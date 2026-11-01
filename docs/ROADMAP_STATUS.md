@@ -35,7 +35,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-010 | SPIKE | Framework de testes | concluída | GUT 9.7.1 aceito por Arthur; ver decisions/0002-avaliacao-gut.md |
 | LW-011 | IMPL | Executor e check_all | concluída | Aprovada por Arthur com ressalvas; avisos do ambiente persistem |
 | LW-012 | IMPL | Verificação de arquitetura | concluída | Aprovada por Arthur com ressalvas; integrada ao check_all |
-| LW-013 | IMPL | IDs | pendente | |
+| LW-013 | IMPL | IDs | concluída | Aprovada por Arthur; 29 testes verdes no check_all |
 | LW-014 | IMPL | Gerador aleatório | pendente | |
 | LW-015 | IMPL | Relógio | pendente | |
 | LW-016 | IMPL | Barramento de eventos | pendente | |
