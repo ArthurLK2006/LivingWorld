@@ -7,6 +7,10 @@ var result: Result
 var save_version: int = 0
 var game_version: String = ""
 var payload: Dictionary = {}
+## Preenchidos pelo SaveStore: de qual arquivo veio ("final", "tmp", "bak1"...) e avisos de
+## arquivos descartados no caminho (ex.: o principal estava corrompido).
+var source: String = ""
+var warnings: Array[String] = []
 
 
 func _init(decode_result: Result) -> void:
