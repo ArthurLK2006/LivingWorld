@@ -43,9 +43,9 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-018 | IMPL | Mundo | concluída | Aprovada pela regra de aceleração de Arthur (check_all verde, 85 testes; único arquivo protegido alterado: arquitetura 4.6, autorizado). Desvio (b) aplicado |
 | LW-019 | IMPL | Agendador | concluída | Aprovada pela regra de aceleração (check_all verde, 95 testes). Orçamento em unidades de trabalho declaradas, não em ms (determinismo, DEC-081); ms só medem |
 | LW-020 | IMPL | SimulationHost | em andamento | Parcial: `SimulationRunner` e `tools/run_sim` prontos e verdes (101 testes). Falta registrar o autoload `SimulationHost` em `project.godot` (arquivo protegido; aguarda autorização de Arthur) |
-| LW-021 | IMPL | Cena inicial com relógio | pendente | |
+| LW-021 | IMPL | Cena inicial com relógio | bloqueada | Exige autoloads GameApp/SimulationHost em `project.godot` (arquivo protegido) e `scenes/main.tscn`; aguarda autorização de Arthur |
 | LW-022 | IMPL | Hash de estado | concluída | Aprovada pela regra de aceleração (check_all verde, 107 testes). 3 execuções de 30 dias dão o mesmo hash |
-| LW-023 | SPIKE | Núcleo da simulação | pendente | |
+| LW-023 | SPIKE | Núcleo da simulação | em auditoria | Parada obrigatória pedida por Arthur. Média 0,14 ms/passo, hash determinístico; picos isolados de 6 a 16 ms no contêiner de nuvem (ruído provável). Falta medir no Mac de referência; release build não executado (ver decisions/0004) |
 | LW-024 | IMPL | Leitor e validador de dados | concluída | Aprovada por Arthur; 21 testes verdes no check_all |
 | LW-025 | SPIKE | Pipeline de dados | concluída | Aprovada por Arthur; JSON mantido (decisions/0003, DEC-082 aprovada). Edição pelo Codex ainda não testada |
 | LW-026 | IMPL | Codec de save | pendente | |
