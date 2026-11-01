@@ -65,6 +65,15 @@ func tick(elapsed_minutes: int) -> void:
 		module.tick(elapsed_minutes)
 
 
+## Roda o tick de um único módulo (usado pelo agendador, que decide quem roda em cada passo).
+func tick_module(module_name: String, elapsed_minutes: int) -> Result:
+	var index: int = _module_names.find(module_name)
+	if index < 0:
+		return Result.failure("WORLD_UNKNOWN_MODULE", "World.tick_module: módulo '%s' não registrado." % module_name)
+	_modules[index].tick(elapsed_minutes)
+	return Result.success()
+
+
 ## Núcleo e módulos, cada módulo sob o nome com que foi registrado.
 func serialize() -> Dictionary:
 	var modules_data: Dictionary = {}
