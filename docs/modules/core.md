@@ -1,12 +1,13 @@
 # Contrato — core
 
-Estado: **parcial**. Existem `Result` e `IdGenerator`; o resto do núcleo entra nas LW-014 a LW-020.
+Estado: **parcial**. Existem `Result`, `IdGenerator` e `WorldRng`; o resto do núcleo entra nas LW-015 a LW-020.
 
 - **Responsabilidade:** base sem dependências: resultado de comandos (agora); IDs, aleatoriedade, relógio, eventos e agendador (tarefas futuras).
 - **Entradas:** nenhuma.
 - **Saídas:** `Result` (`ok`, `code`, `message`), criado por `Result.success()` ou `Result.failure(code, message)`. Falha sem código recebe `UNSPECIFIED_ERROR`.
 - **Dependências permitidas:** nenhuma (camada 0).
 - **IDs (`IdGenerator`, LW-013):** `next_id()` entrega inteiros crescentes a partir de 1, nunca reutilizados; `NO_ID` (0) significa "sem ID" e também é devolvido, com erro registrado, se o limite 2^53-1 acabar. `serialize()` -> `{"next_id": n}`; `on_load(data)` devolve `Result` e só altera o estado se o dado for válido (aceita inteiro ou decimal sem fração, como vem do JSON); `validate()`; `debug_summary()`.
-- **Dados controlados:** o contador de IDs (`next_id`).
+- **Aleatoriedade (`WorldRng`, LW-014):** único gerador do projeto (só `core/rng` pode usar `RandomNumberGenerator`). `WorldRng.new(world_seed)`; `range_int(fluxo, mínimo, máximo)` sorteia inteiro (limites inclusos) num **fluxo nomeado**, criado na primeira vez que é usado. A semente do fluxo é o SHA-256 de `"semente:nome"`. Sortear num fluxo não altera os outros. `serialize()` grava semente do mundo e, por fluxo, `seed` e `state` como **texto decimal** (64 bits); `on_load(data)` devolve `Result` e só altera o estado se tudo for válido; `validate()` confere se cada fluxo bate com a semente do mundo; `debug_summary()`. Faixa invertida e fluxo sem nome registram erro. **Limitação:** o algoritmo do Godot (PCG32) pode mudar entre versões; o teste de valores de referência acusa a troca.
+- **Dados controlados:** o contador de IDs (`next_id`); semente do mundo e estado dos fluxos aleatórios.
 - **Interfaces de comunicação:** nenhum evento publicado ou ouvido.
-- **Testes necessários:** `tests/unit/test_result.gd` (sucesso, falha, distinção entre os dois, falha sem código); `tests/unit/test_id_generator.gd` (crescente e único, ID descartado não volta, salvar/restaurar e ida e volta por JSON continuam a sequência, dado inválido rejeitado sem alterar estado, esgotamento).
+- **Testes necessários:** `tests/unit/test_result.gd` (sucesso, falha, distinção entre os dois, falha sem código); `tests/unit/test_id_generator.gd` (crescente e único, ID descartado não volta, salvar/restaurar e ida e volta por JSON continuam a sequência, dado inválido rejeitado sem alterar estado, esgotamento); `tests/unit/test_world_rng.gd` (mesma semente/mesma sequência, fluxos independentes, derivação SHA-256, salvar/restaurar exato, ida e volta por JSON com 64 bits, dado inválido, limites de 64 bits, faixa, valores de referência do Godot 4.7.2).
