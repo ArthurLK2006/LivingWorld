@@ -63,12 +63,18 @@ func advance_frame(frame_delta_ms: int) -> int:
 	return steps
 
 
+## Data simulada em texto curto, ex.: "ano 1, dia 3, 14:05".
+func format_clock_line() -> String:
+	var clock: SimClock = world.context.clock
+	return "ano %d, dia %d, %02d:%02d" % [clock.year(), clock.day_of_year(), clock.hour_of_day(), clock.minute_of_hour()]
+
+
 ## Texto para a linha de comando: data simulada, módulos e problemas de validação.
 func describe_state() -> String:
 	var clock: SimClock = world.context.clock
 	var problems: Array[String] = world.validate()
 	var lines: PackedStringArray = PackedStringArray()
-	lines.append("Data simulada: ano %d, dia %d, %02d:%02d (%d minutos simulados)" % [clock.year(), clock.day_of_year(), clock.hour_of_day(), clock.minute_of_hour(), clock.total_minutes()])
+	lines.append("Data simulada: %s (%d minutos simulados)" % [format_clock_line(), clock.total_minutes()])
 	lines.append("Semente: %d" % _world_seed)
 	lines.append("Hash do estado: %s" % world.state_hash())
 	var module_names: Array[String] = world.module_names()

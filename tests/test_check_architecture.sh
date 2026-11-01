@@ -39,7 +39,13 @@ check_violation 'evento fora do catálogo' 'rogue.gd:1:'
 printf 'class_name Declared\nextends SimEvent\nfunc _init() -> void:\n    super("Renamed")\n' > "$fixture/src/sim/world/rogue.gd"
 check_violation 'nome de super() fora do catálogo' 'rogue.gd:4:'
 rm "$fixture/src/sim/world/rogue.gd" "$fixture/src/sim/world/declared.gd"
+printf '[application]\nconfig/name="X"\n\n[autoload]\n\nGameApp="*res://a.gd"\nSimulationHost="*res://b.gd"\nDebug="*res://c.gd"\nSettings="*res://d.gd"\n\n[debug]\nfoo=1\n' > "$fixture/project.godot"
+"$checker" "$fixture" || { echo 'FALHA: autoloads permitidos deveriam passar'; exit 1; }
+printf '[autoload]\n\nGameApp="*res://a.gd"\nRogue="*res://x.gd"\n' > "$fixture/project.godot"
+check_violation 'autoload fora da lista' 'project.godot:4:'
+rm "$fixture/project.godot"
 rm "$fixture/src/sim/world/README.md"
 check_violation 'contrato ausente' 'world/README.md'
 echo 'LW-012: 1 caso válido e 5 violações detectadas.'
 echo 'LW-016: 1 evento catalogado aprovado e 2 eventos fora do catálogo detectados.'
+echo 'LW-021: autoloads permitidos aprovados e 1 autoload extra detectado.'

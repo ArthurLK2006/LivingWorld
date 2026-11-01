@@ -17,6 +17,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 - Dados: confirmação de que o Codex consegue editar os dados sem quebrar o resto (parte da LW-025) pendente; usar `tools/validate_data` e `tools/check_all`.
 - Ambiente de trabalho do Claude (nuvem): Godot 4.7.2 Linux instalado fora do projeto; `check_all` verde sem os erros de certificado do ambiente Codex.
 - LW-023: rodar `tests/soak/run_sp1` no Mac de referência para confirmar que nenhum passo passa de ~10 ms (pendente antes do fim da Fase 0).
+- LW-021: conferência visual no Mac: abrir o projeto, F5, ver o texto no canto superior esquerdo, a hora simulada avançar e o Espaço pausar e continuar.
 - DEC-086: GUT 9.7.1 aprovado por Arthur e registrado na entrada oficial.
 - Ambiente Codex: erros de certificados e de criação de `user://logs` persistem durante os testes; a importação também relatou restrição ao gravar configurações do editor. Causa não atribuída ao projeto; investigar separadamente.
 
@@ -43,8 +44,8 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-017 | IMPL | Result e contratos base | concluída | Aprovada por Arthur; `Result`, `SimModule` e `SimContext`; 75 testes verdes. Desvio (b) aprovado: `tick(elapsed_minutes: int)` e `on_load(data) -> Result`, aplicado na LW-018 |
 | LW-018 | IMPL | Mundo | concluída | Aprovada pela regra de aceleração de Arthur (check_all verde, 85 testes; único arquivo protegido alterado: arquitetura 4.6, autorizado). Desvio (b) aplicado |
 | LW-019 | IMPL | Agendador | concluída | Aprovada pela regra de aceleração (check_all verde, 95 testes). Orçamento em unidades de trabalho declaradas, não em ms (determinismo, DEC-081); ms só medem |
-| LW-020 | IMPL | SimulationHost | em andamento | Parcial: `SimulationRunner` e `tools/run_sim` prontos e verdes (101 testes). Falta registrar o autoload `SimulationHost` em `project.godot` (arquivo protegido; aguarda autorização de Arthur) |
-| LW-021 | IMPL | Cena inicial com relógio | bloqueada | Exige autoloads GameApp/SimulationHost em `project.godot` (arquivo protegido) e `scenes/main.tscn`; aguarda autorização de Arthur |
+| LW-020 | IMPL | SimulationHost | concluída | Autoload registrado com autorização de Arthur; `tools/run_sim` no check_all (115 testes) |
+| LW-021 | IMPL | Cena inicial com relógio | concluída | Autoloads e `scenes/main.tscn` alterados com autorização de Arthur; regra 5 do check_architecture ativa. Conferência visual na janela pendente (ver abaixo) |
 | LW-022 | IMPL | Hash de estado | concluída | Aprovada pela regra de aceleração (check_all verde, 107 testes). 3 execuções de 30 dias dão o mesmo hash |
 | LW-023 | SPIKE | Núcleo da simulação | concluída com ressalva | Pico de 10 ms não confirmado; teste no Mac pendente antes do fim da Fase 0. Média 0,14 ms/passo e hash determinístico atingidos (ver decisions/0004) |
 | LW-024 | IMPL | Leitor e validador de dados | concluída | Aprovada por Arthur; 21 testes verdes no check_all |

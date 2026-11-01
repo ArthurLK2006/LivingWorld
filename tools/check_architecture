@@ -46,5 +46,14 @@ if [ -n "$event_report" ]; then
     printf '%s\n%s\n' 'VIOLAÇÃO: evento fora do catálogo' "$event_report"
     failed=1
 fi
+# Regra 5 (arquitetura 27.3): os autoloads de project.godot só podem ser GameApp, SimulationHost, Debug e Settings.
+project_file="$root/project.godot"
+if [ -f "$project_file" ]; then
+    autoload_report=$(awk '/^\[/ { in_autoload = ($0 == "[autoload]"); next } in_autoload && /^[A-Za-z0-9_]+=/ { split($0, parts, "="); name = parts[1]; if (name != "GameApp" && name != "SimulationHost" && name != "Debug" && name != "Settings") printf "%s:%d: autoload não permitido \"%s\"\n", FILENAME, NR, name }' "$project_file")
+    if [ -n "$autoload_report" ]; then
+        printf '%s\n%s\n' 'VIOLAÇÃO: autoload fora da lista permitida' "$autoload_report"
+        failed=1
+    fi
+fi
 if [ "$failed" -ne 0 ]; then exit 1; fi
-echo 'Arquitetura: seis verificações aprovadas.'
+echo 'Arquitetura: sete verificações aprovadas.'
