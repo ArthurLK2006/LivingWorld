@@ -37,7 +37,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-012 | IMPL | Verificação de arquitetura | concluída | Aprovada por Arthur com ressalvas; integrada ao check_all |
 | LW-013 | IMPL | IDs | concluída | Aprovada por Arthur; 29 testes verdes no check_all |
 | LW-014 | IMPL | Gerador aleatório | concluída | Aprovada por Arthur; 43 testes verdes no check_all; valores de referência do Godot 4.7.2 em teste |
-| LW-015 | IMPL | Relógio | pendente | |
+| LW-015 | IMPL | Relógio | concluída | Aprovada por Arthur; 55 testes verdes; valores [HIP] mantidos: 360 dias por ano e 1 dia de jogo ≈ 30 min reais |
 | LW-016 | IMPL | Barramento de eventos | pendente | |
 | LW-017 | IMPL | Result e contratos base | em andamento | Só `Result` feito (aprovado por Arthur); `SimModule` e `SimContext` pendentes até LW-013 a LW-016 |
 | LW-018 | IMPL | Mundo | pendente | |
