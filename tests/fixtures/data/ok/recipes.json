@@ -1,0 +1,4 @@
+[
+	{"id": "test_recipe_a", "output_good": "test_good_a", "output_amount": 3, "yield_chance": 0.5},
+	{"id": "test_recipe_b", "output_good": "test_good_b", "output_amount": 1, "yield_chance": 1}
+]

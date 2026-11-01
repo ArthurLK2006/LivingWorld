@@ -1,0 +1,4 @@
+[
+	{"id": "ghost_ref", "output_good": "ghost_good", "output_amount": 1, "yield_chance": 0.5},
+	{"id": "above_range", "output_good": "dup_good", "output_amount": 1, "yield_chance": 1.5}
+]

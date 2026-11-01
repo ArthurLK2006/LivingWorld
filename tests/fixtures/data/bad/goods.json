@@ -1,0 +1,10 @@
+[
+	{"id": "missing_price", "name_key": "k"},
+	{"id": "wrong_type", "name_key": "k", "base_price": "ten"},
+	{"id": "fraction", "name_key": "k", "base_price": 10.5},
+	{"id": "below_range", "name_key": "k", "base_price": 0},
+	{"id": "Bad-Id", "name_key": "k", "base_price": 5},
+	{"id": "dup_good", "name_key": "k", "base_price": 5},
+	{"id": "dup_good", "name_key": "k", "base_price": 6},
+	{"id": "typo_field", "name_key": "k", "base_price": 5, "base_prise": 5}
+]
