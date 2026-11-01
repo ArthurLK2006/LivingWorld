@@ -31,5 +31,20 @@ for dir in "$root"/src/* "$root"/src/sim/* "$root"/src/presentation/*; do
         failed=1
     fi
 done
+# Regra 8 (arquitetura 27.3): todo evento (classe que estende SimEvent) consta na primeira coluna de docs/events.md.
+catalog="$root/docs/events.md"
+event_files=$(rg -l --glob '*.gd' 'extends[[:space:]]+SimEvent([^A-Za-z0-9_]|$)' "$root/src" 2>/dev/null)
+event_report=$(for file in $event_files; do
+    rg -n -o --no-heading 'class_name[[:space:]]+[A-Za-z0-9_]+|class[[:space:]]+[A-Za-z0-9_]+[[:space:]]+extends[[:space:]]+SimEvent|super\("[A-Za-z0-9_]+"\)' "$file" | while IFS=: read -r line text; do
+        name=$(printf '%s' "$text" | sed -E 's/^class_name[[:space:]]+//; s/^class[[:space:]]+([A-Za-z0-9_]+).*/\1/; s/^super\("(.*)"\)/\1/')
+        if ! grep -E "^\|[[:space:]]*\`?${name}\`?[[:space:]]*\|" "$catalog" >/dev/null 2>&1; then
+            printf '%s:%s: evento "%s" não consta em docs/events.md\n' "$file" "$line" "$name"
+        fi
+    done
+done)
+if [ -n "$event_report" ]; then
+    printf '%s\n%s\n' 'VIOLAÇÃO: evento fora do catálogo' "$event_report"
+    failed=1
+fi
 if [ "$failed" -ne 0 ]; then exit 1; fi
-echo 'Arquitetura: cinco verificações aprovadas.'
+echo 'Arquitetura: seis verificações aprovadas.'
