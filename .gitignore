@@ -1,0 +1,17 @@
+# Metadados locais do macOS
+.DS_Store
+
+# Cache e arquivos locais gerados pelo Godot
+.godot/
+
+# Segredos e configurações locais
+.env
+.env.*
+!.env.example
+
+# Arquivos de log locais
+*.log
+
+# Arquivos temporários e cópias de segurança locais
+*.tmp
+*.bak
