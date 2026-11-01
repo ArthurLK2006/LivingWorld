@@ -36,7 +36,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-011 | IMPL | Executor e check_all | concluída | Aprovada por Arthur com ressalvas; avisos do ambiente persistem |
 | LW-012 | IMPL | Verificação de arquitetura | concluída | Aprovada por Arthur com ressalvas; integrada ao check_all |
 | LW-013 | IMPL | IDs | concluída | Aprovada por Arthur; 29 testes verdes no check_all |
-| LW-014 | IMPL | Gerador aleatório | pendente | |
+| LW-014 | IMPL | Gerador aleatório | concluída | Aprovada por Arthur; 43 testes verdes no check_all; valores de referência do Godot 4.7.2 em teste |
 | LW-015 | IMPL | Relógio | pendente | |
 | LW-016 | IMPL | Barramento de eventos | pendente | |
 | LW-017 | IMPL | Result e contratos base | em andamento | Só `Result` feito (aprovado por Arthur); `SimModule` e `SimContext` pendentes até LW-013 a LW-016 |
