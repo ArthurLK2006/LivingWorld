@@ -52,7 +52,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-025 | SPIKE | Pipeline de dados | concluída | Aprovada por Arthur; JSON mantido (decisions/0003, DEC-082 aprovada). Edição pelo Codex ainda não testada |
 | LW-026 | IMPL | Codec de save | concluída | Regra automática de Arthur (check_all verde, 128 testes). Formato v2, migração 1->2 com fixture, salvar/carregar no meio não muda o hash |
 | LW-027 | IMPL | Escrita e recuperação de save | concluída | Regra automática de Arthur (check_all verde). Falha injetada depois de cada passo nunca perde o save anterior; backups rotativos; recuperação ao carregar |
-| LW-028 | SPIKE | Salvamento | pendente | |
+| LW-028 | SPIKE | Salvamento | concluída | Regra automática de Arthur. 1.000 NPCs: salvar 2,3 ms, carregar 0,9 ms, hash idêntico, falha simulada preserva o save (ver decisions/0005). Plano B (thread) não necessário agora |
 | LW-029 | REV | Revisão arquitetural | pendente | |
 | LW-030 | VAL | Validação do usuário | pendente | |
 | LW-031 | DOC | Fechamento da fase | pendente | |

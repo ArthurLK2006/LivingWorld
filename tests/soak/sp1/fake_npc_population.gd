@@ -135,6 +135,36 @@ func serialize() -> Dictionary:
 	}
 
 
+## Restaura o estado salvo (usado pelo spike SP5). Números do JSON chegam como decimais.
+func on_load(data: Dictionary) -> Result:
+	var hot_columns: Array[String] = ["npc_ids", "hunger", "energy", "social", "action", "last_update"]
+	for column: String in hot_columns:
+		if typeof(data.get(column)) != TYPE_ARRAY or (data[column] as Array).size() != npc_count:
+			return Result.failure("FAKE_NPC_INVALID_SAVE", "FakeNpcPopulation.on_load: coluna '%s' ausente ou com tamanho diferente de %d." % [column, npc_count])
+	if typeof(data.get("ring")) != TYPE_ARRAY or (data["ring"] as Array).size() != RING_SIZE:
+		return Result.failure("FAKE_NPC_INVALID_SAVE", "FakeNpcPopulation.on_load: 'ring' deve ter %d listas." % RING_SIZE)
+	_npc_ids = _to_ints(data["npc_ids"])
+	_hunger = _to_ints(data["hunger"])
+	_energy = _to_ints(data["energy"])
+	_social = _to_ints(data["social"])
+	_action = _to_ints(data["action"])
+	_last_update = _to_ints(data["last_update"])
+	_ring = []
+	for slot_data: Array in data["ring"]:
+		_ring.append(_to_ints(slot_data))
+	thoughts_total = int(data["thoughts_total"])
+	starving_events_seen = int(data["starving_events_seen"])
+	return Result.success()
+
+
+func _to_ints(values: Array) -> PackedInt32Array:
+	var converted: PackedInt32Array = PackedInt32Array()
+	converted.resize(values.size())
+	for index: int in values.size():
+		converted[index] = int(values[index])
+	return converted
+
+
 func debug_summary() -> Dictionary:
 	return {"npcs": npc_count, "thoughts_total": thoughts_total, "starving_events_seen": starving_events_seen}
 
