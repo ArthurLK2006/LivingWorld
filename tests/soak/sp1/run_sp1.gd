@@ -81,7 +81,7 @@ func _report(runner: SimulationRunner, population: FakeNpcPopulation, durations:
 			over_peak += 1
 	var count: int = durations.size()
 	print("SP1 — dias: %d, NPCs: %d, semente: %d, passos: %d" % [days, npcs, world_seed, count])
-	print("Motor: %s" % Engine.get_version_info()["string"])
+	print("Motor: %s | build de depuração: %s" % [Engine.get_version_info()["string"], "sim" if OS.is_debug_build() else "não"])
 	print("Tempo por passo (us): média %.1f | p50 %d | p99 %d | p99,9 %d | máximo %d" % [float(total) / count, sorted[count / 2], sorted[int(count * 0.99)], sorted[int(count * 0.999)], sorted[count - 1]])
 	print("Passos acima de %d us: %d | acima de %d us: %d" % [SIM_BUDGET_USEC, over_budget, PEAK_LIMIT_USEC, over_peak])
 	print("Passos mais lentos (índice:us): %s" % str(_slowest(durations)))

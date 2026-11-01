@@ -50,7 +50,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-023 | SPIKE | Núcleo da simulação | concluída com ressalva | Pico de 10 ms não confirmado; teste no Mac pendente antes do fim da Fase 0. Média 0,14 ms/passo e hash determinístico atingidos (ver decisions/0004) |
 | LW-024 | IMPL | Leitor e validador de dados | concluída | Aprovada por Arthur; 21 testes verdes no check_all |
 | LW-025 | SPIKE | Pipeline de dados | concluída | Aprovada por Arthur; JSON mantido (decisions/0003, DEC-082 aprovada). Edição pelo Codex ainda não testada |
-| LW-026 | IMPL | Codec de save | pendente | |
+| LW-026 | IMPL | Codec de save | concluída | Regra automática de Arthur (check_all verde, 128 testes). Formato v2, migração 1->2 com fixture, salvar/carregar no meio não muda o hash |
 | LW-027 | IMPL | Escrita e recuperação de save | pendente | |
 | LW-028 | SPIKE | Salvamento | pendente | |
 | LW-029 | REV | Revisão arquitetural | pendente | |

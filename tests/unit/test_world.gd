@@ -53,6 +53,14 @@ func test_teardown_runs_in_reverse_order_and_only_once() -> void:
 	assert_eq(_log, ["gamma.teardown", "beta.teardown", "alpha.teardown"] as Array[String])
 
 
+func test_teardown_before_setup_does_not_touch_modules() -> void:
+	_world.teardown()
+	assert_eq(_log.size(), 0, "Módulo que não passou por setup não deve receber teardown.")
+	_world.setup()
+	assert_eq(_log.size(), 0, "Depois de encerrado, o mundo não roda setup.")
+	assert_push_error("já executado ou mundo encerrado")
+
+
 func test_registration_rejects_duplicates_empty_names_and_late_registration() -> void:
 	var duplicate: Result = _world.register_module("alpha", FakeModule.new("again", _log))
 	assert_false(duplicate.ok)

@@ -156,8 +156,10 @@ func debug_summary() -> Dictionary:
 func teardown() -> void:
 	if _phase == Phase.TORN_DOWN:
 		return
-	for index: int in range(_modules.size() - 1, -1, -1):
-		_modules[index].teardown()
+	# Módulos que nunca passaram por setup() não têm o que soltar: não chamar o teardown deles.
+	if _phase == Phase.SET_UP:
+		for index: int in range(_modules.size() - 1, -1, -1):
+			_modules[index].teardown()
 	context.events.teardown()
 	_phase = Phase.TORN_DOWN
 
