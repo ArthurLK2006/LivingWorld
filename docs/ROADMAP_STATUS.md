@@ -14,6 +14,8 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 
 - LW-006: funcional com ressalvas por orientação de Arthur. Saída sem erros na importação e execução, painel Saída, e confirmação visual separada de piso, céu e luz ainda não comprovados. Erros de certificados e permissões ocorreram no ambiente Codex; causa não atribuída ao projeto.
 - LW-008: aprovada por Arthur com ressalvas; o mapeamento individual detalhado das regras da arquitetura não foi comprovado. Limite de leitura do Codex ainda não verificado em fonte oficial.
+- Dados: confirmação de que o Codex consegue editar os dados sem quebrar o resto (parte da LW-025) pendente; usar `tools/validate_data` e `tools/check_all`.
+- Ambiente de trabalho do Claude (nuvem): Godot 4.7.2 Linux instalado fora do projeto; `check_all` verde sem os erros de certificado do ambiente Codex.
 - DEC-086: GUT 9.7.1 aprovado por Arthur e registrado na entrada oficial.
 - Ambiente Codex: erros de certificados e de criação de `user://logs` persistem durante os testes; a importação também relatou restrição ao gravar configurações do editor. Causa não atribuída ao projeto; investigar separadamente.
 
@@ -37,15 +39,15 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-014 | IMPL | Gerador aleatório | pendente | |
 | LW-015 | IMPL | Relógio | pendente | |
 | LW-016 | IMPL | Barramento de eventos | pendente | |
-| LW-017 | IMPL | Result e contratos base | pendente | |
+| LW-017 | IMPL | Result e contratos base | em andamento | Só `Result` feito (aprovado por Arthur); `SimModule` e `SimContext` pendentes até LW-013 a LW-016 |
 | LW-018 | IMPL | Mundo | pendente | |
 | LW-019 | IMPL | Agendador | pendente | |
 | LW-020 | IMPL | SimulationHost | pendente | |
 | LW-021 | IMPL | Cena inicial com relógio | pendente | |
 | LW-022 | IMPL | Hash de estado | pendente | |
 | LW-023 | SPIKE | Núcleo da simulação | pendente | |
-| LW-024 | IMPL | Leitor e validador de dados | pendente | |
-| LW-025 | SPIKE | Pipeline de dados | pendente | |
+| LW-024 | IMPL | Leitor e validador de dados | concluída | Aprovada por Arthur; 21 testes verdes no check_all |
+| LW-025 | SPIKE | Pipeline de dados | concluída | Aprovada por Arthur; JSON mantido (decisions/0003, DEC-082 aprovada). Edição pelo Codex ainda não testada |
 | LW-026 | IMPL | Codec de save | pendente | |
 | LW-027 | IMPL | Escrita e recuperação de save | pendente | |
 | LW-028 | SPIKE | Salvamento | pendente | |

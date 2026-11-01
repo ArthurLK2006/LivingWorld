@@ -1,6 +1,6 @@
 # Registro técnico — Pipeline de dados JSON (spike SP3, parte 2)
 
-- **Status:** proposta (aguarda aprovação de Arthur; relacionada à DEC-082, que segue PROPOSTA).
+- **Status:** aprovado por Arthur em 01/11/2026 (DEC-082 aprovada somente quanto ao JSON validado).
 - **Data e tarefa:** 01/11/2026, LW-025.
 - **Contexto e problema:** a arquitetura (cap. 16.2) recomenda definições em JSON validado, com plano B em `.tres` + validadores. O spike precisava mostrar se esse fluxo é confortável: editar dados, errar, ver o erro e consertar.
 - **Opções consideradas:** (1) JSON + `DataLoader`/`DataValidator` (LW-024); (2) `.tres` com scripts de validação (plano B).

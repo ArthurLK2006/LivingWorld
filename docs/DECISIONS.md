@@ -190,7 +190,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-079 | Gerador de aleatoriedade único, com semente salva | PROPOSTA |
 | DEC-080 | Spikes: protótipos técnicos descartáveis para validar o que é arriscado (SP1 a SP8) | APROVADA (somente a antecipação de SP6 e SP4a) |
 | DEC-081 | Determinismo da simulação no mesmo ambiente (sem replay universal) | APROVADA |
-| DEC-082 | Definições do jogo em arquivos de dados validados | PROPOSTA |
+| DEC-082 | Definições do jogo em arquivos de dados validados | APROVADA (somente JSON validado; formato interno dos arquivos segue PROPOSTA) |
 | DEC-083 | Modelo de persistência (o que se salva, formato, slots, autosave e regras de falha) | APROVADA (somente os princípios) |
 | DEC-084 | Proposta técnica de salvamento: JSON comprimido, escrita atômica, versão e migrações | PROPOSTA |
 | DEC-085 | Modelo de multiplayer (se vier a existir) | PENDENTE |
@@ -1257,12 +1257,12 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PROPOSTA (validação no spike SP3) |
+| **Status** | APROVADA (somente JSON validado como formato das definições; o formato interno dos arquivos — lista de objetos com `id` — e os esquemas seguem PROPOSTA) |
 | **Contexto** | Bens, ações, culturas e eventos devem ser dados, não código, para o agente de IA editar sem arriscar a lógica. |
 | **Decisão** | Proposta da TA (16.1 a 16.4, 26.2): três tipos de dados (definições, estado, configuração) que não se misturam; definições em arquivos (JSON proposto) validados no boot; IDs textuais estáveis. |
 | **Justificativa** | Facilita conteúdo e expansão (DEC-072). |
-| **Consequências** | O formato de definição ainda pode mudar após o spike SP3. |
-| **Data / versão** | TA 0.1 cap. 16 · registrada em 01/11/2026 |
+| **Consequências** | Plano B (`.tres` com validadores) não foi necessário no spike SP3 (LW-025; ver `docs/decisions/0003-pipeline-de-dados.md`). Confirmação de que o Codex edita os dados sem quebrar o resto segue pendente. |
+| **Data / versão** | TA 0.1 cap. 16 · registrada em 01/11/2026 · aprovada por Arthur em mensagem de 01/11/2026 (aprovação das entregas LW-024 e LW-025) |
 | **Relações** | DEC-072, DEC-080 |
 
 ### DEC-083 — Modelo de persistência (o que se salva, formato, slots, autosave e regras de falha)
