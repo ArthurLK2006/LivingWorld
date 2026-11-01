@@ -1,7 +1,8 @@
 extends GutTest
 ## LW-025: três tipos de dado de teste com referências cruzadas (spike SP3).
 
-const OK_DIR: String = "res://tests/fixtures/data/ok"
+## Pasta congelada: não muda quando a pasta editável "ok" é editada.
+const OK_DIR: String = "res://tests/fixtures/data/frozen"
 const BAD_DIR: String = "res://tests/fixtures/data/bad"
 
 
@@ -27,3 +28,13 @@ func test_missing_table_file_does_not_hide_other_errors() -> void:
 	var text: String = bundle.describe_issues()
 	assert_string_contains(text, "offers.json | arquivo não encontrado")
 	assert_string_contains(text, "ghost_good")
+
+
+func test_editable_sample_folder_stays_valid_whatever_its_size() -> void:
+	# A pasta "ok" é editável de propósito (spike SP3): só exigimos que continue válida,
+	# sem fixar quantidades nem conteúdo. O check_all também a valida via tools/validate_data.
+	var bundle: DataBundle = DataLoader.load_all("res://tests/fixtures/data/ok", PipelineSchemas.build())
+	assert_true(bundle.is_valid(), bundle.describe_issues())
+	assert_eq(bundle.tables.size(), 3)
+	for table_name: String in ["goods", "recipes", "offers"]:
+		assert_gt(bundle.tables[table_name].size(), 0, "A tabela %s não pode ficar vazia." % table_name)

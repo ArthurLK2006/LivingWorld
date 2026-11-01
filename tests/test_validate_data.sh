@@ -5,7 +5,7 @@ set -eu
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/lw025.XXXXXX")
 trap 'rm -r "$work"' EXIT HUP INT TERM
-cp "$project_dir"/tests/fixtures/data/ok/*.json "$work/"
+cp "$project_dir"/tests/fixtures/data/frozen/*.json "$work/"
 validator="$project_dir/tools/validate_data"
 expect_valid() {
     label=$1
@@ -39,6 +39,6 @@ expect_invalid 'referência quebrada' 'offers.json' "item 'test_offer_a'" "campo
 printf '[\n{"id": "test_offer_a", "good": "test_good_a", "price_multiplier": 9}\n]\n' > "$work/offers.json"
 expect_invalid 'valor fora da faixa' 'offers.json' "campo 'price_multiplier'" 'acima do máximo'
 # Conserto: volta a passar.
-cp "$project_dir/tests/fixtures/data/ok/offers.json" "$work/offers.json"
+cp "$project_dir/tests/fixtures/data/frozen/offers.json" "$work/offers.json"
 expect_valid 'dado consertado'
 echo 'LW-025: 3 casos válidos e 2 quebras detectadas.'

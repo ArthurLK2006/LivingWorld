@@ -8,8 +8,10 @@ trap 'rm -f "$output"' EXIT HUP INT TERM
 if ! "$godot_bin" --headless --path "$project_dir" --quit-after 60 > "$output" 2>&1; then
     echo 'FALHA: a cena principal não terminou com código 0'; cat "$output"; exit 1
 fi
-if grep -E 'SCRIPT ERROR|Parse Error|ERROR:' "$output" >/dev/null; then
-    echo 'FALHA: a cena principal registrou erros'; cat "$output"; exit 1
+# Erros de ambiente (sem permissão para gravar dados/logs, certificados) são ignorados com aviso;
+# qualquer outro erro derruba o teste (ver tools/filter_env_noise).
+if ! real_errors=$("$project_dir/tools/filter_env_noise" < "$output"); then
+    echo 'FALHA: a cena principal registrou erros reais'; echo "$real_errors"; exit 1
 fi
 echo 'OK: cena principal com autoloads por 60 quadros'
 if ! "$godot_bin" --headless --path "$project_dir" --script res://tools/smoke_test.gd > "$output" 2>&1; then

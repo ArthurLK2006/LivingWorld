@@ -1,6 +1,7 @@
 extends GutTest
 
-const OK_DIR: String = "res://tests/fixtures/data/ok"
+## Pasta congelada: não muda quando a pasta editável "ok" é editada.
+const OK_DIR: String = "res://tests/fixtures/data/frozen"
 const BAD_DIR: String = "res://tests/fixtures/data/bad"
 
 

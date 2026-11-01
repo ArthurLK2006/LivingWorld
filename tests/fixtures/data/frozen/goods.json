@@ -1,0 +1,4 @@
+[
+	{"id": "test_good_a", "name_key": "good.test_good_a.name", "base_price": 10},
+	{"id": "test_good_b", "name_key": "good.test_good_b.name", "base_price": 25, "is_tradable": false}
+]

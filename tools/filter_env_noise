@@ -1,0 +1,30 @@
+#!/bin/sh
+# Separa erros REAIS do Godot de ruído de AMBIENTE (stdin = saída do Godot).
+# Ruído de ambiente = mensagens do núcleo do motor sobre não conseguir criar o diretório de dados,
+# a pasta user://logs ou o arquivo de log, ou sobre certificados do sistema. Elas aparecem em
+# máquinas/sandboxes sem permissão de escrita e não dizem nada sobre o nosso código.
+# Saída (stdout): as linhas de erro reais, com o complemento "at:" de cada uma. Aviso (stderr):
+# quantas mensagens de ambiente foram ignoradas. Código de saída: 1 se houver erro real, 0 se não.
+# Sempre reais, sem exceção: "SCRIPT ERROR", "Parse Error" e qualquer erro que cite res://.
+awk '
+function is_env(line) {
+    if (line ~ /res:\/\//) { return 0 }
+    if (line ~ /^ERROR: Could not create directory:/) { return 1 }
+    if (line ~ /^ERROR: Error attempting to create data dir:/) { return 1 }
+    if (line ~ /^ERROR: Failed to open log file for writing:/) { return 1 }
+    if (line ~ /^ERROR:.*[Cc]ertificat/) { return 1 }
+    return 0
+}
+/^(SCRIPT ERROR|Parse Error)/ { real++; print; in_env = 0; next }
+/^ERROR:/ {
+    if (is_env($0)) { ignored++; in_env = 1; next }
+    real++; in_env = 0; print; next
+}
+/^[[:space:]]+at:/ { if (!in_env) { print } ; next }
+{ in_env = 0 }
+END {
+    if (ignored > 0) {
+        printf "NOTA: %d mensagem(ns) de ambiente ignorada(s) (diretório de dados, logs ou certificados); não indicam erro do projeto.\n", ignored > "/dev/stderr"
+    }
+    exit (real > 0 ? 1 : 0)
+}'
