@@ -40,7 +40,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-015 | IMPL | Relógio | concluída | Aprovada por Arthur; 55 testes verdes; valores [HIP] mantidos: 360 dias por ano e 1 dia de jogo ≈ 30 min reais |
 | LW-016 | IMPL | Barramento de eventos | concluída | Aprovada por Arthur; 69 testes verdes; check_architecture agora confere eventos contra docs/events.md (regra 8) |
 | LW-017 | IMPL | Result e contratos base | concluída | Aprovada por Arthur; `Result`, `SimModule` e `SimContext`; 75 testes verdes. Desvio (b) aprovado: `tick(elapsed_minutes: int)` e `on_load(data) -> Result`, aplicado na LW-018 |
-| LW-018 | IMPL | Mundo | em andamento | |
+| LW-018 | IMPL | Mundo | concluída | Aprovada pela regra de aceleração de Arthur (check_all verde, 85 testes; único arquivo protegido alterado: arquitetura 4.6, autorizado). Desvio (b) aplicado |
 | LW-019 | IMPL | Agendador | pendente | |
 | LW-020 | IMPL | SimulationHost | pendente | |
 | LW-021 | IMPL | Cena inicial com relógio | pendente | |

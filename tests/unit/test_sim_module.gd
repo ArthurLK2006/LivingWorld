@@ -20,12 +20,15 @@ class RecordingModule:
 		calls.append("on_new_game:%d" % world_seed)
 		value = ctx.rng.range_int("recording_module", 1, 6)
 
-	func on_load(data: Dictionary) -> void:
+	func on_load(data: Dictionary) -> Result:
 		calls.append("on_load")
+		if not data.has("value"):
+			return Result.failure("FAKE_MISSING_VALUE", "campo 'value' ausente")
 		value = int(data["value"])
+		return Result.success()
 
-	func tick(dt_sim: float) -> void:
-		calls.append("tick:%s" % str(dt_sim))
+	func tick(elapsed_minutes: int) -> void:
+		calls.append("tick:%d" % elapsed_minutes)
 		value += 1
 
 	func serialize() -> Dictionary:
@@ -67,8 +70,8 @@ func test_base_class_hooks_are_harmless_defaults() -> void:
 	module.setup(_context)
 	module.post_setup()
 	module.on_new_game(1)
-	module.on_load({})
-	module.tick(1.0)
+	assert_true(module.on_load({}).ok)
+	module.tick(1)
 	module.teardown()
 	assert_eq(module.serialize(), {})
 	assert_eq(module.validate(), [] as Array[String])
@@ -81,14 +84,14 @@ func test_fake_module_follows_the_lifecycle_signatures() -> void:
 	base.setup(_context)
 	base.post_setup()
 	base.on_new_game(77)
-	base.tick(1.0)
+	base.tick(1)
 	var saved: Dictionary = base.serialize()
-	base.on_load(saved)
+	assert_true(base.on_load(saved).ok)
 	assert_eq(base.validate().size(), 0)
 	assert_true(base.debug_summary().has("value"))
 	base.teardown()
 	assert_eq(module.calls, [
-		"setup", "post_setup", "on_new_game:77", "tick:1.0", "serialize", "on_load",
+		"setup", "post_setup", "on_new_game:77", "tick:1", "serialize", "on_load",
 		"validate", "debug_summary", "teardown",
 	] as Array[String])
 
@@ -125,5 +128,14 @@ func test_serialize_and_on_load_round_trip_through_json() -> void:
 	original.value = 42
 	var parsed: Variant = JSON.parse_string(JSON.stringify(original.serialize()))
 	var restored: RecordingModule = RecordingModule.new()
-	restored.on_load(parsed)
+	assert_true(restored.on_load(parsed).ok)
 	assert_eq(restored.value, 42)
+
+
+func test_on_load_reports_invalid_data_through_result() -> void:
+	var module: RecordingModule = RecordingModule.new()
+	module.value = 5
+	var result: Result = module.on_load({})
+	assert_false(result.ok)
+	assert_eq(result.code, "FAKE_MISSING_VALUE")
+	assert_eq(module.value, 5)

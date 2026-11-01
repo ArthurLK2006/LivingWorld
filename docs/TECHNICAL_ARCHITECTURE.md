@@ -473,8 +473,8 @@ Todo módulo da simulação implementa as mesmas operações, o que permite ao `
 | `setup(ctx)` | Criação | Receber referências (relógio, eventos, definições) |
 | `post_setup()` | Depois que todos existem | Assinar eventos e conectar consultas |
 | `on_new_game(seed)` | Novo jogo | Criar estado inicial |
-| `on_load(data)` | Carregar | Restaurar estado de dados salvos |
-| `tick(dt_sim)` | A cada passo de simulação, conforme frequência do módulo | Avançar a lógica do módulo |
+| `on_load(data) -> Result` | Carregar | Restaurar estado de dados salvos; devolve erro (sem alterar o estado) se o dado for inválido |
+| `tick(elapsed_minutes: int)` | A cada passo de simulação, conforme frequência do módulo | Avançar a lógica do módulo; recebe os minutos simulados decorridos desde o último tick do módulo |
 | `serialize() -> Dictionary` | Salvar | Devolver o estado em formato salvável |
 | `validate() -> Array[String]` | Depois de carregar e em testes | Listar inconsistências |
 | `debug_summary() -> Dictionary` | Painel de depuração | Resumo legível do estado |
@@ -489,13 +489,15 @@ extends RefCounted
 func setup(_ctx: SimContext) -> void: pass
 func post_setup() -> void: pass
 func on_new_game(_world_seed: int) -> void: pass
-func on_load(_data: Dictionary) -> void: pass
-func tick(_dt_sim: float) -> void: pass
+func on_load(_data: Dictionary) -> Result: return Result.success()
+func tick(_elapsed_minutes: int) -> void: pass
 func serialize() -> Dictionary: return {}
 func validate() -> Array[String]: return []
 func debug_summary() -> Dictionary: return {}
 func teardown() -> void: pass
 ```
+
+**[Revisão v0.3.1 — aprovada por Arthur em 01/11/2026]** `on_load` devolve `Result` (AGENTS 13.1.2: função que pode falhar devolve `Result`) e `tick` recebe minutos inteiros (`elapsed_minutes`) em vez de decimal, coerente com a simulação em inteiros (21.5) e com o passo fixo de 1 minuto (6.4).
 
 **[Revisão Godot v0.2]** No esquema acima, parâmetros sem uso levam prefixo `_` (senão o Godot emite o aviso `UNUSED_PARAMETER`) e o parâmetro da semente se chama `world_seed`, porque `seed` é uma função embutida do Godot (aviso `SHADOWED_GLOBAL_IDENTIFIER`). Ambos violariam a regra "código sem avisos" do `AGENTS.md`. Coleções tipadas **aninhadas** (`Array[Array[int]]`, `Dictionary[int, Array[int]]`) **não existem** na linguagem; use `Array`/`Dictionary` simples na fronteira com JSON e valide em `validate()`. `Dictionary[K, V]` tipado exige Godot 4.4 ou mais.
 

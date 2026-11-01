@@ -21,12 +21,14 @@ func on_new_game(_world_seed: int) -> void:
 
 
 ## Carregar: restaurar o estado a partir do que `serialize()` devolveu.
-func on_load(_data: Dictionary) -> void:
-	pass
+## Devolve falha (sem alterar o estado) se o dado for inválido.
+func on_load(_data: Dictionary) -> Result:
+	return Result.success()
 
 
 ## A cada passo de simulação, conforme a frequência do módulo.
-func tick(_dt_sim: float) -> void:
+## `_elapsed_minutes` são os minutos simulados decorridos desde o último tick deste módulo.
+func tick(_elapsed_minutes: int) -> void:
 	pass
 
 
