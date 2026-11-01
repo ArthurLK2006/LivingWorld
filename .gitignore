@@ -3,6 +3,7 @@
 
 # Cache e arquivos locais gerados pelo Godot
 .godot/
+export_presets.cfg
 
 # Segredos e configurações locais
 .env

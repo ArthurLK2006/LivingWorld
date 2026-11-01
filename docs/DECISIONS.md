@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais (v0.3):** APROVADA: 47 (10 com ressalva) · PROPOSTA: 34 · PENDENTE: 20 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 112**. Na v0.2 eram 35 · 38 · 28 · 10 · 1.
+**Totais atualizados:** APROVADA: 48 (10 com ressalva) · PROPOSTA: 34 · PENDENTE: 19 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 112**. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -194,7 +194,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-083 | Modelo de persistência (o que se salva, formato, slots, autosave e regras de falha) | APROVADA (somente os princípios) |
 | DEC-084 | Proposta técnica de salvamento: JSON comprimido, escrita atômica, versão e migrações | PROPOSTA |
 | DEC-085 | Modelo de multiplayer (se vier a existir) | PENDENTE |
-| DEC-086 | Framework de testes automatizados | PENDENTE |
+| DEC-086 | Framework de testes automatizados | APROVADA (GUT 9.7.1) |
 | DEC-087 | Verificação única (`check_all`), `AGENTS.md` e contratos por módulo | PROPOSTA |
 | DEC-088 | Controle de versão com Git e cópia remota | PROPOSTA |
 | DEC-089 | Hospedagem do repositório Git | APROVADA (somente o serviço) |
@@ -1305,12 +1305,12 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PENDENTE |
-| **Contexto** | A arquitetura exige testes automáticos (`check_all`), mas não escolhe ferramenta. |
-| **Decisão** | **Nada decidido.** |
-| **Justificativa** | Recomendação (TA 26.4 e RM LW-010, não aprovada): escolher o framework mais simples que funcione em linha de comando com o Godot escolhido. |
-| **Consequências** | Bloqueia a tarefa LW-010 e a verificação automática de todas as tarefas seguintes. |
-| **Data / versão** | TA 0.1 cap. 21 e 26.4 · RM 0.1 LW-010 · registrada em 01/11/2026 |
+| **Status** | APROVADA |
+| **Contexto** | A arquitetura exige testes automáticos (`check_all`); a LW-010 avaliou GUT 9.7.1. |
+| **Decisão** | Arthur aceitou GUT 9.7.1 para testes GDScript no Godot 4.7.2. |
+| **Justificativa** | A avaliação headless verificou teste aprovado e falha detectada com códigos 0 e 1. |
+| **Consequências** | Usar a versão avaliada; ressalvas e detalhes constam em `docs/decisions/0002-avaliacao-gut.md`. |
+| **Data / versão** | TA 0.1 cap. 21 e 26.4 · RM LW-010 · decisão aceita por Arthur nesta conversa |
 | **Relações** | DEC-012, DEC-087 |
 
 ### DEC-087 — Verificação única (`check_all`), `AGENTS.md` e contratos por módulo
@@ -1665,7 +1665,7 @@ As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o iníci
 | Idioma do código | DEC-022 | APROVADA: código em inglês; documentação, relatórios e interface em português |
 | Hospedagem do Git | DEC-089 | GitHub, repositório já existe. Visibilidade: PENDENTE do proprietário, não bloqueia |
 | Determinismo | DEC-081 | APROVADA: no mesmo ambiente |
-| Framework de testes | DEC-086 | PENDENTE, decidida na LW-010; não bloqueia a LW-006 |
+| Framework de testes | DEC-086 | APROVADA: GUT 9.7.1, após avaliação da LW-010 |
 
 **Único pré-requisito prático da primeira tarefa:** o Godot 4.7.x instalado no Mac (LW-002, ação de Arthur).
 

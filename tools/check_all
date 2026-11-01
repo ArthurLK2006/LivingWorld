@@ -1,0 +1,19 @@
+#!/bin/sh
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+output_file=$(mktemp "${TMPDIR:-/tmp}/livingworld-check.XXXXXX") || exit 1
+trap 'rm -f "$output_file"' EXIT HUP INT TERM
+status=0
+"$project_dir/tools/check_architecture" || status=1
+"$project_dir/tests/test_check_architecture.sh" || status=1
+"$project_dir/tools/run_tests" "$@" > "$output_file" 2>&1 || status=1
+cat "$output_file"
+if grep -E 'SCRIPT ERROR|Parse Error' "$output_file" >/dev/null; then
+    echo "Falhou: erro de script ou análise detectado na saída."
+    status=1
+fi
+if [ "$status" -ne 0 ]; then
+    echo "VERMELHO: arquitetura ou etapa de testes falhou."
+    exit 1
+fi
+echo "VERDE: arquitetura e etapa de testes aprovadas."
