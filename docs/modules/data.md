@@ -9,5 +9,6 @@ Estado: **parcial (LW-024)**. Existe leitor e validador genéricos; não existe 
 - **Dados controlados:** nenhum estado de simulação; só o conteúdo lido (somente leitura em jogo).
 - **Interfaces de comunicação:** `DataLoader.load_all(base_dir, schemas)`. Nenhum evento.
 - **Formato (proposta, DEC-082 ainda PROPOSTA):** cada arquivo é uma lista de objetos; cada objeto tem `id` (texto `snake_case`, único na tabela). Números do JSON são decimais e viram `int`/`float` conforme o esquema; inteiro só aceita número sem fração.
+- **Ferramenta:** `tools/validate_data [pasta]` valida uma pasta (padrão: dados de teste do spike) e roda dentro do `check_all`. Esquemas de teste em `tests/fixtures/data/pipeline_schemas.gd`.
 - **Limitações:** erros de campo apontam arquivo e item, não linha (o JSON já lido não guarda linha); só erros de sintaxe trazem linha. Inteiros acima de 2^53 são rejeitados. Sem listas nem objetos aninhados nos campos por enquanto.
 - **Testes:** `tests/unit/test_data_loader_validator.gd`, com fixtures em `tests/fixtures/data/{ok,bad}`.

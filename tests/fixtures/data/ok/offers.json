@@ -1,0 +1,4 @@
+[
+	{"id": "test_offer_a", "good": "test_good_a", "price_multiplier": 1.25, "source_recipe": "test_recipe_a"},
+	{"id": "test_offer_b", "good": "test_good_b", "price_multiplier": 0.5}
+]
