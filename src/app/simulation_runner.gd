@@ -70,6 +70,7 @@ func describe_state() -> String:
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("Data simulada: ano %d, dia %d, %02d:%02d (%d minutos simulados)" % [clock.year(), clock.day_of_year(), clock.hour_of_day(), clock.minute_of_hour(), clock.total_minutes()])
 	lines.append("Semente: %d" % _world_seed)
+	lines.append("Hash do estado: %s" % world.state_hash())
 	var module_names: Array[String] = world.module_names()
 	lines.append("Módulos: %d" % module_names.size())
 	for module_name: String in module_names:

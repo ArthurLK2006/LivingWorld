@@ -44,7 +44,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-019 | IMPL | Agendador | concluída | Aprovada pela regra de aceleração (check_all verde, 95 testes). Orçamento em unidades de trabalho declaradas, não em ms (determinismo, DEC-081); ms só medem |
 | LW-020 | IMPL | SimulationHost | em andamento | Parcial: `SimulationRunner` e `tools/run_sim` prontos e verdes (101 testes). Falta registrar o autoload `SimulationHost` em `project.godot` (arquivo protegido; aguarda autorização de Arthur) |
 | LW-021 | IMPL | Cena inicial com relógio | pendente | |
-| LW-022 | IMPL | Hash de estado | pendente | |
+| LW-022 | IMPL | Hash de estado | concluída | Aprovada pela regra de aceleração (check_all verde, 107 testes). 3 execuções de 30 dias dão o mesmo hash |
 | LW-023 | SPIKE | Núcleo da simulação | pendente | |
 | LW-024 | IMPL | Leitor e validador de dados | concluída | Aprovada por Arthur; 21 testes verdes no check_all |
 | LW-025 | SPIKE | Pipeline de dados | concluída | Aprovada por Arthur; JSON mantido (decisions/0003, DEC-082 aprovada). Edição pelo Codex ainda não testada |

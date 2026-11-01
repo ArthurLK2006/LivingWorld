@@ -88,6 +88,13 @@ func serialize() -> Dictionary:
 	return {KEY_CORE: core_data, KEY_MODULES: modules_data}
 
 
+## Impressão digital do estado do mundo: SHA-256 do JSON canônico (chaves ordenadas, decimais com
+## precisão total) de `serialize()`. Nunca `hash()` do Godot: tem 32 bits e depende da ordem das chaves.
+## Serve ao teste de determinismo: mesma semente e mesmos comandos devem dar o mesmo hash.
+func state_hash() -> String:
+	return JSON.stringify(serialize(), "", true, true).sha256_text()
+
+
 ## Restaura núcleo e módulos. O formato é conferido antes de qualquer alteração (todos os módulos
 ## registrados precisam ter dados e não pode sobrar dado de módulo desconhecido). Cada parte
 ## é atômica; se uma falhar no meio, este World deve ser descartado, não reaproveitado: quem

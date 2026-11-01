@@ -8,12 +8,19 @@ runner="$project_dir/tools/run_sim"
 if ! "$runner" --days 30 --seed 1 > "$output" 2>&1; then
     echo 'FALHA: run_sim --days 30 --seed 1 deveria terminar com código 0'; cat "$output"; exit 1
 fi
-for expected in 'Dias simulados: 30' 'ano 1, dia 31, 00:00 (43200 minutos simulados)' 'Semente: 1' 'Problemas de validação: 0'; do
+for expected in 'Hash do estado: ' 'Dias simulados: 30' 'ano 1, dia 31, 00:00 (43200 minutos simulados)' 'Semente: 1' 'Problemas de validação: 0'; do
     if ! grep -F "$expected" "$output" >/dev/null; then
         echo "FALHA: saída sem '$expected'"; cat "$output"; exit 1
     fi
 done
 echo 'OK: run_sim --days 30 --seed 1'
+hash_of() { grep -F 'Hash do estado: ' "$output" | cut -d' ' -f4; }
+first_hash=$(hash_of)
+"$runner" --days 30 --seed 1 > "$output" 2>&1
+[ "$(hash_of)" = "$first_hash" ] || { echo 'FALHA: mesma semente deveria dar o mesmo hash'; exit 1; }
+"$runner" --days 30 --seed 2 > "$output" 2>&1
+[ "$(hash_of)" != "$first_hash" ] || { echo 'FALHA: sementes diferentes deveriam dar hashes diferentes'; exit 1; }
+echo 'OK: hash igual para a mesma semente e diferente para outra'
 if "$runner" --days abc > "$output" 2>&1; then
     echo 'FALHA: argumento inválido deveria falhar'; exit 1
 fi
