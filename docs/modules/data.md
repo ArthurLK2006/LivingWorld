@@ -1,6 +1,6 @@
 # Contrato — data
 
-Estado: **parcial (LW-024)**. Existe leitor e validador genéricos; não existe nenhum `*Def` de jogo nem arquivo real em `data/` ainda.
+Estado: **LW-024 e LW-025 concluídas**. Existem leitor e validador genéricos; ainda não existe nenhum `*Def` de jogo nem arquivo real em `data/` (só dados de teste em `tests/fixtures/data/`).
 
 - **Responsabilidade:** ler arquivos JSON de conteúdo, validá-los (tipos, campos obrigatórios, faixas, ids únicos, campos desconhecidos, referências entre tabelas) e entregar os registros convertidos.
 - **Entradas:** pasta com arquivos JSON; lista de `DataSchema` (um por tabela, declarado em código).

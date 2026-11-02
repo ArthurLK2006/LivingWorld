@@ -1,8 +1,8 @@
 # Contrato — core
 
-Estado: **parcial**. Existem `Result`, `IdGenerator`, `WorldRng`, `SimClock`, `SimEvent`, `EventBus`, `SimModule`, `SimContext`, `World` e `Scheduler`; o resto do núcleo entra na LW-020.
+Estado: **núcleo da Fase 0 implementado** (LW-013 a LW-019 e LW-022): `Result`, `IdGenerator`, `WorldRng`, `SimClock`, `SimEvent`, `EventBus`, `SimModule`, `SimContext`, `World` e `Scheduler`. O `SimulationHost` fica no módulo `app`.
 
-- **Responsabilidade:** base sem dependências: resultado de comandos (agora); IDs, aleatoriedade, relógio, eventos e agendador (tarefas futuras).
+- **Responsabilidade:** base sem dependências: resultado de comandos, IDs, aleatoriedade, relógio, eventos, ciclo de vida de módulos, mundo (registro e orquestração) e agendador.
 - **Entradas:** nenhuma.
 - **Saídas:** `Result` (`ok`, `code`, `message`), criado por `Result.success()` ou `Result.failure(code, message)`. Falha sem código recebe `UNSPECIFIED_ERROR`.
 - **Dependências permitidas:** nenhuma (camada 0).

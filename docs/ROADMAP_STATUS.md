@@ -1,6 +1,6 @@
 # Status do roadmap — Living World
 
-Atualizado em: 01/11/2026 · Fase atual: 0 — Fundação técnica.
+Atualizado em: 02/11/2026 · Fase atual: 0 — Fundação técnica (em fechamento).
 
 O percentual definitivo depende da classificação da LW-006 e da validação da LW-009. Para evitar contar tarefas com ressalvas como plenamente concluídas, este registro não apresenta porcentagem consolidada ainda.
 
@@ -16,6 +16,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 - LW-008: aprovada por Arthur com ressalvas; o mapeamento individual detalhado das regras da arquitetura não foi comprovado. Limite de leitura do Codex ainda não verificado em fonte oficial.
 - Dados: `tests/fixtures/data/ok/` é a amostra editável (validada pelo check_all); `frozen/` é a cópia fixa dos testes do carregador.
 - Ambiente de trabalho do Claude (nuvem): Godot 4.7.2 Linux instalado fora do projeto; `check_all` verde sem os erros de certificado do ambiente Codex.
+- Trabalho local do Mac preservado por Arthur/Codex no ramo `mac-snapshot` (fora deste repositório remoto até o envio); comparação só depois do fechamento da Fase 0. Não tocado.
 - LW-023: rodar `tests/soak/run_sp1` no Mac de referência para confirmar que nenhum passo passa de ~10 ms (pendente antes do fim da Fase 0).
 - LW-021: conferência visual no Mac: abrir o projeto, F5, ver o texto no canto superior esquerdo, a hora simulada avançar e o Espaço pausar e continuar.
 - DEC-086: GUT 9.7.1 aprovado por Arthur e registrado na entrada oficial.
@@ -54,9 +55,9 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-026 | IMPL | Codec de save | concluída | Regra automática de Arthur (check_all verde, 128 testes). Formato v2, migração 1->2 com fixture, salvar/carregar no meio não muda o hash |
 | LW-027 | IMPL | Escrita e recuperação de save | concluída | Regra automática de Arthur (check_all verde). Falha injetada depois de cada passo nunca perde o save anterior; backups rotativos; recuperação ao carregar |
 | LW-028 | SPIKE | Salvamento | concluída | Regra automática de Arthur. 1.000 NPCs: salvar 2,3 ms, carregar 0,9 ms, hash idêntico, falha simulada preserva o save (ver decisions/0005). Plano B (thread) não necessário agora |
-| LW-029 | REV | Revisão arquitetural | pendente | |
-| LW-030 | VAL | Validação do usuário | pendente | |
-| LW-031 | DOC | Fechamento da fase | pendente | |
+| LW-029 | REV | Revisão arquitetural | pendente | Pacote para o revisor externo pronto em `docs/fase-0/LW-029-pacote-de-revisao.md` (aguarda envio por Arthur) |
+| LW-030 | VAL | Validação do usuário | pendente | Resumo dos passos em `docs/fase-0/LW-030-resumo-para-arthur.md`; depende da LW-029 |
+| LW-031 | DOC | Fechamento da fase | pendente | Rascunho do relatório em `docs/fase-0/LW-031-rascunho-relatorio-de-fechamento.md`; depende da LW-030 |
 
 ## Portões
 

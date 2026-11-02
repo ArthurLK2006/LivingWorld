@@ -6,8 +6,8 @@
 
 | | |
 |---|---|
-| **Estado atual** | **Fase de planejamento concluída; a implementação começa pela tarefa LW-006.** Ainda não existe jogo, projeto Godot, código nem testes. O que existe é documentação |
-| **Versão da documentação** | 0.3 (revisão final de 01/11/2026, horário de Brasília) |
+| **Estado atual** | **Fase 0 (fundação técnica) em fechamento.** Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`. **Ainda não há jogo jogável.** Veja a seção 5 |
+| **Versão da documentação** | 0.3 (revisão final de 01/11/2026, horário de Brasília); seções 5, 6.1 e 8 a 10 atualizadas em 02/11/2026 |
 | **Responsável** | Arthur (dono do produto; único que aprova decisões) |
 | **Licença** | Ainda não definida |
 
@@ -130,51 +130,45 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 
 ## 5. Estado atual do desenvolvimento
 
-**Data da informação:** 01/11/2026, 15:32 em diante (Brasília).
+**Data da informação:** 02/11/2026 (Brasília). Fonte do detalhe: [`docs/ROADMAP_STATUS.md`](docs/ROADMAP_STATUS.md).
 
 ### 5.1 O que existe hoje
 
 | Item | Situação |
 |---|---|
-| Briefing Mestre (visão do projeto) | Escrito por Arthur |
-| `BRIEFING_MESTRE.md` (cópia fiel do briefing original) | Pronto |
-| `GDD.md` (design do jogo) | **Documento v0.3 pronto** |
-| `TECHNICAL_ARCHITECTURE.md` | **Documento v0.3 pronto** |
-| `DEVELOPMENT_ROADMAP.md` | **Documento v0.3 pronto** (192 tarefas, 6 fases) |
-| `DECISIONS.md` | **Documento v0.3 pronto** (registro oficial de decisões) |
-| `AGENTS.md` | **Documento v0.3 pronto** (regras para agentes de IA) |
-| `CONSISTENCY_REPORT.md` | Relatório de consistência documental (v0.2, com a seção da revisão v0.3) |
-| `README.md` | Este arquivo |
+| Documentos de planejamento (briefing, GDD, arquitetura, roadmap, decisões, regras para agentes) | Prontos (v0.3) |
+| Projeto Godot 4.7.2 (`project.godot`) e cena inicial | Existem. A cena mostra o texto de título, versão e data simulada; a tecla Espaço pausa |
+| Núcleo da simulação (`src/core`) | Relógio, sorteios repetíveis, IDs, eventos, agendador, mundo e hash de estado, todos testados e rodando **sem janela** |
+| Dados (`src/data`) | Leitor e validador de arquivos JSON |
+| Salvamento (`src/persistence`) | Salvar e carregar com checksum, versões, migração, backups e recuperação |
+| Testes e verificação | `tools/check_all` (arquitetura, dados, testes automáticos, cena e simulação). Estado atual: verde |
+| Medições (spikes) | Núcleo (SP1), dados (SP3) e salvamento (SP5) registrados em `docs/decisions/` |
 
 ### 5.2 O que **não** existe ainda
 
 | Item | Situação |
 |---|---|
-| Projeto Godot (`project.godot`) | **Não criado** (previsto na tarefa LW-006) |
-| Código GDScript | **Nenhum** |
-| Cenas, terreno, personagem, câmera | **Nenhum** |
-| NPCs, economia, política, facções, combate | **Nenhum** |
-| Salvamento e carregamento | **Nenhum** |
-| Testes automáticos e o comando `tools/check_all` | **Não existem** |
-| Godot instalado e ambiente do Codex | **A confirmar** (instalação na LW-002; verificação na LW-006). O repositório GitHub já existe |
+| Terreno, personagem, câmera | **Nenhum** (Fase 1) |
+| NPCs, economia, política, facções, combate | **Nenhum** de verdade (só NPCs "de mentira" em testes de desempenho) |
+| Conteúdo do jogo em `data/` | **Nenhum** (só dados de teste em `tests/fixtures/`) |
 | Executável jogável | **Não existe** |
 
 ### 5.3 Fase atual
 
-O roadmap tem **6 fases e 192 tarefas** (`LW-001` a `LW-192`). Nenhuma foi executada.
+O roadmap tem **6 fases e 192 tarefas** (`LW-001` a `LW-192`).
 
 | Fase | Nome | Tarefas | Situação |
 |---|---|---|---|
-| 0 | Fundação técnica | 31 | **Não iniciada** (0 de 31) |
+| 0 | Fundação técnica | 31 | **Em fechamento** (27 concluídas ou dispensadas; faltam a revisão externa, a validação do dono e o fechamento) |
 | 1 | Primeiro mundo jogável | 23 | Não iniciada |
 | 2 | Primeira sociedade | 32 | Não iniciada |
 | 3 | Economia | 30 | Não iniciada |
 | 4 | Facções e conflitos | 29 | Não iniciada |
 | 5 | Integração e protótipo | 47 | Não iniciada |
 
-**Decisões iniciais (LW-001):** concluídas em 01/11/2026. **Próximos passos:** Arthur instala o Godot 4.7.x (LW-002) e coloca estes documentos na pasta do projeto (LW-003); depois, o Codex executa a **LW-006** (projeto Godot e primeira cena 3D). As LW-004 e LW-005 foram dispensadas.
+A Fase 1 só começa depois da revisão arquitetural (LW-029), da validação do dono (LW-030) e do fechamento (LW-031).
 
-> Quando o trabalho avançar, o acompanhamento passa a ser mantido em `docs/ROADMAP_STATUS.md`, e esta seção deve ser atualizada **somente** com o que estiver verificado.
+> O acompanhamento é mantido em `docs/ROADMAP_STATUS.md`. Esta seção só deve conter o que foi verificado.
 
 ---
 
@@ -182,9 +176,9 @@ O roadmap tem **6 fases e 192 tarefas** (`LW-001` a `LW-192`). Nenhuma foi execu
 
 ### 6.1 Hoje
 
-Atualmente o repositório contém **apenas documentação**: `README.md` e `AGENTS.md` na raiz, e em `docs/` o briefing mestre, o GDD, a arquitetura, o roadmap, as decisões e o relatório de consistência.
+Existem: `project.godot`, `scenes/main.tscn`, `src/` (`app`, `core`, `data`, `persistence`, `presentation/ui`, mais pastas reservadas com um `README`), `tests/` (`unit`, `soak`, `fixtures`), `tools/` (comandos de verificação e simulação) e `docs/` (planejamento, decisões técnicas em `docs/decisions/` e contratos em `docs/modules/`).
 
-### 6.2 Estrutura **planejada** (ainda não existe)
+### 6.2 Estrutura **planejada** (parte já existe; ver 6.1)
 
 Proposta da arquitetura (cap. 2). Será criada aos poucos, **cada pasta só na tarefa que a exige**:
 
@@ -245,47 +239,47 @@ Convenção dos rótulos usados nos documentos: **[CONF]** confirmado · **[REC]
 
 ## 8. Como preparar o ambiente
 
-> **Ainda não é possível rodar nada.** Esta seção descreve a sequência da Fase 0 do roadmap. **Não instale nada além do Godot 4.7.x, e só na tarefa LW-002.**
+**Requisitos:** Mac com macOS · **Godot 4.7.2 estável** (versão padrão, GDScript, sem .NET; a versão exata está em `docs/decisions/0001-ambiente-de-referencia.md`) · Git.
 
-| Passo | Tarefa | Quem | O que acontece |
-|---|---|---|---|
-| 1 | LW-001 | Arthur | **Concluída:** versão do Godot, macOS, idioma, GitHub e hardware de referência decididos em 01/11/2026 |
-| 2 | LW-002 | Arthur | Instala o **Godot 4.7.x estável** (versão padrão, GDScript, sem .NET) no Mac |
-| 3 | LW-003 | Arthur | Coloca estes documentos (`README.md` e `AGENTS.md` na raiz, o resto em `docs/`) na pasta do projeto, que é o repositório GitHub clonado. Sem envio ao remoto |
-| 4 | LW-006 | Codex | Verifica o Godot, identifica o hardware, cria o projeto, a primeira cena 3D e um teste rápido. Detalhes e comandos na LW-006 do roadmap |
+1. Clone o repositório em uma pasta nova e entre no ramo indicado.
+2. Aponte para o Godot. Os comandos em `tools/` procuram o Godot em `/Applications/Godot 2.app/Contents/MacOS/Godot`; se o seu estiver em outro lugar, defina `GODOT_BIN` antes de rodar:
+   ```bash
+   export GODOT_BIN="/caminho/para/Godot"
+   ```
+3. Em um clone novo, rode uma vez (cria o cache de scripts, que não vai para o Git):
+   ```bash
+   godot --headless --path . --import
+   ```
 
-**Requisitos:** Mac com macOS · Godot 4.7.x estável · Git · acesso ao agente de implementação (Codex). O hardware de referência é o seu Mac, identificado pelo Codex na LW-006.
-
-Quando o ambiente existir, esta seção será atualizada com o passo a passo real.
+Não instale nada além do Godot sem autorização (regra do `AGENTS.md`).
 
 ---
 
 ## 9. Como abrir o projeto no Godot
 
-> **Ainda não há projeto Godot para abrir.** O arquivo `project.godot` e a primeira cena 3D serão criados na tarefa LW-006.
+1. Abra o Godot 4.7.2 e, no gerenciador de projetos, escolha **Importar**.
+2. Selecione o arquivo `project.godot` na raiz do repositório e abra o projeto.
+3. Aperte **F5** para executar. Você deve ver a cena de verificação (piso, cubo, céu e sol) e, no canto superior esquerdo, o título, a versão e a **data simulada avançando**. **Espaço** pausa e continua.
 
-Procedimento previsto, depois disso:
-
-1. Instalar o Godot **na versão exata** registrada na LW-006 (`docs/decisions/0001-ambiente-de-referencia.md`); usar outra versão pode quebrar o projeto.
-2. Abrir o Godot e, no gerenciador de projetos, escolher **Importar**.
-3. Selecionar o arquivo `project.godot` na raiz do repositório.
-4. Abrir o projeto. Antes da primeira execução, conferir se o editor mostra a versão esperada. Em um clone novo, rode antes uma vez `godot --headless --path . --import` (a pasta `.godot/`, com o cache dos scripts, não vai para o Git).
-
-A cena da LW-006 é só de verificação (piso, cubo, céu e sol). Cenas jogáveis só existirão a partir da Fase 1.
+O painel "Saída" não deve mostrar mensagens vermelhas.
 
 ---
 
 ## 10. Como executar os testes
 
-> **Ainda não existem testes nem o comando `tools/check_all`.** Nada aqui pode ser executado hoje.
+O comando único é:
 
-O que está **planejado** (arquitetura cap. 21 e roadmap):
+```bash
+tools/check_all
+```
 
-- Um comando único, **`tools/check_all`**, que roda em sequência: verificação de arquitetura → validação de dados → testes unitários → testes de integração → simulação longa curta ("soak").
-- Resultado simples: **verde** (tudo certo) ou **vermelho** (lista do que falhou).
-- Os testes automáticos rodarão **sem abrir a janela do jogo** (modo *headless* do Godot).
-- Até a LW-010 (DEC-086, pendente) o único teste é o `tools/smoke_test.gd` da LW-006; o framework de testes é escolhido na LW-010.
-- Haverá também **testes manuais** (checklists curtas) para Arthur jogar e conferir, ao fim de cada fase.
+Ele roda, em sequência: verificação de arquitetura → validação dos dados de teste → simulação de 30 dias (`run_sim`) → cena principal por 60 quadros → testes automáticos (GUT), tudo **sem abrir janela**. O resultado termina em **VERDE** (tudo certo) ou **VERMELHO** (com a lista do que falhou).
+
+- **Ambientes sem permissão de gravar logs ou certificados:** o `check_all` ignora, **com um aviso** (`NOTA: ... mensagem(ns) de ambiente ignorada(s)`), só essas mensagens do Godot; qualquer outro erro continua sendo falha.
+- **Rodar a simulação sozinha:** `tools/run_sim --days 30 --seed 1` imprime a data final e o "hash do estado"; a mesma semente deve dar o mesmo hash.
+- **Validar os dados de teste:** `tools/validate_data`.
+- **Medições de desempenho (não fazem parte do `check_all`):** `tests/soak/run_sp1` (núcleo) e `tests/soak/run_sp5` (salvamento).
+- **Testes manuais:** abrir o projeto com F5 e conferir a cena (seção 9).
 
 Regra do projeto: **nenhum agente pode declarar teste aprovado sem ter executado** (ver `AGENTS.md`, seção 9).
 

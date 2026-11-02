@@ -1,6 +1,6 @@
 # LW-028 — Spike SP5: salvamento
 
-- **Status:** resultado entregue; aprovado pela regra automática de Arthur (check_all verde, sem desvio). Medido no contêiner de nuvem, não no Mac de referência.
+- **Status:** resultado entregue; aprovado pela regra automática de Arthur (check_all verde, sem desvio). A DEC-084 (formato de save do protótipo) foi aprovada por Arthur com base neste relatório. Medido no contêiner de nuvem, não no Mac de referência.
 - **Pergunta (arquitetura 26.3):** salvar e carregar um mundo cheio é rápido, exato e seguro?
 - **Código descartável:** `tests/soak/sp5/run_sp5.gd` e `tests/soak/run_sp5 [--days N] [--npcs N] [--rounds N]` (usa o mundo do SP1, `FakeNpcPopulation`, agora com `on_load`).
 - **Ambiente:** contêiner de nuvem, Intel Xeon, 4 vCPU, Godot 4.7.2 estável (binário de editor, `--headless`). Build de release: não medido para o SP5.

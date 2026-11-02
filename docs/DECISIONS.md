@@ -192,7 +192,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-081 | Determinismo da simulação no mesmo ambiente (sem replay universal) | APROVADA |
 | DEC-082 | Definições do jogo em arquivos de dados validados | APROVADA (somente JSON validado; formato interno dos arquivos segue PROPOSTA) |
 | DEC-083 | Modelo de persistência (o que se salva, formato, slots, autosave e regras de falha) | APROVADA (somente os princípios) |
-| DEC-084 | Proposta técnica de salvamento: JSON comprimido, escrita atômica, versão e migrações | PROPOSTA |
+| DEC-084 | Proposta técnica de salvamento: JSON comprimido, escrita atômica, versão e migrações | APROVADA (como formato de save do protótipo, com reavaliação do binário se o estado real passar de ~1 MB e a escrita em thread não bastar) |
 | DEC-085 | Modelo de multiplayer (se vier a existir) | PENDENTE |
 | DEC-086 | Framework de testes automatizados | APROVADA (GUT 9.7.1) |
 | DEC-087 | Verificação única (`check_all`), `AGENTS.md` e contratos por módulo | PROPOSTA |
@@ -1281,12 +1281,12 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PROPOSTA (validação no spike SP5) |
+| **Status** | APROVADA (como formato de save do protótipo; ver Consequências para a reavaliação) |
 | **Contexto** | É a solução técnica proposta para o problema de DEC-083. |
 | **Decisão** | Proposta da TA (18.2 a 18.7, 22): interface `SaveCodec` com JSON comprimido primeiro e binário só se as medições exigirem; escrita atômica; checksum; backups rotativos; versão do formato e migrações; arquivo `save_slot_N.lwsave`; **nunca** carregar `.tres`/`.res` vindos de saves (risco de executar código). |
 | **Justificativa** | Legível, depurável e seguro. |
-| **Consequências** | Substituível por outro formato sem alterar DEC-083. Armadilhas do JSON (números decimais, chaves em texto) estão descritas na TA 18.3. Na revisão técnica de Godot (v0.2), a gravação "atômica" passou a ser a sequência `.tmp` → `.bak` → final com recuperação, porque o renomear do Godot não é atômico no Windows (TA 18.4); seed e state do gerador aleatório são gravados como texto; hash e checksum são SHA-256. |
-| **Data / versão** | TA 0.1 cap. 18 e 22 · registrada em 01/11/2026 |
+| **Consequências** | Substituível por outro formato sem alterar DEC-083. Armadilhas do JSON (números decimais, chaves em texto) estão descritas na TA 18.3. Na revisão técnica de Godot (v0.2), a gravação "atômica" passou a ser a sequência `.tmp` → `.bak` → final com recuperação, porque o renomear do Godot não é atômico no Windows (TA 18.4); seed e state do gerador aleatório são gravados como texto; hash e checksum são SHA-256. Aprovação de Arthur (01/11/2026): vale como formato do protótipo; **reavaliar binário só se o estado real passar de ~1 MB e a escrita em outra thread (plano B do SP5) não bastar**. Evidência: `docs/decisions/0005-spike-sp5-salvamento.md` (1.000 NPCs: salvar 2,3 ms, carregar 0,9 ms; o custo é linear, ~0,09 ms por KB de JSON). Implementação: LW-026 e LW-027. |
+| **Data / versão** | TA 0.1 cap. 18 e 22 · registrada em 01/11/2026 · aprovada por Arthur em mensagem de 01/11/2026, após o spike SP5 (LW-028) |
 | **Relações** | DEC-043, DEC-080, DEC-083 |
 
 ### DEC-085 — Modelo de multiplayer (se vier a existir)
