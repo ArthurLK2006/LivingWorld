@@ -9,13 +9,13 @@
    ```bash
    git clone https://github.com/ArthurLK2006/LivingWorld.git lw-validacao
    ```
-2. **Só o README.** Siga apenas o `README.md` (seções 8 a 10), sem ajuda minha. Se faltar um passo, anote qual.
-3. **Preparar o projeto** (uma vez, em pasta nova):
+2. **Só o README.** Siga apenas o `README.md` (seções 8 a 10), sem ajuda minha. Se faltar um passo, anote qual. Antes de tudo, instale os **pré-requisitos** da seção 8: o Godot 4.7.2 e o **ripgrep** (`brew install ripgrep`). Sem o ripgrep o `check_all` não roda; hoje ele avisa isso logo no início, numa mensagem só.
+3. **Preparar o projeto** (uma vez, em pasta nova; use o caminho do seu Godot em `GODOT_BIN`):
    ```bash
-   godot --headless --path . --import
+   "$GODOT_BIN" --headless --path . --import
    ```
 4. **Abrir no Godot 4.7.2** (a versão exata). O painel "Saída" não deve mostrar mensagens vermelhas.
-5. **Rodar tudo:** `tools/check_all`. Deve terminar em **VERDE**.
+5. **Rodar tudo:** `tools/check_all`. Deve terminar em **VERDE** (141 testes no meu ambiente; no seu Mac também deu 141). Se faltar um programa, a primeira linha da saída diz qual é e como instalar.
 6. **Quebrar de propósito:** troque o `4` por `5` em `tests/unit/test_lw010_pass.gd`, rode `tools/check_all` e veja **VERMELHO** com uma mensagem que você entenda. Desfaça a troca.
 7. **Cena inicial (F5):** deve aparecer, no canto superior esquerdo, título, versão e data simulada **avançando**; **Espaço** pausa e continua.
 8. **Repetibilidade:** rode duas vezes `tools/run_sim --days 30 --seed 1`. A linha "Hash do estado" tem de ser **igual** nas duas vezes. (Na minha máquina de nuvem deu `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`; no seu Mac pode ser outro, o que importa é ser igual entre as duas rodadas.)

@@ -1,0 +1,44 @@
+#!/bin/sh
+# Confere, ANTES de qualquer teste, os programas externos de que o tools/check_all depende.
+# Se faltar algo, imprime UMA mensagem listando tudo o que falta e como instalar (macOS primeiro) e
+# sai com código 1. Não instala nada. Chamado no início do tools/check_all.
+# Programas externos assumidos pelos scripts de verificação:
+#   - Godot 4.7.2 estável (GODOT_BIN, ou /Applications/Godot 2.app/Contents/MacOS/Godot)
+#   - ripgrep (rg)
+#   - ferramentas básicas do sistema: awk, sed, grep, cut, mktemp, dirname, cp, rm, mkdir, cat, head
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+expected_version=4.7.2.stable
+missing=""
+add() { missing="$missing
+  - $1"; }
+if ! command -v rg > /dev/null 2>&1; then
+    add "rg (ripgrep): usado pelo check_architecture.
+      macOS:  brew install ripgrep
+      Linux:  sudo apt install ripgrep   (ou o gerenciador da sua distribuição)"
+fi
+basic_missing=""
+for tool in awk sed grep cut mktemp dirname cp rm mkdir cat head; do
+    command -v "$tool" > /dev/null 2>&1 || basic_missing="$basic_missing $tool"
+done
+if [ -n "$basic_missing" ]; then
+    add "ferramentas básicas do sistema ausentes:$basic_missing.
+      macOS:  xcode-select --install   (instala as Command Line Tools)
+      Linux:  instale o pacote coreutils/findutils/gawk/sed/grep da sua distribuição"
+fi
+if [ ! -x "$godot_bin" ]; then
+    add "Godot não encontrado em '$godot_bin'.
+      Baixe o Godot 4.7.2 estável (https://github.com/godotengine/godot-builds/releases/tag/4.7.2-stable)
+      e, se não estiver em /Applications/Godot 2.app, defina o caminho do executável:
+      export GODOT_BIN=\"/caminho/para/Godot\""
+else
+    found_version=$("$godot_bin" --version 2> /dev/null | head -1)
+    case "$found_version" in
+        "$expected_version"*) ;;
+        *) add "Godot com versão errada: este projeto exige $expected_version e '$godot_bin' informa '$found_version'.
+      Use o Godot 4.7.2 estável (link acima) e aponte GODOT_BIN para ele." ;;
+    esac
+fi
+if [ -n "$missing" ]; then
+    printf 'PRÉ-REQUISITOS AUSENTES: o tools/check_all não pode rodar.%s\n\nInstale o que falta e rode de novo. Nenhum teste foi executado.\n' "$missing" >&2
+    exit 1
+fi

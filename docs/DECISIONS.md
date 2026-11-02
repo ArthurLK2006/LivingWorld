@@ -198,6 +198,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-087 | Verificação única (`check_all`), `AGENTS.md` e contratos por módulo | PROPOSTA |
 | DEC-088 | Controle de versão com Git e cópia remota | PROPOSTA |
 | DEC-089 | Hospedagem do repositório Git | APROVADA (somente o serviço) |
+| DEC-113 | Régua de pico do SP1 (LW-023): release decide, por taxa e com laço de controle | APROVADA (somente como régua de medição da LW-023; redação na arquitetura segue PROPOSTA) |
 
 **ÁREA 10 — PROCESSO, ESCOPO E MÉTODO DE TRABALHO**
 
@@ -1638,6 +1639,18 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Consequências** | O RM adotou a ordem de Arthur e criou dois **provisórios (TEMP)** na Fase 2 (estoque simples de comida e renda simbólica), removidos nas tarefas LW-094 e LW-095 e garantidos pelo verificador LW-114. Os marcos M0–M7 continuam úteis só como **mapa** (RM 0.13). O critério de aceite "validar sem gráficos" do GDD (24.4) vale agora só para M0 e para a simulação da Fase 0. |
 | **Data / versão** | GDD 0.1 cap. 24.4 · PA 01/11/2026 (roadmap) · RM 0.1 seção 0.13 · registrada em 01/11/2026 |
 | **Relações** | DEC-070, DEC-094 |
+
+### DEC-113 — Régua de pico do SP1 (LW-023): release decide, por taxa e com laço de controle
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA (somente como régua de medição da LW-023, a valer antes de medir o release). A redação no documento de arquitetura (20.1 e 26.3) e no roadmap (LW-023 e 0.F) segue PROPOSTA e **não foi alterada** até o resultado do release. |
+| **Contexto** | O critério original ("sem pico acima de ~10 ms", arquitetura 20.1 e 26.3, roadmap LW-023) não diz a que build se refere e é sensível à sorte: o mesmo código e o mesmo hash deram de 0 a 14 passos acima de 10 ms em execuções iguais, e um laço de controle sem o código do jogo também teve passos acima de 10 ms. |
+| **Decisão** | Medir em **build de release**, no hardware de referência, em **3 execuções completas** (1 ano, 1.000 NPCs, mesma semente), cada uma com o **laço de controle** (`run_sp1 --control`). Aprovado quando, em todas: (1) hash idêntico; (2) média por passo ≤ 1 ms e p99,9 ≤ 3 ms; (3) nenhum passo acima de 50 ms; (4) passos acima de 10 ms: no máximo 1 por minuto de execução contínua, ou não mais que a taxa do controle + 1 por minuto; (5) os passos mais lentos não se repetem nos mesmos passos entre execuções. Medições em depuração são informativas. Texto completo e aplicação às seis medições do Mac em `docs/decisions/0006-proposta-criterio-de-pico.md`. |
+| **Justificativa** | Separa ruído da máquina de custo do código, define o build que decide e mantém um limite duro que protege o jogador. Aprovada antes de medir o release para os números não serem ajustados ao resultado. |
+| **Consequências** | Se o release falhar, investiga-se a causa; **os números não são ajustados para caber**. Ponto em aberto a decidir antes de medir: o item 4 conta "por execução" (literal) ou "acumulado nas 3 execuções" (recomendado), sem mudar nenhum limite. Os valores numéricos são hipóteses [HIP] calibradas só pelas medições de depuração e da nuvem. |
+| **Data / versão** | Proposta de 02/11/2026 · aprovada por Arthur em mensagem de 02/11/2026 |
+| **Relações** | DEC-078, DEC-080, DEC-081 |
 
 ---
 

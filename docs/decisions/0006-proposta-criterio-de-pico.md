@@ -1,6 +1,6 @@
 # Proposta de redação — critério de pico do SP1
 
-- **Status:** PROPOSTA (para Arthur decidir; não altera a arquitetura nem o roadmap). Preparada em 02/11/2026.
+- **Status:** PROPOSTA quanto à redação na arquitetura e no roadmap (não alterados até o resultado do release). **Aprovada por Arthur em 02/11/2026 como régua de medição da LW-023, a valer antes de medir o release** (DEC-113). Preparada em 02/11/2026.
 - **Contexto e problema:** com a mesma máquina e o mesmo código (hash idêntico), duas execuções seguidas deram 2 e 14 passos acima de 10 ms (nuvem, depuração); no Mac, 7, 13 e 5. Um critério de "sem pico acima de ~10 ms" falha ou passa conforme a sorte da execução. Em compensação, um laço de controle sem o código do jogo também teve passos acima de 10 ms (~1,7 por minuto na nuvem), o que mostra que a máquina sozinha viola um limite absoluto.
 
 ## Texto atual (onde está e o que diz)
@@ -32,3 +32,19 @@
 - Exige 3 execuções de ~2 minutos cada (6 com controle), o que cabe no `check_all` apenas como medição manual, nunca como teste automático.
 - Para aplicar, é preciso editar a arquitetura (arquivo protegido) e o roadmap; isso só ocorre com pedido expresso de Arthur numa tarefa de documentação.
 - **Proposta de entrada para DECISIONS.md, se aprovada:** "Critério de pico do SP1: medido em release, por taxa e com laço de controle, conforme o texto acima".
+
+### Régua do registro 0006 aplicada às seis medições (informativo: são todas de depuração)
+Execução de 1 ano = cerca de 57 s (518.400 passos x ~108 µs); para as três do Codex, que não informaram a média, suponho o mesmo tempo. Itens da régua: (1) hash idêntico; (2) média ≤ 1 ms e p99,9 ≤ 3 ms; (3) nenhum passo > 50 ms; (4) passos > 10 ms: no máximo 1 por minuto de execução contínua (ou até 1 por minuto acima do controle; não há controle nestas medições); (5) picos não se repetem nos mesmos passos.
+
+| # | (1) hash | (2) média / p99,9 | (3) < 50 ms | (4) taxa > 10 ms | (5) picos | Resultado |
+|---|---|---|---|---|---|---|
+| 1 | ok | não informado | **falha** (88,2 ms) | **falha** (~13,7/min) | sem lista | **FALHA** |
+| 2 | não informado | não informado | **falha** (76,3 ms) | **falha** (~7,4/min) | passa | **FALHA** |
+| 3 | não informado | não informado | passa (48,5 ms, 1,5 ms de folga) | **falha** (~5,3/min) | passa | **FALHA** |
+| 4 | ok | passa | **falha** (73,4 ms) | **falha** (7,4/min) | passa | **FALHA** |
+| A | ok | passa | passa | passa (0/min) | passa | **PASSA** |
+| B | ok | passa | passa | **falha por um fio** (1 passo em 56 s = 1,07/min) | passa | **FALHA** (só no item 4) |
+
+**Em palavras simples:** só a execução A passa em tudo. A execução B passa em tudo menos na taxa, e falha por **um único passo lento** numa execução de menos de um minuto. As execuções 1, 2 e 4 quebram o limite duro de 50 ms (de 3 a 5 quadros perdidos) e também a taxa. A execução 3 respeita os 50 ms por pouco, mas falha na taxa. Como são builds de depuração, a régua as trata como informativas: não aprovam nem reprovam.
+
+**Ponto em aberto da régua (a decidir ANTES de medir o release, sem relação com o resultado):** o item 4 diz "no máximo 1 por minuto". Numa execução de ~1 minuto, isso significa que **um único passo lento já reprova** (caso da execução B). Definição (a), literal: por execução. Definição (b): acumulado nas 3 execuções (~3 minutos); com B, seria 1 passo em ~2,8 min, ou 0,36 por minuto. Os limites (1 por minuto, 50 ms etc.) **não mudam** em nenhuma das duas; muda só como se conta. Recomendação minha: (b), porque (a) deixa um único evento decidir o resultado e não distingue uma execução azarada de um problema do código. Fica registrado que, se o release falhar, investiga-se e os números não são ajustados para caber.

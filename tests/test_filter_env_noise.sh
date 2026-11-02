@@ -12,9 +12,9 @@ ERROR: Error attempting to create data dir: /x/godot/app_userdata/Living World.
 ERROR: Failed to open log file for writing: user://logs/godot.log
    at: rotate_file (core/io/logger.cpp:169)'
 mac_certificates='ERROR: Condition "ret != noErr" is true. Returning: ""
-   at: get_system_ca_certificates (platform/macos/os_macos.mm:123)'
-mac_log='ERROR: Failed to open '"'"'user://logs/godot2026-11-02T10.11.12.log'"'"'.
-   at: open (core/io/dir_access.cpp:456)'
+   at: get_system_ca_certificates (platform/macos/os_macos.mm:1035)'
+mac_log='ERROR: Failed to open '"'"'user://logs/godot2026-11-02T09.45.40.log'"'"'.
+   at: copy (core/io/dir_access.cpp:429)'
 expect_pass() {
     label=$1; text=$2
     if ! printf '%s\n' "$text" | "$filter" > /dev/null 2> "$err_file"; then
@@ -46,7 +46,7 @@ $mac_log"
 expect_note 'contagem do aviso: cada par conta como 1 mensagem' "$linux_noise
 $mac_certificates
 $mac_log" 5
-# Erros reais continuam falhando, mesmo misturados ao ruído.
+# Textos acima: saída real do Codex no Mac (02/11/2026). Erros reais continuam falhando, mesmo misturados ao ruído.
 expect_fail 'erro de script real' "$mac_certificates
 SCRIPT ERROR: Invalid access to property or key 'x' on a base object of type 'Nil'.
           at: Foo.bar (res://src/foo.gd:7)" 'SCRIPT ERROR'

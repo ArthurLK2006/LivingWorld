@@ -1,6 +1,6 @@
 # LW-029 — Pacote da revisão arquitetural da Fase 0
 
-**RASCUNHO preparado em 02/11/2026.** Nada aqui foi enviado a ninguém. Quem decide enviar é Arthur.
+**PRONTO PARA ENVIO AO REVISOR (atualizado em 02/11/2026).** Nada aqui foi enviado a ninguém. Quem decide enviar é Arthur. Pendências conhecidas, já declaradas no pedido: release do SP1 no Mac, F5 e conferência visual da LW-006.
 
 ## Em palavras simples
 A LW-029 é uma "auditoria de obra": um revisor de fora lê o conjunto do que foi construído na Fase 0 e diz se a base está firme antes de construir em cima dela. Ele **não programa e não aprova**; quem aprova é Arthur.
@@ -17,7 +17,7 @@ O ChatGPT não enxerga o seu computador. Há duas formas:
 
 | Mensagem | Conteúdo | Tamanho aproximado |
 |---|---|---|
-| 1 | O texto "PEDIDO" (abaixo) + `docs/ROADMAP_STATUS.md` + `docs/decisions/0001` a `0005` | ~25 KB |
+| 1 | O texto "PEDIDO" (abaixo) + `docs/ROADMAP_STATUS.md` + `docs/decisions/0001` a `0006` (o `0004` tem as seis medições do Mac lado a lado e a régua aplicada) + `docs/fase-0/mac-snapshot-comparacao.md` | ~40 KB |
 | 2 | Contratos `docs/modules/core.md`, `data.md`, `persistence.md`, `app.md` + `docs/events.md` + a saída completa de `tools/check_all` (a linha final deve dizer VERDE) | ~25 KB |
 | 3 | Código de `src/` (23 arquivos, ~77 KB), de preferência uma pasta por mensagem (`core`, depois `data`, `persistence`, `app` e `presentation`) | ~77 KB |
 
@@ -42,12 +42,12 @@ Existe trabalho local seu no Mac, preservado no ramo `mac-snapshot`, que **não 
 Você é o auditor de arquitetura do projeto Living World (RPG sandbox 3D em Godot 4.7.2, GDScript tipado, simulação separada da apresentação). Faça a REVISÃO ARQUITETURAL DA FASE 0 (tarefa LW-029), sobre o conjunto da fase e não sobre uma tarefa isolada. Você apenas revisa: não implemente nada e não aprove nada em nome do dono do produto.
 
 **O que a Fase 0 entrega (fatos verificados em 02/11/2026):**
-- 23 arquivos de código em `src/` (~1.900 linhas) e 27 de teste (~2.400 linhas). `tools/check_all` verde, 141 testes.
+- 23 arquivos de código em `src/` (~1.900 linhas) e 27 de teste (~2.400 linhas). `tools/check_all` verde, 141 testes (no Mac também, depois de instalar o ripgrep; o `check_all` agora confere os pré-requisitos no início).
 - Núcleo (`src/core`): `Result`, gerador de IDs, gerador aleatório com fluxos nomeados, relógio de simulação (passo fixo de 1 minuto), barramento de eventos com `cause_id`, `SimModule`/`SimContext`, `World` (ordem declarada, salvar/carregar o núcleo), agendador com frequência por módulo e orçamento por passo, hash de estado (SHA-256 do JSON canônico).
 - Dados (`src/data`): leitor e validador de JSON (tipos, faixas, referências entre arquivos, ids únicos). Persistência (`src/persistence`): codec de save (gzip, checksum, versão 2, migração 1→2 com fixture) e armazenamento com `.tmp`, backups rotativos e recuperação. App (`src/app`): `SimulationRunner`, autoloads `SimulationHost` e `GameApp`, `tools/run_sim`. Um texto 2D na cena inicial.
 - `tools/check_architecture`: 7 regras por busca de texto. `tools/check_all` também ignora, com aviso, ruído de ambiente do Godot (diretório de dados, logs, certificados).
 - Spikes: SP1 (núcleo; 1.000 NPCs de mentira, 1 ano: média 0,14 ms por passo no binário de editor e 0,11 ms no de release; hash igual entre os dois e igual ao do Mac; **o critério de pico de 10 ms está NÃO CONFIRMADO**, veja abaixo), SP3 (pipeline de dados), SP5 (salvamento: 2,3 ms para salvar e 0,9 ms para carregar com 1.000 NPCs). Relatórios em `docs/decisions/0003` a `0005`.
-- DEC-082 (JSON validado) e DEC-084 (formato de save do protótipo) estão APROVADAS.
+- DEC-082 (JSON validado), DEC-084 (formato de save do protótipo) e DEC-113 (régua de pico do SP1, só para a medição) estão APROVADAS.
 
 **Confira, item a item, respondendo "ok", "problema" ou "não consigo verificar":**
 1. Escopo: algo foi construído além do que a Fase 0 pede (antecipação, "para o futuro")?
@@ -71,9 +71,9 @@ Você é o auditor de arquitetura do projeto Living World (RPG sandbox 3D em God
 - O save é gzip + JSON; escrita em outra thread e `fsync` não existem. A partir de ~1 MB de estado, salvar passa de 100 ms na thread principal (medido).
 - `check_architecture` é busca de texto; a regra de imports entre camadas só chega na LW-036.
 - Valores de hipótese mantidos como constantes nomeadas: 360 dias por ano, 1 dia de jogo ≈ 30 min reais, 8 rodadas de eventos por entrega, 60 passos por quadro, 3 backups.
-- **Critério de 10 ms do SP1: NÃO CONFIRMADO.** **Medição de referência no Mac (Terminal normal, sem ambiente restrito; build de depuração, Godot 4.7.2, 1.000 NPCs, 360 dias):** média 109,4 µs, p99,9 881 µs, **21 passos acima de 3 ms, 7 acima de 10 ms, pior passo 73,419 ms**, memória estável, `state_hash` 6ed27f5c82950855b7bf45f1bb94688cf103c2e4831e182f292e4b1fd2df236d (idêntico ao da nuvem), nenhuma linha de erro de logs ou certificados. Passos mais lentos: 372674, 492625, 279760, 279713, 492624, 279727, 492621, 372789. **O critério de 10 ms continua NÃO CONFIRMADO.** Medições do Codex no Mac (ambiente restrito, depuração): 13 passos > 10 ms com pico de 88,216 ms; 7 (pior 76,279 ms); 5 (pior 48,514 ms). Nas três execuções do Mac com lista de passos, nenhum pico coincide com outro a até 2 passos (mudam de lugar). Na nuvem, o mesmo código e o mesmo hash deram de 0 a 14 passos > 10 ms entre execuções, e um laço de controle sem o código do jogo também teve engasgos > 10 ms (~1,7 por minuto). **Hipótese vigente: máquina ou build de depuração; a confirmar com o build release** (script `tests/soak/run_sp1_release`). Opine sobre a medição, sobre o laço de controle e sobre a redação do critério (`docs/decisions/0006`).
+- **Critério de 10 ms do SP1: NÃO CONFIRMADO.** Seis medições no Mac (depuração, Godot 4.7.2, 1.000 NPCs, 360 dias, hash `6ed27f5c82950855b7bf45f1bb94688cf103c2e4831e182f292e4b1fd2df236d` idêntico ao da nuvem), passos acima de 10 ms: 13 (pior 88,216 ms), 7 (76,279 ms), 5 (48,514 ms) — as três do Codex em ambiente restrito —, 7 (73,419 ms; Terminal normal, referência), 0 (1,266 ms) e 1 (10,959 ms) — as duas últimas seguidas, no Terminal normal. Mesmo código e mesmo hash dão de 0 a 13 passos: diferença "provavelmente carga ou temperatura da máquina, a confirmar". Os picos mudam de lugar entre execuções (nenhuma coincidência a até 2 passos). Na nuvem, um laço de controle sem o código do jogo também teve passos > 10 ms (~1,7 por minuto). **Hipótese vigente: máquina ou build de depuração; a confirmar com o build release** (`tests/soak/run_sp1_release`). A régua de medição da LW-023 (DEC-113, aprovada antes de medir o release) está em `docs/decisions/0006`; aplicada às seis medições, só a execução A passa, a B falha por um único passo e as demais falham. Opine sobre a medição, o controle e a régua, inclusive o ponto em aberto (contar "por execução" ou "acumulado nas 3").
 - Pendências abertas e fora do seu alcance: conferência visual da cena inicial (F5) e nova execução do `check_all` no Mac; LW-006 segue "em auditoria" por ressalvas de ambiente.
-- Existe trabalho local do dono, em outro ramo, fora desta revisão.
+- O trabalho local do dono está no ramo `mac-snapshot`, **fora desta revisão** (comparado só em leitura em `docs/fase-0/mac-snapshot-comparacao.md`: implementação paralela do núcleo, ponte e tela inicial mínimas, um experimento de terceira pessoa e 5 medições de release do Codex sem passo acima de 10 ms, com simulação bem mais leve). Será reconciliado depois do fechamento da Fase 0.
 
 **RESPOSTA ESPERADA**
 - Veredito: APROVADO / APROVADO COM AJUSTES / REJEITADO

@@ -44,7 +44,7 @@ A Fase 0 entregou a base técnica do jogo: um motor de simulação que roda sem 
 |---|---|---|
 | 1 | `check_all` verde em pasta nova, seguindo só o README | Verde na nuvem. **AGUARDANDO RESULTADO** no Mac (LW-030) |
 | 2 | Mesma semente, mesmo hash em 3 execuções; sementes diferentes, hashes diferentes | Atendido (testes e SP1) |
-| 3 | SP1 dentro do orçamento | Média 0,14 ms/passo (editor) e 0,11 ms (release) na nuvem. **Pico de 10 ms: NÃO CONFIRMADO.** Medição de referência (Mac, Terminal normal, depuração): 21 passos > 3 ms, **7 > 10 ms, pior 73,419 ms**; Codex (restrito): 13 (88,216 ms), 7 (76,279 ms) e 5 (48,514 ms). Hash idêntico ao da nuvem. Hipótese: máquina ou build de depuração; **AGUARDANDO RESULTADO** do build release no Mac |
+| 3 | SP1 dentro do orçamento | Média 0,14 ms/passo (editor) e 0,11 ms (release) na nuvem; ~0,108 ms no Mac. **Pico de 10 ms: NÃO CONFIRMADO.** Seis medições do Mac (depuração): 13, 7, 5, 7, 0 e 1 passos > 10 ms (piores: 88,216; 76,279; 48,514; 73,419; 1,266; 10,959 ms). Hash idêntico ao da nuvem. Diferença entre execuções: "provavelmente carga ou temperatura, a confirmar". Pela régua da DEC-113 só a execução A passa (informativo, depuração). **AGUARDANDO RESULTADO** do build release no Mac |
 | 4 | Erro proposital em JSON apontado com arquivo e campo; `check_all` o detecta | Atendido; teste do Codex no Mac recusou o dado ruim com mensagem clara |
 | 5 | Salvamento: ida e volta com hash idêntico; adulterado é rejeitado; falha simulada preserva o save | Atendido |
 | 6 | `check_architecture` reprova as violações propositais e aprova o projeto real | Atendido (7 regras) |
@@ -66,7 +66,7 @@ Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-02
 **Condições abertas — AGUARDANDO RESULTADO**
 | Condição | Quem | Como confirmar |
 |---|---|---|
-| Pico de 10 ms (SP1) no Mac | Arthur / Codex | **Referência (Terminal normal, depuração): NÃO CONFIRMADO** (7 passos > 10 ms; pior 73,419 ms). **AGUARDANDO RESULTADO:** `tests/soak/run_sp1_release` (release, com controle, 2 execuções) e `run_sp1 --top 60 --control` em depuração, comparadas com `tests/soak/compare_sp1_runs` |
+| Pico de 10 ms (SP1) no Mac | Arthur / Codex | **NÃO CONFIRMADO** (seis medições de depuração, ver 0004). **AGUARDANDO RESULTADO:** `tests/soak/run_sp1_release` (release, com controle, 2 execuções), avaliado pela régua da DEC-113 (definir antes: contar "por execução" ou "acumulado nas 3") |
 | Cena inicial com F5 | Arthur | Texto no canto superior esquerdo, hora avançando, Espaço pausa e continua |
 | Teste do Codex (nova rodada do `check_all` no Mac após a correção da pasta congelada) | Arthur / Codex | `check_all` verde depois de uma edição legítima dos dados |
 
@@ -74,7 +74,8 @@ Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-02
 - LW-006 segue "em auditoria" por ressalvas de ambiente (painel Saída sem erros; piso, céu e luz não confirmados visualmente separados). Decisão de Arthur: fechar com ressalva registrada ou conferir.
 - LW-029 (revisão externa) e LW-030 (validação de Arthur).
 - Tag `fase-0-concluida`: só com sua autorização e depois de decidir a visibilidade do repositório (DEC-089). Não foi criada.
-- Comparação com o ramo `mac-snapshot`: depois do fechamento. Não tocado.
+- Ramo `mac-snapshot`: comparado só em leitura (`docs/fase-0/mac-snapshot-comparacao.md`); **não tocado nem junto a nada**. Depois do fechamento da Fase 0 apresento a proposta de reaproveitar só o que é único (ponte e tela inicial), **uma tarefa por vez**; a pasta `experiments/` só entra com autorização de Arthur.
+- `check_all` no Mac falhava por falta do `rg`; agora confere pré-requisitos no início (README, seção 8). Verde no Mac (141 testes) depois de `brew install ripgrep`.
 - Itens de backlog já registrados: textos da interface por chave de tradução; semente e versão do jogo definidas por tela de novo jogo.
 
 ## ACOMPANHAMENTO (obrigatório)

@@ -239,7 +239,18 @@ Convenção dos rótulos usados nos documentos: **[CONF]** confirmado · **[REC]
 
 ## 8. Como preparar o ambiente
 
-**Requisitos:** Mac com macOS · **Godot 4.7.2 estável** (versão padrão, GDScript, sem .NET; a versão exata está em `docs/decisions/0001-ambiente-de-referencia.md`) · Git.
+**Requisitos:** Mac com macOS.
+
+**Programas externos que os scripts assumem** (o `tools/check_all` confere isso no início e, se faltar algo, para com **uma** mensagem dizendo o que falta e como instalar):
+
+| Programa | Para que serve | Como obter no macOS |
+|---|---|---|
+| **Godot 4.7.2 estável** (versão exata; padrão, GDScript, sem .NET; ver `docs/decisions/0001-ambiente-de-referencia.md`) | Rodar o projeto e os testes | Baixar de <https://github.com/godotengine/godot-builds/releases/tag/4.7.2-stable> e, se não estiver em `/Applications/Godot 2.app`, definir `GODOT_BIN` |
+| **ripgrep (`rg`)** | A verificação de arquitetura (`tools/check_architecture`) | `brew install ripgrep` (precisa do [Homebrew](https://brew.sh)) |
+| **Git** | Clonar o repositório | `xcode-select --install` |
+| `awk`, `sed`, `grep`, `cut`, `mktemp`, `dirname`, `cp`, `rm`, `mkdir`, `cat`, `head` | Os scripts em `tools/` e `tests/` | Já vêm com o macOS (se faltarem: `xcode-select --install`) |
+
+Só para a medição opcional em release (`tests/soak/run_sp1_release`): `curl`, `unzip`, `tar`, `shasum`, `xattr` e `codesign`, todos já inclusos no macOS.
 
 1. Clone o repositório em uma pasta nova e entre no ramo indicado.
 2. Aponte para o Godot. Os comandos em `tools/` procuram o Godot em `/Applications/Godot 2.app/Contents/MacOS/Godot`; se o seu estiver em outro lugar, defina `GODOT_BIN` antes de rodar:
@@ -248,10 +259,10 @@ Convenção dos rótulos usados nos documentos: **[CONF]** confirmado · **[REC]
    ```
 3. Em um clone novo, rode uma vez (cria o cache de scripts, que não vai para o Git):
    ```bash
-   godot --headless --path . --import
+   "$GODOT_BIN" --headless --path . --import
    ```
 
-Não instale nada além do Godot sem autorização (regra do `AGENTS.md`).
+Agentes de IA não instalam nada sem autorização (regra do `AGENTS.md`); quem instala os programas acima é você.
 
 ---
 
