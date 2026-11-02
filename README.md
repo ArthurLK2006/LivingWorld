@@ -114,15 +114,15 @@ Decisões **aprovadas** por Arthur:
 
 | Item | Escolha | Observação |
 |---|---|---|
-| Engine | **Godot 4.7.x estável** | DEC-011 e DEC-012. Condicionada à verificação técnica de compatibilidade; só havendo impedimento concreto usa-se uma 4.6.x estável. A versão exata é registrada na LW-006 |
+| Engine | **Godot 4.7.x estável** | DEC-011 e DEC-012. Versão exata em uso: **4.7.2 estável**, registrada em `docs/decisions/0001-ambiente-de-referencia.md` |
 | Linguagem | **GDScript tipado** | Todas as variáveis, parâmetros e retornos com tipo (DEC-013) |
 | Plataforma | **PC, com macOS como sistema inicial** | DEC-014 e DEC-015. Outros sistemas: futuro |
 | Modo | **Single-player** | Multiplayer apenas como possibilidade futura (DEC-017, DEC-018) |
 | Visual | **Stylized low-poly** | Fonte de arte, modelos e áudio ainda não definida (DEC-020, DEC-021) |
 | Idioma | **Código e identificadores em inglês; documentação, relatórios e interface em português** | DEC-022. O glossário português ↔ identificador está no GDD, Anexo E |
-| Repositório | **GitHub** (já existe) | DEC-089. A visibilidade (pública ou privada) é decisão do proprietário |
+| Repositório | **GitHub** (já existe) | DEC-089 (aprovada só quanto ao serviço). Em 02/11/2026 o repositório está **público**; manter público ou voltar a privado é decisão do proprietário, ainda **pendente** |
 
-**Ainda pendentes** (não assuma; nenhuma bloqueia o início): hardware mínimo (DEC-016; o hardware de referência é identificado na LW-006), visibilidade do repositório (DEC-089), framework de testes (DEC-086, LW-010), terreno próprio ou addon (DEC-057, LW-033), gamepad (DEC-024), telemetria (DEC-023).
+**Ainda pendentes** (não assuma; nenhuma bloqueia o início): hardware mínimo (DEC-016; só o hardware de referência está aprovado), visibilidade do repositório (DEC-089), terreno próprio ou addon (DEC-057, LW-033), gamepad (DEC-024), telemetria (DEC-023). O framework de testes já foi decidido: GUT 9.7.1 (DEC-086, aprovada).
 
 A arquitetura técnica (camadas, módulos, formato de dados e de save) está **proposta** em [`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md). Em resumo: simulação totalmente separada da apresentação visual, dados de conteúdo em arquivos validados, comunicação por eventos e testes automáticos sem abrir a janela do jogo. O que dessa proposta já foi aprovado e o que não foi está em `docs/DECISIONS.md`.
 
@@ -186,7 +186,7 @@ Proposta da arquitetura (cap. 2). Será criada aos poucos, **cada pasta só na t
 living-world/
 ├── README.md                ← este arquivo
 ├── AGENTS.md                ← regras para agentes de IA
-├── project.godot            ← projeto Godot (planejado, LW-006)
+├── project.godot            ← projeto Godot (existe)
 ├── docs/
 │   ├── BRIEFING_MESTRE.md   ← briefing original de Arthur (cópia fiel)
 │   ├── GDD.md
@@ -194,22 +194,22 @@ living-world/
 │   ├── DECISIONS.md
 │   ├── DEVELOPMENT_ROADMAP.md
 │   ├── CONSISTENCY_REPORT.md ← relatório de consistência documental
-│   ├── ROADMAP_STATUS.md    ← acompanhamento (planejado)
-│   ├── events.md            ← catálogo de eventos (planejado)
-│   ├── backlog.md           ← ideias fora do escopo (planejado)
-│   ├── decisions/           ← registros técnicos curtos (planejado)
-│   └── modules/             ← contrato de cada módulo (planejado)
+│   ├── ROADMAP_STATUS.md    ← acompanhamento (existe)
+│   ├── events.md            ← catálogo de eventos (existe)
+│   ├── backlog.md           ← ideias fora do escopo (existe)
+│   ├── decisions/           ← registros técnicos curtos (existe)
+│   └── modules/             ← contrato de cada módulo (existe; core, data, persistence, app)
 ├── data/                    ← conteúdo do jogo em arquivos de dados (planejado)
 ├── src/
-│   ├── app/  core/  data/   ← base do jogo (planejado)
+│   ├── app/  core/  data/   ← base do jogo (existem)
 │   ├── sim/                 ← SIMULAÇÃO, sem elementos visuais (planejado)
-│   ├── persistence/         ← salvar e carregar (planejado)
+│   ├── persistence/         ← salvar e carregar (existe)
 │   ├── bridge/              ← ponte entre simulação e visual (planejado)
-│   ├── presentation/        ← o que o jogador vê e usa (planejado)
+│   ├── presentation/        ← o que o jogador vê e usa (só `ui/` tem conteúdo; o resto é planejado)
 │   └── tools/               ← ferramentas de depuração (planejado)
 ├── scenes/  assets/  addons/
-├── tests/                   ← unit, integration, soak, fixtures (planejado)
-└── tools/                   ← comandos de verificação (planejado)
+├── tests/                   ← unit, integration, soak, fixtures (existem)
+└── tools/                   ← comandos de verificação (existe)
 ```
 
 A ideia-chave: a pasta `src/sim/` (o "mundo") **não conhece** `src/presentation/` (o "visual"). Isso permite testar e rodar o mundo sem abrir o jogo.

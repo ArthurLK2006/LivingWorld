@@ -1,6 +1,6 @@
 # Proposta de redação — critério de pico do SP1
 
-- **Status:** PROPOSTA quanto à redação na arquitetura e no roadmap (não alterados até o resultado do release). **Aprovada por Arthur em 02/11/2026 como régua de medição da LW-023, a valer antes de medir o release** (DEC-113). Preparada em 02/11/2026.
+- **Status:** régua **aprovada por Arthur em 02/11/2026** para a LW-023, antes de medir o release (DEC-113); aplicada ao build de release no Mac, com critério CONFIRMADO; a redação foi **incorporada à arquitetura (20.1 e 26.3) e ao roadmap (LW-023)** por pedido expresso dele. Preparada em 02/11/2026.
 - **Contexto e problema:** com a mesma máquina e o mesmo código (hash idêntico), duas execuções seguidas deram 2 e 14 passos acima de 10 ms (nuvem, depuração); no Mac, 7, 13 e 5. Um critério de "sem pico acima de ~10 ms" falha ou passa conforme a sorte da execução. Em compensação, um laço de controle sem o código do jogo também teve passos acima de 10 ms (~1,7 por minuto na nuvem), o que mostra que a máquina sozinha viola um limite absoluto.
 
 ## Texto atual (onde está e o que diz)
@@ -28,6 +28,8 @@
 - Define o build: **release decide**, depuração informa.
 
 ## Consequências e riscos
+> **Situação em 02/11/2026:** a régua foi aplicada ao build de release no Mac e o critério ficou CONFIRMADO (ver a seção "Aplicação" abaixo e `0004`). Os números continuam [HIP], mantidos sem ajuste (DEC-113). A redação já foi incorporada à arquitetura (20.1 e 26.3) e ao roadmap (LW-023) por pedido expresso de Arthur. O texto a seguir é o da época da proposta.
+
 - Os números (1 ms, 3 ms, 50 ms, 1 por minuto) são **hipóteses** minhas; devem ser calibrados com a medição de release no Mac antes de virarem decisão. Com os dados atuais: na nuvem (depuração) o limite de 50 ms nunca foi ultrapassado, mas no Mac, em depuração, foram 73,4 e 88,2 ms; só a medição de release dirá se o item 3 passa.
 - Exige 3 execuções de ~2 minutos cada (6 com controle), o que cabe no `check_all` apenas como medição manual, nunca como teste automático.
 - Para aplicar, é preciso editar a arquitetura (arquivo protegido) e o roadmap; isso só ocorre com pedido expresso de Arthur numa tarefa de documentação.

@@ -23,6 +23,8 @@
 - **Limitações:** NPCs de mentira (sem memória, relações nem rotas); eventos sem ouvintes caros; medição inclui o custo do próprio cronômetro (2 leituras por passo).
 - **Relação com DEC-081 e arquitetura 26.3 (SP1).** Proposta de decisão: manter GDScript com este desenho (anel de vencimento + dados compactos) como base dos NPCs T1.
 
+> **Como ler este registro:** ele é cronológico. As seções do meio mostram o que se sabia em cada momento (inclusive hipóteses depois superadas e frases como "a confirmar com o build release"). A conclusão vigente é a do **status** no topo e da **última seção** ("Release no Mac"): critério de pico CONFIRMADO em release, pela régua da DEC-113.
+
 ## Medição no Mac (relatada por Arthur em 02/11/2026)
 - Mac de referência, executado pelo Codex, build de depuração, Godot 4.7.2, 1.000 NPCs, 360 dias: **51 passos acima de 3.000 µs, 13 acima de 10.000 µs, pico de 88,216 ms**; `state_hash` `6ed27f5c82950855b7bf45f1bb94688cf103c2e4831e182f292e4b1fd2df236d`, **idêntico** ao medido na nuvem (Linux, Xeon). **O critério de 10 ms NÃO foi cumprido nesta medição.**
 - **Leitura:** o resultado do mundo é o mesmo nas duas plataformas; só o tempo difere. A distribuição média não foi informada. Nas execuções da nuvem, os passos mais lentos mudam de lugar a cada repetição (ruído). Falta saber se no Mac também mudam.

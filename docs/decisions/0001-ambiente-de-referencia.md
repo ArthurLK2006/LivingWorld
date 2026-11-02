@@ -10,7 +10,7 @@
 
 ## Verificações da LW-006
 
-**Situação: funcional com ressalvas**, conforme orientação de Arthur. Os testes da cena e do caso de erro passaram; os critérios de saída sem erros e a verificação visual completa continuam pendentes. Os erros do ambiente Codex permanecem para investigação, sem atribuição de causa ao projeto.
+**Situação na data da verificação (histórico; a LW-006 foi fechada em 02/11/2026, veja o fim deste arquivo): funcional com ressalvas**, conforme orientação de Arthur. Os testes da cena e do caso de erro passaram; os critérios de saída sem erros e a verificação visual completa continuam pendentes. Os erros do ambiente Codex permanecem para investigação, sem atribuição de causa ao projeto.
 
 - Importação headless: código 0, mas com erros de acesso aos diretórios de dados e cache do Godot e aos certificados do sistema; não aprovada.
 - Teste da cena: `SMOKE_TEST: PASS`, código 0; a saída também apresentou erros de acesso aos dados e certificados.

@@ -1,1 +1,1 @@
-Diretório reservado para tests/soak; implementação ou conteúdo em tarefa futura.
+Medições e simulações longas, sem janela. Hoje: `run_sp1` e `run_sp1_release` (spike SP1, núcleo da simulação), `compare_sp1_runs` (compara execuções do SP1), `run_sp5` (spike SP5, salvamento) e o código descartável em `sp1/` e `sp5/`. Os resultados estão em `docs/decisions/0004` e `0005`. Uso: seção 10 do `README.md` da raiz.

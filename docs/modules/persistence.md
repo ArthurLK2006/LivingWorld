@@ -1,6 +1,6 @@
 # Contrato — persistence
 
-Estado: **LW-026 e LW-027 concluídas** (codec e armazenamento em disco). O spike de salvamento (SP5) é a LW-028.
+Estado: **LW-026, LW-027 e LW-028 concluídas** (codec, armazenamento em disco e o spike de salvamento SP5, registrado em `docs/decisions/0005-spike-sp5-salvamento.md`).
 
 - **Responsabilidade:** transformar o estado do jogo em bytes e de volta, com versão, checksum e migrações; gravar e ler com segurança (LW-027).
 - **Entradas:** `payload` (dados simples: `{world, scheduler}` montado por `SimulationRunner.capture_game()`) e a versão do jogo.

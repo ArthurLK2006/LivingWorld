@@ -35,21 +35,21 @@ A Fase 0 entregou a base técnica do jogo: um motor de simulação que roda sem 
 4. Tarefas de tamanho: LW-020 e LW-021 precisaram de autorização em arquivo protegido; sugiro marcar essas tarefas, no roadmap, com "exige autorização de `project.godot`" para ninguém ser surpreendido. LW-026 passou do limite de ~8 arquivos (fixtures binárias e migração); sugiro tratar fixtures de save como um item à parte na contagem.
 
 ## 5. TESTES EXECUTADOS (no ambiente de nuvem, 02/11/2026)
-- `tools/check_all` — **VERDE**, 141 de 141 testes; 7 regras de arquitetura; validação de dados; cena principal por 60 quadros; `run_sim`.
+- `tools/check_all` — **VERDE**, 145 de 145 testes (19 scripts, 3.218 asserts); 7 regras de arquitetura; validação de dados; cena principal por 60 quadros; `run_sim`.
 - Mesmo comando em ambiente sem permissão de gravar dados e logs — **VERDE**, com a nota "4 mensagem(ns) de ambiente ignorada(s)".
 - Spikes: SP1 (editor e release), SP3 e SP5 conforme `docs/decisions/0003` a `0005`.
-- **No Mac (Arthur): AGUARDANDO RESULTADO** — ver seção 9.
+- **No Mac (Arthur, commit `0eb1bdf`):** `tools/check_all` **VERDE, 145 testes**; F5 da cena inicial conferido (data avança, Espaço pausa e continua, aba Erros vazia); SP1 em release, 3 execuções (ver seção 9).
 
 ## 6. RESULTADOS — critérios de aceitação da fase (roadmap 0.F)
 | # | Critério | Situação |
 |---|---|---|
-| 1 | `check_all` verde em pasta nova, seguindo só o README | Verde na nuvem. **AGUARDANDO RESULTADO** no Mac (LW-030) |
+| 1 | `check_all` verde em pasta nova, seguindo só o README | Verde na nuvem e no Mac (pasta de trabalho de Arthur, 145 testes). **AGUARDANDO RESULTADO** só da repetição em pasta nova seguindo apenas o README (LW-030) |
 | 2 | Mesma semente, mesmo hash em 3 execuções; sementes diferentes, hashes diferentes | Atendido (testes e SP1) |
 | 3 | SP1 dentro do orçamento | **Atendido e CONFIRMADO em release.** Mac de referência, build de release, 3 execuções (1 ano, 1.000 NPCs): média 0,075 ms, p99,9 0,600 ms, máximo 2,857 ms, **0 passos > 10 ms em 1,95 min medido**, hash igual ao da nuvem. Passa nos 5 itens da régua DEC-113. Em depuração houve picos (informativo) |
 | 4 | Erro proposital em JSON apontado com arquivo e campo; `check_all` o detecta | Atendido; teste do Codex no Mac recusou o dado ruim com mensagem clara |
 | 5 | Salvamento: ida e volta com hash idêntico; adulterado é rejeitado; falha simulada preserva o save | Atendido |
 | 6 | `check_architecture` reprova as violações propositais e aprova o projeto real | Atendido (7 regras) |
-| 7 | Cena inicial abre sem erros e mostra título, versão e hora avançando | Atendido por teste; conferência visual com F5: **AGUARDANDO RESULTADO** |
+| 7 | Cena inicial abre sem erros e mostra título, versão e hora avançando | Atendido por teste e conferido por Arthur com F5 em 02/11/2026 (data avança, Espaço pausa e continua, aba Erros vazia) |
 | 8 | Documentação existente e aprovada | Em andamento (README atualizado; aprovação de Arthur pendente) |
 | 9 | Cópia remota com a tag `fase-0-concluida` | **Pendente de autorização** (ver 9) |
 
@@ -61,7 +61,7 @@ Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-02
 - O salvamento passa de 100 ms na thread principal a partir de ~1 MB de estado (plano B descrito, não implementado).
 - `check_architecture` é busca de texto; a regra de imports entre camadas só chega na LW-036.
 - Código de spike em `tests/soak/` precisa continuar sendo tratado como descartável.
-- Trabalho local do Mac preservado no ramo `mac-snapshot`: ainda não comparado com este ramo (comparação prevista para depois do fechamento da fase).
+- Trabalho local do Mac preservado no ramo `mac-snapshot` (já no mesmo repositório do GitHub): comparado só em leitura, sem tocar nem juntar nada; a decisão de aproveitá-lo fica para depois do fechamento da fase.
 
 ## 9. PENDÊNCIAS
 **Condições abertas da Fase 0: nenhuma delas continua aberta.** Pico de 10 ms: CONFIRMADO em release (3 execuções). Cena inicial (F5): data avança, Espaço pausa e continua, aba Erros sem erros. `check_all` no Mac: VERDE, 145 testes. Teste do Codex na edição de dados: concluído (ver LW-025). O que resta da fase são as tarefas LW-029, LW-030 e LW-031.
@@ -69,13 +69,13 @@ Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-02
 **Outras pendências**
 - LW-006: fechada por Arthur em 02/11/2026 (sem pendência).
 - LW-029 (revisão externa) e LW-030 (validação de Arthur).
-- Tag `fase-0-concluida`: só com sua autorização e depois de decidir a visibilidade do repositório (DEC-089). Não foi criada.
+- Tag `fase-0-concluida`: só com sua autorização. Não foi criada. O repositório está **público** (verificado em 02/11/2026); manter assim ou voltar a privado é decisão sua (DEC-089, pendente).
 - Ramo `mac-snapshot`: comparado só em leitura (`docs/fase-0/mac-snapshot-comparacao.md`); **não tocado nem junto a nada**. Depois do fechamento da Fase 0 apresento a proposta de reaproveitar só o que é único (ponte e tela inicial), **uma tarefa por vez**; a pasta `experiments/` só entra com autorização de Arthur.
-- `check_all` no Mac falhava por falta do `rg`; agora confere pré-requisitos no início (README, seção 8). Verde no Mac (141 testes) depois de `brew install ripgrep`.
+- `check_all` no Mac falhava por falta do `rg`; agora confere pré-requisitos no início (README, seção 8). Depois de `brew install ripgrep` ficou verde no Mac; a última rodada (commit `0eb1bdf`) deu VERDE com 145 testes.
 - Itens de backlog já registrados: textos da interface por chave de tradução; semente e versão do jogo definidas por tela de novo jogo.
 
 ## ACOMPANHAMENTO (obrigatório)
 - **Avanço:** 28 de 31 tarefas concluídas ou dispensadas; faltam LW-029, LW-030 e LW-031.
 - **Próxima tarefa recomendada:** LW-029 (revisão externa). Fase 1 **não iniciada**.
-- **Decisões que dependem de Arthur:** enviar o pacote da LW-029 ao revisor; aprovar os ajustes de modelo (4.3); autorizar a tag e o envio, e decidir a visibilidade do repositório.
+- **Decisões que dependem de Arthur:** enviar o pacote da LW-029 ao revisor; aprovar os ajustes de modelo (4.3); autorizar a tag e decidir se o repositório continua público (DEC-089).
 - **Git:** rascunho versionado em `docs/fase-0/`; ramo de trabalho `claude/living-world-coordination-umft1k`; ramo `mac-snapshot` intocado.

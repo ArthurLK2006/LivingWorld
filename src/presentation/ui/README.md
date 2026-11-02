@@ -1,1 +1,1 @@
-Diretório reservado para src/presentation/ui; implementação ou conteúdo em tarefa futura.
+Interface do jogo. Hoje tem só `status_overlay.gd`: um texto 2D (título, versão, data simulada e a dica da tecla de pausa) que apenas exibe o que o autoload `GameApp` entrega e reage ao signal dele; não conhece a simulação nem a altera. A ponte `src/bridge/` ainda não existe.

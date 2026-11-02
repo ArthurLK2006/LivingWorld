@@ -1,6 +1,6 @@
 # LW-010 — Avaliação do GUT 9.7.1
 
-**Situação:** Arthur aceitou GUT 9.7.1 após a avaliação; registrar a decisão oficial em DEC-086 em tarefa documental autorizada.
+**Situação:** Arthur aceitou GUT 9.7.1 após a avaliação e a decisão está **registrada como DEC-086 (APROVADA)** em `docs/DECISIONS.md`.
 
 - **Origem:** https://github.com/bitwes/Gut/tree/v9.7.1; distribuição instalada em `addons/gut/`.
 - **Licença:** MIT, preservada em `addons/gut/LICENSE.md`.

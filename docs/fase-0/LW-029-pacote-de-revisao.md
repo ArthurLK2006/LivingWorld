@@ -12,16 +12,16 @@ A LW-029 é uma "auditoria de obra": um revisor de fora lê o conjunto do que fo
 
 ## O que o revisor precisa receber
 O ChatGPT não enxerga o seu computador. Há duas formas:
-1. **Repositório público:** basta dizer o endereço e o ramo. A visibilidade é decisão sua (DEC-089); hoje não sei se está público.
+1. **Repositório público:** o repositório está público (verificado em 02/11/2026); basta dar o endereço de um commit exato. Se o revisor não conseguir abrir os arquivos, use a forma 2. A visibilidade é decisão sua (DEC-089, pendente) e não foi alterada.
 2. **Colar o material** (mais seguro). Em **3 mensagens**, nesta ordem:
 
 | Mensagem | Conteúdo | Tamanho atual |
 |---|---|---|
-| 1 | O texto "PEDIDO" (a partir de "## PEDIDO" até o fim deste arquivo) + `docs/ROADMAP_STATUS.md` + `docs/decisions/0001` a `0006` + `docs/fase-0/mac-snapshot-comparacao.md` | 59.5 KB (59.216 caracteres) |
-| 2 | Contratos `docs/modules/core.md`, `data.md`, `persistence.md`, `app.md` + `docs/events.md` + a saída completa de `tools/check_all` (a linha final deve dizer VERDE; a minha tem 21.5 KB (21.926 caracteres)) | 39.2 KB (39.741 caracteres) |
+| 1 | O texto "PEDIDO" (a partir de "## PEDIDO" até o fim deste arquivo) + `docs/ROADMAP_STATUS.md` + `docs/decisions/0001` a `0006` + `docs/fase-0/mac-snapshot-comparacao.md` | 61.3 KB (61.011 caracteres) |
+| 2 | Contratos `docs/modules/core.md`, `data.md`, `persistence.md`, `app.md` + `docs/events.md` + a saída completa de `tools/check_all` (a linha final deve dizer VERDE; a minha tem 21.5 KB (21.926 caracteres, sem os códigos de cor do terminal)) | 39.3 KB (39.797 caracteres) |
 | 3 | Código de `src/` (24 arquivos `.gd`), uma pasta por mensagem se preferir: `app` 8.6 KB; `core` 38.8 KB; `data` 11.2 KB; `persistence` 17.3 KB; `presentation` 0.5 KB | 76.4 KB (77.663 caracteres) |
 
-Os tamanhos são do texto puro em UTF-8 e foram medidos em 02/11/2026. A soma das 3 mensagens é de 175.1 KB (176.620 caracteres). Se o chat do revisor reclamar de tamanho, divida a mensagem 3 por pasta.
+Os tamanhos são do texto puro em UTF-8 e foram medidos em 02/11/2026. A soma das 3 mensagens é de 176.9 KB (178.471 caracteres). KB = 1.024 bytes. Se o chat do revisor reclamar de tamanho, divida a mensagem 3 por pasta.
 
 Só se o revisor pedir: os testes (`tests/`, 30 arquivos `.gd`, ~99 KB), o `AGENTS.md` (~32 KB) e os capítulos 4, 17 e 18 da arquitetura.
 
