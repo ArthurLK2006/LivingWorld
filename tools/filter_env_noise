@@ -1,30 +1,55 @@
 #!/bin/sh
 # Separa erros REAIS do Godot de ruído de AMBIENTE (stdin = saída do Godot).
-# Ruído de ambiente = mensagens do núcleo do motor sobre não conseguir criar o diretório de dados,
-# a pasta user://logs ou o arquivo de log, ou sobre certificados do sistema. Elas aparecem em
-# máquinas/sandboxes sem permissão de escrita e não dizem nada sobre o nosso código.
+# Ruído de ambiente = mensagens do núcleo do motor sobre não conseguir gravar o diretório de dados,
+# a pasta user://logs ou o arquivo de log, ou sobre os certificados do sistema do macOS. Aparecem
+# em máquinas/sandboxes restritos (ex.: o do Codex) e não dizem nada sobre o nosso código.
+# Cada regra é ESPECÍFICA, para nunca engolir erro real:
+#   uma linha:  "Could not create directory" (fora de res://), "Error attempting to create data dir",
+#               "Failed to open log file for writing".
+#   duas linhas (a linha "at:" que vem logo depois precisa citar a origem esperada):
+#               Condition "ret != noErr" ... + at: get_system_ca_certificates   (certificados do macOS)
+#               Failed to open 'user://logs/godot<data>.log' + at: dir_access.cpp (abertura do log)
 # Saída (stdout): as linhas de erro reais, com o complemento "at:" de cada uma. Aviso (stderr):
 # quantas mensagens de ambiente foram ignoradas. Código de saída: 1 se houver erro real, 0 se não.
-# Sempre reais, sem exceção: "SCRIPT ERROR", "Parse Error" e qualquer erro que cite res://.
+# Sempre reais, sem exceção: "SCRIPT ERROR", "Parse Error", qualquer outro "ERROR:" e qualquer
+# erro que cite res://.
 awk '
-function is_env(line) {
+function is_single_env(line) {
     if (line ~ /res:\/\//) { return 0 }
     if (line ~ /^ERROR: Could not create directory:/) { return 1 }
     if (line ~ /^ERROR: Error attempting to create data dir:/) { return 1 }
     if (line ~ /^ERROR: Failed to open log file for writing:/) { return 1 }
-    if (line ~ /^ERROR:.*[Cc]ertificat/) { return 1 }
     return 0
 }
-/^(SCRIPT ERROR|Parse Error)/ { real++; print; in_env = 0; next }
-/^ERROR:/ {
-    if (is_env($0)) { ignored++; in_env = 1; next }
-    real++; in_env = 0; print; next
+function pair_origin(line) {
+    if (line ~ /res:\/\//) { return "" }
+    if (line ~ /^ERROR: Condition "ret != noErr" is true/) { return "get_system_ca_certificates" }
+    if (line ~ /^ERROR: Failed to open .user:\/\/logs\/godot[^ ]*\.log./) { return "dir_access.cpp" }
+    return ""
 }
-/^[[:space:]]+at:/ { if (!in_env) { print } ; next }
-{ in_env = 0 }
+function flush_pending() {
+    if (pending != "") { real++; print pending; pending = ""; in_env = 0 }
+}
+{
+    line = $0
+    if (pending != "") {
+        if (line ~ /^[[:space:]]+at:/ && index(line, origin) > 0) { ignored++; in_env = 1; pending = ""; next }
+        flush_pending()
+    }
+    if (line ~ /^(SCRIPT ERROR|Parse Error)/) { real++; print line; in_env = 0; next }
+    if (line ~ /^ERROR:/) {
+        if (is_single_env(line)) { ignored++; in_env = 1; next }
+        origin = pair_origin(line)
+        if (origin != "") { pending = line; next }
+        real++; in_env = 0; print line; next
+    }
+    if (line ~ /^[[:space:]]+at:/) { if (!in_env) { print line }; next }
+    in_env = 0
+}
 END {
+    flush_pending()
     if (ignored > 0) {
-        printf "NOTA: %d mensagem(ns) de ambiente ignorada(s) (diretório de dados, logs ou certificados); não indicam erro do projeto.\n", ignored > "/dev/stderr"
+        printf "NOTA: %d mensagem(ns) de ambiente ignorada(s) (diretório de dados, logs ou certificados do macOS); não indicam erro do projeto.\n", ignored > "/dev/stderr"
     }
     exit (real > 0 ? 1 : 0)
 }'

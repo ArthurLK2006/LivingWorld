@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/soak/sp1/sp1_node.gd" id="1_node"]
+
+[node name="Sp1Main" type="Node"]
+script = ExtResource("1_node")
