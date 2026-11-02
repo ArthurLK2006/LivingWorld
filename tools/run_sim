@@ -1,0 +1,5 @@
+#!/bin/sh
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+exec "$godot_bin" --headless --path "$project_dir" --script res://tools/run_sim.gd -- "$@"

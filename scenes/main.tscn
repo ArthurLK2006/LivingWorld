@@ -1,4 +1,7 @@
-[gd_scene format=3]
+[gd_scene load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/initial_status.gd" id="StatusScript"]
+[ext_resource type="Script" path="res://src/bridge/initial_bridge.gd" id="BridgeScript"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 
@@ -40,3 +43,13 @@ mesh = SubResource("CubeMesh")
 position = Vector3(5, 4, 7)
 rotation_degrees = Vector3(-22, 35, 0)
 current = true
+
+[node name="Status" type="Label" parent="."]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 360.0
+offset_bottom = 90.0
+script = ExtResource("StatusScript")
+
+[node name="InitialBridge" type="Node" parent="."]
+script = ExtResource("BridgeScript")

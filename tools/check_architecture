@@ -24,6 +24,30 @@ scan 'simulação usa apresentação' '(^|[^A-Za-z0-9_])(Node[[:alnum:]_]*|Camer
 scan 'aleatoriedade fora do core/rng' '(^|[^A-Za-z0-9_])(randf|randi|randomize)[[:space:]]*\(|RandomNumberGenerator\.new[[:space:]]*\(' --glob '!**/core/rng/**' "$root/src"
 scan 'tempo do sistema na simulação' '(Time|OS)\.get_' "$root/src/sim"
 scan 'estado estático mutável' 'static[[:space:]]+var\b' "$root/src/sim"
+if [ -f "$root/project.godot" ]; then
+    invalid_autoloads=$(awk '/^\[autoload\]/{active=1; next} /^\[/{active=0} active && /^[A-Za-z_][A-Za-z0-9_]*=/{split($0,a,"="); if (a[1] != "GameApp" && a[1] != "SimulationHost" && a[1] != "Debug" && a[1] != "Settings") print FILENAME ":" FNR ":" $0}' "$root/project.godot")
+    if [ -n "$invalid_autoloads" ]; then
+        printf 'VIOLAÇÃO: autoload não permitido\n%s\n' "$invalid_autoloads"
+        failed=1
+    fi
+fi
+if [ ! -f "$root/docs/events.md" ]; then
+    echo 'AUSENTE: docs/events.md'
+    failed=1
+else
+    publications=$(rg -n --no-heading --glob '*.gd' '\.publish\([[:space:]]*"[A-Za-z][A-Za-z0-9]*"' "$root/src" || true)
+    if [ -n "$publications" ]; then
+        while IFS= read -r line; do
+            name=$(printf '%s\n' "$line" | sed -E 's/.*\.publish\([[:space:]]*"([A-Za-z][A-Za-z0-9]*)".*/\1/')
+            if ! grep -F "\`$name\`" "$root/docs/events.md" >/dev/null; then
+                printf 'VIOLAÇÃO: evento não catalogado: %s\n' "$line"
+                failed=1
+            fi
+        done <<EOF
+$publications
+EOF
+    fi
+fi
 for dir in "$root"/src/* "$root"/src/sim/* "$root"/src/presentation/*; do
     [ -d "$dir" ] || continue
     if [ ! -f "$dir/README.md" ]; then
@@ -32,4 +56,4 @@ for dir in "$root"/src/* "$root"/src/sim/* "$root"/src/presentation/*; do
     fi
 done
 if [ "$failed" -ne 0 ]; then exit 1; fi
-echo 'Arquitetura: cinco verificações aprovadas.'
+echo 'Arquitetura: verificações aprovadas.'

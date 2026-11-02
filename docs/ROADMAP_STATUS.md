@@ -16,6 +16,8 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 - LW-008: aprovada por Arthur com ressalvas; o mapeamento individual detalhado das regras da arquitetura não foi comprovado. Limite de leitura do Codex ainda não verificado em fonte oficial.
 - DEC-086: GUT 9.7.1 aprovado por Arthur e registrado na entrada oficial.
 - Ambiente Codex: erros de certificados e de criação de `user://logs` persistem durante os testes; a importação também relatou restrição ao gravar configurações do editor. Causa não atribuída ao projeto; investigar separadamente.
+- LW-020: retomada de trabalho cooperativo foi corrigida e testada; verificação visual da interface da LW-021 permanece pendente.
+- Lote LW-013–015: `tools/check_all` retornou VERDE e código 0, com 4 testes GUT e 26 asserções; cinco violações arquiteturais também foram detectadas. A saída apresentou os erros conhecidos de logs e certificados acima.
 
 ## Tarefas da Fase 0
 
@@ -33,17 +35,17 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-010 | SPIKE | Framework de testes | concluída | GUT 9.7.1 aceito por Arthur; ver decisions/0002-avaliacao-gut.md |
 | LW-011 | IMPL | Executor e check_all | concluída | Aprovada por Arthur com ressalvas; avisos do ambiente persistem |
 | LW-012 | IMPL | Verificação de arquitetura | concluída | Aprovada por Arthur com ressalvas; integrada ao check_all |
-| LW-013 | IMPL | IDs | pendente | |
-| LW-014 | IMPL | Gerador aleatório | pendente | |
-| LW-015 | IMPL | Relógio | pendente | |
-| LW-016 | IMPL | Barramento de eventos | pendente | |
-| LW-017 | IMPL | Result e contratos base | pendente | |
-| LW-018 | IMPL | Mundo | pendente | |
-| LW-019 | IMPL | Agendador | pendente | |
-| LW-020 | IMPL | SimulationHost | pendente | |
-| LW-021 | IMPL | Cena inicial com relógio | pendente | |
-| LW-022 | IMPL | Hash de estado | pendente | |
-| LW-023 | SPIKE | Núcleo da simulação | pendente | |
+| LW-013 | IMPL | IDs | concluída | Aprovada por Arthur |
+| LW-014 | IMPL | Gerador aleatório | concluída | Aprovada por Arthur |
+| LW-015 | IMPL | Relógio | concluída | Aprovada por Arthur |
+| LW-016 | IMPL | Barramento de eventos | concluída | Aprovada por Arthur com ressalvas; limite de eventos testado |
+| LW-017 | IMPL | Result e contratos base | concluída | Aprovada por Arthur com ressalvas |
+| LW-018 | IMPL | Mundo | concluída | Aprovada por Arthur com ressalvas |
+| LW-019 | IMPL | Agendador | concluída | Aprovada por Arthur com ressalvas |
+| LW-020 | IMPL | SimulationHost | concluída | Aprovada por Arthur com ressalvas |
+| LW-021 | IMPL | Cena inicial com relógio | concluída | Aprovada com ressalvas; validação visual continua pendente |
+| LW-022 | IMPL | Hash de estado | concluída | Aprovada por Arthur; estado pendente e reprodução testados |
+| LW-023 | SPIKE | Núcleo da simulação | bloqueada | Release medido abaixo de 10 ms; editor repete picos acima do limite, sem causa isolada. Ver decisions/0003-sp1-medicao-preliminar.md |
 | LW-024 | IMPL | Leitor e validador de dados | pendente | |
 | LW-025 | SPIKE | Pipeline de dados | pendente | |
 | LW-026 | IMPL | Codec de save | pendente | |

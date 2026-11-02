@@ -4,6 +4,8 @@ project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 fixture=$(mktemp -d "${TMPDIR:-/tmp}/lw012.XXXXXX")
 trap 'rm -r "$fixture"' EXIT HUP INT TERM
 mkdir -p "$fixture/src/core/rng" "$fixture/src/data" "$fixture/src/sim/world" "$fixture/src/presentation"
+mkdir -p "$fixture/docs"
+printf '# Eventos\n' > "$fixture/docs/events.md"
 for dir in "$fixture/src/core" "$fixture/src/core/rng" "$fixture/src/data" "$fixture/src/sim" "$fixture/src/sim/world" "$fixture/src/presentation"; do
     printf 'Contrato de teste\n' > "$dir/README.md"
 done
@@ -32,4 +34,11 @@ check_violation 'estado estático' 'violation.gd:1:'
 rm "$fixture/src/sim/world/violation.gd"
 rm "$fixture/src/sim/world/README.md"
 check_violation 'contrato ausente' 'world/README.md'
-echo 'LW-012: 1 caso válido e 5 violações detectadas.'
+printf 'Contrato\n' > "$fixture/src/sim/world/README.md"
+printf 'func x(): bus.publish("TestOccurred")\n' > "$fixture/src/sim/world/violation.gd"
+check_violation 'evento não catalogado' 'violation.gd:1:'
+printf '| `TestOccurred` | teste |\n' >> "$fixture/docs/events.md"
+"$checker" "$fixture" || { echo 'FALHA: evento catalogado'; exit 1; }
+printf '[autoload]\nUnexpected="*res://unexpected.gd"\n' > "$fixture/project.godot"
+check_violation 'autoload não permitido' 'project.godot:2:'
+echo 'Arquitetura: casos válidos e sete violações detectadas.'
