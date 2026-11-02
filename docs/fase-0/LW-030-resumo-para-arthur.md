@@ -24,7 +24,7 @@
 11. **Explicar com suas palavras o ciclo de uma tarefa:** você escolhe a tarefa → o Codex implementa e testa e entrega relatório → o auditor confere → você aprova e manda registrar. (Está no roadmap, item 0.6.)
 
 ## Pendências que entram na validação
-- **Pico de 10 ms (SP1), no Mac:** em release, 2 de 3 execuções feitas e aprovadas pela régua da DEC-113 (0 passos > 10 ms). Falta a terceira: `RUNS=1 tests/soak/run_sp1_release` (não baixa de novo). Em depuração houve picos (13, 7, 5, 7, 0 e 1 passos > 10 ms).
+- **Pico de 10 ms (SP1), no Mac:** já **CONFIRMADO em release** (3 execuções, 0 passos acima de 10 ms; régua da DEC-113). Na validação, basta você ler o relatório (`docs/decisions/0004`) e concordar. Se quiser repetir a medição: `RUNS=1 tests/soak/run_sp1_release`.
 
 ## Como terminar
 - Tudo certo: responda **"LW-030 assinada"** (a checklist de 11 itens acima, marcados).

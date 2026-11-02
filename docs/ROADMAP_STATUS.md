@@ -2,7 +2,7 @@
 
 Atualizado em: 02/11/2026 · Fase atual: 0 — Fundação técnica (em fechamento).
 
-O percentual definitivo depende da classificação da LW-006 e da validação da LW-009. Para evitar contar tarefas com ressalvas como plenamente concluídas, este registro não apresenta porcentagem consolidada ainda.
+Fase 0: **28 de 31 tarefas concluídas ou dispensadas** (26 concluídas, 2 dispensadas); faltam LW-029 (revisão externa), LW-030 (validação de Arthur) e LW-031 (fechamento). O percentual oficial da fase só passa a 100% depois dessas três.
 
 ## Critérios de cálculo
 
@@ -12,15 +12,15 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 
 ## Pendências e ressalvas
 
-- LW-006: funcional com ressalvas por orientação de Arthur. Saída sem erros na importação e execução, painel Saída, e confirmação visual separada de piso, céu e luz ainda não comprovados. Erros de certificados e permissões ocorreram no ambiente Codex; causa não atribuída ao projeto.
+- LW-006: **fechada por Arthur em 02/11/2026**. Evidências: F5 no Mac mostrou piso, cubo, céu e sol; a aba Erros do editor ficou sem erros depois da correção dos 27 avisos do GDScript; o `check_all` está verde no Mac (145 testes). As mensagens de certificados e de gravação de logs do ambiente restrito do Codex são ruído de ambiente tratado por `tools/filter_env_noise`.
 - LW-008: aprovada por Arthur com ressalvas; o mapeamento individual detalhado das regras da arquitetura não foi comprovado. Limite de leitura do Codex ainda não verificado em fonte oficial.
 - Dados: `tests/fixtures/data/ok/` é a amostra editável (validada pelo check_all); `frozen/` é a cópia fixa dos testes do carregador.
 - Ambiente de trabalho do Claude (nuvem): Godot 4.7.2 Linux instalado fora do projeto; `check_all` verde sem os erros de certificado do ambiente Codex.
 - Trabalho local do Mac preservado por Arthur/Codex no ramo `mac-snapshot` (fora deste repositório remoto até o envio); comparação só depois do fechamento da Fase 0. Não tocado.
-- LW-023: critério de pico de 10 ms **PARCIAL**: release no Mac passa em 2 de 2 execuções feitas (0 passos > 10 ms; máximo 2,857 ms), mas a DEC-113 exige 3. Pendente: `git pull` e `RUNS=1 tests/soak/run_sp1_release` (mesmas condições: carregador, Godot fechado, sem uso). Não dar como confirmado antes disso.
-- LW-021 (F5, 02/11/2026): a janela abriu com piso, cubo, céu e sol e o texto "Living World · versão 0.0.1-dev / Data simulada: ano 1, dia 1, 00:13 · 1x / [Espaço] pausar ou continuar". A data lida (00:13, partindo de 00:00) mostra que avançou; **ainda sem resposta explícita:** a data continua avançando? o Espaço pausa e continua? (conferência visual da LW-021 só fecha com isso).
+- LW-023: **fechada sem ressalva em 02/11/2026.** Critério de pico de 10 ms **CONFIRMADO em build de release** no Mac de referência pela régua da DEC-113 (3 execuções, 0 passos > 10 ms em 1,95 min medido, máximo 2,857 ms, hash igual). Condições da medição: carregador ligado, Godot fechado, sem uso. Em depuração houve picos (informativo). Redação incorporada à arquitetura (20.1 e 26.3) e ao item da LW-023 do roadmap.
+- LW-021 (F5 no Mac, 02/11/2026): a janela abriu com piso, cubo, céu e sol e o texto "Living World · versão 0.0.1-dev / Data simulada: ano 1, dia 1, 00:13 · 1x / [Espaço] pausar ou continuar"; **a data avança: sim; o Espaço pausa: sim; o Espaço de novo continua: sim.** Parte visual da LW-021 fechada por Arthur.
+- `check_all` no Mac (commit `0eb1bdf`): VERDE, 145 testes (19 scripts, 3.218 asserts).
 - Avisos do GDScript: em 02/11/2026 o editor mostrou 5 avisos de divisão inteira em `sim_clock.gd`. O `check_all` não os via porque o Godot só imprime avisos de compilação com o depurador ligado. Varredura completa achou 27 no total (divisão inteira, nomes que repetem funções do Godot, ternário incompatível, variável sem uso, sombreamentos); todos corrigidos sem `@warning_ignore` e o `check_all` ganhou `tools/check_gdscript_warnings`. Relatórios anteriores que diziam "sem avisos de GDScript" estavam errados.
-- LW-021: conferência visual no Mac: abrir o projeto, F5, ver o texto no canto superior esquerdo, a hora simulada avançar e o Espaço pausar e continuar.
 - DEC-086: GUT 9.7.1 aprovado por Arthur e registrado na entrada oficial.
 - Ambiente restrito: o `check_all` ignora, com aviso (`NOTA: N mensagem(ns) de ambiente ignorada(s)`), as mensagens do motor sobre diretório de dados, `user://logs` e certificados (`tools/filter_env_noise`); qualquer outro erro continua sendo falha. Reproduzido aqui o caso de diretório/logs sem permissão; a mensagem exata de certificados do macOS não foi reproduzida (o filtro cobre mensagens `ERROR:` com "certificat").
 - Ambiente Codex: erros de certificados e de criação de `user://logs` persistem durante os testes; a importação também relatou restrição ao gravar configurações do editor. Causa não atribuída ao projeto; investigar separadamente.
@@ -34,7 +34,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-003 | USER | Organizar documentos | concluída | Pacote publicado |
 | LW-004 | USER | Preparar Codex | dispensada | Absorvida pela LW-006 |
 | LW-005 | IMPL | Instalação automatizada | dispensada | Instalação realizada por Arthur |
-| LW-006 | IMPL | Projeto e cena estática | em auditoria | Funcional com ressalvas. Piso, cubo, céu e sol vistos por Arthur no F5 (02/11/2026). Faltava a aba Erros limpa: o editor mostrava 5 avisos amarelos de divisão inteira, corrigidos em 02/11/2026; conferir após `git pull` |
+| LW-006 | IMPL | Projeto e cena estática | concluída | Fechada por Arthur em 02/11/2026: F5 com piso, cubo, céu e sol; aba Erros sem erros após corrigir os 27 avisos; `check_all` verde no Mac |
 | LW-007 | IMPL | Estrutura de pastas | concluída | Aprovada por Arthur |
 | LW-008 | DOC | Validar AGENTS.md | concluída | Aprovada com ressalvas por Arthur |
 | LW-009 | DOC | Modelos e acompanhamento | concluída | Aprovada por Arthur |
@@ -49,9 +49,9 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-018 | IMPL | Mundo | concluída | Aprovada pela regra de aceleração de Arthur (check_all verde, 85 testes; único arquivo protegido alterado: arquitetura 4.6, autorizado). Desvio (b) aplicado |
 | LW-019 | IMPL | Agendador | concluída | Aprovada pela regra de aceleração (check_all verde, 95 testes). Orçamento em unidades de trabalho declaradas, não em ms (determinismo, DEC-081); ms só medem |
 | LW-020 | IMPL | SimulationHost | concluída | Autoload registrado com autorização de Arthur; `tools/run_sim` no check_all (115 testes) |
-| LW-021 | IMPL | Cena inicial com relógio | concluída | Autoloads e `scenes/main.tscn` alterados com autorização de Arthur; regra 5 do check_architecture ativa. Conferência visual na janela pendente (ver abaixo) |
+| LW-021 | IMPL | Cena inicial com relógio | concluída | Autoloads e `scenes/main.tscn` alterados com autorização de Arthur; regra 5 do check_architecture ativa. Parte visual fechada por Arthur em 02/11/2026 (data avança; Espaço pausa e continua) |
 | LW-022 | IMPL | Hash de estado | concluída | Aprovada pela regra de aceleração (check_all verde, 107 testes). 3 execuções de 30 dias dão o mesmo hash |
-| LW-023 | SPIKE | Núcleo da simulação | concluída com ressalva | **Pico de 10 ms: PARCIAL.** Release no Mac (régua DEC-113, acumulado): 2 execuções, 0 passos > 10 ms, máximo 2,857 ms, média 0,075 ms, hash igual; passa nos 5 itens, mas a régua exige 3 execuções (falta 1: `RUNS=1 tests/soak/run_sp1_release`). Depuração no Mac: 13/7/5/7/0/1 passos > 10 ms |
+| LW-023 | SPIKE | Núcleo da simulação | concluída | **Pico de 10 ms CONFIRMADO em release** no Mac (régua DEC-113, 3 execuções, 0 passos > 10 ms em 1,95 min, máximo 2,857 ms, média 0,075 ms, hash igual). Detalhes e linhas brutas em decisions/0004 e docs/fase-0/evidencias |
 | LW-024 | IMPL | Leitor e validador de dados | concluída | Aprovada por Arthur; 21 testes verdes no check_all |
 | LW-025 | SPIKE | Pipeline de dados | concluída | Aprovada por Arthur; JSON mantido (decisions/0003, DEC-082 aprovada). Teste do Codex no Mac (01/11/2026): editou os dados, o validador aceitou o bom e recusou o ruim com arquivo, item e campo; o check_all ficou vermelho por um teste que contava itens, corrigido com pasta congelada `tests/fixtures/data/frozen/` |
 | LW-026 | IMPL | Codec de save | concluída | Regra automática de Arthur (check_all verde, 128 testes). Formato v2, migração 1->2 com fixture, salvar/carregar no meio não muda o hash |

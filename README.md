@@ -159,7 +159,7 @@ O roadmap tem **6 fases e 192 tarefas** (`LW-001` a `LW-192`).
 
 | Fase | Nome | Tarefas | Situação |
 |---|---|---|---|
-| 0 | Fundação técnica | 31 | **Em fechamento** (27 concluídas ou dispensadas; faltam a revisão externa, a validação do dono e o fechamento) |
+| 0 | Fundação técnica | 31 | **Em fechamento** (28 de 31 concluídas ou dispensadas; faltam a revisão externa, a validação do dono e o fechamento) |
 | 1 | Primeiro mundo jogável | 23 | Não iniciada |
 | 2 | Primeira sociedade | 32 | Não iniciada |
 | 3 | Economia | 30 | Não iniciada |

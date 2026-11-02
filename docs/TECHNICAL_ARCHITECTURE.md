@@ -1638,7 +1638,7 @@ O hardware-alvo mínimo é uma **decisão pendente [PEND]**. Até lá, usar como
 |---|---|
 | Taxa de quadros | 60 FPS estáveis em jogo normal; 30 FPS como piso em aceleração de tempo |
 | Orçamento da simulação por quadro | ~3 ms em tempo normal; teto de ~6 ms em tempo acelerado |
-| Pico máximo de um tick | Sem tick que passe de ~10 ms (quebrar em fatias) |
+| Pico de um tick (régua da DEC-113) | Medido em **build de release**, no hardware de referência, em 3 execuções completas com laço de controle: nenhum tick acima de 50 ms; no máximo 1 tick acima de 10 ms por minuto de execução contínua (contado de forma acumulada nas execuções) ou, se for maior, não mais que a taxa do controle + 1 por minuto; os ticks mais lentos não se repetem nos mesmos passos entre execuções (média e p99,9 em 26.3). Depuração é só informativa. Tick que passar do limite é quebrado em fatias |
 | Salvamento | Sem travada perceptível (≤ ~100 ms na thread principal) |
 | Carregamento | Poucos segundos no protótipo |
 | Memória | A definir após medição; sem crescimento contínuo ao longo do tempo |
@@ -1975,7 +1975,7 @@ Spikes são **pequenos, descartáveis e objetivos**. Cada um responde a uma perg
 
 | Spike | Pergunta | Escopo | Critério de sucesso | Plano B |
 |---|---|---|---|---|
-| **SP1: Núcleo da simulação** | GDScript aguenta relógio + agendador + EventBus + 1.000 NPCs "de mentira" em orçamento de ms? | Sem janela. NPCs com necessidades e ações simples. Medir por 1 ano de jogo | Tick dentro do orçamento (cap. 20); sem pico > ~10 ms; hash determinístico | Reduzir frequências, compactar dados quentes, limitar contagens; só depois avaliar threads |
+| **SP1: Núcleo da simulação** | GDScript aguenta relógio + agendador + EventBus + 1.000 NPCs "de mentira" em orçamento de ms? | Sem janela. NPCs com necessidades e ações simples. Medir por 1 ano de jogo | Tick dentro do orçamento (cap. 20); régua de pico da DEC-113, medida em release com 3 execuções e laço de controle (média ≤ 1 ms, p99,9 ≤ 3 ms, nenhum tick > 50 ms, no máximo 1 tick > 10 ms por minuto de forma acumulada, picos que não se repetem nos mesmos passos); hash determinístico | Reduzir frequências, compactar dados quentes, limitar contagens; só depois avaliar threads |
 | **SP2: Corpos e LOD de NPCs** | Dá para alternar NPCs entre S1 e S0 (com corpo e navegação) sem teleporte, duplicação ou queda de quadros? | 100 NPCs, `NpcView` em pool, intenções/resultados, raio S0 | Sem duplicar, sem travar, quadros estáveis | Reduzir raio S0, simplificar navegação, menos NPCs corpóreos |
 | **SP3: Pipeline de dados e testes** | JSON + validador + framework de testes funcionam bem com agentes de IA? | 3 tipos de dado, validador, `check_all` headless | Erros apontados com clareza; agente edita dados sem quebrar; tudo roda sem janela | `.tres` com validadores; framework mínimo próprio |
 | **SP4: Câmera contínua e terreno** | Subir e descer a câmera com chunks e camadas de mapa fica estável e bonito? | Terreno de teste, câmera com curvas, camada de marcadores | Sem engasgos, sem falhas de profundidade, sem vazamento | Addon de terreno, transição "fatiada", menos detalhe |
