@@ -44,7 +44,7 @@ A Fase 0 entregou a base técnica do jogo: um motor de simulação que roda sem 
 |---|---|---|
 | 1 | `check_all` verde em pasta nova, seguindo só o README | Verde na nuvem. **AGUARDANDO RESULTADO** no Mac (LW-030) |
 | 2 | Mesma semente, mesmo hash em 3 execuções; sementes diferentes, hashes diferentes | Atendido (testes e SP1) |
-| 3 | SP1 dentro do orçamento | Média 0,14 ms/passo (editor) e 0,11 ms (release) na nuvem. **Pico de 10 ms: NÃO CUMPRIDO na medição do Mac** (51 passos > 3 ms; 13 passos > 10 ms; pico de 88,216 ms; build de depuração, Codex). Hash idêntico ao da nuvem. **Causa: AGUARDANDO RESULTADO** (duas execuções seguidas e uma no Terminal normal) |
+| 3 | SP1 dentro do orçamento | Média 0,14 ms/passo (editor) e 0,11 ms (release) na nuvem. **Pico de 10 ms: NÃO CONFIRMADO.** Medição de referência (Mac, Terminal normal, depuração): 21 passos > 3 ms, **7 > 10 ms, pior 73,419 ms**; Codex (restrito): 13 (88,216 ms), 7 (76,279 ms) e 5 (48,514 ms). Hash idêntico ao da nuvem. Hipótese: máquina ou build de depuração; **AGUARDANDO RESULTADO** do build release no Mac |
 | 4 | Erro proposital em JSON apontado com arquivo e campo; `check_all` o detecta | Atendido; teste do Codex no Mac recusou o dado ruim com mensagem clara |
 | 5 | Salvamento: ida e volta com hash idêntico; adulterado é rejeitado; falha simulada preserva o save | Atendido |
 | 6 | `check_architecture` reprova as violações propositais e aprova o projeto real | Atendido (7 regras) |
@@ -56,7 +56,7 @@ A Fase 0 entregou a base técnica do jogo: um motor de simulação que roda sem 
 Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-029 e as falhas da LW-030.
 
 ## 8. RISCOS
-- **Pico de tempo por passo:** a nuvem compartilhada deu 5,5 a 30,6 ms e o Mac (depuração, Codex) deu 13 passos acima de 10 ms e pico de 88,216 ms; o critério do SP1 não está cumprido e a causa (ruído ou código) está sendo investigada.
+- **Pico de tempo por passo:** a nuvem deu 5,5 a 30,6 ms; o Mac, no Terminal normal (referência, depuração), deu 7 passos acima de 10 ms e pior de 73,419 ms (Codex: 13, 7 e 5 passos; pior de 88,216 ms). O critério do SP1 está NÃO CONFIRMADO; hipótese: máquina ou build de depuração, a confirmar com o release. O critério também está ambíguo no texto (ver `docs/decisions/0006`).
 - O salvamento passa de 100 ms na thread principal a partir de ~1 MB de estado (plano B descrito, não implementado).
 - `check_architecture` é busca de texto; a regra de imports entre camadas só chega na LW-036.
 - Código de spike em `tests/soak/` precisa continuar sendo tratado como descartável.
@@ -66,7 +66,7 @@ Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-02
 **Condições abertas — AGUARDANDO RESULTADO**
 | Condição | Quem | Como confirmar |
 |---|---|---|
-| Pico de 10 ms (SP1) no Mac | Arthur / Codex | **Primeira medição: NÃO CUMPRIDO** (51 passos > 3 ms, 13 > 10 ms, pico de 88,216 ms, depuração). **AGUARDANDO RESULTADO** da análise: duas execuções seguidas + uma no Terminal normal, comparadas com `tests/soak/compare_sp1_runs` (`--top 60`); depois, medição de release no Mac se for ruído |
+| Pico de 10 ms (SP1) no Mac | Arthur / Codex | **Referência (Terminal normal, depuração): NÃO CONFIRMADO** (7 passos > 10 ms; pior 73,419 ms). **AGUARDANDO RESULTADO:** `tests/soak/run_sp1_release` (release, com controle, 2 execuções) e `run_sp1 --top 60 --control` em depuração, comparadas com `tests/soak/compare_sp1_runs` |
 | Cena inicial com F5 | Arthur | Texto no canto superior esquerdo, hora avançando, Espaço pausa e continua |
 | Teste do Codex (nova rodada do `check_all` no Mac após a correção da pasta congelada) | Arthur / Codex | `check_all` verde depois de uma edição legítima dos dados |
 

@@ -4,7 +4,8 @@
 # O QUE FAZ, em ordem:
 #  1. Baixa os modelos de exportação OFICIAIS do Godot 4.7.2 (um arquivo de ~1,28 GB) para a
 #     pasta de trabalho, confere o SHA-512 publicado pelo Godot, extrai SÓ o binário de release do
-#     macOS (de macos.zip) e apaga o download (use KEEP_DOWNLOAD=1 para manter).
+#     macOS (macos.zip, 123,6 MB, e dentro dele godot_macos_release.universal, 170 MB) e apaga o
+#     download e o macos.zip (use KEEP_DOWNLOAD=1 para manter).
 #  2. Cria na pasta de trabalho uma CÓPIA do projeto (git archive HEAD: só arquivos versionados),
 #     com o spike SP1 como cena principal. O seu projeto não é alterado.
 #  3. Exporta o pacote de recursos (.pck) com o Godot do editor (sem modelos de exportação).
@@ -68,7 +69,7 @@ else
     xattr -d com.apple.quarantine "$RELEASE_BIN" 2> /dev/null || true
     # Binário arm64 precisa de assinatura; assinatura "ad hoc" só desta cópia extraída.
     command -v codesign > /dev/null && codesign --force --sign - "$RELEASE_BIN" 2> /dev/null || true
-    [ "$KEEP_DOWNLOAD" = 1 ] || rm -f "$TPZ"
+    [ "$KEEP_DOWNLOAD" = 1 ] || rm -f "$TPZ" "$WORK/modelos/macos.zip"
     echo "Binário de release: $RELEASE_BIN"
 fi
 
