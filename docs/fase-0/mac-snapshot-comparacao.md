@@ -4,7 +4,7 @@ Feita em 02/11/2026 com `git fetch origin mac-snapshot` e `git diff`/`git log` s
 
 ## Resumo
 - `mac-snapshot` é **um único commit** (`f1a9192`, "snapshot do trabalho local do Mac, não revisado") em cima de `95bc4c4` (LW-012). O ramo de trabalho tem 29 commits em cima do mesmo ponto (na hora da comparação eram 27).
-- O snapshot é uma **implementação paralela do núcleo** (cerca de 510 linhas em `src/`, 6 arquivos de teste), feita antes do ramo de trabalho (cerca de 1886 linhas em `src/`, 16 arquivos de teste de unidade, mais dados, salvamento e spikes).
+- O snapshot é uma **implementação paralela do núcleo** (cerca de 510 linhas em `src/`, 6 arquivos de teste), em paralelo ao ramo de trabalho (cerca de 1886 linhas em `src/`, 16 arquivos de teste de unidade, mais dados, salvamento e spikes).
 - O `ROADMAP_STATUS.md` do snapshot já marca LW-013 a LW-022 como "concluída", e a LW-023 como "bloqueada"; é uma segunda versão da verdade que precisará ser reconciliada.
 
 ## O que é DUPLICADO (mesma função, implementada nos dois)
