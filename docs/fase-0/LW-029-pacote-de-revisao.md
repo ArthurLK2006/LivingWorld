@@ -46,7 +46,7 @@ Você é o auditor de arquitetura do projeto Living World (RPG sandbox 3D em God
 - Núcleo (`src/core`): `Result`, gerador de IDs, gerador aleatório com fluxos nomeados, relógio de simulação (passo fixo de 1 minuto), barramento de eventos com `cause_id`, `SimModule`/`SimContext`, `World` (ordem declarada, salvar/carregar o núcleo), agendador com frequência por módulo e orçamento por passo, hash de estado (SHA-256 do JSON canônico).
 - Dados (`src/data`): leitor e validador de JSON (tipos, faixas, referências entre arquivos, ids únicos). Persistência (`src/persistence`): codec de save (gzip, checksum, versão 2, migração 1→2 com fixture) e armazenamento com `.tmp`, backups rotativos e recuperação. App (`src/app`): `SimulationRunner`, autoloads `SimulationHost` e `GameApp`, `tools/run_sim`. Um texto 2D na cena inicial.
 - `tools/check_architecture`: 7 regras por busca de texto. `tools/check_all` também ignora, com aviso, ruído de ambiente do Godot (diretório de dados, logs, certificados).
-- Spikes: SP1 (núcleo; 1.000 NPCs de mentira, 1 ano: média 0,14 ms por passo no binário de editor e 0,11 ms no de release; hash igual entre os dois), SP3 (pipeline de dados), SP5 (salvamento: 2,3 ms para salvar e 0,9 ms para carregar com 1.000 NPCs). Relatórios em `docs/decisions/0003` a `0005`.
+- Spikes: SP1 (núcleo; 1.000 NPCs de mentira, 1 ano: média 0,14 ms por passo no binário de editor e 0,11 ms no de release; hash igual entre os dois e igual ao do Mac; **mas o critério de pico de 10 ms não foi cumprido no Mac**, veja abaixo), SP3 (pipeline de dados), SP5 (salvamento: 2,3 ms para salvar e 0,9 ms para carregar com 1.000 NPCs). Relatórios em `docs/decisions/0003` a `0005`.
 - DEC-082 (JSON validado) e DEC-084 (formato de save do protótipo) estão APROVADAS.
 
 **Confira, item a item, respondendo "ok", "problema" ou "não consigo verificar":**
@@ -71,7 +71,8 @@ Você é o auditor de arquitetura do projeto Living World (RPG sandbox 3D em God
 - O save é gzip + JSON; escrita em outra thread e `fsync` não existem. A partir de ~1 MB de estado, salvar passa de 100 ms na thread principal (medido).
 - `check_architecture` é busca de texto; a regra de imports entre camadas só chega na LW-036.
 - Valores de hipótese mantidos como constantes nomeadas: 360 dias por ano, 1 dia de jogo ≈ 30 min reais, 8 rodadas de eventos por entrega, 60 passos por quadro, 3 backups.
-- Pendências abertas e fora do seu alcance: pico de 10 ms do SP1 ainda não confirmado no Mac de referência; conferência visual da cena inicial (F5) e nova execução do `check_all` no Mac pendentes; LW-006 segue "em auditoria" por ressalvas de ambiente.
+- **Critério de 10 ms do SP1 NÃO cumprido na medição do Mac** (Mac de referência, executado pelo Codex, build de depuração, Godot 4.7.2, 1.000 NPCs, 360 dias: 51 passos acima de 3.000 µs, 13 acima de 10.000 µs, pico de 88,216 ms; `state_hash` `6ed27f5c82950855b7bf45f1bb94688cf103c2e4831e182f292e4b1fd2df236d`, idêntico ao medido na nuvem (Linux, Xeon). O critério de 10 ms NÃO foi cumprido nesta medição. Nas medições na nuvem o pico ficou entre 5,5 e 30,6 ms (5 a 17 passos acima de 3 ms). Ainda não se sabe se o pico é ruído da máquina (picos que mudam de lugar entre execuções) ou trabalho periódico do código (picos nos mesmos passos); a análise depende de duas execuções seguidas e de uma no Terminal normal, ainda não recebidas. Dê a sua opinião sobre a medição e sobre como medir uma versão release no Mac.
+- Pendências abertas e fora do seu alcance: conferência visual da cena inicial (F5) e nova execução do `check_all` no Mac; LW-006 segue "em auditoria" por ressalvas de ambiente.
 - Existe trabalho local do dono, em outro ramo, fora desta revisão.
 
 **RESPOSTA ESPERADA**

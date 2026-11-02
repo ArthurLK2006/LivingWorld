@@ -24,7 +24,7 @@
 11. **Explicar com suas palavras o ciclo de uma tarefa:** você escolhe a tarefa → o Codex implementa e testa e entrega relatório → o auditor confere → você aprova e manda registrar. (Está no roadmap, item 0.6.)
 
 ## Pendências que entram na validação
-- **Pico de 10 ms (SP1), no Mac:** `tests/soak/run_sp1` (com `GODOT_BIN` apontando para o Godot). Veja a linha "Passos acima de 10000 us": o ideal é **0**. Me passe a linha inteira.
+- **Pico de 10 ms (SP1), no Mac:** a primeira medição **não cumpriu** o critério (51 passos > 3 ms; 13 > 10 ms; pico de 88,216 ms; depuração, Codex). Para a validação: `tests/soak/run_sp1 --days 360 --top 60` duas vezes seguidas e uma no Terminal normal, e `tests/soak/compare_sp1_runs` sobre as saídas. A fase só fecha com o critério cumprido (por medição de release) ou com decisão sua registrada.
 
 ## Como terminar
 - Tudo certo: responda **"LW-030 assinada"** (a checklist de 11 itens acima, marcados).

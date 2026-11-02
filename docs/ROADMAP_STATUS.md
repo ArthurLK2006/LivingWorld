@@ -17,7 +17,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 - Dados: `tests/fixtures/data/ok/` é a amostra editável (validada pelo check_all); `frozen/` é a cópia fixa dos testes do carregador.
 - Ambiente de trabalho do Claude (nuvem): Godot 4.7.2 Linux instalado fora do projeto; `check_all` verde sem os erros de certificado do ambiente Codex.
 - Trabalho local do Mac preservado por Arthur/Codex no ramo `mac-snapshot` (fora deste repositório remoto até o envio); comparação só depois do fechamento da Fase 0. Não tocado.
-- LW-023: rodar `tests/soak/run_sp1` no Mac de referência para confirmar que nenhum passo passa de ~10 ms (pendente antes do fim da Fase 0).
+- LW-023: o critério de pico de 10 ms **não foi cumprido** na medição do Mac (51 passos > 3 ms; 13 > 10 ms; pico de 88,216 ms; depuração). Pendente: duas execuções seguidas e uma no Terminal normal com `tests/soak/run_sp1 --days 360 --top 60`, comparadas com `tests/soak/compare_sp1_runs`; se for ruído, medir o release no Mac; se for do código, plano B do SP1.
 - LW-021: conferência visual no Mac: abrir o projeto, F5, ver o texto no canto superior esquerdo, a hora simulada avançar e o Espaço pausar e continuar.
 - DEC-086: GUT 9.7.1 aprovado por Arthur e registrado na entrada oficial.
 - Ambiente restrito: o `check_all` ignora, com aviso (`NOTA: N mensagem(ns) de ambiente ignorada(s)`), as mensagens do motor sobre diretório de dados, `user://logs` e certificados (`tools/filter_env_noise`); qualquer outro erro continua sendo falha. Reproduzido aqui o caso de diretório/logs sem permissão; a mensagem exata de certificados do macOS não foi reproduzida (o filtro cobre mensagens `ERROR:` com "certificat").
@@ -49,7 +49,7 @@ O percentual definitivo depende da classificação da LW-006 e da validação da
 | LW-020 | IMPL | SimulationHost | concluída | Autoload registrado com autorização de Arthur; `tools/run_sim` no check_all (115 testes) |
 | LW-021 | IMPL | Cena inicial com relógio | concluída | Autoloads e `scenes/main.tscn` alterados com autorização de Arthur; regra 5 do check_architecture ativa. Conferência visual na janela pendente (ver abaixo) |
 | LW-022 | IMPL | Hash de estado | concluída | Aprovada pela regra de aceleração (check_all verde, 107 testes). 3 execuções de 30 dias dão o mesmo hash |
-| LW-023 | SPIKE | Núcleo da simulação | concluída com ressalva | Pico de 10 ms não confirmado; teste no Mac pendente antes do fim da Fase 0. Média 0,14 ms/passo e hash determinístico atingidos (ver decisions/0004) |
+| LW-023 | SPIKE | Núcleo da simulação | concluída com ressalva | **Critério de pico de 10 ms NÃO cumprido** na medição do Mac (depuração, Codex: 51 passos > 3 ms; 13 > 10 ms; pico de 88,216 ms). Hash idêntico ao da nuvem. Causa em investigação; média 0,14 ms/passo (ver decisions/0004) |
 | LW-024 | IMPL | Leitor e validador de dados | concluída | Aprovada por Arthur; 21 testes verdes no check_all |
 | LW-025 | SPIKE | Pipeline de dados | concluída | Aprovada por Arthur; JSON mantido (decisions/0003, DEC-082 aprovada). Teste do Codex no Mac (01/11/2026): editou os dados, o validador aceitou o bom e recusou o ruim com arquivo, item e campo; o check_all ficou vermelho por um teste que contava itens, corrigido com pasta congelada `tests/fixtures/data/frozen/` |
 | LW-026 | IMPL | Codec de save | concluída | Regra automática de Arthur (check_all verde, 128 testes). Formato v2, migração 1->2 com fixture, salvar/carregar no meio não muda o hash |

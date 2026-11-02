@@ -278,7 +278,7 @@ Ele roda, em sequência: verificação de arquitetura → validação dos dados 
 - **Ambientes sem permissão de gravar logs ou certificados:** o `check_all` ignora, **com um aviso** (`NOTA: ... mensagem(ns) de ambiente ignorada(s)`), só essas mensagens do Godot; qualquer outro erro continua sendo falha.
 - **Rodar a simulação sozinha:** `tools/run_sim --days 30 --seed 1` imprime a data final e o "hash do estado"; a mesma semente deve dar o mesmo hash.
 - **Validar os dados de teste:** `tools/validate_data`.
-- **Medições de desempenho (não fazem parte do `check_all`):** `tests/soak/run_sp1` (núcleo) e `tests/soak/run_sp5` (salvamento).
+- **Medições de desempenho (não fazem parte do `check_all`):** `tests/soak/run_sp1` (núcleo; aceita `--days`, `--npcs`, `--seed` e `--top N` para listar os N passos mais lentos) e `tests/soak/run_sp5` (salvamento). `tests/soak/compare_sp1_runs a.txt b.txt` diz se os picos de duas execuções caem nos mesmos passos.
 - **Testes manuais:** abrir o projeto com F5 e conferir a cena (seção 9).
 
 Regra do projeto: **nenhum agente pode declarar teste aprovado sem ter executado** (ver `AGENTS.md`, seção 9).

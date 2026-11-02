@@ -1,0 +1,46 @@
+#!/bin/sh
+# Compara as listas "Passos mais lentos" de duas ou mais saídas de tests/soak/run_sp1 (use --top 60).
+# Diz se os picos caem nos MESMOS passos (causa provável no código) ou mudam de lugar (ruído da
+# máquina). Limiares do veredito são hipóteses de trabalho: >= 50% coincidentes = mesmos passos;
+# < 20% = ruído; no meio = inconclusivo.
+# Uso: tests/soak/compare_sp1_runs saida_a.txt saida_b.txt [saida_c.txt ...]
+set -u
+if [ "$#" -lt 2 ]; then
+    echo "Uso: $0 saida_a.txt saida_b.txt [...]" >&2
+    exit 2
+fi
+extract() {
+    grep -a 'Passos mais lentos' "$1" | head -1 | grep -o '[0-9][0-9]*:[0-9][0-9]*' | cut -d: -f1
+}
+status=0
+for first in "$@"; do
+    for second in "$@"; do
+        [ "$first" \< "$second" ] || continue
+        list_a=$(extract "$first"); list_b=$(extract "$second")
+        if [ -z "$list_a" ] || [ -z "$list_b" ]; then
+            echo "ERRO: sem a linha 'Passos mais lentos' em $first ou $second (rode run_sp1 atual com --top 60)"; status=1; continue
+        fi
+        printf '%s\n--\n%s\n' "$list_a" "$list_b" | awk -v fa="$first" -v fb="$second" '
+            function absval(x) { return x < 0 ? -x : x }
+            /^--$/ { part = 1; next }
+            part == 0 { a[++na] = $1; next }
+            { b[++nb] = $1 }
+            END {
+                exact = 0; near = 0; sameminute = 0
+                for (i = 1; i <= na; i++) {
+                    found_exact = 0; found_near = 0; found_min = 0
+                    for (j = 1; j <= nb; j++) {
+                        d = absval(a[i] - b[j])
+                        if (d == 0) { found_exact = 1 }
+                        if (d <= 2) { found_near = 1 }
+                        if ((a[i] % 1440) == (b[j] % 1440)) { found_min = 1 }
+                    }
+                    exact += found_exact; near += found_near; sameminute += found_min
+                }
+                pct = (na > 0) ? 100 * near / na : 0
+                verdict = (pct >= 50) ? "MESMOS PASSOS: investigar trabalho periódico no código" : ((pct < 20) ? "MUDAM DE LUGAR: ruído da máquina" : "INCONCLUSIVO")
+                printf "%s x %s\n  picos listados: %d e %d\n  mesmo passo exato: %d | até 2 passos de distância: %d (%.0f%%) | mesmo minuto do dia: %d\n  VEREDITO: %s\n", fa, fb, na, nb, exact, near, pct, sameminute, verdict
+            }'
+    done
+done
+exit $status

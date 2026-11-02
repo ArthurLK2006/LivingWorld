@@ -44,7 +44,7 @@ A Fase 0 entregou a base técnica do jogo: um motor de simulação que roda sem 
 |---|---|---|
 | 1 | `check_all` verde em pasta nova, seguindo só o README | Verde na nuvem. **AGUARDANDO RESULTADO** no Mac (LW-030) |
 | 2 | Mesma semente, mesmo hash em 3 execuções; sementes diferentes, hashes diferentes | Atendido (testes e SP1) |
-| 3 | SP1 dentro do orçamento | Média 0,14 ms/passo (editor) e 0,11 ms (release). Pico de 10 ms: **AGUARDANDO RESULTADO** no Mac |
+| 3 | SP1 dentro do orçamento | Média 0,14 ms/passo (editor) e 0,11 ms (release) na nuvem. **Pico de 10 ms: NÃO CUMPRIDO na medição do Mac** (51 passos > 3 ms; 13 passos > 10 ms; pico de 88,216 ms; build de depuração, Codex). Hash idêntico ao da nuvem. **Causa: AGUARDANDO RESULTADO** (duas execuções seguidas e uma no Terminal normal) |
 | 4 | Erro proposital em JSON apontado com arquivo e campo; `check_all` o detecta | Atendido; teste do Codex no Mac recusou o dado ruim com mensagem clara |
 | 5 | Salvamento: ida e volta com hash idêntico; adulterado é rejeitado; falha simulada preserva o save | Atendido |
 | 6 | `check_architecture` reprova as violações propositais e aprova o projeto real | Atendido (7 regras) |
@@ -56,7 +56,7 @@ A Fase 0 entregou a base técnica do jogo: um motor de simulação que roda sem 
 Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-029 e as falhas da LW-030.
 
 ## 8. RISCOS
-- Pico de tempo por passo só validado em nuvem compartilhada.
+- **Pico de tempo por passo:** a nuvem compartilhada deu 5,5 a 30,6 ms e o Mac (depuração, Codex) deu 13 passos acima de 10 ms e pico de 88,216 ms; o critério do SP1 não está cumprido e a causa (ruído ou código) está sendo investigada.
 - O salvamento passa de 100 ms na thread principal a partir de ~1 MB de estado (plano B descrito, não implementado).
 - `check_architecture` é busca de texto; a regra de imports entre camadas só chega na LW-036.
 - Código de spike em `tests/soak/` precisa continuar sendo tratado como descartável.
@@ -66,7 +66,7 @@ Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-02
 **Condições abertas — AGUARDANDO RESULTADO**
 | Condição | Quem | Como confirmar |
 |---|---|---|
-| Pico de 10 ms (SP1) no Mac | Arthur | `tests/soak/run_sp1`; linha "Passos acima de 10000 us" |
+| Pico de 10 ms (SP1) no Mac | Arthur / Codex | **Primeira medição: NÃO CUMPRIDO** (51 passos > 3 ms, 13 > 10 ms, pico de 88,216 ms, depuração). **AGUARDANDO RESULTADO** da análise: duas execuções seguidas + uma no Terminal normal, comparadas com `tests/soak/compare_sp1_runs` (`--top 60`); depois, medição de release no Mac se for ruído |
 | Cena inicial com F5 | Arthur | Texto no canto superior esquerdo, hora avançando, Espaço pausa e continua |
 | Teste do Codex (nova rodada do `check_all` no Mac após a correção da pasta congelada) | Arthur / Codex | `check_all` verde depois de uma edição legítima dos dados |
 
@@ -80,5 +80,5 @@ Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-02
 ## ACOMPANHAMENTO (obrigatório)
 - **Avanço:** 27 de 31 tarefas concluídas ou dispensadas; faltam LW-006 (auditoria), LW-029, LW-030 e LW-031.
 - **Próxima tarefa recomendada:** LW-029 (revisão externa). Fase 1 **não iniciada**.
-- **Decisões que dependem de Arthur:** resultado dos três testes no Mac; fechar a LW-006 com ressalva; aprovar os ajustes de modelo (4.3); autorizar a tag e o envio, e decidir a visibilidade do repositório.
+- **Decisões que dependem de Arthur:** resultado dos testes no Mac (o do pico de 10 ms já voltou, e falhou nesta medição); se o pico se confirmar como ruído, aceitar com medição release; se for do código, aplicar o plano B do SP1 (reduzir frequências, compactar dados); fechar a LW-006 com ressalva; aprovar os ajustes de modelo (4.3); autorizar a tag e o envio, e decidir a visibilidade do repositório.
 - **Git:** rascunho versionado em `docs/fase-0/`; ramo de trabalho `claude/living-world-coordination-umft1k`; ramo `mac-snapshot` intocado.

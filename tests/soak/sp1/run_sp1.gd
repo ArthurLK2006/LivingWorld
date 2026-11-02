@@ -11,13 +11,15 @@ const TICK_ALERT_USEC: int = 10000
 const SIM_BUDGET_USEC: int = 3000
 const PEAK_LIMIT_USEC: int = 10000
 const PROGRESS_EVERY_DAYS: int = 60
-const TOP_SLOW_COUNT: int = 8
+const DEFAULT_TOP_SLOW: int = 8
+const MAX_TOP_SLOW: int = 500
 
 
 func _initialize() -> void:
 	var days: int = DEFAULT_DAYS
 	var npcs: int = DEFAULT_NPCS
 	var world_seed: int = DEFAULT_SEED
+	var top_slow: int = DEFAULT_TOP_SLOW
 	var args: PackedStringArray = OS.get_cmdline_user_args()
 	var index: int = 0
 	while index + 1 < args.size():
@@ -29,6 +31,8 @@ func _initialize() -> void:
 				npcs = value
 			"--seed":
 				world_seed = value
+			"--top":
+				top_slow = clampi(value, 1, MAX_TOP_SLOW)
 		index += 2
 	var runner: SimulationRunner = SimulationRunner.new(world_seed)
 	var population: FakeNpcPopulation = FakeNpcPopulation.new(npcs)
@@ -47,27 +51,29 @@ func _initialize() -> void:
 			print("  ... dia %d de %d" % [(step + 1) / SimClock.MINUTES_PER_DAY, days])
 	var wall_usec: int = Time.get_ticks_usec() - wall_start
 	var memory_after: int = int(Performance.get_monitor(Performance.MEMORY_STATIC))
-	_report(runner, population, durations, wall_usec, memory_before, memory_after, days, npcs, world_seed)
+	_report(runner, population, durations, wall_usec, memory_before, memory_after, days, npcs, world_seed, top_slow)
 	runner.finish()
 	quit(0)
 
 
-## Os TOP_SLOW_COUNT passos mais lentos, para saber se os picos se repetem nos mesmos passos
-## (causa no código) ou mudam de lugar a cada execução (ruído do ambiente).
-func _slowest(durations: PackedInt32Array) -> Array[String]:
+## Os `top_slow` passos mais lentos, para saber se os picos se repetem nos mesmos passos
+## (causa no código) ou mudam de lugar a cada execução (ruído do ambiente). Usa o vetor já
+## ordenado para achar o limiar e varre os passos uma única vez.
+func _slowest(durations: PackedInt32Array, sorted: PackedInt32Array, top_slow: int) -> Array[String]:
+	var count: int = mini(top_slow, durations.size())
+	var threshold: int = sorted[durations.size() - count]
+	var slow_steps: Array[Vector2i] = []
+	for step: int in durations.size():
+		if durations[step] >= threshold:
+			slow_steps.append(Vector2i(step, durations[step]))
+	slow_steps.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return a.y > b.y or (a.y == b.y and a.x < b.x))
 	var found: Array[String] = []
-	var taken: Dictionary = {}
-	for _rank: int in TOP_SLOW_COUNT:
-		var worst_index: int = -1
-		for step: int in durations.size():
-			if not taken.has(step) and (worst_index < 0 or durations[step] > durations[worst_index]):
-				worst_index = step
-		taken[worst_index] = true
-		found.append("%d:%d" % [worst_index, durations[worst_index]])
+	for entry: Vector2i in slow_steps.slice(0, count):
+		found.append("%d:%d" % [entry.x, entry.y])
 	return found
 
 
-func _report(runner: SimulationRunner, population: FakeNpcPopulation, durations: PackedInt32Array, wall_usec: int, memory_before: int, memory_after: int, days: int, npcs: int, world_seed: int) -> void:
+func _report(runner: SimulationRunner, population: FakeNpcPopulation, durations: PackedInt32Array, wall_usec: int, memory_before: int, memory_after: int, days: int, npcs: int, world_seed: int, top_slow: int) -> void:
 	var sorted: PackedInt32Array = durations.duplicate()
 	sorted.sort()
 	var total: int = 0
@@ -84,7 +90,12 @@ func _report(runner: SimulationRunner, population: FakeNpcPopulation, durations:
 	print("Motor: %s | build de depuração: %s" % [Engine.get_version_info()["string"], "sim" if OS.is_debug_build() else "não"])
 	print("Tempo por passo (us): média %.1f | p50 %d | p99 %d | p99,9 %d | máximo %d" % [float(total) / count, sorted[count / 2], sorted[int(count * 0.99)], sorted[int(count * 0.999)], sorted[count - 1]])
 	print("Passos acima de %d us: %d | acima de %d us: %d" % [SIM_BUDGET_USEC, over_budget, PEAK_LIMIT_USEC, over_peak])
-	print("Passos mais lentos (índice:us): %s" % str(_slowest(durations)))
+	var slowest: Array[String] = _slowest(durations, sorted, top_slow)
+	print("Passos mais lentos (índice:us): %s" % str(slowest))
+	var minutes_of_day: Array[int] = []
+	for entry: String in slowest:
+		minutes_of_day.append(entry.get_slice(":", 0).to_int() % SimClock.MINUTES_PER_DAY)
+	print("Minuto do dia desses passos: %s" % str(minutes_of_day))
 	print("Tempo total: %.2f s | pensamentos de NPC: %d | eventos de fome: %d" % [wall_usec / 1000000.0, population.thoughts_total, population.starving_events_seen])
 	print("Memória estática (bytes): antes %d, depois %d" % [memory_before, memory_after])
 	var hash_started: int = Time.get_ticks_usec()
