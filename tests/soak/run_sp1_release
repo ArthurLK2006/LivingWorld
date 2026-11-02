@@ -15,6 +15,7 @@
 # NADA é gravado em ~/Library, em configuração global do Godot, nem dentro do projeto.
 #
 # USO:   tests/soak/run_sp1_release [pasta_de_trabalho]        (padrão: $HOME/lw-release-probe)
+#        Para acrescentar UMA execução às já feitas (sem baixar de novo): RUNS=1 tests/soak/run_sp1_release
 # AJUSTES (variáveis de ambiente): GODOT_BIN, RUNS (2), DAYS (360), TOP (60), KEEP_DOWNLOAD (0).
 # Para APAGAR tudo depois:  rm -rf "$HOME/lw-release-probe"
 # Para testar sem baixar nada: LW_PROBE_TEMPLATE_BIN=/caminho/binario_de_release.
@@ -39,7 +40,8 @@ mkdir -p "$WORK"
 case "$WORK" in "$PROJECT_DIR"|"$PROJECT_DIR"/*) fail "A pasta de trabalho precisa ficar FORA do projeto ($PROJECT_DIR).";; esac
 # Trava de segurança: o script apaga subpastas dele (projeto/, modelos/) dentro da pasta de trabalho.
 # Por isso só aceita uma pasta NOVA/VAZIA ou uma criada por ele antes (marcada com .lw-release-probe).
-if [ ! -f "$WORK/.lw-release-probe" ] && [ -n "$(ls -A "$WORK")" ]; then
+# Pastas criadas por uma versão anterior deste script (sem a marca) são reconhecidas pelo conteúdo.
+if [ ! -f "$WORK/.lw-release-probe" ] && [ -n "$(ls -A "$WORK")" ] && [ ! -d "$WORK/execucao" ] && [ ! -f "$WORK/sp1.pck" ] && [ ! -f "$WORK/release_run_1.txt" ]; then
     fail "A pasta '$WORK' não está vazia e não foi criada por este script. Use uma pasta nova (ex.: \$HOME/lw-release-probe)."
 fi
 : > "$WORK/.lw-release-probe"
@@ -56,6 +58,9 @@ if [ -n "${LW_PROBE_TEMPLATE_BIN:-}" ]; then
     RELEASE_BIN=$LW_PROBE_TEMPLATE_BIN
     [ -x "$RELEASE_BIN" ] || fail "LW_PROBE_TEMPLATE_BIN não é executável: $RELEASE_BIN"
     say "1/4 Usando o binário de release informado: $RELEASE_BIN"
+elif existing=$(ls "$WORK"/bin/*release* 2> /dev/null | head -1) && [ -n "$existing" ] && [ -x "$existing" ]; then
+    RELEASE_BIN=$existing
+    say "1/4 Reaproveitando o binário de release já extraído (nada será baixado): $RELEASE_BIN"
 else
     command -v curl > /dev/null || fail "curl não encontrado."
     command -v unzip > /dev/null || fail "unzip não encontrado."
@@ -115,17 +120,26 @@ cp "$RELEASE_BIN" "$WORK/execucao/sp1_release"
 chmod +x "$WORK/execucao/sp1_release"
 cp "$WORK/sp1.pck" "$WORK/execucao/sp1_release.pck"
 command -v codesign > /dev/null && codesign --force --sign - "$WORK/execucao/sp1_release" 2> /dev/null || true
-n=1
-while [ "$n" -le "$RUNS" ]; do
+# As execuções novas continuam a numeração: não sobrescrevem as anteriores (release_run_1.txt, 2, 3...).
+last=0
+for existing_out in "$WORK"/release_run_*.txt; do
+    [ -f "$existing_out" ] || continue
+    number=$(basename "$existing_out" .txt | sed 's/^release_run_//')
+    case "$number" in ''|*[!0-9]*) continue;; esac
+    [ "$number" -gt "$last" ] && last=$number
+done
+n=$((last + 1))
+end=$((last + RUNS))
+while [ "$n" -le "$end" ]; do
     out=$WORK/release_run_$n.txt
     echo "--- execução $n (cerca de 2 minutos) -> $out"
     "$WORK/execucao/sp1_release" --headless -- --days "$DAYS" --top "$TOP" --control > "$out" 2>&1 || { cat "$out" >&2; fail "A execução $n terminou com erro (saída acima). Se a mensagem disser que não achou o jogo ou o pacote, me avise."; }
     grep -aE "^Motor:|Tempo por passo|^Passos acima|^Tempo total|^state_hash|^Engasgos|^Conclusão do controle" "$out"
     n=$((n + 1))
 done
-if [ "$RUNS" -ge 2 ]; then
-    say "Comparação dos picos entre as execuções"
+if [ "$end" -ge 2 ]; then
+    say "Comparação dos picos entre TODAS as execuções da pasta (release_run_*.txt)"
     "$PROJECT_DIR/tests/soak/compare_sp1_runs" "$WORK"/release_run_*.txt || true
 fi
-say "Pronto. Cole aqui o conteúdo de: $WORK/release_run_1.txt e release_run_2.txt"
+say "Pronto. Cole aqui o conteúdo dos arquivos release_run_*.txt de $WORK"
 echo "A linha 'Motor:' deve dizer 'build de depuração: não'. Para apagar tudo: rm -rf \"$WORK\""
