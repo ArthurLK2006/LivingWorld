@@ -26,7 +26,8 @@ func _initialize() -> void:
 			pending.append(dir_path.path_join(sub_dir))
 		for file_name: String in dir.get_files():
 			var script_path: String = dir_path.path_join(file_name)
-			# Recarregar o script que está rodando derruba o Godot; ele é conferido pelo carregamento inicial.
+			# Recarregar o script que está rodando derruba o Godot. Ele não fica sem cobertura: o Godot o
+			# compila ao iniciar e, com --debug, imprime os avisos dele (provado em tests/test_check_gdscript_warnings.sh).
 			if file_name.ends_with(".gd") and script_path != own_path:
 				ResourceLoader.load(script_path, "", ResourceLoader.CACHE_MODE_IGNORE)
 				count += 1
