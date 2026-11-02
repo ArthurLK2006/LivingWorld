@@ -284,7 +284,7 @@ O comando único é:
 tools/check_all
 ```
 
-Ele roda, em sequência: verificação de arquitetura → validação dos dados de teste → simulação de 30 dias (`run_sim`) → cena principal por 60 quadros → testes automáticos (GUT), tudo **sem abrir janela**. O resultado termina em **VERDE** (tudo certo) ou **VERMELHO** (com a lista do que falhou).
+Ele roda, em sequência: conferência dos pré-requisitos → verificação de arquitetura → **zero avisos de compilação do GDScript** (`tools/check_gdscript_warnings`) → validação dos dados de teste → simulação de 30 dias (`run_sim`) → cena principal por 60 quadros → testes automáticos (GUT), tudo **sem abrir janela**. O resultado termina em **VERDE** (tudo certo) ou **VERMELHO** (com a lista do que falhou).
 
 - **Ambientes sem permissão de gravar logs ou certificados:** o `check_all` ignora, **com um aviso** (`NOTA: ... mensagem(ns) de ambiente ignorada(s)`), só essas mensagens do Godot; qualquer outro erro continua sendo falha.
 - **Rodar a simulação sozinha:** `tools/run_sim --days 30 --seed 1` imprime a data final e o "hash do estado"; a mesma semente deve dar o mesmo hash.

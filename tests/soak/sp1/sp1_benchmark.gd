@@ -67,7 +67,7 @@ func run(args: PackedStringArray) -> int:
 		runner.step_once()
 		durations[step] = Time.get_ticks_usec() - started
 		if (step + 1) % (PROGRESS_EVERY_DAYS * SimClock.MINUTES_PER_DAY) == 0:
-			print("  ... dia %d de %d" % [(step + 1) / SimClock.MINUTES_PER_DAY, days])
+			print("  ... dia %d de %d" % [IntMath.floor_div(step + 1, SimClock.MINUTES_PER_DAY), days])
 	var wall_usec: int = Time.get_ticks_usec() - wall_start
 	var memory_after: int = int(Performance.get_monitor(Performance.MEMORY_STATIC))
 	_report(runner, population, durations, wall_usec, memory_before, memory_after, days, npcs, world_seed, top_slow)
@@ -111,7 +111,7 @@ func _report(runner: SimulationRunner, population: FakeNpcPopulation, durations:
 	var count: int = durations.size()
 	print("SP1 — dias: %d, NPCs: %d, semente: %d, passos: %d" % [days, npcs, world_seed, count])
 	print("Motor: %s | build de depuração: %s" % [Engine.get_version_info()["string"], "sim" if OS.is_debug_build() else "não"])
-	print("Tempo por passo (us): média %.1f | p50 %d | p99 %d | p99,9 %d | máximo %d" % [float(total) / count, sorted[count / 2], sorted[int(count * 0.99)], sorted[int(count * 0.999)], sorted[count - 1]])
+	print("Tempo por passo (us): média %.1f | p50 %d | p99 %d | p99,9 %d | máximo %d" % [float(total) / count, sorted[count >> 1], sorted[int(count * 0.99)], sorted[int(count * 0.999)], sorted[count - 1]])
 	print("Passos acima de %d us: %d | acima de %d us: %d" % [SIM_BUDGET_USEC, _count_over(durations, SIM_BUDGET_USEC), PEAK_LIMIT_USEC, _count_over(durations, PEAK_LIMIT_USEC)])
 	var slowest: Array[String] = _slowest(durations, sorted, top_slow)
 	print("Passos mais lentos (índice:us): %s" % str(slowest))

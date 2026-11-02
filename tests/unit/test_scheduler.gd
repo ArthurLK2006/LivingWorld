@@ -2,29 +2,28 @@ extends GutTest
 
 var _log: Array[String] = []
 var _world: World
-var _scheduler: Scheduler
 
 
-func _build(module_names: Array[String], log: Array[String], budget: int = Scheduler.UNLIMITED_BUDGET, usec_source: Callable = Callable()) -> Array:
+func _build(module_names: Array[String], call_log: Array[String], budget: int = Scheduler.UNLIMITED_BUDGET, usec_source: Callable = Callable()) -> Array:
 	var clock: SimClock = SimClock.new()
 	var context: SimContext = SimContext.new(clock, EventBus.new(clock), WorldRng.new(3), IdGenerator.new())
 	var world: World = World.new(context)
 	for module_name: String in module_names:
-		assert_true(world.register_module(module_name, FakeModule.new(module_name, log)).ok)
+		assert_true(world.register_module(module_name, FakeModule.new(module_name, call_log)).ok)
 	world.setup()
-	log.clear()
+	call_log.clear()
 	return [world, Scheduler.new(world, budget, usec_source)]
 
 
-func _run_steps(world: World, scheduler: Scheduler, log: Array[String], steps: int) -> void:
+func _run_steps(world: World, scheduler: Scheduler, call_log: Array[String], steps: int) -> void:
 	for _i: int in steps:
 		world.context.clock.advance_step()
-		log.append("@%d" % world.context.clock.total_minutes())
+		call_log.append("@%d" % world.context.clock.total_minutes())
 		scheduler.step()
 
 
-func _only(log: Array[String], prefix: String) -> Array[String]:
-	return log.filter(func(line: String) -> bool: return line.begins_with(prefix))
+func _only(call_log: Array[String], prefix: String) -> Array[String]:
+	return call_log.filter(func(line: String) -> bool: return line.begins_with(prefix))
 
 
 func before_each() -> void:
@@ -116,15 +115,15 @@ func test_execution_is_deterministic_and_independent_of_measured_time() -> void:
 
 
 func _scenario(usec_source: Callable) -> Array[String]:
-	var log: Array[String] = []
-	var built: Array = _build(["a", "b", "c"], log, 70, usec_source)
+	var call_log: Array[String] = []
+	var built: Array = _build(["a", "b", "c"], call_log, 70, usec_source)
 	var scheduler: Scheduler = built[1]
 	scheduler.configure_module("a", 3, 50)
 	scheduler.configure_module("b", 1, 40)
 	scheduler.configure_module("c", 5, 30, 2)
-	_run_steps(built[0], scheduler, log, 40)
+	_run_steps(built[0], scheduler, call_log, 40)
 	built[0].teardown()
-	return log
+	return call_log
 
 
 func test_save_and_load_continue_the_exact_schedule() -> void:

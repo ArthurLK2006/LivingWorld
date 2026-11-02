@@ -19,4 +19,4 @@ func test_spike_population_is_deterministic_and_valid() -> void:
 	assert_eq(_hash_and_thoughts(1), first)
 	assert_ne(_hash_and_thoughts(2)[0], first[0])
 	assert_eq(first[2], 0, "O mundo do spike deve validar.")
-	assert_gt(first[1], 100 * 2 * 1440 / 15 - 100, "Cada NPC pensa a cada 5 a 15 minutos.")
+	assert_gt(first[1], IntMath.floor_div(100 * 2 * SimClock.MINUTES_PER_DAY, 15) - 100, "Cada NPC pensa a cada 5 a 15 minutos.")

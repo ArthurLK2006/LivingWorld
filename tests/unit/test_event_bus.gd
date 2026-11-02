@@ -83,17 +83,17 @@ func test_two_identical_runs_give_same_sequence() -> void:
 
 func _run_scenario() -> Array[String]:
 	var bus: EventBus = EventBus.new(SimClock.new())
-	var log: Array[String] = []
+	var call_log: Array[String] = []
 	bus.subscribe("TestPinged", func(event: SimEvent) -> void:
-		log.append("%s#%d<-%d@%d" % [event.type, event.id, event.cause_id, event.time])
+		call_log.append("%s#%d<-%d@%d" % [event.type, event.id, event.cause_id, event.time])
 		bus.publish(TestEvent.new("TestPonged")))
 	bus.subscribe("TestPonged", func(event: SimEvent) -> void:
-		log.append("%s#%d<-%d@%d" % [event.type, event.id, event.cause_id, event.time]))
+		call_log.append("%s#%d<-%d@%d" % [event.type, event.id, event.cause_id, event.time]))
 	for _i: int in 3:
 		bus.publish(TestEvent.new("TestPinged"))
 	bus.dispatch()
 	bus.teardown()
-	return log
+	return call_log
 
 
 func test_round_limit_keeps_excess_for_next_dispatch() -> void:

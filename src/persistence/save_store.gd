@@ -40,8 +40,8 @@ func save(slot: int, payload: Dictionary, game_version: String) -> Result:
 	if slot < 0:
 		return Result.failure("SAVE_INVALID_SLOT", "SaveStore.save: slot %d inválido (use 0 ou maior)." % slot)
 	_recover_unfinished_save(slot)
-	var final_path: String = _final_path(slot)
-	var tmp_path: String = final_path + TMP_SUFFIX
+	var final_file: String = _final_path(slot)
+	var tmp_path: String = final_file + TMP_SUFFIX
 	var bytes: PackedByteArray = _codec.encode(payload, game_version)
 	var write_result: Result = _write_file(tmp_path, bytes)
 	if not write_result.ok:
@@ -54,14 +54,14 @@ func save(slot: int, payload: Dictionary, game_version: String) -> Result:
 		return Result.failure("SAVE_VERIFY_FAILED", "SaveStore.save: o arquivo gravado não passou na conferência (%s). O save anterior foi mantido." % check.result.message)
 	if _injected(STEP_TMP_VERIFIED):
 		return _injected_failure(STEP_TMP_VERIFIED)
-	var rotate_result: Result = _rotate_backups(final_path)
+	var rotate_result: Result = _rotate_backups(final_file)
 	if not rotate_result.ok:
 		return rotate_result
 	if _injected(STEP_BACKUPS_ROTATED):
 		return _injected_failure(STEP_BACKUPS_ROTATED)
-	var rename_error: Error = DirAccess.rename_absolute(tmp_path, final_path)
+	var rename_error: Error = DirAccess.rename_absolute(tmp_path, final_file)
 	if rename_error != OK:
-		return Result.failure("SAVE_RENAME_FAILED", "SaveStore.save: não foi possível promover '%s' a '%s' (erro %d). O save anterior está em backup." % [tmp_path, final_path, rename_error])
+		return Result.failure("SAVE_RENAME_FAILED", "SaveStore.save: não foi possível promover '%s' a '%s' (erro %d). O save anterior está em backup." % [tmp_path, final_file, rename_error])
 	if _injected(STEP_FINAL_REPLACED):
 		return _injected_failure(STEP_FINAL_REPLACED)
 	return Result.success()

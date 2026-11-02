@@ -96,7 +96,7 @@ func test_truncated_file_is_rejected() -> void:
 	var runner: SimulationRunner = _started_runner(5)
 	var bytes: PackedByteArray = _codec.encode(runner.capture_game(), GAME_VERSION)
 	runner.finish()
-	var decoded: DecodedSave = _codec.decode(bytes.slice(0, bytes.size() / 2))
+	var decoded: DecodedSave = _codec.decode(bytes.slice(0, IntMath.floor_div(bytes.size(), 2)))
 	assert_false(decoded.result.ok)
 	assert_true(decoded.result.code in ["SAVE_CORRUPT", "SAVE_CHECKSUM_MISMATCH"], decoded.result.code)
 	assert_engine_error_count(1)

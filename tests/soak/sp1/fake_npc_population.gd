@@ -6,6 +6,8 @@ extends SimModule
 ## passo acompanha quem pensa, não o total. Dados quentes em PackedInt32Array.
 
 const NEED_MAX: int = 1000
+## Metade de NEED_MAX (valor inicial típico das necessidades), escrita como constante para evitar divisão.
+const NEED_HALF: int = 500
 const RING_SIZE: int = 16
 const RING_MASK: int = 15
 const MIN_THINK_DELAY: int = 5
@@ -64,9 +66,9 @@ func on_new_game(_world_seed: int) -> void:
 		_ring.append(PackedInt32Array())
 	for npc: int in npc_count:
 		_npc_ids[npc] = _ctx.ids.next_id()
-		_hunger[npc] = _ctx.rng.range_int(STREAM_INIT, 0, NEED_MAX / 2)
-		_energy[npc] = _ctx.rng.range_int(STREAM_INIT, NEED_MAX / 2, NEED_MAX)
-		_social[npc] = _ctx.rng.range_int(STREAM_INIT, NEED_MAX / 2, NEED_MAX)
+		_hunger[npc] = _ctx.rng.range_int(STREAM_INIT, 0, NEED_HALF)
+		_energy[npc] = _ctx.rng.range_int(STREAM_INIT, NEED_HALF, NEED_MAX)
+		_social[npc] = _ctx.rng.range_int(STREAM_INIT, NEED_HALF, NEED_MAX)
 		_action[npc] = Action.WORK
 		_last_update[npc] = 0
 		_ring[(1 + npc % THINK_DELAY_SPAN) & RING_MASK].append(npc)

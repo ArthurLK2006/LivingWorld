@@ -1,6 +1,6 @@
 # LW-023 — Spike SP1: núcleo da simulação
 
-- **Status:** concluído com ressalva (aprovado por Arthur). **Critério de pico de 10 ms: NÃO CONFIRMADO.** A medição de referência no Mac (Terminal normal, depuração) teve 7 passos acima de 10 ms e pior de 73,419 ms; ver as seções "Medição no Mac" e "Medição de referência no Mac". Causa ainda não isolada.
+- **Status:** concluído com ressalva (aprovado por Arthur). **Critério de pico de 10 ms: PARCIAL, ainda não confirmado.** Em release no Mac, 2 das 3 execuções exigidas pela DEC-113 passam em todos os itens da régua; falta a terceira. Em depuração, ver as seções "Medição de referência no Mac" e "seis medições". A medição de referência no Mac (Terminal normal, depuração) teve 7 passos acima de 10 ms e pior de 73,419 ms; ver as seções "Medição no Mac" e "Medição de referência no Mac". Causa ainda não isolada.
 - **Pergunta (arquitetura 26.3):** GDScript aguenta relógio + agendador + EventBus + 1.000 NPCs "de mentira" em orçamento de milissegundos, 1 ano de jogo, sem janela?
 - **Código descartável:** `tests/soak/sp1/` (`fake_npc_population.gd`, `run_sp1.gd`, teste de sanidade) e `tests/soak/run_sp1 [--days N] [--npcs N] [--seed S]`. NPCs com 3 necessidades e 4 ações, pensando a cada 5 a 15 min escalonados (anel de 16 listas, só processa quem vence), dados quentes em `PackedInt32Array`, ~2 eventos publicados por passo (carga pessimista do barramento). Cada passo = relógio + agendador + módulo + entrega de eventos.
 - **Ambiente da medição (NÃO é o hardware de referência):** contêiner de nuvem, Intel Xeon, 4 vCPU, 16 GB, Godot 4.7.2 estável (binário oficial com editor, `--headless`). O hardware de referência (MacBook Air M3) **não foi usado**. Build de release: **executado depois**, com autorização de Arthur (modelos de exportação 4.7.2 de Linux numa pasta temporária fora do projeto; exportação a partir de uma cópia do projeto; ver seção Release).
@@ -76,3 +76,43 @@ Execução de 1 ano = cerca de 57 s (518.400 passos x ~108 µs); para as três d
 
 ## Medições de release do `mac-snapshot` (Codex, mesmo Mac)
 - 5 execuções em build **release** (modelo macOS oficial) de 525.600 passos, **nenhuma com passo acima de 10 ms** (máximos de 468, 160, 180, 300 e 191 µs); as execuções de editor no mesmo Mac e dia tiveram picos de 24 a 42 ms (e 87,7 ms na primeira). **Ressalva: a simulação daquela medição era bem mais leve** (média de 3,8 µs por passo no release e 5,5 µs no editor, contra ~108 µs aqui), então ela não prova que a nossa carga passa em release. Comparação completa em `docs/fase-0/mac-snapshot-comparacao.md`.
+
+## Release no Mac (régua da DEC-113) — 02/11/2026
+Mac de referência (Apple M3), **build de release** (modelo oficial macOS 4.7.2; o `Motor` informa "build de depuração: não"), carregador ligado, Godot fechado e sem uso durante a medição; commit `6d0e882`; script `tests/soak/run_sp1_release` (download conferido por SHA-512). Linhas brutas, coladas por Arthur:
+
+```
+== 4/4 Rodando o SP1 em release (2 vez(es), 360 dias, 1.000 NPCs, com controle)
+--- execução 1
+Motor: 4.7.2-stable (official) | build de depuração: não
+Tempo por passo (us): média 75.1 | p50 69 | p99 577 | p99,9 598 | máximo 2398
+Passos acima de 3000 us: 0 | acima de 10000 us: 0
+Tempo total: 38.94 s | pensamentos de NPC: 51886979 | eventos de fome: 1037742
+state_hash: 6ed27f5c82950855b7bf45f1bb94688cf103c2e4831e182f292e4b1fd2df236d (calculado em 0.6 ms)
+Engasgos acima de 10000 us por minuto de execução contínua: simulação 0.00 | controle 0.00
+Conclusão do controle: nenhum engasgo acima do limite nesta execução, nem na simulação nem no controle (repita para confirmar).
+--- execução 2
+Motor: 4.7.2-stable (official) | build de depuração: não
+Tempo por passo (us): média 75.1 | p50 69 | p99 578 | p99,9 598 | máximo 2857
+Passos acima de 3000 us: 0 | acima de 10000 us: 0
+Tempo total: 38.97 s | pensamentos de NPC: 51886979 | eventos de fome: 1037742
+state_hash: 6ed27f5c82950855b7bf45f1bb94688cf103c2e4831e182f292e4b1fd2df236d (calculado em 0.6 ms)
+Engasgos acima de 10000 us por minuto de execução contínua: simulação 0.00 | controle 0.00
+Conclusão do controle: nenhum engasgo acima do limite nesta execução, nem na simulação nem no controle (repita para confirmar).
+== Comparação dos picos entre as execuções
+  picos listados: 60 e 60
+  mesmo passo exato: 0 | até 2 passos de distância: 0 (0%) | mesmo minuto do dia: 15
+  VEREDITO: MUDAM DE LUGAR: ruído da máquina
+```
+
+**Régua aplicada (2 das 3 execuções exigidas):**
+| Item da régua | Execução 1 | Execução 2 | Resultado |
+|---|---|---|---|
+| (1) hash idêntico | `6ed27f5c…236d` | `6ed27f5c…236d` | **passa** (e igual ao da nuvem e ao da depuração no Mac) |
+| (2) média ≤ 1 ms e p99,9 ≤ 3 ms | 0,075 ms / 0,598 ms | 0,075 ms / 0,598 ms | **passa** |
+| (3) nenhum passo > 50 ms | máximo 2,398 ms | máximo 2,857 ms | **passa** (nem 3 ms foi ultrapassado) |
+| (4) passos > 10 ms, **acumulado** (soma ÷ total de minutos) | 0 | 0 | **passa**: 0 passos em 77,91 s (1,30 min) = 0,00 por minuto; o controle também teve 0 |
+| (5) picos não se repetem nos mesmos passos | — | — | **passa**: 0 no mesmo passo exato e 0 a até 2 passos de distância (de 60 listados) |
+
+- **A régua pede 3 execuções e o script fez 2: falta uma.** Até a terceira, o critério **não é dado como confirmado** (e a LW-023 segue "concluída com ressalva"). Para a terceira: `git pull` e `RUNS=1 tests/soak/run_sp1_release` (reaproveita o binário, não baixa de novo, grava `release_run_3.txt` sem sobrescrever as anteriores e compara as três), nas mesmas condições.
+- **"Mesmo minuto do dia: 15" (de 60):** previsão a confirmar com as linhas brutas. Em release silencioso, os 60 passos mais lentos de cada execução são em sua maioria os passos de "onda" do módulo de teste (818 NPCs a cada 99 passos, ~0,58 ms, ver acima), que só podem cair em 160 minutos do dia diferentes; com isso, ~25% de coincidência (15 de 60) é esperado por acaso e **não indica** trabalho periódico novo. O item 5 da régua mede passos exatos, não minuto do dia.
+- **Leitura:** em release, no mesmo Mac, a média é ~30% menor que em depuração (75 contra 108 µs) e não há nenhum passo acima de 3 ms. As condições (carregador, Godot fechado, sem uso) foram mais silenciosas que as de algumas medições de depuração; a execução A de depuração, nas mesmas condições de Terminal normal, também teve 0. Portanto **não dá para atribuir a melhora só ao build de release**: pode ser build e/ou máquina sem carga. A régua da DEC-113 decide pelo release, não pela causa.

@@ -9,11 +9,11 @@ func after_each() -> void:
 		_runner = null
 
 
-func _runner_with_module(world_seed: int, log: Array[String]) -> SimulationRunner:
+func _runner_with_module(world_seed: int, call_log: Array[String]) -> SimulationRunner:
 	var runner: SimulationRunner = SimulationRunner.new(world_seed)
-	assert_true(runner.register_module("fake", FakeModule.new("fake", log)).ok)
+	assert_true(runner.register_module("fake", FakeModule.new("fake", call_log)).ok)
 	runner.start_new_game()
-	log.clear()
+	call_log.clear()
 	return runner
 
 
@@ -28,15 +28,15 @@ func test_30_days_advance_exactly_30_days_of_minutes() -> void:
 
 
 func test_each_step_ticks_modules_and_delivers_events() -> void:
-	var log: Array[String] = []
-	_runner = _runner_with_module(1, log)
+	var call_log: Array[String] = []
+	_runner = _runner_with_module(1, call_log)
 	var received: Array[int] = []
 	_runner.world.context.events.subscribe("TestPinged", func(event: SimEvent) -> void: received.append(event.time))
 	_runner.step_once()
 	_runner.world.context.events.publish(TestEvent.new("TestPinged"))
 	assert_eq(received, [] as Array[int], "Publicar só enfileira.")
 	_runner.step_once()
-	assert_eq(log, ["fake.tick(1)", "fake.tick(1)"] as Array[String])
+	assert_eq(call_log, ["fake.tick(1)", "fake.tick(1)"] as Array[String])
 	assert_eq(received, [1] as Array[int], "O evento é entregue no fim do passo seguinte, carimbado com o minuto em que foi publicado.")
 
 
@@ -49,8 +49,8 @@ func test_same_seed_gives_same_world_state_and_different_seed_does_not() -> void
 
 
 func _final_state(world_seed: int) -> Dictionary:
-	var log: Array[String] = []
-	var runner: SimulationRunner = _runner_with_module(world_seed, log)
+	var call_log: Array[String] = []
+	var runner: SimulationRunner = _runner_with_module(world_seed, call_log)
 	runner.run_days(2)
 	var state: Dictionary = runner.world.serialize()
 	runner.finish()
@@ -81,8 +81,8 @@ func test_start_twice_is_refused() -> void:
 
 
 func test_describe_state_shows_date_and_modules() -> void:
-	var log: Array[String] = []
-	_runner = _runner_with_module(5, log)
+	var call_log: Array[String] = []
+	_runner = _runner_with_module(5, call_log)
 	_runner.run_steps(61)
 	var text: String = _runner.describe_state()
 	assert_string_contains(text, "ano 1, dia 1, 01:01 (61 minutos simulados)")

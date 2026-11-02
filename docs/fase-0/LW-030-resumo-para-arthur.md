@@ -14,7 +14,7 @@
    ```bash
    "$GODOT_BIN" --headless --path . --import
    ```
-4. **Abrir no Godot 4.7.2** (a versão exata). O painel "Saída" não deve mostrar mensagens vermelhas.
+4. **Abrir no Godot 4.7.2** (a versão exata). O painel "Saída" não deve mostrar mensagens vermelhas e a aba **Erros** do depurador deve ficar **vazia** (sem avisos amarelos).
 5. **Rodar tudo:** `tools/check_all`. Deve terminar em **VERDE** (141 testes no meu ambiente; no seu Mac também deu 141). Se faltar um programa, a primeira linha da saída diz qual é e como instalar.
 6. **Quebrar de propósito:** troque o `4` por `5` em `tests/unit/test_lw010_pass.gd`, rode `tools/check_all` e veja **VERMELHO** com uma mensagem que você entenda. Desfaça a troca.
 7. **Cena inicial (F5):** deve aparecer, no canto superior esquerdo, título, versão e data simulada **avançando**; **Espaço** pausa e continua.
@@ -24,7 +24,7 @@
 11. **Explicar com suas palavras o ciclo de uma tarefa:** você escolhe a tarefa → o Codex implementa e testa e entrega relatório → o auditor confere → você aprova e manda registrar. (Está no roadmap, item 0.6.)
 
 ## Pendências que entram na validação
-- **Pico de 10 ms (SP1), no Mac:** **NÃO CONFIRMADO.** Referência (Terminal normal, depuração): 7 passos > 10 ms, pior 73,419 ms. Para a validação, rode `tests/soak/run_sp1_release` (mede o release; baixa ~1,28 GB para uma pasta fora do projeto) e cole as duas saídas. A fase só fecha com o critério cumprido em release ou com decisão sua registrada.
+- **Pico de 10 ms (SP1), no Mac:** em release, 2 de 3 execuções feitas e aprovadas pela régua da DEC-113 (0 passos > 10 ms). Falta a terceira: `RUNS=1 tests/soak/run_sp1_release` (não baixa de novo). Em depuração houve picos (13, 7, 5, 7, 0 e 1 passos > 10 ms).
 
 ## Como terminar
 - Tudo certo: responda **"LW-030 assinada"** (a checklist de 11 itens acima, marcados).

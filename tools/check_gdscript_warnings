@@ -1,0 +1,32 @@
+#!/bin/sh
+# Falha se algum script do projeto (src, tests, tools) gerar AVISO de compilação do GDScript.
+# Sem o depurador ligado o Godot não imprime esses avisos (por isso execuções sem janela e o GUT
+# nunca os mostravam); aqui o depurador local é ligado com --debug. Não silencia nada: o AGENTS.md
+# proíbe @warning_ignore. Uso: tools/check_gdscript_warnings [pasta ...]  (padrão: src, tests, tools).
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+output=$(mktemp "${TMPDIR:-/tmp}/lwwarn.XXXXXX") || exit 1
+trap 'rm -f "$output"' EXIT HUP INT TERM
+if [ "$#" -gt 0 ]; then
+    "$godot_bin" --headless --debug --path "$project_dir" -s res://tools/check_gdscript_warnings.gd -- "$@" > "$output" 2>&1
+else
+    "$godot_bin" --headless --debug --path "$project_dir" -s res://tools/check_gdscript_warnings.gd > "$output" 2>&1
+fi
+status=$?
+verified=$(grep -a 'SCRIPTS_VERIFICADOS' "$output" | head -1)
+if [ "$status" -ne 0 ] || [ -z "$verified" ]; then
+    echo "FALHA: a varredura de avisos do GDScript não terminou direito (código $status)."; cat "$output"; exit 1
+fi
+# Cada aviso é "WARNING: <mensagem>" seguido de "at: GDScript::reload (<arquivo>:<linha>)".
+warnings=$(sed 's/\x1b\[[0-9;]*m//g' "$output" | awk '/^WARNING:/ { msg = $0; sub(/^WARNING: /, "", msg); next } /at: GDScript::reload/ { loc = $0; sub(/.*\(/, "", loc); sub(/\)[[:space:]]*$/, "", loc); print loc ": " msg }' | sort -u)
+errors=$(grep -aE '^(SCRIPT ERROR|Parse Error)' "$output" || true)
+if [ -n "$warnings" ] || [ -n "$errors" ]; then
+    printf 'FALHA: avisos de compilação do GDScript encontrados (o projeto exige zero; AGENTS.md 4.3):\n%s\n%s\n' "$warnings" "$errors"
+    exit 1
+fi
+echo "GDScript: sem avisos de compilação ($verified)."

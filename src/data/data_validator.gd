@@ -95,7 +95,9 @@ func _convert(value: Variant, type: DataSchema.FieldType) -> Variant:
 		DataSchema.FieldType.BOOL:
 			return value if value_type == TYPE_BOOL else null
 		DataSchema.FieldType.FLOAT:
-			return float(value) if value_type == TYPE_INT or value_type == TYPE_FLOAT else null
+			if value_type == TYPE_INT or value_type == TYPE_FLOAT:
+				return float(value)
+			return null
 		DataSchema.FieldType.INT:
 			if value_type == TYPE_INT:
 				return value
@@ -121,10 +123,10 @@ func _check_references(bundle: DataBundle, schema: DataSchema, schemas: Array[Da
 		for index: int in records.size():
 			var record: Dictionary = records[index]
 			# Variant: valor ainda cru se a conversão falhou antes.
-			var reference: Variant = record.get(field.name)
-			if typeof(reference) == TYPE_STRING and not target_ids.has(reference):
+			var reference_value: Variant = record.get(field.name)
+			if typeof(reference_value) == TYPE_STRING and not target_ids.has(reference_value):
 				var item: String = str(record.get(ID_FIELD, "#%d" % index))
-				bundle.add_issue(file_path, item, field.name, "referência a id inexistente '%s' na tabela '%s'" % [reference, field.ref_table])
+				bundle.add_issue(file_path, item, field.name, "referência a id inexistente '%s' na tabela '%s'" % [reference_value, field.ref_table])
 
 
 func _declares_table(schemas: Array[DataSchema], table_id: String) -> bool:

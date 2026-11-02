@@ -24,6 +24,7 @@ A Fase 0 entregou a base técnica do jogo: um motor de simulação que roda sem 
 - Arquivos protegidos: o registro dos autoloads e a cena inicial exigiram parar e pedir autorização (LW-020/021).
 - Testes frágeis: testes que contavam itens da pasta editável quebraram com uma edição legítima do Codex; corrigido com a pasta congelada `tests/fixtures/data/frozen/`.
 - Medição em ambiente compartilhado: o pico de 10 ms do SP1 oscilou entre execuções idênticas (ruído do contêiner); por isso o critério segue aberto até a medição no Mac.
+- **Erro meu nos relatórios (achado em 02/11/2026):** os relatórios de várias tarefas diziam "sem avisos de GDScript". Estava errado: o Godot só imprime avisos de compilação com o depurador ligado, e minhas execuções sem janela não os mostravam. O editor de Arthur mostrou 5 (divisão inteira em `sim_clock.gd`); a varredura completa achou 27. Todos corrigidos sem `@warning_ignore`; a divisão inteira, que é intencional (minutos inteiros), virou `IntMath.floor_div`; o `check_all` agora falha se houver qualquer aviso (`tools/check_gdscript_warnings`, com teste). O hash do mundo não mudou.
 - Defeito achado por teste: o `World.teardown()` chamava módulos que nunca passaram por `setup()`. Corrigido.
 - **O que a revisão externa achou:** **A PREENCHER (LW-029).**
 
@@ -44,7 +45,7 @@ A Fase 0 entregou a base técnica do jogo: um motor de simulação que roda sem 
 |---|---|---|
 | 1 | `check_all` verde em pasta nova, seguindo só o README | Verde na nuvem. **AGUARDANDO RESULTADO** no Mac (LW-030) |
 | 2 | Mesma semente, mesmo hash em 3 execuções; sementes diferentes, hashes diferentes | Atendido (testes e SP1) |
-| 3 | SP1 dentro do orçamento | Média 0,14 ms/passo (editor) e 0,11 ms (release) na nuvem; ~0,108 ms no Mac. **Pico de 10 ms: NÃO CONFIRMADO.** Seis medições do Mac (depuração): 13, 7, 5, 7, 0 e 1 passos > 10 ms (piores: 88,216; 76,279; 48,514; 73,419; 1,266; 10,959 ms). Hash idêntico ao da nuvem. Diferença entre execuções: "provavelmente carga ou temperatura, a confirmar". Pela régua da DEC-113 só a execução A passa (informativo, depuração). **AGUARDANDO RESULTADO** do build release no Mac |
+| 3 | SP1 dentro do orçamento | Média 0,075 ms/passo em release no Mac (0,108 ms em depuração). **Pico de 10 ms: PARCIAL.** Release no Mac: 2 execuções, 0 passos > 3 ms, 0 > 10 ms, máximo 2,857 ms, hash igual; passa nos 5 itens da régua (DEC-113, acumulado), **mas a régua exige 3 execuções: AGUARDANDO RESULTADO da terceira.** Depuração no Mac: 13, 7, 5, 7, 0 e 1 passos > 10 ms ("provavelmente carga ou temperatura, a confirmar") |
 | 4 | Erro proposital em JSON apontado com arquivo e campo; `check_all` o detecta | Atendido; teste do Codex no Mac recusou o dado ruim com mensagem clara |
 | 5 | Salvamento: ida e volta com hash idêntico; adulterado é rejeitado; falha simulada preserva o save | Atendido |
 | 6 | `check_architecture` reprova as violações propositais e aprova o projeto real | Atendido (7 regras) |
@@ -66,8 +67,8 @@ Veja a retrospectiva (4.2). Além disso: **A PREENCHER** com os achados da LW-02
 **Condições abertas — AGUARDANDO RESULTADO**
 | Condição | Quem | Como confirmar |
 |---|---|---|
-| Pico de 10 ms (SP1) no Mac | Arthur / Codex | **NÃO CONFIRMADO** (seis medições de depuração, ver 0004). **AGUARDANDO RESULTADO:** `tests/soak/run_sp1_release` (release, com controle, 2 execuções), avaliado pela régua da DEC-113 (definir antes: contar "por execução" ou "acumulado nas 3") |
-| Cena inicial com F5 | Arthur | Texto no canto superior esquerdo, hora avançando, Espaço pausa e continua |
+| Pico de 10 ms (SP1) no Mac, release | Arthur | 2 de 3 execuções feitas e aprovadas pela régua. **AGUARDANDO RESULTADO** da 3ª: `git pull` e `RUNS=1 tests/soak/run_sp1_release`, mesmas condições |
+| Cena inicial com F5 | Arthur | Janela abriu com piso, cubo, céu, sol e o texto; data lida 00:13 (avançou). **AGUARDANDO RESULTADO:** confirmação explícita de que a data segue avançando e de que o Espaço pausa e continua; aba Erros do editor sem avisos após `git pull` |
 | Teste do Codex (nova rodada do `check_all` no Mac após a correção da pasta congelada) | Arthur / Codex | `check_all` verde depois de uma edição legítima dos dados |
 
 **Outras pendências**

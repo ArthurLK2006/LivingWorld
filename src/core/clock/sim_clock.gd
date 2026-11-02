@@ -53,7 +53,7 @@ func steps_for_frame(frame_delta_ms: int) -> int:
 	if _is_paused:
 		return 0
 	_pending_scaled_ms += frame_delta_ms * _speed
-	var steps: int = _pending_scaled_ms / _real_ms_per_minute
+	var steps: int = IntMath.floor_div(_pending_scaled_ms, _real_ms_per_minute)
 	_pending_scaled_ms -= steps * _real_ms_per_minute
 	return steps
 
@@ -87,17 +87,17 @@ func minute_of_hour() -> int:
 
 
 func hour_of_day() -> int:
-	return (_total_minutes / MINUTES_PER_HOUR) % HOURS_PER_DAY
+	return IntMath.floor_div(_total_minutes, MINUTES_PER_HOUR) % HOURS_PER_DAY
 
 
 ## Dia dentro do ano, começando em 1.
 func day_of_year() -> int:
-	return (_total_minutes / MINUTES_PER_DAY) % _days_per_year + 1
+	return IntMath.floor_div(_total_minutes, MINUTES_PER_DAY) % _days_per_year + 1
 
 
 ## Ano, começando em 1.
 func year() -> int:
-	return (_total_minutes / MINUTES_PER_DAY) / _days_per_year + 1
+	return IntMath.floor_div(IntMath.floor_div(_total_minutes, MINUTES_PER_DAY), _days_per_year) + 1
 
 
 func serialize() -> Dictionary:

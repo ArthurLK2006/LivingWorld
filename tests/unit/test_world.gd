@@ -14,9 +14,9 @@ func _build_world(world_seed: int = 5) -> World:
 	return world
 
 
-func _register_all(world: World, log: Array[String], modules: Array[FakeModule]) -> void:
+func _register_all(world: World, call_log: Array[String], modules: Array[FakeModule]) -> void:
 	for module_name: String in MODULE_NAMES:
-		var module: FakeModule = FakeModule.new(module_name, log)
+		var module: FakeModule = FakeModule.new(module_name, call_log)
 		modules.append(module)
 		assert_true(world.register_module(module_name, module).ok)
 
@@ -62,9 +62,9 @@ func test_teardown_before_setup_does_not_touch_modules() -> void:
 
 
 func test_registration_rejects_duplicates_empty_names_and_late_registration() -> void:
-	var duplicate: Result = _world.register_module("alpha", FakeModule.new("again", _log))
-	assert_false(duplicate.ok)
-	assert_eq(duplicate.code, "WORLD_DUPLICATE_MODULE")
+	var duplicate_result: Result = _world.register_module("alpha", FakeModule.new("again", _log))
+	assert_false(duplicate_result.ok)
+	assert_eq(duplicate_result.code, "WORLD_DUPLICATE_MODULE")
 	assert_eq(_world.register_module("", FakeModule.new("x", _log)).code, "WORLD_INVALID_MODULE")
 	assert_eq(_world.register_module("nullable", null).code, "WORLD_INVALID_MODULE")
 	_world.setup()
