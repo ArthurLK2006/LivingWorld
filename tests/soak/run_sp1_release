@@ -8,7 +8,9 @@
 #  2. Cria na pasta de trabalho uma CÓPIA do projeto (git archive HEAD: só arquivos versionados),
 #     com o spike SP1 como cena principal. O seu projeto não é alterado.
 #  3. Exporta o pacote de recursos (.pck) com o Godot do editor (sem modelos de exportação).
-#  4. Roda o SP1 com o binário de release (--main-pack), RUNS vezes, e compara os picos.
+#  4. Copia o binário de release para a pasta de execução, coloca o .pck ao lado com o mesmo nome
+#     (é assim que um binário de release acha o jogo; os modelos de release não aceitam
+#     --main-pack) e roda o SP1 RUNS vezes, comparando os picos.
 # NADA é gravado em ~/Library, em configuração global do Godot, nem dentro do projeto.
 #
 # USO:   tests/soak/run_sp1_release [pasta_de_trabalho]        (padrão: $HOME/lw-release-probe)
@@ -100,11 +102,16 @@ rm -f "$WORK/sp1.pck"
 echo "Pacote criado: $WORK/sp1.pck"
 
 say "4/4 Rodando o SP1 em release ($RUNS vez(es), $DAYS dias, 1.000 NPCs, com controle)"
+mkdir -p "$WORK/execucao"
+cp "$RELEASE_BIN" "$WORK/execucao/sp1_release"
+chmod +x "$WORK/execucao/sp1_release"
+cp "$WORK/sp1.pck" "$WORK/execucao/sp1_release.pck"
+command -v codesign > /dev/null && codesign --force --sign - "$WORK/execucao/sp1_release" 2> /dev/null || true
 n=1
 while [ "$n" -le "$RUNS" ]; do
     out=$WORK/release_run_$n.txt
     echo "--- execução $n (cerca de 2 minutos) -> $out"
-    "$RELEASE_BIN" --headless --main-pack "$WORK/sp1.pck" -- --days "$DAYS" --top "$TOP" --control > "$out" 2>&1 || fail "A execução $n terminou com erro; veja $out"
+    "$WORK/execucao/sp1_release" --headless -- --days "$DAYS" --top "$TOP" --control > "$out" 2>&1 || { cat "$out" >&2; fail "A execução $n terminou com erro (saída acima). Se a mensagem disser que não achou o jogo ou o pacote, me avise."; }
     grep -aE "^Motor:|Tempo por passo|^Passos acima|^Tempo total|^state_hash|^Engasgos|^Conclusão do controle" "$out"
     n=$((n + 1))
 done
