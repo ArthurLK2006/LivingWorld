@@ -2,7 +2,7 @@
 set -u
 root=${1:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}
 failed=0
-for dir in src/core src/data src/sim; do
+for dir in src/core src/data src/sim src/app src/persistence; do
     if [ ! -d "$root/$dir" ]; then echo "AUSENTE: $dir"; failed=1; fi
 done
 if [ "$failed" -ne 0 ]; then exit 1; fi
@@ -20,10 +20,45 @@ scan() {
         failed=1
     fi
 }
-scan 'simulação usa apresentação' '(^|[^A-Za-z0-9_])(Node[[:alnum:]_]*|Camera[[:alnum:]_]*|Control|get_node)([^A-Za-z0-9_]|$)|\$|res://scenes|src/presentation' "$root/src/sim" "$root/src/core" "$root/src/data"
-scan 'aleatoriedade fora do core/rng' '(^|[^A-Za-z0-9_])(randf|randi|randomize)[[:space:]]*\(|RandomNumberGenerator\.new[[:space:]]*\(' --glob '!**/core/rng/**' "$root/src"
-scan 'tempo do sistema na simulação' '(Time|OS)\.get_' "$root/src/sim"
-scan 'estado estático mutável' 'static[[:space:]]+var\b' "$root/src/sim"
+# Igual a `scan`, mas ignora as linhas ("arquivo:linha:texto") que casam com o ERE `allowed`. Serve às
+# exceções declaradas, sempre estreitas (um arquivo e um uso), nunca a uma pasta inteira (LW-029A).
+scan_allowing() {
+    label=$1
+    pattern=$2
+    allowed=$3
+    shift 3
+    result=$(rg -n --no-heading --glob '*.gd' "$pattern" "$@" 2>&1)
+    code=$?
+    if [ "$code" -eq 0 ]; then
+        result=$(printf '%s\n' "$result" | grep -vE "$allowed")
+        if [ -n "$result" ]; then
+            printf '%s\n%s\n' "VIOLAÇÃO: $label" "$result"
+            failed=1
+        fi
+    elif [ "$code" -ne 1 ]; then
+        printf '%s\n%s\n' "ERRO: busca de $label falhou" "$result"
+        failed=1
+    fi
+}
+# src/app fica de fora desta regra por enquanto: GameApp e SimulationHost estendem Node de propósito, e o
+# comentário "sem Node" de simulation_runner.gd daria falso positivo (proposta de desvio da LW-029A).
+scan 'simulação usa apresentação' '(^|[^A-Za-z0-9_])(Node[[:alnum:]_]*|Camera[[:alnum:]_]*|Control|get_node)([^A-Za-z0-9_]|$)|\$|res://scenes|src/presentation' "$root/src/sim" "$root/src/core" "$root/src/data" "$root/src/persistence"
+# Funções globais e métodos de sorteio que não passam pelo WorldRng. `seed(`, instâncias criadas por
+# ClassDB e fontes do sistema não são cobertos (busca de texto; ver docs/backlog.md).
+scan 'aleatoriedade fora do core/rng' '(^|[^A-Za-z0-9_])(randf|randi|randomize|randf_range|randi_range|randfn|rand_from_seed)[[:space:]]*\(|\.(shuffle|pick_random)[[:space:]]*\(|RandomNumberGenerator\.new[[:space:]]*\(' --glob '!**/core/rng/**' "$root/src"
+# O código da simulação mora em core, app, data, persistence e sim (src/sim só tem README por enquanto).
+# Única exceção: o scheduler.gd lê o relógio do sistema para MEDIR microssegundos; isso nunca entra no estado.
+scan_allowing 'tempo do sistema na simulação' '(Time|OS)\.get_' 'core/scheduler/scheduler\.gd:[0-9]+:.*Time\.get_ticks_usec' "$root/src/core" "$root/src/app" "$root/src/data" "$root/src/persistence" "$root/src/sim"
+scan 'estado estático mutável' 'static[[:space:]]+var\b' "$root/src/core" "$root/src/app" "$root/src/data" "$root/src/persistence" "$root/src/sim"
+# Só core (dono do relógio) e app (SimulationHost e SimulationRunner) avançam, pausam ou aceleram o
+# relógio e mandam entregar eventos; módulos recebem o relógio só para LER (SimContext). Conta a CHAMADA
+# (ponto antes do nome): declarar um método com o mesmo nome em outro módulo não é violação.
+for dir in "$root"/src/*/; do
+    case "$dir" in
+        "$root"/src/core/ | "$root"/src/app/) continue ;;
+    esac
+    scan 'relógio ou barramento mexido fora de core e app' '\.(advance_step|set_paused|set_speed|dispatch)[[:space:]]*\(' "$dir"
+done
 for dir in "$root"/src/* "$root"/src/sim/* "$root"/src/presentation/*; do
     [ -d "$dir" ] || continue
     if [ ! -f "$dir/README.md" ]; then
@@ -56,4 +91,4 @@ if [ -f "$project_file" ]; then
     fi
 fi
 if [ "$failed" -ne 0 ]; then exit 1; fi
-echo 'Arquitetura: sete verificações aprovadas.'
+echo 'Arquitetura: oito verificações aprovadas.'
