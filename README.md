@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| **Estado atual** | **Fase 0 (fundação técnica) em fechamento.** Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`. **Ainda não há jogo jogável.** Veja a seção 5 |
+| **Estado atual** | **Fase 0 (fundação técnica) concluída nas tarefas (31 de 31); falta só a tag `fase-0-concluida`, que depende da autorização de Arthur.** Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`. **Ainda não há jogo jogável.** Veja a seção 5 |
 | **Versão da documentação** | 0.3 (revisão final de 01/11/2026, horário de Brasília); seções 5, 6.1 e 8 a 10 atualizadas em 02/11/2026 |
 | **Responsável** | Arthur (dono do produto; único que aprova decisões) |
 | **Licença** | Ainda não definida |
@@ -130,7 +130,7 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 
 ## 5. Estado atual do desenvolvimento
 
-**Data da informação:** 02/11/2026 (Brasília). Fonte do detalhe: [`docs/ROADMAP_STATUS.md`](docs/ROADMAP_STATUS.md).
+**Data da informação:** 03/11/2026 (Brasília). Fonte do detalhe: [`docs/ROADMAP_STATUS.md`](docs/ROADMAP_STATUS.md).
 
 ### 5.1 O que existe hoje
 
@@ -141,8 +141,9 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 | Núcleo da simulação (`src/core`) | Relógio, sorteios repetíveis, IDs, eventos, agendador, mundo e hash de estado, todos testados e rodando **sem janela** |
 | Dados (`src/data`) | Leitor e validador de arquivos JSON |
 | Salvamento (`src/persistence`) | Salvar e carregar com checksum, versões, migração, backups e recuperação |
-| Testes e verificação | `tools/check_all` (arquitetura, dados, testes automáticos, cena e simulação). Estado atual: verde |
+| Testes e verificação | `tools/check_all` (arquitetura em 8 verificações, dados, testes automáticos, cena e simulação). Verificado em 03/11/2026 no commit `4efa0a6`: **verde no Mac e na nuvem, com 154 testes**. No Windows (que não é a plataforma de referência) terminou vermelho por três linhas das próprias ferramentas de verificação; detalhes em [`docs/fase-0/LW-031-relatorio-de-fechamento.md`](docs/fase-0/LW-031-relatorio-de-fechamento.md) |
 | Medições (spikes) | Núcleo (SP1), dados (SP3) e salvamento (SP5) registrados em `docs/decisions/` |
+| Revisão e validação da Fase 0 | Revisão arquitetural aceita (aprovada com ajustes, 0 achados críticos) e validação assinada por Arthur com ressalvas, ambas em 03/11/2026 |
 
 ### 5.2 O que **não** existe ainda
 
@@ -159,14 +160,14 @@ O roadmap tem **6 fases e 192 tarefas** (`LW-001` a `LW-192`).
 
 | Fase | Nome | Tarefas | Situação |
 |---|---|---|---|
-| 0 | Fundação técnica | 31 | **Em fechamento** (28 de 31 concluídas ou dispensadas; faltam a revisão externa, a validação do dono e o fechamento) |
-| 1 | Primeiro mundo jogável | 23 | Não iniciada |
+| 0 | Fundação técnica | 31 | **Concluída nas tarefas** (31 de 31 concluídas ou dispensadas); falta só a tag `fase-0-concluida`, que depende da autorização de Arthur |
+| 1 | Primeiro mundo jogável | 23 | **Próxima fase.** Não iniciada |
 | 2 | Primeira sociedade | 32 | Não iniciada |
 | 3 | Economia | 30 | Não iniciada |
 | 4 | Facções e conflitos | 29 | Não iniciada |
 | 5 | Integração e protótipo | 47 | Não iniciada |
 
-A Fase 1 só começa depois da revisão arquitetural (LW-029), da validação do dono (LW-030) e do fechamento (LW-031).
+A Fase 1 **não foi iniciada**: só começa quando Arthur escolher a primeira tarefa, depois de aprovar o fechamento da Fase 0 (LW-031). O avanço total do projeto é de 31 de 192 tarefas (16,1%).
 
 > O acompanhamento é mantido em `docs/ROADMAP_STATUS.md`. Esta seção só deve conter o que foi verificado.
 
