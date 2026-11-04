@@ -1,8 +1,8 @@
 # Status do roadmap — Living World
 
-Atualizado em: 03/11/2026 (horário de Brasília) · Fase 0 — Fundação técnica: 31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` está pendente. Próxima fase: 1, **não iniciada**.
+Atualizado em: 04/11/2026 (horário de Brasília) · Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026). Próxima fase: 1, **não iniciada**.
 
-Fase 0: **31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e 2 dispensadas (LW-004 e LW-005). Isso decorre de Arthur ter aceitado a revisão da LW-029 e assinado a LW-030 (com ressalvas) em 03/11/2026; para a própria LW-031, vale a partir da aprovação de Arthur. Pelo roadmap (0.J), a fase só é dada como concluída quando a tag `fase-0-concluida` estiver no remoto; a tag **não foi criada** e depende da autorização de Arthur. **Avanço total do projeto: 31 de 192 tarefas (16,1%).** A LW-029A é uma tarefa extra, fora das 31, e não entra na conta.
+Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e 2 dispensadas (LW-004 e LW-005). Arthur aceitou a revisão da LW-029, assinou a LW-030 (com ressalvas) e aprovou a LW-031, todas em 03/11/2026. Pelo roadmap (0.J), a fase é dada como concluída quando a tag `fase-0-concluida` estiver no remoto: ela foi criada e enviada em 03/11/2026, apontando para `7ae6e8e` (ponta de `main` no GitHub), com autorização de Arthur; é uma tag **leve** (não anotada). **Avanço total do projeto: 31 de 192 tarefas (16,1%).** A LW-029A é uma tarefa extra, fora das 31, e não entra na conta.
 
 ## Critérios de cálculo
 
@@ -27,7 +27,7 @@ Fase 0: **31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e
 - **LW-030: assinada por Arthur em 03/11/2026, com duas ressalvas.** (a) O README só cobre macOS; no Windows Arthur seguiu um guia provisório, então o item "só o README" **não foi provado no Windows**. No Mac, Arthur informou em 03/11/2026 que seguiu comandos recebidos no chat, e não só o README; portanto "só o README" **não está confirmado em nenhum dos dois sistemas**. (b) No desktop Windows (Git Bash, Godot 4.7.2, ramo `lw-029a-correcoes-revisao`, commit `4efa0a6`) o `check_all` terminou **VERMELHO por três linhas, todas de ferramenta de verificação**: (1) `VIOLAÇÃO: tempo do sistema na simulação` do `tools/check_architecture` em `src/core/scheduler/scheduler.gd:37`, que é a exceção declarada (**hipótese não verificada:** o ripgrep escreve o caminho com `\` no Windows e a regra da exceção espera `/`; problema novo, vindo da LW-029A); (2) `FALHA: Time.get_ticks_usec no scheduler.gd é a exceção deveria passar` em `tests/test_check_architecture.sh`, que usa `set -e` e para ali, então os casos seguintes dele não rodaram no Windows; (3) `FALHA: sem rg...` em `tests/test_check_prerequisites.sh` (já conhecida; também para ali). No Windows os testes do GUT passaram: 154 de 154 (Scripts 21, Asserts 3292), a varredura de avisos do GDScript ficou limpa (60 scripts) e o teste de quebra pegou a falha (153 aprovados e 1 falho). A referência continua sendo o Mac (DEC-015 e DEC-016); suporte oficial ao Windows exigiria uma entrada nova em `DECISIONS.md`.
 - `check_all` em 03/11/2026 no commit `4efa0a6`: **Mac VERDE** (clone novo; 154 de 154, Scripts 21, Asserts 3292, "oito verificações", "LW-029A: 27 violações detectadas e 17 casos aceitos", 6 casos de pré-requisitos, avisos do GDScript limpos em 60 scripts, 1 aviso "Deprecated" do GUT); **nuvem VERDE** (mesmos números). Os casos de `tests/test_check_architecture.sh` que pararam no Windows rodaram inteiros no Mac. `run_sim --days 30 --seed 1`: hash `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, igual no Mac, no Windows e na nuvem.
 - LW-029 (revisão): veredito APROVADO COM AJUSTES, 0 críticos, 6 importantes, 13 menores; aceita por Arthur em 03/11/2026. LW-029A (extra) corrigiu I1, I2, I3 e I6. **LW-029B (M1, M3 e M7) não foi feita.** O restante é dívida registrada em `docs/backlog.md` (I4 e I5 como critérios das tarefas donas; menores sem dono; DOC que exige pedido de Arthur; portabilidade Windows).
-- DEC-089: aprovada só quanto ao serviço (GitHub); a visibilidade do repositório segue **pendente**. O repositório está público (verificado em 02/11/2026).
+- DEC-089: aprovada só quanto ao serviço (GitHub). A visibilidade do repositório foi decidida na **DEC-114** (nova, 04/11/2026): **público (por ora)**, reversível. O repositório esteve privado por um período entre 03/11 e 04/11/2026 e voltou a público em 04/11/2026, por decisão de Arthur.
 - Aviso "Deprecated" do GUT (`wait_frames` em `tests/unit/test_app_nodes.gd:90`): presente no Mac e na nuvem, sem efeito nos resultados; registrado no backlog.
 
 ## Tarefas da Fase 0
@@ -64,7 +64,7 @@ Fase 0: **31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e
 | LW-028 | SPIKE | Salvamento | concluída | Regra automática de Arthur. 1.000 NPCs: salvar 2,3 ms, carregar 0,9 ms, hash idêntico, falha simulada preserva o save (ver decisions/0005). Plano B (thread) não necessário agora |
 | LW-029 | REV | Revisão arquitetural | concluída | Parecer em `docs/fase-0/LW-029-parecer.md`: APROVADO COM AJUSTES, 0 críticos, 6 importantes, 13 menores. **Aceita por Arthur em 03/11/2026.** Achados I1, I2, I3 e I6 corrigidos na LW-029A; o resto virou dívida no `docs/backlog.md` |
 | LW-030 | VAL | Validação do usuário | concluída | **Assinada por Arthur em 03/11/2026, com ressalvas** (ver "Pendências e ressalvas"). Roteiro em `docs/fase-0/LW-030-resumo-para-arthur.md` |
-| LW-031 | DOC | Fechamento da fase | concluída | Relatório final em `docs/fase-0/LW-031-relatorio-de-fechamento.md` (o rascunho foi mantido). Vale a partir da aprovação de Arthur; a tag `fase-0-concluida` **não foi criada** |
+| LW-031 | DOC | Fechamento da fase | concluída | Relatório final em `docs/fase-0/LW-031-relatorio-de-fechamento.md` (o rascunho foi mantido). **Aprovada por Arthur em 03/11/2026**; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e` |
 
 ## Tarefas extras (fora das 31; não entram na conta)
 
@@ -79,7 +79,7 @@ Fase 0: **31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e
 |---|---|
 | REV Fase 0 — LW-029 | aprovado por Arthur em 03/11/2026 (0 críticos) |
 | VAL Fase 0 — LW-030 | assinado por Arthur em 03/11/2026, com ressalvas |
-| Tag fase-0-concluida | pendente (não criada; depende da autorização de Arthur) |
+| Tag fase-0-concluida | criada e no remoto, em `7ae6e8e`, 03/11/2026, com autorização de Arthur (tag leve, não anotada) |
 
 ## Escopo do protótipo
 

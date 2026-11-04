@@ -199,6 +199,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-088 | Controle de versão com Git e cópia remota | PROPOSTA |
 | DEC-089 | Hospedagem do repositório Git | APROVADA (somente o serviço) |
 | DEC-113 | Régua de pico do SP1 (LW-023): release decide, por taxa e com laço de controle | APROVADA (somente como régua de medição da LW-023; redação na arquitetura segue PROPOSTA) |
+| DEC-114 | Visibilidade do repositório | APROVADA (reversível) |
 
 **ÁREA 10 — PROCESSO, ESCOPO E MÉTODO DE TRABALHO**
 
@@ -1344,11 +1345,11 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|
 | **Status** | APROVADA (somente o serviço) |
 | **Contexto** | Escolha do serviço onde fica a cópia remota. |
-| **Decisão** | O repositório remoto fica no **GitHub** e **já existe**: não há tarefa de recriação. A **visibilidade (pública ou privada) permanece decisão do proprietário [PENDENTE]**; recomendação (não aprovada): privada, porque o repositório conterá o GDD e as decisões do produto. Enquanto a visibilidade não for decidida, nenhum agente faz push (AGENTS 10). |
+| **Decisão** | O repositório remoto fica no **GitHub** e **já existe**: não há tarefa de recriação. A **visibilidade (pública ou privada) permanece decisão do proprietário**; decidida na **DEC-114** (04/11/2026): público, por ora, reversível. Enquanto a visibilidade não for decidida, nenhum agente faz push (AGENTS 10). |
 | **Justificativa** | Diretriz 14 de Arthur (serviço e existência do repositório). |
 | **Consequências** | A visibilidade não bloqueia a primeira implementação: o Codex trabalha na pasta local do projeto. Mudar a visibilidade é ação do dono nas configurações do GitHub. |
 | **Data / versão** | TA 0.1 cap. 26.4 · RM 0.1 LW-001 · registrada em 01/11/2026 · mensagem de Arthur de 01/11/2026 15:32 (diretriz 14) |
-| **Relações** | DEC-088 |
+| **Relações** | DEC-088, DEC-114 |
 
 ---
 
@@ -1646,11 +1647,25 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|
 | **Status** | APROVADA (somente como régua de medição da LW-023, a valer antes de medir o release). A redação foi incorporada à arquitetura (20.1 e 26.3) e ao item da LW-023 no roadmap em 02/11/2026, com autorização de Arthur, depois que o release passou na régua nas 3 execuções; o critério 3 da seção 0.F do roadmap não foi alterado. |
 | **Contexto** | O critério original ("sem pico acima de ~10 ms", arquitetura 20.1 e 26.3, roadmap LW-023) não diz a que build se refere e é sensível à sorte: o mesmo código e o mesmo hash deram de 0 a 14 passos acima de 10 ms em execuções iguais, e um laço de controle sem o código do jogo também teve passos acima de 10 ms. |
-| **Decisão** | Medir em **build de release**, no hardware de referência, em **3 execuções completas** (1 ano, 1.000 NPCs, mesma semente), cada uma com o **laço de controle** (`run_sp1 --control`). Aprovado quando, em todas: (1) hash idêntico; (2) média por passo ≤ 1 ms e p99,9 ≤ 3 ms; (3) nenhum passo acima de 50 ms; (4) passos acima de 10 ms: no máximo 1 por minuto de execução contínua, ou não mais que a taxa do controle + 1 por minuto, **contado de forma acumulada nas execuções do release: a soma dos passos acima de 10 ms dividida pelo total de minutos medidos** (decisão de Arthur de 02/11/2026, registrada antes de analisar o release; nenhum número muda); (5) os passos mais lentos não se repetem nos mesmos passos entre execuções. Medições em depuração são informativas. Texto completo e aplicação às seis medições do Mac em `docs/decisions/0006-proposta-criterio-de-pico.md`. |
+| **Decisão** | Medir em **build de release**, no hardware de referência, em **3 execuções completas** (1 ano, 1.000 NPCs, mesma semente), cada uma com o **laço de controle** (`run_sp1 --control`). Aprovado quando, em todas: (1) hash idêntico; (2) média por passo ≤ 1 ms e p99,9 ≤ 3 ms; (3) nenhum passo acima de 50 ms; (4) passos acima de 10 ms: no máximo 1 por minuto de execução contínua, ou não mais que a taxa do controle + 1 por minuto, **contado de forma acumulada nas execuções do release: a soma dos passos acima de 10 ms dividida pelo total de minutos medidos** (decisão de Arthur de 02/11/2026, registrada antes de analisar o release; nenhum número muda); (5) os passos acima de 3 ms não se repetem no mesmo passo em 2 ou mais das 3 execuções; passos periódicos conhecidos do módulo de teste são classificados à parte; se não houver nenhum passo acima de 3 ms, o item vale por ausência, e isso é registrado assim (redação da LW-031A, 04/11/2026; nenhum número muda). A régua também registra a taxa de passos acima de 10 ms **por milhão de passos**, além da taxa por minuto (acréscimo da LW-031A; não substitui a taxa por minuto do item 4). Medições em depuração são informativas. Texto completo e aplicação às seis medições do Mac em `docs/decisions/0006-proposta-criterio-de-pico.md`. |
 | **Justificativa** | Separa ruído da máquina de custo do código, define o build que decide e mantém um limite duro que protege o jogador. Aprovada antes de medir o release para os números não serem ajustados ao resultado. |
 | **Consequências** | Se o release falhar, investiga-se a causa; **os números não são ajustados para caber**. Ponto em aberto resolvido por Arthur em 02/11/2026, antes de analisar o release: o item 4 vale de forma **acumulada** (soma dos passos acima de 10 ms ÷ total de minutos medidos), sem mudar nenhum limite. Os valores numéricos são hipóteses [HIP] calibradas só pelas medições de depuração e da nuvem. |
-| **Data / versão** | Proposta de 02/11/2026 · aprovada por Arthur em mensagem de 02/11/2026 |
+| **Data / versão** | Proposta de 02/11/2026 · aprovada por Arthur em mensagem de 02/11/2026 · item 5 reescrito e taxa por milhão de passos acrescentada na LW-031A, com autorização de Arthur (04/11/2026) |
 | **Relações** | DEC-078, DEC-080, DEC-081 |
+
+---
+
+### DEC-114 — Visibilidade do repositório
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA |
+| **Contexto** | A DEC-089 aprovou só o serviço (GitHub); a visibilidade (pública ou privada) ficou como decisão do proprietário, pendente. |
+| **Decisão** | Visibilidade do repositório: **PÚBLICO (por ora)**. |
+| **Justificativa** | Arthur só consegue conectar uma conta do GitHub ao Claude por vez; com o repositório público, o revisor externo lê o conteúdo sem precisar de conexão própria. |
+| **Consequências** | Decisão **reversível**: a reavaliar antes de qualquer conteúdo sensível entrar no repositório, ou quando houver outro motivo para privá-lo. Vale a regra de sempre: nada de chaves, senhas ou dados pessoais no repositório (AGENTS 10.7). Complementa a DEC-089, que segue aprovada só quanto ao serviço. |
+| **Data / versão** | Decidida por Arthur em 04/11/2026 · registrada em 04/11/2026 |
+| **Relações** | DEC-089 |
 
 ---
 

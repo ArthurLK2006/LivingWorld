@@ -2061,16 +2061,17 @@ Um script (`tools/check_architecture`) falha se encontrar:
 
 | Regra | Como detecta (busca de texto) |
 |---|---|
-| Simulação usando cena | Termos como `Node`, `Node3D`, `get_node`, `$`, `Camera`, `Control`, `preload("res://scenes` em `src/sim/`, `src/core/`, `src/data/` |
-| Aleatoriedade solta | `randf(`, `randi(`, `randomize(`, `RandomNumberGenerator.new(` fora de `core/` |
-| Tempo do sistema na simulação | `Time.get_`, `OS.get_` em `src/sim/` (a simulação usa só o relógio dela) |
-| Import fora das camadas | Referências a pastas de camada superior ou a arquivos privados de outro módulo |
+| Simulação usando cena | `Node`, `Node3D`, `get_node`, `$`, `Camera`, `Camera3D`, `Control`, `res://scenes`, `src/presentation` em `src/sim/`, `src/core/`, `src/data/` e `src/persistence/` (e nos arquivos de `src/app/` que não estendem `Node`, se a opção C for aprovada) |
+| Aleatoriedade solta | `randf(`, `randi(`, `randomize(`, `randf_range(`, `randi_range(`, `randfn(`, `rand_from_seed(`, `.shuffle(`, `.pick_random(` e `RandomNumberGenerator.new(` fora de `core/rng/` |
+| Tempo do sistema na simulação | `Time.get_` e `OS.get_` em `src/core/`, `src/app/`, `src/data/`, `src/persistence/` e `src/sim/`. Única exceção: a linha com `Time.get_ticks_usec` em `src/core/scheduler/scheduler.gd` (medição que não entra no estado) |
+| Import fora das camadas | Referências a pastas de camada superior ou a arquivos privados de outro módulo. **[FUT]** regra ainda não implementada; chega na LW-036 |
 | Autoload novo | Lista de autoloads em `project.godot` diferente da permitida |
-| Variável estática mutável na simulação | Padrão `static var` em `src/sim/` |
+| Variável estática mutável | `static var` em `src/core/`, `src/app/`, `src/data/`, `src/persistence/` e `src/sim/` |
+| Relógio e barramento fora de core e app | chamadas `.advance_step(`, `.set_paused(`, `.set_speed(` e `.dispatch(` fora de `src/core/` e `src/app/` |
 | Falta de contrato | Pasta de módulo sem `README`/contrato |
 | Evento fora do catálogo | Nome de evento publicado não presente em `docs/events.md` |
 
-**[LIM]** É busca de texto, então pega o óbvio, não o sutil. Complementa, **não substitui**, a revisão.
+**[LIM]** É busca de texto, então pega o óbvio, não o sutil. Complementa, **não substitui**, a revisão. `seed(`, instâncias criadas por `ClassDB` e fontes do sistema (por exemplo `Crypto.generate_random_bytes`) não são pegas pela regra de aleatoriedade; a regra do relógio e barramento só varre `src/`.
 
 **[Nota v0.2]** A tarefa que implementa cada regra está na seção 0.15 do roadmap.
 
