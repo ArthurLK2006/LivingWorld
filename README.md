@@ -122,7 +122,7 @@ Decisões **aprovadas** por Arthur:
 | Idioma | **Código e identificadores em inglês; documentação, relatórios e interface em português** | DEC-022. O glossário português ↔ identificador está no GDD, Anexo E |
 | Repositório | **GitHub** (já existe) | DEC-089 (aprovada só quanto ao serviço). Em 02/11/2026 o repositório está **público**; manter público ou voltar a privado é decisão do proprietário, ainda **pendente** |
 
-**Ainda pendentes** (não assuma; nenhuma bloqueia o início): hardware mínimo (DEC-016; só o hardware de referência está aprovado), visibilidade do repositório (DEC-089), terreno próprio ou addon (DEC-057, LW-033), gamepad (DEC-024), telemetria (DEC-023). O framework de testes já foi decidido: GUT 9.7.1 (DEC-086, aprovada).
+**Ainda pendentes** (não assuma; nenhuma bloqueia o início): hardware mínimo (DEC-016; só o hardware de referência está aprovado), terreno próprio ou addon (DEC-057, LW-033), gamepad (DEC-024), telemetria (DEC-023). O framework de testes já foi decidido: GUT 9.7.1 (DEC-086, aprovada).
 
 A arquitetura técnica (camadas, módulos, formato de dados e de save) está **proposta** em [`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md). Em resumo: simulação totalmente separada da apresentação visual, dados de conteúdo em arquivos validados, comunicação por eventos e testes automáticos sem abrir a janela do jogo. O que dessa proposta já foi aprovado e o que não foi está em `docs/DECISIONS.md`.
 

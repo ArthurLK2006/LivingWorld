@@ -2061,7 +2061,7 @@ Um script (`tools/check_architecture`) falha se encontrar:
 
 | Regra | Como detecta (busca de texto) |
 |---|---|
-| Simulação usando cena | `Node`, `Node3D`, `get_node`, `$`, `Camera`, `Camera3D`, `Control`, `res://scenes`, `src/presentation` em `src/sim/`, `src/core/`, `src/data/` e `src/persistence/` (e nos arquivos de `src/app/` que não estendem `Node`, se a opção C for aprovada) |
+| Simulação usando cena | `Node`, `Node3D`, `get_node`, `$`, `Camera`, `Camera3D`, `Control`, `res://scenes`, `src/presentation` em `src/sim/`, `src/core/`, `src/data/` e `src/persistence/` |
 | Aleatoriedade solta | `randf(`, `randi(`, `randomize(`, `randf_range(`, `randi_range(`, `randfn(`, `rand_from_seed(`, `.shuffle(`, `.pick_random(` e `RandomNumberGenerator.new(` fora de `core/rng/` |
 | Tempo do sistema na simulação | `Time.get_` e `OS.get_` em `src/core/`, `src/app/`, `src/data/`, `src/persistence/` e `src/sim/`. Única exceção: a linha com `Time.get_ticks_usec` em `src/core/scheduler/scheduler.gd` (medição que não entra no estado) |
 | Import fora das camadas | Referências a pastas de camada superior ou a arquivos privados de outro módulo. **[FUT]** regra ainda não implementada; chega na LW-036 |
