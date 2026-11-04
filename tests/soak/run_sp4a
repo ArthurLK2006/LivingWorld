@@ -1,0 +1,72 @@
+#!/bin/sh
+# SPIKE descartável (LW-033/SP4a). Mede terreno próprio x addon, 3 níveis de qualidade e (em modo
+# completo) 3 renderizadores. O Godot só aceita --rendering-method ao ABRIR o processo (confirmado
+# por teste curto antes de escrever este script): por isso este script chama o Godot uma vez por
+# renderizador pedido, passando o resto por "-- args" para tests/soak/sp4a/sp4a_main.gd. Cada
+# processo acumula linhas no mesmo JSON (--run-id compartilhado) e a ÚLTIMA execução imprime a
+# tabela completa.
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+
+modo="rapido"
+terreno="ambos"
+qualidade="todas"
+cenario="todos"
+renderizador=""
+repeticoes="3"
+duracao="-1"
+
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --modo) modo=$2; shift 2 ;;
+        --terreno) terreno=$2; shift 2 ;;
+        --qualidade) qualidade=$2; shift 2 ;;
+        --cenario) cenario=$2; shift 2 ;;
+        --renderizador) renderizador=$2; shift 2 ;;
+        --repeticoes) repeticoes=$2; shift 2 ;;
+        --duracao) duracao=$2; shift 2 ;;
+        *) echo "ERRO: opção desconhecida: $1" >&2; exit 1 ;;
+    esac
+done
+
+run_id=$(date +%Y-%m-%d_%H%M%S)
+echo "SP4a: modo=$modo terreno=$terreno qualidade=$qualidade cenario=$cenario renderizador=${renderizador:-(automático)} run-id=$run_id"
+echo "Uma janela do Godot vai abrir para medir quadros reais. Deixe-a em primeiro plano e não mexa no PC durante a medição."
+
+run_one() {
+    render_method=$1
+    quality_override=$2
+    extra_args=""
+    if [ -n "$render_method" ]; then
+        extra_args="--rendering-method $render_method"
+    fi
+    "$godot_bin" $extra_args --path "$project_dir" res://tests/soak/sp4a/sp4a_main.tscn -- \
+        --modo "$modo" --terreno "$terreno" --qualidade "$quality_override" --cenario "$cenario" \
+        --repeticoes "$repeticoes" --duracao "$duracao" --run-id "$run_id" \
+        --acumular-em "$project_dir/tests/soak/sp4a/resultados/sp4a_$run_id.json"
+    return $?
+}
+
+status=0
+if [ "$modo" = "ver" ]; then
+    "$godot_bin" --path "$project_dir" res://tests/soak/sp4a/sp4a_main.tscn -- --modo ver
+    exit $?
+elif [ -n "$renderizador" ] && [ "$renderizador" != "todos" ]; then
+    run_one "$renderizador" "$qualidade" || status=1
+elif [ "$modo" = "completo" ] && { [ -z "$renderizador" ] || [ "$renderizador" = "todos" ]; }; then
+    run_one "" "$qualidade" || status=1
+    run_one "forward_plus" "medio" || status=1
+    run_one "mobile" "medio" || status=1
+else
+    run_one "" "$qualidade" || status=1
+fi
+
+if [ "$status" -ne 0 ]; then
+    echo "FALHA: pelo menos uma execução do Godot terminou com erro." >&2
+fi
+exit $status
