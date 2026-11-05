@@ -1,8 +1,8 @@
 # Status do roadmap — Living World
 
-Atualizado em: 04/11/2026 (horário de Brasília) · Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026). Próxima fase: 1, **não iniciada**.
+Atualizado em: 05/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: **EM ANDAMENTO** (2 de 23 tarefas concluídas, 8,7%: LW-032 e LW-033). **Avanço total do projeto: 33 de 192 tarefas (17,2%).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
 
-Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e 2 dispensadas (LW-004 e LW-005). Arthur aceitou a revisão da LW-029, assinou a LW-030 (com ressalvas) e aprovou a LW-031, todas em 03/11/2026. Pelo roadmap (0.J), a fase é dada como concluída quando a tag `fase-0-concluida` estiver no remoto: ela foi criada e enviada em 03/11/2026, apontando para `7ae6e8e` (ponta de `main` no GitHub), com autorização de Arthur; é uma tag **leve** (não anotada). **Avanço total do projeto: 31 de 192 tarefas (16,1%).** A LW-029A é uma tarefa extra, fora das 31, e não entra na conta.
+Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e 2 dispensadas (LW-004 e LW-005). Arthur aceitou a revisão da LW-029, assinou a LW-030 (com ressalvas) e aprovou a LW-031, todas em 03/11/2026. Pelo roadmap (0.J), a fase é dada como concluída quando a tag `fase-0-concluida` estiver no remoto: ela foi criada e enviada em 03/11/2026, apontando para `7ae6e8e` (ponta de `main` no GitHub), com autorização de Arthur; é uma tag **leve** (não anotada). Na data do fechamento da Fase 0, o avanço total do projeto era de 31 de 192 tarefas (16,1%); o valor atual está na primeira linha deste arquivo. A LW-029A é uma tarefa extra, fora das 31, e não entra na conta.
 
 ## Critérios de cálculo
 
@@ -29,6 +29,7 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 - LW-029 (revisão): veredito APROVADO COM AJUSTES, 0 críticos, 6 importantes, 13 menores; aceita por Arthur em 03/11/2026. LW-029A (extra) corrigiu I1, I2, I3 e I6. **LW-029B (M1, M3 e M7) não foi feita.** O restante é dívida registrada em `docs/backlog.md` (I4 e I5 como critérios das tarefas donas; menores sem dono; DOC que exige pedido de Arthur; portabilidade Windows).
 - DEC-089: aprovada só quanto ao serviço (GitHub). A visibilidade do repositório foi decidida na **DEC-114** (nova, 04/11/2026): **público (por ora)**, reversível. O repositório esteve privado por um período entre 03/11 e 04/11/2026 e voltou a público em 04/11/2026, por decisão de Arthur.
 - Aviso "Deprecated" do GUT (`wait_frames` em `tests/unit/test_app_nodes.gd:90`): presente no Mac e na nuvem, sem efeito nos resultados; registrado no backlog.
+- LW-033 (terreno): a medição oficial do Mac foi feita em modo DEBUG e com a energia do Mac incerta, então serve para comparar os terrenos, não para fixar a meta de quadros; repetir em release, com o Mac na tomada (condição e da DEC-057). A DEC-055 (tamanho do mundo) continua PENDENTE: só o terreno de teste foi decidido (DEC-118).
 
 ## Tarefas da Fase 0
 
@@ -66,12 +67,21 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 | LW-030 | VAL | Validação do usuário | concluída | **Assinada por Arthur em 03/11/2026, com ressalvas** (ver "Pendências e ressalvas"). Roteiro em `docs/fase-0/LW-030-resumo-para-arthur.md` |
 | LW-031 | DOC | Fechamento da fase | concluída | Relatório final em `docs/fase-0/LW-031-relatorio-de-fechamento.md` (o rascunho foi mantido). **Aprovada por Arthur em 03/11/2026**; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e` |
 
+## Tarefas da Fase 1
+
+| ID | Tipo | Tarefa | Estado | Observações |
+|---|---|---|---|---|
+| LW-032 | DOC | Contratos mínimos de `world`, `character` e `bridge` | concluída | Aprovada por Arthur. Está no `main` (avanço rápido); commits `32a09a0` e `821d548`, de 04/11/2026 |
+| LW-033 | SPIKE | Spike SP4a: terreno | concluída | **Aprovada por Arthur em 05/11/2026**; `main` em `930ce8e`. Caminho de terreno decidido: **terreno próprio** (DEC-057, APROVADA). Resultado em `docs/decisions/0007-spike-sp4a-terreno.md`. A medição oficial do Mac foi feita em modo DEBUG; a repetição em release fica como condição (e) da DEC-057 |
+
 ## Tarefas extras (fora das 31; não entram na conta)
 
 | ID | Tipo | Tarefa | Estado | Observações |
 |---|---|---|---|---|
 | LW-029A | TESTE | Correções da revisão LW-029 | concluída | Commit `4efa0a6` (ramo `lw-029a-correcoes-revisao`, publicado em 03/11/2026). Corrigiu I1, I2, I3 e I6: `check_architecture` com 8 verificações, módulo-canário da ordem de `Dictionary` e teste de salvar/carregar de ponta a ponta. `check_all` VERDE, 154 testes |
 | LW-029B | TESTE | Reparos M1, M3 e M7 do parecer | **não feita** | Dívida no `docs/backlog.md` (fazer cedo na Fase 1, junto da LW-036 quando tocar `src/app`) |
+| LW-031A | DOC | Registro pós-fechamento da Fase 0 | concluída | Commits `622fecb` e `4bd9316`, de 04/11/2026 (DEC-114, DEC-113 item 5, arquitetura 27.3, backlog e README) |
+| LW-033A | DOC | Registro das decisões pós-SP4a, status, README e backlog | em auditoria | Esta tarefa (ramo `lw-033a-registro-pos-spike`): registra DEC-057 como APROVADA e as DEC-115 a DEC-118. Não entra na conta |
 
 ## Portões
 

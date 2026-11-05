@@ -16,3 +16,6 @@ export_presets.cfg
 # Arquivos temporários e cópias de segurança locais
 *.tmp
 *.bak
+
+# Terrain3D baixado só para o spike SP4a; nunca versionar (DEC-057)
+addons/terrain_3d/

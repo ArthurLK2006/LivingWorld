@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais atualizados:** APROVADA: 48 (10 com ressalva) · PROPOSTA: 34 · PENDENTE: 19 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 112**. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
+**Totais atualizados em 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -108,6 +108,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-027 | Controle híbrido entre personagem e visão estratégica (princípio) | APROVADA (somente o princípio) |
 | DEC-028 | Câmera contínua por parâmetro de escala `t` com três faixas | PROPOSTA |
 | DEC-029 | Profundidade do comando nas visões tática e estratégica | PENDENTE |
+| DEC-115 | Câmera padrão: terceira pessoa elevada, de altura média | APROVADA |
+| DEC-116 | Controle do personagem: movimento por WASD | APROVADA |
 
 **ÁREA 4 — CONTEÚDO DO UNIVERSO (QUESTÕES ABERTAS)**
 
@@ -155,11 +157,12 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|---|
 | DEC-055 | Dimensões do mundo (tamanho físico, número de regiões e províncias) | PENDENTE |
 | DEC-056 | Mundo lógico separado do mundo visual, com hierarquia espacial | PROPOSTA |
-| DEC-057 | Terreno: solução própria ou addon | PENDENTE |
+| DEC-057 | Terreno: solução própria ou addon | APROVADA |
 | DEC-058 | Terreno em chunks com níveis de detalhe | PROPOSTA |
 | DEC-059 | Tempo do mundo: dia e noite, relógio da simulação | PROPOSTA |
 | DEC-060 | Clima e estações fora do protótipo | PROPOSTA |
 | DEC-061 | Mundo autoral de uma região; sem geração procedural no protótipo | PROPOSTA |
+| DEC-118 | Terreno de teste do protótipo (Fase 1) | APROVADA |
 
 **ÁREA 8 — JOGADOR, PROGRESSÃO, COMBATE E EVENTOS**
 
@@ -174,6 +177,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-068 | Criaturas: 3 a 4 tipos e 1 chefe no protótipo | PROPOSTA |
 | DEC-069 | Diretor de eventos (sistema que provoca acontecimentos para dar ritmo) | PENDENTE |
 | DEC-070 | Eventos dinâmicos: 8 a 12 tipos, na Fase 5 | PROPOSTA |
+| DEC-117 | Direção do combate: por alvo e habilidades | APROVADA (somente a direção; o sistema definitivo segue PENDENTE na DEC-066) |
 
 **ÁREA 9 — ARQUITETURA TÉCNICA**
 
@@ -929,9 +933,9 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Arthur pediu o registro desta dúvida. **Nenhum documento fixa dimensões em quilômetros nem o tamanho do mundo.** O BM fala em regiões, cidades, vilas (§3) e em protótipo pequeno e expansível (§2). |
 | **Decisão** | **Nada decidido.** Não há área, número de regiões, número de cidades nem tamanho de chunk aprovados. |
 | **Justificativa** | Hipóteses não aprovadas, todas rotuladas [HIP]: protótipo com 1 região autoral e 12 a 30 províncias lógicas, parte delas jogável em 3D detalhado (GDD 24.2); chunks de cerca de 64 m e terreno de teste de cerca de 1 km² (RM, fase 1). A recomendação é fixar o tamanho **depois** do spike do terreno (SP4a), com hardware-alvo (DEC-016) e meta de quadros definidos. |
-| **Consequências** | Condiciona terreno (DEC-057), câmera estratégica (DEC-028), distância de viagem, desempenho (DEC-071) e quantidade de NPCs (DEC-040). Nenhum número de dimensão pode aparecer como definitivo. |
+| **Consequências** | Condiciona terreno (DEC-057), câmera estratégica (DEC-028), distância de viagem, desempenho (DEC-071) e quantidade de NPCs (DEC-040). Nenhum número de dimensão pode aparecer como definitivo. Portão da Fase 1 atendido pela DEC-118 (05/11/2026); o tamanho FINAL do mundo continua PENDENTE e deve ser reavaliado, com a condição (d) da DEC-057, antes da Fase 5. |
 | **Data / versão** | BM §2 e §3 · GDD 0.1 cap. 4 e 24.2 · RM 0.1 LW-033 · registrada em 01/11/2026 |
-| **Relações** | DEC-016, DEC-028, DEC-040, DEC-057, DEC-071 |
+| **Relações** | DEC-016, DEC-028, DEC-040, DEC-057, DEC-071, DEC-118 |
 
 ### DEC-056 — Mundo lógico separado do mundo visual, com hierarquia espacial
 
@@ -949,13 +953,13 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PENDENTE |
-| **Contexto** | A câmera seamless (DEC-026) exige terreno em níveis de detalhe. A TA avalia opções e declara a escolha pendente. |
-| **Decisão** | **Nada decidido.** |
-| **Justificativa** | Recomendação (TA 26.4 e RM LW-033, não aprovada): decidir com o resultado do spike SP4a. |
-| **Consequências** | Qualquer addon de terceiros precisa de decisão e licença explícitas. |
-| **Data / versão** | TA 0.1 cap. 19.4 e 26.4 · RM 0.1 LW-033 · registrada em 01/11/2026 |
-| **Relações** | DEC-026, DEC-028, DEC-055, DEC-058 |
+| **Status** | APROVADA |
+| **Contexto** | A câmera seamless (DEC-026) exige terreno em níveis de detalhe. A TA avaliou as opções e declarou a escolha pendente, para decidir com o resultado do spike SP4a. O spike SP4a (LW-033, `docs/decisions/0007-spike-sp4a-terreno.md`) mediu terreno próprio e addon (Terrain3D v1.1.0-stable, MIT) no PC (provisório) e no Mac de referência (oficial, DEC-016). Nas duas máquinas o terreno próprio foi mais rápido em 9 de 9 combinações e acertou a colisão em 36 de 36; o addon andou liso (0 engasgos), mas acertou 22 de 36 na colisão, causa não investigada. O terreno próprio engasgou ao andar (médio e alto). A comparação visual não foi possível (addon sem material). Medição do Mac em modo depuração, com energia incerta: serve para comparar, não para fixar meta de quadros. |
+| **Decisão** | **Terreno próprio** (malha por script, por chunk) para o protótipo. O addon Terrain3D v1.1.0-stable (MIT) **não foi adotado por ora**. |
+| **Justificativa** | Mais rápido nas duas máquinas, colisão sempre correta, código nosso e fácil de depurar pelo Codex, sem depender de API nativa fechada. Não é uma escolha sobre o visual final. |
+| **Consequências** | Condições de Arthur: (a) resolver os engasgos ao andar antes de oferecer o nível "alto" ao jogador; (b) confirmar ou corrigir a "frestinha" entre níveis de detalhe vizinhos; (c) o terreno fica só na camada de apresentação, para poder trocar depois sem mexer na simulação; (d) reavaliar o Terrain3D na LW-040 ou na revisão arquitetural da Fase 1 (LW-053) se ocorrer qualquer um destes gatilhos: os engasgos persistirem depois de construir os pedaços aos poucos; as frestas não tiverem conserto simples; ou a decisão do tamanho do mundo (DEC-055) exigir um mapa de vários quilômetros antes da Fase 5; (e) a primeira medição do jogo real deve ser em modo release e com o Mac na tomada. Qualquer addon de terceiros continua precisando de decisão e licença explícitas. |
+| **Data / versão** | TA 0.1 cap. 19.4 e 26.4 · RM 0.1 LW-033 · SP4a Parte A (PC, 04/11/2026) e Parte B (Mac, 05/11/2026) · Decidida por Arthur em 05/11/2026 · registrada em 05/11/2026 (LW-033A) |
+| **Relações** | DEC-026, DEC-028, DEC-055, DEC-058, DEC-080 |
 
 ### DEC-058 — Terreno em chunks com níveis de detalhe
 
@@ -965,7 +969,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Para a transição contínua entre escalas, o terreno precisa mudar de detalhe com a distância. |
 | **Decisão** | Proposta da TA (19.4) e do GDD (21): terreno dividido em chunks com LOD, objetos distantes como proxies simples, camadas de mapa sobre o mesmo terreno. Tamanhos e distâncias são **[HIP]**. |
 | **Justificativa** | Padrão conhecido para mundos abertos; combina com o estilo low-poly (DEC-020). |
-| **Consequências** | É o principal risco técnico da câmera. Plano B: transição "fatiada". |
+| **Consequências** | É o principal risco técnico da câmera. Plano B: transição "fatiada". Validação parcial no SP4a (05/11/2026): o spike exercitou chunks com níveis de detalhe no terreno próprio, em cerca de 1 km², com as condições (a) e (b) da DEC-057 em aberto; a transição de câmera até a visão estratégica continua sem validação (SP4 final, LW-168). |
 | **Data / versão** | TA 0.1 cap. 19.4 · GDD 0.1 cap. 21 · registrada em 01/11/2026 |
 | **Relações** | DEC-026, DEC-028, DEC-057 |
 
@@ -1077,9 +1081,9 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | É o conjunto mínimo de combate proposto para provar as hipóteses. |
 | **Decisão** | Proposta do GDD (24.2 e cap. 16): combate em tempo real em terceira pessoa com estamina, ferimentos e durabilidade de equipamento. |
 | **Justificativa** | Mínimo coerente com o BM §8. |
-| **Consequências** | Se DEC-066 for decidido de outra forma, esta entrada vira SUBSTITUÍDA. |
+| **Consequências** | Se DEC-066 for decidido de outra forma, esta entrada vira SUBSTITUÍDA. A direção por alvo e habilidades (DEC-117) altera a proposta de mira por direção; revisar no SP6. DEC-066 continua PENDENTE. |
 | **Data / versão** | GDD 0.1 cap. 16 e 24.2 · registrada em 01/11/2026 |
-| **Relações** | DEC-066, DEC-068 |
+| **Relações** | DEC-066, DEC-068, DEC-117 |
 
 ### DEC-068 — Criaturas: 3 a 4 tipos e 1 chefe no protótipo
 
@@ -1345,7 +1349,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|
 | **Status** | APROVADA (somente o serviço) |
 | **Contexto** | Escolha do serviço onde fica a cópia remota. |
-| **Decisão** | O repositório remoto fica no **GitHub** e **já existe**: não há tarefa de recriação. A **visibilidade (pública ou privada) permanece decisão do proprietário**; decidida na **DEC-114** (04/11/2026): público, por ora, reversível. Enquanto a visibilidade não for decidida, nenhum agente faz push (AGENTS 10). |
+| **Decisão** | O repositório remoto fica no **GitHub** e **já existe**: não há tarefa de recriação. A **visibilidade (pública ou privada) permanece decisão do proprietário**; decidida na **DEC-114** (04/11/2026): público, por ora, reversível. Enquanto a visibilidade não for decidida, nenhum agente faz push (AGENTS 10) (sem efeito desde a DEC-114, de 04/11/2026). |
 | **Justificativa** | Diretriz 14 de Arthur (serviço e existência do repositório). |
 | **Consequências** | A visibilidade não bloqueia a primeira implementação: o Codex trabalha na pasta local do projeto. Mudar a visibilidade é ação do dono nas configurações do GitHub. |
 | **Data / versão** | TA 0.1 cap. 26.4 · RM 0.1 LW-001 · registrada em 01/11/2026 · mensagem de Arthur de 01/11/2026 15:32 (diretriz 14) |
@@ -1669,6 +1673,62 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
+### DEC-115 — Câmera padrão: terceira pessoa elevada, de altura média
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA |
+| **Contexto** | As DEC-025 e DEC-026 aprovam a câmera combinada e contínua; faltava a câmera do dia a dia na faixa de terceira pessoa. |
+| **Decisão** | A câmera principal do jogo é de **terceira pessoa ELEVADA, de altura média**. É **uma câmera única**, que **gira 360°** em volta do personagem e tem **zoom** para perto e para longe. |
+| **Justificativa** | Escolha de Arthur. |
+| **Consequências** | A altura e a inclinação exatas são **[HIP]** e são calibradas na LW-046, em constantes nomeadas. Esta é a posição de partida da faixa de terceira pessoa da DEC-028 (que continua PROPOSTA) e **não** decide a câmera tática nem a estratégica. |
+| **Data / versão** | Decidida por Arthur em 04/11/2026 · registrada em 05/11/2026 (LW-033A) |
+| **Relações** | DEC-025, DEC-026, DEC-027, DEC-028 |
+
+---
+
+### DEC-116 — Controle do personagem: movimento por WASD
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA |
+| **Contexto** | O GDD 21.4 propõe teclado e mouse como entrada primária, mas não define o esquema. |
+| **Decisão** | O personagem anda pelas teclas **W, A, S e D**. |
+| **Justificativa** | Escolha de Arthur. |
+| **Consequências** | Tudo por ações nomeadas (`InputMap`, LW-044); nenhuma tecla fixa no código. O remapeamento segue a prioridade P2 (GDD 21.4). O gamepad continua PENDENTE (DEC-024). Olhar, correr, pular e interagir **não** foram decididos aqui. |
+| **Data / versão** | Decidida por Arthur em 04/11/2026 · registrada em 05/11/2026 (LW-033A) |
+| **Relações** | DEC-024, DEC-115 |
+
+---
+
+### DEC-117 — Direção do combate: por alvo e habilidades
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA (somente a **direção**; o sistema definitivo de combate segue PENDENTE na DEC-066, no mesmo estilo da DEC-027) |
+| **Contexto** | O GDD 16.2 propunha "mira por direção, sem travar sempre o alvo" (PROPOSTA). |
+| **Decisão** | O combate é **por alvo e habilidades**: o jogador **seleciona o inimigo** (clicando nele), o **ataque é automático** contra o alvo e as **habilidades são acionadas pelo jogador**, "mas melhorado", com mais profundidade do que nos jogos padrão. O que significa o "melhorado" está **EM ABERTO**. |
+| **Justificativa** | Escolha de Arthur. |
+| **Consequências** | Substitui, no GDD 16.2, a proposta de mira por direção. Ritmo, estamina, ferimentos, defesa e o "melhorado" serão explorados no spike SP6 (LW-152), com playtest de Arthur. A DEC-066 permanece PENDENTE; a DEC-067 permanece PROPOSTA e é revista no SP6. |
+| **Data / versão** | Decidida por Arthur em 04/11/2026 · registrada em 05/11/2026 (LW-033A) |
+| **Relações** | DEC-066, DEC-067 |
+
+---
+
+### DEC-118 — Terreno de teste do protótipo (Fase 1)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA |
+| **Contexto** | A DEC-055 (PENDENTE) é o portão das tarefas LW-034 a LW-037; o spike SP4a mediu o terreno em cerca de 1 km². |
+| **Decisão** | O terreno de teste do protótipo tem **cerca de 1 km²**, em chunks de **cerca de 64 m**, definidos como **dados** em `data/world/` (não como constantes no código). |
+| **Justificativa** | Escolha de Arthur; é o tamanho que o SP4a mediu. |
+| **Consequências** | **Não** fixa o tamanho final do mundo: a DEC-055 **continua PENDENTE**. Os valores ficam em dados e são fáceis de mudar. Um mundo de vários km exigiria nova medição e dispara a reavaliação do Terrain3D (DEC-057, condição d). |
+| **Data / versão** | Decidida por Arthur em 05/11/2026 · registrada em 05/11/2026 (LW-033A) |
+| **Relações** | DEC-055, DEC-056, DEC-057, DEC-058 |
+
+---
+
 ## 3. DÚVIDAS ABERTAS EM DESTAQUE
 
 As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o início do trabalho. Os números citados são **hipóteses [HIP]**, não decisões. Pendências só relevantes em fases futuras **não** exigem aprovação antecipada (diretriz 15).
@@ -1677,10 +1737,10 @@ As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o iníci
 
 | Dúvida | ID | O que existe hoje (não aprovado) | Recomendação (não aprovada) | Quando decidir |
 |---|---|---|---|---|
-| **Dimensões do mundo** | DEC-055 | Nenhuma dimensão em km. Hipótese de 1 região autoral com 12 a 30 províncias lógicas; chunk de cerca de 64 m e terreno de teste de cerca de 1 km² | Fixar depois do spike do terreno (SP4a) e com hardware-alvo definido | Fase 1, tarefa LW-033 |
+| **Dimensões do mundo** | DEC-055 | Nenhuma dimensão em km. Hipótese de 1 região autoral com 12 a 30 províncias lógicas; chunk de cerca de 64 m e terreno de teste de cerca de 1 km² | Fixar depois do spike do terreno (SP4a) e com hardware-alvo definido | Fase 1, tarefa LW-033 (a LW-033 decidiu só o terreno de teste, na DEC-118; o tamanho final do mundo continua PENDENTE) |
 | **Quantidade de NPCs** | DEC-040 | Hipótese de 150 a 300 NPCs T1/T2 em detalhe; "dezenas a poucas centenas" de T2/T3; T0 fora (DEC-041, aprovada) | Medir (spike SP2 e tarefa LW-179) antes de fixar | Fases 2 e 5 |
 | **Escala das batalhas** | DEC-053 | Cinco escalas de conflito (proposta); "poucas dezenas" de combatentes corpóreos (hipótese); resto abstrato | Decidir após os spikes SP2 e SP6 | Fase 5, tarefas LW-146 e spike SP6 |
-| **Sistema definitivo de combate** | DEC-066 | Proposta de tempo real em terceira pessoa com estamina e ferimentos; ritmo exato em hipótese | Decidir após o spike SP6 (combate) | Fase 5 |
+| **Sistema definitivo de combate** | DEC-066 | Proposta de tempo real em terceira pessoa com estamina e ferimentos; ritmo exato em hipótese | Decidir após o spike SP6 (combate) | Fase 5 (a direção por alvo e habilidades foi decidida em 04/11/2026, na DEC-117; o sistema definitivo continua PENDENTE) |
 | **Modelo de persistência** | DEC-083 | Princípios aprovados (desde o início; migrações complexas adiadas). Formato: proposta DEC-084 | Validar no spike SP5 antes de fixar o formato | Fase 0 (spike SP5) |
 
 ### 3.2 O que bloqueava o início (resolvido na v0.3)
@@ -1708,7 +1768,7 @@ As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o iníci
 | Diretor de eventos | DEC-069 | Fase 5 |
 | Determinismo | DEC-081 | Decidida na v0.3 (mesmo ambiente) |
 | Espécies, tecnologia, nomes e domesticação | DEC-032, DEC-031, DEC-033, DEC-034 | Depois do protótipo |
-| Terreno próprio ou addon | DEC-057 | Spike SP4a |
+| Terreno próprio ou addon | DEC-057 | Decidida em 05/11/2026 (APROVADA: terreno próprio), com o resultado do Spike SP4a |
 | Arte, telemetria, gamepad, multiplayer e IA generativa | DEC-021, DEC-023, DEC-024, DEC-085, DEC-044 | Depois do protótipo |
 
 ---

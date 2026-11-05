@@ -1,6 +1,7 @@
 # LIVING WORLD — GAME DESIGN DOCUMENT (GDD)
 
 **Versão do documento:** 0.3 (rascunho de design para orientar implementação; atualizado em 01/11/2026 após a revisão final e as diretrizes de Arthur, ver `docs/CONSISTENCY_REPORT.md`)
+**Registro de alterações (a versão do documento não mudou):** 05/11/2026 (horário de Brasília), LW-033A: seções 16.2, 16.9, 21.1 e 21.4 atualizadas com as DEC-115, DEC-116 e DEC-117, aprovadas por Arthur.
 **Status das decisões:** o registro oficial é `DECISIONS.md`. Os rótulos deste documento não substituem o status lá registrado.
 **Título:** "Living World" é o **título de trabalho** do projeto, não um nome comercial definido.
 **Escopo deste documento:** design, arquitetura de alto nível e planejamento. Não contém código.
@@ -1122,10 +1123,12 @@ Ação em tempo real em terceira pessoa:
 - **Ataques:** leves e pesados, com tempo de preparo e recuperação.
 - **Defesa:** bloqueio, parada e esquiva, com custo de estamina.
 - **Estamina e posicionamento** importam mais que "números de dano".
-- **Alvo e movimento:** mira por direção, sem travar sempre o alvo. Opções de lock-on podem ser avaliadas.
+- **Alvo e habilidades (DEC-117, APROVADA somente quanto à direção):** o jogador seleciona o inimigo clicando nele, o ataque é automático contra o alvo e as habilidades são acionadas pelo jogador, "mas melhorado". O que significa o "melhorado" está **em aberto** e será explorado no SP6.
 - **Lesões:** modelo simples de **vida + estados de ferimento** (sangramento, membro ferido, atordoamento), com cura demorada e custo econômico (curandeiros).
 
 **[HIP]** O ritmo exato (mais acessível ou mais exigente) precisa ser testado, e dificuldade ajustável deve existir.
+
+Os demais itens desta seção continuam [PROP] e serão revistos no SP6 à luz da DEC-117.
 
 ## 16.3 Combate à distância **[PROP]**
 
@@ -1166,7 +1169,7 @@ NPCs avaliam risco antes de combater (comparação de força, moral, posição, 
 
 **Objetivo.** Dar ação direta ao jogo, integrada à economia e ao mundo.
 
-**Funcionamento.** Combate em tempo real em terceira pessoa, com estamina, ferimentos, durabilidade e IA que avalia risco.
+**Funcionamento.** Combate em tempo real em terceira pessoa, com estamina, ferimentos, durabilidade e IA que avalia risco. O estilo de controle é por alvo e habilidades (DEC-117), com os detalhes em aberto.
 
 **Dados envolvidos.** Arma (tipo, dano, alcance, velocidade, durabilidade), Armadura, Combatente (vida, estamina, ferimentos, moral), Habilidades de combate, Criatura (comportamento, fraquezas).
 
@@ -1480,6 +1483,8 @@ Sem explicação, consequências parecem arbitrárias. Mecanismos:
 
 A câmera combina **terceira pessoa** com **visão tática e estratégica**, com **transição contínua (seamless)** entre escalas **[CONF]**.
 
+**Câmera padrão (DEC-115, APROVADA):** terceira pessoa elevada, de altura média. É uma câmera única, que gira 360° em volta do personagem e tem zoom para perto e para longe. A altura e a inclinação são **[HIP]** e são calibradas na LW-046.
+
 **Modelo proposto [PROP]:** uma câmera controlada por um parâmetro contínuo de **altitude/escala**, em vez de modos separados:
 
 | Faixa de escala | Nome | O que o jogador vê e faz |
@@ -1526,7 +1531,7 @@ Com uma simulação profunda, o risco principal de UX é **excesso de informaç�
 
 ## 21.4 Entradas e acessibilidade **[PROP/PEND]**
 
-- **Teclado e mouse** como entrada primária (PC) **[PROP]** (o briefing fixa a plataforma PC, não o esquema de entrada) e **gamepad** como possibilidade **[PEND]** (DEC-024).
+- **Teclado e mouse** como entrada primária (PC) **[PROP]** (o briefing fixa a plataforma PC, não o esquema de entrada) e **gamepad** como possibilidade **[PEND]** (DEC-024). O movimento do personagem é por W, A, S e D (DEC-116, APROVADA).
 - **Acessibilidade:** legendas, tamanho de texto, daltonismo em camadas de mapa, remapeamento de teclas. Prioridade P2.
 
 ## 21.5 Introdução e aprendizado **[PROP]**

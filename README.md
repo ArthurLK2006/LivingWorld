@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| **Estado atual** | **Fase 0 (fundação técnica) CONCLUÍDA: 31 de 31 tarefas concluídas ou dispensadas e a tag `fase-0-concluida` criada e no remoto (aprovação de Arthur em 03/11/2026).** Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`. **Ainda não há jogo jogável.** Veja a seção 5 |
+| **Estado atual** | **Fase 1 (primeiro mundo jogável) EM ANDAMENTO: 2 de 23 tarefas concluídas; avanço total do projeto: 33 de 192 tarefas (17,2%).** A Fase 0 (fundação técnica) está concluída: 31 de 31 tarefas concluídas ou dispensadas, tag `fase-0-concluida` no remoto (aprovação de Arthur em 03/11/2026). Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`; o SP4a (medição de terreno) existe como código descartável em `tests/soak/sp4a`. **Ainda não há jogo jogável.** Veja a seção 5 |
 | **Versão da documentação** | 0.3 (revisão final de 01/11/2026, horário de Brasília); seções 5, 6.1 e 8 a 10 atualizadas em 02/11/2026 |
 | **Responsável** | Arthur (dono do produto; único que aprova decisões) |
 | **Licença** | Ainda não definida |
@@ -120,9 +120,9 @@ Decisões **aprovadas** por Arthur:
 | Modo | **Single-player** | Multiplayer apenas como possibilidade futura (DEC-017, DEC-018) |
 | Visual | **Stylized low-poly** | Fonte de arte, modelos e áudio ainda não definida (DEC-020, DEC-021) |
 | Idioma | **Código e identificadores em inglês; documentação, relatórios e interface em português** | DEC-022. O glossário português ↔ identificador está no GDD, Anexo E |
-| Repositório | **GitHub** (já existe) | DEC-089 (aprovada só quanto ao serviço). Em 02/11/2026 o repositório está **público**; manter público ou voltar a privado é decisão do proprietário, ainda **pendente** |
+| Repositório | **GitHub** (já existe) | DEC-089 (aprovada só quanto ao serviço). A visibilidade foi decidida na DEC-114 (04/11/2026): **público, por ora**, reversível |
 
-**Ainda pendentes** (não assuma; nenhuma bloqueia o início): hardware mínimo (DEC-016; só o hardware de referência está aprovado), terreno próprio ou addon (DEC-057, LW-033), gamepad (DEC-024), telemetria (DEC-023). O framework de testes já foi decidido: GUT 9.7.1 (DEC-086, aprovada).
+**Ainda pendentes** (não assuma; nenhuma bloqueia o início): hardware mínimo (DEC-016; só o hardware de referência está aprovado), gamepad (DEC-024), telemetria (DEC-023). O framework de testes já foi decidido: GUT 9.7.1 (DEC-086, aprovada). O terreno do protótipo também já foi decidido: terreno próprio, e não o addon (DEC-057, 05/11/2026).
 
 A arquitetura técnica (camadas, módulos, formato de dados e de save) está **proposta** em [`docs/TECHNICAL_ARCHITECTURE.md`](docs/TECHNICAL_ARCHITECTURE.md). Em resumo: simulação totalmente separada da apresentação visual, dados de conteúdo em arquivos validados, comunicação por eventos e testes automáticos sem abrir a janela do jogo. O que dessa proposta já foi aprovado e o que não foi está em `docs/DECISIONS.md`.
 
@@ -130,7 +130,7 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 
 ## 5. Estado atual do desenvolvimento
 
-**Data da informação:** 04/11/2026 (Brasília). Fonte do detalhe: [`docs/ROADMAP_STATUS.md`](docs/ROADMAP_STATUS.md).
+**Data da informação:** 05/11/2026 (Brasília). Fonte do detalhe: [`docs/ROADMAP_STATUS.md`](docs/ROADMAP_STATUS.md).
 
 ### 5.1 O que existe hoje
 
@@ -142,14 +142,14 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 | Dados (`src/data`) | Leitor e validador de arquivos JSON |
 | Salvamento (`src/persistence`) | Salvar e carregar com checksum, versões, migração, backups e recuperação |
 | Testes e verificação | `tools/check_all` (arquitetura em 8 verificações, dados, testes automáticos, cena e simulação). Verificado em 03/11/2026 no commit `4efa0a6`: **verde no Mac e na nuvem, com 154 testes**. No Windows (que não é a plataforma de referência) terminou vermelho por três linhas das próprias ferramentas de verificação; detalhes em [`docs/fase-0/LW-031-relatorio-de-fechamento.md`](docs/fase-0/LW-031-relatorio-de-fechamento.md) |
-| Medições (spikes) | Núcleo (SP1), dados (SP3) e salvamento (SP5) registrados em `docs/decisions/` |
+| Medições (spikes) | Núcleo (SP1), dados (SP3), salvamento (SP5) e terreno (SP4a) registrados em `docs/decisions/` |
 | Revisão e validação da Fase 0 | Revisão arquitetural aceita (aprovada com ajustes, 0 achados críticos), validação assinada por Arthur com ressalvas e fechamento da fase (LW-031) aprovado, os três em 03/11/2026 |
 
 ### 5.2 O que **não** existe ainda
 
 | Item | Situação |
 |---|---|
-| Terreno, personagem, câmera | **Nenhum** (Fase 1) |
+| Terreno, personagem, câmera | **Nenhum** (Fase 1). Só existe o SP4a, código descartável de medição em `tests/soak/sp4a`, que não é o terreno do jogo |
 | NPCs, economia, política, facções, combate | **Nenhum** de verdade (só NPCs "de mentira" em testes de desempenho) |
 | Conteúdo do jogo em `data/` | **Nenhum** (só dados de teste em `tests/fixtures/`) |
 | Executável jogável | **Não existe** |
@@ -161,13 +161,13 @@ O roadmap tem **6 fases e 192 tarefas** (`LW-001` a `LW-192`).
 | Fase | Nome | Tarefas | Situação |
 |---|---|---|---|
 | 0 | Fundação técnica | 31 | **Concluída** (31 de 31 concluídas ou dispensadas; tag `fase-0-concluida` criada e no remoto, em `7ae6e8e`, 03/11/2026) |
-| 1 | Primeiro mundo jogável | 23 | **Próxima fase.** Não iniciada |
+| 1 | Primeiro mundo jogável | 23 | **Em andamento** (2 de 23 concluídas: LW-032 e LW-033) |
 | 2 | Primeira sociedade | 32 | Não iniciada |
 | 3 | Economia | 30 | Não iniciada |
 | 4 | Facções e conflitos | 29 | Não iniciada |
 | 5 | Integração e protótipo | 47 | Não iniciada |
 
-A Fase 1 **não foi iniciada**: Arthur aprovou o fechamento da Fase 0 (LW-031) em 03/11/2026; a Fase 1 só começa quando ele escolher a primeira tarefa. O avanço total do projeto é de 31 de 192 tarefas (16,1%).
+A Fase 1 está **em andamento**: a LW-032 (contratos mínimos) e a LW-033 (spike SP4a do terreno, aprovada por Arthur em 05/11/2026) estão concluídas, 2 de 23 tarefas. O avanço total do projeto é de 33 de 192 tarefas (17,2%).
 
 > O acompanhamento é mantido em `docs/ROADMAP_STATUS.md`. Esta seção só deve conter o que foi verificado.
 

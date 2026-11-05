@@ -584,6 +584,8 @@ Testadas por 16 scripts curtos e descartáveis (`api_probe.gd` a `api_probe16.gd
 
 ## Proposta de entrada para DECISIONS.md — versão da Parte B (para Arthur ou o auditor registrarem; o dev NÃO escreve em `DECISIONS.md`)
 
+Registrada em DECISIONS.md na LW-033A (05/11/2026) como APROVADA; ver também DEC-115 a DEC-118.
+
 **DEC-057 — Terreno: solução própria ou addon** (a entrada hoje está PENDENTE; proposta de nova redação):
 
 | Campo | Conteúdo |
