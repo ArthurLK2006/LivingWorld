@@ -1,0 +1,27 @@
+RESULTADO PARA COLAR
+Máquina: {"memoria_total_mb":16384,"nucleos":8,"placa_video":"Apple M3","processador":"Apple M3","renderizador":"gl_compatibility","resolucao":"1152x648","sistema":"macOS","versao_godot":"4.7.2-stable (official)","versao_sistema":"26.6.2"}
+Máquina | Renderizador | Nível | Terreno | Cenário | FPS médio | FPS mín | 1% pior | p99 (ms) | Engasgos >33 ms | Memória (MB) | Vídeo (MB) | Observação
+macOS | gl_compatibility | baixo | proprio | parado | 691.0 | 278.1 | 340.3 | 2.8 | 0 | 38.1 | 14.6 | 
+macOS | gl_compatibility | baixo | proprio | caminhada | 783.8 | 111.2 | 412.8 | 1.7 | 0 | 38.1 | 14.2 | 
+macOS | gl_compatibility | baixo | proprio | subida | 808.0 | 259.6 | 327.4 | 2.8 | 0 | 38.1 | 14.2 | nunca ficou <30fps; por faixa: 0m:534fps, 100m:764fps, 200m:845fps, 300m:783fps, 400m:822fps, 500m:880fps, 600m:877fps, 700m:873fps, 800m:804fps, 900m:775fps, 1000m:693fps
+macOS | gl_compatibility | baixo | proprio | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 38.3 | 14.6 | colisão: 36/36 alturas batem; cápsula andou (5.6m)
+macOS | gl_compatibility | medio | proprio | parado | 514.2 | 480.0 | 480.0 | 2.1 | 0 | 39.0 | 27.3 | 
+macOS | gl_compatibility | medio | proprio | caminhada | 490.1 | 23.9 | 35.5 | 11.1 | 12 | 39.0 | 29.0 | 
+macOS | gl_compatibility | medio | proprio | subida | 392.0 | 154.8 | 169.3 | 5.6 | 0 | 39.0 | 29.0 | nunca ficou <30fps; por faixa: 0m:334fps, 100m:353fps, 200m:351fps, 300m:340fps, 400m:354fps, 500m:383fps, 600m:412fps, 700m:414fps, 800m:433fps, 900m:476fps, 1000m:485fps
+macOS | gl_compatibility | medio | proprio | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 39.3 | 31.1 | colisão: 36/36 alturas batem; cápsula andou (5.5m)
+macOS | gl_compatibility | alto | proprio | parado | 332.3 | 246.3 | 249.2 | 3.9 | 0 | 41.4 | 75.5 | 
+macOS | gl_compatibility | alto | proprio | caminhada | 265.6 | 6.7 | 7.0 | 134.6 | 12 | 41.6 | 89.0 | 
+macOS | gl_compatibility | alto | proprio | subida | 123.8 | 60.5 | 60.9 | 16.0 | 0 | 41.5 | 89.0 | nunca ficou <30fps; por faixa: 0m:194fps, 100m:163fps, 200m:105fps, 300m:86fps, 400m:81fps, 500m:79fps, 600m:81fps, 700m:93fps, 800m:117fps, 900m:132fps, 1000m:139fps
+macOS | gl_compatibility | alto | proprio | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 42.3 | 100.8 | colisão: 36/36 alturas batem; cápsula andou (5.4m)
+macOS | gl_compatibility | baixo | addon | parado | 419.5 | 360.0 | 373.5 | 2.5 | 0 | 66.2 | 38.4 | 
+macOS | gl_compatibility | baixo | addon | caminhada | 484.1 | 323.8 | 357.3 | 2.8 | 0 | 66.4 | 38.4 | 
+macOS | gl_compatibility | baixo | addon | subida | 346.6 | 121.6 | 144.6 | 6.7 | 0 | 66.3 | 38.4 | nunca ficou <30fps; por faixa: 0m:202fps, 100m:207fps, 200m:231fps, 300m:278fps, 400m:333fps, 500m:390fps, 600m:404fps, 700m:386fps, 800m:391fps, 900m:409fps, 1000m:420fps
+macOS | gl_compatibility | baixo | addon | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 66.1 | 38.4 | colisão: 22/36 alturas batem; cápsula andou (5.4m)
+macOS | gl_compatibility | medio | addon | parado | 150.3 | 96.7 | 97.6 | 9.8 | 0 | 66.2 | 47.4 | 
+macOS | gl_compatibility | medio | addon | caminhada | 145.4 | 79.2 | 82.4 | 11.7 | 0 | 66.3 | 47.4 | 
+macOS | gl_compatibility | medio | addon | subida | 104.4 | 60.0 | 60.0 | 16.7 | 0 | 66.3 | 47.4 | nunca ficou <30fps; por faixa: 0m:105fps, 100m:102fps, 200m:99fps, 300m:100fps, 400m:102fps, 500m:103fps, 600m:106fps, 700m:109fps, 800m:108fps, 900m:109fps, 1000m:107fps
+macOS | gl_compatibility | medio | addon | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 66.2 | 47.4 | colisão: 22/36 alturas batem; cápsula andou (5.5m)
+macOS | gl_compatibility | alto | addon | parado | 84.3 | 84.0 | 84.0 | 11.9 | 0 | 66.3 | 60.7 | 
+macOS | gl_compatibility | alto | addon | caminhada | 101.0 | 83.0 | 85.3 | 11.5 | 0 | 66.4 | 60.7 | 
+macOS | gl_compatibility | alto | addon | subida | 83.7 | 60.0 | 60.0 | 16.7 | 0 | 66.4 | 60.7 | nunca ficou <30fps; por faixa: 0m:123fps, 100m:112fps, 200m:90fps, 300m:74fps, 400m:70fps, 500m:68fps, 600m:66fps, 700m:65fps, 800m:66fps, 900m:66fps, 1000m:66fps
+macOS | gl_compatibility | alto | addon | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 66.3 | 60.7 | colisão: 22/36 alturas batem; cápsula andou (5.4m)
