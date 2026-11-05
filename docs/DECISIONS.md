@@ -931,7 +931,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|
 | **Status** | PENDENTE |
 | **Contexto** | Arthur pediu o registro desta dúvida. **Nenhum documento fixa dimensões em quilômetros nem o tamanho do mundo.** O BM fala em regiões, cidades, vilas (§3) e em protótipo pequeno e expansível (§2). |
-| **Decisão** | **Nada decidido.** Não há área, número de regiões, número de cidades nem tamanho de chunk aprovados. |
+| **Decisão** | **Nada decidido.** Não há área, número de regiões, número de cidades nem tamanho de chunk aprovados. (Exceção: o terreno de teste do protótipo foi decidido na DEC-118; o tamanho final do mundo continua sem decisão.) |
 | **Justificativa** | Hipóteses não aprovadas, todas rotuladas [HIP]: protótipo com 1 região autoral e 12 a 30 províncias lógicas, parte delas jogável em 3D detalhado (GDD 24.2); chunks de cerca de 64 m e terreno de teste de cerca de 1 km² (RM, fase 1). A recomendação é fixar o tamanho **depois** do spike do terreno (SP4a), com hardware-alvo (DEC-016) e meta de quadros definidos. |
 | **Consequências** | Condiciona terreno (DEC-057), câmera estratégica (DEC-028), distância de viagem, desempenho (DEC-071) e quantidade de NPCs (DEC-040). Nenhum número de dimensão pode aparecer como definitivo. Portão da Fase 1 atendido pela DEC-118 (05/11/2026); o tamanho FINAL do mundo continua PENDENTE e deve ser reavaliado, com a condição (d) da DEC-057, antes da Fase 5. |
 | **Data / versão** | BM §2 e §3 · GDD 0.1 cap. 4 e 24.2 · RM 0.1 LW-033 · registrada em 01/11/2026 |
@@ -957,7 +957,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | A câmera seamless (DEC-026) exige terreno em níveis de detalhe. A TA avaliou as opções e declarou a escolha pendente, para decidir com o resultado do spike SP4a. O spike SP4a (LW-033, `docs/decisions/0007-spike-sp4a-terreno.md`) mediu terreno próprio e addon (Terrain3D v1.1.0-stable, MIT) no PC (provisório) e no Mac de referência (oficial, DEC-016). Nas duas máquinas o terreno próprio foi mais rápido em 9 de 9 combinações e acertou a colisão em 36 de 36; o addon andou liso (0 engasgos), mas acertou 22 de 36 na colisão, causa não investigada. O terreno próprio engasgou ao andar (médio e alto). A comparação visual não foi possível (addon sem material). Medição do Mac em modo depuração, com energia incerta: serve para comparar, não para fixar meta de quadros. |
 | **Decisão** | **Terreno próprio** (malha por script, por chunk) para o protótipo. O addon Terrain3D v1.1.0-stable (MIT) **não foi adotado por ora**. |
 | **Justificativa** | Mais rápido nas duas máquinas, colisão sempre correta, código nosso e fácil de depurar pelo Codex, sem depender de API nativa fechada. Não é uma escolha sobre o visual final. |
-| **Consequências** | Condições de Arthur: (a) resolver os engasgos ao andar antes de oferecer o nível "alto" ao jogador; (b) confirmar ou corrigir a "frestinha" entre níveis de detalhe vizinhos; (c) o terreno fica só na camada de apresentação, para poder trocar depois sem mexer na simulação; (d) reavaliar o Terrain3D na LW-040 ou na revisão arquitetural da Fase 1 (LW-053) se ocorrer qualquer um destes gatilhos: os engasgos persistirem depois de construir os pedaços aos poucos; as frestas não tiverem conserto simples; ou a decisão do tamanho do mundo (DEC-055) exigir um mapa de vários quilômetros antes da Fase 5; (e) a primeira medição do jogo real deve ser em modo release e com o Mac na tomada. Qualquer addon de terceiros continua precisando de decisão e licença explícitas. |
+| **Consequências** | Condições de Arthur: (a) resolver os engasgos ao andar antes de oferecer o nível "alto" ao jogador; (b) confirmar ou corrigir a "frestinha" entre níveis de detalhe vizinhos; (c) o terreno fica só na camada de apresentação, para poder trocar depois sem mexer na simulação. Entende-se, por confirmação de Arthur em 05/11/2026: a malha, a colisão e o material do terreno ficam na camada de apresentação; as alturas e superfícies do mapa (dados lógicos, TerrainData, LW-034) ficam na simulação (DEC-056). (d) reavaliar o Terrain3D na LW-040 ou na revisão arquitetural da Fase 1 (LW-053) se ocorrer qualquer um destes gatilhos: os engasgos persistirem depois de construir os pedaços aos poucos; as frestas não tiverem conserto simples; ou a decisão do tamanho do mundo (DEC-055) exigir um mapa de vários quilômetros antes da Fase 5; (e) a primeira medição do jogo real deve ser em modo release e com o Mac na tomada. Qualquer addon de terceiros continua precisando de decisão e licença explícitas. |
 | **Data / versão** | TA 0.1 cap. 19.4 e 26.4 · RM 0.1 LW-033 · SP4a Parte A (PC, 04/11/2026) e Parte B (Mac, 05/11/2026) · Decidida por Arthur em 05/11/2026 · registrada em 05/11/2026 (LW-033A) |
 | **Relações** | DEC-026, DEC-028, DEC-055, DEC-058, DEC-080 |
 
@@ -1081,7 +1081,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | É o conjunto mínimo de combate proposto para provar as hipóteses. |
 | **Decisão** | Proposta do GDD (24.2 e cap. 16): combate em tempo real em terceira pessoa com estamina, ferimentos e durabilidade de equipamento. |
 | **Justificativa** | Mínimo coerente com o BM §8. |
-| **Consequências** | Se DEC-066 for decidido de outra forma, esta entrada vira SUBSTITUÍDA. A direção por alvo e habilidades (DEC-117) altera a proposta de mira por direção; revisar no SP6. DEC-066 continua PENDENTE. |
+| **Consequências** | Se DEC-066 for decidido de outra forma, esta entrada vira SUBSTITUÍDA. A direção por alvo e habilidades (DEC-117) altera o estilo de controle do combate proposto no GDD 16.2 (mira por direção); revisar no SP6. DEC-066 continua PENDENTE. |
 | **Data / versão** | GDD 0.1 cap. 16 e 24.2 · registrada em 01/11/2026 |
 | **Relações** | DEC-066, DEC-068, DEC-117 |
 
@@ -1751,7 +1751,7 @@ As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o iníci
 | Sistema operacional | DEC-015 | APROVADA: macOS |
 | Hardware | DEC-016 | Referência: identificada pelo Codex na LW-006. Mínimo: PENDENTE, não bloqueia |
 | Idioma do código | DEC-022 | APROVADA: código em inglês; documentação, relatórios e interface em português |
-| Hospedagem do Git | DEC-089 | GitHub, repositório já existe. Visibilidade: PENDENTE do proprietário, não bloqueia |
+| Hospedagem do Git | DEC-089 | GitHub, repositório já existe. Visibilidade: decidida na DEC-114 (público, por ora) |
 | Determinismo | DEC-081 | APROVADA: no mesmo ambiente |
 | Framework de testes | DEC-086 | APROVADA: GUT 9.7.1, após avaliação da LW-010 |
 
@@ -1912,7 +1912,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-113` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-119` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto

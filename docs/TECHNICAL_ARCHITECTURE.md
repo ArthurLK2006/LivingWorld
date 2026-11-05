@@ -1596,7 +1596,7 @@ Uma única câmera (`CameraRig`) controlada por **um parâmetro contínuo de esc
 
 - O terreno é dividido em **chunks** de tamanho fixo, carregados e descarregados conforme a **área visível pela câmera**.
 - Níveis de detalhe: vários níveis por chunk, com transição.
-- **Decisão pendente de implementação:** construir um terreno próprio simples (mapa de altura → malha por chunk) **ou** avaliar um addon de terreno da comunidade. Critério: o que o spike SP4 mostrar mais estável com a câmera subindo e descendo. **[VAL]**
+- **Decidido em 05/11/2026 (DEC-057, APROVADA):** terreno próprio simples (mapa de altura → malha por chunk), na camada de apresentação; o addon (Terrain3D) fica como plano B condicional (DEC-057, condição d). A validação com a câmera subindo e descendo continua no SP4 final (LW-168). **[VAL]**
 - **Carregamento assíncrono** de chunks e modelos (carregamento em segundo plano do Godot) para não travar. **[VAL]**
 - **[Revisão Godot v0.2]** O LOD automático de malhas do Godot é gerado **na importação** de modelos; malhas criadas em código (terreno por chunk) **não** o recebem. O LOD do terreno é manual (malhas de menor resolução por chunk ou visibility ranges). Vegetação em `MultiMesh`: **um `MultiMeshInstance3D` por chunk**, pois não há descarte por instância.
 - **Precisão de profundidade [LIM]:** ao variar muito a altura da câmera, o buffer de profundidade pode causar falhas visuais (z-fighting). A curva de near/far acompanha `t` para mitigar.
@@ -1980,7 +1980,7 @@ Spikes são **pequenos, descartáveis e objetivos**. Cada um responde a uma perg
 | **SP3: Pipeline de dados e testes** | JSON + validador + framework de testes funcionam bem com agentes de IA? | 3 tipos de dado, validador, `check_all` headless | Erros apontados com clareza; agente edita dados sem quebrar; tudo roda sem janela | `.tres` com validadores; framework mínimo próprio |
 | **SP4: Câmera contínua e terreno** | Subir e descer a câmera com chunks e camadas de mapa fica estável e bonito? | Terreno de teste, câmera com curvas, camada de marcadores | Sem engasgos, sem falhas de profundidade, sem vazamento | Addon de terreno, transição "fatiada", menos detalhe |
 | **SP5: Salvamento** | Salvar e carregar mundo cheio é rápido, exato e seguro? | Estado do SP1 + ida e volta, escrita atômica, escrita em thread | Equivalência exata; tempos no orçamento; falha simulada preserva o save | Binário; dividir por módulos; salvar entre quadros |
-| **SP6: Combate (laço completo)** | O laço golpe → `HitReport` → regras → resultado → animação tem boa sensação? | Duelo 1v1 com arma e armadura, janelas de defesa | Responsivo e legível em playtest | Mais tolerância nas janelas, regras no cliente com validação leve |
+| **SP6: Combate (laço completo)** | O laço golpe → `HitReport` → regras → resultado → animação tem boa sensação? | Duelo 1v1 com arma e armadura, janelas de defesa [a revisar à luz da DEC-117, no SP6] | Responsivo e legível em playtest | Mais tolerância nas janelas, regras no cliente com validação leve |
 | **SP7: Equivalência de comércio** | Fluxo agregado e caravanas dão resultados compatíveis? | 2 mercados, 1 rota, 1 ano | Diferença média abaixo do limite acordado | Ajustar fórmulas; simplificar para só um modo |
 | SP8: IA de texto **[FUT]** | Texto gerado agrega sem arriscar o jogo? | Fora do protótipo | — | Permanecer só com padrão |
 
@@ -1994,9 +1994,9 @@ Spikes são **pequenos, descartáveis e objetivos**. Cada um responde a uma perg
 |---|---|---|
 | 1 | Versão do Godot | **Decidida (DEC-012):** 4.7.x estável; 4.6.x se houver impedimento concreto. Versão exata na LW-006 |
 | 2 | Hardware | **Referência decidida (DEC-016):** identificada pelo Codex na máquina (LW-006). Mínimo: pendente, definir só depois da medição (LW-179) |
-| 3 | Framework de testes | Pendente (DEC-086); decidir no SP3 (LW-010). Não bloqueia a LW-006 |
-| 4 | Hospedagem do Git | **Decidida (DEC-089, só o serviço):** GitHub, repositório existente. Visibilidade: do dono |
-| 5 | Terreno próprio ou addon | Pendente (DEC-057); decidir no SP4a (LW-033) |
+| 3 | Framework de testes | **Decidido (DEC-086, APROVADA):** GUT 9.7.1 |
+| 4 | Hospedagem do Git | **Decidida (DEC-089, só o serviço):** GitHub, repositório existente. Visibilidade: pública, por ora (DEC-114) |
+| 5 | Terreno próprio ou addon | **Decidida em 05/11/2026 (DEC-057, APROVADA):** terreno próprio |
 | 6 | Idioma | **Decidido (DEC-022):** código em inglês; documentação, relatórios e interface em português |
 | 7 | Telemetria e IA generativa | Não no protótipo (pendentes, sem prazo) |
 | 8 | Sistema operacional | **Decidido (DEC-015):** macOS |
@@ -2009,7 +2009,7 @@ O status oficial está em `DECISIONS.md`. Esta lista não é a fonte de status.
 | 2 | Hardware-alvo mínimo | Definir antes do SP1 (orça a simulação) |
 | 3 | Framework de testes | Decidir no SP3 |
 | 4 | Hospedagem do Git (backup remoto) | Qualquer serviço confiável; o essencial é **ter** |
-| 5 | Terreno próprio ou addon | Decidir no SP4 |
+| 5 | Terreno próprio ou addon | Decidido na LW-033 (DEC-057); o SP4 final (LW-168) valida a câmera contínua |
 | 6 | Idioma do código e dos comentários | Código em inglês, comentários e docs em português |
 | 7 | Telemetria e IA generativa (consentimento, serviço) | Não no protótipo |
 | 8 | Sistema operacional alvo (adicionado na v0.2: o executável de teste e os caminhos de arquivo dependem dele) | O sistema que você realmente usa para testar; os demais ficam como futuro |

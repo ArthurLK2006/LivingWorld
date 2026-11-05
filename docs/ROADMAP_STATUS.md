@@ -81,7 +81,7 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 | LW-029A | TESTE | Correções da revisão LW-029 | concluída | Commit `4efa0a6` (ramo `lw-029a-correcoes-revisao`, publicado em 03/11/2026). Corrigiu I1, I2, I3 e I6: `check_architecture` com 8 verificações, módulo-canário da ordem de `Dictionary` e teste de salvar/carregar de ponta a ponta. `check_all` VERDE, 154 testes |
 | LW-029B | TESTE | Reparos M1, M3 e M7 do parecer | **não feita** | Dívida no `docs/backlog.md` (fazer cedo na Fase 1, junto da LW-036 quando tocar `src/app`) |
 | LW-031A | DOC | Registro pós-fechamento da Fase 0 | concluída | Commits `622fecb` e `4bd9316`, de 04/11/2026 (DEC-114, DEC-113 item 5, arquitetura 27.3, backlog e README) |
-| LW-033A | DOC | Registro das decisões pós-SP4a, status, README e backlog | em auditoria | Esta tarefa (ramo `lw-033a-registro-pos-spike`): registra DEC-057 como APROVADA e as DEC-115 a DEC-118. Não entra na conta |
+| LW-033A | DOC | Registro das decisões pós-SP4a, status, README e backlog | concluída | Aprovada por Arthur em 05/11/2026; está no `main`; registra DEC-057 como APROVADA e as DEC-115 a DEC-118. Não entra na conta |
 
 ## Portões
 
