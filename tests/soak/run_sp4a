@@ -38,16 +38,23 @@ run_id=$(date +%Y-%m-%d_%H%M%S)
 echo "SP4a: modo=$modo terreno=$terreno qualidade=$qualidade cenario=$cenario renderizador=${renderizador:-(automático)} run-id=$run_id"
 echo "Uma janela do Godot vai abrir para medir quadros reais. Deixe-a em primeiro plano e não mexa no PC durante a medição."
 
+# A linha de comando NÃO devolve o --rendering-method de volta ao script: nem ProjectSettings nem
+# get_setting_with_override refletem o valor real (testado antes desta correção — ver relatório,
+# seção 4; nas linhas de forward_plus/mobile da Parte A, a coluna "Renderizador" saiu sempre
+# "gl_compatibility", errada). Por isso este script, que já sabe qual renderizador está abrindo,
+# passa o nome certo por --renderer-label em vez do script tentar adivinhar.
 run_one() {
     render_method=$1
     quality_override=$2
     extra_args=""
+    label=${render_method:-gl_compatibility}
     if [ -n "$render_method" ]; then
         extra_args="--rendering-method $render_method"
     fi
     "$godot_bin" $extra_args --path "$project_dir" res://tests/soak/sp4a/sp4a_main.tscn -- \
         --modo "$modo" --terreno "$terreno" --qualidade "$quality_override" --cenario "$cenario" \
         --repeticoes "$repeticoes" --duracao "$duracao" --run-id "$run_id" \
+        --renderer-label "$label" \
         --acumular-em "$project_dir/tests/soak/sp4a/resultados/sp4a_$run_id.json"
     return $?
 }

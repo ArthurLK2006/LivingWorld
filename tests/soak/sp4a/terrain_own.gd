@@ -94,8 +94,13 @@ func _build_chunk(cx: int, cz: int) -> Node3D:
 			var b: int = zi * samples_per_side + xi + 1
 			var c: int = (zi + 1) * samples_per_side + xi
 			var d: int = (zi + 1) * samples_per_side + xi + 1
-			_add_triangle(surface_tool, positions, colors, a, c, b)
-			_add_triangle(surface_tool, positions, colors, b, c, d)
+			# Vencimento (a,c,b)/(b,c,d) dava normais para BAIXO (confirmado: as 18.432 normais de
+			# um chunk de teste apontavam todas para y<0, achado na revisão da Parte A — por isso
+			# o chão ficava invisível de cima, só visível de baixo/de raspão). Corrigido para
+			# (a,b,c)/(b,d,c) e reconferido: normais passaram a apontar para cima (ver teste
+			# test_chunk_normals_point_up em test_sp4a_sanity.gd).
+			_add_triangle(surface_tool, positions, colors, a, b, c)
+			_add_triangle(surface_tool, positions, colors, b, d, c)
 	surface_tool.generate_normals()
 	var mesh: ArrayMesh = surface_tool.commit()
 

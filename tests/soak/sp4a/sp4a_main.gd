@@ -56,7 +56,10 @@ func _run_benchmark(args: Dictionary) -> void:
 	runner.scene_root = self
 	runner.camera = camera
 	runner.terrain_data = _terrain_data
-	runner.renderer_label = ProjectSettings.get_setting("rendering/renderer/rendering_method", "?")
+	# ProjectSettings não reflete --rendering-method da linha de comando (testado e confirmado na
+	# revisão da Parte A — ver relatório, seção 4); por isso o rótulo vem de --renderer-label,
+	# que tests/soak/run_sp4a já sabe de antemão e passa explicitamente.
+	runner.renderer_label = args["renderer_label"]
 	runner.machine_label = OS.get_name()
 
 	var writer: Sp4aResultWriter = Sp4aResultWriter.new()

@@ -30,20 +30,31 @@ var _node_count_start: int = 0
 var _node_count_end: int = 0
 var _static_mem_mb: float = 0.0
 var _video_mem_mb: float = 0.0
+var _unfocused_samples: int = 0
 
 
 func start_window() -> void:
 	_frame_times_ms.clear()
 	_draw_calls.clear()
 	_primitives.clear()
+	_unfocused_samples = 0
 	_node_count_start = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 
 
-## Chamar uma vez por quadro (_process) durante o cenário.
-func sample_frame() -> void:
-	var fps: float = Performance.get_monitor(Performance.TIME_FPS)
-	if fps > 0.0:
-		_frame_times_ms.append(1000.0 / fps)
+## Chamar uma vez por quadro, com o delta REAL desse quadro (get_process_delta_time() ou
+## get_physics_process_delta_time(), conforme o que o chamador está esperando). Antes usava
+## Performance.TIME_FPS para montar os "tempos de quadro", mas esse contador só atualiza cerca de
+## 1x por segundo (não é por quadro) — por isso "FPS mín" e "1% pior" saíam sempre iguais nos
+## cenários curtos (achado na revisão da Parte A; ver relatório, seção 4). delta_seconds é o tempo
+## de verdade entre quadros, sempre diferente a cada amostra.
+func sample_frame(delta_seconds: float) -> void:
+	if delta_seconds > 0.0:
+		_frame_times_ms.append(delta_seconds * 1000.0)
+	# DisplayServer.window_is_focused() confirmado por teste curto antes de usar (ver relatório,
+	# seção 4). Sem foco de verdade o Windows reduz os quadros reais (achado da Parte A); contar
+	# amostras sem foco permite marcar a rodada inteira como inválida em vez de confiar nela.
+	if not DisplayServer.window_is_focused():
+		_unfocused_samples += 1
 	_draw_calls.append(int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)))
 	_primitives.append(int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)))
 	_static_mem_mb = Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
@@ -54,7 +65,7 @@ func sample_frame() -> void:
 func finish() -> Dictionary:
 	_node_count_end = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	if _frame_times_ms.is_empty():
-		return {"amostras": 0}
+		return {"amostras": 0, "amostras_sem_foco": _unfocused_samples, "invalida_por_foco": _unfocused_samples > 0}
 	var fps_values: Array[float] = []
 	for ms: float in _frame_times_ms:
 		fps_values.append(1000.0 / ms)
@@ -79,6 +90,8 @@ func finish() -> Dictionary:
 		"primitivas_media": _average_int(_primitives),
 		"nos_inicio": _node_count_start,
 		"nos_fim": _node_count_end,
+		"amostras_sem_foco": _unfocused_samples,
+		"invalida_por_foco": _unfocused_samples > 0,
 	}
 
 

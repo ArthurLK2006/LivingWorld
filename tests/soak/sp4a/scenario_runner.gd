@@ -22,6 +22,13 @@ const SUBIDA_MAX_HEIGHT: float = 1000.0  ## [HIP]
 const WALK_PATH_START: Vector2 = Vector2(120.0, 120.0)
 const WALK_PATH_END: Vector2 = Vector2(900.0, 900.0)
 const COLLISION_GRID_STEP: float = 64.0  ## [HIP] amostra a cada chunk
+## Margens de altura da câmera acima do terreno, por cenário [HIP]. Nomeadas (revisão da Parte A,
+## item 1b): todo cenário precisa começar com a câmera acima do chão por uma margem clara e com
+## orientação definida (ver test_sp4a_sanity.gd, test_every_scenario_starts_camera_above_ground).
+const CAMERA_MARGIN_PARADO: float = 8.0
+const CAMERA_MARGIN_CAMINHADA: float = 2.0
+const CAMERA_MARGIN_SUBIDA_MIN: float = 2.0
+const CAMERA_MARGIN_COLISAO: float = 10.0
 
 var scene_root: Node3D
 var camera: Sp4aFreeCamera
@@ -38,6 +45,7 @@ static func parse_args(args: PackedStringArray) -> Dictionary:
 	var parsed: Dictionary = {
 		"modo": "rapido", "terreno": "ambos", "qualidade": "todas", "cenario": "todos",
 		"repeticoes": 3, "duracao": -1.0, "acumular_em": "", "run_id": "",
+		"renderer_label": "gl_compatibility",
 	}
 	var i: int = 0
 	while i < args.size():
@@ -52,6 +60,7 @@ static func parse_args(args: PackedStringArray) -> Dictionary:
 			"--duracao": parsed["duracao"] = value.to_float()
 			"--acumular-em": parsed["acumular_em"] = value
 			"--run-id": parsed["run_id"] = value
+			"--renderer-label": parsed["renderer_label"] = value
 		i += 2
 	if parsed["modo"] == "rapido":
 		parsed["repeticoes"] = 1
@@ -120,7 +129,7 @@ func _apply_quality(terreno: String, quality: Dictionary) -> void:
 		_own_terrain.vertex_spacing = quality["espaco_vertice"]
 		_own_terrain.view_distance_chunks = quality["distancia_chunks"]
 	elif terreno == "addon" and _addon_terrain != null:
-		_addon_terrain.set_vertex_spacing(quality["espaco_vertice"])
+		_addon_terrain.set_quality(quality["addon_mesh_size"], quality["addon_mesh_lods"])
 	# Sombras e MSAA são ajustados pela composição de ambiente (LW-041); fora do escopo do SP4a,
 	# que mede terreno. Registrado como limitação no relatório.
 
@@ -132,10 +141,13 @@ func _run_combo(terreno: String, qualidade: String, cenario: String, duration: f
 	var fps_mins: Array[float] = []
 	var last_stats: Dictionary = {}
 	var observation: String = ""
+	var lost_focus: bool = false
 	for repeticao: int in range(repeticoes):
 		var pass_result: Dictionary = await _run_single_pass(terreno, cenario, duration)
 		last_stats = pass_result["stats"]
 		observation = pass_result["observacao"]
+		if last_stats.get("invalida_por_foco", false):
+			lost_focus = true
 		if last_stats.get("amostras", 0) > 0:
 			fps_medios.append(last_stats["fps_medio"])
 			fps_mins.append(last_stats["fps_min"])
@@ -145,6 +157,11 @@ func _run_combo(terreno: String, qualidade: String, cenario: String, duration: f
 		observation += " | %d repetições: FPS médio de %.1f a %.1f, FPS mín de %.1f a %.1f" % [
 			repeticoes, spread_medio["minimo"], spread_medio["maximo"], spread_min["minimo"], spread_min["maximo"],
 		]
+	# H6 (revisão da Parte A): marca INVÁLIDA se QUALQUER amostra desta combinação perdeu o foco
+	# da janela (DisplayServer.window_is_focused() checado a cada quadro em metrics.gd) — sem
+	# foco de verdade o Windows reduz os quadros reais e o número não serve de medição.
+	if lost_focus:
+		observation = "INVÁLIDA (perdeu foco da janela durante a medição) | " + observation
 	result_writer.add_row(renderer_label, qualidade, terreno, cenario, last_stats, observation)
 	print("Concluído: %s / %s / %s / %s" % [renderer_label, qualidade, terreno, cenario])
 
@@ -156,7 +173,7 @@ func _run_single_pass(terreno: String, cenario: String, duration: float) -> Dict
 	match cenario:
 		"parado":
 			var spawn: Vector3 = terrain_data.peek_spawn_point()
-			camera.global_position = spawn + Vector3(0.0, 8.0, 15.0)
+			camera.global_position = spawn + Vector3(0.0, CAMERA_MARGIN_PARADO, 15.0)
 			camera.look_at(spawn, Vector3.UP)
 			if terreno == "proprio" and _own_terrain != null:
 				_own_terrain.set_focus(camera.global_position)
@@ -164,8 +181,9 @@ func _run_single_pass(terreno: String, cenario: String, duration: float) -> Dict
 			var elapsed: float = 0.0
 			while elapsed < duration:
 				await scene_root.get_tree().process_frame
-				metrics.sample_frame()
-				elapsed += scene_root.get_process_delta_time()
+				var delta: float = scene_root.get_process_delta_time()
+				metrics.sample_frame(delta)
+				elapsed += delta
 		"caminhada":
 			var elapsed_walk: float = 0.0
 			while elapsed_walk < duration:
@@ -174,11 +192,21 @@ func _run_single_pass(terreno: String, cenario: String, duration: float) -> Dict
 				var ping_pong: float = 1.0 - absf(2.0 * t - 1.0)
 				var ground_pos: Vector2 = WALK_PATH_START.lerp(WALK_PATH_END, ping_pong)
 				var height: float = terrain_data.get_height(ground_pos.x, ground_pos.y)
-				camera.global_position = Vector3(ground_pos.x, height + 2.0, ground_pos.y)
+				camera.global_position = Vector3(ground_pos.x, height + CAMERA_MARGIN_CAMINHADA, ground_pos.y)
+				# Orientação definida sempre (achado na revisão: sem isto, "caminhada" herdava o
+				# look_at de "parado", a câmera parada olhando sempre para o nascimento enquanto
+				# a posição se movia — ver relatório, seção 4). Olha um pouco à frente, na direção
+				# do trecho atual do trajeto (START->END ou o inverso, conforme a ida e volta).
+				var path_forward: Vector2 = (WALK_PATH_END - WALK_PATH_START).normalized()
+				if t > 0.5:
+					path_forward = -path_forward
+				var look_target: Vector3 = Vector3(ground_pos.x, height, ground_pos.y) + Vector3(path_forward.x, 0.0, path_forward.y) * 10.0
+				camera.look_at(look_target, Vector3.UP)
 				if terreno == "proprio" and _own_terrain != null:
 					_own_terrain.set_focus(camera.global_position)
-				metrics.sample_frame()
-				elapsed_walk += scene_root.get_process_delta_time()
+				var delta_walk: float = scene_root.get_process_delta_time()
+				metrics.sample_frame(delta_walk)
+				elapsed_walk += delta_walk
 		"subida":
 			observation = await _run_subida(metrics, duration)
 		"colisao":
@@ -197,18 +225,25 @@ func _run_subida(metrics: Sp4aMetrics, cycle_duration: float) -> String:
 			await scene_root.get_tree().process_frame
 			var t: float = elapsed / cycle_duration
 			var ping_pong: float = 1.0 - absf(2.0 * t - 1.0)
-			var height: float = lerpf(2.0, SUBIDA_MAX_HEIGHT, ping_pong)
+			# Relativo ao chão do nascimento (spawn.y), não um Y absoluto: o nascimento não fica
+			# exatamente em altura 0 (achado na revisão — câmera "nascia" enterrada quando o
+			# terreno ali tinha, por exemplo, 14 m; ver relatório, seção 4).
+			var height: float = lerpf(spawn.y + CAMERA_MARGIN_SUBIDA_MIN, spawn.y + SUBIDA_MAX_HEIGHT, ping_pong)
 			camera.global_position = Vector3(base_xz.x, height, base_xz.y)
-			camera.look_at(Vector3(base_xz.x, 0.0, base_xz.y), Vector3.FORWARD)
-			metrics.sample_frame()
-			var fps: float = Performance.get_monitor(Performance.TIME_FPS)
+			camera.look_at(Vector3(base_xz.x, spawn.y, base_xz.y), Vector3.FORWARD)
+			var delta: float = scene_root.get_process_delta_time()
+			metrics.sample_frame(delta)
+			# FPS por quadro de verdade (1/delta), não Performance.TIME_FPS (só atualiza ~1x por
+			# segundo — mesmo achado do item H5, ver relatório seção 4): sem isto, a tabela "por
+			# faixa de altura" repetia o mesmo número várias faixas seguidas.
+			var fps: float = 1.0 / delta if delta > 0.0 else 0.0
 			var bucket: int = int(height / 100.0) * 100
 			if not height_buckets.has(bucket):
 				height_buckets[bucket] = []
 			height_buckets[bucket].append(fps)
 			if fps < 30.0 and fps > 0.0 and (fps_below_30_height < 0.0 or height < fps_below_30_height):
 				fps_below_30_height = height
-			elapsed += scene_root.get_process_delta_time()
+			elapsed += delta
 	var bucket_summary: Array[String] = []
 	for bucket: int in height_buckets.keys():
 		var values: Array = height_buckets[bucket]
@@ -226,7 +261,13 @@ func _run_subida(metrics: Sp4aMetrics, cycle_duration: float) -> String:
 ## seção 4). Por isso foca perto do nascimento e testa só essa vizinhança.
 func _run_colisao(terreno: String, metrics: Sp4aMetrics, duration: float) -> String:
 	var spawn: Vector3 = terrain_data.peek_spawn_point()
-	camera.global_position = spawn + Vector3(0.0, 10.0, 0.0)
+	camera.global_position = spawn + Vector3(0.0, CAMERA_MARGIN_COLISAO, 0.0)
+	# Vector3.FORWARD como referência "up", não Vector3.UP: a câmera fica exatamente acima do
+	# alvo (deslocamento só no eixo Y), então olhar para baixo com UP como referência é colinear
+	# com a direção do olhar — o motor avisa "Target and up vectors are colinear" (achado pelo
+	# teste novo test_every_scenario_starts_camera_above_ground_with_orientation; mesmo problema
+	# que "subida" já evitava, mas que eu tinha esquecido de aplicar aqui — ver relatório, seção 4).
+	camera.look_at(spawn, Vector3.FORWARD)
 	if terreno == "proprio" and _own_terrain != null:
 		_own_terrain.set_focus(spawn)
 	await scene_root.get_tree().process_frame
@@ -252,7 +293,7 @@ func _run_colisao(terreno: String, metrics: Sp4aMetrics, duration: float) -> Str
 				mismatches += 1
 			z += COLLISION_GRID_STEP
 		await scene_root.get_tree().physics_frame
-		metrics.sample_frame()
+		metrics.sample_frame(scene_root.get_physics_process_delta_time())
 		x += COLLISION_GRID_STEP
 
 	var body: CharacterBody3D = CharacterBody3D.new()

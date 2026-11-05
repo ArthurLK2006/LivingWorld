@@ -1,0 +1,27 @@
+RESULTADO PARA COLAR
+Máquina: {"memoria_total_mb":31865,"nucleos":12,"placa_video":"AMD Radeon RX 9060 XT","processador":"AMD Ryzen 5 8600G w/ Radeon 760M Graphics","renderizador":"gl_compatibility","resolucao":"1152x648","sistema":"Windows","versao_godot":"4.7.2-stable (official)","versao_sistema":"10.0.26200"}
+Máquina | Renderizador | Nível | Terreno | Cenário | FPS médio | FPS mín | 1% pior | p99 (ms) | Engasgos >33 ms | Memória (MB) | Vídeo (MB) | Observação
+Windows | gl_compatibility | baixo | proprio | parado | 3802.9 | 895.2 | 2171.6 | 0.4 | 0 | 41.0 | 20.7 | 
+Windows | gl_compatibility | baixo | proprio | caminhada | 3662.3 | 113.2 | 866.4 | 0.5 | 0 | 41.5 | 20.3 | 
+Windows | gl_compatibility | baixo | proprio | subida | 5275.9 | 304.1 | 2145.6 | 0.4 | 0 | 42.7 | 20.3 | nunca ficou <30fps; por faixa: 0m:3798fps, 100m:5100fps, 200m:5403fps, 300m:5395fps, 400m:5425fps, 500m:5424fps, 600m:5334fps, 700m:5331fps, 800m:5473fps, 900m:5435fps, 1000m:5557fps
+Windows | gl_compatibility | baixo | proprio | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 40.7 | 20.7 | colisão: 36/36 alturas batem; cápsula andou (5.5m)
+Windows | gl_compatibility | medio | proprio | parado | 2828.2 | 1390.8 | 1698.8 | 0.5 | 0 | 41.9 | 33.4 | 
+Windows | gl_compatibility | medio | proprio | caminhada | 2656.5 | 16.9 | 467.5 | 0.9 | 18 | 42.1 | 35.1 | 
+Windows | gl_compatibility | medio | proprio | subida | 3090.0 | 720.0 | 1781.7 | 0.5 | 0 | 42.9 | 35.1 | nunca ficou <30fps; por faixa: 0m:2508fps, 100m:3095fps, 200m:3069fps, 300m:3028fps, 400m:3076fps, 500m:3144fps, 600m:3167fps, 700m:3226fps, 800m:3217fps, 900m:3160fps, 1000m:3160fps
+Windows | gl_compatibility | medio | proprio | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 41.7 | 37.2 | colisão: 36/36 alturas batem; cápsula andou (5.4m)
+Windows | gl_compatibility | alto | proprio | parado | 1946.3 | 1162.8 | 1326.8 | 0.7 | 0 | 44.2 | 81.6 | 
+Windows | gl_compatibility | alto | proprio | caminhada | 1327.1 | 6.7 | 88.5 | 4.7 | 12 | 44.3 | 95.1 | 
+Windows | gl_compatibility | alto | proprio | subida | 1135.3 | 662.3 | 718.7 | 1.4 | 0 | 44.4 | 95.1 | nunca ficou <30fps; por faixa: 0m:1505fps, 100m:1688fps, 200m:1337fps, 300m:1035fps, 400m:932fps, 500m:846fps, 600m:806fps, 700m:797fps, 800m:780fps, 900m:798fps, 1000m:832fps
+Windows | gl_compatibility | alto | proprio | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 44.7 | 106.9 | colisão: 36/36 alturas batem; cápsula andou (5.4m)
+Windows | gl_compatibility | baixo | addon | parado | 2614.2 | 1466.3 | 1694.9 | 0.6 | 0 | 68.9 | 44.5 | 
+Windows | gl_compatibility | baixo | addon | caminhada | 3007.1 | 720.0 | 1775.0 | 0.5 | 0 | 69.8 | 44.5 | 
+Windows | gl_compatibility | baixo | addon | subida | 4199.9 | 252.3 | 1857.4 | 0.5 | 0 | 70.3 | 44.5 | nunca ficou <30fps; por faixa: 0m:2436fps, 100m:2729fps, 200m:3068fps, 300m:3479fps, 400m:4057fps, 500m:4432fps, 600m:4690fps, 700m:4806fps, 800m:4946fps, 900m:4972fps, 1000m:5083fps
+Windows | gl_compatibility | baixo | addon | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 68.6 | 44.5 | colisão: 22/36 alturas batem; cápsula andou (5.4m)
+Windows | gl_compatibility | medio | addon | parado | 1383.2 | 877.2 | 990.7 | 0.9 | 0 | 68.9 | 53.5 | 
+Windows | gl_compatibility | medio | addon | caminhada | 1639.2 | 720.0 | 1165.9 | 0.8 | 0 | 69.5 | 53.5 | 
+Windows | gl_compatibility | medio | addon | subida | 1563.3 | 720.0 | 1119.4 | 0.8 | 0 | 69.4 | 53.5 | nunca ficou <30fps; por faixa: 0m:1433fps, 100m:1478fps, 200m:1537fps, 300m:1587fps, 400m:1585fps, 500m:1558fps, 600m:1595fps, 700m:1611fps, 800m:1600fps, 900m:1602fps, 1000m:1614fps
+Windows | gl_compatibility | medio | addon | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 68.7 | 53.5 | colisão: 22/36 alturas batem; cápsula andou (5.4m)
+Windows | gl_compatibility | alto | addon | parado | 632.4 | 600.0 | 600.0 | 1.7 | 0 | 68.9 | 66.8 | 
+Windows | gl_compatibility | alto | addon | caminhada | 740.4 | 621.1 | 656.3 | 1.5 | 0 | 69.1 | 66.8 | 
+Windows | gl_compatibility | alto | addon | subida | 770.6 | 560.9 | 598.0 | 1.7 | 0 | 69.1 | 66.8 | nunca ficou <30fps; por faixa: 0m:897fps, 100m:835fps, 200m:795fps, 300m:857fps, 400m:920fps, 500m:698fps, 600m:691fps, 700m:677fps, 800m:632fps, 900m:648fps, 1000m:660fps
+Windows | gl_compatibility | alto | addon | colisao | 60.0 | 60.0 | 60.0 | 16.7 | 0 | 68.8 | 66.8 | colisão: 22/36 alturas batem; cápsula andou (5.4m)

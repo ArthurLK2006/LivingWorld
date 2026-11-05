@@ -12,6 +12,14 @@ extends Node3D
 ## controle, cor; as duas últimas podem ser null).
 
 const HEIGHT_RESOLUTION: float = 1.0  ## 1 pixel do mapa de altura = 1 metro, fixo
+## vertex_spacing do Terrain3D muda a ESCALA DO MUNDO inteiro, não só a densidade da malha —
+## confirmado por teste curto (ver relatório, seção 4): um pico importado no pixel (4,4) aparece
+## em x,z=(4,4) com vertex_spacing 1,0, em ~(8,8) com 2,0 e em ~(16,16) com 4,0. Variar isso por
+## nível de qualidade (como a Parte A fazia) media um MUNDO DIFERENTE em cada nível — e explica
+## a colisão "quebrada": meus pontos de teste (perto do nascimento, mundo de 1.024 m) caíam fora
+## do terreno de verdade, que tinha sido esticado para até ~4.100 m. Por isso fica fixo em 1,0:
+## as duas variantes precisam medir o MESMO mundo.
+const FIXED_VERTEX_SPACING: float = 1.0
 
 var terrain_data: Sp4aTerrainData
 var load_error: String = ""
@@ -51,6 +59,7 @@ func setup(data: Sp4aTerrainData) -> bool:
 			bytes.encode_float((zi * side + xi) * 4, height)
 	var image: Image = Image.create_from_data(side, side, false, Image.FORMAT_RF, bytes)
 
+	_terrain.set("vertex_spacing", FIXED_VERTEX_SPACING)
 	var images: Array[Image] = [image, null, null]
 	var terrain_data_object: Object = _terrain.get("data")
 	if terrain_data_object == null or not terrain_data_object.has_method("import_images"):
@@ -70,9 +79,14 @@ func setup(data: Sp4aTerrainData) -> bool:
 	return true
 
 
-func set_vertex_spacing(spacing: float) -> void:
+## Densidade visual por nível de qualidade SEM mexer no mundo: mesh_size (vértices por anel do
+## clipmap, faixa 8-256) e mesh_lods (quantidade de anéis, faixa 1-10) não deslocam a altura
+## importada (testado: mesmo pico, mesma posição, em mesh_size 8/32/64 — ver relatório, seção 4).
+## vertex_spacing continua FIXO (ver FIXED_VERTEX_SPACING) e não é tocado aqui.
+func set_quality(mesh_size: int, mesh_lods: int) -> void:
 	if _terrain != null:
-		_terrain.set("vertex_spacing", spacing)
+		_terrain.set("mesh_size", mesh_size)
+		_terrain.set("mesh_lods", mesh_lods)
 
 
 func set_camera(camera: Camera3D) -> void:
