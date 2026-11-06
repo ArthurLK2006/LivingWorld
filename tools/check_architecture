@@ -90,5 +90,71 @@ if [ -f "$project_file" ]; then
         failed=1
     fi
 fi
+# Regra 4 (arquitetura 27.3): import fora das camadas. Camadas por pasta (arquitetura 3.2): core 0, data 1,
+# sim/world e sim/entities 2, sim/character, npc, economy e ecology 3, sim/factions, politics, military e
+# combat 4, sim/events 5, persistence, bridge e app 6, presentation 7. `src/app` não está na tabela da
+# arquitetura e conta como 6 (limitação); pastas sem camada (ai_text, net, tools) ficam de fora.
+# (A) um arquivo não cita class_name de camada estritamente maior; (B) a apresentação não cita class_name de
+# src/sim (fala com a simulação só pela ponte); (C) class_name declarada em uma pasta internal/ só é citada
+# dentro do módulo dono (a pasta que contém internal/). Citação = palavra inteira. Só nestas regras novas,
+# linhas inteiras de comentário (começam com #) não contam; código com comentário no fim continua varrido.
+# [LIM] Não vê classes internas (`class X:`) nem referências por caminho (`preload`).
+gd_files=$(rg --files --glob '*.gd' "$root/src" 2>/dev/null | sort)
+if [ -n "$gd_files" ]; then
+    layer_report=$(awk -v pass=1 -v prefix="$root/src/" '
+    function layer_of(path) {
+        if (path ~ /^core\//) return 0
+        if (path ~ /^data\//) return 1
+        if (path ~ /^sim\/(world|entities)\//) return 2
+        if (path ~ /^sim\/(character|npc|economy|ecology)\//) return 3
+        if (path ~ /^sim\/(factions|politics|military|combat)\//) return 4
+        if (path ~ /^sim\/events\//) return 5
+        if (path ~ /^(persistence|bridge|app)\//) return 6
+        if (path ~ /^presentation\//) return 7
+        return -1
+    }
+    FNR == 1 { rel = substr(FILENAME, length(prefix) + 1) }
+    pass == 1 && /^class_name[[:space:]]+[A-Za-z0-9_]+/ {
+        where[$2] = rel
+        class_layer[$2] = layer_of(rel)
+        cut = index(rel, "/internal/")
+        if (cut > 0) owner[$2] = substr(rel, 1, cut)
+        next
+    }
+    pass == 2 && $0 !~ /^[[:space:]]*#/ {
+        count = split($0, tokens, /[^A-Za-z0-9_]+/)
+        split("", seen)
+        here = layer_of(rel)
+        for (i = 1; i <= count; i++) {
+            name = tokens[i]
+            if (name == "" || !(name in where) || (name in seen) || where[name] == rel) continue
+            seen[name] = 1
+            if (here >= 0 && class_layer[name] > here)
+                printf "A|%s:%d: \"%s\" (camada %d, src/%s) citada em arquivo de camada %d; esperado citar só camada menor ou igual.\n", FILENAME, FNR, name, class_layer[name], where[name], here
+            if (rel ~ /^presentation\// && where[name] ~ /^sim\//)
+                printf "B|%s:%d: \"%s\" (src/%s) citada pela apresentação; esperado falar com a simulação só pela ponte (bridge).\n", FILENAME, FNR, name, where[name]
+            if ((name in owner) && index(rel, owner[name]) != 1)
+                printf "C|%s:%d: \"%s\" (src/%s) é privada de src/%s; esperado citar só dentro do módulo.\n", FILENAME, FNR, name, where[name], owner[name]
+        }
+    }' $gd_files pass=2 $gd_files 2>&1)
+    layer_code=$?
+    if [ "$layer_code" -ne 0 ]; then
+        printf '%s\n%s\n' 'ERRO: busca de import fora das camadas falhou' "$layer_report"
+        failed=1
+    else
+        for layer_rule in A B C; do
+            case $layer_rule in
+                A) layer_label='import de camada superior' ;;
+                B) layer_label='apresentação cita classe da simulação' ;;
+                C) layer_label='classe privada (internal/) citada fora do módulo' ;;
+            esac
+            layer_part=$(printf '%s\n' "$layer_report" | sed -n "s/^$layer_rule|//p")
+            if [ -n "$layer_part" ]; then
+                printf '%s\n%s\n' "VIOLAÇÃO: $layer_label" "$layer_part"
+                failed=1
+            fi
+        done
+    fi
+fi
 if [ "$failed" -ne 0 ]; then exit 1; fi
-echo 'Arquitetura: oito verificações aprovadas.'
+echo 'Arquitetura: nove verificações aprovadas.'
