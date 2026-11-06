@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| **Estado atual** | **Fase 1 (primeiro mundo jogável) EM ANDAMENTO: 12 de 23 tarefas concluídas; avanço total do projeto: 43 de 192 tarefas (22,4%).** A Fase 0 (fundação técnica) está concluída: 31 de 31 tarefas concluídas ou dispensadas, tag `fase-0-concluida` no remoto (aprovação de Arthur em 03/11/2026). Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`; o SP4a (medição de terreno) existe como código descartável em `tests/soak/sp4a`. O terreno de teste de 1 km² já aparece na tela, com colisão (LW-038 e LW-039), com céu, luz que segue a hora simulada (dia e noite), árvores e pedras e um mapa de teclas por ações nomeadas (LW-041 a LW-044). **Ainda não há jogo jogável.** Veja a seção 5 |
+| **Estado atual** | **Fase 1 (primeiro mundo jogável) EM ANDAMENTO: 16 de 23 tarefas concluídas; avanço total do projeto: 47 de 192 tarefas (24,5%).** A Fase 0 (fundação técnica) está concluída: 31 de 31 tarefas concluídas ou dispensadas, tag `fase-0-concluida` no remoto (aprovação de Arthur em 03/11/2026). Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`; o SP4a (medição de terreno) existe como código descartável em `tests/soak/sp4a`. O terreno de teste de 1 km² já aparece na tela, com colisão (LW-038 e LW-039), carregado só em volta do jogador (LW-040), com céu, luz que segue a hora simulada (dia e noite), árvores e pedras e um mapa de teclas por ações nomeadas (LW-041 a LW-044). Já dá para andar, correr e pular com um personagem provisório (uma cápsula laranja, LW-045), visto de uma câmera de terceira pessoa que gira e dá zoom (LW-046), com limites de inclinação, borda do mapa e queda (LW-047). **Ainda não há jogo jogável** (faltam, entre outras coisas, a interação com o mundo, o HUD e o relato da posição à simulação). Veja a seção 5 |
 | **Versão da documentação** | 0.3 (revisão final de 01/11/2026, horário de Brasília); seções 5, 6.1 e 8 a 10 atualizadas em 02/11/2026 |
 | **Responsável** | Arthur (dono do produto; único que aprova decisões) |
 | **Licença** | Ainda não definida |
@@ -137,11 +137,11 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 | Item | Situação |
 |---|---|
 | Documentos de planejamento (briefing, GDD, arquitetura, roadmap, decisões, regras para agentes) | Prontos (v0.3) |
-| Projeto Godot 4.7.2 (`project.godot`) e cena inicial | Existem. A cena mostra o terreno de teste de 1 km² (planície, colina, vale e caminho, com colisão por chunk), com céu, sol com sombras e névoa que seguem a hora simulada (dia e noite) e árvores e pedras sobre a grama, visto de uma câmera provisória fixa, e o texto de título, versão e data simulada; a tecla P pausa (as teclas são ações nomeadas do `InputMap`; o Espaço é o pulo, ainda sem uso) |
+| Projeto Godot 4.7.2 (`project.godot`) e cena inicial | Existem. A cena mostra o terreno de teste de 1 km² (planície, colina, vale e caminho, com colisão por chunk, carregado só em volta do jogador), com céu, sol com sombras e névoa que seguem a hora simulada (dia e noite) e árvores e pedras sobre a grama, e o texto de título, versão e data simulada. Um personagem provisório (cápsula laranja) anda, corre e pula sobre o terreno, visto de uma câmera de terceira pessoa elevada. As teclas são ações nomeadas do `InputMap`: W, A, S e D andam, Shift esquerdo corre, Espaço pula, o botão direito do mouse arrastado e as setas giram a câmera, a roda dá zoom e P pausa o relógio (o personagem não reage à pausa) |
 | Núcleo da simulação (`src/core`) | Relógio, sorteios repetíveis, IDs, eventos, agendador, mundo e hash de estado, todos testados e rodando **sem janela** |
 | Dados (`src/data`) | Leitor e validador de arquivos JSON |
 | Salvamento (`src/persistence`) | Salvar e carregar com checksum, versões, migração, backups e recuperação |
-| Testes e verificação | `tools/check_all` (arquitetura em 9 verificações, teclas fixas, dados, testes automáticos, cena e simulação). Verificado em 06/11/2026 no commit de código `0f2a7c8` (LW-044, ramo `lw-044-mapa-de-entradas`): **verde no Mac, com 314 testes** (a nuvem não foi repetida desde 03/11/2026, quando deu verde com 154 testes). No Windows (que não é a plataforma de referência) terminou vermelho em 03/11/2026 por três linhas das próprias ferramentas de verificação; detalhes em [`docs/fase-0/LW-031-relatorio-de-fechamento.md`](docs/fase-0/LW-031-relatorio-de-fechamento.md) |
+| Testes e verificação | `tools/check_all` (arquitetura em 9 verificações, teclas fixas, dados, testes automáticos, cena e simulação). Verificado em 06/11/2026 no commit de código `52946f7` (LW-047, ramo `lw-047-limites-do-jogador`): **verde no Mac, com 368 testes** (a nuvem não foi repetida desde 03/11/2026, quando deu verde com 154 testes). No Windows (que não é a plataforma de referência) terminou vermelho em 03/11/2026 por três linhas das próprias ferramentas de verificação; detalhes em [`docs/fase-0/LW-031-relatorio-de-fechamento.md`](docs/fase-0/LW-031-relatorio-de-fechamento.md) |
 | Medições (spikes) | Núcleo (SP1), dados (SP3), salvamento (SP5) e terreno (SP4a) registrados em `docs/decisions/` |
 | Revisão e validação da Fase 0 | Revisão arquitetural aceita (aprovada com ajustes, 0 achados críticos), validação assinada por Arthur com ressalvas e fechamento da fase (LW-031) aprovado, os três em 03/11/2026 |
 
@@ -149,7 +149,7 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 
 | Item | Situação |
 |---|---|
-| Personagem e câmera de jogo | **Nenhum** (Fase 1). O terreno de teste já aparece na tela (LW-038 e LW-039); a câmera da cena é provisória e fixa. O SP4a segue como código descartável de medição em `tests/soak/sp4a` |
+| Personagem e câmera de jogo definitivos | **Só os provisórios** (Fase 1): uma cápsula laranja que anda, corre e pula, com limites de inclinação, borda do mapa e queda (LW-045 e LW-047), e uma câmera de terceira pessoa elevada, com órbita e zoom (LW-046). Ainda sem animação, sem interação e sem relato da posição à simulação (LW-048). O SP4a segue como código descartável de medição em `tests/soak/sp4a` |
 | NPCs, economia, política, facções, combate | **Nenhum** de verdade (só NPCs "de mentira" em testes de desempenho) |
 | Conteúdo do jogo em `data/` | **Nenhum** de verdade (só o terreno de teste de blockout em `data/world/`, LW-037, e dados de teste em `tests/fixtures/`) |
 | Executável jogável | **Não existe** |
@@ -161,13 +161,13 @@ O roadmap tem **6 fases e 192 tarefas** (`LW-001` a `LW-192`).
 | Fase | Nome | Tarefas | Situação |
 |---|---|---|---|
 | 0 | Fundação técnica | 31 | **Concluída** (31 de 31 concluídas ou dispensadas; tag `fase-0-concluida` criada e no remoto, em `7ae6e8e`, 03/11/2026) |
-| 1 | Primeiro mundo jogável | 23 | **Em andamento** (12 de 23 concluídas: LW-032, LW-033, LW-034, LW-035, LW-036, LW-037, LW-038, LW-039, LW-041, LW-042, LW-043 e LW-044) |
+| 1 | Primeiro mundo jogável | 23 | **Em andamento** (16 de 23 concluídas: LW-032, LW-033, LW-034, LW-035, LW-036, LW-037, LW-038, LW-039, LW-040, LW-041, LW-042, LW-043, LW-044, LW-045, LW-046 e LW-047) |
 | 2 | Primeira sociedade | 32 | Não iniciada |
 | 3 | Economia | 30 | Não iniciada |
 | 4 | Facções e conflitos | 29 | Não iniciada |
 | 5 | Integração e protótipo | 47 | Não iniciada |
 
-A Fase 1 está **em andamento**: a LW-032 (contratos mínimos), a LW-033 (spike SP4a do terreno), a LW-034 (dados do terreno e lista de inteiros no `data`), a LW-035 (personagem mínimo no módulo `character`), a LW-036 (ponte mínima entre a apresentação e a simulação), a LW-037 (gerador do terreno de blockout e tamanho do chunk como dado), a LW-038 (terreno desenhado, `TerrainView`), a LW-039 (colisão do terreno por chunk), a LW-041 (ambiente estático), a LW-042 (ciclo de dia e noite), a LW-043 (árvores e pedras por dados) e a LW-044 (mapa de entradas), as onze últimas aprovadas por Arthur (a LW-033 e a LW-034 em 05/11/2026; as demais em 06/11/2026), estão concluídas, 12 de 23 tarefas. O avanço total do projeto é de 43 de 192 tarefas (22,4%).
+A Fase 1 está **em andamento**: a LW-032 (contratos mínimos), a LW-033 (spike SP4a do terreno), a LW-034 (dados do terreno e lista de inteiros no `data`), a LW-035 (personagem mínimo no módulo `character`), a LW-036 (ponte mínima entre a apresentação e a simulação), a LW-037 (gerador do terreno de blockout e tamanho do chunk como dado), a LW-038 (terreno desenhado, `TerrainView`), a LW-039 (colisão do terreno por chunk), a LW-040 (carga e descarga de chunks por distância), a LW-041 (ambiente estático), a LW-042 (ciclo de dia e noite), a LW-043 (árvores e pedras por dados), a LW-044 (mapa de entradas), a LW-045 (personagem provisório, `PlayerBody`), a LW-046 (câmera de terceira pessoa) e a LW-047 (limites do jogador), as quinze últimas aprovadas por Arthur (a LW-033 e a LW-034 em 05/11/2026; as demais em 06/11/2026), estão concluídas, 16 de 23 tarefas. O avanço total do projeto é de 47 de 192 tarefas (24,5%).
 
 > O acompanhamento é mantido em `docs/ROADMAP_STATUS.md`. Esta seção só deve conter o que foi verificado.
 
@@ -177,7 +177,7 @@ A Fase 1 está **em andamento**: a LW-032 (contratos mínimos), a LW-033 (spike 
 
 ### 6.1 Hoje
 
-Existem: `project.godot`, `scenes/main.tscn`, `data/world/` (terreno de teste e decorações), `assets/environment/` (recurso do ambiente), `src/` (`app`, `bridge`, `core`, `data`, `persistence`, `sim/world`, `sim/character`, `presentation/ui`, `presentation/world_view` com `terrain`, `environment` e `decoration`, mais pastas reservadas com um `README`), `tests/` (`unit`, `integration`, `soak`, `fixtures`), `tools/` (comandos de verificação e simulação) e `docs/` (planejamento, decisões técnicas em `docs/decisions/` e contratos em `docs/modules/`).
+Existem: `project.godot`, `scenes/main.tscn`, `data/world/` (terreno de teste e decorações), `assets/environment/` (recurso do ambiente), `src/` (`app`, `bridge`, `core`, `data`, `persistence`, `sim/world`, `sim/character`, `presentation/ui`, `presentation/world_view` com `terrain`, `environment` e `decoration`, `presentation/player`, `presentation/camera`, mais pastas reservadas com um `README`), `tests/` (`unit`, `integration`, `soak`, `fixtures`), `tools/` (comandos de verificação e simulação) e `docs/` (planejamento, decisões técnicas em `docs/decisions/` e contratos em `docs/modules/`).
 
 ### 6.2 Estrutura **planejada** (parte já existe; ver 6.1)
 
@@ -206,7 +206,7 @@ living-world/
 │   ├── sim/                 ← SIMULAÇÃO, sem elementos visuais (planejado)
 │   ├── persistence/         ← salvar e carregar (existe)
 │   ├── bridge/              ← ponte entre simulação e visual (planejado)
-│   ├── presentation/        ← o que o jogador vê e usa (só `ui/` tem conteúdo; o resto é planejado)
+│   ├── presentation/        ← o que o jogador vê e usa (`ui/`, `world_view/`, `player/` e `camera/` têm conteúdo; o resto é planejado)
 │   └── tools/               ← ferramentas de depuração (planejado)
 ├── scenes/  assets/  addons/
 ├── tests/                   ← unit, integration, soak, fixtures (existem)
@@ -271,7 +271,7 @@ Agentes de IA não instalam nada sem autorização (regra do `AGENTS.md`); quem 
 
 1. Abra o Godot 4.7.2 e, no gerenciador de projetos, escolha **Importar**.
 2. Selecione o arquivo `project.godot` na raiz do repositório e abra o projeto.
-3. Aperte **F5** para executar. Você deve ver o terreno de teste (planície verde com um caminho cor de areia e uma colina ao longe) aparecendo aos poucos, com árvores e pedras e visto de uma câmera provisória fixa, e, no canto superior esquerdo, o título, a versão e a **data simulada avançando**. O jogo nasce à **meia-noite** (tudo azul-escuro) e, a 1x, só amanhece depois de cerca de 7,5 minutos reais. **P** pausa e continua (o Espaço é o pulo, ainda sem uso).
+3. Aperte **F5** para executar. Você deve ver o terreno de teste (planície verde com um caminho cor de areia e uma colina ao longe) aparecendo aos poucos em volta de uma cápsula laranja, o personagem provisório, visto de uma câmera de terceira pessoa, com árvores e pedras, e, no canto superior esquerdo, o título, a versão e a **data simulada avançando**. O jogo nasce à **meia-noite** (tudo azul-escuro) e, a 1x, só amanhece depois de cerca de 7,5 minutos reais. **P** pausa e continua o relógio (o personagem não reage à pausa). **W, A, S e D** andam, **Shift** esquerdo corre e **Espaço** pula; o **botão direito do mouse** arrastado ou as **setas** giram a câmera, e a **roda** dá zoom.
 
 O painel "Saída" não deve mostrar mensagens vermelhas.
 
