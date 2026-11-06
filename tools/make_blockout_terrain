@@ -1,0 +1,11 @@
+#!/bin/sh
+# Gera (ou, com --check, só confere) o terreno de blockout em data/world/. Uso único, fora do jogo.
+# Uso: tools/make_blockout_terrain [--out <pasta>] [--check]
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+exec "$godot_bin" --headless --path "$project_dir" -s res://tools/make_blockout_terrain.gd -- "$@"

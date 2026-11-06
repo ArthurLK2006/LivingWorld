@@ -13,6 +13,11 @@ const NO_SURFACE_CODE: int = -1
 
 var _cells: Vector2i
 var _cell_size_cm: int
+## Células por lado de cada chunk (dado do arquivo, DEC-118); o chunk (ci, cj) cobre as células
+## [ci * chunk_cells, (ci + 1) * chunk_cells) em x e o equivalente em z.
+var _chunk_cells: int
+## Quantidade de chunks em x e em z; só é calculada para uma grade coerente (senão fica zerada).
+var _chunk_count: Vector2i = Vector2i.ZERO
 ## Alturas em cm nos nós, por linhas de z: o nó (ix, iz) fica em iz * (células_x + 1) + ix.
 var _heights_cm: PackedInt64Array
 ## Código de superfície por célula, por linhas de z: a célula (cx, cz) fica em cz * células_x + cx.
@@ -28,9 +33,10 @@ var _spawn_point: Vector3 = Vector3.ZERO
 
 ## O TerrainData passa a ser dono das listas recebidas (arrays "Packed" são passados por referência):
 ## quem chama não deve alterá-las depois. Quem monta o objeto é o TerrainLoader.
-func _init(cells: Vector2i, cell_size_cm: int, heights_cm: PackedInt64Array, surfaces: PackedInt64Array, surface_ids: Dictionary[int, String], spawn_cm: Vector2i) -> void:
+func _init(cells: Vector2i, cell_size_cm: int, chunk_cells: int, heights_cm: PackedInt64Array, surfaces: PackedInt64Array, surface_ids: Dictionary[int, String], spawn_cm: Vector2i) -> void:
 	_cells = cells
 	_cell_size_cm = cell_size_cm
+	_chunk_cells = chunk_cells
 	_heights_cm = heights_cm
 	_surfaces = surfaces
 	_surface_ids = surface_ids
@@ -39,6 +45,7 @@ func _init(cells: Vector2i, cell_size_cm: int, heights_cm: PackedInt64Array, sur
 	_size_z_m = float(cells.y * cell_size_cm) / CM_PER_METER
 	# Grade incoerente não é lida (índices fora da lista): validate() relata o problema.
 	if _grid_problems().is_empty():
+		_chunk_count = Vector2i(IntMath.floor_div(cells.x, chunk_cells), IntMath.floor_div(cells.y, chunk_cells))
 		var spawn_x: float = float(spawn_cm.x) / CM_PER_METER
 		var spawn_z: float = float(spawn_cm.y) / CM_PER_METER
 		_spawn_point = Vector3(spawn_x, _height_m_at(spawn_x, spawn_z), spawn_z)
@@ -82,6 +89,16 @@ func peek_size_m() -> Vector2:
 	return Vector2(_size_x_m, _size_z_m)
 
 
+## Células por lado de cada chunk (metadado do arquivo).
+func peek_chunk_cells() -> int:
+	return _chunk_cells
+
+
+## Chunks em x e em z (células da grade divididas por `chunk_cells`); zerado se a grade for incoerente.
+func peek_chunk_count() -> Vector2i:
+	return _chunk_count
+
+
 ## Inconsistências da grade (vazia se estiver certo). Roda depois de carregar e em testes.
 func validate() -> Array[String]:
 	var problems: Array[String] = _grid_problems()
@@ -99,6 +116,8 @@ func debug_summary() -> Dictionary:
 		"cells_x": _cells.x,
 		"cells_z": _cells.y,
 		"cell_size_cm": _cell_size_cm,
+		"chunk_cells": _chunk_cells,
+		"chunk_count": _chunk_count,
 		"size_x_m": _size_x_m,
 		"size_z_m": _size_z_m,
 		"node_count": _heights_cm.size(),
@@ -114,6 +133,8 @@ func _grid_problems() -> Array[String]:
 	if _cells.x < 1 or _cells.y < 1 or _cell_size_cm < 1:
 		problems.append("grade inválida: %d x %d células de %d cm; esperado ao menos 1 célula por lado e passo positivo." % [_cells.x, _cells.y, _cell_size_cm])
 		return problems
+	if _chunk_cells < 1 or _cells.x % _chunk_cells != 0 or _cells.y % _chunk_cells != 0:
+		problems.append("chunks: chunk_cells %d não divide a grade de %d x %d células; esperado um valor de 1 em diante que divida as duas medidas." % [_chunk_cells, _cells.x, _cells.y])
 	var node_count: int = (_cells.x + 1) * (_cells.y + 1)
 	if _heights_cm.size() != node_count:
 		problems.append("alturas: esperado %d nós, encontrado %d." % [node_count, _heights_cm.size()])

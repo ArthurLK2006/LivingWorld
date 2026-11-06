@@ -4,6 +4,7 @@
 		"cells_x": 4,
 		"cells_z": 3,
 		"cell_size_cm": 200,
+		"chunk_cells": 1,
 		"spawn_x_cm": 300,
 		"spawn_z_cm": 200,
 		"heights_cm": [

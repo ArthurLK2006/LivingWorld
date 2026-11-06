@@ -15,10 +15,13 @@ const MAX_CELLS_PER_SIDE: int = 4096
 const MIN_CELL_SIZE_CM: int = 1
 const MAX_CELL_SIZE_CM: int = 100000
 const MAX_COORDINATE_CM: int = MAX_CELLS_PER_SIDE * MAX_CELL_SIZE_CM
+## Células por lado de um chunk: de 1 até este limite [HIP]; o valor em si é dado do arquivo (DEC-118).
+const MIN_CHUNK_CELLS: int = 1
+const MAX_CHUNK_CELLS: int = 256
 const MIN_HEIGHT_CM: int = -100000
 const MAX_HEIGHT_CM: int = 100000
 const MAX_SURFACE_CODE: int = 65535
-const INT_FIELDS: Array[String] = ["cells_x", "cells_z", "cell_size_cm", "spawn_x_cm", "spawn_z_cm"]
+const INT_FIELDS: Array[String] = ["cells_x", "cells_z", "cell_size_cm", "chunk_cells", "spawn_x_cm", "spawn_z_cm"]
 const LIST_FIELDS: Array[String] = ["heights_cm", "surfaces"]
 
 
@@ -28,6 +31,7 @@ static func build_schemas(terrain_file: String = DEFAULT_TERRAIN_FILE, surface_f
 	terrain.add_field("cells_x", DataSchema.FieldType.INT).set_range(1, MAX_CELLS_PER_SIDE)
 	terrain.add_field("cells_z", DataSchema.FieldType.INT).set_range(1, MAX_CELLS_PER_SIDE)
 	terrain.add_field("cell_size_cm", DataSchema.FieldType.INT).set_range(MIN_CELL_SIZE_CM, MAX_CELL_SIZE_CM)
+	terrain.add_field("chunk_cells", DataSchema.FieldType.INT).set_range(MIN_CHUNK_CELLS, MAX_CHUNK_CELLS)
 	terrain.add_field("spawn_x_cm", DataSchema.FieldType.INT).set_range(0, MAX_COORDINATE_CM)
 	terrain.add_field("spawn_z_cm", DataSchema.FieldType.INT).set_range(0, MAX_COORDINATE_CM)
 	terrain.add_field("heights_cm", DataSchema.FieldType.INT_LIST).set_range(MIN_HEIGHT_CM, MAX_HEIGHT_CM)
@@ -92,6 +96,7 @@ static func _check_terrain(bundle: DataBundle, file_path: String, record: Dictio
 	var cells_x: int = record["cells_x"]
 	var cells_z: int = record["cells_z"]
 	var cell_size_cm: int = record["cell_size_cm"]
+	var chunk_cells: int = record["chunk_cells"]
 	var spawn_x_cm: int = record["spawn_x_cm"]
 	var spawn_z_cm: int = record["spawn_z_cm"]
 	var heights: PackedInt64Array = record["heights_cm"]
@@ -101,10 +106,23 @@ static func _check_terrain(bundle: DataBundle, file_path: String, record: Dictio
 	if surfaces.size() != cells_x * cells_z:
 		bundle.add_issue(file_path, item, "surfaces", "tamanho da lista: esperado %d (= células_x × células_z = %d × %d), encontrado %d" % [cells_x * cells_z, cells_x, cells_z, surfaces.size()])
 	_check_surface_codes(bundle, file_path, item, surfaces, codes)
+	_check_chunk_division(bundle, file_path, item, cells_x, cells_z, chunk_cells)
 	if spawn_x_cm > cells_x * cell_size_cm:
 		bundle.add_issue(file_path, item, "spawn_x_cm", "ponto de nascimento fora do mapa: x=%d cm, esperado de 0 a %d cm" % [spawn_x_cm, cells_x * cell_size_cm])
 	if spawn_z_cm > cells_z * cell_size_cm:
 		bundle.add_issue(file_path, item, "spawn_z_cm", "ponto de nascimento fora do mapa: z=%d cm, esperado de 0 a %d cm" % [spawn_z_cm, cells_z * cell_size_cm])
+
+
+## O mapa é feito de chunks inteiros: as células de cada lado precisam ser múltiplas de chunk_cells.
+## Valor fora da faixa já foi relatado pelo esquema; aqui só se confere a divisão com um valor utilizável
+## (evita dividir por zero).
+static func _check_chunk_division(bundle: DataBundle, file_path: String, item: String, cells_x: int, cells_z: int, chunk_cells: int) -> void:
+	if chunk_cells < MIN_CHUNK_CELLS:
+		return
+	if cells_x % chunk_cells != 0:
+		bundle.add_issue(file_path, item, "chunk_cells", "células_x (%d) não é múltiplo de chunk_cells (%d); esperado um divisor de %d" % [cells_x, chunk_cells, cells_x])
+	if cells_z % chunk_cells != 0:
+		bundle.add_issue(file_path, item, "chunk_cells", "células_z (%d) não é múltiplo de chunk_cells (%d); esperado um divisor de %d" % [cells_z, chunk_cells, cells_z])
 
 
 static func _check_surface_codes(bundle: DataBundle, file_path: String, item: String, surfaces: PackedInt64Array, codes: Dictionary[int, String]) -> void:
@@ -124,7 +142,7 @@ static func _build(bundle: DataBundle) -> TerrainData:
 	var record: Dictionary = bundle.tables[TERRAIN_TABLE][0]
 	# O pacote é válido, então esta chamada não registra problema nenhum.
 	var codes: Dictionary[int, String] = _collect_codes(bundle)
-	return TerrainData.new(Vector2i(record["cells_x"], record["cells_z"]), record["cell_size_cm"], record["heights_cm"], record["surfaces"], codes, Vector2i(record["spawn_x_cm"], record["spawn_z_cm"]))
+	return TerrainData.new(Vector2i(record["cells_x"], record["cells_z"]), record["cell_size_cm"], record["chunk_cells"], record["heights_cm"], record["surfaces"], codes, Vector2i(record["spawn_x_cm"], record["spawn_z_cm"]))
 
 
 ## Resultado do carregamento: `result.ok` diz se deu certo; só então `terrain` vale

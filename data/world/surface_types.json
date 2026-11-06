@@ -1,0 +1,5 @@
+[
+	{"id": "grass", "code": 1},
+	{"id": "path", "code": 2},
+	{"id": "rock", "code": 3}
+]

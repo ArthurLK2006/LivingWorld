@@ -142,7 +142,7 @@ func test_loading_twice_gives_the_same_answers() -> void:
 
 func test_validate_reports_an_incoherent_grid_without_crashing() -> void:
 	var ids: Dictionary[int, String] = {1: "grass"}
-	var broken: TerrainData = TerrainData.new(Vector2i(2, 1), 100, PackedInt64Array([0, 10]), PackedInt64Array([1, 5]), ids, Vector2i(500, 0))
+	var broken: TerrainData = TerrainData.new(Vector2i(2, 1), 100, 1, PackedInt64Array([0, 10]), PackedInt64Array([1, 5]), ids, Vector2i(500, 0))
 	var problems: String = str(broken.validate())
 	assert_string_contains(problems, "alturas: esperado 6 nós, encontrado 2")
 	assert_string_contains(problems, "ponto de nascimento (500, 0) cm fora do mapa")
@@ -153,7 +153,7 @@ func test_validate_reports_an_incoherent_grid_without_crashing() -> void:
 # --- arquivos inválidos ---
 
 func _good_record() -> Dictionary:
-	return {"id": "t", "cells_x": 2, "cells_z": 1, "cell_size_cm": 100, "spawn_x_cm": 100, "spawn_z_cm": 50, "heights_cm": [0, 10, 20, 30, 40, 50], "surfaces": [1, 2]}
+	return {"id": "t", "cells_x": 2, "cells_z": 1, "cell_size_cm": 100, "chunk_cells": 1, "spawn_x_cm": 100, "spawn_z_cm": 50, "heights_cm": [0, 10, 20, 30, 40, 50], "surfaces": [1, 2]}
 
 
 ## Valida registros em memória com os mesmos esquemas e verificações do carregamento de arquivos.
@@ -245,3 +245,63 @@ func test_malformed_json_fails_with_the_line() -> void:
 	var loaded: TerrainLoader.LoadResult = TerrainLoader.load_dir(BAD_DIR, "malformed.json", "not_a_list.json")
 	assert_false(loaded.result.ok)
 	assert_string_contains(loaded.result.message, "malformed.json | JSON inválido na linha")
+
+
+# --- chunks (LW-037, DEC-118) ---
+
+## Terreno plano de 4 x 2 células (todas com o código 0), com o tamanho de chunk dado.
+func _flat_terrain(chunk_cells: int) -> TerrainData:
+	var heights: PackedInt64Array = PackedInt64Array()
+	heights.resize(15) # 5 x 3 nós, todos em 0
+	var surfaces: PackedInt64Array = PackedInt64Array()
+	surfaces.resize(8)
+	var ids: Dictionary[int, String] = {0: "grass"}
+	return TerrainData.new(Vector2i(4, 2), 100, chunk_cells, heights, surfaces, ids, Vector2i(0, 0))
+
+
+func test_chunk_metadata_matches_the_file() -> void:
+	var terrain: TerrainData = _load_ok()
+	assert_eq(terrain.peek_chunk_cells(), 1)
+	assert_eq(terrain.peek_chunk_count(), Vector2i(4, 3), "4 x 3 células em chunks de 1 célula.")
+	var summary: Dictionary = terrain.debug_summary()
+	assert_eq(summary["chunk_cells"], 1)
+	assert_eq(summary["chunk_count"], Vector2i(4, 3))
+
+
+func test_chunk_count_is_the_grid_divided_by_chunk_cells() -> void:
+	var terrain: TerrainData = _flat_terrain(2)
+	assert_eq(terrain.validate().size(), 0, str(terrain.validate()))
+	assert_eq(terrain.peek_chunk_cells(), 2)
+	assert_eq(terrain.peek_chunk_count(), Vector2i(2, 1), "4 x 2 células em chunks de 2 células.")
+
+
+func test_validate_reports_a_chunk_size_that_does_not_divide_the_grid() -> void:
+	for chunk_cells: int in [3, 0, -2]:
+		var terrain: TerrainData = _flat_terrain(chunk_cells)
+		assert_string_contains(str(terrain.validate()), "chunk_cells %d não divide a grade de 4 x 2" % chunk_cells)
+		assert_eq(terrain.peek_chunk_count(), Vector2i.ZERO, "Grade incoerente não calcula os chunks.")
+
+
+func test_chunk_cells_must_divide_the_cells_of_the_file() -> void:
+	var record: Dictionary = _good_record()
+	record["chunk_cells"] = 3
+	var bundle: DataBundle = _inspect([record])
+	_assert_reported(bundle, TERRAIN_PATH, "t", "chunk_cells", "células_x (2) não é múltiplo de chunk_cells (3); esperado um divisor de 2")
+	_assert_reported(bundle, TERRAIN_PATH, "t", "chunk_cells", "células_z (1) não é múltiplo de chunk_cells (3); esperado um divisor de 1")
+	record["chunk_cells"] = 2
+	var only_z: String = _inspect([record]).describe_issues()
+	assert_string_contains(only_z, "células_z (1) não é múltiplo de chunk_cells (2)")
+	assert_false(only_z.contains("células_x"), "chunk_cells 2 divide células_x = 2.")
+
+
+func test_chunk_cells_out_of_range_is_reported() -> void:
+	for row: Array in [[0, "valor 0 abaixo do mínimo"], [-4, "valor -4 abaixo do mínimo"], [TerrainLoader.MAX_CHUNK_CELLS + 1, "valor 257 acima do máximo"]]:
+		var record: Dictionary = _good_record()
+		record["chunk_cells"] = row[0]
+		_assert_reported(_inspect([record]), TERRAIN_PATH, "t", "chunk_cells", row[1])
+
+
+func test_chunk_cells_is_required() -> void:
+	var record: Dictionary = _good_record()
+	record.erase("chunk_cells")
+	_assert_reported(_inspect([record]), TERRAIN_PATH, "t", "chunk_cells", "campo obrigatório ausente")
