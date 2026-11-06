@@ -1,6 +1,6 @@
 # Contrato — world
 
-Estado: **LW-034 implementada** (dados físicos do terreno) e **LW-037 em revisão** (campo `chunk_cells` e terreno de teste gerado em `data/world/`). A visão completa do módulo (mapa lógico de províncias, rotas, assentamentos — arquitetura 5.2 e 5.5) é de fase futura e **não é construída agora** (roadmap 1.J: "não fazer nesta fase: mapa"). Isso é uma **redução proposta** da ficha da arquitetura, não o módulo inteiro.
+Estado: **LW-034 implementada** (dados físicos do terreno) e **LW-037 implementada** (campo `chunk_cells` e terreno de teste gerado em `data/world/`). A visão completa do módulo (mapa lógico de províncias, rotas, assentamentos — arquitetura 5.2 e 5.5) é de fase futura e **não é construída agora** (roadmap 1.J: "não fazer nesta fase: mapa"). Isso é uma **redução proposta** da ficha da arquitetura, não o módulo inteiro.
 
 - **Responsabilidade:** guardar e validar os dados físicos do terreno (altura e tipo de superfície) e o ponto de nascimento do jogador; responder consultas de altura e superfície por coordenada.
 - **Entradas:** `data/world/terrain.json` e `data/world/surface_types.json` (formato abaixo), lidos e validados pelo módulo `data`. `TerrainLoader.load_dir(pasta)` devolve um `LoadResult` (`result` e `terrain`; `terrain` só vale se `result.ok`), no mesmo padrão de `DecodedSave`.

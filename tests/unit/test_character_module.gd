@@ -126,7 +126,7 @@ func test_commands_fail_when_the_module_is_not_ready() -> void:
 	assert_eq(without_setup.request_spawn().result.code, CharacterModule.CODE_NOT_READY)
 	assert_eq(without_setup.report_position(1, Vector3.ZERO, 0.0).code, CharacterModule.CODE_NOT_READY)
 	var ids: Dictionary[int, String] = {1: "grass"}
-	var broken: TerrainData = TerrainData.new(Vector2i(2, 1), 100, PackedInt64Array([0, 10]), PackedInt64Array([1, 5]), ids, Vector2i(500, 0))
+	var broken: TerrainData = TerrainData.new(Vector2i(2, 1), 100, 1, PackedInt64Array([0, 10]), PackedInt64Array([1, 5]), ids, Vector2i(500, 0))
 	for bad_terrain: TerrainData in [null, broken]:
 		var module: CharacterModule = CharacterModule.new(bad_terrain)
 		var world: World = _new_world(module)
