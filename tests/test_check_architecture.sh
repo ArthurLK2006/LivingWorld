@@ -103,9 +103,58 @@ expect_violation src/persistence/violation.gd 'func x(): ctx.clock.advance_step(
 expect_violation src/presentation/violation.gd 'func x(): ctx.events.dispatch()' 'violation.gd:1:' 'dispatch em src/presentation'
 expect_clean src/sim/world/definition.gd 'func set_speed(value: int) -> void: pass' 'declarar um método set_speed não é chamar o relógio'
 expect_clean src/sim/world/publisher.gd 'func x(): ctx.events.publish(event)' 'publicar evento continua permitido'
+# LW-036: regra de import fora das camadas. Classes de prova, uma por camada: ProbeCore (0), ProbeTerrain (2),
+# ProbeBridge (6), ProbeView (7) e ProbeSecret (classe privada de sim/world, pasta internal/). Os contadores
+# desta seção são separados para não mudar a mensagem da LW-029A.
+lw029a_violations=$new_violations
+lw029a_clean=$new_clean
+mkdir -p "$fixture/src/bridge" "$fixture/src/sim/economy" "$fixture/src/sim/world/internal" "$fixture/src/tools"
+for dir in bridge sim/economy tools; do
+    printf 'Contrato de teste\n' > "$fixture/src/$dir/README.md"
+done
+printf 'class_name ProbeCore\nextends RefCounted\n' > "$fixture/src/core/probe_core.gd"
+printf 'class_name ProbeTerrain\nextends RefCounted\n' > "$fixture/src/sim/world/probe_terrain.gd"
+printf 'class_name ProbeBridge\nextends RefCounted\n' > "$fixture/src/bridge/probe_bridge.gd"
+printf 'class_name ProbeView\nextends RefCounted\n' > "$fixture/src/presentation/probe_view.gd"
+printf 'class_name ProbeSecret\nextends RefCounted\n' > "$fixture/src/sim/world/internal/probe_secret.gd"
+check_passes 'classes de prova de camadas, sem nenhuma citação, passam'
+# (a) camada superior: o arquivo aponta a classe, a linha e a camada.
+expect_violation src/sim/world/violation.gd 'var bridge: ProbeBridge' 'violation.gd:1: "ProbeBridge"' 'camada: sim/world (2) cita bridge (6)'
+expect_violation src/core/violation.gd 'var terrain: ProbeTerrain' 'violation.gd:1: "ProbeTerrain"' 'camada: core (0) cita sim/world (2)'
+expect_violation src/bridge/violation.gd 'var view: ProbeView' 'violation.gd:1: "ProbeView"' 'camada: bridge (6) cita presentation (7)'
+printf 'extends RefCounted\n\nvar bridge: ProbeBridge\n' > "$fixture/src/sim/world/violation.gd"
+check_violation 'camada: a linha apontada é a da citação (linha 3)' 'violation.gd:3: "ProbeBridge"'
+rm "$fixture/src/sim/world/violation.gd"
+new_violations=$((new_violations + 1))
+expect_clean src/persistence/clean.gd 'var bridge: ProbeBridge' 'mesma camada (persistence cita bridge) é permitida'
+expect_clean src/bridge/clean.gd 'var terrain: ProbeTerrain' 'camada maior cita menor (bridge cita sim/world)'
+expect_clean src/sim/world/clean.gd 'var core: ProbeCore' 'sim/world cita core'
+expect_clean src/sim/world/lookalike.gd 'var x: ProbeBridgeExtra = MyProbeBridge.new()' 'nome parecido não é citação (palavra inteira)'
+expect_clean src/tools/clean.gd 'var view: ProbeView' 'pasta sem camada (src/tools) fica de fora'
+# (b) a apresentação não cita classe de src/sim.
+expect_violation src/presentation/violation.gd 'var terrain: ProbeTerrain' 'violation.gd:1: "ProbeTerrain" (src/sim/world/probe_terrain.gd) citada pela apresentação' 'apresentação cita classe de sim/'
+expect_clean src/presentation/clean.gd 'var bridge: ProbeBridge = ProbeCore.new()' 'apresentação cita a ponte e o core'
+# (c) classe de internal/ só dentro do módulo dono.
+expect_violation src/sim/economy/violation.gd 'var secret: ProbeSecret' 'violation.gd:1: "ProbeSecret" (src/sim/world/internal/probe_secret.gd) é privada de src/sim/world/' 'classe de internal/ citada por outro módulo'
+expect_clean src/sim/world/inside_module.gd 'var secret: ProbeSecret' 'classe de internal/ citada dentro do módulo'
+expect_clean src/sim/world/internal/sibling.gd 'var secret: ProbeSecret' 'classe de internal/ citada por vizinha da mesma pasta'
+# (d) linha inteira de comentário não conta; código com comentário no fim continua varrido.
+expect_clean src/sim/world/commented.gd '# usa ProbeBridge só no comentário' 'comentário de linha inteira não conta'
+expect_clean src/sim/world/commented.gd '    ## ProbeBridge e ProbeView em documentação' 'comentário de documentação indentado não conta'
+expect_violation src/sim/world/violation.gd 'var bridge: ProbeBridge # comentário no fim da linha' 'violation.gd:1: "ProbeBridge"' 'comentário no fim da linha não isenta o código'
+if ! "$checker" "$project_dir" > "$fixture/output" 2>&1 || ! grep -F 'nove verificações aprovadas' "$fixture/output" >/dev/null; then
+    echo 'FALHA: a árvore real deveria passar com nove verificações'; cat "$fixture/output"; exit 1
+fi
+echo 'OK: árvore real passa'
+lw036_violations=$((new_violations - lw029a_violations))
+lw036_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
+rm "$fixture/src/core/probe_core.gd" "$fixture/src/sim/world/probe_terrain.gd" "$fixture/src/bridge/probe_bridge.gd" "$fixture/src/presentation/probe_view.gd" "$fixture/src/sim/world/internal/probe_secret.gd"
 rm "$fixture/src/sim/world/README.md"
 check_violation 'contrato ausente' 'world/README.md'
 echo 'LW-012: 1 caso válido e 5 violações detectadas.'
 echo 'LW-016: 1 evento catalogado aprovado e 2 eventos fora do catálogo detectados.'
 echo 'LW-021: autoloads permitidos aprovados e 1 autoload extra detectado.'
 echo "LW-029A: $new_violations violações detectadas e $new_clean casos aceitos (sorteio, tempo, estático, Node em persistence, relógio e barramento)."
+echo "LW-036: $lw036_violations violações detectadas e $lw036_clean casos aceitos (camada superior, apresentação, classe privada de internal/, comentário) e a árvore real aprovada."
