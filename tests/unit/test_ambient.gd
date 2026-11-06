@@ -40,9 +40,22 @@ func _free_all(nodes: Array[Node]) -> void:
 
 
 func _assert_applied(config: AmbientConfig, world_environment: WorldEnvironment, sun: DirectionalLight3D) -> void:
-	assert_eq(sun.light_color, config.sun_color)
+	_assert_fixed_parts(config, world_environment, sun)
 	assert_almost_eq(sun.light_energy, config.sun_energy, FLOAT_TOLERANCE)
 	assert_true(sun.rotation_degrees.is_equal_approx(Vector3(-config.sun_elevation_degrees, config.sun_yaw_degrees, 0.0)), "Rotação do sol: x = -inclinação, y = giro.")
+	var sky: ProceduralSkyMaterial = world_environment.environment.sky.sky_material as ProceduralSkyMaterial
+	assert_eq(sky.sky_top_color, config.sky_top_color)
+	assert_eq(sky.sky_horizon_color, config.sky_horizon_color)
+	assert_eq(sky.ground_horizon_color, config.ground_horizon_color)
+	assert_eq(sky.ground_bottom_color, config.ground_bottom_color)
+	assert_eq(world_environment.environment.ambient_light_color, config.ambient_color)
+	assert_almost_eq(world_environment.environment.ambient_light_energy, config.ambient_energy, FLOAT_TOLERANCE)
+	assert_eq(world_environment.environment.fog_light_color, config.fog_color)
+
+
+## Valores que NÃO dependem da hora (a partir da LW-042 a luz e as cores são função da hora simulada).
+func _assert_fixed_parts(config: AmbientConfig, world_environment: WorldEnvironment, sun: DirectionalLight3D) -> void:
+	assert_eq(sun.light_color, config.sun_color)
 	assert_eq(sun.shadow_enabled, config.shadows_enabled)
 	assert_eq(sun.directional_shadow_mode, config.shadow_mode)
 	assert_almost_eq(sun.directional_shadow_max_distance, config.shadow_max_distance_m, FLOAT_TOLERANCE)
@@ -51,16 +64,8 @@ func _assert_applied(config: AmbientConfig, world_environment: WorldEnvironment,
 	assert_almost_eq(sun.shadow_blur, config.shadow_blur, FLOAT_TOLERANCE)
 	var environment: Environment = world_environment.environment
 	assert_eq(environment.background_mode, Environment.BG_SKY)
-	var sky: ProceduralSkyMaterial = environment.sky.sky_material as ProceduralSkyMaterial
-	assert_eq(sky.sky_top_color, config.sky_top_color)
-	assert_eq(sky.sky_horizon_color, config.sky_horizon_color)
-	assert_eq(sky.ground_horizon_color, config.ground_horizon_color)
-	assert_eq(sky.ground_bottom_color, config.ground_bottom_color)
 	assert_eq(environment.ambient_light_source, Environment.AMBIENT_SOURCE_COLOR)
-	assert_eq(environment.ambient_light_color, config.ambient_color)
-	assert_almost_eq(environment.ambient_light_energy, config.ambient_energy, FLOAT_TOLERANCE)
 	assert_eq(environment.fog_enabled, config.fog_enabled)
-	assert_eq(environment.fog_light_color, config.fog_color)
 	assert_almost_eq(environment.fog_density, config.fog_density, FLOAT_TOLERANCE)
 	assert_almost_eq(environment.fog_sky_affect, config.fog_sky_affect, FLOAT_TOLERANCE)
 
@@ -144,4 +149,12 @@ func test_the_main_scene_has_one_environment_and_one_shadowed_sun_with_the_resou
 	var rig: AmbientRig = main.get_node("AmbientRig") as AmbientRig
 	assert_not_null(rig)
 	assert_eq(rig.config.resource_path, DEFAULT_CONFIG_PATH, "A cena usa o recurso editável de assets/environment.")
-	_assert_applied(rig.config, main.get_node("Environment") as WorldEnvironment, main.get_node("Sun") as DirectionalLight3D)
+	var world_environment: WorldEnvironment = main.get_node("Environment") as WorldEnvironment
+	var sun: DirectionalLight3D = main.get_node("Sun") as DirectionalLight3D
+	_assert_fixed_parts(rig.config, world_environment, sun)
+	# O jogo nasce à meia-noite (LW-042): a luz é a da noite, com o sol bem abaixo do horizonte.
+	var sky: ProceduralSkyMaterial = world_environment.environment.sky.sky_material as ProceduralSkyMaterial
+	assert_eq(sun.light_energy, 0.0)
+	assert_eq(sky.sky_top_color, rig.config.night_sky_top_color)
+	assert_eq(world_environment.environment.ambient_light_color, rig.config.night_ambient_color)
+	assert_eq(world_environment.environment.fog_light_color, rig.config.night_fog_color)
