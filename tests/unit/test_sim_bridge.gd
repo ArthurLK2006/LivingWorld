@@ -168,3 +168,63 @@ func test_queueing_intents_does_not_change_the_state_hash() -> void:
 func test_bridge_needs_no_scene_tree_or_node() -> void:
 	assert_false(is_instance_of(_bridge, Node), "A ponte é RefCounted, sem Node.")
 	assert_false(_host.is_inside_tree(), "O host de teste está fora da árvore de cena.")
+
+
+# --- LW-037A: formato do terreno (peek_terrain_layout) ---
+
+## Terreno de blockout real (DEC-118). O valor esperado do formato é decisão de Arthur, não do arquivo de teste.
+const BLOCKOUT_DIR: String = "res://data/world"
+
+## Carregado uma vez por arquivo de teste (o JSON do blockout tem 2,3 MB).
+var _blockout_terrain: TerrainData
+
+
+func _blockout_bridge() -> SimBridge:
+	if _blockout_terrain == null:
+		var loaded: TerrainLoader.LoadResult = TerrainLoader.load_dir(BLOCKOUT_DIR)
+		assert_true(loaded.result.ok, loaded.result.message)
+		_blockout_terrain = loaded.terrain
+	return SimBridge.new(_host, _blockout_terrain)
+
+
+func test_terrain_layout_of_the_real_blockout_terrain() -> void:
+	var reply: SimBridge.TerrainLayoutReply = _blockout_bridge().peek_terrain_layout()
+	assert_true(reply.result.ok, reply.result.message)
+	assert_eq(reply.cells, Vector2i(512, 512))
+	assert_eq(reply.cell_size_m, 2.0)
+	assert_eq(reply.chunk_cells, 32)
+	assert_eq(reply.chunk_count, Vector2i(16, 16))
+	assert_eq(reply.size_m, Vector2(1024.0, 1024.0))
+
+
+func test_terrain_layout_repeats_the_values_of_the_terrain_data() -> void:
+	var reply: SimBridge.TerrainLayoutReply = _bridge.peek_terrain_layout()
+	assert_true(reply.result.ok, reply.result.message)
+	assert_eq(reply.cells, _terrain.peek_cells())
+	assert_eq(reply.cell_size_m, _terrain.peek_cell_size_m())
+	assert_eq(reply.chunk_cells, _terrain.peek_chunk_cells())
+	assert_eq(reply.chunk_count, _terrain.peek_chunk_count())
+	assert_eq(reply.size_m, _terrain.peek_size_m())
+
+
+func test_terrain_layout_without_terrain_fails_with_the_bridge_code() -> void:
+	var reply: SimBridge.TerrainLayoutReply = SimBridge.new(_host, null).peek_terrain_layout()
+	assert_false(reply.result.ok)
+	assert_eq(reply.result.code, SimBridge.CODE_NO_TERRAIN)
+	assert_string_contains(reply.result.message, "peek_terrain_layout")
+	assert_eq(reply.cells, Vector2i.ZERO, "Sem terreno os campos ficam zerados e não valem.")
+	assert_eq(reply.chunk_count, Vector2i.ZERO)
+
+
+func test_terrain_layout_reply_is_a_copy() -> void:
+	var first: SimBridge.TerrainLayoutReply = _bridge.peek_terrain_layout()
+	var original_cells: Vector2i = first.cells
+	var original_size: Vector2 = first.size_m
+	first.cells = Vector2i(999, 999)
+	first.chunk_count = Vector2i(77, 77)
+	first.size_m = Vector2(1.0, 1.0)
+	var second: SimBridge.TerrainLayoutReply = _bridge.peek_terrain_layout()
+	assert_eq(second.cells, original_cells, "Alterar uma resposta não muda a próxima.")
+	assert_eq(second.chunk_count, _terrain.peek_chunk_count())
+	assert_eq(second.size_m, original_size)
+	assert_eq(_terrain.peek_cells(), original_cells, "Nem o terreno de origem.")

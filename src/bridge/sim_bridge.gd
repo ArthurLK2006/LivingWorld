@@ -44,6 +44,14 @@ func peek_spawn_point() -> SpawnReply:
 	return SpawnReply.new(Result.success(), _terrain.peek_spawn_point())
 
 
+## Formato do terreno (células, tamanho da célula, chunks): é o que a TerrainView precisa para saber quantos
+## chunks existem e onde ficam. Valores copiados do TerrainData.
+func peek_terrain_layout() -> TerrainLayoutReply:
+	if _terrain == null:
+		return TerrainLayoutReply.new(_missing_terrain("peek_terrain_layout"), null)
+	return TerrainLayoutReply.new(Result.success(), _terrain)
+
+
 ## Cópia da hora simulada e do ritmo no momento da chamada.
 func peek_time() -> TimeSnapshot:
 	var clock: SimClock = _clock()
@@ -136,6 +144,29 @@ class SpawnReply:
 	func _init(reply_result: Result, value: Vector3) -> void:
 		result = reply_result
 		point = value
+
+
+## Resposta de `peek_terrain_layout`: só vale se `result.ok`. `cells` e `chunk_count` são (x, z); `size_m` é o
+## tamanho do mapa em metros. Convenções de nós, células e chunks em docs/modules/world.md.
+class TerrainLayoutReply:
+	extends RefCounted
+
+	var result: Result
+	var cells: Vector2i = Vector2i.ZERO
+	var cell_size_m: float = 0.0
+	var chunk_cells: int = 0
+	var chunk_count: Vector2i = Vector2i.ZERO
+	var size_m: Vector2 = Vector2.ZERO
+
+	func _init(reply_result: Result, terrain: TerrainData) -> void:
+		result = reply_result
+		if terrain == null:
+			return
+		cells = terrain.peek_cells()
+		cell_size_m = terrain.peek_cell_size_m()
+		chunk_cells = terrain.peek_chunk_cells()
+		chunk_count = terrain.peek_chunk_count()
+		size_m = terrain.peek_size_m()
 
 
 ## Hora simulada e ritmo copiados do relógio; os campos só valem se `result.ok`.
