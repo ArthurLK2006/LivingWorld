@@ -1,1 +1,3 @@
-Diretório reservado para src/presentation/world_view; implementação ou conteúdo em tarefa futura.
+Visão do mundo (módulo `presentation`; contrato em `docs/modules/presentation.md`).
+
+Implementado (LW-038): `main_world_view.gd` (script da cena principal: entrega a ponte à `TerrainView` e posiciona a câmera provisória, até a LW-046) e `terrain/` (`TerrainView`, `TerrainChunkBuilder`, `TerrainPalette`: malha low-poly por chunk, construção incremental, passos 1 e 2 com saias). Árvores e pedras (LW-043) e entidades ficam para tarefas futuras.

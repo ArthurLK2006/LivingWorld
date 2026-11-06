@@ -12,10 +12,10 @@ func _initialize() -> void:
 		_fail("não foi possível carregar a cena: " + scene_path)
 		return
 	var instance: Node = scene.instantiate()
-	var counts: Dictionary = {"camera": 0, "sun": 0, "environment": 0, "mesh": 0}
+	var counts: Dictionary = {"camera": 0, "sun": 0, "environment": 0, "terrain_view": 0}
 	_count_nodes(instance, counts)
 	instance.free()
-	if counts["camera"] != 1 or counts["sun"] != 1 or counts["environment"] != 1 or counts["mesh"] < 2:
+	if counts["camera"] != 1 or counts["sun"] != 1 or counts["environment"] != 1 or counts["terrain_view"] != 1:
 		_fail("componentes da cena não correspondem ao esperado")
 		return
 	print("SMOKE_TEST: PASS")
@@ -29,8 +29,8 @@ func _count_nodes(node: Node, counts: Dictionary) -> void:
 		counts["sun"] += 1
 	if node is WorldEnvironment:
 		counts["environment"] += 1
-	if node is MeshInstance3D:
-		counts["mesh"] += 1
+	if node is TerrainView:
+		counts["terrain_view"] += 1
 	for child: Node in node.get_children():
 		_count_nodes(child, counts)
 

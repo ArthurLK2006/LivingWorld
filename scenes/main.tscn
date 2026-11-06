@@ -1,6 +1,8 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://src/presentation/ui/status_overlay.gd" id="1_overlay"]
+[ext_resource type="Script" path="res://src/presentation/world_view/main_world_view.gd" id="2_world"]
+[ext_resource type="Script" path="res://src/presentation/world_view/terrain/terrain_view.gd" id="3_terrain"]
 
 [sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
 
@@ -12,16 +14,8 @@ background_mode = 2
 sky = SubResource("Sky")
 ambient_light_source = 3
 
-[sub_resource type="BoxMesh" id="FloorMesh"]
-size = Vector3(20, 0.2, 20)
-
-[sub_resource type="StandardMaterial3D" id="CubeMaterial"]
-albedo_color = Color(0.2, 0.5, 0.8, 1)
-
-[sub_resource type="BoxMesh" id="CubeMesh"]
-material = SubResource("CubeMaterial")
-
 [node name="Main" type="Node3D"]
+script = ExtResource("2_world")
 
 [node name="Environment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment")
@@ -30,17 +24,12 @@ environment = SubResource("Environment")
 rotation_degrees = Vector3(-55, -30, 0)
 shadow_enabled = true
 
-[node name="Floor" type="MeshInstance3D" parent="."]
-position = Vector3(0, -0.1, 0)
-mesh = SubResource("FloorMesh")
-
-[node name="Cube" type="MeshInstance3D" parent="."]
-position = Vector3(0, 0.5, 0)
-mesh = SubResource("CubeMesh")
+[node name="TerrainView" type="Node3D" parent="."]
+script = ExtResource("3_terrain")
 
 [node name="Camera" type="Camera3D" parent="."]
-position = Vector3(5, 4, 7)
-rotation_degrees = Vector3(-22, 35, 0)
+position = Vector3(100, 35, 512)
+rotation_degrees = Vector3(-20, -90, 0)
 current = true
 
 [node name="HUD" type="CanvasLayer" parent="."]
