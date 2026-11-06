@@ -37,6 +37,12 @@ static func expected_vertex_count(chunk_cells: int, step: int) -> int:
 	return VERTICES_PER_TRIANGLE * TRIANGLES_PER_QUAD * (quads * quads + SKIRT_SIDES * quads)
 
 
+## Vértices só do corpo da malha (sem saias): 3 por triângulo, 2 triângulos por quadrado.
+static func expected_body_vertex_count(chunk_cells: int, step: int) -> int:
+	var quads: int = IntMath.floor_div(chunk_cells, step)
+	return VERTICES_PER_TRIANGLE * TRIANGLES_PER_QUAD * quads * quads
+
+
 func chunk_size_m() -> float:
 	return float(_layout.chunk_cells) * _layout.cell_size_m
 
@@ -63,6 +69,25 @@ func build(coord: Vector2i, step: int, skirt_depth_m: float = SKIRT_DEPTH_M) -> 
 	_add_body(buffers, heights, colors, quads, step_m)
 	_add_skirts(buffers, heights, colors, quads, step_m, skirt_depth_m)
 	return buffers.commit()
+
+
+## Triângulos do corpo do chunk para a colisão (LW-039), SEMPRE no passo fino, qualquer que seja o passo da malha
+## desenhada (decisão D6). Usa a mesma `_add_body` da malha: a mesma triangulação. Vazio (depois de push_error)
+## se o pedido for inválido ou uma consulta à ponte falhar.
+func build_collision_faces(coord: Vector2i) -> PackedVector3Array:
+	var problem: String = _request_problem(coord, STEP_FINE)
+	if not problem.is_empty():
+		push_error("TerrainChunkBuilder.build_collision_faces: %s" % problem)
+		return PackedVector3Array()
+	var quads: int = _layout.chunk_cells
+	var heights: PackedFloat32Array = _sample_heights(chunk_origin_m(coord), quads, _layout.cell_size_m)
+	if heights.is_empty():
+		return PackedVector3Array()
+	var buffers: MeshBuffers = MeshBuffers.new(expected_body_vertex_count(_layout.chunk_cells, STEP_FINE))
+	var unused_colors: PackedColorArray = PackedColorArray()
+	unused_colors.resize(quads * quads)
+	_add_body(buffers, heights, unused_colors, quads, _layout.cell_size_m)
+	return buffers.vertices()
 
 
 func _request_problem(coord: Vector2i, step: int) -> String:
@@ -174,6 +199,9 @@ class MeshBuffers:
 		else:
 			_push(top_a, top_b, low_b, SKIRT_NORMAL, color)
 			_push(top_a, low_b, low_a, SKIRT_NORMAL, color)
+
+	func vertices() -> PackedVector3Array:
+		return _vertices
 
 	func commit() -> ArrayMesh:
 		# Array sem tipo: é a forma que a API de malhas do Godot exige (um slot por tipo de dado do vértice).

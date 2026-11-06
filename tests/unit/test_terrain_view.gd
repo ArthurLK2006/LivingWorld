@@ -20,6 +20,8 @@ const SKIRT_SIDES: int = 4
 const FINE: int = 1
 const COARSE: int = 2
 const MAX_BUDGET_CALLS: int = 1000
+## Nós de um chunk desde a LW-039: MeshInstance3D, StaticBody3D e CollisionShape3D.
+const NODES_PER_CHUNK: int = 3
 const HUGE_BUDGET_MS: float = 1.0e9
 ## Terreno em memória: 8 x 8 células de 2 m em chunks de 4 células (2 x 2 chunks), uma superfície só.
 const SMALL_CELLS: int = 8
@@ -206,7 +208,7 @@ func test_the_queue_starts_at_the_chunk_of_the_spawn_point_and_freeing_the_view_
 	assert_true(view.has_chunk(SPAWN_CHUNK) or view.has_chunk(SPAWN_CHUNK_NORTH), "O primeiro construído toca o ponto de nascimento.")
 	assert_eq(view.built_count(), 1)
 	assert_eq(view.process_chunks(7), 7)
-	assert_eq(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), nodes_before + 1 + 8)
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), nodes_before + 1 + 8 * NODES_PER_CHUNK)
 	view.free()
 	assert_eq(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), nodes_before, "Liberar a view libera os 8 chunks.")
 

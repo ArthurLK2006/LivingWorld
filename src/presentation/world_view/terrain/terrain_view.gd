@@ -10,6 +10,10 @@ const FRAME_BUDGET_MS: float = 4.0
 const USEC_PER_MS: float = 1000.0
 ## Nível de detalhe usado pelo jogo nesta tarefa; a escolha por distância é da LW-040.
 const GAME_STEP: int = TerrainChunkBuilder.STEP_FINE
+## Camada de física do terreno (número de 1 a 32) [HIP]: a primeira. Quem andar sobre o terreno (LW-045) usa esta
+## camada na máscara. O corpo do terreno não procura nada (máscara 0).
+const TERRAIN_PHYSICS_LAYER: int = 1
+const COLLISION_BODY_NAME: String = "Collision"
 ## Centro de um chunk, em chunks, a partir do canto de menor x e z (para ordenar a fila por distância).
 const CHUNK_CENTER: Vector2 = Vector2(0.5, 0.5)
 
@@ -48,10 +52,14 @@ func build_chunk(coord: Vector2i, step: int = GAME_STEP) -> bool:
 		return false
 	var node: MeshInstance3D = _chunks.get(coord)
 	if node == null:
+		var body: StaticBody3D = _make_collision_body(coord)
+		if body == null:
+			return false
 		node = MeshInstance3D.new()
 		node.name = "Chunk_%d_%d" % [coord.x, coord.y]
 		node.position = _builder.chunk_origin_m(coord)
 		node.material_override = _material
+		node.add_child(body)
 		add_child(node)
 		_chunks[coord] = node
 	node.mesh = mesh
@@ -108,10 +116,38 @@ func chunk_node(coord: Vector2i) -> MeshInstance3D:
 	return _chunks.get(coord)
 
 
+## Corpo de colisão do chunk (filho do nó do chunk: liberar o chunk libera o corpo), ou nulo se não existir.
+func chunk_body(coord: Vector2i) -> StaticBody3D:
+	var node: MeshInstance3D = _chunks.get(coord)
+	if node == null:
+		return null
+	return node.get_node_or_null(COLLISION_BODY_NAME) as StaticBody3D
+
+
 func _process(_delta: float) -> void:
 	process_budget(FRAME_BUDGET_MS)
 	if _pending.is_empty():
 		set_process(false)
+
+
+## Corpo estático do chunk com a malha de triângulos na RESOLUÇÃO CHEIA (passo fino), mesmo que a malha desenhada
+## use outro passo (D6). ConcavePolygonShape3D, e não HeightMapShape3D: só ela garante a mesma triangulação da
+## malha, sem depender da diagonal que cada motor de física escolhe. Nulo (depois de push_error) se falhar.
+func _make_collision_body(coord: Vector2i) -> StaticBody3D:
+	var faces: PackedVector3Array = _builder.build_collision_faces(coord)
+	if faces.is_empty():
+		return null
+	var shape: ConcavePolygonShape3D = ConcavePolygonShape3D.new()
+	shape.set_faces(faces)
+	var collision_shape: CollisionShape3D = CollisionShape3D.new()
+	collision_shape.shape = shape
+	var body: StaticBody3D = StaticBody3D.new()
+	body.name = COLLISION_BODY_NAME
+	body.collision_layer = 0
+	body.collision_mask = 0
+	body.set_collision_layer_value(TERRAIN_PHYSICS_LAYER, true)
+	body.add_child(collision_shape)
+	return body
 
 
 func _clear() -> void:
