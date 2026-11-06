@@ -8,7 +8,11 @@ const CAMERA_PITCH_DEGREES: float = -20.0
 ## Em Godot a câmera olha para -Z; girar -90° em Y a faz olhar para +X (leste).
 const CAMERA_YAW_EAST_DEGREES: float = -90.0
 
+## Árvores e pedras de blockout (LW-043): dados em data/world, só visuais.
+const DECORATIONS_PATH: String = "res://data/world/decorations.json"
+
 @onready var _terrain_view: TerrainView = $TerrainView
+@onready var _decoration_view: DecorationView = $DecorationView
 @onready var _camera: Camera3D = $Camera
 
 
@@ -19,6 +23,11 @@ func _ready() -> void:
 		return
 	var bridge: SimBridge = app.peek_bridge()
 	_terrain_view.setup(bridge)
+	var decorations: DecorationReader.ReadResult = DecorationReader.read_file(DECORATIONS_PATH)
+	if decorations.result.ok:
+		_decoration_view.setup(bridge, decorations.items)
+	else:
+		push_error("MainWorldView: %s Nenhuma decoração será desenhada." % decorations.result.message)
 	var spawn: SimBridge.SpawnReply = bridge.peek_spawn_point()
 	if spawn.result.ok:
 		_camera.position = spawn.point + Vector3(0.0, CAMERA_HEIGHT_ABOVE_SPAWN_M, 0.0)
