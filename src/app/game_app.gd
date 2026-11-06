@@ -1,8 +1,9 @@
 class_name GameAppNode
 extends Node
 ## Script do autoload `GameApp` (arquitetura 4.3): ciclo de vida do aplicativo. Por enquanto
-## inicia um mundo de desenvolvimento, monta o texto de estado e trata a tecla de pausa.
-## Não guarda estado do mundo. A apresentação lê só o texto e o sinal daqui.
+## inicia um mundo de desenvolvimento, monta o texto de estado, trata a tecla de pausa e cria e guarda a
+## ponte com a apresentação (peek_bridge). Não guarda estado do mundo. A apresentação lê o texto e o sinal
+## daqui e pede a ponte por aqui (decisão D1 de Arthur, 06/11/2026: sem autoload novo).
 
 ## Avisa quando o texto de estado muda (a apresentação só redesenha nesse caso).
 signal status_changed(text: String)
@@ -11,9 +12,16 @@ signal status_changed(text: String)
 const DEFAULT_WORLD_SEED: int = 1
 const GAME_VERSION: String = "0.0.1-dev"
 const PAUSE_KEY: Key = KEY_SPACE
+## Pasta dos arquivos de terreno lidos na primeira chamada de peek_bridge().
+const TERRAIN_DIR: String = "res://data/world"
+
+## Pasta lida por peek_bridge(). Pública só para o teste de falha trocá-la; mudar depois da primeira chamada
+## não recarrega nada.
+var terrain_dir: String = TERRAIN_DIR
 
 var _host: SimulationHostNode
 var _last_status_text: String = ""
+var _bridge: SimBridge
 
 
 func _ready() -> void:
@@ -27,6 +35,26 @@ func _ready() -> void:
 
 func bind_host(host: SimulationHostNode) -> void:
 	_host = host
+
+
+## Ponte da apresentação com a simulação. PREGUIÇOSA de propósito: só na primeira chamada lê o terreno (arquivo
+## de cerca de 2,3 MB) e cria a ponte com o host já ligado; as chamadas seguintes devolvem a MESMA instância.
+## Quem nunca a pede (testes, tools/run_sim) não paga a leitura. Terreno que não carrega não derruba o jogo:
+## push_error com o motivo e ponte sem terreno, cujas consultas falham com BRIDGE_NO_TERRAIN.
+func peek_bridge() -> SimBridge:
+	if _bridge == null:
+		_bridge = SimBridge.new(_host, _load_terrain())
+	return _bridge
+
+
+## Terreno de terrain_dir, ou nulo (depois de push_error) se não carregar. Sem `quit`: o GameApp também roda
+## dentro de testes e ferramentas.
+func _load_terrain() -> TerrainData:
+	var loaded: TerrainLoader.LoadResult = TerrainLoader.load_dir(terrain_dir)
+	if not loaded.result.ok:
+		push_error("GameApp.peek_bridge: terreno não carregado de '%s': %s" % [terrain_dir, loaded.result.message])
+		return null
+	return loaded.terrain
 
 
 ## Texto de estado para a tela: título, versão, data simulada, velocidade ou pausa e a tecla.
