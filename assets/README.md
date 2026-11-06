@@ -1,1 +1,1 @@
-Diretório reservado para assets; implementação ou conteúdo em tarefa futura.
+Pasta de assets do jogo. Hoje só tem `environment/ambient_default.tres`: o recurso editável do ambiente (`AmbientConfig`: sol, sombras, céu, luz ambiente e névoa), lido pelo `AmbientRig` da cena principal (LW-041). Contrato em `docs/modules/presentation.md`.

@@ -1,3 +1,3 @@
 Módulo `presentation` (camada 7). Contrato em `docs/modules/presentation.md`.
 
-Implementado hoje: `ui/status_overlay.gd` (texto 2D de status, lido do autoload `GameApp`) e, em `world_view/` (LW-038), o terreno desenhado (`TerrainView`) e o script da cena principal que o liga à ponte. A apresentação fala com a simulação só pela ponte `src/bridge/`. `audio/` e `camera/` seguem reservados para tarefas futuras.
+Implementado hoje: `ui/status_overlay.gd` (texto 2D de status, lido do autoload `GameApp`) e, em `world_view/` (LW-038), o terreno desenhado (`TerrainView`) o script da cena principal que o liga à ponte e (LW-041) o ambiente estático (`AmbientConfig` e `AmbientRig`). A apresentação fala com a simulação só pela ponte `src/bridge/`. `audio/` e `camera/` seguem reservados para tarefas futuras.

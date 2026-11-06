@@ -3,26 +3,20 @@
 [ext_resource type="Script" path="res://src/presentation/ui/status_overlay.gd" id="1_overlay"]
 [ext_resource type="Script" path="res://src/presentation/world_view/main_world_view.gd" id="2_world"]
 [ext_resource type="Script" path="res://src/presentation/world_view/terrain/terrain_view.gd" id="3_terrain"]
-
-[sub_resource type="ProceduralSkyMaterial" id="SkyMaterial"]
-
-[sub_resource type="Sky" id="Sky"]
-sky_material = SubResource("SkyMaterial")
-
-[sub_resource type="Environment" id="Environment"]
-background_mode = 2
-sky = SubResource("Sky")
-ambient_light_source = 3
+[ext_resource type="Script" path="res://src/presentation/world_view/environment/ambient_rig.gd" id="4_rig"]
+[ext_resource type="Resource" path="res://assets/environment/ambient_default.tres" id="5_ambient"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("2_world")
 
 [node name="Environment" type="WorldEnvironment" parent="."]
-environment = SubResource("Environment")
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-rotation_degrees = Vector3(-55, -30, 0)
 shadow_enabled = true
+
+[node name="AmbientRig" type="Node" parent="."]
+script = ExtResource("4_rig")
+config = ExtResource("5_ambient")
 
 [node name="TerrainView" type="Node3D" parent="."]
 script = ExtResource("3_terrain")
