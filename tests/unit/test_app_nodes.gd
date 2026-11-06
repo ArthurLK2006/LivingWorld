@@ -39,7 +39,7 @@ func test_status_text_shows_title_version_date_and_pace() -> void:
 	assert_string_contains(text, "versão " + GameAppNode.GAME_VERSION)
 	assert_string_contains(text, "ano 1, dia 1, 00:00")
 	assert_string_contains(text, "1x")
-	assert_string_contains(text, "[Espaço]")
+	assert_string_contains(text, "[P] pausar ou continuar")
 
 
 func test_pause_toggle_stops_the_simulated_clock_and_shows_it() -> void:
@@ -65,22 +65,29 @@ func test_status_changed_signal_fires_only_when_text_changes() -> void:
 
 func _key(keycode: Key, pressed: bool, echo: bool = false) -> InputEventKey:
 	var event: InputEventKey = InputEventKey.new()
-	event.keycode = keycode
+	event.physical_keycode = keycode
 	event.pressed = pressed
 	event.echo = echo
 	return event
 
 
-func test_space_key_toggles_pause_and_other_input_does_not() -> void:
+## Tecla que o InputMap liga à ação de pausa (LW-044): o teste simula a AÇÃO, sem escrever a tecla.
+func _pause_key() -> Key:
+	var event: InputEventKey = InputMap.action_get_events(InputActions.PAUSE)[0] as InputEventKey
+	return event.physical_keycode
+
+
+func test_pause_action_toggles_pause_and_other_input_does_not() -> void:
 	var clock: SimClock = _host.runner.world.context.clock
 	assert_false(_app.handle_key(_key(KEY_A, true)), "Outra tecla não é consumida.")
-	assert_false(_app.handle_key(_key(GameAppNode.PAUSE_KEY, false)), "Soltar a tecla não conta.")
-	assert_false(_app.handle_key(_key(GameAppNode.PAUSE_KEY, true, true)), "Repetição da tecla não conta.")
+	assert_false(_app.handle_key(_key(KEY_SPACE, true)), "Espaço é pulo, não pausa.")
+	assert_false(_app.handle_key(_key(_pause_key(), false)), "Soltar a tecla não conta.")
+	assert_false(_app.handle_key(_key(_pause_key(), true, true)), "Repetição da tecla não conta.")
 	assert_false(_app.handle_key(InputEventMouseButton.new()))
 	assert_false(clock.is_paused())
-	assert_true(_app.handle_key(_key(GameAppNode.PAUSE_KEY, true)))
+	assert_true(_app.handle_key(_key(_pause_key(), true)))
 	assert_true(clock.is_paused())
-	assert_true(_app.handle_key(_key(GameAppNode.PAUSE_KEY, true)))
+	assert_true(_app.handle_key(_key(_pause_key(), true)))
 	assert_false(clock.is_paused())
 
 

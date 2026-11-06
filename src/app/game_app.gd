@@ -1,7 +1,7 @@
 class_name GameAppNode
 extends Node
 ## Script do autoload `GameApp` (arquitetura 4.3): ciclo de vida do aplicativo. Por enquanto
-## inicia um mundo de desenvolvimento, monta o texto de estado, trata a tecla de pausa e cria e guarda a
+## inicia um mundo de desenvolvimento, monta o texto de estado, trata a ação de pausa e cria e guarda a
 ## ponte com a apresentação (peek_bridge). Não guarda estado do mundo. A apresentação lê o texto e o sinal
 ## daqui e pede a ponte por aqui (decisão D1 de Arthur, 06/11/2026: sem autoload novo).
 
@@ -11,7 +11,6 @@ signal status_changed(text: String)
 ## Provisórios até existirem a tela de novo jogo e o versionamento (Fase 0).
 const DEFAULT_WORLD_SEED: int = 1
 const GAME_VERSION: String = "0.0.1-dev"
-const PAUSE_KEY: Key = KEY_SPACE
 ## Pasta dos arquivos de terreno lidos na primeira chamada de peek_bridge().
 const TERRAIN_DIR: String = "res://data/world"
 
@@ -57,21 +56,23 @@ func _load_terrain() -> TerrainData:
 	return loaded.terrain
 
 
-## Texto de estado para a tela: título, versão, data simulada, velocidade ou pausa e a tecla.
+## Texto de estado para a tela: título, versão, data simulada, velocidade ou pausa e a tecla da ação de pausa.
 func status_text() -> String:
 	if _host == null or _host.runner == null:
 		return ""
 	var clock: SimClock = _host.runner.world.context.clock
 	var pace: String = "PAUSADO" if clock.is_paused() else "%dx" % clock.get_speed()
 	var title: String = str(ProjectSettings.get_setting("application/config/name", "Living World"))
-	return "%s · versão %s\nData simulada: %s · %s\n[Espaço] pausar ou continuar" % [title, GAME_VERSION, _host.runner.format_clock_line(), pace]
+	return "%s · versão %s\nData simulada: %s · %s\n[%s] pausar ou continuar" % [title, GAME_VERSION, _host.runner.format_clock_line(), pace, _pause_key_label()]
 
 
 func toggle_pause() -> void:
 	if _host == null or _host.runner == null:
 		return
 	var clock: SimClock = _host.runner.world.context.clock
-	clock.set_paused(not clock.is_paused())
+	var outcome: Result = _host.request_pause(not clock.is_paused())
+	if not outcome.ok:
+		push_error("GameApp.toggle_pause: %s" % outcome.message)
 
 
 func _process(_delta: float) -> void:
@@ -81,13 +82,19 @@ func _process(_delta: float) -> void:
 		status_changed.emit(text)
 
 
-## Trata a tecla de pausa; devolve verdadeiro se o evento era dela e foi consumido.
+## Trata a AÇÃO de pausa (InputActions.PAUSE, tecla no project.godot); sem tecla fixa. Devolve verdadeiro se o evento
+## era dela e foi consumido. O nome é histórico: vale para qualquer evento que o InputMap ligue à ação. Repetição não conta.
 func handle_key(event: InputEvent) -> bool:
-	var key_event: InputEventKey = event as InputEventKey
-	if key_event == null or not key_event.pressed or key_event.echo or key_event.keycode != PAUSE_KEY:
+	if not event.is_action_pressed(InputActions.PAUSE):
 		return false
 	toggle_pause()
 	return true
+
+
+## Tecla da ação de pausa para a dica da tela, lida do InputMap (primeira palavra do texto do evento, ex.: "P").
+func _pause_key_label() -> String:
+	var events: Array[InputEvent] = InputMap.action_get_events(InputActions.PAUSE)
+	return events[0].as_text().get_slice(" ", 0) if not events.is_empty() else "?"
 
 
 func _unhandled_input(event: InputEvent) -> void:

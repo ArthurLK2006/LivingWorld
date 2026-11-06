@@ -1,0 +1,29 @@
+#!/bin/sh
+# LW-044: falha se houver TECLA escrita direto no código de jogo (src/). Teclas moram só no [input] do project.godot e o
+# código usa ações nomeadas (src/app/input_actions.gd). Procura (busca de texto, como o check_architecture): InputEventKey,
+# keycode e physical_keycode, is_key_pressed e variantes, tipos "Key" e as constantes KEY_ de teclas de verdade (letras,
+# dígitos, setas, Shift, Espaço, F1... ). Constantes como KEY_IDS ou KEY_WORLD_SEED NÃO são teclas e não são acusadas.
+# Linhas inteiras de comentário (começam com #) são ignoradas.
+# [LIM] uma tecla com nome fora da lista de KEY_* abaixo, ou montada por texto, passa sem ser vista.
+# Uso: tools/check_input_keys [raiz-do-projeto]
+set -u
+root=${1:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}
+if [ ! -d "$root/src" ]; then echo "AUSENTE: src"; exit 1; fi
+pattern='\bInputEventKey\b|\b(physical_)?keycode\b|\bis_(physical_)?key_(label_)?pressed\b|(:|->)[[:space:]]*Key\b|\[Key\]|\bKEY_([A-Z0-9]|SPACE|ESCAPE|ENTER|KP_ENTER|TAB|BACKSPACE|DELETE|INSERT|HOME|END|PAGEUP|PAGEDOWN|UP|DOWN|LEFT|RIGHT|SHIFT|CTRL|ALT|META|CAPSLOCK|F[0-9]{1,2})\b'
+result=$(rg -n --no-heading --glob '*.gd' "$pattern" "$root/src" 2>&1)
+code=$?
+if [ "$code" -eq 1 ]; then
+    echo 'Teclas fixas: nenhuma encontrada em src/.'
+    exit 0
+fi
+if [ "$code" -ne 0 ]; then
+    printf '%s\n%s\n' 'ERRO: busca de teclas fixas falhou' "$result"
+    exit 1
+fi
+found=$(printf '%s\n' "$result" | grep -vE ':[0-9]+:[[:space:]]*#')
+if [ -z "$found" ]; then
+    echo 'Teclas fixas: nenhuma encontrada em src/ (só comentários).'
+    exit 0
+fi
+printf '%s\n%s\n' 'VIOLAÇÃO: tecla escrita direto no código de jogo (use uma ação de InputActions)' "$found"
+exit 1
