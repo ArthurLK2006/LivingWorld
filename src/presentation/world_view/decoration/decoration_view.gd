@@ -2,8 +2,9 @@ class_name DecorationView
 extends Node3D
 ## Árvores e pedras (LW-043): UM MultiMeshInstance3D por chunk E por tipo, só nos chunks que têm instâncias, filhos desta
 ## view. Só visual: sem colisão, não é recurso de jogo, nada é salvo (decisão E4 de Arthur). A altura de cada instância
-## vem da ponte (peek_height); posição, giro e escala vêm do arquivo. Um só material (cor de vértice). Contrato:
-## docs/modules/presentation.md.
+## vem da ponte (peek_height); posição, giro e escala vêm do arquivo. Um só material (cor de vértice). Todos os MultiMesh
+## nascem ESCONDIDOS e só ficam visíveis enquanto o terreno do chunk existe (set_chunk_visible, LW-040): sem isso as árvores
+## flutuariam no vazio onde o terreno foi descartado. Contrato: docs/modules/presentation.md.
 
 const CM_PER_METER: float = 100.0
 const PERCENT: float = 100.0
@@ -13,6 +14,8 @@ var _instance_counts: Dictionary[String, int] = {}
 ## Transformações montadas, por nome do nó. Ficam guardadas aqui porque, sem janela (renderizador "dummy"), o MultiMesh
 ## não devolve o que recebeu e os testes não poderiam conferir posição e altura.
 var _transforms: Dictionary[String, Array] = {}
+## MultiMeshInstance3D de cada chunk (um por tipo), para ligar e desligar a visibilidade sem procurar.
+var _instances_by_chunk: Dictionary[Vector2i, Array] = {}
 
 
 ## Monta os MultiMesh a partir dos itens lidos. Ponte nula ou sem terreno: push_error e nada é construído.
@@ -40,8 +43,15 @@ func setup(bridge: SimBridge, items: Array[DecorationReader.Item]) -> void:
 	keys.sort()
 	for key: String in keys:
 		var group: Array = groups[key]
-		var kind: String = (group[0] as DecorationReader.Item).kind
-		_add_group(bridge, key, kind, group, meshes[kind], material)
+		var first: DecorationReader.Item = group[0]
+		var chunk: Vector2i = Vector2i(IntMath.floor_div(first.x_cm, chunk_size_cm), IntMath.floor_div(first.z_cm, chunk_size_cm))
+		_add_group(bridge, key, first.kind, group, chunk, meshes[first.kind], material)
+
+
+## Mostra ou esconde as decorações (árvores e pedras) do chunk; chunk sem decoração não faz nada.
+func set_chunk_visible(chunk: Vector2i, shown: bool) -> void:
+	for instance: MultiMeshInstance3D in _instances_by_chunk.get(chunk, []):
+		instance.visible = shown
 
 
 ## Instâncias montadas de um tipo ("tree" ou "rock"), somando todos os chunks.
@@ -60,7 +70,7 @@ func transforms_of(instance: MultiMeshInstance3D) -> Array[Transform3D]:
 	return result
 
 
-func _add_group(bridge: SimBridge, key: String, kind: String, group: Array, mesh: ArrayMesh, material: StandardMaterial3D) -> void:
+func _add_group(bridge: SimBridge, key: String, kind: String, group: Array, chunk: Vector2i, mesh: ArrayMesh, material: StandardMaterial3D) -> void:
 	var transforms: Array[Transform3D] = []
 	for entry: DecorationReader.Item in group:
 		var x: float = float(entry.x_cm) / CM_PER_METER
@@ -83,8 +93,12 @@ func _add_group(bridge: SimBridge, key: String, kind: String, group: Array, mesh
 	instance.name = "Deco_%s" % key
 	instance.multimesh = multimesh
 	instance.material_override = material
+	instance.visible = false
 	add_child(instance)
 	_multimesh_instances.append(instance)
+	if not _instances_by_chunk.has(chunk):
+		_instances_by_chunk[chunk] = []
+	_instances_by_chunk[chunk].append(instance)
 	_transforms[instance.name] = transforms
 	_instance_counts[kind] = _instance_counts.get(kind, 0) + transforms.size()
 
@@ -96,3 +110,4 @@ func _clear() -> void:
 	_multimesh_instances.clear()
 	_instance_counts.clear()
 	_transforms.clear()
+	_instances_by_chunk.clear()
