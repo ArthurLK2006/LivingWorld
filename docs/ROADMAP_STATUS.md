@@ -1,6 +1,6 @@
 # Status do roadmap — Living World
 
-Atualizado em: 05/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: **EM ANDAMENTO** (2 de 23 tarefas concluídas, 8,7%: LW-032 e LW-033). **Avanço total do projeto: 33 de 192 tarefas (17,2%).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
+Atualizado em: 05/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: **EM ANDAMENTO** (3 de 23 tarefas concluídas, 13,0%: LW-032, LW-033 e LW-034). **Avanço total do projeto: 34 de 192 tarefas (17,7%).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
 
 Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e 2 dispensadas (LW-004 e LW-005). Arthur aceitou a revisão da LW-029, assinou a LW-030 (com ressalvas) e aprovou a LW-031, todas em 03/11/2026. Pelo roadmap (0.J), a fase é dada como concluída quando a tag `fase-0-concluida` estiver no remoto: ela foi criada e enviada em 03/11/2026, apontando para `7ae6e8e` (ponta de `main` no GitHub), com autorização de Arthur; é uma tag **leve** (não anotada). Na data do fechamento da Fase 0, o avanço total do projeto era de 31 de 192 tarefas (16,1%); o valor atual está na primeira linha deste arquivo. A LW-029A é uma tarefa extra, fora das 31, e não entra na conta.
 
@@ -73,6 +73,7 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 |---|---|---|---|---|
 | LW-032 | DOC | Contratos mínimos de `world`, `character` e `bridge` | concluída | Aprovada por Arthur. Está no `main` (avanço rápido); commits `32a09a0` e `821d548`, de 04/11/2026 |
 | LW-033 | SPIKE | Spike SP4a: terreno | concluída | **Aprovada por Arthur em 05/11/2026**; `main` em `930ce8e`. Caminho de terreno decidido: **terreno próprio** (DEC-057, APROVADA). Resultado em `docs/decisions/0007-spike-sp4a-terreno.md`. A medição oficial do Mac foi feita em modo DEBUG; a repetição em release fica como condição (e) da DEC-057 |
+| LW-034 | IMPL | `TerrainData`: dados do terreno (alturas e superfícies) e lista de inteiros no `data` | concluída | **Aprovada por Arthur em 05/11/2026**; está no `main`; commit de código `6c63dac`. `TerrainData` (alturas nos nós, superfície por célula, ponto de nascimento) e `TerrainLoader` em `src/sim/world`; lista de inteiros (`INT_LIST`) no `data`; 203 testes verdes; terreno real e resolução da grade ficam na LW-037 |
 
 ## Tarefas extras (fora das 31; não entram na conta)
 
