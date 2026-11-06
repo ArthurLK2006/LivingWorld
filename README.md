@@ -6,7 +6,7 @@
 
 | | |
 |---|---|
-| **Estado atual** | **Fase 1 (primeiro mundo jogável) EM ANDAMENTO: 5 de 23 tarefas concluídas; avanço total do projeto: 36 de 192 tarefas (18,8%).** A Fase 0 (fundação técnica) está concluída: 31 de 31 tarefas concluídas ou dispensadas, tag `fase-0-concluida` no remoto (aprovação de Arthur em 03/11/2026). Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`; o SP4a (medição de terreno) existe como código descartável em `tests/soak/sp4a`. **Ainda não há jogo jogável.** Veja a seção 5 |
+| **Estado atual** | **Fase 1 (primeiro mundo jogável) EM ANDAMENTO: 6 de 23 tarefas concluídas; avanço total do projeto: 37 de 192 tarefas (19,3%).** A Fase 0 (fundação técnica) está concluída: 31 de 31 tarefas concluídas ou dispensadas, tag `fase-0-concluida` no remoto (aprovação de Arthur em 03/11/2026). Existem o projeto Godot, o núcleo da simulação sem janela, leitura de dados, salvamento e a verificação `tools/check_all`; o SP4a (medição de terreno) existe como código descartável em `tests/soak/sp4a`. **Ainda não há jogo jogável.** Veja a seção 5 |
 | **Versão da documentação** | 0.3 (revisão final de 01/11/2026, horário de Brasília); seções 5, 6.1 e 8 a 10 atualizadas em 02/11/2026 |
 | **Responsável** | Arthur (dono do produto; único que aprova decisões) |
 | **Licença** | Ainda não definida |
@@ -141,7 +141,7 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 | Núcleo da simulação (`src/core`) | Relógio, sorteios repetíveis, IDs, eventos, agendador, mundo e hash de estado, todos testados e rodando **sem janela** |
 | Dados (`src/data`) | Leitor e validador de arquivos JSON |
 | Salvamento (`src/persistence`) | Salvar e carregar com checksum, versões, migração, backups e recuperação |
-| Testes e verificação | `tools/check_all` (arquitetura em 9 verificações, dados, testes automáticos, cena e simulação). Verificado em 06/11/2026 no commit `588f125` mais a junção com o `main` (`55abc64`): **verde no Mac, com 237 testes** (a nuvem não foi repetida desde 03/11/2026, quando deu verde com 154 testes). No Windows (que não é a plataforma de referência) terminou vermelho em 03/11/2026 por três linhas das próprias ferramentas de verificação; detalhes em [`docs/fase-0/LW-031-relatorio-de-fechamento.md`](docs/fase-0/LW-031-relatorio-de-fechamento.md) |
+| Testes e verificação | `tools/check_all` (arquitetura em 9 verificações, dados, testes automáticos, cena e simulação). Verificado em 06/11/2026 no commit de código `3288bd4` (LW-037), com o ajuste `c39a7d9` e a junção com o `main` (`15c58a4`): **verde no Mac, com 256 testes** (a nuvem não foi repetida desde 03/11/2026, quando deu verde com 154 testes). No Windows (que não é a plataforma de referência) terminou vermelho em 03/11/2026 por três linhas das próprias ferramentas de verificação; detalhes em [`docs/fase-0/LW-031-relatorio-de-fechamento.md`](docs/fase-0/LW-031-relatorio-de-fechamento.md) |
 | Medições (spikes) | Núcleo (SP1), dados (SP3), salvamento (SP5) e terreno (SP4a) registrados em `docs/decisions/` |
 | Revisão e validação da Fase 0 | Revisão arquitetural aceita (aprovada com ajustes, 0 achados críticos), validação assinada por Arthur com ressalvas e fechamento da fase (LW-031) aprovado, os três em 03/11/2026 |
 
@@ -161,13 +161,13 @@ O roadmap tem **6 fases e 192 tarefas** (`LW-001` a `LW-192`).
 | Fase | Nome | Tarefas | Situação |
 |---|---|---|---|
 | 0 | Fundação técnica | 31 | **Concluída** (31 de 31 concluídas ou dispensadas; tag `fase-0-concluida` criada e no remoto, em `7ae6e8e`, 03/11/2026) |
-| 1 | Primeiro mundo jogável | 23 | **Em andamento** (5 de 23 concluídas: LW-032, LW-033, LW-034, LW-035 e LW-036) |
+| 1 | Primeiro mundo jogável | 23 | **Em andamento** (6 de 23 concluídas: LW-032, LW-033, LW-034, LW-035, LW-036 e LW-037) |
 | 2 | Primeira sociedade | 32 | Não iniciada |
 | 3 | Economia | 30 | Não iniciada |
 | 4 | Facções e conflitos | 29 | Não iniciada |
 | 5 | Integração e protótipo | 47 | Não iniciada |
 
-A Fase 1 está **em andamento**: a LW-032 (contratos mínimos), a LW-033 (spike SP4a do terreno), a LW-034 (dados do terreno e lista de inteiros no `data`), a LW-035 (personagem mínimo no módulo `character`) e a LW-036 (ponte mínima entre a apresentação e a simulação), as quatro últimas aprovadas por Arthur (a LW-033 e a LW-034 em 05/11/2026; a LW-035 e a LW-036 em 06/11/2026), estão concluídas, 5 de 23 tarefas. O avanço total do projeto é de 36 de 192 tarefas (18,8%).
+A Fase 1 está **em andamento**: a LW-032 (contratos mínimos), a LW-033 (spike SP4a do terreno), a LW-034 (dados do terreno e lista de inteiros no `data`), a LW-035 (personagem mínimo no módulo `character`), a LW-036 (ponte mínima entre a apresentação e a simulação) e a LW-037 (gerador do terreno de blockout e tamanho do chunk como dado), as cinco últimas aprovadas por Arthur (a LW-033 e a LW-034 em 05/11/2026; a LW-035, a LW-036 e a LW-037 em 06/11/2026), estão concluídas, 6 de 23 tarefas. O avanço total do projeto é de 37 de 192 tarefas (19,3%).
 
 > O acompanhamento é mantido em `docs/ROADMAP_STATUS.md`. Esta seção só deve conter o que foi verificado.
 
