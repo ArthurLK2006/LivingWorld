@@ -9,6 +9,8 @@ const ID_FIELD: String = "id"
 const ID_PATTERN: String = "^[a-z][a-z0-9_]*\\z"
 ## Maior inteiro que um decimal de 64 bits representa sem perder precisão.
 const MAX_SAFE_INTEGER: float = 9007199254740992.0
+## Quantos elementos inválidos de uma mesma lista são detalhados um a um; o resto vira uma linha de resumo. [HIP]
+const MAX_ELEMENT_ISSUES: int = 10
 
 var _id_regex: RegEx
 
@@ -69,6 +71,9 @@ func _check_field(bundle: DataBundle, file_path: String, item: String, record: D
 		if field.is_required:
 			bundle.add_issue(file_path, item, field.name, "campo obrigatório ausente")
 		return
+	if field.type == DataSchema.FieldType.INT_LIST:
+		_check_int_list(bundle, file_path, item, record, field)
+		return
 	# Variant: valor cru do JSON; null sinaliza falha de conversão.
 	var raw_value: Variant = record[field.name]
 	var value: Variant = _convert(raw_value, field.type)
@@ -76,14 +81,61 @@ func _check_field(bundle: DataBundle, file_path: String, item: String, record: D
 		bundle.add_issue(file_path, item, field.name, "tipo inválido: esperado %s, encontrado %s (%s)" % [_type_name(field.type), type_string(typeof(raw_value)), str(raw_value)])
 		return
 	if field.type == DataSchema.FieldType.INT or field.type == DataSchema.FieldType.FLOAT:
-		var number: float = value
-		if number < field.min_value:
-			bundle.add_issue(file_path, item, field.name, "valor %s abaixo do mínimo %s" % [str(value), str(field.min_value)])
-			return
-		if number > field.max_value:
-			bundle.add_issue(file_path, item, field.name, "valor %s acima do máximo %s" % [str(value), str(field.max_value)])
+		var problem: String = _range_problem(value, field)
+		if not problem.is_empty():
+			bundle.add_issue(file_path, item, field.name, problem)
 			return
 	record[field.name] = value
+
+
+## Lista de inteiros: confere o tamanho e cada elemento e, estando tudo certo, guarda a lista como
+## PackedInt64Array. Cada problema traz a posição do elemento (a partir de 0); só os primeiros
+## MAX_ELEMENT_ISSUES são detalhados, para um arquivo todo errado não gerar milhões de linhas.
+func _check_int_list(bundle: DataBundle, file_path: String, item: String, record: Dictionary, field: DataSchema.Field) -> void:
+	# Variant: valor cru do JSON; o tipo é conferido na linha seguinte.
+	var raw_value: Variant = record[field.name]
+	if typeof(raw_value) != TYPE_ARRAY:
+		bundle.add_issue(file_path, item, field.name, "tipo inválido: esperado %s, encontrado %s" % [_type_name(field.type), type_string(typeof(raw_value))])
+		return
+	var raw_list: Array = raw_value
+	if raw_list.size() > field.max_length:
+		bundle.add_issue(file_path, item, field.name, "lista com %d elementos, acima do limite de %d" % [raw_list.size(), field.max_length])
+		return
+	var converted: PackedInt64Array = PackedInt64Array()
+	converted.resize(raw_list.size())
+	var bad_count: int = 0
+	for position: int in raw_list.size():
+		var problem: String = _element_problem(raw_list[position], field)
+		if problem.is_empty():
+			converted[position] = int(raw_list[position])
+			continue
+		bad_count += 1
+		if bad_count <= MAX_ELEMENT_ISSUES:
+			bundle.add_issue(file_path, item, field.name, "elemento na posição %d: %s" % [position, problem])
+	if bad_count == 0:
+		record[field.name] = converted
+	elif bad_count > MAX_ELEMENT_ISSUES:
+		bundle.add_issue(file_path, item, field.name, "mais %d elementos inválidos não detalhados (total %d)" % [bad_count - MAX_ELEMENT_ISSUES, bad_count])
+
+
+## Problema de um elemento de lista de inteiros (texto vazio se estiver certo).
+func _element_problem(raw_element: Variant, field: DataSchema.Field) -> String:
+	# Variant: elemento cru do JSON; null sinaliza falha de conversão.
+	var element: Variant = _convert(raw_element, DataSchema.FieldType.INT)
+	if element == null:
+		return "tipo inválido: esperado inteiro, encontrado %s (%s)" % [type_string(typeof(raw_element)), str(raw_element)]
+	return _range_problem(element, field)
+
+
+## Problema de faixa de um número já convertido (texto vazio se estiver dentro dela).
+## `value` é Variant porque pode ser int ou float, conforme o tipo do campo.
+func _range_problem(value: Variant, field: DataSchema.Field) -> String:
+	var number: float = value
+	if number < field.min_value:
+		return "valor %s abaixo do mínimo %s" % [str(value), str(field.min_value)]
+	if number > field.max_value:
+		return "valor %s acima do máximo %s" % [str(value), str(field.max_value)]
+	return ""
 
 
 ## Devolve o valor no tipo do esquema ou null se não for possível.
@@ -146,4 +198,6 @@ func _type_name(type: DataSchema.FieldType) -> String:
 			return "número"
 		DataSchema.FieldType.BOOL:
 			return "verdadeiro/falso"
+		DataSchema.FieldType.INT_LIST:
+			return "lista de inteiros"
 	return "desconhecido"

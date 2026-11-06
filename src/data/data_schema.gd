@@ -4,7 +4,10 @@ extends RefCounted
 ## seus tipos, faixas e referências a outras tabelas. Todo registro tem ainda
 ## o campo implícito `id` (texto em snake_case, único na tabela).
 
-enum FieldType { STRING, INT, FLOAT, BOOL }
+enum FieldType { STRING, INT, FLOAT, BOOL, INT_LIST }
+
+## Tamanho máximo de um campo INT_LIST quando o esquema não define outro: protege contra arquivo gigante. [HIP]
+const DEFAULT_MAX_LIST_LENGTH: int = 4194304
 
 var table_id: String
 var file_name: String
@@ -38,6 +41,7 @@ class Field:
 	var min_value: float = -INF
 	var max_value: float = INF
 	var ref_table: String = ""
+	var max_length: int = DataSchema.DEFAULT_MAX_LIST_LENGTH
 
 	func _init(field_name: String, field_type: DataSchema.FieldType, required: bool) -> void:
 		name = field_name
@@ -48,6 +52,11 @@ class Field:
 	func set_range(lowest: float, highest: float) -> Field:
 		min_value = lowest
 		max_value = highest
+		return self
+
+	## Tamanho máximo da lista (INT_LIST); a faixa de `set_range` vale para cada elemento.
+	func set_max_length(length: int) -> Field:
+		max_length = length
 		return self
 
 	## Marca o campo (STRING) como referência ao `id` de um registro de outra tabela.
