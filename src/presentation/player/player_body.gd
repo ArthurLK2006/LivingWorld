@@ -3,8 +3,9 @@ extends CharacterBody3D
 ## Corpo provisório do jogador (LW-045): uma cápsula visível que anda, corre e pula sobre o terreno. A FÍSICA FICA NA
 ## APRESENTAÇÃO (arquitetura 15): a posição daqui não é estado da simulação e nada é relatado a ela nesta tarefa (o relato é a
 ## LW-048). Lê o teclado só por ações nomeadas (InputActions). A direção do movimento é relativa ao giro do nó de referência
-## (hoje a câmera provisória). Enquanto o chão sob o corpo não tem colisão que valha (TerrainView.has_collision_at) ele fica
-## parado, sem cair nem andar. Contrato: docs/modules/presentation.md.
+## (a câmera de terceira pessoa). Enquanto o chão sob o corpo não tem colisão que valha (TerrainView.has_collision_at) ele fica
+## parado, sem cair nem andar. LIMITES (LW-047): encostas acima da inclinação máxima o bloqueiam, ele não passa da borda do mapa
+## e, se cair abaixo do terreno, é posto de volta sobre o chão. Contrato: docs/modules/presentation.md.
 
 ## Velocidades e impulso do pulo [HIP] (m/s).
 const WALK_SPEED_MPS: float = 4.0
@@ -17,6 +18,11 @@ const CAPSULE_HEIGHT_M: float = 1.8
 const PLAYER_PHYSICS_LAYER: int = 2
 ## Quanto acima do chão o corpo nasce [HIP] (m); ele assenta sozinho.
 const SPAWN_CLEARANCE_M: float = 0.05
+## Limites do jogador [HIP] (LW-047): inclinação máxima caminhável (graus; encosta mais íngreme vira parede), margem até a borda
+## do mapa (m) e quanto abaixo do terreno (m) o corpo precisa estar para ser reposto sobre o chão.
+const MAX_WALKABLE_SLOPE_DEGREES: float = 40.0
+const BORDER_MARGIN_M: float = 1.0
+const RECOVERY_DEPTH_M: float = 2.0
 ## Cor provisória da cápsula [HIP]: laranja, para não se confundir com o terreno.
 const CAPSULE_COLOR: Color = Color(0.95, 0.45, 0.10)
 const GRAVITY_SETTING: String = "physics/3d/default_gravity"
@@ -27,6 +33,10 @@ const COLLISION_SHAPE_NAME: String = "Shape"
 const HALF: float = 0.5
 
 var _terrain: TerrainView
+var _bridge: SimBridge
+var _world_size_m: Vector2 = Vector2.ZERO
+var _spawn_point: Vector3 = Vector3.ZERO
+var _has_reported_height_error: bool = false
 var _direction_reference: Node3D
 var _is_spawned: bool = false
 var _was_jump_down: bool = false
@@ -39,6 +49,7 @@ func _ready() -> void:
 	collision_mask = 0
 	set_collision_layer_value(PLAYER_PHYSICS_LAYER, true)
 	set_collision_mask_value(TerrainView.TERRAIN_PHYSICS_LAYER, true)
+	floor_max_angle = deg_to_rad(MAX_WALKABLE_SLOPE_DEGREES)
 	_add_capsule()
 	visible = false
 	set_physics_process(false)
@@ -63,10 +74,17 @@ func setup(bridge: SimBridge, terrain: TerrainView, direction_reference: Node3D)
 	if not spawn.result.ok:
 		push_error("PlayerBody.setup: ponto de nascimento indisponível (%s): %s" % [spawn.result.code, spawn.result.message])
 		return false
+	var layout: SimBridge.TerrainLayoutReply = bridge.peek_terrain_layout()
+	if not layout.result.ok:
+		push_error("PlayerBody.setup: formato do terreno indisponível (%s): %s" % [layout.result.code, layout.result.message])
+		return false
 	_terrain = terrain
+	_bridge = bridge
+	_world_size_m = layout.size_m
+	_spawn_point = spawn.point
+	_has_reported_height_error = false
 	_direction_reference = direction_reference
-	global_position = spawn.point + Vector3(0.0, SPAWN_CLEARANCE_M, 0.0)
-	velocity = Vector3.ZERO
+	_place_at(spawn.point)
 	_was_jump_down = Input.is_action_pressed(InputActions.JUMP)
 	_is_spawned = true
 	visible = true
@@ -85,6 +103,8 @@ func _physics_process(delta: float) -> void:
 	_apply_horizontal_input()
 	_apply_vertical_motion(delta)
 	move_and_slide()
+	_keep_inside_world()
+	_recover_if_below_terrain()
 
 
 ## Ações move_* dão o vetor das teclas (já normalizado), girado pelo yaw do nó de referência: "para frente" é para onde ele olha.
@@ -105,6 +125,35 @@ func _apply_vertical_motion(delta: float) -> void:
 	else:
 		velocity.y -= _gravity_mps2 * delta
 	_was_jump_down = is_jump_down
+
+
+## O corpo não passa da borda do mapa: x e z ficam a pelo menos BORDER_MARGIN_M dela (e o corpo desliza ao longo da borda).
+func _keep_inside_world() -> void:
+	var inside: Vector3 = global_position
+	inside.x = clampf(inside.x, BORDER_MARGIN_M, _world_size_m.x - BORDER_MARGIN_M)
+	inside.z = clampf(inside.z, BORDER_MARGIN_M, _world_size_m.y - BORDER_MARGIN_M)
+	if inside != global_position:
+		global_position = inside
+
+
+## Se o corpo caiu mais de RECOVERY_DEPTH_M abaixo do terreno (a colisão só tem a face de cima), volta para cima do chão no mesmo
+## x e z; se a altura do terreno não puder ser lida, volta ao ponto de nascimento. Os dois casos avisam no log.
+func _recover_if_below_terrain() -> void:
+	var ground: SimBridge.HeightReply = _bridge.peek_height(global_position.x, global_position.z)
+	if not ground.result.ok:
+		if not _has_reported_height_error:
+			_has_reported_height_error = true
+			push_warning("PlayerBody: altura do terreno indisponível em (x=%s, z=%s): %s; o corpo volta ao ponto de nascimento." % [str(global_position.x), str(global_position.z), ground.result.message])
+		_place_at(_spawn_point)
+	elif global_position.y < ground.height_m - RECOVERY_DEPTH_M:
+		push_warning("PlayerBody: corpo %s m abaixo do terreno em (x=%s, z=%s); reposto sobre o chão." % [str(ground.height_m - global_position.y), str(global_position.x), str(global_position.z)])
+		_place_at(Vector3(global_position.x, ground.height_m, global_position.z))
+
+
+## Põe o corpo sobre o ponto (o chão), com a folga de nascimento, e para o movimento.
+func _place_at(ground_point: Vector3) -> void:
+	global_position = ground_point + Vector3(0.0, SPAWN_CLEARANCE_M, 0.0)
+	velocity = Vector3.ZERO
 
 
 ## Cápsula visível e forma de colisão do mesmo tamanho, com o centro a meia altura (a origem do corpo fica nos pés).
