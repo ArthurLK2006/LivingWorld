@@ -2,7 +2,7 @@ extends GutTest
 ## LW-044: mapa de entradas. Todas as ações existem no InputMap com as teclas de E1 (por tecla física), nenhuma tecla vale para
 ## duas ações, e a pausa do GameApp é tratada pela AÇÃO, sem tecla fixa. Sem janela.
 
-const ACTION_COUNT: int = 14
+const ACTION_COUNT: int = 17
 const GAME_APP_SOURCE: String = "res://src/app/game_app.gd"
 const UNSPECIFIED: KeyLocation = KEY_LOCATION_UNSPECIFIED
 ## Teclas padrão da decisão E1 de Arthur (DEC-116): ação -> [tecla física, localização].
@@ -21,6 +21,12 @@ const EXPECTED_KEYS: Dictionary[StringName, Array] = {
 	InputActions.LOOK_DOWN: [KEY_DOWN, KEY_LOCATION_UNSPECIFIED],
 	InputActions.SPEED_NORMAL: [KEY_1, KEY_LOCATION_UNSPECIFIED],
 	InputActions.SPEED_DOUBLE: [KEY_2, KEY_LOCATION_UNSPECIFIED],
+}
+## Botões de mouse da decisão D3 do lote 3: ação -> botão (botão direito arrastado gira a câmera, a roda dá zoom).
+const MOUSE_BUTTONS: Dictionary[StringName, MouseButton] = {
+	InputActions.CAMERA_ORBIT: MOUSE_BUTTON_RIGHT,
+	InputActions.ZOOM_IN: MOUSE_BUTTON_WHEEL_UP,
+	InputActions.ZOOM_OUT: MOUSE_BUTTON_WHEEL_DOWN,
 }
 ## Palavras que não podem aparecer no código do GameApp (tecla escrita direto).
 const FORBIDDEN_WORDS: Array[String] = ["PAUSE_KEY", "InputEventKey", "keycode", "KEY_SPACE", "is_key_pressed"]
@@ -75,6 +81,8 @@ func test_all_actions_exist_with_snake_case_names_and_no_extra_game_action() -> 
 func test_each_action_has_at_least_one_event_and_the_keys_of_the_decision_E1() -> void:
 	for action: StringName in InputActions.ALL:
 		assert_gt(InputMap.action_get_events(action).size(), 0, "A ação '%s' não tem nenhum evento." % action)
+		if not EXPECTED_KEYS.has(action):
+			continue # ações de mouse da câmera (decisão D3): têm o teste próprio mais abaixo
 		var expected: Array = EXPECTED_KEYS[action]
 		var keys: Array[InputEventKey] = _key_events(action)
 		assert_eq(keys.size(), 1, "A ação '%s' deve ter exatamente uma tecla." % action)
@@ -122,6 +130,8 @@ func test_the_game_app_uses_no_fixed_key() -> void:
 
 func test_a_real_key_event_matches_its_own_action_and_only_it_and_run_is_the_left_shift() -> void:
 	for action: StringName in InputActions.ALL:
+		if not EXPECTED_KEYS.has(action):
+			continue # ações de mouse da câmera (decisão D3): têm o teste próprio
 		var expected: Array = EXPECTED_KEYS[action]
 		var event: InputEventKey = InputEventKey.new()
 		event.physical_keycode = expected[0]
@@ -134,3 +144,19 @@ func test_a_real_key_event_matches_its_own_action_and_only_it_and_run_is_the_lef
 	right_shift.location = KEY_LOCATION_RIGHT
 	right_shift.pressed = true
 	assert_false(InputMap.event_is_action(right_shift, InputActions.RUN), "Só o Shift esquerdo corre.")
+
+
+func test_the_camera_actions_are_bound_to_the_mouse_buttons_of_the_decision_D3_and_only_to_them() -> void:
+	for action: StringName in MOUSE_BUTTONS:
+		var events: Array[InputEvent] = InputMap.action_get_events(action)
+		assert_eq(events.size(), 1, "A ação '%s' deve ter exatamente um evento." % action)
+		var button: InputEventMouseButton = events[0] as InputEventMouseButton
+		assert_not_null(button, "A ação '%s' deve ser um botão do mouse." % action)
+		assert_eq(button.button_index, MOUSE_BUTTONS[action], "Botão errado em '%s'." % action)
+		assert_eq(button.device, -1, "A ação '%s' deve valer para qualquer dispositivo." % action)
+		assert_eq(_key_events(action).size(), 0, "A ação '%s' não tem tecla." % action)
+		var real: InputEventMouseButton = InputEventMouseButton.new()
+		real.button_index = MOUSE_BUTTONS[action]
+		real.pressed = true
+		for other: StringName in InputActions.ALL:
+			assert_eq(InputMap.event_is_action(real, other), other == action, "O botão de '%s' casou com '%s'." % [action, other])

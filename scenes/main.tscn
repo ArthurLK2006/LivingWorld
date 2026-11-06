@@ -7,6 +7,7 @@
 [ext_resource type="Resource" path="res://assets/environment/ambient_default.tres" id="5_ambient"]
 [ext_resource type="Script" path="res://src/presentation/world_view/decoration/decoration_view.gd" id="6_decoration"]
 [ext_resource type="Script" path="res://src/presentation/player/player_body.gd" id="7_player"]
+[ext_resource type="Script" path="res://src/presentation/camera/third_person_camera.gd" id="8_camera"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("2_world")
@@ -30,6 +31,7 @@ script = ExtResource("6_decoration")
 script = ExtResource("7_player")
 
 [node name="Camera" type="Camera3D" parent="."]
+script = ExtResource("8_camera")
 position = Vector3(100, 35, 512)
 rotation_degrees = Vector3(-20, -90, 0)
 current = true
