@@ -1,6 +1,7 @@
 extends Node3D
-## Script da cena principal: entrega a ponte à TerrainView e à DecorationView, informa o foco do terreno (hoje a posição da câmera
-## provisória; D1 de Arthur: direto, sem passar pela ponte) e posiciona a câmera provisória. Sem regra de jogo.
+## Script da cena principal: entrega a ponte à TerrainView e à DecorationView, faz o PlayerBody nascer, informa o foco do terreno
+## (a posição do PlayerBody; antes dele existir, a da câmera provisória; D1 de Arthur: direto, sem passar pela ponte) e posiciona
+## a câmera provisória, que também é a referência de direção do PlayerBody até a LW-046. Sem regra de jogo.
 
 ## Câmera PROVISÓRIA até a LW-046 (câmera de jogo, DEC-115): fixa, acima do ponto de nascimento, olhando para
 ## leste ao longo do caminho. Alturas e ângulos são [HIP].
@@ -15,6 +16,7 @@ const DECORATIONS_PATH: String = "res://data/world/decorations.json"
 @onready var _terrain_view: TerrainView = $TerrainView
 @onready var _decoration_view: DecorationView = $DecorationView
 @onready var _camera: Camera3D = $Camera
+@onready var _player: PlayerBody = $PlayerBody
 ## Só informa o foco depois de a TerrainView ter sido ligada a uma ponte.
 var _is_terrain_ready: bool = false
 
@@ -38,11 +40,17 @@ func _ready() -> void:
 	if spawn.result.ok:
 		_camera.position = spawn.point + Vector3(0.0, CAMERA_HEIGHT_ABOVE_SPAWN_M, 0.0)
 		_camera.rotation_degrees = Vector3(CAMERA_PITCH_DEGREES, CAMERA_YAW_EAST_DEGREES, 0.0)
-	_terrain_view.set_focus(_camera.position)
+	_player.setup(bridge, _terrain_view, _camera)
+	_terrain_view.set_focus(_focus_position())
 	_is_terrain_ready = true
 	set_process(true)
 
 
 func _process(_delta: float) -> void:
 	if _is_terrain_ready:
-		_terrain_view.set_focus(_camera.position)
+		_terrain_view.set_focus(_focus_position())
+
+
+## De onde o terreno é carregado: do jogador, se ele nasceu; senão da câmera provisória.
+func _focus_position() -> Vector3:
+	return _player.global_position if _player.is_spawned() else _camera.position
