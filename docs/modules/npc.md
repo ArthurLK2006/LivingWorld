@@ -1,0 +1,178 @@
+# Contrato — npc
+
+Estado: **PROPOSTA da LW-055** (só documento: nenhum código, dado ou teste existe; `src/sim/npc/` tem só o README reservado). Aprovado por Arthur, passa a ser a fonte de verdade das LW-056 a LW-086 (rastreio na seção 12). Fontes: arquitetura cap. 8, 9 e 10 (mais 5.3, 6, 7, 16, 17 e 20), GDD cap. 8 e 9 e roadmap Fase 2. Rótulos: **decisão** (DECISIONS.md, APROVADA), **[PROPOSTA]** (desenho deste contrato, ainda não aprovado), **[HIP]** (número de trabalho, não é requisito: vai para `data/` ou constante nomeada), **[PENDENTE]**, **[LIM]** e **TEMP** (provisório com tarefa de remoção). `[Qn]` remete à lista de pontos abertos da seção 13. Nomes de ofícios, lugares e pessoas são **provisórios e genéricos** (DEC-100, APROVADA); nenhum nome de povo, cultura, região ou religião é inventado aqui.
+
+**Escala do protótipo (DEC-040, PENDENTE; registro provisório do roadmap, autorizado por Arthur, não é decisão):** cerca de **100 a 300 NPCs individuais [HIP]**, provisório até a LW-179. Só existem os tiers **T1 e T2**: o T3 depende de facção e não existe na Fase 2. **T0 e `PopulationGroup` ficam fora** (DEC-041, APROVADA): não ganham classe, dado nem evento até haver necessidade medida; S2 e S3 também ficam fora (só S1 e S0). DEC-038 (tiers) e DEC-039 (níveis S0 a S3) são PROPOSTA e valem como padrão de trabalho.
+
+- **Responsabilidade:** existência e vida dos NPCs individuais: estado, necessidades, ações, rotina de ofício, decisão por utilidade, LOD lógico (S1 e S0), notáveis T2 (memória e relações) e consequências de necessidade crítica. **Não** faz economia, política, facção, combate, T0, nascimento, família, herança, rumor, IA generativa (DEC-036) nem rede.
+- **Entradas:** o passo do relógio (`tick`); dados de `data/` (seções 2 a 5 e 9); consultas ao `world` (assentamentos e locais, extensão em `world.md`); o evento `AlarmRaised`; comandos (seção 10), vindos da ponte e de ferramentas de desenvolvimento; os pontos de foco (seção 6).
+- **Saídas:** consultas `peek_*` (cópias); intenções `NpcIntent` para a apresentação (seção 6); eventos `LodChanged`, `NpcDied`, `NpcImpasseRecovered`, `AlarmRaised` e `RelationChanged` (catálogo em `docs/events.md`).
+- **Dependências permitidas:** `core` e `data` (camadas 0 e 1) e `world` (camada 2). **Não importa** `character` (mesma camada 3 e fora da lista da ficha da arquitetura 8.6), `economy`, `politics`, `military` nem `combat`. O módulo `entities` (arquitetura 8.6) não existe e nenhuma tarefa da Fase 2 o cria: os IDs vêm de `ctx.ids`, como no `character` [Q8]. Camada 3 do AGENTS 5.1.
+- **Dados controlados:** tabela da seção 11.
+- **Interfaces de comunicação:** seção 10 (`peek_*`, `request_*`, `on_*`) e `docs/events.md`.
+- **Testes necessários:** um por tarefa, nomeados na seção 12, mais as regras gerais: mesma semente, mesmo hash (DEC-081); ida e volta de save pelo codec JSON; dado inválido falha apontando arquivo, item e campo; nada em S0 sem apresentação simulada; sem janela (`--headless`).
+
+## 1. Estado do NPC (LW-057; ver também LW-067)
+
+- **Tipo e armazenamento:** `NpcState` (`RefCounted`, só dados, sem Node) numa tabela do módulo indexada por `npc_id` (arquitetura 7.3, opção D). Visita sempre por IDs em ordem crescente (regra do `MODELO.md`). Campos, por bloco:
+  - **Identidade:** `npc_id: int` de `ctx.ids`, nunca reutilizado e nunca igual ao ID de um jogador; `name_key` e `name_number` (a simulação só guarda a chave do texto; a apresentação monta "Aldeão 001"); `tier` (1 ou 2); `is_alive`, `death_cause`, `died_at`.
+  - **Personalidade:** traços inteiros de 0 a 100 (50 é neutro), sorteados na criação e fixos. **Quatro [PROPOSTA, Q9]:** cautela, sociabilidade, ambição e lealdade, com ids em `data/traits.json`. Os outros quatro exemplos do GDD 8.4 (agressividade, honestidade, curiosidade, ganância) esperam uma ação que os use.
+  - **Necessidades:** valor e resto de cada uma, e o minuto da última atualização (seção 2).
+  - **Posição lógica:** `x_cm` e `z_cm` inteiros (convenção do terreno), `settlement_id` e `place_id` (vazio em trânsito). Em S0 vale o último relato do corpo.
+  - **Ofício e locais:** `occupation_id`, `home_place_id` e `work_place_id` (ids de conteúdo, em texto).
+  - **Ação atual:** `action_id`, `action_target_place_id`, `action_started_at` e `action_ends_at` (minutos de simulação) e `action_serial: int`, contador de ações do NPC que identifica a Intent e o resultado.
+  - **Pensamento e controle:** `next_think_time`; `critical_since` (minuto em que a necessidade letal entrou em nível crítico, ou -1); `last_progress_at` (detector de impasse).
+- **Fora do save** (voláteis, derivados ou de depuração): nível de LOD e Intent pendente (seção 6), pontos de foco, índice de ocupação dos locais (refeito ao carregar), marca e rastros de depuração. Ao carregar, todos nascem em S1; a ação atual continua em modo abstrato com o tempo que falta.
+- **Criar, remover, morrer:** `request_create_npc(spec)` devolve `npc_id`; `request_remove_npc(npc_id)` apaga o registro e o ID não volta; **morte** (seção 8) mantém só identidade e causa, para quem guarda o ID. IDs nunca reutilizados (AGENTS 4.12).
+- **População inicial (LW-067):** `on_new_game(world_seed)` lê `data/population.json` (linhas `id`, `settlement_id`, `occupation_id`, `count`), cria os NPCs em ordem fixa (assentamento, ofício, sequência), sorteia os traços no fluxo `npc.population` do `core`, dá a cada um a primeira casa com vaga e um local de trabalho com vaga (por ID). Capacidade insuficiente no assentamento é erro de dado na validação (`NPC_POPULATION_NO_ROOM`), não NPC sem casa.
+- **Salvamento:** `serialize()` devolve `{"npcs": {"<id>": {...}}}` (ID como texto, chaves em ordem, decimais de 64 bits como no `core`); `on_load(data) -> Result` converte e valida **tudo** antes de alterar o estado (`NPC_INVALID_SAVE`); `validate()` aponta necessidade fora de 0 a 100, referência a ofício, local ou ação inexistente, tier inválido, morto com ação, mais T2 que o limite e ID acima do contador do `core`; `debug_summary()` traz contagens por tier, nível de LOD, ofício e vivos/mortos, pensamentos do último passo e o tamanho em bytes do `serialize()` (backlog I4). Entra no `state_hash` ao se registrar no `World` com o nome `npc`. A estrutura do arquivo de save não muda (ele já guarda `modules`), então a versão do save segue a lógica da LW-048 (continua 2); a LW-057 confirma [PROPOSTA].
+
+## 2. Necessidades (LW-058)
+
+- **Cinco necessidades** (arquitetura 9.2), definidas em `data/needs.json`: `hunger` (fome), `rest` (descanso), `safety` (segurança), `income` (renda) e `social`. Campos: `id`, `order` (posição fixa), `start_value`, `rate_per_hour` (inteiro, pode ser negativo), `attention`, `urgent` e `critical` (limiares crescentes), `weight_attention`, `weight_urgent` e `weight_critical` (peso na utilidade), `weaken_after_hours` e `lethal_after_hours` (0 = não letal; seção 8).
+- **Escala [PROPOSTA, Q4]:** todas guardam **pressão**: 0 = satisfeita, 100 = no limite. Fome, cansaço e solidão sobem com o tempo; "comer" a reduz; "trabalhar" reduz a pressão de renda (o roadmap diz "eleva renda": leia "renda sentida como suficiente"); a segurança sobe com perigo e desce devagar (taxa negativa). Assim taxa positiva sobe, efeito negativo alivia, e todas se comportam do mesmo jeito.
+- **Urgência:** nível 0 (confortável), 1 (atenção), 2 (urgente) ou 3 (crítica), pelos limiares; o peso de cada nível vem de dados.
+- **Atualização preguiçosa e exata:** `pontos = IntMath.floor_div(taxa × minutos + resto, 60)`, com o resto guardado no estado; o total não depende de com que frequência o NPC pensa nem de ele estar em S0 ou S1. Valor sempre limitado a 0..100. Só mudam o valor: o tempo, os efeitos de ação (seção 3) e o alarme (seção 8).
+- **Validação no boot** (DEC-082): limiares crescentes e dentro de 0 a 100, `order` único; falha aponta arquivo, item e campo.
+
+## 3. Ações e `ActionRunner` (LW-059, LW-060)
+
+- **Catálogo em tabelas planas [PROPOSTA, Q3]** (o `data` não aceita objetos aninhados, `data.md`): `data/actions.json` (`id`, `duration_min`, `place_kind`, `risk` de 0 a 100, `interruptible`), `data/action_effects.json` (`action_id` referência, `need_id` referência, `delta`; negativo alivia), `data/action_conditions.json` (`action_id`, `kind`, `need_id` opcional, `min_value`, `max_value`) e `data/action_trait_weights.json` (`action_id`, `trait_id`, `weight`). Adicionar uma ação com tipos de condição e de efeito que já existem é **só editar dados**; criar um tipo novo é código. Referência a necessidade, traço ou tipo de local inexistente falha na validação.
+- **Tipos de local:** vocabulário fechado dado pelo `world` (`home`, `work`, `rest`, `social`, `market_reserved`; este último é reservado e nenhuma ação da Fase 2 o usa), ou vazio (qualquer lugar). **Condições [PROPOSTA]:** `need_at_least`, `need_at_most`, `hour_between`, `place_has_room` e `has_food` (TEMP-LW-065). Ação sem condição atendida não começa e não é candidata.
+- **Sete ações iniciais** (id; duração, local e efeitos principais são **[HIP]**): `sleep` (480 min, `home`, alivia `rest`), `eat` (20 min, `home`, alivia `hunger`, exige `has_food`), `work` (240 min, `work`, custo leve de `rest`; renda e comida pelos provisórios da seção 9), `rest` (60 min, `rest`, alivia `rest`), `talk` (30 min, `social`, alivia `social`), `go_to_place` (duração = distância ÷ `walk_speed_cm_per_min` [HIP], sem efeito de necessidade) e `wait` (10 min, qualquer lugar, sem efeito). Reações a alarme (`flee`, `help`) são linhas de dados acrescentadas na LW-076.
+- **`ActionRunner` abstrato** (arquitetura 8.5): `begin(npc_id, action_id, place_id, now)` confere as condições e fixa `action_ends_at`; `advance(npc_id, now)` (modo S1) termina a ação quando o tempo acaba; **`apply_effects(npc_id, action_id, place_id, progress_permille)` é a ÚNICA função que escreve efeitos de ação**, chamada pelos dois modos: no S1 ao fim da duração, no S0 ao receber `ActionResult` de sucesso (seção 6). Os efeitos entram **uma vez**, proporcionais ao progresso (`floor_div(delta × progress, 1000)`): ação completa usa 1000, ação interrompida aplica o que cumpriu. **Sem sorteio nos efeitos** (senão a equivalência abstrato × corpóreo da LW-075 não se prova); "falha por regra" é uma condição que deixa de valer (ex.: sem comida ao terminar `eat`): `Result` `NPC_ACTION_FAILED`, sem efeito. O `risk` só pesa na utilidade e nas reações. Um teste de arquitetura confere que existe um só ponto de chamada de `apply_effects`.
+
+## 4. Rotina e ofícios (LW-061)
+
+- **Ofícios em dados** (`data/occupations.json`: `id`, `work_place_kind`): cinco **[HIP]**, os do roadmap: `farmer`, `lumberjack`, `artisan`, `guard`, `innkeeper` (agricultor, lenhador, artesão, guarda, taberneiro; nomes de exibição provisórios, por chave de texto). **Agenda** (`data/routine_blocks.json`: `id`, `occupation_id`, `from_hour` 0 a 23, `to_hour` 1 a 24 exclusivo, `action_id`): cada ofício cobre **exatamente as 24 horas**, sem lacuna nem sobreposição; ofício ou ação inexistente é rejeitado na validação. Consulta `peek_routine_action(occupation_id, hour_of_day)`; a hora vem de `SimClock.hour_of_day()`.
+- **Onde:** a rotina diz **o quê**; o local vem do estado (`home_place_id`, `work_place_id`) ou, para `rest` e `talk`, do mesmo assentamento por `world.peek_places_of_kind`: o mais próximo com vaga, desempate por ID do local [PROPOSTA]. **Capacidade** (estática) é dado do `world`; **ocupação** (quem está onde) é derivada do estado dos NPCs, fica no `npc` e não é salva.
+- **Fora:** variação por estação, dia da semana ou festa (GDD 9.3; DEC-060 PROPOSTA).
+
+## 5. Decisão (LW-062, LW-063, LW-064)
+
+- **Fluxo** (é o da **arquitetura 9.7**; o 9.7 do GDD trata de falhas e modos de erro), reduzido à Fase 2: acorda em `next_think_time`, atualiza necessidades, trata interrupção (alarme, seção 8), senão necessidade **urgente** (nível 2 ou mais) e as ações que a aliviam, senão a ação da **rotina** da hora; pontua, sorteia, executa (S1: `ActionRunner`; S0: Intent), aplica efeitos pela função única, grava memória (T2), publica eventos e agenda o próximo pensamento. Objetivos e planos (T2/T3), percepção por linha de visão e rumores **não existem na Fase 2** (sem tarefa; o ramo "objetivo ou plano" do fluxo fica vazio).
+- **Utilidade (inteiros; parâmetros em `data/npc_params.json`, uma linha, todos [HIP]):** `pontos = Σ(alívio × peso do nível de urgência) + Σ((traço − 50) × peso da ação) ÷ 50 − custo de tempo − custo de distância − custo de risco + bônus de inércia (ação atual) + bônus de rotina (ação da hora)`. Função pura: mesmo estado e mesma semente, mesma pontuação.
+- **Escolha:** ordena por pontos (desempate por ID da ação e do local), toma as `top_k` melhores até uma margem abaixo da primeira e **sorteia com peso** pelo `ctx.rng` no fluxo `npc.decision` (único gerador permitido, AGENTS 4.9). Um fluxo para todos, visitados em ordem fixa (`next_think_time`, `npc_id`), é determinístico e não pesa no save; um fluxo por NPC pesaria dezenas de bytes por NPC [PROPOSTA].
+- **Fila de pensamento:** `next_think_time` por NPC, a cada `think_interval_min` [HIP 10; arquitetura 6.4: 5 a 15]. **Fase fixa** por NPC (`npc_id` mod intervalo, na criação) para não formar ondas e **teto determinístico** `max_thinks_per_step` [HIP]: o excedente espera o passo seguinte, o mais antigo primeiro. O SP1 juntou 818 de 1.000 NPCs num passo; o teste de 1 ano confere o máximo por passo (linha I5 do backlog, critério da LW-063). Só pensa quem venceu; o módulo roda a cada passo e sai cedo se ninguém venceu.
+- **Rastro (LW-064):** `explain_decision(npc_id)` só para NPC **marcado** (`request_set_traced`, só em build de desenvolvimento): guarda os últimos `trace_depth` [HIP 8] pensamentos com necessidades, candidatas e cada parcela da pontuação, ação escolhida e motivo (`INTERRUPTION`, `URGENT_NEED`, `ROUTINE`, `INERTIA`). Não é salvo nem entra no hash; NPC não marcado não gera custo nem dado e recebe `NPC_NOT_TRACED`. Não há evento `NpcDecided` (seria evento em laço quente, AGENTS 4.14).
+
+## 6. LOD lógico, Intent e `ActionResult` (LW-069 a LW-073)
+
+- **Níveis:** **S1** (sem corpo; `ActionRunner` abstrato) e **S0** (com `NpcView`; a simulação emite Intent e espera o resultado). O nível é derivado do foco e **não é salvo**.
+- **Foco:** `request_set_focus(focus_id, position_m)` e `request_clear_focus(focus_id)`; vários focos, nada supõe jogador único; não é salvo. Como o `npc` não pode importar o `character` (a posição do jogador vive lá; é por isso que o roadmap liga a LW-069 à LW-035), quem entrega a posição do ator é a ponte (ou o `app`), no começo do passo (arquitetura 6.5) [Q7].
+- **Histerese [HIP]:** vira S0 a até `lod_enter_radius_m` (80 m) do foco mais próximo e só volta a S1 acima de `lod_exit_radius_m` (120 m; saída maior que entrada). Limite `max_s0` (50): acima dele ficam em S0 os mais próximos, desempate por ID. O evento `LodChanged(npc_id, from_level, to_level)` sai **só na troca**. **[Q6]** a arquitetura 5.3, 5.5 e 17.5 põe a classificação e o evento no `world`; o roadmap (LW-069) a põe em `npc/lod`, e o pedido da LW-055 também traz o LOD para este contrato. Aqui vale a redução do roadmap (só NPCs têm LOD no protótipo); quando outra entidade precisar de LOD, a função sobe para o `world`, por tarefa de contrato.
+- **Preservação:** ao entrar em S0 o corpo nasce **coerente com a ação e a hora** (parado no local, ou em trânsito interpolado entre origem e destino); ao sair, o último relato do corpo vira a posição lógica e a ação segue em modo abstrato com o tempo que falta. Ação atual e local são preservados.
+- **Protocolo [PROPOSTA, Q12]:** `NpcIntent` (`npc_id`, `action_serial`, tipo `MOVE_TO_PLACE` ou `ACT_AT_PLACE`, `place_id`, destino em cm, duração esperada) e `NpcActionResult` (`npc_id`, `action_serial`, desfecho `ARRIVED`, `DONE`, `BLOCKED` ou `CANCELLED`, posição final). Os nomes diferem de propósito do `BridgeIntent` do `bridge.md`, que é o caminho contrário (jogador para simulação). A simulação oferece `peek_pending_intents()` (cópias) e recebe `request_report_npc_result(result)` e `request_report_npc_positions(batch)` (posições do corpo em lote, no máximo uma vez a cada 6 quadros de física [HIP], como o `PlayerBody`). A ponte só repassa; o contrato do `bridge` muda na LW-070, não aqui. Resultado com `action_serial` velho é descartado e registrado.
+- **Tempo limite:** Intent sem resultado até `intent_timeout_min` [HIP] depois da duração esperada: a ação é **cancelada sem efeito**, o NPC volta a pensar e a falta alimenta o detector de impasse; resultado tardio é ignorado. (Completar a ação em modo abstrato faria o corpo "teleportar" na tela.)
+- **Detector de impasse (LW-073):** sem progresso (mesmo local e ação, ou resultado ausente) por `impasse_limit_min` [HIP]: cancela a ação, reposiciona o NPC na casa e publica `NpcImpasseRecovered(npc_id, reason, place_id)`.
+- **[LIM] a decidir no SP2 (LW-071):** 1 minuto de jogo vale 1,25 s reais a 1x (`core.md`): andar 100 m a 1,4 m/s leva cerca de 57 minutos de jogo, então a velocidade dos corpos S0 precisa acompanhar o relógio e a pausa; a navegação (malha, grade ou pontos) também é do SP2.
+
+## 7. Notáveis T2: promoção, memória, relações e ações sociais (LW-077 a LW-080, LW-083)
+
+- **Promoção:** `request_promote(npc_id, 2)` e `request_demote(npc_id, 1)`, só entre T1 e T2. **Limite global** `max_t2` [HIP 40]: cheio, devolve `NPC_T2_LIMIT_REACHED` e **não expulsa** ninguém [PROPOSTA, Q10]. Promover mantém identidade e rotina e só acrescenta memória e relações; a morte libera a vaga. **Rebaixar** resume memória e relações em **traços permanentes** (até `trait_slots` [HIP 4], valência por pessoa) e guarda a relação com o jogador com valores arredondados; promover de novo recria a partir dos traços, sem duplicar [PROPOSTA].
+- **`MemoryRecord` (só T2):** `kind` (de `data/memory_kinds.json`: `id`, `valence`, `salience`, `decay_per_day`), atores (até 2 IDs), `place_id`, `time`, `valence` (-100 a +100), `salience` (0 a 100), `source` (só `WITNESSED`; rumor é fora) e `confidence` (0 a 100). Capacidade `memory_capacity` [HIP 24]. **Esquecimento por valor:** valor = saliência − idade em dias × decaimento (mínimo 0); cheia, sai a de menor valor (empate: a mais antiga). Registro com saliência acima de `trait_threshold` [HIP 80] vira traço permanente antes de sair. `peek_memories(npc_id, kind_filter)` devolve cópias.
+- **Relações:** grafo **esparso** numa tabela do módulo, chave = par de IDs em ordem (a ordem de quem pergunta não importa); só existe entre quem **se conheceu** e **só se um dos lados é T2 ou é o jogador** [PROPOSTA, Q11] (T1 com T1 só alivia a necessidade `social`). Cinco dimensões de -100 a +100 (afeição, confiança, respeito, medo, dívida); o rótulo (conhecido, amigo, rival) é **derivado** por limiares de `npc_params`; família e empregador esperam os sistemas deles. Limite por NPC `relations_capacity` [HIP 16]: cheio, sai a mais fraca (menor soma dos módulos), **nunca a do jogador**. Decaimento diário `relation_decay_per_day` [HIP 1] rumo a 0. `peek_opinion(a, b)` devolve conhecido ou não, dimensões e rótulo, e se o outro está vivo.
+- **Ações sociais (LW-080):** `talk` entre NPCs no **mesmo local** `social` (par formado por menor ID): alivia `social` dos dois; com T2, ajusta afeição e confiança até um limite (`talk_gain` [HIP]) e grava memória **só para T2**; `help` (reação a alarme) grava memória de valência positiva no ajudado. `RelationChanged` sai **no máximo uma vez por par por dia**; o dia da última publicação fica na própria relação (é salvo, para continuar igual depois de carregar) [PROPOSTA].
+- **Conversa com o jogador (LW-083):** `request_converse(actor_id, actor_position_m, npc_id)` devolve `result`, `text_key` e `was_promoted`. Valida a distância horizontal (`TALK_REACH_M` [HIP 3 m]) contra a posição do NPC, que precisa estar em S0; a ponte lê a posição do ator no `character`, como na LW-049. Promove a T2 se houver vaga, cria ou ajusta a relação (NPC, `actor_id`) e grava memória; devolve só a **chave** do texto, escolhida por regra (primeira conversa, já conhecido), nunca o texto (DEC-036).
+
+## 8. Personalidade, alarme e necessidade crítica (LW-076, LW-081)
+
+- **Personalidade** altera a pontuação (`action_trait_weights`) e a reação a alarme, nada mais. **Alarme:** `request_raise_alarm(x_cm, z_cm, severity)` (comando de depuração `alarm`, só em build de desenvolvimento, AGENTS 12.6) publica `AlarmRaised` [Q14]; o `npc` o ouve (`on_alarm_raised`): NPC vivo a até `alarm_radius_m` [HIP 150] do ponto é interrompido (a ação atual é cancelada com efeito proporcional), pensa já e a necessidade `safety` sobe `alarm_safety_pressure` [HIP 40]. As reações são **ações do catálogo**: `flee` (vai para casa e alivia a segurança), `help` (vai ao ponto, grava relação positiva) e **ignorar** (a inércia vence). Cautela alta favorece `flee`; lealdade e sociabilidade favorecem `help`; cautela baixa e sem laços, ignorar. Passada a reação, o pensamento seguinte devolve a rotina da hora (**retomada**).
+- **Necessidade crítica:** necessidade com `lethal_after_hours` maior que 0 (só `hunger` na Fase 2) em nível crítico há `weaken_after_hours`: NPC **enfraquecido** (`work` rende `weak_effect_percent` [HIP 50] %); há `lethal_after_hours`: **morte**: `is_alive` falso, ação cancelada, local e vaga liberados, memória e relações **dele** descartadas (as arestas dos outros ficam e `peek_opinion` diz que o outro morreu) e `NpcDied(npc_id, cause, tier)` publicado (`cause` é o id da necessidade). Quem guarda IDs trata o morto sem erro: `peek_npc` devolve `is_alive` falso e nenhuma consulta falha.
+
+## 9. Provisórios TEMP (LW-065, LW-066; remoção na LW-094 e na LW-095)
+
+Marcas: comentário `TEMP-LW-065` (e `TEMP-LW-066`) em cada arquivo `.gd` do provisório e em `docs/`, e o campo `temp_mark` obrigatório em cada linha de dados (JSON não tem comentário). Anexo D do roadmap; `tools/check_temp` (LW-114) falha se sobrar marca. Cada provisório vive em arquivos próprios, para a remoção tocar só o `npc`.
+- **`FoodStub` (TEMP-LW-065):** estoque inteiro de comida por assentamento, **nunca negativo** (consumo que não cabe falha), com teto. `data/food_stub.json`: `id`, `temp_mark`, `settlement_id`, `start_stock`, `max_stock`, `eat_cost`, `yield_occupation_id`, `work_yield`. `eat` consome `eat_cost` (condição `has_food`); `work` do ofício `yield_occupation_id` repõe `work_yield` (a regra é dado). `request_set_food_stock` (só desenvolvimento) serve ao teste "comida a zero" do checklist 2.H.
+- **`IncomeStub` (TEMP-LW-066):** sem estado próprio. `data/income_stub.json`: `id`, `temp_mark`, `occupation_id`, `income_relief`. Ao completar `work`, reduz a necessidade `income` por `income_relief` (proporcional ao progresso). **Sem dinheiro, preço, `Ledger` ou mercado.**
+- **Dono [Q1, Q2]:** o `npc` (recomendação): o estoque e a necessidade `income` são dele; o `world` só guarda onde fica o assentamento.
+
+## 10. API pública, eventos e dependências (LW-057 em diante)
+
+Padrão `peek_*` (consulta, devolve cópia), `request_*` (comando, devolve `Result`) e `on_*` (reação a evento). Assinaturas descritas em prosa; os tipos de resposta são classes internas do módulo (`result` mais os campos), como no `world`.
+
+| Nome | Tarefa | Descrição |
+|---|---|---|
+| `peek_npc(npc_id)` | 057 | resumo (tier, nível, vivo, ofício, casa, trabalho, ação atual, posição, necessidades); ID inexistente devolve `NPC_UNKNOWN`, sem derrubar o jogo |
+| `peek_npc_ids()` / `peek_counts()` | 057 | IDs em ordem crescente / contagens por tier, nível e vivos |
+| `peek_routine_action(occupation_id, hour)` | 061 | ação da rotina do ofício naquela hora |
+| `peek_opinion(a, b)` / `peek_memories(npc_id, kind)` | 078, 079 | opinião e memórias, sempre cópias |
+| `explain_decision(npc_id)` | 064 | rastro; só para NPC marcado |
+| `peek_pending_intents()` | 070 | Intents que a apresentação ainda não cumpriu (cópias) |
+| `peek_food_stock(settlement_id)` | 065 | TEMP-LW-065 |
+| `request_create_npc(spec)` / `request_remove_npc(npc_id)` | 057 | cria (devolve `npc_id`) e remove |
+| `request_set_focus(focus_id, position_m)` / `request_clear_focus(focus_id)` | 069 | pontos de foco para o LOD |
+| `request_report_npc_result(result)` / `request_report_npc_positions(batch)` | 070 | resultados e posições do corpo, vindos da ponte |
+| `request_promote(npc_id, tier)` / `request_demote(npc_id, tier)` | 077 | promoção e rebaixamento |
+| `request_converse(actor_id, actor_position_m, npc_id)` | 083 | conversa do jogador |
+| `request_set_traced(npc_id, is_traced)`, `request_raise_alarm(x_cm, z_cm, severity)`, `request_set_food_stock(settlement_id, amount)` | 064, 076, 065 | **só em build de desenvolvimento** |
+| `on_alarm_raised(event)` | 076 | reação ao alarme |
+
+- **Ciclo de vida** (`SimModule`, `core.md`): `setup(ctx)` guarda o contexto; `post_setup()` assina `AlarmRaised`; `on_new_game(world_seed)` cria a população; `tick(elapsed_minutes)` roda a fila de pensamento, as necessidades, o LOD e os decaimentos diários; `serialize`, `on_load`, `validate`, `debug_summary` e `teardown` como na seção 1. As definições (`needs`, `actions`, ofícios, parâmetros) e os dados de assentamento entram **pelo construtor**, já lidos e validados, sem global nem autoload (padrão do `CharacterModule`). O `Scheduler` roda o módulo a cada passo com custo declarado [HIP].
+- **Eventos publicados:** `LodChanged`, `NpcDied`, `NpcImpasseRecovered`, `AlarmRaised`, `RelationChanged` (todos `planejado`, ver `docs/events.md`). **Ouvidos:** só `AlarmRaised`. Sem eventos em laço quente.
+- **O que o `npc` precisa da ponte** (o `bridge.md` não muda aqui; muda na LW-069/LW-070): entregar o foco, repassar Intents e resultados, traduzir `LodChanged` e `NpcDied` em sinais para a apresentação e expor as consultas acima. A divisão do `sim_bridge.gd` (backlog, M1) vem antes da LW-069.
+
+## 11. Dado → dono
+
+| Dado | Dono | Observação |
+|---|---|---|
+| `NpcState` (identidade, traços, posição lógica, ofício, locais, ação atual, tier, `next_think_time`, morte) | `npc` | salvo; entra no `state_hash` |
+| Valores e restos das necessidades | `npc` | salvo |
+| Definições: necessidades, ações, efeitos, condições, pesos, ofícios, agenda, traços, tipos de memória, parâmetros, população | arquivos de `data/` (conteúdo) | o `data` lê e valida; o `npc` só lê; não salvo |
+| Memórias e traços permanentes (T2) | `npc` | salvo |
+| Relações (inclui a do jogador) | `npc` | salvo; a ID do jogador pertence ao `character` |
+| Estoque do `FoodStub` e dados dos dois provisórios | `npc` | TEMP; estoque salvo [Q1] |
+| `Settlement` e `Place` (posição, tipo, capacidade) | `world` | conteúdo; não salvo |
+| Ocupação dos locais | `npc` | derivada; não salva |
+| Nível de LOD, Intent pendente, pontos de foco | `npc` | voláteis; não salvos |
+| Rastros de decisão e marca de depuração | `npc` | voláteis; só NPC marcado |
+| Contador de IDs, fluxos de sorteio, relógio, fila de eventos | `core` | `npc` só usa `ctx` |
+| Posição e ID do personagem do jogador | `character` | o `npc` recebe a posição só pelo foco e pelo `request_converse` |
+| Corpo do NPC (posição física) | apresentação | o `npc` guarda só o último relato |
+| Texto de nomes, ofícios e conversa | apresentação (`UiText`) | a simulação só devolve chaves |
+
+**Arquivos de dados propostos** (JSON em `data/`, lista de objetos com `id`; formato **[PROPOSTA]**, DEC-082): `needs`, `traits`, `actions`, `action_effects`, `action_conditions`, `action_trait_weights`, `occupations`, `routine_blocks`, `memory_kinds`, `npc_params` (uma linha só, com os valores **[HIP]**), `population` e, **TEMP**, `food_stub` e `income_stub`. Do `world`: `world/settlements` e `world/places` (ver `world.md`). Nenhum deles é criado nesta tarefa; cada um nasce na tarefa que o usa (seção 12).
+
+## 12. Rastreio: tarefa → seção que a governa
+
+| Tarefa | Tipo | Seção(ões) | Teste de aceite (nome proposto) |
+|---|---|---|---|
+| LW-056 | IMPL | `world.md`, seção "Extensão da Fase 2" | `test_settlements.gd`: referência quebrada, local fora do mapa, consultas, ida e volta |
+| LW-057 | IMPL | 1, 10, 11 | `test_npc_state.gd`: IDs não reutilizados, ida e volta, `state_hash` |
+| LW-058 | IMPL | 2 | `test_npc_needs.gd`: variação por hora, limiares, faixa 0 a 100, dado inválido |
+| LW-059 | IMPL | 3 | `test_action_catalog.gd`: referências inexistentes, ação nova só por dados |
+| LW-060 | IMPL | 3 | `test_action_runner.gd`: "comer" reduz fome, pré-condição, caminho único |
+| LW-061 | IMPL | 4 | `test_routine.gd`: ação por ofício e hora, ofício inexistente |
+| LW-062 | IMPL | 5 | `test_utility.gd`: mesma pontuação, faminto prefere comer, inércia |
+| LW-063 | IMPL | 5 | `test_decision_flow.gd`: urgência, rotina, sem ação sem condição, fila e teto |
+| LW-064 | IMPL | 5 | `test_decision_trace.gd`: NPC marcado e não marcado |
+| LW-065 | IMPL | 9, 3 | `test_food_stub.gd`: nunca negativo, reposição, consumo, marca `TEMP-LW-065` |
+| LW-066 | IMPL | 9 | `test_income_stub.gd`: trabalhar alivia, sem trabalho decai, marca `TEMP-LW-066` |
+| LW-067 | IMPL | 1, 4 | `test_population.gd`: contagens, casa e trabalho válidos, mesmo hash |
+| LW-068 | TESTE | 1, 2, 5, 9 | `tests/soak/test_npc_life_30d.gd`: 100 NPCs por 30 dias, invariantes, mesmo hash |
+| LW-069 | IMPL | 6, 10 | `test_npc_lod.gd`: histerese, preservar ação e local, limite S0, `cause_id` |
+| LW-070 | IMPL | 6, 10 | `test_npc_intents.gd`: Intent, resultado, tempo limite |
+| LW-071 | SPIKE | 6 (ressalvas: navegação e tempo do corpo) | relatório do SP2 (não é teste automático) |
+| LW-072 | IMPL | 6; `presentation.md` na própria tarefa | `test_npc_view_pool.gd`: contagem de corpos = NPCs em S0, pool sem vazamento |
+| LW-073 | IMPL | 6 | `test_impasse.gd`: NPC bloqueado é recuperado, sem falso positivo em 30 dias |
+| LW-074 | IMPL | `world.md` (tipos e posições dos locais) | `test_place_buildings.gd`: contagem e posição das caixas |
+| LW-075 | TESTE | 3, 6 | `test_action_equivalence.gd`: mesmos efeitos em S1 e S0, falha se houver 2º caminho |
+| LW-076 | IMPL | 8, 5 | `test_personality_alarm.gd`: covarde × valente, retomada, determinismo |
+| LW-077 | IMPL | 7 | `test_npc_tiers.gd`: promover e rebaixar, limite global de T2 |
+| LW-078 | IMPL | 7 | `test_npc_memory.gd`: capacidade, traço antes de sair, ida e volta |
+| LW-079 | IMPL | 7 | `test_npc_relations.gd`: par independe da ordem, limite, decaimento, `state_hash` |
+| LW-080 | IMPL | 7 | `test_social_actions.gd`: afeição dentro dos limites, memória só T2, evento agregado |
+| LW-081 | IMPL | 8 | `test_critical_needs.gd`: morte com causa, com comida não morre, save com morto |
+| LW-082 | IMPL | 5, 10 | `test_npc_debug_panel.gd`: o painel só lê |
+| LW-083 | IMPL | 7 | `tests/integration/test_player_npc_talk.gd`: vira T2, relação sobrevive ao save |
+| LW-084 | TESTE | 1 a 9 | `tests/soak/test_npc_soak_1y.gd`: 300 NPCs por 1 ano, tick, pico, memória, hash |
+| LW-085 | REV | 10, 11, 13 | relatório (limites, função única, ponte fina, sem economia, marcas TEMP) |
+| LW-086 | VAL | 9 e o checklist 2.H do roadmap | checklist assinada por Arthur |
+
+## 13. Pontos em aberto (recomendação completa no relatório da LW-055)
+
+- **Q1/Q2** dono do estoque do `FoodStub` e da renda do `IncomeStub`: `npc` (seção 9). **Q3** formato dos dados: tabelas planas (DEC-082 segue PROPOSTA quanto ao formato interno; alternativa: o `data` aceitar listas aninhadas, tarefa de contrato do `data`). **Q4** escala das necessidades: pressão de 0 a 100 (seção 2).
+- **Q5** valores **[HIP]** (limites de S0 e de T2, raios do LOD, capacidades de memória e de relações, intervalos, pesos): todos em `npc_params` ou em dados, nenhum é requisito. **Q6** quem classifica o LOD e publica `LodChanged`: `npc` no protótipo (seção 6). **Q7** quem entrega o foco ao `npc`: a ponte (seção 6).
+- **Q8** sem módulo `entities` na Fase 2: IDs de `ctx.ids` (`character.md` já faz o mesmo). **Q9** quatro traços, não oito (seção 1). **Q10** `max_t2` cheio recusa, não expulsa (seção 7). **Q11** relação só com T2 ou jogador (seção 7). **Q12** nomes `NpcIntent` e `NpcActionResult` (seção 6).
+- **Q13** linha I4 do backlog (escrita do save em outra thread pronta antes do módulo de memória, LW-078): nenhuma tarefa da Fase 2 a cria; decidir uma tarefa extra ou reavaliar com medição (DEC-084: reavaliar só se o estado passar de cerca de 1 MB). **Q14** quem publica `AlarmRaised`: o `npc`, por falta de módulo dono de perigo (seção 8). **Q15** velocidade dos corpos S0 em tempo de jogo (SP2).
+- **Q16** eventos que o roadmap não nomeia (`NpcImpasseRecovered`, `AlarmRaised`, `RelationChanged`) e a recusa do `NpcDecided` (seções 5, 6, 8; `docs/events.md`). **Q17** a versão do save continua 2 (seção 1).
