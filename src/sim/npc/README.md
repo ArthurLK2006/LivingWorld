@@ -1,3 +1,5 @@
-Módulo `npc` (camada 3). Contrato em `docs/modules/npc.md`. Pastas, como na arquitetura 8.4: `api/` (porta de entrada: `NpcModule` e `NpcSpec`) e `state/` (`NpcState`, traços).
+Módulo `npc` (camada 3). Contrato em `docs/modules/npc.md`. Pastas, como na arquitetura 8.4: `api/` (porta de entrada: `NpcModule` e `NpcSpec`), `state/` (`NpcState`, traços) e `needs/` (necessidades).
 
 Implementado (LW-057): `NpcModule` (tabela de NPCs por ID, criar e remover com IDs que nunca voltam, `serialize`/`on_load`/`validate`/`debug_summary`, entra no `World` e no `state_hash`), `NpcState`, `NpcSpec` e os traços de personalidade (`TraitLoader` com a classe interna `TraitDef`, `data/traits.json`). Registrado no jogo desde a LW-057 (`GameModules.NPC_NAME`), ainda sem nenhum NPC: a população nasce na LW-067. Não decide, não anda e não tem rotina: isso vem nas tarefas seguintes (necessidades LW-058, ações LW-059 e LW-060).
+
+Implementado (LW-058): as cinco necessidades, em `needs/`: `NeedDef` e `NeedLoader` (`data/needs.json`) e `NeedMath` (urgência pelos limiares e variação por hora em inteiros, com resto guardado e valor de 0 a 100). `NpcModule.new(need_defs)` recebe as definições; sem elas o módulo funciona com necessidades em zero. O jogo real ainda não lê `data/needs.json` (LW-067), e nada chama `NeedMath.settle` até a fila de pensamento (LW-063).

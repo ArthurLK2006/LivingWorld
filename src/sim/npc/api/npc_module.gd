@@ -2,8 +2,9 @@ class_name NpcModule
 extends SimModule
 ## Módulo `npc` (camada 3; contrato em docs/modules/npc.md). LW-057: tabela de NPCs indexada por npc_id (um NpcState por NPC), criar e
 ## remover com IDs de ctx.ids que nunca voltam, salvar e carregar, validate e debug_summary. O módulo entra no World e, pelo
-## serialize(), no state_hash. Ainda NÃO decide, anda, tem necessidades que variam, rotina nem LOD: isso é das tarefas seguintes.
-## Dependências: só core (e data, nas tarefas que lerem dados). Não importa o `character`.
+## serialize(), no state_hash. LW-058: as definições das necessidades (NeedDef, lidas de data/needs.json por quem monta o módulo)
+## entram pelo CONSTRUTOR, sem global nem autoload; sem elas (padrão) os NPCs nascem com tudo em zero e sem urgência. Ainda NÃO
+## decide, anda, tem rotina nem LOD: isso é das tarefas seguintes. Dependências: só core e a própria pasta; não importa o `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -22,7 +23,16 @@ const COUNT_TIER_NOTABLE: String = "tier_2"
 const NO_OCCUPATION_LABEL: String = "none"
 
 var _ctx: SimContext
+var _need_defs: Array[NeedDef] = []
+## Motivo de as definições não servirem (vazio = servem, ou não foram dadas). Conferido uma vez, no construtor.
+var _defs_problem: String = ""
 var _npcs: Dictionary[int, NpcState] = {}
+
+
+## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
+func _init(need_defs: Array[NeedDef] = []) -> void:
+	_need_defs = need_defs
+	_defs_problem = "" if need_defs.is_empty() else NeedMath.definitions_problem(need_defs)
 
 
 func setup(ctx: SimContext) -> void:
@@ -33,6 +43,8 @@ func setup(ctx: SimContext) -> void:
 func request_create_npc(spec: NpcSpec) -> CreateResult:
 	if _ctx == null:
 		return CreateResult.new(Result.failure(CODE_NOT_READY, "NpcModule.request_create_npc: módulo sem setup() (sem relógio nem IDs); esperado um módulo registrado no World."), IdGenerator.NO_ID)
+	if not _defs_problem.is_empty():
+		return CreateResult.new(Result.failure(CODE_NOT_READY, "NpcModule.request_create_npc: definições de necessidades inválidas: %s." % _defs_problem), IdGenerator.NO_ID)
 	var problem: String = _spec_problem(spec)
 	if not problem.is_empty():
 		return CreateResult.new(Result.failure(CODE_INVALID_SPEC, "NpcModule.request_create_npc: pedido inválido: %s." % problem), IdGenerator.NO_ID)
@@ -57,7 +69,10 @@ func request_remove_npc(npc_id: int) -> Result:
 func peek_npc(npc_id: int) -> NpcQuery:
 	if not _npcs.has(npc_id):
 		return NpcQuery.new(_unknown("peek_npc", npc_id), null)
-	return NpcQuery.new(Result.success(), _npcs[npc_id])
+	var state: NpcState = _npcs[npc_id]
+	var query: NpcQuery = NpcQuery.new(Result.success(), state)
+	query.need_urgencies = _urgencies_of(state)
+	return query
 
 
 ## IDs dos NPCs em ordem crescente.
@@ -115,6 +130,8 @@ func on_load(data: Dictionary) -> Result:
 ## acrescenta a sua conferência (LW-056, LW-059, LW-061).
 func validate() -> Array[String]:
 	var problems: Array[String] = []
+	if not _defs_problem.is_empty():
+		problems.append("Definições de necessidades inválidas: %s." % _defs_problem)
 	var next_id: int = _next_issued_id()
 	for npc_id: int in _sorted_ids():
 		var state: NpcState = _npcs[npc_id]
@@ -124,8 +141,9 @@ func validate() -> Array[String]:
 			problems.append("NPC %d: ID acima do contador do core (o próximo ID a sair é %d); esse ID nunca foi emitido." % [npc_id, next_id])
 		if state.tier != NpcState.TIER_NORMAL and state.tier != NpcState.TIER_NOTABLE:
 			problems.append("NPC %d: tier %d inválido; esperado %d ou %d." % [npc_id, state.tier, NpcState.TIER_NORMAL, NpcState.TIER_NOTABLE])
-		_append_range_problems(problems, npc_id, "necessidade", state.need_values)
-		_append_range_problems(problems, npc_id, "traço", state.traits)
+		_append_range_problems(problems, npc_id, "necessidade", state.need_values, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
+		_append_range_problems(problems, npc_id, "resto de necessidade", state.need_remainders, 0, NeedMath.MAX_REMAINDER)
+		_append_range_problems(problems, npc_id, "traço", state.traits, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
 		if not state.is_alive and not state.action_id.is_empty():
 			problems.append("NPC %d: morto, mas com ação atual '%s'; esperado nenhuma." % [npc_id, state.action_id])
 	return problems
@@ -157,11 +175,25 @@ func _sorted_ids() -> Array[int]:
 	return ids
 
 
-## Valor inicial das necessidades. LW-057: tudo zero; a LW-058 passa a ler `start_value` dos dados.
+## Valor inicial das necessidades: o `start_value` de cada definição; sem definições, tudo zero.
 func _start_needs() -> PackedInt64Array:
 	var needs: PackedInt64Array = PackedInt64Array()
 	needs.resize(NpcState.NEED_COUNT)
+	if not _need_defs.is_empty():
+		for def: NeedDef in _need_defs:
+			needs[def.order] = def.start_value
 	return needs
+
+
+## Nível de urgência de cada necessidade do NPC, pelos limiares dos dados. Sem definições, tudo 0 (não há limiares para comparar).
+func _urgencies_of(state: NpcState) -> PackedInt64Array:
+	var urgencies: PackedInt64Array = PackedInt64Array()
+	urgencies.resize(NpcState.NEED_COUNT)
+	if _need_defs.is_empty() or not _defs_problem.is_empty():
+		return urgencies
+	for def: NeedDef in _need_defs:
+		urgencies[def.order] = NeedMath.urgency(state.need_values[def.order], def)
+	return urgencies
 
 
 ## Primeiro problema do pedido de criação (texto vazio se estiver certo).
@@ -184,10 +216,10 @@ func _spec_problem(spec: NpcSpec) -> String:
 	return ""
 
 
-func _append_range_problems(problems: Array[String], npc_id: int, what: String, values: PackedInt64Array) -> void:
+func _append_range_problems(problems: Array[String], npc_id: int, what: String, values: PackedInt64Array, lowest: int, highest: int) -> void:
 	for index: int in values.size():
-		if values[index] < NpcState.VALUE_MIN or values[index] > NpcState.VALUE_MAX:
-			problems.append("NPC %d: %s na posição %d fora de %d a %d (valor %d)." % [npc_id, what, index, NpcState.VALUE_MIN, NpcState.VALUE_MAX, values[index]])
+		if values[index] < lowest or values[index] > highest:
+			problems.append("NPC %d: %s na posição %d fora de %d a %d (valor %d)." % [npc_id, what, index, lowest, highest, values[index]])
 
 
 ## Próximo ID que o contador do core entregaria (0 se o módulo ainda não passou por setup()).
@@ -241,6 +273,8 @@ class NpcQuery:
 	var death_cause: String = ""
 	var traits: PackedInt64Array = PackedInt64Array()
 	var need_values: PackedInt64Array = PackedInt64Array()
+	## Urgência (0 a 3) de cada necessidade pelos limiares dos dados; tudo 0 se o módulo não tem definições.
+	var need_urgencies: PackedInt64Array = PackedInt64Array()
 	var needs_updated_at: int = 0
 	var x_cm: int = 0
 	var z_cm: int = 0
