@@ -1,6 +1,8 @@
 {
 	"poi.test_marker_near": "Um marco de pedra simples, sem inscrição, marca o caminho.",
 	"poi.test_marker_far": "Restos frios de uma fogueira, apagada há muito tempo.",
+	"settlement.test_settlement_a.name": "Povoado A",
+	"settlement.test_settlement_b.name": "Povoado B",
 	"ui.interact_prompt": "[{key}] Interagir",
 	"ui.interact_too_far": "Chegue mais perto.",
 	"ui.interact_unknown": "Não há nada para interagir aqui.",
