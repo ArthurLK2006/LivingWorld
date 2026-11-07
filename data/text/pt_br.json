@@ -1,0 +1,14 @@
+{
+	"poi.test_marker_near": "Um marco de pedra simples, sem inscrição, marca o caminho.",
+	"poi.test_marker_far": "Restos frios de uma fogueira, apagada há muito tempo.",
+	"ui.interact_prompt": "[{key}] Interagir",
+	"ui.interact_too_far": "Chegue mais perto.",
+	"ui.interact_unknown": "Não há nada para interagir aqui.",
+	"ui.interact_failed": "Não foi possível interagir.",
+	"ui.status_title": "{title} · versão {version}",
+	"ui.status_clock": "Data simulada: {date} · {pace}",
+	"ui.status_date": "ano {year}, dia {day}, {hour}:{minute}",
+	"ui.status_pause_hint": "[{key}] pausar ou continuar",
+	"ui.pace_paused": "PAUSADO",
+	"ui.pace_speed": "{speed}x"
+}

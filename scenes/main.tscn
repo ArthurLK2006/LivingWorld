@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://src/presentation/world_view/decoration/decoration_view.gd" id="6_decoration"]
 [ext_resource type="Script" path="res://src/presentation/player/player_body.gd" id="7_player"]
 [ext_resource type="Script" path="res://src/presentation/camera/third_person_camera.gd" id="8_camera"]
+[ext_resource type="Script" path="res://src/presentation/interaction/interaction_view.gd" id="9_interaction"]
 
 [node name="Main" type="Node3D"]
 script = ExtResource("2_world")
@@ -30,6 +31,9 @@ script = ExtResource("6_decoration")
 [node name="PlayerBody" type="CharacterBody3D" parent="."]
 script = ExtResource("7_player")
 
+[node name="InteractionView" type="Node3D" parent="."]
+script = ExtResource("9_interaction")
+
 [node name="Camera" type="Camera3D" parent="."]
 script = ExtResource("8_camera")
 position = Vector3(100, 35, 512)
@@ -47,3 +51,41 @@ theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 20
 script = ExtResource("1_overlay")
+
+[node name="InteractionPrompt" type="Label" parent="HUD"]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -300.0
+offset_top = -110.0
+offset_right = 300.0
+offset_bottom = -76.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 24
+horizontal_alignment = 1
+
+[node name="InteractionText" type="Label" parent="HUD"]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -190.0
+offset_right = 320.0
+offset_bottom = -126.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 6
+theme_override_font_sizes/font_size = 22
+horizontal_alignment = 1
+vertical_alignment = 2
+autowrap_mode = 3

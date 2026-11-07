@@ -1,0 +1,75 @@
+#!/bin/sh
+# LW-050: falha se houver TEXTO DE INTERFACE escrito direto no código de jogo (src/presentation e src/app). Os textos moram em
+# data/text/pt_br.json e o código usa só chaves (UiText). Busca de texto, no mesmo padrão de tools/check_input_keys e do check_architecture.
+# Reprova: (A) atribuição de literal de texto a uma propriedade de texto da interface (.text, .bbcode_text, .tooltip_text,
+# .placeholder_text, .title, com = ou +=); (B) chamada de função de texto com literal (set_text, add_text, append_text, push_text,
+# set_tooltip_text, add_item, set_item_text); (C) dentro de uma função cujo nome termina em _text, _label, _caption, _line, _hint,
+# _prompt ou _title (é onde o código monta frases para a tela), um literal que é FRASE (duas palavras com espaço entre elas, como
+# "Data simulada") ou PALAVRA EM MAIÚSCULAS (4 letras ou mais, como "PAUSADO"); chaves de dicionário e de dados ("year") passam. "Tem letra" não conta
+# especificadores de formato (%s, %d, %02d...): "%d" e "" passam. NÃO conta: log (push_error, push_warning, print, printerr, assert),
+# nome de nó (name = "..."), caminho, chave de dados nem linha inteira de comentário. Uma chave entre aspas dentro de uma chamada, como
+# get_text("ui.interact_prompt"), é dado e passa.
+# [LIM] texto montado por concatenação (variavel + "texto"), guardado em variável e atribuído depois, ou em função com outro nome, não é visto.
+# Uso: tools/check_literal_text [raiz-do-projeto]
+set -u
+root=${1:-$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)}
+if [ ! -d "$root/src/presentation" ] || [ ! -d "$root/src/app" ]; then echo "AUSENTE: src/presentation ou src/app"; exit 1; fi
+log_filter='push_error|push_warning|print[(]|printerr[(]|assert'
+# Literal com ao menos uma letra, ignorando especificadores de formato.
+literal='"(%[0-9.+-]*[sdifxXeEgGcb]|[^"%\p{L}])*\p{L}'
+rule_a="\\.(text|bbcode_text|tooltip_text|placeholder_text|title)[[:space:]]*\\+?=[[:space:]]*$literal"
+rule_b="\\.(set_text|add_text|append_text|push_text|set_tooltip_text|add_item|set_item_text)\\([[:space:]]*$literal"
+found=""
+scan_rule() {
+    label=$1
+    description=$2
+    pattern=$3
+    result=$(rg -n --no-heading --glob '*.gd' "$pattern" "$root/src/presentation" "$root/src/app" 2>&1)
+    code=$?
+    if [ "$code" -gt 1 ]; then
+        printf '%s\n%s\n' "ERRO: busca da regra $label falhou" "$result"
+        exit 1
+    fi
+    if [ "$code" -eq 0 ]; then
+        hits=$(printf '%s\n' "$result" | grep -vE ":[0-9]+:[[:space:]]*#" | grep -vE "$log_filter")
+        if [ -n "$hits" ]; then
+            found="$found
+[$label] $description:
+$hits"
+        fi
+    fi
+}
+scan_rule A 'atribuição de literal a propriedade de texto' "$rule_a"
+scan_rule B 'chamada de função de texto com literal' "$rule_b"
+files=$(rg --files --glob '*.gd' "$root/src/presentation" "$root/src/app" | sort)
+function_hits=$(awk -v log_re="$log_filter" '
+    # Percorre os literais da linha de dois em dois (abre e fecha aspas), para não juntar o texto entre dois literais.
+    function has_prose(line,    rest, literal) {
+        rest = line
+        while (match(rest, /"[^"]*"/)) {
+            literal = substr(rest, RSTART + 1, RLENGTH - 2)
+            if (literal ~ /[A-Za-z]+ [A-Za-z]+/ || literal ~ /[A-Z][A-Z][A-Z][A-Z]/) return 1
+            rest = substr(rest, RSTART + RLENGTH)
+        }
+        return 0
+    }
+    /^func[[:space:]]/ {
+        name = $2
+        sub(/\(.*/, "", name)
+        in_text_function = (name ~ /(_text|_label|_caption|_line|_hint|_prompt|_title)$/)
+        next
+    }
+    /^[^[:space:]#]/ { in_text_function = 0 }
+    in_text_function && $0 !~ /^[[:space:]]*#/ && $0 !~ log_re && has_prose($0) { printf "%s:%d:%s\n", FILENAME, FNR, $0 }
+' $files)
+if [ -n "$function_hits" ]; then
+    found="$found
+[C] literal de texto dentro de função que monta texto de tela:
+$function_hits"
+fi
+if [ -n "$found" ]; then
+    printf '%s\n%s\n' 'VIOLAÇÃO: texto de interface escrito direto no código de jogo (use uma chave de data/text/pt_br.json)' "$found"
+    exit 1
+fi
+echo 'Texto literal: nenhum texto de interface escrito direto em src/presentation e src/app.'
+exit 0

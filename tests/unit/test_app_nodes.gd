@@ -2,6 +2,8 @@ extends GutTest
 
 var _host: SimulationHostNode
 var _app: GameAppNode
+## Guardado no teste de propósito: o Callable do provider não mantém o UiText vivo.
+var _texts: UiText
 
 
 func before_each() -> void:
@@ -9,6 +11,11 @@ func before_each() -> void:
 	_host.start_new_game(3)
 	_app = GameAppNode.new()
 	_app.bind_host(_host)
+	# LW-050: a linha de status vem de chaves de texto; o provider é o mesmo que a cena principal liga (UiText sobre data/text/pt_br.json).
+	var loaded: UiText.LoadResult = UiText.from_file(UiText.DEFAULT_PATH)
+	assert_true(loaded.result.ok, loaded.result.message)
+	_texts = loaded.texts
+	_app.text_provider = _texts.get_text
 
 
 func after_each() -> void:

@@ -11,12 +11,29 @@ signal status_changed(text: String)
 ## Provisórios até existirem a tela de novo jogo e o versionamento (Fase 0).
 const DEFAULT_WORLD_SEED: int = 1
 const GAME_VERSION: String = "0.0.1-dev"
+## Chaves de texto da linha de status (as frases moram em data/text/pt_br.json).
+const KEY_TITLE: String = "ui.status_title"
+const KEY_CLOCK: String = "ui.status_clock"
+const KEY_DATE: String = "ui.status_date"
+const KEY_PAUSE_HINT: String = "ui.status_pause_hint"
+const KEY_PACE_PAUSED: String = "ui.pace_paused"
+const KEY_PACE_SPEED: String = "ui.pace_speed"
 ## Pasta dos arquivos de terreno lidos na primeira chamada de peek_bridge().
 const TERRAIN_DIR: String = "res://data/world"
 
 ## Pasta lida por peek_bridge(). Pública só para o teste de falha trocá-la; mudar depois da primeira chamada
 ## não recarrega nada.
 var terrain_dir: String = TERRAIN_DIR
+
+## Resolve uma chave de texto (e seus valores {nome}) em frase, para a linha de status (LW-050). Quem o define é a apresentação, dona dos
+## textos (UiText); o app não cita a classe dela (camadas). Sem ele, a linha mostra as próprias chaves. Um Callable não segura o objeto
+## vivo: quem define o provider precisa guardar o UiText numa variável própria.
+var text_provider: Callable = Callable():
+	set(value):
+		text_provider = value
+		# Texto novo à vista: o próximo quadro reemite o estado, mesmo que o texto por extenso coincida com o último emitido (quem
+		# ouve pode ter nascido com um provider antigo, já liberado, e estar mostrando chaves).
+		_last_status_text = ""
 
 var _host: SimulationHostNode
 var _last_status_text: String = ""
@@ -81,14 +98,28 @@ func _load_terrain() -> TerrainData:
 	return loaded.terrain
 
 
-## Texto de estado para a tela: título, versão, data simulada, velocidade ou pausa e a tecla da ação de pausa.
+## Texto de estado para a tela: título, versão, data simulada, velocidade ou pausa e a tecla da ação de pausa. As frases vêm de chaves
+## (data/text/pt_br.json) pelo `text_provider`; este código não tem texto de tela. A LW-051 troca esta linha pelo HUD.
 func status_text() -> String:
 	if _host == null or _host.runner == null:
 		return ""
 	var clock: SimClock = _host.runner.world.context.clock
-	var pace: String = "PAUSADO" if clock.is_paused() else "%dx" % clock.get_speed()
-	var title: String = str(ProjectSettings.get_setting("application/config/name", "Living World"))
-	return "%s · versão %s\nData simulada: %s · %s\n[%s] pausar ou continuar" % [title, GAME_VERSION, _host.runner.format_clock_line(), pace, _pause_key_label()]
+	var pace: String = _text(KEY_PACE_PAUSED) if clock.is_paused() else _text(KEY_PACE_SPEED, {"speed": clock.get_speed()})
+	var date: String = _text(KEY_DATE, {"year": clock.year(), "day": clock.day_of_year(), "hour": "%02d" % clock.hour_of_day(), "minute": "%02d" % clock.minute_of_hour()})
+	var title: String = str(ProjectSettings.get_setting("application/config/name", ""))
+	var lines: PackedStringArray = PackedStringArray([
+		_text(KEY_TITLE, {"title": title, "version": GAME_VERSION}),
+		_text(KEY_CLOCK, {"date": date, "pace": pace}),
+		_text(KEY_PAUSE_HINT, {"key": _pause_key_label()}),
+	])
+	return "\n".join(lines)
+
+
+## Frase da chave pelo provider; sem provider, a própria chave.
+func _text(key: String, values: Dictionary = {}) -> String:
+	if text_provider.is_valid():
+		return str(text_provider.call(key, values))
+	return key
 
 
 func toggle_pause() -> void:
