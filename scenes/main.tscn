@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://src/presentation/ui/status_overlay.gd" id="1_overlay"]
+[ext_resource type="Script" path="res://src/presentation/ui/hud_view.gd" id="1_hud"]
 [ext_resource type="Script" path="res://src/presentation/world_view/main_world_view.gd" id="2_world"]
 [ext_resource type="Script" path="res://src/presentation/world_view/terrain/terrain_view.gd" id="3_terrain"]
 [ext_resource type="Script" path="res://src/presentation/world_view/environment/ambient_rig.gd" id="4_rig"]
@@ -50,7 +50,7 @@ offset_bottom = 12.0
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 6
 theme_override_font_sizes/font_size = 20
-script = ExtResource("1_overlay")
+script = ExtResource("1_hud")
 
 [node name="InteractionPrompt" type="Label" parent="HUD"]
 visible = false

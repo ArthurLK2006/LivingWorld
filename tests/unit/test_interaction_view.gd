@@ -225,3 +225,17 @@ func test_setup_with_a_missing_piece_reports_the_error_and_creates_nothing() -> 
 	assert_false(view.setup(no_game, _body, _view, _texts, _prompt, _result))
 	assert_push_error("pontos de interesse indisponíveis")
 	assert_eq(view.marker_count(), 0)
+
+
+func test_while_the_clock_is_paused_the_interaction_is_not_sent_and_shows_nothing() -> void:
+	var received: Array[SimEvent] = []
+	_host.runner.world.context.events.subscribe("InteractionPerformed", func(event: SimEvent) -> void: received.append(event))
+	_stand_at(NEAR_POINT + Vector3(1.0, 0.0, 0.0))
+	assert_true(_bridge.request_pause(true).ok)
+	assert_false(_interaction.interact(), "Pausado, a interação não vale.")
+	assert_false(_result.visible, "Nada é mostrado.")
+	_host.runner.step_once()
+	assert_eq(received.size(), 0, "E nada foi enviado à simulação.")
+	assert_true(_bridge.request_pause(false).ok)
+	assert_true(_interaction.interact(), "Despausado, a mesma interação vale.")
+	assert_true(_result.visible)

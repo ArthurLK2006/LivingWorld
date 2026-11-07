@@ -2,20 +2,22 @@ extends Node3D
 ## Script da cena principal: entrega a ponte à TerrainView e à DecorationView, faz o PlayerBody nascer, liga a câmera de terceira
 ## pessoa ao jogador (e o jogador à câmera, que é a referência de direção dele) e informa o foco do terreno: a posição do
 ## PlayerBody; se ele não nascer, a da câmera, que fica onde a cena a pôs (D1 de Arthur: direto, sem passar pela ponte). Carrega os
-## textos de jogo (UiText), entrega-os ao GameApp (linha de status) e à InteractionView (LW-050). Sem regra de jogo.
+## textos de jogo (UiText) e os entrega ao HUD (LW-051) e à InteractionView (LW-050). Sem regra de jogo.
 
 ## Árvores e pedras de blockout (LW-043): dados em data/world, só visuais.
 const DECORATIONS_PATH: String = "res://data/world/decorations.json"
+## Configuração do projeto de onde vem o título do jogo mostrado no HUD.
+const GAME_NAME_SETTING: String = "application/config/name"
 
 @onready var _terrain_view: TerrainView = $TerrainView
 @onready var _decoration_view: DecorationView = $DecorationView
 @onready var _camera: ThirdPersonCamera = $Camera
 @onready var _player: PlayerBody = $PlayerBody
+@onready var _hud: HudView = $HUD/StatusLabel
 @onready var _interaction_view: InteractionView = $InteractionView
 @onready var _prompt_label: Label = $HUD/InteractionPrompt
 @onready var _result_label: Label = $HUD/InteractionText
-## Os textos de jogo. Fica guardado aqui de propósito: o `text_provider` do GameApp é um Callable, que NÃO segura o objeto vivo; sem esta
-## referência o UiText seria liberado ao fim do `_ready` e a linha de status voltaria a mostrar chaves.
+## Os textos de jogo, guardados aqui para viverem tanto quanto a cena.
 var _texts: UiText
 ## Só informa o foco depois de a TerrainView ter sido ligada a uma ponte.
 var _is_terrain_ready: bool = false
@@ -28,8 +30,8 @@ func _ready() -> void:
 		push_error("MainWorldView: autoload GameApp não encontrado; o terreno não será desenhado.")
 		return
 	_texts = _load_texts()
-	app.text_provider = _texts.get_text
 	var bridge: SimBridge = app.peek_bridge()
+	_hud.setup(bridge, _texts, str(ProjectSettings.get_setting(GAME_NAME_SETTING, "")), GameAppNode.GAME_VERSION)
 	_terrain_view.chunk_loaded.connect(_decoration_view.set_chunk_visible.bind(true))
 	_terrain_view.chunk_unloaded.connect(_decoration_view.set_chunk_visible.bind(false))
 	_terrain_view.setup(bridge)

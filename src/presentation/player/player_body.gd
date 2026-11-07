@@ -6,7 +6,9 @@ extends CharacterBody3D
 ## posição ao corpo (fluxo de um sentido só). Lê o teclado só por ações nomeadas (InputActions). A direção do movimento é relativa ao giro do nó de referência
 ## (a câmera de terceira pessoa). Enquanto o chão sob o corpo não tem colisão que valha (TerrainView.has_collision_at) ele fica
 ## parado, sem cair nem andar. LIMITES (LW-047): encostas acima da inclinação máxima o bloqueiam, ele não passa da borda do mapa
-## e, se cair abaixo do terreno, é posto de volta sobre o chão. Contrato: docs/modules/presentation.md.
+## e, se cair abaixo do terreno, é posto de volta sobre o chão. PAUSA (LW-051, decisão D1 de Arthur): com o relógio da simulação
+## pausado o corpo congela (velocidade zero, sem gravidade, sem pulo, sem andar, sem relato); ao despausar tudo volta de onde parou.
+## Contrato: docs/modules/presentation.md.
 
 ## Velocidades e impulso do pulo [HIP] (m/s).
 const WALK_SPEED_MPS: float = 4.0
@@ -44,6 +46,9 @@ var _direction_reference: Node3D
 var _is_spawned: bool = false
 var _was_jump_down: bool = false
 var _gravity_mps2: float = DEFAULT_GRAVITY_MPS2
+## Congelado pela pausa do relógio; guarda a velocidade vertical para o pulo ou a queda continuarem de onde pararam.
+var _is_frozen: bool = false
+var _frozen_vertical_mps: float = 0.0
 ## Personagem deste corpo na simulação (IdGenerator.NO_ID = não nasceu lá; o corpo anda do mesmo jeito, só não relata).
 var _actor_id: int = IdGenerator.NO_ID
 var _frames_since_report: int = 0
@@ -91,6 +96,7 @@ func setup(bridge: SimBridge, terrain: TerrainView, direction_reference: Node3D)
 	_world_size_m = layout.size_m
 	_spawn_point = spawn.point
 	_has_reported_height_error = false
+	_is_frozen = false
 	_direction_reference = direction_reference
 	_place_at(spawn.point)
 	_was_jump_down = Input.is_action_pressed(InputActions.JUMP)
@@ -111,6 +117,8 @@ func get_actor_id() -> int:
 
 
 func _physics_process(delta: float) -> void:
+	if _is_frozen_by_pause():
+		return
 	if not _terrain.has_collision_at(global_position):
 		velocity = Vector3.ZERO
 		return
@@ -122,6 +130,25 @@ func _physics_process(delta: float) -> void:
 	_frames_since_report += 1
 	if _frames_since_report >= REPORT_EVERY_PHYSICS_FRAMES:
 		_report_position()
+
+
+## Pausa do relógio da simulação (lida pela ponte: `peek_time().is_paused`) congela o corpo: velocidade zero, sem andar, sem gravidade,
+## sem pulo e sem relato. A tecla de pulo continua sendo lida, para segurá-la durante a pausa não disparar um pulo ao despausar. Ao
+## despausar a velocidade vertical de antes volta, e a posição não salta (o corpo nunca foi movido). Hora indisponível (ponte sem jogo)
+## conta como não pausado. Devolve se o corpo está congelado agora.
+func _is_frozen_by_pause() -> bool:
+	var time: SimBridge.TimeSnapshot = _bridge.peek_time()
+	if time.result.ok and time.is_paused:
+		if not _is_frozen:
+			_is_frozen = true
+			_frozen_vertical_mps = velocity.y
+		velocity = Vector3.ZERO
+		_was_jump_down = Input.is_action_pressed(InputActions.JUMP)
+		return true
+	if _is_frozen:
+		_is_frozen = false
+		velocity.y = _frozen_vertical_mps
+	return false
 
 
 ## Ações move_* dão o vetor das teclas (já normalizado), girado pelo yaw do nó de referência: "para frente" é para onde ele olha.

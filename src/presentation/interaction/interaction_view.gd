@@ -111,8 +111,9 @@ func tick(delta_seconds: float) -> void:
 
 ## Pede a interação ao ponto ao alcance (ou, se nenhum está ao alcance, ao mais próximo de todos: a simulação recusa e a tela mostra
 ## o texto de "chegue mais perto"). Sucesso: o texto do ponto; falha: o texto da chave de erro do código. Devolve se a interação valeu.
+## Com o relógio da simulação pausado nada é enviado nem mostrado (LW-051, decisão D1 de Arthur: a pausa congela o personagem).
 func interact() -> bool:
-	if _bridge == null:
+	if _bridge == null or _is_game_paused():
 		return false
 	var target_id: String = _nearest_id if not _nearest_id.is_empty() else _nearest_point_overall()
 	if target_id.is_empty():
@@ -124,6 +125,12 @@ func interact() -> bool:
 		return true
 	_show_result(_texts.get_text(_failure_key(reply.result.code)))
 	return false
+
+
+## Pausa do relógio, lida pela ponte; hora indisponível conta como não pausado.
+func _is_game_paused() -> bool:
+	var time: SimBridge.TimeSnapshot = _bridge.peek_time()
+	return time.result.ok and time.is_paused
 
 
 func _unhandled_input(event: InputEvent) -> void:

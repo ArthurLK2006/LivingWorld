@@ -5,7 +5,7 @@ extends GutTest
 ## Toda chave que o código de jogo usa hoje; o teste confere que o arquivo real as tem (escritas à mão).
 const USED_KEYS: Array[String] = [
 	"poi.test_marker_near", "poi.test_marker_far", "ui.interact_prompt", "ui.interact_too_far", "ui.interact_unknown",
-	"ui.interact_failed", "ui.status_title", "ui.status_clock", "ui.status_date", "ui.status_pause_hint", "ui.pace_paused", "ui.pace_speed",
+	"ui.interact_failed", "ui.hud_title", "ui.hud_clock", "ui.hud_date", "ui.hud_pause_hint", "ui.hud_pace_paused", "ui.hud_pace_speed",
 ]
 
 var _temp_dirs: Array[DirAccess] = []

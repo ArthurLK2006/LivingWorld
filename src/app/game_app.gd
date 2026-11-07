@@ -1,23 +1,13 @@
 class_name GameAppNode
 extends Node
 ## Script do autoload `GameApp` (arquitetura 4.3): ciclo de vida do aplicativo. Por enquanto
-## inicia um mundo de desenvolvimento (com o terreno lido e os módulos do jogo, LW-048), monta o texto de estado, trata a ação de
-## pausa e cria e guarda a ponte com a apresentação (peek_bridge). Não guarda estado do mundo. A apresentação lê o texto e o sinal
-## daqui e pede a ponte por aqui (decisão D1 de Arthur, 06/11/2026: sem autoload novo).
-
-## Avisa quando o texto de estado muda (a apresentação só redesenha nesse caso).
-signal status_changed(text: String)
+## inicia um mundo de desenvolvimento (com o terreno lido e os módulos do jogo, LW-048), trata a ação de pausa e cria e guarda a ponte
+## com a apresentação (peek_bridge). Não guarda estado do mundo. A apresentação pede a ponte por aqui (decisão D1 de Arthur,
+## 06/11/2026: sem autoload novo). O texto de estado da tela saiu na LW-051: o HUD (presentation) lê a hora e o ritmo pela ponte.
 
 ## Provisórios até existirem a tela de novo jogo e o versionamento (Fase 0).
 const DEFAULT_WORLD_SEED: int = 1
 const GAME_VERSION: String = "0.0.1-dev"
-## Chaves de texto da linha de status (as frases moram em data/text/pt_br.json).
-const KEY_TITLE: String = "ui.status_title"
-const KEY_CLOCK: String = "ui.status_clock"
-const KEY_DATE: String = "ui.status_date"
-const KEY_PAUSE_HINT: String = "ui.status_pause_hint"
-const KEY_PACE_PAUSED: String = "ui.pace_paused"
-const KEY_PACE_SPEED: String = "ui.pace_speed"
 ## Pasta dos arquivos de terreno lidos na primeira chamada de peek_bridge().
 const TERRAIN_DIR: String = "res://data/world"
 
@@ -25,18 +15,7 @@ const TERRAIN_DIR: String = "res://data/world"
 ## não recarrega nada.
 var terrain_dir: String = TERRAIN_DIR
 
-## Resolve uma chave de texto (e seus valores {nome}) em frase, para a linha de status (LW-050). Quem o define é a apresentação, dona dos
-## textos (UiText); o app não cita a classe dela (camadas). Sem ele, a linha mostra as próprias chaves. Um Callable não segura o objeto
-## vivo: quem define o provider precisa guardar o UiText numa variável própria.
-var text_provider: Callable = Callable():
-	set(value):
-		text_provider = value
-		# Texto novo à vista: o próximo quadro reemite o estado, mesmo que o texto por extenso coincida com o último emitido (quem
-		# ouve pode ter nascido com um provider antigo, já liberado, e estar mostrando chaves).
-		_last_status_text = ""
-
 var _host: SimulationHostNode
-var _last_status_text: String = ""
 var _bridge: SimBridge
 ## Terreno lido uma vez só (no _ready do jogo ou na primeira peek_bridge dos testes); nulo se não carregou.
 var _terrain: TerrainData
@@ -98,30 +77,6 @@ func _load_terrain() -> TerrainData:
 	return loaded.terrain
 
 
-## Texto de estado para a tela: título, versão, data simulada, velocidade ou pausa e a tecla da ação de pausa. As frases vêm de chaves
-## (data/text/pt_br.json) pelo `text_provider`; este código não tem texto de tela. A LW-051 troca esta linha pelo HUD.
-func status_text() -> String:
-	if _host == null or _host.runner == null:
-		return ""
-	var clock: SimClock = _host.runner.world.context.clock
-	var pace: String = _text(KEY_PACE_PAUSED) if clock.is_paused() else _text(KEY_PACE_SPEED, {"speed": clock.get_speed()})
-	var date: String = _text(KEY_DATE, {"year": clock.year(), "day": clock.day_of_year(), "hour": "%02d" % clock.hour_of_day(), "minute": "%02d" % clock.minute_of_hour()})
-	var title: String = str(ProjectSettings.get_setting("application/config/name", ""))
-	var lines: PackedStringArray = PackedStringArray([
-		_text(KEY_TITLE, {"title": title, "version": GAME_VERSION}),
-		_text(KEY_CLOCK, {"date": date, "pace": pace}),
-		_text(KEY_PAUSE_HINT, {"key": _pause_key_label()}),
-	])
-	return "\n".join(lines)
-
-
-## Frase da chave pelo provider; sem provider, a própria chave.
-func _text(key: String, values: Dictionary = {}) -> String:
-	if text_provider.is_valid():
-		return str(text_provider.call(key, values))
-	return key
-
-
 func toggle_pause() -> void:
 	if _host == null or _host.runner == null:
 		return
@@ -131,13 +86,6 @@ func toggle_pause() -> void:
 		push_error("GameApp.toggle_pause: %s" % outcome.message)
 
 
-func _process(_delta: float) -> void:
-	var text: String = status_text()
-	if text != _last_status_text:
-		_last_status_text = text
-		status_changed.emit(text)
-
-
 ## Trata a AÇÃO de pausa (InputActions.PAUSE, tecla no project.godot); sem tecla fixa. Devolve verdadeiro se o evento
 ## era dela e foi consumido. O nome é histórico: vale para qualquer evento que o InputMap ligue à ação. Repetição não conta.
 func handle_key(event: InputEvent) -> bool:
@@ -145,12 +93,6 @@ func handle_key(event: InputEvent) -> bool:
 		return false
 	toggle_pause()
 	return true
-
-
-## Tecla da ação de pausa para a dica da tela, lida do InputMap (primeira palavra do texto do evento, ex.: "P").
-func _pause_key_label() -> String:
-	var events: Array[InputEvent] = InputMap.action_get_events(InputActions.PAUSE)
-	return events[0].as_text().get_slice(" ", 0) if not events.is_empty() else "?"
 
 
 func _unhandled_input(event: InputEvent) -> void:

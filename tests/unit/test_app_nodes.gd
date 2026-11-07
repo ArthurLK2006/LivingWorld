@@ -2,8 +2,6 @@ extends GutTest
 
 var _host: SimulationHostNode
 var _app: GameAppNode
-## Guardado no teste de propósito: o Callable do provider não mantém o UiText vivo.
-var _texts: UiText
 
 
 func before_each() -> void:
@@ -11,11 +9,6 @@ func before_each() -> void:
 	_host.start_new_game(3)
 	_app = GameAppNode.new()
 	_app.bind_host(_host)
-	# LW-050: a linha de status vem de chaves de texto; o provider é o mesmo que a cena principal liga (UiText sobre data/text/pt_br.json).
-	var loaded: UiText.LoadResult = UiText.from_file(UiText.DEFAULT_PATH)
-	assert_true(loaded.result.ok, loaded.result.message)
-	_texts = loaded.texts
-	_app.text_provider = _texts.get_text
 
 
 func after_each() -> void:
@@ -40,34 +33,15 @@ func test_host_without_game_does_nothing_and_new_game_replaces_the_world() -> vo
 	assert_eq(_host.runner.world.context.clock.total_minutes(), 0)
 
 
-func test_status_text_shows_title_version_date_and_pace() -> void:
-	var text: String = _app.status_text()
-	assert_string_contains(text, "Living World")
-	assert_string_contains(text, "versão " + GameAppNode.GAME_VERSION)
-	assert_string_contains(text, "ano 1, dia 1, 00:00")
-	assert_string_contains(text, "1x")
-	assert_string_contains(text, "[P] pausar ou continuar")
-
-
-func test_pause_toggle_stops_the_simulated_clock_and_shows_it() -> void:
+func test_pause_toggle_stops_the_simulated_clock_and_resumes_it() -> void:
 	var seconds_per_minute: float = SimClock.DEFAULT_REAL_MS_PER_MINUTE / 1000.0
 	_app.toggle_pause()
-	assert_string_contains(_app.status_text(), "PAUSADO")
+	assert_true(_host.runner.world.context.clock.is_paused())
 	assert_eq(_host.advance(seconds_per_minute * 5.0), 0)
 	_app.toggle_pause()
-	assert_string_contains(_app.status_text(), "1x")
+	assert_false(_host.runner.world.context.clock.is_paused())
 	assert_eq(_host.advance(seconds_per_minute * 5.0), 5)
-	assert_string_contains(_app.status_text(), "ano 1, dia 1, 00:05")
-
-
-func test_status_changed_signal_fires_only_when_text_changes() -> void:
-	watch_signals(_app)
-	_app._process(0.0)
-	_app._process(0.0)
-	assert_signal_emit_count(_app, "status_changed", 1)
-	_host.advance(SimClock.DEFAULT_REAL_MS_PER_MINUTE / 1000.0)
-	_app._process(0.0)
-	assert_signal_emit_count(_app, "status_changed", 2)
+	assert_eq(_host.runner.world.context.clock.total_minutes(), 5)
 
 
 func _key(keycode: Key, pressed: bool, echo: bool = false) -> InputEventKey:
