@@ -1,0 +1,7 @@
+[
+	{"id": "sleep_rest", "action_id": "sleep", "need_id": "rest", "delta": -100},
+	{"id": "eat_hunger", "action_id": "eat", "need_id": "hunger", "delta": -60},
+	{"id": "work_rest", "action_id": "work", "need_id": "rest", "delta": 5},
+	{"id": "rest_rest", "action_id": "rest", "need_id": "rest", "delta": -20},
+	{"id": "talk_social", "action_id": "talk", "need_id": "social", "delta": -30}
+]
