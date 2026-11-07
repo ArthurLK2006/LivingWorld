@@ -12,4 +12,3 @@ tests/soak/run_game_release --editor     # a mesma medição no binário de DEPU
 ```
 
 Variáveis: `RUNS` (3), `ENSAIOS` (`rota,parado,pausado`), `GODOT_BIN`, `KEEP_DOWNLOAD`. Deixe a janela em primeiro plano e não use o Mac durante a medição. A cópia do projeto sai do `git archive HEAD` (só o que está commitado). Os resultados de cada medição entram no relatório da tarefa que a fez.
-
