@@ -33,12 +33,12 @@ func test_two_calls_return_the_same_instance() -> void:
 
 func test_with_the_real_data_the_spawn_point_matches_the_height_at_the_same_place() -> void:
 	var bridge: SimBridge = _app.peek_bridge()
-	var spawn: SimBridge.SpawnReply = bridge.peek_spawn_point()
+	var spawn: BridgeReplies.SpawnReply = bridge.peek_spawn_point()
 	assert_true(spawn.result.ok, spawn.result.message)
-	var height: SimBridge.HeightReply = bridge.peek_height(spawn.point.x, spawn.point.z)
+	var height: BridgeReplies.HeightReply = bridge.peek_height(spawn.point.x, spawn.point.z)
 	assert_true(height.result.ok, height.result.message)
 	assert_almost_eq(spawn.point.y, height.height_m, HEIGHT_TOLERANCE_M, "y do nascimento = altura do chão no mesmo ponto.")
-	var layout: SimBridge.TerrainLayoutReply = bridge.peek_terrain_layout()
+	var layout: BridgeReplies.TerrainLayoutReply = bridge.peek_terrain_layout()
 	assert_true(layout.result.ok, "Os dados reais de data/world foram carregados: " + layout.result.message)
 	assert_eq(layout.chunk_count, Vector2i(16, 16))
 
@@ -48,7 +48,7 @@ func test_missing_terrain_folder_gives_a_bridge_without_terrain_and_a_visible_er
 	var bridge: SimBridge = _app.peek_bridge()
 	assert_not_null(bridge, "A ponte é devolvida mesmo sem terreno.")
 	assert_push_error("GameApp.peek_bridge: terreno não carregado")
-	var height: SimBridge.HeightReply = bridge.peek_height(1.0, 1.0)
+	var height: BridgeReplies.HeightReply = bridge.peek_height(1.0, 1.0)
 	assert_false(height.result.ok)
 	assert_eq(height.result.code, SimBridge.CODE_NO_TERRAIN)
 	assert_eq(bridge.peek_terrain_layout().result.code, SimBridge.CODE_NO_TERRAIN)
@@ -60,7 +60,7 @@ func test_without_a_bound_host_the_bridge_is_returned_and_time_fails() -> void:
 	unbound.terrain_dir = SMALL_TERRAIN_DIR
 	var bridge: SimBridge = unbound.peek_bridge()
 	assert_not_null(bridge)
-	var time: SimBridge.TimeSnapshot = bridge.peek_time()
+	var time: BridgeReplies.TimeSnapshot = bridge.peek_time()
 	assert_false(time.result.ok)
 	assert_eq(time.result.code, SimBridge.CODE_NO_GAME)
 	assert_true(bridge.peek_height(1.0, 1.0).result.ok, "O terreno não depende de haver host.")
@@ -71,7 +71,7 @@ func test_the_bridge_sees_the_host_bound_before_the_first_call() -> void:
 	_app.terrain_dir = SMALL_TERRAIN_DIR
 	var bridge: SimBridge = _app.peek_bridge()
 	_host.runner.run_steps(5)
-	var time: SimBridge.TimeSnapshot = bridge.peek_time()
+	var time: BridgeReplies.TimeSnapshot = bridge.peek_time()
 	assert_true(time.result.ok, time.result.message)
 	assert_eq(time.total_minutes, 5, "A ponte lê o relógio do host que o GameApp tinha ligado.")
 

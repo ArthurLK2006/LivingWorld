@@ -83,11 +83,11 @@ func setup(bridge: SimBridge, terrain: TerrainView, direction_reference: Node3D)
 	if not is_inside_tree():
 		push_error("PlayerBody.setup: o corpo precisa estar na árvore de cena antes do setup.")
 		return false
-	var spawn: SimBridge.SpawnReply = bridge.peek_spawn_point()
+	var spawn: BridgeReplies.SpawnReply = bridge.peek_spawn_point()
 	if not spawn.result.ok:
 		push_error("PlayerBody.setup: ponto de nascimento indisponível (%s): %s" % [spawn.result.code, spawn.result.message])
 		return false
-	var layout: SimBridge.TerrainLayoutReply = bridge.peek_terrain_layout()
+	var layout: BridgeReplies.TerrainLayoutReply = bridge.peek_terrain_layout()
 	if not layout.result.ok:
 		push_error("PlayerBody.setup: formato do terreno indisponível (%s): %s" % [layout.result.code, layout.result.message])
 		return false
@@ -137,7 +137,7 @@ func _physics_process(delta: float) -> void:
 ## despausar a velocidade vertical de antes volta, e a posição não salta (o corpo nunca foi movido). Hora indisponível (ponte sem jogo)
 ## conta como não pausado. Devolve se o corpo está congelado agora.
 func _is_frozen_by_pause() -> bool:
-	var time: SimBridge.TimeSnapshot = _bridge.peek_time()
+	var time: BridgeReplies.TimeSnapshot = _bridge.peek_time()
 	if time.result.ok and time.is_paused:
 		if not _is_frozen:
 			_is_frozen = true
@@ -183,7 +183,7 @@ func _keep_inside_world() -> void:
 ## Se o corpo caiu mais de RECOVERY_DEPTH_M abaixo do terreno (a colisão só tem a face de cima), volta para cima do chão no mesmo
 ## x e z; se a altura do terreno não puder ser lida, volta ao ponto de nascimento. Os dois casos avisam no log.
 func _recover_if_below_terrain() -> void:
-	var ground: SimBridge.HeightReply = _bridge.peek_height(global_position.x, global_position.z)
+	var ground: BridgeReplies.HeightReply = _bridge.peek_height(global_position.x, global_position.z)
 	if not ground.result.ok:
 		if not _has_reported_height_error:
 			_has_reported_height_error = true
@@ -200,7 +200,7 @@ func _spawn_character() -> void:
 	_actor_id = IdGenerator.NO_ID
 	_frames_since_report = 0
 	_warned_codes.clear()
-	var reply: SimBridge.SpawnCharacterReply = _bridge.request_spawn_character()
+	var reply: BridgeReplies.SpawnCharacterReply = _bridge.request_spawn_character()
 	if not reply.result.ok:
 		_warn_once(reply.result, "o personagem não nasceu na simulação")
 		return

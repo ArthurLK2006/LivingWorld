@@ -35,7 +35,7 @@ const TRIANGLES_PER_QUAD: int = 2
 const NODES_PER_CHUNK: int = 3
 
 var _bridge: SimBridge
-var _layout: SimBridge.TerrainLayoutReply
+var _layout: BridgeReplies.TerrainLayoutReply
 var _view: TerrainView
 var _chunk_size_m: float = 0.0
 var _moved_body: StaticBody3D

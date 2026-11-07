@@ -35,7 +35,7 @@ var last_work_ms: float = 0.0
 var max_work_ms: float = 0.0
 
 var _builder: TerrainChunkBuilder
-var _layout: SimBridge.TerrainLayoutReply
+var _layout: BridgeReplies.TerrainLayoutReply
 var _material: StandardMaterial3D
 var _queue: TerrainWorkQueue = TerrainWorkQueue.new()
 var _chunks: Dictionary[Vector2i, MeshInstance3D] = {}
@@ -55,11 +55,11 @@ func setup(bridge: SimBridge) -> void:
 	if bridge == null:
 		push_error("TerrainView.setup: ponte nula; esperado uma SimBridge.")
 		return
-	var layout: SimBridge.TerrainLayoutReply = bridge.peek_terrain_layout()
+	var layout: BridgeReplies.TerrainLayoutReply = bridge.peek_terrain_layout()
 	if not layout.result.ok:
 		push_error("TerrainView.setup: formato do terreno indisponível (%s): %s" % [layout.result.code, layout.result.message])
 		return
-	var spawn: SimBridge.SpawnReply = bridge.peek_spawn_point()
+	var spawn: BridgeReplies.SpawnReply = bridge.peek_spawn_point()
 	_layout = layout
 	_builder = TerrainChunkBuilder.new(bridge, layout)
 	_material = _make_material()

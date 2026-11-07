@@ -37,7 +37,7 @@ func after_each() -> void:
 
 
 func _spawned_actor() -> int:
-	var reply: SimBridge.SpawnCharacterReply = _bridge.request_spawn_character()
+	var reply: BridgeReplies.SpawnCharacterReply = _bridge.request_spawn_character()
 	assert_true(reply.result.ok, reply.result.message)
 	return reply.actor_id
 
@@ -46,7 +46,7 @@ func test_spawn_gives_a_new_actor_at_the_spawn_point_with_zero_yaw() -> void:
 	var actor_id: int = _spawned_actor()
 	assert_gt(actor_id, IdGenerator.NO_ID)
 	var spawn: Vector3 = _bridge.peek_spawn_point().point
-	var stored: SimBridge.CharacterReply = _bridge.peek_character(actor_id)
+	var stored: BridgeReplies.CharacterReply = _bridge.peek_character(actor_id)
 	assert_true(stored.result.ok, stored.result.message)
 	assert_almost_eq(stored.position.x, spawn.x, POSITION_TOLERANCE_M)
 	assert_almost_eq(stored.position.y, spawn.y, POSITION_TOLERANCE_M)
@@ -66,7 +66,7 @@ func test_a_reported_position_and_yaw_are_stored_and_read_back_as_a_copy() -> vo
 	var actor_id: int = _spawned_actor()
 	var outcome: Result = _bridge.request_report_position(actor_id, REPORTED_POSITION, REPORTED_YAW)
 	assert_true(outcome.ok, outcome.message)
-	var first: SimBridge.CharacterReply = _bridge.peek_character(actor_id)
+	var first: BridgeReplies.CharacterReply = _bridge.peek_character(actor_id)
 	assert_eq(first.position, REPORTED_POSITION)
 	assert_eq(first.yaw, REPORTED_YAW)
 	assert_true(_bridge.request_report_position(actor_id, OTHER_POSITION, 0.0).ok)
@@ -80,7 +80,7 @@ func test_unknown_actor_is_a_handled_error_for_report_and_peek() -> void:
 		var report: Result = _bridge.request_report_position(actor_id, REPORTED_POSITION, REPORTED_YAW)
 		assert_false(report.ok, "Relato para o ator %d deveria ser recusado." % actor_id)
 		assert_eq(report.code, CharacterModule.CODE_UNKNOWN_ACTOR)
-		var peek: SimBridge.CharacterReply = _bridge.peek_character(actor_id)
+		var peek: BridgeReplies.CharacterReply = _bridge.peek_character(actor_id)
 		assert_false(peek.result.ok)
 		assert_eq(peek.result.code, CharacterModule.CODE_UNKNOWN_ACTOR)
 	assert_eq(_host.runner.world.validate().size(), 0, "Nada foi corrompido pelos pedidos recusados.")
@@ -105,14 +105,14 @@ func test_non_finite_values_and_positions_outside_the_map_are_refused_and_change
 
 func test_a_bridge_without_host_fails_with_a_code_and_does_not_crash() -> void:
 	var alone: SimBridge = SimBridge.new(null, _terrain)
-	var spawn: SimBridge.SpawnCharacterReply = alone.request_spawn_character()
+	var spawn: BridgeReplies.SpawnCharacterReply = alone.request_spawn_character()
 	assert_false(spawn.result.ok)
 	assert_eq(spawn.result.code, SimBridge.CODE_NO_GAME)
 	assert_string_contains(spawn.result.message, "request_spawn_character")
 	var report: Result = alone.request_report_position(1, REPORTED_POSITION, REPORTED_YAW)
 	assert_eq(report.code, SimBridge.CODE_NO_GAME)
 	assert_string_contains(report.message, "request_report_position")
-	var peek: SimBridge.CharacterReply = alone.peek_character(1)
+	var peek: BridgeReplies.CharacterReply = alone.peek_character(1)
 	assert_eq(peek.result.code, SimBridge.CODE_NO_GAME)
 	assert_string_contains(peek.result.message, "peek_character")
 
@@ -132,7 +132,7 @@ func test_a_game_started_without_terrain_has_no_character_module() -> void:
 	assert_null(bare.character)
 	assert_eq(bare.runner.world.module_names().size(), 0, "Sem terreno o mundo nasce só com o núcleo.")
 	var bridge: SimBridge = SimBridge.new(bare, _terrain)
-	var spawn: SimBridge.SpawnCharacterReply = bridge.request_spawn_character()
+	var spawn: BridgeReplies.SpawnCharacterReply = bridge.request_spawn_character()
 	assert_false(spawn.result.ok)
 	assert_eq(spawn.result.code, SimBridge.CODE_NO_CHARACTER)
 	assert_string_contains(spawn.result.message, "start_new_game")
@@ -171,7 +171,7 @@ func test_game_modules_refuse_a_null_terrain_and_a_second_registration() -> void
 func test_a_new_game_discards_the_previous_characters() -> void:
 	var old_actor: int = _spawned_actor()
 	_host.start_new_game(WORLD_SEED, _terrain)
-	var peek: SimBridge.CharacterReply = _bridge.peek_character(old_actor)
+	var peek: BridgeReplies.CharacterReply = _bridge.peek_character(old_actor)
 	assert_false(peek.result.ok, "O mundo novo não tem o personagem do mundo antigo.")
 	assert_eq(peek.result.code, CharacterModule.CODE_UNKNOWN_ACTOR)
 

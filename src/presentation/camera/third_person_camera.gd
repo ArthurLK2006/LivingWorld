@@ -71,7 +71,7 @@ func setup(bridge: SimBridge, target: Node3D) -> bool:
 	if not is_inside_tree():
 		push_error("ThirdPersonCamera.setup: a câmera precisa estar na árvore de cena antes do setup.")
 		return false
-	var layout: SimBridge.TerrainLayoutReply = bridge.peek_terrain_layout()
+	var layout: BridgeReplies.TerrainLayoutReply = bridge.peek_terrain_layout()
 	if not layout.result.ok:
 		push_error("ThirdPersonCamera.setup: formato do terreno indisponível (%s): %s" % [layout.result.code, layout.result.message])
 		return false
@@ -204,7 +204,7 @@ func _is_blocked(point_m: Vector3) -> bool:
 
 ## Altura do terreno sob o ponto; fora do mapa vale a da borda mais próxima (a câmera pode ficar além da borda).
 func _ground_at(point_m: Vector3) -> float:
-	var reply: SimBridge.HeightReply = _bridge.peek_height(clampf(point_m.x, 0.0, _map_size_m.x), clampf(point_m.z, 0.0, _map_size_m.y))
+	var reply: BridgeReplies.HeightReply = _bridge.peek_height(clampf(point_m.x, 0.0, _map_size_m.x), clampf(point_m.z, 0.0, _map_size_m.y))
 	if reply.result.ok:
 		return reply.height_m
 	if not _has_reported_height_error:

@@ -72,14 +72,14 @@ class FailingBridge:
 	func _init(terrain: TerrainData) -> void:
 		super(null, terrain)
 
-	func peek_height(x: float, z: float) -> SimBridge.HeightReply:
+	func peek_height(x: float, z: float) -> BridgeReplies.HeightReply:
 		if fail_heights:
-			return SimBridge.HeightReply.new(Result.failure("TEST_HEIGHT", "altura de teste indisponível"), 0.0)
+			return BridgeReplies.HeightReply.new(Result.failure("TEST_HEIGHT", "altura de teste indisponível"), 0.0)
 		return super(x, z)
 
-	func peek_terrain_layout() -> SimBridge.TerrainLayoutReply:
+	func peek_terrain_layout() -> BridgeReplies.TerrainLayoutReply:
 		if fail_layout:
-			return SimBridge.TerrainLayoutReply.new(Result.failure("TEST_LAYOUT", "formato de teste indisponível"), null)
+			return BridgeReplies.TerrainLayoutReply.new(Result.failure("TEST_LAYOUT", "formato de teste indisponível"), null)
 		return super()
 
 

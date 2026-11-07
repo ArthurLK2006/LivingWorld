@@ -22,10 +22,10 @@ const QUAD_CENTER: float = 0.5
 const SKIRT_NORMAL: Vector3 = Vector3.UP
 
 var _bridge: SimBridge
-var _layout: SimBridge.TerrainLayoutReply
+var _layout: BridgeReplies.TerrainLayoutReply
 
 
-func _init(bridge: SimBridge, layout: SimBridge.TerrainLayoutReply) -> void:
+func _init(bridge: SimBridge, layout: BridgeReplies.TerrainLayoutReply) -> void:
 	_bridge = bridge
 	_layout = layout
 
@@ -108,7 +108,7 @@ func _sample_heights(origin: Vector3, quads: int, step_m: float) -> PackedFloat3
 		for node_x: int in range(nodes_per_side):
 			var x: float = minf(origin.x + float(node_x) * step_m, _layout.size_m.x)
 			var z: float = minf(origin.z + float(node_z) * step_m, _layout.size_m.y)
-			var reply: SimBridge.HeightReply = _bridge.peek_height(x, z)
+			var reply: BridgeReplies.HeightReply = _bridge.peek_height(x, z)
 			if not reply.result.ok:
 				push_error("TerrainChunkBuilder: altura indisponível em (x=%s, z=%s): %s" % [str(x), str(z), reply.result.message])
 				return PackedFloat32Array()
@@ -124,7 +124,7 @@ func _sample_colors(origin: Vector3, quads: int, step_m: float) -> PackedColorAr
 		for quad_x: int in range(quads):
 			var x: float = minf(origin.x + (float(quad_x) + QUAD_CENTER) * step_m, _layout.size_m.x)
 			var z: float = minf(origin.z + (float(quad_z) + QUAD_CENTER) * step_m, _layout.size_m.y)
-			var reply: SimBridge.SurfaceReply = _bridge.peek_surface(x, z)
+			var reply: BridgeReplies.SurfaceReply = _bridge.peek_surface(x, z)
 			if not reply.result.ok:
 				push_error("TerrainChunkBuilder: superfície indisponível em (x=%s, z=%s): %s" % [str(x), str(z), reply.result.message])
 				return PackedColorArray()

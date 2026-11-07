@@ -31,7 +31,7 @@ var _terrain: TerrainView
 var _texts: UiText
 var _prompt_label: Label
 var _result_label: Label
-var _points: Array[SimBridge.PointReply] = []
+var _points: Array[BridgeReplies.PointReply] = []
 var _markers: Dictionary[String, MeshInstance3D] = {}
 var _nearest_id: String = ""
 var _result_left_s: float = 0.0
@@ -48,7 +48,7 @@ func setup(bridge: SimBridge, player: PlayerBody, terrain: TerrainView, texts: U
 	if bridge == null or player == null or terrain == null or texts == null or prompt_label == null or result_label == null:
 		push_error("InteractionView.setup: ponte, jogador, terreno, textos ou rótulo nulo; esperado todos.")
 		return false
-	var reply: SimBridge.PointsReply = bridge.peek_points_of_interest()
+	var reply: BridgeReplies.PointsReply = bridge.peek_points_of_interest()
 	if not reply.result.ok:
 		push_error("InteractionView.setup: pontos de interesse indisponíveis (%s): %s" % [reply.result.code, reply.result.message])
 		return false
@@ -59,7 +59,7 @@ func setup(bridge: SimBridge, player: PlayerBody, terrain: TerrainView, texts: U
 	_prompt_label = prompt_label
 	_result_label = result_label
 	_points = reply.points
-	for point: SimBridge.PointReply in _points:
+	for point: BridgeReplies.PointReply in _points:
 		_add_marker(point)
 	_prompt_label.visible = false
 	_result_label.visible = false
@@ -119,7 +119,7 @@ func interact() -> bool:
 	if target_id.is_empty():
 		_show_result(_texts.get_text(KEY_FAILED))
 		return false
-	var reply: SimBridge.InteractReply = _bridge.request_interact(_player.get_actor_id(), target_id)
+	var reply: BridgeReplies.InteractReply = _bridge.request_interact(_player.get_actor_id(), target_id)
 	if reply.result.ok:
 		_show_result(_texts.get_text(reply.text_key))
 		return true
@@ -129,7 +129,7 @@ func interact() -> bool:
 
 ## Pausa do relógio, lida pela ponte; hora indisponível conta como não pausado.
 func _is_game_paused() -> bool:
-	var time: SimBridge.TimeSnapshot = _bridge.peek_time()
+	var time: BridgeReplies.TimeSnapshot = _bridge.peek_time()
 	return time.result.ok and time.is_paused
 
 
@@ -154,14 +154,14 @@ func _show_result(text: String) -> void:
 
 
 ## Distância horizontal (x, z) do jogador ao ponto, a mesma regra do mundo (a altura não conta).
-func _horizontal_distance_m(point: SimBridge.PointReply) -> float:
+func _horizontal_distance_m(point: BridgeReplies.PointReply) -> float:
 	return Vector2(_player.global_position.x - point.x, _player.global_position.z - point.z).length()
 
 
 func _nearest_point_in_reach() -> String:
 	var best_id: String = ""
 	var best_m: float = INF
-	for point: SimBridge.PointReply in _points:
+	for point: BridgeReplies.PointReply in _points:
 		var distance_m: float = _horizontal_distance_m(point)
 		if distance_m <= point.reach_m and distance_m < best_m:
 			best_id = point.id
@@ -172,7 +172,7 @@ func _nearest_point_in_reach() -> String:
 func _nearest_point_overall() -> String:
 	var best_id: String = ""
 	var best_m: float = INF
-	for point: SimBridge.PointReply in _points:
+	for point: BridgeReplies.PointReply in _points:
 		var distance_m: float = _horizontal_distance_m(point)
 		if distance_m < best_m:
 			best_id = point.id
@@ -186,7 +186,7 @@ func _interact_key_label() -> String:
 	return events[0].as_text().get_slice(" ", 0) if not events.is_empty() else "?"
 
 
-func _add_marker(point: SimBridge.PointReply) -> void:
+func _add_marker(point: BridgeReplies.PointReply) -> void:
 	var mesh: CylinderMesh = CylinderMesh.new()
 	mesh.top_radius = MARKER_RADIUS_M
 	mesh.bottom_radius = MARKER_RADIUS_M

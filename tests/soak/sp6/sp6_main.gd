@@ -98,12 +98,12 @@ func _place_dummy() -> bool:
 	if not _player.is_spawned():
 		push_error("Sp6Main: o PlayerBody não nasceu; o teste de combate não pode rodar.")
 		return false
-	var spawn: SimBridge.SpawnReply = _bridge.peek_spawn_point()
+	var spawn: BridgeReplies.SpawnReply = _bridge.peek_spawn_point()
 	if not spawn.result.ok:
 		push_error("Sp6Main: ponto de nascimento indisponível (%s): %s" % [spawn.result.code, spawn.result.message])
 		return false
 	var x_m: float = spawn.point.x + Sp6Constants.DUMMY_DISTANCE_M
-	var ground: SimBridge.HeightReply = _bridge.peek_height(x_m, spawn.point.z)
+	var ground: BridgeReplies.HeightReply = _bridge.peek_height(x_m, spawn.point.z)
 	if not ground.result.ok:
 		push_error("Sp6Main: altura do chão indisponível em x=%s, z=%s (%s): %s" % [str(x_m), str(spawn.point.z), ground.result.code, ground.result.message])
 		return false
@@ -112,7 +112,7 @@ func _place_dummy() -> bool:
 
 
 func _is_paused() -> bool:
-	var time: SimBridge.TimeSnapshot = _bridge.peek_time()
+	var time: BridgeReplies.TimeSnapshot = _bridge.peek_time()
 	return time.result.ok and time.is_paused
 
 

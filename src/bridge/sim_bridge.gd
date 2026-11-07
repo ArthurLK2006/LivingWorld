@@ -4,7 +4,8 @@ extends RefCounted
 ## Não é dona de dado nenhum e não tem regra de jogo: repassa consultas somente-leitura, pedidos de
 ## pausa e velocidade, o nascimento e o relato de posição do personagem (LW-048) e guarda a fila de intenções. NÃO avança a simulação: o SimulationHost já faz
 ## isso no seu _process (decisão de Arthur de 05/11/2026). As respostas são tipos próprios, com os
-## valores copiados, para a apresentação nunca precisar citar tipos de `sim/`.
+## valores copiados, para a apresentação nunca precisar citar tipos de `sim/`. Esses tipos moram em `BridgeReplies`
+## (bridge_replies.gd), fora deste arquivo, para ele não passar do limite de tamanho (LW-053B).
 
 const CODE_NO_GAME: String = "BRIDGE_NO_GAME"
 const CODE_NO_TERRAIN: String = "BRIDGE_NO_TERRAIN"
@@ -28,40 +29,40 @@ func _init(host: SimulationHostNode, terrain: TerrainData) -> void:
 
 
 ## Altura do chão (metros) em (x, z). Fora do mapa ou coordenada não numérica: falha tratada do `world`.
-func peek_height(x: float, z: float) -> HeightReply:
+func peek_height(x: float, z: float) -> BridgeReplies.HeightReply:
 	if _terrain == null:
-		return HeightReply.new(_missing_terrain("peek_height"), 0.0)
+		return BridgeReplies.HeightReply.new(_missing_terrain("peek_height"), 0.0)
 	var query: TerrainData.HeightQuery = _terrain.peek_height(x, z)
-	return HeightReply.new(query.result, query.height_m)
+	return BridgeReplies.HeightReply.new(query.result, query.height_m)
 
 
-func peek_surface(x: float, z: float) -> SurfaceReply:
+func peek_surface(x: float, z: float) -> BridgeReplies.SurfaceReply:
 	if _terrain == null:
-		return SurfaceReply.new(_missing_terrain("peek_surface"), TerrainData.NO_SURFACE_CODE, "")
+		return BridgeReplies.SurfaceReply.new(_missing_terrain("peek_surface"), TerrainData.NO_SURFACE_CODE, "")
 	var query: TerrainData.SurfaceQuery = _terrain.peek_surface(x, z)
-	return SurfaceReply.new(query.result, query.surface_code, query.surface_id)
+	return BridgeReplies.SurfaceReply.new(query.result, query.surface_code, query.surface_id)
 
 
-func peek_spawn_point() -> SpawnReply:
+func peek_spawn_point() -> BridgeReplies.SpawnReply:
 	if _terrain == null:
-		return SpawnReply.new(_missing_terrain("peek_spawn_point"), Vector3.ZERO)
-	return SpawnReply.new(Result.success(), _terrain.peek_spawn_point())
+		return BridgeReplies.SpawnReply.new(_missing_terrain("peek_spawn_point"), Vector3.ZERO)
+	return BridgeReplies.SpawnReply.new(Result.success(), _terrain.peek_spawn_point())
 
 
 ## Formato do terreno (células, tamanho da célula, chunks): é o que a TerrainView precisa para saber quantos
 ## chunks existem e onde ficam. Valores copiados do TerrainData.
-func peek_terrain_layout() -> TerrainLayoutReply:
+func peek_terrain_layout() -> BridgeReplies.TerrainLayoutReply:
 	if _terrain == null:
-		return TerrainLayoutReply.new(_missing_terrain("peek_terrain_layout"), null)
-	return TerrainLayoutReply.new(Result.success(), _terrain)
+		return BridgeReplies.TerrainLayoutReply.new(_missing_terrain("peek_terrain_layout"), null)
+	return BridgeReplies.TerrainLayoutReply.new(Result.success(), _terrain)
 
 
 ## Cópia da hora simulada e do ritmo no momento da chamada.
-func peek_time() -> TimeSnapshot:
+func peek_time() -> BridgeReplies.TimeSnapshot:
 	var clock: SimClock = _clock()
 	if clock == null:
-		return TimeSnapshot.new(_missing_game("peek_time"), null)
-	return TimeSnapshot.new(Result.success(), clock)
+		return BridgeReplies.TimeSnapshot.new(_missing_game("peek_time"), null)
+	return BridgeReplies.TimeSnapshot.new(Result.success(), clock)
 
 
 func request_pause(is_paused: bool) -> Result:
@@ -79,42 +80,42 @@ func request_speed(speed: int) -> Result:
 
 ## Pontos de interesse do mundo, em CÓPIAS (id, tipo, posição com a altura do terreno, chave de texto e alcance da interação), para a
 ## apresentação desenhar e detectar o ponto próximo. É só dica visual: quem decide se a interação vale é `request_interact`.
-func peek_points_of_interest() -> PointsReply:
+func peek_points_of_interest() -> BridgeReplies.PointsReply:
 	var interaction: InteractionService = _interaction()
 	if interaction == null:
-		return PointsReply.new(_missing_interaction("peek_points_of_interest"), [])
-	var copies: Array[PointReply] = []
+		return BridgeReplies.PointsReply.new(_missing_interaction("peek_points_of_interest"), [])
+	var copies: Array[BridgeReplies.PointReply] = []
 	for point: PointOfInterest in interaction.peek_points():
-		copies.append(PointReply.new(point))
-	return PointsReply.new(Result.success(), copies)
+		copies.append(BridgeReplies.PointReply.new(point))
+	return BridgeReplies.PointsReply.new(Result.success(), copies)
 
 
 ## Pede a interação do ator com o ponto. A posição do ator vem SEMPRE do que está guardado no personagem (o último relato do corpo),
 ## nunca da apresentação: a simulação confere a distância (alcance de InteractionService.INTERACT_REACH_M). Sucesso: a chave do texto
 ## do ponto e o evento InteractionPerformed (entregue no próximo passo). Ator desconhecido: falha do personagem; ponto desconhecido
 ## ou longe demais: falha da interação.
-func request_interact(actor_id: int, poi_id: String) -> InteractReply:
+func request_interact(actor_id: int, poi_id: String) -> BridgeReplies.InteractReply:
 	var interaction: InteractionService = _interaction()
 	if interaction == null:
-		return InteractReply.new(_missing_interaction("request_interact"), "", "")
+		return BridgeReplies.InteractReply.new(_missing_interaction("request_interact"), "", "")
 	var character: CharacterModule = _character()
 	if character == null:
-		return InteractReply.new(_missing_character("request_interact"), "", "")
+		return BridgeReplies.InteractReply.new(_missing_character("request_interact"), "", "")
 	var stored: CharacterQuery = character.peek_character(actor_id)
 	if not stored.result.ok:
-		return InteractReply.new(stored.result, "", "")
+		return BridgeReplies.InteractReply.new(stored.result, "", "")
 	var outcome: InteractionService.InteractionResult = interaction.request_interact(actor_id, stored.position, poi_id)
-	return InteractReply.new(outcome.result, outcome.poi_id, outcome.text_key)
+	return BridgeReplies.InteractReply.new(outcome.result, outcome.poi_id, outcome.text_key)
 
 
 ## Pede o nascimento de um personagem (ID novo, no ponto de nascimento do terreno). Quem pede é quem guarda o `actor_id`: a ponte
 ## não é dona de "o jogador" e pode atender vários atores. `actor_id` só vale se `result.ok`.
-func request_spawn_character() -> SpawnCharacterReply:
+func request_spawn_character() -> BridgeReplies.SpawnCharacterReply:
 	var character: CharacterModule = _character()
 	if character == null:
-		return SpawnCharacterReply.new(_missing_character("request_spawn_character"), IdGenerator.NO_ID)
+		return BridgeReplies.SpawnCharacterReply.new(_missing_character("request_spawn_character"), IdGenerator.NO_ID)
 	var spawn: SpawnResult = character.request_spawn()
-	return SpawnCharacterReply.new(spawn.result, spawn.actor_id)
+	return BridgeReplies.SpawnCharacterReply.new(spawn.result, spawn.actor_id)
 
 
 ## Repassa ao personagem a posição (metros) e a orientação (radianos) que o corpo físico informa. A simulação nunca devolve posição
@@ -127,12 +128,12 @@ func request_report_position(actor_id: int, position: Vector3, yaw: float) -> Re
 
 
 ## Cópia da posição e da orientação guardadas na simulação para o ator. Ator desconhecido: falha tratada, sem derrubar.
-func peek_character(actor_id: int) -> CharacterReply:
+func peek_character(actor_id: int) -> BridgeReplies.CharacterReply:
 	var character: CharacterModule = _character()
 	if character == null:
-		return CharacterReply.new(_missing_character("peek_character"), Vector3.ZERO, 0.0)
+		return BridgeReplies.CharacterReply.new(_missing_character("peek_character"), Vector3.ZERO, 0.0)
 	var query: CharacterQuery = character.peek_character(actor_id)
-	return CharacterReply.new(query.result, query.position, query.yaw)
+	return BridgeReplies.CharacterReply.new(query.result, query.position, query.yaw)
 
 
 ## Enfileira uma intenção. Recusa intenção nula e ator sem ID válido. Nada a consome ainda.
@@ -194,164 +195,3 @@ func _missing_game(caller: String) -> Result:
 
 func _missing_terrain(caller: String) -> Result:
 	return Result.failure(CODE_NO_TERRAIN, "SimBridge.%s: terreno não carregado; esperado um TerrainData ao criar a ponte." % caller)
-
-
-## Resposta de `peek_height`: `height_m` só vale se `result.ok`.
-class HeightReply:
-	extends RefCounted
-
-	var result: Result
-	var height_m: float
-
-	func _init(reply_result: Result, value_m: float) -> void:
-		result = reply_result
-		height_m = value_m
-
-
-## Resposta de `peek_surface`: só vale se `result.ok`. `surface_id` é o id de conteúdo (texto).
-class SurfaceReply:
-	extends RefCounted
-
-	var result: Result
-	var surface_code: int
-	var surface_id: String
-
-	func _init(reply_result: Result, code: int, id: String) -> void:
-		result = reply_result
-		surface_code = code
-		surface_id = id
-
-
-## Resposta de `peek_spawn_point`: `point` em metros (y = altura do chão), só vale se `result.ok`.
-class SpawnReply:
-	extends RefCounted
-
-	var result: Result
-	var point: Vector3
-
-	func _init(reply_result: Result, value: Vector3) -> void:
-		result = reply_result
-		point = value
-
-
-## Resposta de `request_spawn_character`: `actor_id` só vale se `result.ok`.
-class SpawnCharacterReply:
-	extends RefCounted
-
-	var result: Result
-	var actor_id: int
-
-	func _init(reply_result: Result, new_actor_id: int) -> void:
-		result = reply_result
-		actor_id = new_actor_id
-
-
-## Resposta de `peek_character`: cópia de `position` (metros) e `yaw` (radianos), só vale se `result.ok`.
-class CharacterReply:
-	extends RefCounted
-
-	var result: Result
-	var position: Vector3
-	var yaw: float
-
-	func _init(reply_result: Result, current_position: Vector3, current_yaw: float) -> void:
-		result = reply_result
-		position = current_position
-		yaw = current_yaw
-
-
-## Um ponto de interesse copiado: posição em metros (y = altura do terreno) e o alcance da interação. Só dados, sem tipos de `sim/`.
-class PointReply:
-	extends RefCounted
-
-	var id: String
-	var kind: String
-	var x: float
-	var y: float
-	var z: float
-	var text_key: String
-	var reach_m: float
-
-	func _init(point: PointOfInterest) -> void:
-		id = point.id
-		kind = point.kind
-		x = point.position.x
-		y = point.position.y
-		z = point.position.z
-		text_key = point.text_key
-		reach_m = InteractionService.INTERACT_REACH_M
-
-
-## Resposta de `peek_points_of_interest`: `points` na ordem do arquivo, só vale se `result.ok`.
-class PointsReply:
-	extends RefCounted
-
-	var result: Result
-	var points: Array[PointReply]
-
-	func _init(reply_result: Result, copies: Array[PointReply]) -> void:
-		result = reply_result
-		points = copies
-
-
-## Resposta de `request_interact`: `poi_id` e `text_key` (a CHAVE do texto, não o texto) só valem se `result.ok`.
-class InteractReply:
-	extends RefCounted
-
-	var result: Result
-	var poi_id: String
-	var text_key: String
-
-	func _init(reply_result: Result, reached_poi_id: String, reached_text_key: String) -> void:
-		result = reply_result
-		poi_id = reached_poi_id
-		text_key = reached_text_key
-
-
-## Resposta de `peek_terrain_layout`: só vale se `result.ok`. `cells` e `chunk_count` são (x, z); `size_m` é o
-## tamanho do mapa em metros. Convenções de nós, células e chunks em docs/modules/world.md.
-class TerrainLayoutReply:
-	extends RefCounted
-
-	var result: Result
-	var cells: Vector2i = Vector2i.ZERO
-	var cell_size_m: float = 0.0
-	var chunk_cells: int = 0
-	var chunk_count: Vector2i = Vector2i.ZERO
-	var size_m: Vector2 = Vector2.ZERO
-
-	func _init(reply_result: Result, terrain: TerrainData) -> void:
-		result = reply_result
-		if terrain == null:
-			return
-		cells = terrain.peek_cells()
-		cell_size_m = terrain.peek_cell_size_m()
-		chunk_cells = terrain.peek_chunk_cells()
-		chunk_count = terrain.peek_chunk_count()
-		size_m = terrain.peek_size_m()
-
-
-## Hora simulada e ritmo copiados do relógio; os campos só valem se `result.ok`.
-class TimeSnapshot:
-	extends RefCounted
-
-	var result: Result
-	var year: int = 0
-	var day_of_year: int = 0
-	var hour_of_day: int = 0
-	var minute_of_hour: int = 0
-	var total_minutes: int = 0
-	var is_paused: bool = false
-	var speed: int = 0
-
-	func _init(reply_result: Result, clock: SimClock) -> void:
-		result = reply_result
-		if clock == null:
-			return
-		year = clock.year()
-		day_of_year = clock.day_of_year()
-		hour_of_day = clock.hour_of_day()
-		minute_of_hour = clock.minute_of_hour()
-		total_minutes = clock.total_minutes()
-		is_paused = clock.is_paused()
-		speed = clock.get_speed()
