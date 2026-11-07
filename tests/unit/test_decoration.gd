@@ -18,7 +18,7 @@ const ROCK_TRIANGLES: int = 12
 const VERTICES_PER_TRIANGLE: int = 3
 
 var _bridge: SimBridge
-var _layout: SimBridge.TerrainLayoutReply
+var _layout: BridgeReplies.TerrainLayoutReply
 var _items: Array[DecorationReader.Item]
 var _view: DecorationView
 var _temp_dirs: Array[DirAccess] = []

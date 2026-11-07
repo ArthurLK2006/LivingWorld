@@ -38,7 +38,7 @@ const NODES_PER_FINE_CHUNK: int = 3
 const SETTLE_FRAMES: int = 4
 
 var _bridge: SimBridge
-var _layout: SimBridge.TerrainLayoutReply
+var _layout: BridgeReplies.TerrainLayoutReply
 
 
 func before_all() -> void:

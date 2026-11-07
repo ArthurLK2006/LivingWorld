@@ -37,7 +37,7 @@ func _process(_delta: float) -> void:
 func refresh() -> bool:
 	if _bridge == null:
 		return false
-	var time: SimBridge.TimeSnapshot = _bridge.peek_time()
+	var time: BridgeReplies.TimeSnapshot = _bridge.peek_time()
 	if not time.result.ok:
 		if not _time_failure_reported:
 			_time_failure_reported = true

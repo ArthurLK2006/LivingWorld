@@ -90,7 +90,7 @@ func test_one_marker_is_created_per_point_once_and_sits_on_the_terrain_height() 
 	for point: PointOfInterest in _points:
 		var marker: MeshInstance3D = _interaction.marker_of(point.id)
 		assert_not_null(marker, "Marcador do ponto '%s'." % point.id)
-		var ground: SimBridge.HeightReply = _bridge.peek_height(point.position.x, point.position.z)
+		var ground: BridgeReplies.HeightReply = _bridge.peek_height(point.position.x, point.position.z)
 		assert_almost_eq(marker.global_position.x, point.position.x, HEIGHT_TOLERANCE_M)
 		assert_almost_eq(marker.global_position.z, point.position.z, HEIGHT_TOLERANCE_M)
 		assert_almost_eq(marker.global_position.y - MARKER_HALF_HEIGHT_M, ground.height_m, HEIGHT_TOLERANCE_M, "A base do marcador toca o chão.")

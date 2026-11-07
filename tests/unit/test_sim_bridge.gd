@@ -33,7 +33,7 @@ func test_height_matches_the_terrain_data() -> void:
 	# [x, z, altura em metros]: dois nós e dois pontos intermediários do terreno de teste.
 	var samples: Array[Array] = [[2.0, 0.0, 1.0], [4.0, 2.0, 17.0], [1.0, 1.0, 5.5], [3.0, 1.0, 7.75]]
 	for row: Array in samples:
-		var reply: SimBridge.HeightReply = _bridge.peek_height(row[0], row[1])
+		var reply: BridgeReplies.HeightReply = _bridge.peek_height(row[0], row[1])
 		assert_true(reply.result.ok, reply.result.message)
 		assert_almost_eq(reply.height_m, row[2], TOLERANCE, "Altura em x=%s z=%s." % [row[0], row[1]])
 		assert_eq(reply.height_m, _terrain.peek_height(row[0], row[1]).height_m, "A ponte repassa o valor do world sem alterar.")
@@ -43,29 +43,29 @@ func test_surface_matches_the_terrain_data() -> void:
 	# [x, z, código, id]
 	var samples: Array[Array] = [[1.0, 1.0, 1, "grass"], [3.0, 3.0, 7, "rock"], [7.0, 1.0, 2, "path"]]
 	for row: Array in samples:
-		var reply: SimBridge.SurfaceReply = _bridge.peek_surface(row[0], row[1])
+		var reply: BridgeReplies.SurfaceReply = _bridge.peek_surface(row[0], row[1])
 		assert_true(reply.result.ok, reply.result.message)
 		assert_eq(reply.surface_code, row[2])
 		assert_eq(reply.surface_id, row[3])
 
 
 func test_spawn_point_matches_the_terrain_data() -> void:
-	var reply: SimBridge.SpawnReply = _bridge.peek_spawn_point()
+	var reply: BridgeReplies.SpawnReply = _bridge.peek_spawn_point()
 	assert_true(reply.result.ok, reply.result.message)
 	assert_eq(reply.point, _terrain.peek_spawn_point())
 	assert_almost_eq(reply.point.y, 14.0, TOLERANCE, "Altura do chão no ponto de nascimento do terreno de teste.")
 
 
 func test_outside_the_map_and_non_finite_coordinates_fail_with_the_world_codes() -> void:
-	var outside: SimBridge.HeightReply = _bridge.peek_height(8.001, 0.0)
+	var outside: BridgeReplies.HeightReply = _bridge.peek_height(8.001, 0.0)
 	assert_false(outside.result.ok)
 	assert_eq(outside.result.code, TerrainData.CODE_OUT_OF_BOUNDS)
 	assert_string_contains(outside.result.message, "fora do mapa")
-	var not_a_number: SimBridge.SurfaceReply = _bridge.peek_surface(NAN, 1.0)
+	var not_a_number: BridgeReplies.SurfaceReply = _bridge.peek_surface(NAN, 1.0)
 	assert_false(not_a_number.result.ok)
 	assert_eq(not_a_number.result.code, TerrainData.CODE_INVALID_COORDINATE)
 	assert_eq(not_a_number.surface_code, TerrainData.NO_SURFACE_CODE)
-	var infinite: SimBridge.HeightReply = _bridge.peek_height(1.0, INF)
+	var infinite: BridgeReplies.HeightReply = _bridge.peek_height(1.0, INF)
 	assert_eq(infinite.result.code, TerrainData.CODE_INVALID_COORDINATE)
 
 
@@ -78,11 +78,11 @@ func test_without_terrain_the_queries_fail_but_time_still_works() -> void:
 
 
 func test_peek_time_follows_the_clock_and_each_answer_is_a_copy() -> void:
-	var start: SimBridge.TimeSnapshot = _bridge.peek_time()
+	var start: BridgeReplies.TimeSnapshot = _bridge.peek_time()
 	assert_true(start.result.ok, start.result.message)
 	assert_eq([start.year, start.day_of_year, start.hour_of_day, start.minute_of_hour, start.total_minutes], [1, 1, 0, 0, 0])
 	_host.runner.run_steps(SimClock.MINUTES_PER_DAY + 61)
-	var later: SimBridge.TimeSnapshot = _bridge.peek_time()
+	var later: BridgeReplies.TimeSnapshot = _bridge.peek_time()
 	assert_eq([later.year, later.day_of_year, later.hour_of_day, later.minute_of_hour, later.total_minutes], [1, 2, 1, 1, 1501])
 	assert_eq(start.total_minutes, 0, "Uma resposta já entregue não muda com o relógio.")
 
@@ -188,7 +188,7 @@ func _blockout_bridge() -> SimBridge:
 
 
 func test_terrain_layout_of_the_real_blockout_terrain() -> void:
-	var reply: SimBridge.TerrainLayoutReply = _blockout_bridge().peek_terrain_layout()
+	var reply: BridgeReplies.TerrainLayoutReply = _blockout_bridge().peek_terrain_layout()
 	assert_true(reply.result.ok, reply.result.message)
 	assert_eq(reply.cells, Vector2i(512, 512))
 	assert_eq(reply.cell_size_m, 2.0)
@@ -198,7 +198,7 @@ func test_terrain_layout_of_the_real_blockout_terrain() -> void:
 
 
 func test_terrain_layout_repeats_the_values_of_the_terrain_data() -> void:
-	var reply: SimBridge.TerrainLayoutReply = _bridge.peek_terrain_layout()
+	var reply: BridgeReplies.TerrainLayoutReply = _bridge.peek_terrain_layout()
 	assert_true(reply.result.ok, reply.result.message)
 	assert_eq(reply.cells, _terrain.peek_cells())
 	assert_eq(reply.cell_size_m, _terrain.peek_cell_size_m())
@@ -208,7 +208,7 @@ func test_terrain_layout_repeats_the_values_of_the_terrain_data() -> void:
 
 
 func test_terrain_layout_without_terrain_fails_with_the_bridge_code() -> void:
-	var reply: SimBridge.TerrainLayoutReply = SimBridge.new(_host, null).peek_terrain_layout()
+	var reply: BridgeReplies.TerrainLayoutReply = SimBridge.new(_host, null).peek_terrain_layout()
 	assert_false(reply.result.ok)
 	assert_eq(reply.result.code, SimBridge.CODE_NO_TERRAIN)
 	assert_string_contains(reply.result.message, "peek_terrain_layout")
@@ -217,13 +217,13 @@ func test_terrain_layout_without_terrain_fails_with_the_bridge_code() -> void:
 
 
 func test_terrain_layout_reply_is_a_copy() -> void:
-	var first: SimBridge.TerrainLayoutReply = _bridge.peek_terrain_layout()
+	var first: BridgeReplies.TerrainLayoutReply = _bridge.peek_terrain_layout()
 	var original_cells: Vector2i = first.cells
 	var original_size: Vector2 = first.size_m
 	first.cells = Vector2i(999, 999)
 	first.chunk_count = Vector2i(77, 77)
 	first.size_m = Vector2(1.0, 1.0)
-	var second: SimBridge.TerrainLayoutReply = _bridge.peek_terrain_layout()
+	var second: BridgeReplies.TerrainLayoutReply = _bridge.peek_terrain_layout()
 	assert_eq(second.cells, original_cells, "Alterar uma resposta não muda a próxima.")
 	assert_eq(second.chunk_count, _terrain.peek_chunk_count())
 	assert_eq(second.size_m, original_size)

@@ -47,7 +47,7 @@ func _on_interaction(event: SimEvent) -> void:
 
 
 func _spawned_actor_at(point: Vector3) -> int:
-	var reply: SimBridge.SpawnCharacterReply = _bridge.request_spawn_character()
+	var reply: BridgeReplies.SpawnCharacterReply = _bridge.request_spawn_character()
 	assert_true(reply.result.ok, reply.result.message)
 	var reported: Result = _bridge.request_report_position(reply.actor_id, point, 0.0)
 	assert_true(reported.ok, reported.message)
@@ -55,30 +55,30 @@ func _spawned_actor_at(point: Vector3) -> int:
 
 
 func test_peek_points_of_interest_returns_the_two_markers_as_copies_with_ground_height_and_reach() -> void:
-	var reply: SimBridge.PointsReply = _bridge.peek_points_of_interest()
+	var reply: BridgeReplies.PointsReply = _bridge.peek_points_of_interest()
 	assert_true(reply.result.ok, reply.result.message)
 	assert_eq(reply.points.size(), 2)
-	var near: SimBridge.PointReply = reply.points[0]
+	var near: BridgeReplies.PointReply = reply.points[0]
 	assert_eq(near.id, "test_marker_near")
 	assert_eq(near.kind, "test_marker")
 	assert_eq(near.text_key, "poi.test_marker_near")
 	assert_eq(near.x, NEAR_POINT.x)
 	assert_eq(near.z, NEAR_POINT.z)
 	assert_eq(near.reach_m, REACH_M)
-	for point: SimBridge.PointReply in reply.points:
-		var ground: SimBridge.HeightReply = _bridge.peek_height(point.x, point.z)
+	for point: BridgeReplies.PointReply in reply.points:
+		var ground: BridgeReplies.HeightReply = _bridge.peek_height(point.x, point.z)
 		assert_true(ground.result.ok)
 		assert_almost_eq(point.y, ground.height_m, HEIGHT_TOLERANCE_M, "A altura é a do terreno.")
 	near.text_key = "alterado"
 	near.x = 0.0
-	var again: SimBridge.PointsReply = _bridge.peek_points_of_interest()
+	var again: BridgeReplies.PointsReply = _bridge.peek_points_of_interest()
 	assert_eq(again.points[0].text_key, "poi.test_marker_near", "A resposta é cópia: mexer nela não altera a próxima.")
 	assert_eq(again.points[0].x, NEAR_POINT.x)
 
 
 func test_interacting_close_to_the_marker_returns_the_text_key_and_the_event_arrives_at_the_next_step() -> void:
 	var actor_id: int = _spawned_actor_at(BESIDE_NEAR)
-	var reply: SimBridge.InteractReply = _bridge.request_interact(actor_id, "test_marker_near")
+	var reply: BridgeReplies.InteractReply = _bridge.request_interact(actor_id, "test_marker_near")
 	assert_true(reply.result.ok, reply.result.message)
 	assert_eq(reply.poi_id, "test_marker_near")
 	assert_eq(reply.text_key, "poi.test_marker_near")
@@ -91,9 +91,9 @@ func test_interacting_close_to_the_marker_returns_the_text_key_and_the_event_arr
 
 
 func test_interacting_from_the_spawn_point_is_too_far_and_publishes_nothing() -> void:
-	var spawn: SimBridge.SpawnCharacterReply = _bridge.request_spawn_character()
+	var spawn: BridgeReplies.SpawnCharacterReply = _bridge.request_spawn_character()
 	assert_true(spawn.result.ok)
-	var outcome: SimBridge.InteractReply = _bridge.request_interact(spawn.actor_id, "test_marker_near")
+	var outcome: BridgeReplies.InteractReply = _bridge.request_interact(spawn.actor_id, "test_marker_near")
 	assert_false(outcome.result.ok, "O nascimento fica a cerca de 20 m do marco perto.")
 	assert_eq(outcome.result.code, InteractionService.CODE_TOO_FAR)
 	assert_string_contains(outcome.result.message, "muito longe")
@@ -106,18 +106,18 @@ func test_the_position_used_is_the_one_stored_in_the_character_not_one_given_by_
 	var actor_id: int = _spawned_actor_at(BESIDE_NEAR)
 	assert_true(_bridge.request_interact(actor_id, "test_marker_near").result.ok)
 	assert_true(_bridge.request_report_position(actor_id, FAR_POINT, 0.0).ok)
-	var from_far: SimBridge.InteractReply = _bridge.request_interact(actor_id, "test_marker_near")
+	var from_far: BridgeReplies.InteractReply = _bridge.request_interact(actor_id, "test_marker_near")
 	assert_false(from_far.result.ok, "Depois de o corpo relatar que está longe, a simulação recusa; a ponte não aceita posição de fora.")
 	assert_eq(from_far.result.code, InteractionService.CODE_TOO_FAR)
 	assert_true(_bridge.request_interact(actor_id, "test_marker_far").result.ok, "Junto do marco longe, o marco longe vale.")
 
 
 func test_an_unknown_actor_and_an_unknown_point_are_handled_errors() -> void:
-	var unknown_actor: SimBridge.InteractReply = _bridge.request_interact(UNKNOWN_ACTOR_ID, "test_marker_near")
+	var unknown_actor: BridgeReplies.InteractReply = _bridge.request_interact(UNKNOWN_ACTOR_ID, "test_marker_near")
 	assert_false(unknown_actor.result.ok)
 	assert_eq(unknown_actor.result.code, CharacterModule.CODE_UNKNOWN_ACTOR, "Ator desconhecido: o código é o do personagem.")
 	var actor_id: int = _spawned_actor_at(BESIDE_NEAR)
-	var unknown_point: SimBridge.InteractReply = _bridge.request_interact(actor_id, "no_such_point")
+	var unknown_point: BridgeReplies.InteractReply = _bridge.request_interact(actor_id, "no_such_point")
 	assert_false(unknown_point.result.ok)
 	assert_eq(unknown_point.result.code, InteractionService.CODE_UNKNOWN_POI)
 	_host.runner.step_once()
@@ -141,7 +141,7 @@ func test_a_game_started_without_terrain_has_no_interaction_service() -> void:
 	bare.start_new_game(WORLD_SEED)
 	assert_null(bare.interaction)
 	var bridge: SimBridge = SimBridge.new(bare, _terrain)
-	var points: SimBridge.PointsReply = bridge.peek_points_of_interest()
+	var points: BridgeReplies.PointsReply = bridge.peek_points_of_interest()
 	assert_false(points.result.ok)
 	assert_eq(points.result.code, SimBridge.CODE_NO_INTERACTION)
 	assert_string_contains(points.result.message, "start_new_game")
@@ -154,6 +154,6 @@ func test_the_real_boot_has_the_points_in_the_world_of_the_game() -> void:
 	var host: SimulationHostNode = get_node("/root/SimulationHost") as SimulationHostNode
 	var app: GameAppNode = get_node("/root/GameApp") as GameAppNode
 	assert_not_null(host.interaction, "O GameApp leu o pois.json ao iniciar o jogo.")
-	var reply: SimBridge.PointsReply = app.peek_bridge().peek_points_of_interest()
+	var reply: BridgeReplies.PointsReply = app.peek_bridge().peek_points_of_interest()
 	assert_true(reply.result.ok, reply.result.message)
 	assert_eq(reply.points.size(), 2)

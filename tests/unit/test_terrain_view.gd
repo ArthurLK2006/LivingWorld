@@ -34,7 +34,7 @@ const BUMP_CM: int = 150
 const SHALLOW_SKIRT_M: float = 1.0
 
 var _bridge: SimBridge
-var _layout: SimBridge.TerrainLayoutReply
+var _layout: BridgeReplies.TerrainLayoutReply
 var _view: TerrainView
 var _calls_to_finish: int = 0
 
@@ -56,19 +56,19 @@ func after_all() -> void:
 	_view.free()
 
 
-func _chunk_size_m(layout: SimBridge.TerrainLayoutReply) -> float:
+func _chunk_size_m(layout: BridgeReplies.TerrainLayoutReply) -> float:
 	return float(layout.chunk_cells) * layout.cell_size_m
 
 
-func _quads(layout: SimBridge.TerrainLayoutReply, step: int) -> int:
+func _quads(layout: BridgeReplies.TerrainLayoutReply, step: int) -> int:
 	return IntMath.floor_div(layout.chunk_cells, step)
 
 
-func _body_vertices(layout: SimBridge.TerrainLayoutReply, step: int) -> int:
+func _body_vertices(layout: BridgeReplies.TerrainLayoutReply, step: int) -> int:
 	return VERTICES_PER_TRIANGLE * TRIANGLES_PER_QUAD * _quads(layout, step) * _quads(layout, step)
 
 
-func _vertices_per_chunk(layout: SimBridge.TerrainLayoutReply, step: int) -> int:
+func _vertices_per_chunk(layout: BridgeReplies.TerrainLayoutReply, step: int) -> int:
 	return _body_vertices(layout, step) + VERTICES_PER_TRIANGLE * TRIANGLES_PER_QUAD * SKIRT_SIDES * _quads(layout, step)
 
 
@@ -94,7 +94,7 @@ func _vertices_of(mesh: ArrayMesh) -> PackedVector3Array:
 
 ## y por posição ao longo da borda leste (`east`) ou oeste do chunk, olhando os `count` primeiros vértices.
 ## `lowest` guarda o vértice mais baixo de cada posição (fundo da saia); senão, o do corpo da malha.
-func _east_west_edge(mesh: ArrayMesh, layout: SimBridge.TerrainLayoutReply, east: bool, count: int, lowest: bool) -> Dictionary[float, float]:
+func _east_west_edge(mesh: ArrayMesh, layout: BridgeReplies.TerrainLayoutReply, east: bool, count: int, lowest: bool) -> Dictionary[float, float]:
 	var vertices: PackedVector3Array = _vertices_of(mesh)
 	var edge_x: float = _chunk_size_m(layout) if east else 0.0
 	var profile: Dictionary[float, float] = {}
@@ -117,7 +117,7 @@ func _interpolate(profile: Dictionary[float, float], at: float) -> float:
 
 
 ## Maior diferença de altura entre a borda leste do chunk fino (passo 1) e a oeste do grosso (passo 2) vizinho.
-func _largest_gap(fine: ArrayMesh, coarse: ArrayMesh, layout: SimBridge.TerrainLayoutReply) -> float:
+func _largest_gap(fine: ArrayMesh, coarse: ArrayMesh, layout: BridgeReplies.TerrainLayoutReply) -> float:
 	var fine_top: Dictionary[float, float] = _east_west_edge(fine, layout, true, _body_vertices(layout, FINE), false)
 	var coarse_top: Dictionary[float, float] = _east_west_edge(coarse, layout, false, _body_vertices(layout, COARSE), false)
 	var largest: float = 0.0
@@ -128,7 +128,7 @@ func _largest_gap(fine: ArrayMesh, coarse: ArrayMesh, layout: SimBridge.TerrainL
 
 ## Quanto da diferença de altura fica SEM saia que a cubra. A profundidade é MEDIDA na malha (topo do corpo
 ## menos o ponto mais baixo da saia) e vale a saia do lado mais alto em cada ponto da borda.
-func _largest_uncovered_gap(fine: ArrayMesh, coarse: ArrayMesh, layout: SimBridge.TerrainLayoutReply) -> float:
+func _largest_uncovered_gap(fine: ArrayMesh, coarse: ArrayMesh, layout: BridgeReplies.TerrainLayoutReply) -> float:
 	var fine_top: Dictionary[float, float] = _east_west_edge(fine, layout, true, _body_vertices(layout, FINE), false)
 	var coarse_top: Dictionary[float, float] = _east_west_edge(coarse, layout, false, _body_vertices(layout, COARSE), false)
 	var fine_low: Dictionary[float, float] = _east_west_edge(fine, layout, true, _vertices_of(fine).size(), true)
@@ -243,7 +243,7 @@ func test_skirt_covers_the_largest_gap_between_neighbors_of_different_steps_on_t
 
 func test_skirt_covers_a_steep_gap_of_one_and_a_half_meters_and_a_shallower_skirt_does_not() -> void:
 	var bridge: SimBridge = _small_bridge("grass", {BUMP_NODE: BUMP_CM})
-	var layout: SimBridge.TerrainLayoutReply = bridge.peek_terrain_layout()
+	var layout: BridgeReplies.TerrainLayoutReply = bridge.peek_terrain_layout()
 	var builder: TerrainChunkBuilder = TerrainChunkBuilder.new(bridge, layout)
 	var bump_m: float = float(BUMP_CM) / TerrainData.CM_PER_METER
 	var fine: ArrayMesh = builder.build(Vector2i(0, 0), FINE)

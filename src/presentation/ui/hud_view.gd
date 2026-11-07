@@ -55,7 +55,7 @@ func _process(_delta: float) -> void:
 func refresh() -> void:
 	if _bridge == null:
 		return
-	var time: SimBridge.TimeSnapshot = _bridge.peek_time()
+	var time: BridgeReplies.TimeSnapshot = _bridge.peek_time()
 	if not time.result.ok:
 		if not _has_reported_time_error:
 			_has_reported_time_error = true
@@ -94,7 +94,7 @@ func _request_speed(speed: int) -> void:
 
 
 ## Três linhas: título e versão, data e ritmo, dica da tecla de pausa. Tudo por chaves.
-func _compose(time: SimBridge.TimeSnapshot) -> String:
+func _compose(time: BridgeReplies.TimeSnapshot) -> String:
 	var pace: String = _texts.get_text(KEY_PACE_PAUSED) if time.is_paused else _texts.get_text(KEY_PACE_SPEED, {"speed": time.speed})
 	var date: String = _texts.get_text(KEY_DATE, {"year": time.year, "day": time.day_of_year, "hour": "%02d" % time.hour_of_day, "minute": "%02d" % time.minute_of_hour})
 	var lines: PackedStringArray = PackedStringArray([

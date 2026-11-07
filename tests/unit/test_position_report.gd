@@ -83,7 +83,7 @@ func _frames(count: int) -> void:
 		await get_tree().physics_frame
 
 
-func _stored(body: PlayerBody) -> SimBridge.CharacterReply:
+func _stored(body: PlayerBody) -> BridgeReplies.CharacterReply:
 	return _bridge.peek_character(body.get_actor_id())
 
 
@@ -91,7 +91,7 @@ func test_the_body_is_born_in_the_simulation_at_the_spawn_point_and_reports_its_
 	var spawn: Vector3 = _bridge.peek_spawn_point().point
 	var body: PlayerBody = _new_body()
 	assert_gt(body.get_actor_id(), IdGenerator.NO_ID, "O corpo guardou o ID do personagem que a simulação criou.")
-	var stored: SimBridge.CharacterReply = _stored(body)
+	var stored: BridgeReplies.CharacterReply = _stored(body)
 	assert_true(stored.result.ok, stored.result.message)
 	assert_almost_eq(stored.position.x, spawn.x, SETTLED_TOLERANCE_M, "Nasce no x do ponto de nascimento.")
 	assert_almost_eq(stored.position.z, spawn.z, SETTLED_TOLERANCE_M, "Nasce no z do ponto de nascimento.")
@@ -111,7 +111,7 @@ func test_a_ten_second_scripted_run_keeps_the_stored_position_close_to_the_capsu
 		await get_tree().physics_frame
 		if frame % SAMPLE_EVERY_FRAMES == 0:
 			_focus_on(body.global_position)
-		var stored: SimBridge.CharacterReply = _stored(body)
+		var stored: BridgeReplies.CharacterReply = _stored(body)
 		worst_gap_m = maxf(worst_gap_m, (stored.position - body.global_position).length())
 		sample_count += 1
 	Input.action_release(InputActions.MOVE_FORWARD)
@@ -128,7 +128,7 @@ func test_without_movement_the_stored_position_stays_at_the_birth_point() -> voi
 	var spawn: Vector3 = _bridge.peek_spawn_point().point
 	var body: PlayerBody = _new_body()
 	await _frames(STILL_FRAMES)
-	var stored: SimBridge.CharacterReply = _stored(body)
+	var stored: BridgeReplies.CharacterReply = _stored(body)
 	assert_almost_eq(stored.position.x, spawn.x, SETTLED_TOLERANCE_M)
 	assert_almost_eq(stored.position.z, spawn.z, SETTLED_TOLERANCE_M)
 	assert_almost_eq(stored.position.y, spawn.y, STILL_TOLERANCE_M, "Só a folga de nascimento (5 cm) pode diferenciar a altura.")

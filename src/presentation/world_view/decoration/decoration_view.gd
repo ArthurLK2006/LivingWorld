@@ -24,7 +24,7 @@ func setup(bridge: SimBridge, items: Array[DecorationReader.Item]) -> void:
 	if bridge == null:
 		push_error("DecorationView.setup: ponte nula; esperado uma SimBridge.")
 		return
-	var layout: SimBridge.TerrainLayoutReply = bridge.peek_terrain_layout()
+	var layout: BridgeReplies.TerrainLayoutReply = bridge.peek_terrain_layout()
 	if not layout.result.ok:
 		push_error("DecorationView.setup: formato do terreno indisponível (%s): %s" % [layout.result.code, layout.result.message])
 		return
@@ -75,7 +75,7 @@ func _add_group(bridge: SimBridge, key: String, kind: String, group: Array, chun
 	for entry: DecorationReader.Item in group:
 		var x: float = float(entry.x_cm) / CM_PER_METER
 		var z: float = float(entry.z_cm) / CM_PER_METER
-		var height: SimBridge.HeightReply = bridge.peek_height(x, z)
+		var height: BridgeReplies.HeightReply = bridge.peek_height(x, z)
 		if not height.result.ok:
 			push_error("DecorationView: altura indisponível em (x=%s, z=%s): %s" % [str(x), str(z), height.result.message])
 			continue
