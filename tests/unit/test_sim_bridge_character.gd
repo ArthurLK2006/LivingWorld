@@ -13,6 +13,8 @@ const OUTSIDE_POSITION: Vector3 = Vector3(-5.0, 10.0, 500.0)
 const UNKNOWN_ACTOR_ID: int = 999
 ## Escrito à mão: é a chave do módulo no save, e mudá-la sem querer quebraria os saves.
 const EXPECTED_MODULE_NAME: String = "character"
+## Desde a LW-057 o mundo do jogo também tem o módulo `npc`, registrado logo depois do `character` (escrito à mão, como acima).
+const EXPECTED_NPC_MODULE_NAME: String = "npc"
 
 var _terrain: TerrainData
 var _host: SimulationHostNode
@@ -144,7 +146,7 @@ func test_a_game_started_without_terrain_has_no_character_module() -> void:
 
 func test_the_game_world_registers_the_character_module_under_its_name() -> void:
 	assert_not_null(_host.character)
-	var expected_names: Array[String] = [EXPECTED_MODULE_NAME]
+	var expected_names: Array[String] = [EXPECTED_MODULE_NAME, EXPECTED_NPC_MODULE_NAME]
 	assert_eq(_host.runner.world.module_names(), expected_names)
 	assert_eq(GameModules.CHARACTER_NAME, EXPECTED_MODULE_NAME)
 

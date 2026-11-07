@@ -2,16 +2,19 @@ class_name GameModules
 extends RefCounted
 ## Módulos do mundo do JOGO (LW-048): a lista de quem entra no `SimulationRunner` fica só aqui. O `SimulationHost` a usa ao
 ## iniciar um jogo novo e os testes de integração a usam para montar o MESMO mundo (por isso é uma função única, pequena).
-## Hoje o personagem (módulo registrado no `World`) e o serviço de interação com pontos de interesse (LW-049; conteúdo, sem estado
+## Hoje o personagem e o `npc` (LW-057; módulos registrados no `World`, nessa ordem) e o serviço de interação com pontos de interesse (LW-049; conteúdo, sem estado
 ## salvo, por isso NÃO é registrado no `World` e não muda o save); cada módulo novo do jogo é criado aqui e em mais nenhum lugar. O que vem de `data/` (o terreno)
 ## entra pelo construtor do módulo, sem global nem autoload. Contrato: docs/modules/app.md.
 
 ## Nome do módulo no mundo (é a chave dele no save).
 const CHARACTER_NAME: String = "character"
+## Nome do módulo `npc` (LW-057), registrado depois do `character`; também é a chave dele no save.
+const NPC_NAME: String = "npc"
 
 var result: Result = Result.success()
-## Os dois só valem se `result.ok`.
+## Os três só valem se `result.ok`.
 var character: CharacterModule
+var npc: NpcModule
 var interaction: InteractionService
 
 
@@ -29,5 +32,12 @@ static func register(runner: SimulationRunner, terrain: TerrainData, points: Arr
 		modules.result = registered
 		return modules
 	modules.character = character_module
+	# Sem definições por enquanto: nenhum NPC existe no jogo até a LW-067 (população inicial) ligar os dados.
+	var npc_module: NpcModule = NpcModule.new()
+	registered = runner.register_module(NPC_NAME, npc_module)
+	if not registered.ok:
+		modules.result = registered
+		return modules
+	modules.npc = npc_module
 	modules.interaction = InteractionService.new(points, runner.world.context)
 	return modules

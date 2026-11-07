@@ -12,7 +12,7 @@ Estado: **PROPOSTA da LW-055** (só documento: nenhum código, dado ou teste exi
 - **Interfaces de comunicação:** seção 10 (`peek_*`, `request_*`, `on_*`) e `docs/events.md`.
 - **Testes necessários:** um por tarefa, nomeados na seção 12, mais as regras gerais: mesma semente, mesmo hash (DEC-081); ida e volta de save pelo codec JSON; dado inválido falha apontando arquivo, item e campo; nada em S0 sem apresentação simulada; sem janela (`--headless`).
 
-## 1. Estado do NPC (LW-057; ver também LW-067)
+## 1. Estado do NPC (LW-057, **implementada** em 07/11/2026, diferenças na tabela da seção 12; ver também LW-067)
 
 - **Tipo e armazenamento:** `NpcState` (`RefCounted`, só dados, sem Node) numa tabela do módulo indexada por `npc_id` (arquitetura 7.3, opção D). Visita sempre por IDs em ordem crescente (regra do `MODELO.md`). Campos, por bloco:
   - **Identidade:** `npc_id: int` de `ctx.ids`, nunca reutilizado e nunca igual ao ID de um jogador; `name_key` e `name_number` (a simulação só guarda a chave do texto; a apresentação monta "Aldeão 001"); `tier` (1 ou 2); `is_alive`, `death_cause`, `died_at`.
@@ -110,7 +110,7 @@ Padrão `peek_*` (consulta, devolve cópia), `request_*` (comando, devolve `Resu
 
 - **Ciclo de vida** (`SimModule`, `core.md`): `setup(ctx)` guarda o contexto; `post_setup()` assina `AlarmRaised`; `on_new_game(world_seed)` cria a população; `tick(elapsed_minutes)` roda a fila de pensamento, as necessidades, o LOD e os decaimentos diários; `serialize`, `on_load`, `validate`, `debug_summary` e `teardown` como na seção 1. As definições (`needs`, `actions`, ofícios, parâmetros) e os dados de assentamento entram **pelo construtor**, já lidos e validados, sem global nem autoload (padrão do `CharacterModule`). O `Scheduler` roda o módulo a cada passo com custo declarado [HIP].
 - **Eventos publicados:** `LodChanged`, `NpcDied`, `NpcImpasseRecovered`, `AlarmRaised`, `RelationChanged` (todos `planejado`, ver `docs/events.md`). **Ouvidos:** só `AlarmRaised`. Sem eventos em laço quente.
-- **O que o `npc` precisa da ponte** (o `bridge.md` não muda aqui; muda na LW-069/LW-070): entregar o foco, repassar Intents e resultados, traduzir `LodChanged` e `NpcDied` em sinais para a apresentação e expor as consultas acima. A divisão do `sim_bridge.gd` (backlog, M1) vem antes da LW-069.
+- **O que o `npc` precisa da ponte** (o `bridge.md` não muda aqui; muda na LW-069/LW-070): entregar o foco, repassar Intents e resultados, traduzir `LodChanged` e `NpcDied` em sinais para a apresentação e expor as consultas acima. Os tipos de resposta da ponte já estão na classe `BridgeReplies` (LW-053B, 07/11/2026, no `main`); a LW-069 e a LW-070 só acrescentam consultas de NPC.
 
 ## 11. Dado → dono
 
@@ -138,7 +138,7 @@ Padrão `peek_*` (consulta, devolve cópia), `request_*` (comando, devolve `Resu
 | Tarefa | Tipo | Seção(ões) | Teste de aceite (nome proposto) |
 |---|---|---|---|
 | LW-056 | IMPL | `world.md`, seção "Extensão da Fase 2" | `test_settlements.gd`: referência quebrada, local fora do mapa, consultas, ida e volta |
-| LW-057 | IMPL | 1, 10, 11 | `test_npc_state.gd`: IDs não reutilizados, ida e volta, `state_hash` |
+| LW-057 | IMPL | 1, 10, 11 | `test_npc_state.gd`: IDs não reutilizados, ida e volta, `state_hash`. **IMPLEMENTADA (07/11/2026)**, mais `test_npc_traits.gd` e `data/traits.json` (autorizados no lote). **O que diferiu do desenho:** (a) ficam para a tarefa que os usa os campos `next_think_time` (LW-063), `critical_since` (LW-081) e `last_progress_at` (LW-073), o nível de LOD no resumo `peek_npc` e a contagem por nível em `peek_counts()` (LW-069); (b) `on_load` recusa só o que não dá para converter (estrutura, tipos, chave de ID, tamanho das listas) e `validate()` aponta faixa de necessidade e de traço, tier, morto com ação e ID acima do contador, como no `character`; referência a ofício, local e ação segue como texto (LW-056, LW-059 e LW-061 acrescentam a conferência); (c) traços e necessidades ficam em vetores por posição (`order`), com `NpcState.NEED_COUNT` = 5 e `NpcState.TRAIT_COUNT` = 4; (d) `NpcSpec` é arquivo próprio e `CreateResult` e `NpcQuery` são classes internas do módulo; (e) `debug_summary()` traz contagens por tier, vivos e mortos, por ofício e `serialize_bytes` (os pensamentos do último passo e o nível de LOD vêm com as tarefas deles); (f) o módulo está registrado no jogo (`GameModules.NPC_NAME`) sem NPC nenhum até a LW-067, então o conteúdo do save e o `state_hash` do jogo mudaram e a versão do save continua 2 |
 | LW-058 | IMPL | 2 | `test_npc_needs.gd`: variação por hora, limiares, faixa 0 a 100, dado inválido |
 | LW-059 | IMPL | 3 | `test_action_catalog.gd`: referências inexistentes, ação nova só por dados |
 | LW-060 | IMPL | 3 | `test_action_runner.gd`: "comer" reduz fome, pré-condição, caminho único |
@@ -176,3 +176,4 @@ Padrão `peek_*` (consulta, devolve cópia), `request_*` (comando, devolve `Resu
 - **Q8** sem módulo `entities` na Fase 2: IDs de `ctx.ids` (`character.md` já faz o mesmo). **Q9** quatro traços, não oito (seção 1). **Q10** `max_t2` cheio recusa, não expulsa (seção 7). **Q11** relação só com T2 ou jogador (seção 7). **Q12** nomes `NpcIntent` e `NpcActionResult` (seção 6).
 - **Q13** linha I4 do backlog (escrita do save em outra thread pronta antes do módulo de memória, LW-078): nenhuma tarefa da Fase 2 a cria; decidir uma tarefa extra ou reavaliar com medição (DEC-084: reavaliar só se o estado passar de cerca de 1 MB). **Q14** quem publica `AlarmRaised`: o `npc`, por falta de módulo dono de perigo (seção 8). **Q15** velocidade dos corpos S0 em tempo de jogo (SP2).
 - **Q16** eventos que o roadmap não nomeia (`NpcImpasseRecovered`, `AlarmRaised`, `RelationChanged`) e a recusa do `NpcDecided` (seções 5, 6, 8; `docs/events.md`). **Q17** a versão do save continua 2 (seção 1).
+- Respostas de Arthur (painel, 07/11/2026): Q9 = quatro traços ("4 traços (Recomendado)"); Q11 = relação só com notáveis e com o jogador ("Só notáveis e você (Recomendado)"). Os demais pontos valem como escritos acima, pela aprovação de Arthur. Estas respostas não são entrada de DECISIONS.md.

@@ -1,1 +1,3 @@
-Diretório reservado para src/sim/npc; implementação ou conteúdo em tarefa futura.
+Módulo `npc` (camada 3). Contrato em `docs/modules/npc.md`. Pastas, como na arquitetura 8.4: `api/` (porta de entrada: `NpcModule` e `NpcSpec`) e `state/` (`NpcState`, traços).
+
+Implementado (LW-057): `NpcModule` (tabela de NPCs por ID, criar e remover com IDs que nunca voltam, `serialize`/`on_load`/`validate`/`debug_summary`, entra no `World` e no `state_hash`), `NpcState`, `NpcSpec` e os traços de personalidade (`TraitLoader` com a classe interna `TraitDef`, `data/traits.json`). Registrado no jogo desde a LW-057 (`GameModules.NPC_NAME`), ainda sem nenhum NPC: a população nasce na LW-067. Não decide, não anda e não tem rotina: isso vem nas tarefas seguintes (necessidades LW-058, ações LW-059 e LW-060).
