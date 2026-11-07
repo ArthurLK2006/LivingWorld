@@ -18,14 +18,19 @@ const CODE_NO_INTERACTION: String = "BRIDGE_NO_INTERACTION"
 
 var _host: SimulationHostNode
 var _terrain: TerrainData
+## Locais dos assentamentos (LW-074): conteúdo somente leitura, em ordem crescente de id. Não é salvo nem entra no state_hash.
+var _places: Array[Place] = []
 ## Intenções na ordem de chegada. É estrutura de apresentação: não é salva nem entra no state_hash.
 var _pending_intents: Array[BridgeIntent] = []
 
 
-## `host` e `terrain` podem ser nulos: as chamadas que dependem deles falham com código, sem derrubar o jogo.
-func _init(host: SimulationHostNode, terrain: TerrainData) -> void:
+## `host` e `terrain` podem ser nulos: as chamadas que dependem deles falham com código, sem derrubar o jogo. `places` é opcional
+## (sem ele, `peek_places` devolve lista vazia) e fica guardado em ordem crescente de id.
+func _init(host: SimulationHostNode, terrain: TerrainData, places: Array[Place] = []) -> void:
 	_host = host
 	_terrain = terrain
+	_places.assign(places)
+	_places.sort_custom(_is_before)
 
 
 ## Altura do chão (metros) em (x, z). Fora do mapa ou coordenada não numérica: falha tratada do `world`.
@@ -88,6 +93,17 @@ func peek_points_of_interest() -> BridgeReplies.PointsReply:
 	for point: PointOfInterest in interaction.peek_points():
 		copies.append(BridgeReplies.PointReply.new(point))
 	return BridgeReplies.PointsReply.new(Result.success(), copies)
+
+
+## TODOS os locais dos assentamentos, em CÓPIAS e em ordem crescente de id (id, assentamento, tipo, posição com a altura do terreno e
+## capacidade), para a apresentação desenhar. Não depende do host. Ponte sem terreno: falha `BRIDGE_NO_TERRAIN`; sem locais: lista vazia.
+func peek_places() -> BridgeReplies.PlacesReply:
+	if _terrain == null:
+		return BridgeReplies.PlacesReply.new(_missing_terrain("peek_places"), [])
+	var copies: Array[BridgeReplies.PlaceReply] = []
+	for place: Place in _places:
+		copies.append(BridgeReplies.PlaceReply.new(place))
+	return BridgeReplies.PlacesReply.new(Result.success(), copies)
 
 
 ## Pede a interação do ator com o ponto. A posição do ator vem SEMPRE do que está guardado no personagem (o último relato do corpo),
@@ -155,6 +171,10 @@ func take_pending_intents() -> Array[BridgeIntent]:
 
 func pending_intent_count() -> int:
 	return _pending_intents.size()
+
+
+static func _is_before(first: Place, second: Place) -> bool:
+	return first.id < second.id
 
 
 func _clock() -> SimClock:

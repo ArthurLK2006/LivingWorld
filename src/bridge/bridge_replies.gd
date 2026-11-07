@@ -107,6 +107,40 @@ class PointsReply:
 		points = copies
 
 
+## Um local copiado: posição em metros (y = altura do terreno) e capacidade. Só dados, sem tipos de `sim/`.
+class PlaceReply:
+	extends RefCounted
+
+	var id: String
+	var settlement_id: String
+	var kind: String
+	var x: float
+	var y: float
+	var z: float
+	var capacity: int
+
+	func _init(place: Place) -> void:
+		id = place.id
+		settlement_id = place.settlement_id
+		kind = place.kind
+		x = place.position.x
+		y = place.position.y
+		z = place.position.z
+		capacity = place.capacity
+
+
+## Resposta de `peek_places`: `places` em ordem crescente de id, só vale se `result.ok`.
+class PlacesReply:
+	extends RefCounted
+
+	var result: Result
+	var places: Array[PlaceReply]
+
+	func _init(reply_result: Result, copies: Array[PlaceReply]) -> void:
+		result = reply_result
+		places = copies
+
+
 ## Resposta de `request_interact`: `poi_id` e `text_key` (a CHAVE do texto, não o texto) só valem se `result.ok`.
 class InteractReply:
 	extends RefCounted
