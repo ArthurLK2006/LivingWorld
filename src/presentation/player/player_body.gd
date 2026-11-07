@@ -1,8 +1,9 @@
 class_name PlayerBody
 extends CharacterBody3D
 ## Corpo provisório do jogador (LW-045): uma cápsula visível que anda, corre e pula sobre o terreno. A FÍSICA FICA NA
-## APRESENTAÇÃO (arquitetura 15): a posição daqui não é estado da simulação e nada é relatado a ela nesta tarefa (o relato é a
-## LW-048). Lê o teclado só por ações nomeadas (InputActions). A direção do movimento é relativa ao giro do nó de referência
+## APRESENTAÇÃO (arquitetura 15): quem manda na posição é este corpo. Ao nascer ele pede à simulação um personagem (pela ponte) e,
+## a cada poucos quadros de física, RELATA a posição e a orientação (LW-048); a simulação guarda o que foi relatado e nunca devolve
+## posição ao corpo (fluxo de um sentido só). Lê o teclado só por ações nomeadas (InputActions). A direção do movimento é relativa ao giro do nó de referência
 ## (a câmera de terceira pessoa). Enquanto o chão sob o corpo não tem colisão que valha (TerrainView.has_collision_at) ele fica
 ## parado, sem cair nem andar. LIMITES (LW-047): encostas acima da inclinação máxima o bloqueiam, ele não passa da borda do mapa
 ## e, se cair abaixo do terreno, é posto de volta sobre o chão. Contrato: docs/modules/presentation.md.
@@ -23,6 +24,8 @@ const SPAWN_CLEARANCE_M: float = 0.05
 const MAX_WALKABLE_SLOPE_DEGREES: float = 40.0
 const BORDER_MARGIN_M: float = 1.0
 const RECOVERY_DEPTH_M: float = 2.0
+## Relato de posição [HIP] (LW-048): a cada tantos quadros de física (6 = 10 por segundo a 60 Hz) e uma vez ao nascer.
+const REPORT_EVERY_PHYSICS_FRAMES: int = 6
 ## Cor provisória da cápsula [HIP]: laranja, para não se confundir com o terreno.
 const CAPSULE_COLOR: Color = Color(0.95, 0.45, 0.10)
 const GRAVITY_SETTING: String = "physics/3d/default_gravity"
@@ -41,6 +44,11 @@ var _direction_reference: Node3D
 var _is_spawned: bool = false
 var _was_jump_down: bool = false
 var _gravity_mps2: float = DEFAULT_GRAVITY_MPS2
+## Personagem deste corpo na simulação (IdGenerator.NO_ID = não nasceu lá; o corpo anda do mesmo jeito, só não relata).
+var _actor_id: int = IdGenerator.NO_ID
+var _frames_since_report: int = 0
+## Códigos de falha já avisados no log: cada código avisa uma vez só, para uma falha repetida não encher o log.
+var _warned_codes: Dictionary[String, bool] = {}
 
 
 func _ready() -> void:
@@ -89,11 +97,17 @@ func setup(bridge: SimBridge, terrain: TerrainView, direction_reference: Node3D)
 	_is_spawned = true
 	visible = true
 	set_physics_process(true)
+	_spawn_character()
 	return true
 
 
 func is_spawned() -> bool:
 	return _is_spawned
+
+
+## ID do personagem deste corpo na simulação, ou IdGenerator.NO_ID se ele não nasceu lá (ponte sem jogo ou sem personagem).
+func get_actor_id() -> int:
+	return _actor_id
 
 
 func _physics_process(delta: float) -> void:
@@ -105,6 +119,9 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 	_keep_inside_world()
 	_recover_if_below_terrain()
+	_frames_since_report += 1
+	if _frames_since_report >= REPORT_EVERY_PHYSICS_FRAMES:
+		_report_position()
 
 
 ## Ações move_* dão o vetor das teclas (já normalizado), girado pelo yaw do nó de referência: "para frente" é para onde ele olha.
@@ -148,6 +165,38 @@ func _recover_if_below_terrain() -> void:
 	elif global_position.y < ground.height_m - RECOVERY_DEPTH_M:
 		push_warning("PlayerBody: corpo %s m abaixo do terreno em (x=%s, z=%s); reposto sobre o chão." % [str(ground.height_m - global_position.y), str(global_position.x), str(global_position.z)])
 		_place_at(Vector3(global_position.x, ground.height_m, global_position.z))
+
+
+## Pede à simulação um personagem para este corpo e relata a posição de nascimento. Falha (ponte sem jogo ou sem módulo do
+## personagem): um aviso no log e o corpo segue sem relatar; nunca derruba nem trava o corpo.
+func _spawn_character() -> void:
+	_actor_id = IdGenerator.NO_ID
+	_frames_since_report = 0
+	_warned_codes.clear()
+	var reply: SimBridge.SpawnCharacterReply = _bridge.request_spawn_character()
+	if not reply.result.ok:
+		_warn_once(reply.result, "o personagem não nasceu na simulação")
+		return
+	_actor_id = reply.actor_id
+	_report_position()
+
+
+## Envia a posição dos pés e o giro horizontal do nó de referência de direção (a câmera) ao personagem. Resposta recusada: aviso uma
+## vez por código; o corpo não é afetado.
+func _report_position() -> void:
+	_frames_since_report = 0
+	if _actor_id == IdGenerator.NO_ID:
+		return
+	var outcome: Result = _bridge.request_report_position(_actor_id, global_position, _direction_reference.global_rotation.y)
+	if not outcome.ok:
+		_warn_once(outcome, "relato de posição recusado")
+
+
+func _warn_once(failure: Result, what: String) -> void:
+	if _warned_codes.has(failure.code):
+		return
+	_warned_codes[failure.code] = true
+	push_warning("PlayerBody: %s (%s): %s" % [what, failure.code, failure.message])
 
 
 ## Põe o corpo sobre o ponto (o chão), com a folga de nascimento, e para o movimento.

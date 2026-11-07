@@ -1,8 +1,8 @@
 class_name SimBridge
 extends RefCounted
 ## Ponte mínima entre a apresentação e a simulação (arquitetura 6.7; contrato em docs/modules/bridge.md).
-## Não é dona de dado nenhum e não tem regra de jogo: repassa consultas somente-leitura e pedidos de
-## pausa e velocidade e guarda a fila de intenções. NÃO avança a simulação: o SimulationHost já faz
+## Não é dona de dado nenhum e não tem regra de jogo: repassa consultas somente-leitura, pedidos de
+## pausa e velocidade, o nascimento e o relato de posição do personagem (LW-048) e guarda a fila de intenções. NÃO avança a simulação: o SimulationHost já faz
 ## isso no seu _process (decisão de Arthur de 05/11/2026). As respostas são tipos próprios, com os
 ## valores copiados, para a apresentação nunca precisar citar tipos de `sim/`.
 
@@ -10,6 +10,8 @@ const CODE_NO_GAME: String = "BRIDGE_NO_GAME"
 const CODE_NO_TERRAIN: String = "BRIDGE_NO_TERRAIN"
 const CODE_NULL_INTENT: String = "BRIDGE_NULL_INTENT"
 const CODE_INVALID_ACTOR: String = "BRIDGE_INVALID_ACTOR"
+## Há jogo iniciado, mas ele não tem o módulo do personagem (começou sem terreno).
+const CODE_NO_CHARACTER: String = "BRIDGE_NO_CHARACTER"
 
 var _host: SimulationHostNode
 var _terrain: TerrainData
@@ -73,6 +75,34 @@ func request_speed(speed: int) -> Result:
 	return _host.request_speed(speed)
 
 
+## Pede o nascimento de um personagem (ID novo, no ponto de nascimento do terreno). Quem pede é quem guarda o `actor_id`: a ponte
+## não é dona de "o jogador" e pode atender vários atores. `actor_id` só vale se `result.ok`.
+func request_spawn_character() -> SpawnCharacterReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return SpawnCharacterReply.new(_missing_character("request_spawn_character"), IdGenerator.NO_ID)
+	var spawn: SpawnResult = character.request_spawn()
+	return SpawnCharacterReply.new(spawn.result, spawn.actor_id)
+
+
+## Repassa ao personagem a posição (metros) e a orientação (radianos) que o corpo físico informa. A simulação nunca devolve posição
+## ao corpo: o fluxo é de um sentido só (arquitetura 6.2). Valor não finito, fora do mapa ou ator desconhecido: falha tratada do módulo.
+func request_report_position(actor_id: int, position: Vector3, yaw: float) -> Result:
+	var character: CharacterModule = _character()
+	if character == null:
+		return _missing_character("request_report_position")
+	return character.report_position(actor_id, position, yaw)
+
+
+## Cópia da posição e da orientação guardadas na simulação para o ator. Ator desconhecido: falha tratada, sem derrubar.
+func peek_character(actor_id: int) -> CharacterReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return CharacterReply.new(_missing_character("peek_character"), Vector3.ZERO, 0.0)
+	var query: CharacterQuery = character.peek_character(actor_id)
+	return CharacterReply.new(query.result, query.position, query.yaw)
+
+
 ## Enfileira uma intenção. Recusa intenção nula e ator sem ID válido. Nada a consome ainda.
 func submit_intent(intent: BridgeIntent) -> Result:
 	if intent == null:
@@ -98,6 +128,19 @@ func _clock() -> SimClock:
 	if _host == null or _host.runner == null:
 		return null
 	return _host.runner.world.context.clock
+
+
+## Módulo do personagem do jogo atual, ou nulo (sem host, sem jogo ou jogo sem terreno).
+func _character() -> CharacterModule:
+	if _host == null or _host.runner == null:
+		return null
+	return _host.character
+
+
+func _missing_character(caller: String) -> Result:
+	if _host == null or _host.runner == null:
+		return _missing_game(caller)
+	return Result.failure(CODE_NO_CHARACTER, "SimBridge.%s: o jogo atual não tem o módulo do personagem; esperado um jogo iniciado com terreno (SimulationHost.start_new_game(seed, terreno))." % caller)
 
 
 func _missing_game(caller: String) -> Result:
@@ -144,6 +187,32 @@ class SpawnReply:
 	func _init(reply_result: Result, value: Vector3) -> void:
 		result = reply_result
 		point = value
+
+
+## Resposta de `request_spawn_character`: `actor_id` só vale se `result.ok`.
+class SpawnCharacterReply:
+	extends RefCounted
+
+	var result: Result
+	var actor_id: int
+
+	func _init(reply_result: Result, new_actor_id: int) -> void:
+		result = reply_result
+		actor_id = new_actor_id
+
+
+## Resposta de `peek_character`: cópia de `position` (metros) e `yaw` (radianos), só vale se `result.ok`.
+class CharacterReply:
+	extends RefCounted
+
+	var result: Result
+	var position: Vector3
+	var yaw: float
+
+	func _init(reply_result: Result, current_position: Vector3, current_yaw: float) -> void:
+		result = reply_result
+		position = current_position
+		yaw = current_yaw
 
 
 ## Resposta de `peek_terrain_layout`: só vale se `result.ok`. `cells` e `chunk_count` são (x, z); `size_m` é o

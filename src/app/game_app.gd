@@ -1,8 +1,8 @@
 class_name GameAppNode
 extends Node
 ## Script do autoload `GameApp` (arquitetura 4.3): ciclo de vida do aplicativo. Por enquanto
-## inicia um mundo de desenvolvimento, monta o texto de estado, trata a ação de pausa e cria e guarda a
-## ponte com a apresentação (peek_bridge). Não guarda estado do mundo. A apresentação lê o texto e o sinal
+## inicia um mundo de desenvolvimento (com o terreno lido e os módulos do jogo, LW-048), monta o texto de estado, trata a ação de
+## pausa e cria e guarda a ponte com a apresentação (peek_bridge). Não guarda estado do mundo. A apresentação lê o texto e o sinal
 ## daqui e pede a ponte por aqui (decisão D1 de Arthur, 06/11/2026: sem autoload novo).
 
 ## Avisa quando o texto de estado muda (a apresentação só redesenha nesse caso).
@@ -21,6 +21,9 @@ var terrain_dir: String = TERRAIN_DIR
 var _host: SimulationHostNode
 var _last_status_text: String = ""
 var _bridge: SimBridge
+## Terreno lido uma vez só (no _ready do jogo ou na primeira peek_bridge dos testes); nulo se não carregou.
+var _terrain: TerrainData
+var _is_terrain_loaded: bool = false
 
 
 func _ready() -> void:
@@ -29,21 +32,30 @@ func _ready() -> void:
 		push_error("GameApp: autoload SimulationHost não encontrado.")
 		return
 	bind_host(host)
-	host.start_new_game(DEFAULT_WORLD_SEED)
+	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load())
 
 
 func bind_host(host: SimulationHostNode) -> void:
 	_host = host
 
 
-## Ponte da apresentação com a simulação. PREGUIÇOSA de propósito: só na primeira chamada lê o terreno (arquivo
-## de cerca de 2,3 MB) e cria a ponte com o host já ligado; as chamadas seguintes devolvem a MESMA instância.
-## Quem nunca a pede (testes, tools/run_sim) não paga a leitura. Terreno que não carrega não derruba o jogo:
-## push_error com o motivo e ponte sem terreno, cujas consultas falham com BRIDGE_NO_TERRAIN.
+## Ponte da apresentação com a simulação: cria a ponte com o host já ligado e o MESMO terreno que o mundo do jogo usa; as chamadas
+## seguintes devolvem a MESMA instância. O terreno (arquivo de cerca de 2,3 MB, cerca de 0,45 s para ler) é lido uma só vez: no
+## _ready do autoload, porque o módulo do personagem precisa dele antes de o jogo começar (LW-048), ou aqui, na primeira chamada,
+## quando o GameApp é criado à mão (testes). Terreno que não carrega não derruba o jogo: push_error com o motivo e ponte sem terreno,
+## cujas consultas falham com BRIDGE_NO_TERRAIN.
 func peek_bridge() -> SimBridge:
 	if _bridge == null:
-		_bridge = SimBridge.new(_host, _load_terrain())
+		_bridge = SimBridge.new(_host, _terrain_or_load())
 	return _bridge
+
+
+## Lê o terreno na primeira chamada e guarda o resultado (inclusive a falha, para o erro aparecer uma vez só).
+func _terrain_or_load() -> TerrainData:
+	if not _is_terrain_loaded:
+		_is_terrain_loaded = true
+		_terrain = _load_terrain()
+	return _terrain
 
 
 ## Terreno de terrain_dir, ou nulo (depois de push_error) se não carregar. Sem `quit`: o GameApp também roda

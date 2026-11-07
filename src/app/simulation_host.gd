@@ -9,13 +9,24 @@ const MS_PER_SECOND: float = 1000.0
 const CODE_NO_GAME: String = "HOST_NO_GAME"
 
 var runner: SimulationRunner
+## Módulo do personagem do mundo atual (LW-048); nulo quando o jogo começou sem terreno. A ponte o usa para repassar nascimento e
+## relato de posição. O host só guarda a referência: o dono do dado é o módulo.
+var character: CharacterModule
 
 
-## Cria um mundo novo, encerrando o anterior se houver.
-func start_new_game(world_seed: int) -> void:
+## Cria um mundo novo, encerrando o anterior se houver. Com `terrain`, registra os módulos do jogo (GameModules); sem ele o mundo
+## nasce só com o núcleo (testes e ferramentas que não precisam do terreno). Falha de registro: push_error e o mundo segue sem módulos.
+func start_new_game(world_seed: int, terrain: TerrainData = null) -> void:
 	if runner != null:
 		runner.finish()
+	character = null
 	runner = SimulationRunner.new(world_seed)
+	if terrain != null:
+		var modules: GameModules = GameModules.register(runner, terrain)
+		if modules.result.ok:
+			character = modules.character
+		else:
+			push_error("SimulationHost.start_new_game: módulos do jogo não registrados (%s): %s" % [modules.result.code, modules.result.message])
 	runner.start_new_game()
 
 
@@ -54,3 +65,4 @@ func _exit_tree() -> void:
 	if runner != null:
 		runner.finish()
 		runner = null
+	character = null
