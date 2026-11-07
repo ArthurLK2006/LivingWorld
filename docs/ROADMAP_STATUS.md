@@ -1,6 +1,6 @@
 # Status do roadmap — Living World
 
-Atualizado em: 07/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: **EM ANDAMENTO** (21 de 23 tarefas concluídas, 91,3%: LW-032, LW-033, LW-034, LW-035, LW-036, LW-037, LW-038, LW-039, LW-040, LW-041, LW-042, LW-043, LW-044, LW-045, LW-046, LW-047, LW-048, LW-049, LW-050, LW-051 e LW-052). **Avanço total do projeto: 52 de 192 tarefas (27,1%).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
+Atualizado em: 07/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: **EM ANDAMENTO** (22 de 23 tarefas concluídas, 95,7%: LW-032, LW-033, LW-034, LW-035, LW-036, LW-037, LW-038, LW-039, LW-040, LW-041, LW-042, LW-043, LW-044, LW-045, LW-046, LW-047, LW-048, LW-049, LW-050, LW-051, LW-052 e LW-053). **Avanço total do projeto: 53 de 192 tarefas (27,6%).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
 
 Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e 2 dispensadas (LW-004 e LW-005). Arthur aceitou a revisão da LW-029, assinou a LW-030 (com ressalvas) e aprovou a LW-031, todas em 03/11/2026. Pelo roadmap (0.J), a fase é dada como concluída quando a tag `fase-0-concluida` estiver no remoto: ela foi criada e enviada em 03/11/2026, apontando para `7ae6e8e` (ponta de `main` no GitHub), com autorização de Arthur; é uma tag **leve** (não anotada). Na data do fechamento da Fase 0, o avanço total do projeto era de 31 de 192 tarefas (16,1%); o valor atual está na primeira linha deste arquivo. A LW-029A é uma tarefa extra, fora das 31, e não entra na conta.
 
@@ -30,6 +30,7 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 - DEC-089: aprovada só quanto ao serviço (GitHub). A visibilidade do repositório foi decidida na **DEC-114** (nova, 04/11/2026): **público (por ora)**, reversível. O repositório esteve privado por um período entre 03/11 e 04/11/2026 e voltou a público em 04/11/2026, por decisão de Arthur.
 - Aviso "Deprecated" do GUT (`wait_frames` em `tests/unit/test_app_nodes.gd:90`): presente no Mac e na nuvem, sem efeito nos resultados; registrado no backlog.
 - LW-033 (terreno): a medição oficial do Mac foi feita em modo DEBUG e com a energia do Mac incerta, então serve para comparar os terrenos, não para fixar a meta de quadros; repetir em release, com o Mac na tomada (condição e da DEC-057). A DEC-055 (tamanho do mundo) continua PENDENTE: só o terreno de teste foi decidido (DEC-118).
+- LW-053 (revisão da Fase 1, aprovada por Arthur em 07/11/2026, 0 críticos): três achados importantes, detalhados em `docs/fase-1/LW-053-parecer.md`. **I1** (o jogo desenha 120 quadros por segundo numa tela de 60 Hz): esperar a LW-054; só se Arthur sentir o movimento aos trancos se abre uma tarefa de diagnóstico. **I2** (meta de quadros): registrada como decisão na DEC-119. **I3** (tetos de arquivos dos envios): nos próximos envios o teto conta só arquivos de código e há uma linha "PARE se passar". Dos 7 menores, M1, M2, M4 e M5 foram registrados ou corrigidos em `docs/backlog.md` e `tests/soak/README.md`; os demais (M3, M6 e M7) ficam no parecer.
 
 ## Tarefas da Fase 0
 
@@ -92,6 +93,7 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 | LW-050 | IMPL | Interação na tela (ponto próximo, aviso e texto) e localização mínima | concluída | **Aprovada por Arthur em 07/11/2026**; está no `main`; commit de código `76b6736`. `UiText` e `data/text/pt_br.json` (chave ausente vira `[chave]` com aviso único); `InteractionView` (marcador provisório por ponto, aviso "[E] Interagir", texto por 5 s [HIP]); `tools/check_literal_text` no `check_all`; a linha de status passou a usar chaves; 441 testes verdes |
 | LW-051 | IMPL | HUD mínimo (data e hora, pausa e velocidade) e pausa congela o jogador | concluída | **Aprovada por Arthur em 07/11/2026**; está no `main`; commit de código `3cae8bd`. `HudView` (título, versão, data e hora, PAUSADO ou 1x/2x, só por chaves e lendo só `peek_time`), teclas 1 e 2 pedem a velocidade; substituiu a linha provisória de status; decisão D1 de Arthur: a pausa congela o personagem (não anda, não pula, não cai, não relata e não interage; a câmera continua); 456 testes verdes |
 | LW-052 | TESTE | Teste de integração scriptado da fase | concluída | **Aprovada por Arthur em 07/11/2026**; está no `main`; commit de código `72d8478`. Sem código novo de jogo: nasce, anda até o ponto, interage, pausa, salva e recarrega; 30 dias simulados com o jogador parado e o mesmo hash em duas execuções (e salvando no meio); contagem de nós da cena estável (a primeira volta guarda alguns chunks pela histerese do terreno); 459 testes verdes |
+| LW-053 | REV | Revisão arquitetural da Fase 1 | concluída | Revisão independente feita por Claude; aceita por Arthur em 07/11/2026: **APROVADO COM AJUSTES** (0 críticos, 3 importantes, 7 menores); parecer em `docs/fase-1/LW-053-parecer.md`; commit `834ae66` |
 
 ## Tarefas extras (fora das 31; não entram na conta)
 
@@ -113,6 +115,7 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 | REV Fase 0 — LW-029 | aprovado por Arthur em 03/11/2026 (0 críticos) |
 | VAL Fase 0 — LW-030 | assinado por Arthur em 03/11/2026, com ressalvas |
 | Tag fase-0-concluida | criada e no remoto, em `7ae6e8e`, 03/11/2026, com autorização de Arthur (tag leve, não anotada) |
+| REV Fase 1 — LW-053 | aprovado por Arthur em 07/11/2026 (0 críticos) |
 
 ## Escopo do protótipo
 

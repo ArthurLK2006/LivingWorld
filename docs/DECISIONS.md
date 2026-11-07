@@ -1135,7 +1135,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | O BM pede "eficiência computacional" (§9) e sistemas viáveis para um desenvolvedor solo. Sem números, não há como testar. |
 | **Decisão** | Proposta da TA (20.1): um orçamento de milissegundos por passo de simulação, por módulo, e uma meta de quadros por segundo no hardware-alvo. **Nenhum valor está aprovado.** |
 | **Justificativa** | Torna a eficiência mensurável. |
-| **Consequências** | Os valores dependem do hardware-alvo (DEC-016) e da quantidade de NPCs (DEC-040). Meta de quadros é decisão de Arthur na LW-033. |
+| **Consequências** | Os valores dependem do hardware-alvo (DEC-016) e da quantidade de NPCs (DEC-040). Meta de quadros é decisão de Arthur na LW-033. A meta de quadros foi decidida na DEC-119 (07/11/2026). |
 | **Data / versão** | TA 0.1 cap. 20.1 · RM 0.1 LW-033 · registrada em 01/11/2026 |
 | **Relações** | DEC-016, DEC-040, DEC-053, DEC-055 |
 
@@ -1726,6 +1726,20 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Consequências** | **Não** fixa o tamanho final do mundo: a DEC-055 **continua PENDENTE**. Os valores ficam em dados e são fáceis de mudar. Um mundo de vários km exigiria nova medição e dispara a reavaliação do Terrain3D (DEC-057, condição d). |
 | **Data / versão** | Decidida por Arthur em 05/11/2026 · registrada em 05/11/2026 (LW-033A) |
 | **Relações** | DEC-055, DEC-056, DEC-057, DEC-058 |
+
+---
+
+### DEC-119 — Meta de quadros do protótipo
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA |
+| **Contexto** | A DEC-071 deixou a meta de quadros como decisão de Arthur (valores [HIP]). A LW-033 mediu o terreno; a LW-053A mediu o jogo real em modo release, com o Mac na tomada: média de 8,37 a 8,39 ms por quadro e nenhum quadro acima de 33 ms em 3 execuções. |
+| **Decisão** | A meta de quadros do protótipo é: **média de 60 quadros por segundo ou mais e nenhum quadro acima de 33 ms**, no hardware de referência (o Mac de Arthur, DEC-016), na tomada, em modo release. |
+| **Justificativa** | Escolha de Arthur, com a medição da LW-053A em mãos (cumprida com folga). |
+| **Consequências** | Vale como régua das fases seguintes, inclusive para decoração, gente e mapas maiores. Medidas em depuração ou na bateria servem só para comparar. **Não** decide o orçamento de milissegundos por passo de simulação da DEC-071 (continua PROPOSTA) e **não** fixa o tamanho do mundo (DEC-055). O texto do critério 1.F item 5 em DEVELOPMENT_ROADMAP.md ainda diz "proposta [PEND]": a DEC-119 vale sobre ele. O jogo desenhar 120 quadros por segundo numa tela de 60 Hz só será investigado se Arthur sentir movimento aos trancos (backlog). |
+| **Data / versão** | Decidida por Arthur em 07/11/2026 · registrada em 07/11/2026 (LW-053) |
+| **Relações** | DEC-016, DEC-055, DEC-057, DEC-071 |
 
 ---
 
