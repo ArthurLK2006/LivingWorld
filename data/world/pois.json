@@ -1,0 +1,4 @@
+[
+	{"id": "test_marker_near", "kind": "test_marker", "x_cm": 12000, "z_cm": 51300, "text_key": "poi.test_marker_near"},
+	{"id": "test_marker_far", "kind": "test_marker", "x_cm": 22000, "z_cm": 51300, "text_key": "poi.test_marker_far"}
+]

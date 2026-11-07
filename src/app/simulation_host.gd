@@ -12,19 +12,24 @@ var runner: SimulationRunner
 ## Módulo do personagem do mundo atual (LW-048); nulo quando o jogo começou sem terreno. A ponte o usa para repassar nascimento e
 ## relato de posição. O host só guarda a referência: o dono do dado é o módulo.
 var character: CharacterModule
+## Serviço de interação com pontos de interesse do mundo atual (LW-049); nulo quando o jogo começou sem terreno.
+var interaction: InteractionService
 
 
 ## Cria um mundo novo, encerrando o anterior se houver. Com `terrain`, registra os módulos do jogo (GameModules); sem ele o mundo
-## nasce só com o núcleo (testes e ferramentas que não precisam do terreno). Falha de registro: push_error e o mundo segue sem módulos.
-func start_new_game(world_seed: int, terrain: TerrainData = null) -> void:
+## nasce só com o núcleo (testes e ferramentas que não precisam do terreno). `points` são os pontos de interesse já lidos (LW-049).
+## Falha de registro: push_error e o mundo segue sem módulos.
+func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = []) -> void:
 	if runner != null:
 		runner.finish()
 	character = null
+	interaction = null
 	runner = SimulationRunner.new(world_seed)
 	if terrain != null:
-		var modules: GameModules = GameModules.register(runner, terrain)
+		var modules: GameModules = GameModules.register(runner, terrain, points)
 		if modules.result.ok:
 			character = modules.character
+			interaction = modules.interaction
 		else:
 			push_error("SimulationHost.start_new_game: módulos do jogo não registrados (%s): %s" % [modules.result.code, modules.result.message])
 	runner.start_new_game()
@@ -66,3 +71,4 @@ func _exit_tree() -> void:
 		runner.finish()
 		runner = null
 	character = null
+	interaction = null

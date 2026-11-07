@@ -32,7 +32,7 @@ func _ready() -> void:
 		push_error("GameApp: autoload SimulationHost não encontrado.")
 		return
 	bind_host(host)
-	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load())
+	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points())
 
 
 func bind_host(host: SimulationHostNode) -> void:
@@ -56,6 +56,19 @@ func _terrain_or_load() -> TerrainData:
 		_is_terrain_loaded = true
 		_terrain = _load_terrain()
 	return _terrain
+
+
+## Pontos de interesse de terrain_dir (LW-049), conferidos contra o mapa do terreno já lido; lista vazia (depois de push_error) se o arquivo
+## não carregar ou se não houver terreno: o jogo segue, sem pontos para interagir.
+func _load_points() -> Array[PointOfInterest]:
+	var terrain: TerrainData = _terrain_or_load()
+	if terrain == null:
+		return []
+	var loaded: PointOfInterestLoader.LoadResult = PointOfInterestLoader.load_dir(terrain_dir, terrain)
+	if not loaded.result.ok:
+		push_error("GameApp: pontos de interesse não carregados de '%s': %s" % [terrain_dir, loaded.result.message])
+		return []
+	return loaded.points
 
 
 ## Terreno de terrain_dir, ou nulo (depois de push_error) se não carregar. Sem `quit`: o GameApp também roda

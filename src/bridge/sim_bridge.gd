@@ -12,6 +12,8 @@ const CODE_NULL_INTENT: String = "BRIDGE_NULL_INTENT"
 const CODE_INVALID_ACTOR: String = "BRIDGE_INVALID_ACTOR"
 ## Há jogo iniciado, mas ele não tem o módulo do personagem (começou sem terreno).
 const CODE_NO_CHARACTER: String = "BRIDGE_NO_CHARACTER"
+## Há jogo iniciado, mas ele não tem o serviço de interação (começou sem terreno).
+const CODE_NO_INTERACTION: String = "BRIDGE_NO_INTERACTION"
 
 var _host: SimulationHostNode
 var _terrain: TerrainData
@@ -75,6 +77,36 @@ func request_speed(speed: int) -> Result:
 	return _host.request_speed(speed)
 
 
+## Pontos de interesse do mundo, em CÓPIAS (id, tipo, posição com a altura do terreno, chave de texto e alcance da interação), para a
+## apresentação desenhar e detectar o ponto próximo. É só dica visual: quem decide se a interação vale é `request_interact`.
+func peek_points_of_interest() -> PointsReply:
+	var interaction: InteractionService = _interaction()
+	if interaction == null:
+		return PointsReply.new(_missing_interaction("peek_points_of_interest"), [])
+	var copies: Array[PointReply] = []
+	for point: PointOfInterest in interaction.peek_points():
+		copies.append(PointReply.new(point))
+	return PointsReply.new(Result.success(), copies)
+
+
+## Pede a interação do ator com o ponto. A posição do ator vem SEMPRE do que está guardado no personagem (o último relato do corpo),
+## nunca da apresentação: a simulação confere a distância (alcance de InteractionService.INTERACT_REACH_M). Sucesso: a chave do texto
+## do ponto e o evento InteractionPerformed (entregue no próximo passo). Ator desconhecido: falha do personagem; ponto desconhecido
+## ou longe demais: falha da interação.
+func request_interact(actor_id: int, poi_id: String) -> InteractReply:
+	var interaction: InteractionService = _interaction()
+	if interaction == null:
+		return InteractReply.new(_missing_interaction("request_interact"), "", "")
+	var character: CharacterModule = _character()
+	if character == null:
+		return InteractReply.new(_missing_character("request_interact"), "", "")
+	var stored: CharacterQuery = character.peek_character(actor_id)
+	if not stored.result.ok:
+		return InteractReply.new(stored.result, "", "")
+	var outcome: InteractionService.InteractionResult = interaction.request_interact(actor_id, stored.position, poi_id)
+	return InteractReply.new(outcome.result, outcome.poi_id, outcome.text_key)
+
+
 ## Pede o nascimento de um personagem (ID novo, no ponto de nascimento do terreno). Quem pede é quem guarda o `actor_id`: a ponte
 ## não é dona de "o jogador" e pode atender vários atores. `actor_id` só vale se `result.ok`.
 func request_spawn_character() -> SpawnCharacterReply:
@@ -135,6 +167,19 @@ func _character() -> CharacterModule:
 	if _host == null or _host.runner == null:
 		return null
 	return _host.character
+
+
+## Serviço de interação do jogo atual, ou nulo (sem host, sem jogo ou jogo sem terreno).
+func _interaction() -> InteractionService:
+	if _host == null or _host.runner == null:
+		return null
+	return _host.interaction
+
+
+func _missing_interaction(caller: String) -> Result:
+	if _host == null or _host.runner == null:
+		return _missing_game(caller)
+	return Result.failure(CODE_NO_INTERACTION, "SimBridge.%s: o jogo atual não tem pontos de interesse; esperado um jogo iniciado com terreno (SimulationHost.start_new_game(seed, terreno, pontos))." % caller)
 
 
 func _missing_character(caller: String) -> Result:
@@ -213,6 +258,54 @@ class CharacterReply:
 		result = reply_result
 		position = current_position
 		yaw = current_yaw
+
+
+## Um ponto de interesse copiado: posição em metros (y = altura do terreno) e o alcance da interação. Só dados, sem tipos de `sim/`.
+class PointReply:
+	extends RefCounted
+
+	var id: String
+	var kind: String
+	var x: float
+	var y: float
+	var z: float
+	var text_key: String
+	var reach_m: float
+
+	func _init(point: PointOfInterest) -> void:
+		id = point.id
+		kind = point.kind
+		x = point.position.x
+		y = point.position.y
+		z = point.position.z
+		text_key = point.text_key
+		reach_m = InteractionService.INTERACT_REACH_M
+
+
+## Resposta de `peek_points_of_interest`: `points` na ordem do arquivo, só vale se `result.ok`.
+class PointsReply:
+	extends RefCounted
+
+	var result: Result
+	var points: Array[PointReply]
+
+	func _init(reply_result: Result, copies: Array[PointReply]) -> void:
+		result = reply_result
+		points = copies
+
+
+## Resposta de `request_interact`: `poi_id` e `text_key` (a CHAVE do texto, não o texto) só valem se `result.ok`.
+class InteractReply:
+	extends RefCounted
+
+	var result: Result
+	var poi_id: String
+	var text_key: String
+
+	func _init(reply_result: Result, reached_poi_id: String, reached_text_key: String) -> void:
+		result = reply_result
+		poi_id = reached_poi_id
+		text_key = reached_text_key
 
 
 ## Resposta de `peek_terrain_layout`: só vale se `result.ok`. `cells` e `chunk_count` são (x, z); `size_m` é o
