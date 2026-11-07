@@ -1,6 +1,6 @@
 # Status do roadmap — Living World
 
-Atualizado em: 07/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: **CONCLUÍDA** (23 de 23 tarefas concluídas, 100%; a tag `fase-1-concluida` foi criada e está no remoto, em `ac4c61f`, com autorização de Arthur em 07/11/2026; LW-032, LW-033, LW-034, LW-035, LW-036, LW-037, LW-038, LW-039, LW-040, LW-041, LW-042, LW-043, LW-044, LW-045, LW-046, LW-047, LW-048, LW-049, LW-050, LW-051, LW-052, LW-053 e LW-054). **Avanço total do projeto: 54 de 192 tarefas (28,1%).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
+Atualizado em: 07/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: **CONCLUÍDA** (23 de 23 tarefas concluídas, 100%; a tag `fase-1-concluida` foi criada e está no remoto, em `ac4c61f`, com autorização de Arthur em 07/11/2026; LW-032, LW-033, LW-034, LW-035, LW-036, LW-037, LW-038, LW-039, LW-040, LW-041, LW-042, LW-043, LW-044, LW-045, LW-046, LW-047, LW-048, LW-049, LW-050, LW-051, LW-052, LW-053 e LW-054). **Avanço total do projeto: 55 de 192 tarefas (28,6%), contando a LW-152 (SP6), concluída antecipadamente (DEC-080).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
 
 Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e 2 dispensadas (LW-004 e LW-005). Arthur aceitou a revisão da LW-029, assinou a LW-030 (com ressalvas) e aprovou a LW-031, todas em 03/11/2026. Pelo roadmap (0.J), a fase é dada como concluída quando a tag `fase-0-concluida` estiver no remoto: ela foi criada e enviada em 03/11/2026, apontando para `7ae6e8e` (ponta de `main` no GitHub), com autorização de Arthur; é uma tag **leve** (não anotada). Na data do fechamento da Fase 0, o avanço total do projeto era de 31 de 192 tarefas (16,1%); o valor atual está na primeira linha deste arquivo. A LW-029A é uma tarefa extra, fora das 31, e não entra na conta.
 
@@ -96,6 +96,12 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 | LW-052 | TESTE | Teste de integração scriptado da fase | concluída | **Aprovada por Arthur em 07/11/2026**; está no `main`; commit de código `72d8478`. Sem código novo de jogo: nasce, anda até o ponto, interage, pausa, salva e recarrega; 30 dias simulados com o jogador parado e o mesmo hash em duas execuções (e salvando no meio); contagem de nós da cena estável (a primeira volta guarda alguns chunks pela histerese do terreno); 459 testes verdes |
 | LW-053 | REV | Revisão arquitetural da Fase 1 | concluída | Revisão independente feita por Claude; aceita por Arthur em 07/11/2026: **APROVADO COM AJUSTES** (0 críticos, 3 importantes, 7 menores); parecer em `docs/fase-1/LW-053-parecer.md`; commit `834ae66` |
 | LW-054 | VAL | Validação do usuário da Fase 1 | concluída | Validação por Arthur em 07/11/2026, com a ressalva de que ainda se atravessam árvores e pedras (decisão E4 da LW-043; está no backlog): checklist 1.H assinada; relatório em `docs/fase-1/LW-054-relatorio-de-fechamento.md`; commit `ef8aed2` |
+
+## Tarefas antecipadas (Fase 5, DEC-080)
+
+| ID | Tipo | Tarefa | Estado | Observações |
+|---|---|---|---|---|
+| LW-152 | SPIKE | Spike SP6: laço de combate por alvo e habilidades (duelo 1 contra 1 contra um boneco parado) | concluída (antecipada, DEC-080) | **Jogada por Arthur em 07/11/2026:** o golpe responde, dá para ler, o ritmo é bom e a estamina cria decisão; pediu que o inimigo não fique estático (backlog) e não pediu ajuste de valores. Resultado em `docs/decisions/0008-spike-sp6-combate.md`; DEC-121 (APROVADA só como ponto de partida; a DEC-066 segue PENDENTE). Código descartável em `tests/soak/sp6`; commit de código `4dbf125`. Pertence à Fase 5: conta no total do projeto, não na contagem da Fase 1 |
 
 ## Tarefas extras (fora das 31; não entram na conta)
 

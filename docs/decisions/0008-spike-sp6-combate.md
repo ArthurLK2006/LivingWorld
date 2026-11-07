@@ -1,6 +1,6 @@
 # LW-152 — Spike SP6: laço de combate por alvo e habilidades
 
-- **Status:** **PRONTA PARA PLAYTEST (Fase A, 07/11/2026, Brasília).** O código e os testes estão prontos e verdes. **Falta o playtest de Arthur**: as respostas dele (seção "Respostas de Arthur") e os valores finais ainda **não existem**; nada abaixo diz que o combate está "responsivo", "legível" ou "divertido". Isso é só de Arthur (roadmap LW-152). Ramo `spike-lw-152`, a partir de `origin/main` em `307a9db`.
+- **Status:** **CONCLUÍDA (Fase B, 07/11/2026).** Ramo `spike-lw-152`, a partir de `origin/main` em `307a9db`.
 - **Rótulos:** **fato** (com origem), **[HIP]** (valor inicial para Arthur ajustar jogando), **interpretação** (leitura minha de um ponto aberto da tarefa), **limitação**.
 
 ## Pergunta (roadmap LW-152; arquitetura 26.3)
@@ -28,6 +28,8 @@ O laço de combate **por alvo e habilidades** (DEC-117, APROVADA só quanto à d
 5. **Pausa (P):** congela também o relógio do combate, junto com o personagem.
 6. **Alvo:** ao cair, o boneco solta o alvo; ao ressurgir é preciso clicar de novo. O preparo em curso mantém o boneco como alvo mesmo se o jogador apertar Esc.
 7. **Apertos fora do buffer:** apertar uma habilidade durante o preparo, ou antes dos últimos 200 ms da recuperação, é ignorado sem mensagem.
+
+**Situação:** Claude as auditou e Arthur jogou com elas; ele não pediu nenhuma mudança.
 
 ## Constantes [HIP] (todas em `Sp6Constants`; nenhuma é requisito)
 
@@ -73,16 +75,18 @@ Não é preciso definir `GODOT_BIN`: o script já usa `/Applications/Godot 2.app
 
 | Pergunta | Resposta |
 |---|---|
-| 1. O golpe responde logo? | *(a preencher)* |
-| 2. Dá para ler o que está acontecendo? | *(a preencher)* |
-| 3. Preparo e recuperação têm bom ritmo? | *(a preencher)* |
-| 4. A estamina cria decisão ou só atrapalha? | *(a preencher)* |
-| 5. Dar a volta para bater pelas costas é divertido ou chato? | *(a preencher)* |
-| Outras palavras dele | *(a preencher)* |
+| 1. O golpe responde logo? | Sim, o golpe responde |
+| 2. Dá para ler o que está acontecendo? | Da pra ler o que está acontecendo |
+| 3. Preparo e recuperação têm bom ritmo? | Bom ritmo |
+| 4. A estamina cria decisão ou só atrapalha? | Cria decisáo e quando tivermos magias, armas, skills etc vai ser interessante |
+| 5. Dar a volta para bater pelas costas é divertido ou chato? | Nesse estado do jogo nao deu pra sentir muita diferença, mas o inimigo nao pode, na pratica, deixar vc bater nas costas sem mais e nem menos. Ele nao deverá ficar estático simplesmente,  |
+| Outras palavras dele | "Sobte outros pontos, acho que inicialmente está bom, como é só um descartável, é um bom inicio para nós." |
+
+Arthur jogou em 07/11/2026 e mandou estas respostas às 15h21 (horário de Brasília). Resumo da sessão: não fornecido.
 
 ## Tolerâncias de janela definidas (roadmap LW-152)
 
-Hoje valem os **valores iniciais [HIP]**: preparo Q 700 / R 200 / F 400 ms; recuperação Q 900 / R 400 / F 600 ms; tolerância de alcance no golpe 50 cm; buffer de entrada 200 ms. **Valor FINAL depois dos ajustes: a preencher** (rodadas de ajuste e Fase B). Se o playtest disser "sem resposta", vale o **plano B** da arquitetura 26.3: mais tolerância (buffer e alcance) e regras no cliente com validação leve.
+**Valor FINAL = valor inicial [HIP]:** Arthur não pediu nenhum ajuste de valores, então não houve rodada de ajuste. Preparo Q 700 / R 200 / F 400 ms; recuperação Q 900 / R 400 / F 600 ms; tolerância de alcance no golpe 50 cm; buffer de entrada 200 ms. O plano B da arquitetura 26.3 (mais tolerância nas janelas e regras no cliente com validação leve) não foi acionado.
 
 ## Verificações executadas (comandos que EU rodei, 07/11/2026)
 
@@ -106,15 +110,16 @@ Hoje valem os **valores iniciais [HIP]**: preparo Q 700 / R 200 / F 400 ms; recu
 
 Não prova a sensação (só o playtest de Arthur) nem o equilíbrio dos números. Não diz nada sobre combate contra NPCs, escala de batalhas (**DEC-053**: só foi testado 1 contra 1), animações, rede ou validação pela simulação, e desempenho com muitos combatentes. Não valida o sistema definitivo (**DEC-066** segue PENDENTE).
 
-## Proposta de entrada para DECISIONS.md (número provisório; só proposta, o dev NÃO escreve em `DECISIONS.md`)
+## Entrada registrada: DEC-121
 
-**DEC-121 (provisório; o próximo livre em `DECISIONS.md` é DEC-121, conferido em `307a9db`) — Combate por alvo e habilidades: tolerâncias e valores iniciais do SP6**
+### DEC-121 — Combate por alvo e habilidades: resultado do SP6 (ponto de partida)
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PROPOSTA |
-| **Contexto** | O SP6 (LW-152, antecipado pela DEC-080) testou o laço por alvo e habilidades (DEC-117) num duelo 1 contra 1. O playtest de Arthur diz se o laço é "responsivo e legível". |
-| **Decisão** | *(a preencher depois do playtest)* Se Arthur aprovar: ficam como valores iniciais do combate do protótipo as janelas e os custos da tabela acima (valores finais depois dos ajustes), em dados e não em código. |
-| **Justificativa** | Sensação validada jogando, não por argumento. Insumo da DEC-066; sobre a DEC-053 só diz que 1 contra 1 foi testado. |
-| **Consequências** | A DEC-066 continua PENDENTE até Arthur decidir o sistema. A DEC-067 é revista: ferimentos, bloqueio e esquiva ficaram **fora** deste teste. As teclas e o botão do mouse do combate entram no `InputActions` oficial na Fase 5. |
+| **Status** | APROVADA (somente como **ponto de partida**; o sistema definitivo de combate segue PENDENTE na DEC-066) |
+| **Contexto** | O SP6 (LW-152, antecipado pela DEC-080) testou, num duelo 1 contra 1 contra um boneco parado, o laço por alvo e habilidades da DEC-117: clique para escolher o alvo, ataque automático, três habilidades com preparo e recuperação, estamina e bônus por posição (lado e costas). Arthur jogou em 07/11/2026 e não pediu ajuste de valores. |
+| **Decisão** | (1) O laço do SP6 (alvo por clique, ataque automático, habilidades com preparo e recuperação, estamina e posição) vale como **bom ponto de partida** para o combate do protótipo: segundo Arthur, o golpe responde, dá para ler o que acontece, o ritmo é bom e a estamina cria decisão. (2) Os valores do teste (tempos, danos, custos, alcance e tolerâncias) são **iniciais [HIP]**: ficam em dados, não em código, e podem ser ajustados. (3) O **inimigo não pode ficar estático**: não deve deixar o jogador bater nas costas sem mais nem menos; deve reagir e se posicionar. (4) Ficam **para depois**: ferimentos por golpe, bloqueio e esquiva, magias, armas e outras habilidades. |
+| **Justificativa** | Escolha de Arthur, depois de jogar o SP6 (07/11/2026). As respostas dele, palavra por palavra, estão em `docs/decisions/0008-spike-sp6-combate.md`. |
+| **Consequências** | **Não** decide o sistema definitivo (a DEC-066 continua PENDENTE) nem a escala das batalhas (a DEC-053 continua PENDENTE; o teste foi só 1 contra 1). A DEC-067 (PROPOSTA) segue como proposta de trabalho. A posição (lado e costas) **não foi sentida** com o boneco parado: só vale validar com inimigo que reage (Fase 5, LW-153 a LW-155). Ferimentos, bloqueio e esquiva continuam sem teste. As teclas e o botão do mouse do combate entram no `InputActions` oficial na Fase 5. O código do spike é descartável (`tests/soak/sp6/`) e não vira o combate definitivo. |
+| **Data / versão** | Decidida por Arthur em 07/11/2026 · registrada em 07/11/2026 (LW-152) |
 | **Relações** | DEC-053, DEC-066, DEC-067, DEC-080, DEC-117 |

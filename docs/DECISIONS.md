@@ -179,6 +179,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-069 | Diretor de eventos (sistema que provoca acontecimentos para dar ritmo) | PENDENTE |
 | DEC-070 | Eventos dinâmicos: 8 a 12 tipos, na Fase 5 | PROPOSTA |
 | DEC-117 | Direção do combate: por alvo e habilidades | APROVADA (somente a direção; o sistema definitivo segue PENDENTE na DEC-066) |
+| DEC-121 | Combate por alvo e habilidades: resultado do SP6 (ponto de partida) | APROVADA (somente como ponto de partida) |
 
 **ÁREA 9 — ARQUITETURA TÉCNICA**
 
@@ -1759,6 +1760,20 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
+### DEC-121 — Combate por alvo e habilidades: resultado do SP6 (ponto de partida)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA (somente como **ponto de partida**; o sistema definitivo de combate segue PENDENTE na DEC-066) |
+| **Contexto** | O SP6 (LW-152, antecipado pela DEC-080) testou, num duelo 1 contra 1 contra um boneco parado, o laço por alvo e habilidades da DEC-117: clique para escolher o alvo, ataque automático, três habilidades com preparo e recuperação, estamina e bônus por posição (lado e costas). Arthur jogou em 07/11/2026 e não pediu ajuste de valores. |
+| **Decisão** | (1) O laço do SP6 (alvo por clique, ataque automático, habilidades com preparo e recuperação, estamina e posição) vale como **bom ponto de partida** para o combate do protótipo: segundo Arthur, o golpe responde, dá para ler o que acontece, o ritmo é bom e a estamina cria decisão. (2) Os valores do teste (tempos, danos, custos, alcance e tolerâncias) são **iniciais [HIP]**: ficam em dados, não em código, e podem ser ajustados. (3) O **inimigo não pode ficar estático**: não deve deixar o jogador bater nas costas sem mais nem menos; deve reagir e se posicionar. (4) Ficam **para depois**: ferimentos por golpe, bloqueio e esquiva, magias, armas e outras habilidades. |
+| **Justificativa** | Escolha de Arthur, depois de jogar o SP6 (07/11/2026). As respostas dele, palavra por palavra, estão em `docs/decisions/0008-spike-sp6-combate.md`. |
+| **Consequências** | **Não** decide o sistema definitivo (a DEC-066 continua PENDENTE) nem a escala das batalhas (a DEC-053 continua PENDENTE; o teste foi só 1 contra 1). A DEC-067 (PROPOSTA) segue como proposta de trabalho. A posição (lado e costas) **não foi sentida** com o boneco parado: só vale validar com inimigo que reage (Fase 5, LW-153 a LW-155). Ferimentos, bloqueio e esquiva continuam sem teste. As teclas e o botão do mouse do combate entram no `InputActions` oficial na Fase 5. O código do spike é descartável (`tests/soak/sp6/`) e não vira o combate definitivo. |
+| **Data / versão** | Decidida por Arthur em 07/11/2026 · registrada em 07/11/2026 (LW-152) |
+| **Relações** | DEC-053, DEC-066, DEC-067, DEC-080, DEC-117 |
+
+---
+
 ## 3. DÚVIDAS ABERTAS EM DESTAQUE
 
 As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o início do trabalho. Os números citados são **hipóteses [HIP]**, não decisões. Pendências só relevantes em fases futuras **não** exigem aprovação antecipada (diretriz 15).
@@ -1942,7 +1957,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-121` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-122` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto
