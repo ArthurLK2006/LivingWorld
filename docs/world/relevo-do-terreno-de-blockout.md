@@ -27,6 +27,7 @@ Os chunks vizinhos compartilham os nós da divisa, então não há emenda entre 
 | **Colina** | centro em (700 m, 300 m), raio 160 m (ocupa de x = 540 a 860 m e de z = 140 a 460 m) | topo a **40 m** (+30 m sobre a planície) |
 | **Vale** | centro em (300 m, 750 m), raio 140 m (ocupa de x = 160 a 440 m e de z = 610 a 890 m) | fundo a **−2 m** (−12 m sob a planície) |
 | **Caminho** | faixa de **6 m** de largura, de oeste a leste (x de 0 a 1.024 m), com z de 510 m a 516 m | **10 m**, plano |
+| **Morro íngreme de teste (LW-047A)** | pico em (168 m, 469 m); pegada de x = 148 m a 207 m e de z = 436 m a 502 m; a cerca de 80 m do nascimento, a cerca de 10 m do caminho (a pegada vai até z = 500 m e o caminho começa em 510 m) e a mais de 30 m dos dois pontos de interesse | pico a **25,2 m** (+15,2 m sobre a planície), **lado oeste muito íngreme (cerca de 50°)** e **lado leste suave (cerca de 31°)** |
 
 O vale é só uma depressão seca: não há água (fora de escopo da Fase 1). A colina e o vale têm forma suave: a altura sobe (ou desce) com a fórmula `amplitude × (1 − d²/R²)²`, onde `d` é a distância ao centro e `R` o raio. O topo é arredondado e a borda se funde ao chão sem degrau.
 
@@ -78,9 +79,9 @@ A recomendação inicial era "6 m de largura ao longo de z = 512 m". Só que 512
 
 | Código | Id | Onde |
 |---|---|---|
-| 1 | `grass` | todo o mapa, exceto o que está abaixo: 253.616 células |
+| 1 | `grass` | todo o mapa, exceto o que está abaixo: 253.004 células |
 | 2 | `path` | as 3 fileiras de células do caminho: 1.536 células |
-| 3 | `rock` | 6.992 células, em dois lugares da colina (abaixo) |
+| 3 | `rock` | 7.604 células: dois lugares da colina e o morro íngreme (abaixo) |
 
 **Pedra [HIP].** Uma célula fora do caminho vira `rock` se:
 - a **inclinação média da célula passa de 27 %** (módulo do gradiente, que não depende da direção da encosta); ou
@@ -102,7 +103,17 @@ Medida no arquivo gerado, entre nós vizinhos (passo de 2 m):
 | Vale | 13,5 % (27 cm em 2 m) | cerca de 8° |
 | Planície e caminho | 0 % | 0° |
 
-A colina é a única parte que testa um limite de inclinação. **Informação para a LW-047** (inclinação máxima caminhável, ainda não decidida): se o limite for menor que 29 %, a faixa de pedra da encosta ficará intransponível andando; isso é esperado e serve de teste.
+A colina testava só um limite de inclinação baixo (cerca de 16°, abaixo do limite de 40° do jogador da LW-047), então o bloqueio de inclinação só aparecia nos testes. **LW-047A:** o morro íngreme de teste acrescenta uma encosta que bloqueia DE VERDADE no jogo. Medida pelo ângulo da normal de cada triângulo da malha de 2 m (nas duas diagonais), que é o que o `PlayerBody` enfrenta:
+
+| Região | Inclinação máxima (triângulos) |
+|---|---|
+| **Morro íngreme, lado oeste (linha central)** | **50,3°**, com um trecho de mais de 45° e menos de 55° (cerca de 150 células) |
+| Morro íngreme, lado leste (linha central) | 31,4° |
+| Morro íngreme, flancos norte e sul | cerca de 35° |
+| Colina antiga (resto do mapa) | 16,5° |
+| Caminho | 0° |
+
+O máximo do mapa inteiro é o do morro (cerca de 50°). **Como o morro é feito:** a mesma saliência suave da colina, `amplitude × (1 − s²)²`, mas com `s² = (dx / raio_x)² + (dz / raio_z)²` e o raio em x diferente nos dois lados do pico (19,4 m a oeste, 38,5 m a leste; 33 m em z); a inclinação máxima da fórmula é cerca de `1,54 × subida / raio`. Só o pé da encosta oeste (cerca de 3 m, até 1,6 m de altura) é caminhável; depois passa de 40° e o corpo é bloqueado (`tests/unit/test_steep_hill_walk.gd`: correndo 8 s, com ou sem pulos, os pés ficam a menos de 3 m acima da planície; pelo lado suave o corpo chega ao topo).
 
 ## 7. Como regenerar e como conferir
 
@@ -124,6 +135,6 @@ Não grava nada: confere se os arquivos existentes são idênticos ao que a ferr
 
 ## 8. O que ainda é hipótese [HIP]
 
-Tudo da seção 2 além do tamanho da grade: altura da planície (10 m); centro, raio e altura da colina; centro, raio e profundidade do vale; eixo e largura do caminho; a forma da fórmula; os dois limites da pedra (27 % e 26 m); o ponto de nascimento. Também são hipóteses os limites de segurança do formato (`chunk_cells` de 1 a 256, em `TerrainLoader`) e os códigos 1, 2 e 3. Os testes de relevo (`test_blockout_terrain.gd`) comparam **relações** (a colina é mais alta que a planície, o vale é mais baixo, o caminho é plano e tem a superfície `path`), não esses números, para a LW-038 poder ajustá-los sem quebrar testes.
+Tudo da seção 2 além do tamanho da grade: altura da planície (10 m); centro, raio e altura da colina; centro, raio e profundidade do vale; centro, subida e raios do morro íngreme (LW-047A); eixo e largura do caminho; a forma da fórmula; os dois limites da pedra (27 % e 26 m); o ponto de nascimento. Também são hipóteses os limites de segurança do formato (`chunk_cells` de 1 a 256, em `TerrainLoader`) e os códigos 1, 2 e 3. Os testes de relevo (`test_blockout_terrain.gd`) comparam **relações** (a colina é mais alta que a planície, o vale é mais baixo, o caminho é plano e tem a superfície `path`), não esses números, para a LW-038 poder ajustá-los sem quebrar testes.
 
 **Limitação.** O terreno não tem rios, água, árvores, construções nem pontos de interesse (LW-043 e LW-049). Cada um desses entra na sua tarefa, sobre este chão.

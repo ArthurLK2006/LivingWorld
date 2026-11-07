@@ -1,6 +1,7 @@
 class_name BlockoutTerrainGenerator
 extends RefCounted
-## Gera o terreno de blockout (LW-037, DEC-118): planície, uma colina, um vale e um caminho plano, em
+## Gera o terreno de blockout (LW-037, DEC-118): planície, uma colina, um vale, um caminho plano e (LW-047A) um morro de teste com um
+## lado muito íngreme, em
 ## data/world/. Ferramenta de USO ÚNICO e fora do jogo: o jogo não gera mundo, só lê o resultado.
 ## O relevo é uma fórmula, sem aleatoriedade, calculada só com inteiros (centímetros e permilagem),
 ## para o arquivo sair idêntico em qualquer máquina. Todo valor de forma abaixo é HIPÓTESE [HIP]:
@@ -29,6 +30,19 @@ const HILL_RISE_CM: int = 3000
 const VALLEY_CENTER_CM: Vector2i = Vector2i(30000, 75000)
 const VALLEY_RADIUS_CM: int = 14000
 const VALLEY_DEPTH_CM: int = 1200
+## Morro de teste íngreme (LW-047A), para o limite de inclinação do jogador (40°) aparecer no jogo: um lado muito íngreme (oeste, de frente
+## para o nascimento) e o oposto suave (leste). Mesma fórmula suave da colina, com raios diferentes dos dois lados do pico; a inclinação
+## máxima de cada direção é ~1,54 x subida / raio (o máximo da fórmula): 1,54 x 15,2 m / 19,4 m = 1,21 (cerca de 50°) a oeste,
+## 1,54 x 15,2 m / 38,5 m = 0,61 (cerca de 31°) a leste e 1,54 x 15,2 m / 33 m = 0,71 (cerca de 35°) nos flancos norte e sul. A subida de 15,2 m
+## (e não 15,0) é para o pico, que não cai num nó da grade, passar de 15 m depois da interpolação. Fica a cerca de
+## 80 m do nascimento, a 10 m do caminho (a pegada vai até z = 500 m; o caminho começa em 510 m) e a mais de 30 m dos dois pontos de
+## interesse. O centro foi escolhido para nenhuma ÁRVORE de data/world/decorations.json cair na pegada dele, de modo que o arquivo de
+## decoração segue idêntico (a ferramenta o confere). Altura, raios e centro são [HIP].
+const STEEP_HILL_CENTER_CM: Vector2i = Vector2i(16800, 46900)
+const STEEP_HILL_RISE_CM: int = 1520
+const STEEP_HILL_WEST_RADIUS_CM: int = 1940
+const STEEP_HILL_EAST_RADIUS_CM: int = 3850
+const STEEP_HILL_NORTH_SOUTH_RADIUS_CM: int = 3300
 ## Caminho de oeste a leste. 512 m cai sobre uma linha da grade e uma faixa simétrica ali teria 4 m ou
 ## 8 m; para ter os 6 m pedidos, o eixo fica em 513 m (meio da célula): 3 células, de 510 m a 516 m.
 const PATH_AXIS_Z_CM: int = 51300
@@ -58,7 +72,7 @@ static func node_height_cm(x_cm: int, z_cm: int) -> int:
 		return PLAIN_HEIGHT_CM
 	var hill: int = _bump_cm(x_cm, z_cm, HILL_CENTER_CM, HILL_RADIUS_CM, HILL_RISE_CM)
 	var valley: int = _bump_cm(x_cm, z_cm, VALLEY_CENTER_CM, VALLEY_RADIUS_CM, VALLEY_DEPTH_CM)
-	return PLAIN_HEIGHT_CM + hill - valley
+	return PLAIN_HEIGHT_CM + hill + _steep_hill_cm(x_cm, z_cm) - valley
 
 
 ## Saliência suave, em inteiros: amplitude * (1 - d²/R²)², com d²/R² na escala RELIEF_SCALE; zero a
@@ -72,6 +86,21 @@ static func _bump_cm(x_cm: int, z_cm: int, center_cm: Vector2i, radius_cm: int, 
 		return 0
 	var inside: int = RELIEF_SCALE - IntMath.floor_div(RELIEF_SCALE * distance_sq, radius_sq)
 	return IntMath.floor_div(amplitude_cm * inside * inside, RELIEF_SCALE * RELIEF_SCALE)
+
+
+## Subida (cm) do morro íngreme no nó (x, z): a mesma saliência suave, amplitude * (1 - s²)², com s² = (dx / raio_x)² + (dz / raio_z)² na
+## escala RELIEF_SCALE, mas o raio em x é o do lado oeste ou o do lado leste do pico. As duas metades têm derivada zero no pico, então não
+## há quina. Zero a partir de s² = 1. Só inteiros (cada produto cabe com folga nos 64 bits).
+static func _steep_hill_cm(x_cm: int, z_cm: int) -> int:
+	var delta_x: int = x_cm - STEEP_HILL_CENTER_CM.x
+	var delta_z: int = z_cm - STEEP_HILL_CENTER_CM.y
+	var radius_x: int = STEEP_HILL_WEST_RADIUS_CM if delta_x < 0 else STEEP_HILL_EAST_RADIUS_CM
+	var radius_z: int = STEEP_HILL_NORTH_SOUTH_RADIUS_CM
+	var distance_sq: int = IntMath.floor_div(RELIEF_SCALE * delta_x * delta_x, radius_x * radius_x) + IntMath.floor_div(RELIEF_SCALE * delta_z * delta_z, radius_z * radius_z)
+	if distance_sq >= RELIEF_SCALE:
+		return 0
+	var inside: int = RELIEF_SCALE - distance_sq
+	return IntMath.floor_div(STEEP_HILL_RISE_CM * inside * inside, RELIEF_SCALE * RELIEF_SCALE)
 
 
 ## Alturas de todos os nós, por linhas de z (convenção de docs/modules/world.md).
