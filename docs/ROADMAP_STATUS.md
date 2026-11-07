@@ -1,6 +1,6 @@
 # Status do roadmap — Living World
 
-Atualizado em: 07/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: 23 de 23 tarefas concluídas (100%); a fase só é dada como concluída com a tag no remoto (LW-032, LW-033, LW-034, LW-035, LW-036, LW-037, LW-038, LW-039, LW-040, LW-041, LW-042, LW-043, LW-044, LW-045, LW-046, LW-047, LW-048, LW-049, LW-050, LW-051, LW-052, LW-053 e LW-054). **Avanço total do projeto: 54 de 192 tarefas (28,1%).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
+Atualizado em: 07/11/2026 (horário de Brasília) · Fase 1 — Primeiro mundo jogável: **CONCLUÍDA** (23 de 23 tarefas concluídas, 100%; a tag `fase-1-concluida` foi criada e está no remoto, em `ac4c61f`, com autorização de Arthur em 07/11/2026; LW-032, LW-033, LW-034, LW-035, LW-036, LW-037, LW-038, LW-039, LW-040, LW-041, LW-042, LW-043, LW-044, LW-045, LW-046, LW-047, LW-048, LW-049, LW-050, LW-051, LW-052, LW-053 e LW-054). **Avanço total do projeto: 54 de 192 tarefas (28,1%).** Fase 0 — Fundação técnica: **CONCLUÍDA** (31 de 31 tarefas concluídas ou dispensadas; a tag `fase-0-concluida` foi criada e está no remoto, em `7ae6e8e`, com aprovação de Arthur em 03/11/2026).
 
 Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 29 concluídas e 2 dispensadas (LW-004 e LW-005). Arthur aceitou a revisão da LW-029, assinou a LW-030 (com ressalvas) e aprovou a LW-031, todas em 03/11/2026. Pelo roadmap (0.J), a fase é dada como concluída quando a tag `fase-0-concluida` estiver no remoto: ela foi criada e enviada em 03/11/2026, apontando para `7ae6e8e` (ponta de `main` no GitHub), com autorização de Arthur; é uma tag **leve** (não anotada). Na data do fechamento da Fase 0, o avanço total do projeto era de 31 de 192 tarefas (16,1%); o valor atual está na primeira linha deste arquivo. A LW-029A é uma tarefa extra, fora das 31, e não entra na conta.
 
@@ -119,7 +119,7 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 | Tag fase-0-concluida | criada e no remoto, em `7ae6e8e`, 03/11/2026, com autorização de Arthur (tag leve, não anotada) |
 | REV Fase 1 — LW-053 | aprovado por Arthur em 07/11/2026 (0 críticos) |
 | VAL Fase 1 — LW-054 | assinado por Arthur em 07/11/2026 |
-| Tag fase-1-concluida | pendente (criada na etapa seguinte, se Arthur autorizou; senão, aguarda autorização) |
+| Tag fase-1-concluida | criada e no remoto, em `ac4c61f`, 07/11/2026, com autorização de Arthur (tag leve, não anotada) |
 
 ## Escopo do protótipo
 
