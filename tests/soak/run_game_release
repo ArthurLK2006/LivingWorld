@@ -1,0 +1,134 @@
+#!/bin/sh
+# LW-053A: mede os QUADROS DO JOGO (cena principal, COM janela) no binário de RELEASE, sem instalar nada no Godot nem no sistema. Mesmo método do
+# run_sp1_release (modelos oficiais, .pck, binário de release com o .pck ao lado), com a cena tests/soak/game_release/game_release_main.tscn, que
+# carrega res://scenes/main.tscn e mede três ensaios (rota de 60 s, parado de 30 s, pausado de 30 s). ANTES: Mac na tomada, janela em primeiro plano.
+# Reaproveita o binário de $HOME/lw-release-probe/bin ou baixa os modelos oficiais do Godot 4.7.2 (~1,28 GB), confere o SHA-512, extrai SÓ o binário
+# de release do macOS e apaga o download; copia o projeto (git archive HEAD) e troca a cena principal SÓ NA CÓPIA do project.godot; exporta o .pck.
+# USO:   tests/soak/run_game_release [pasta]     (padrão: $HOME/lw-release-probe; saídas: game_release_run_N.txt; nada é apagado no fim)
+#        tests/soak/run_game_release --editor    (mesma medição no binário de DEPURAÇÃO do editor, sem cópia nem .pck)
+# AJUSTES: GODOT_BIN, RUNS (3), ENSAIOS (rota,parado,pausado), KEEP_DOWNLOAD (0), LW_PROBE_COPY=worktree (só para DESENVOLVER: copia a árvore de trabalho).
+set -eu
+PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+GODOT_BIN=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+MODE=release
+if [ "${1:-}" = "--editor" ]; then MODE=editor; shift; fi
+WORK=${1:-$HOME/lw-release-probe}
+RUNS=${RUNS:-3}
+ENSAIOS=${ENSAIOS:-rota,parado,pausado}
+KEEP_DOWNLOAD=${KEEP_DOWNLOAD:-0}
+GODOT_VERSION_PREFIX=4.7.2.stable
+BASE_URL=https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable
+TEMPLATES_FILE=Godot_v4.7.2-stable_export_templates.tpz
+MAIN_SCENE=res://tests/soak/game_release/game_release_main.tscn
+say() { printf '\n== %s\n' "$1"; }
+fail() { printf 'ERRO: %s\n' "$1" >&2; exit 1; }
+sha512_of() { if command -v shasum > /dev/null; then shasum -a 512 "$1" | cut -d' ' -f1; else sha512sum "$1" | cut -d' ' -f1; fi; }
+[ -x "$GODOT_BIN" ] || fail "Godot não encontrado em '$GODOT_BIN'. Defina GODOT_BIN."
+"$GODOT_BIN" --version | grep -q "^$GODOT_VERSION_PREFIX" || fail "Exige o Godot $GODOT_VERSION_PREFIX; o seu informa: $("$GODOT_BIN" --version)"
+pmset -g batt | head -1
+pmset -g batt | grep -q "AC Power" || fail "O Mac não está na tomada ('AC Power'). Ligue-o e rode de novo: a medição com bateria não vale."
+
+run_trials() { # $1 = prefixo do arquivo de saída; o resto = comando do jogo (cada palavra entre aspas: o caminho do Godot tem espaço)
+    prefix=$1; shift
+    last=0
+    for existing_out in "$WORK"/"$prefix"_run_*.txt; do
+        [ -f "$existing_out" ] || continue
+        number=$(basename "$existing_out" .txt | sed "s/^${prefix}_run_//")
+        case "$number" in ''|*[!0-9]*) continue;; esac
+        [ "$number" -gt "$last" ] && last=$number
+    done
+    n=$((last + 1)); end=$((last + RUNS))
+    while [ "$n" -le "$end" ]; do
+        out=$WORK/${prefix}_run_$n.txt
+        echo "--- execução $n (cerca de 2,5 minutos, com janela) -> $out"
+        echo "energia (antes): $(pmset -g batt | sed -n 1,2p | tr '\n' ' ')" > "$out"
+        "$@" -- --ensaios "$ENSAIOS" >> "$out" 2>&1 || { cat "$out" >&2; fail "A execução $n terminou com erro (saída acima)."; }
+        after=$(pmset -g batt | sed -n 1,2p | tr '\n' ' ')
+        echo "energia (depois): $after" >> "$out"
+        cat "$out"
+        case "$after" in *"AC Power"*) ;; *) fail "O Mac saiu da tomada durante a execução $n: os números não valem; refaça.";; esac
+        n=$((n + 1))
+    done
+}
+
+mkdir -p "$WORK"
+case "$WORK" in "$PROJECT_DIR"|"$PROJECT_DIR"/*) fail "A pasta de trabalho precisa ficar FORA do projeto ($PROJECT_DIR).";; esac
+if [ "$MODE" = editor ]; then
+    say "Medindo no binário de DEPURAÇÃO do editor (janela; o project.godot não muda: a cena vai na linha de comando)"
+    run_trials game_editor "$GODOT_BIN" --path "$PROJECT_DIR" "$MAIN_SCENE"
+    du -sh "$WORK"; exit 0
+fi
+# Trava de segurança: o script apaga subpastas dele (projeto/, modelos/) na pasta de trabalho; só aceita pasta nova/vazia ou criada por ele.
+if [ ! -f "$WORK/.lw-release-probe" ] && [ -n "$(ls -A "$WORK")" ] && [ ! -d "$WORK/execucao" ] && [ ! -f "$WORK/sp1.pck" ] && [ ! -f "$WORK/release_run_1.txt" ]; then
+    fail "A pasta '$WORK' não está vazia e não foi criada por este script. Use uma pasta nova (ex.: \$HOME/lw-release-probe)."
+fi
+: > "$WORK/.lw-release-probe"
+
+if existing=$(ls "$WORK"/bin/*release* 2> /dev/null | head -1) && [ -n "$existing" ] && [ -x "$existing" ]; then
+    RELEASE_BIN=$existing
+    say "1/4 Reaproveitando o binário de release já extraído (nada será baixado): $RELEASE_BIN"
+else
+    command -v curl > /dev/null && command -v unzip > /dev/null || fail "curl e unzip são necessários."
+    TPZ=$WORK/$TEMPLATES_FILE
+    say "1/4 Baixando os modelos de exportação oficiais (~1,28 GB) para $WORK"
+    expected=$(curl -fsSL "$BASE_URL/SHA512-SUMS.txt" | grep " $TEMPLATES_FILE\$" | cut -d' ' -f1)
+    [ -n "$expected" ] || fail "Não consegui obter o SHA-512 oficial do pacote."
+    curl -fL -C - --progress-bar -o "$TPZ" "$BASE_URL/$TEMPLATES_FILE"
+    [ "$(sha512_of "$TPZ")" = "$expected" ] || { rm -f "$TPZ"; fail "SHA-512 do download não confere (o download foi apagado). Nada foi extraído."; }
+    echo "SHA-512 conferido com o publicado pelo Godot."
+    mkdir -p "$WORK/modelos" "$WORK/bin"
+    unzip -o -j "$TPZ" "templates/macos.zip" -d "$WORK/modelos" > /dev/null
+    inner=$(unzip -Z1 "$WORK/modelos/macos.zip" | grep '/MacOS/.*release' | head -1)
+    [ -n "$inner" ] || fail "Não achei o binário de release dentro de macos.zip."
+    unzip -o -j "$WORK/modelos/macos.zip" "$inner" -d "$WORK/bin" > /dev/null
+    RELEASE_BIN=$WORK/bin/$(basename "$inner")
+    chmod +x "$RELEASE_BIN"
+    xattr -d com.apple.quarantine "$RELEASE_BIN" 2> /dev/null || true
+    command -v codesign > /dev/null && codesign --force --sign - "$RELEASE_BIN" 2> /dev/null || true   # assinatura "ad hoc" só desta cópia
+    [ "$KEEP_DOWNLOAD" = 1 ] || rm -f "$TPZ" "$WORK/modelos/macos.zip"
+    echo "Binário de release: $RELEASE_BIN"
+fi
+
+say "2/4 Criando a cópia do projeto em $WORK/projeto"
+rm -rf "$WORK/projeto"
+mkdir -p "$WORK/projeto"
+if [ "${LW_PROBE_COPY:-}" = worktree ]; then
+    (cd "$PROJECT_DIR" && git ls-files -co --exclude-standard | tar -T - -cf -) | tar -x -C "$WORK/projeto"
+else
+    git -C "$PROJECT_DIR" archive HEAD | tar -x -C "$WORK/projeto"
+fi
+sed "s|^run/main_scene=.*|run/main_scene=\"$MAIN_SCENE\"|" "$WORK/projeto/project.godot" > "$WORK/projeto/project.godot.novo"
+mv "$WORK/projeto/project.godot.novo" "$WORK/projeto/project.godot"
+cat > "$WORK/projeto/export_presets.cfg" <<'PRESET'
+[preset.0]
+
+name="Pacote"
+platform="Linux"
+runnable=false
+export_filter="all_resources"
+include_filter="*.json"
+exclude_filter="addons/*"
+export_path=""
+
+[preset.0.options]
+
+binary_format/embed_pck=false
+PRESET
+
+say "3/4 Exportando o pacote de recursos (.pck)"
+"$GODOT_BIN" --headless --path "$WORK/projeto" --import > /dev/null 2>&1 || true
+rm -f "$WORK/game.pck"
+"$GODOT_BIN" --headless --path "$WORK/projeto" --export-pack "Pacote" "$WORK/game.pck" > "$WORK/exportacao.txt" 2>&1 || true
+[ -s "$WORK/game.pck" ] || { cat "$WORK/exportacao.txt" >&2; fail "A exportação do pacote falhou (saída acima)."; }
+echo "Pacote criado: $WORK/game.pck"
+
+say "4/4 Rodando o jogo em release ($RUNS vez(es), ensaios: $ENSAIOS)"
+echo "Uma janela vai abrir. Deixe-a em primeiro plano e não mexa no Mac durante a medição."
+mkdir -p "$WORK/execucao"
+cp "$RELEASE_BIN" "$WORK/execucao/game_release"
+chmod +x "$WORK/execucao/game_release"
+cp "$WORK/game.pck" "$WORK/execucao/game_release.pck"
+command -v codesign > /dev/null && codesign --force --sign - "$WORK/execucao/game_release" 2> /dev/null || true
+run_trials game_release "$WORK/execucao/game_release"
+say "Pronto. Saídas em $WORK/game_release_run_*.txt"
+du -sh "$WORK"

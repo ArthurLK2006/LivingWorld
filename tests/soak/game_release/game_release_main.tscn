@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/soak/game_release/game_release_node.gd" id="1_node"]
+
+[node name="GameReleaseMain" type="Node"]
+script = ExtResource("1_node")
