@@ -98,6 +98,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-022 | Idioma do código e dos comentários | APROVADA |
 | DEC-023 | Telemetria | PENDENTE |
 | DEC-024 | Suporte a gamepad | PENDENTE |
+| DEC-120 | Direção visual: simples, com a sensação de Albion Online e RuneScape | APROVADA |
 
 **ÁREA 3 — CÂMERA E CONTROLE**
 
@@ -204,6 +205,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-089 | Hospedagem do repositório Git | APROVADA (somente o serviço) |
 | DEC-113 | Régua de pico do SP1 (LW-023): release decide, por taxa e com laço de controle | APROVADA (somente como régua de medição da LW-023; redação na arquitetura segue PROPOSTA) |
 | DEC-114 | Visibilidade do repositório | APROVADA (reversível) |
+| DEC-119 | Meta de quadros do protótipo | APROVADA |
 
 **ÁREA 10 — PROCESSO, ESCOPO E MÉTODO DE TRABALHO**
 
@@ -1743,6 +1745,20 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
+### DEC-120 — Direção visual: simples, com a sensação de Albion Online e RuneScape
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA |
+| **Contexto** | A DEC-020 fixa o estilo stylized low-poly, mas não diz quão simples ele deve ser nem em que jogos se inspirar. Depois de jogar o protótipo da Fase 1, Arthur indicou a referência de sensação. |
+| **Decisão** | A direção visual do jogo é **estilizada e simples**, com a **sensação** de jogos como **Albion Online e RuneScape**. O jogo **não** busca o acabamento super polido e complexo de jogos como Diablo. |
+| **Justificativa** | Escolha de Arthur (07/11/2026): ele gosta desse estilo e não quer o polimento e a complexidade de Diablo. É coerente com a DEC-020, com a câmera elevada da DEC-115 e com a diretriz de evitar o que um desenvolvedor solo assistido por IA não sustenta (AGENTS seção 1, DEC-006). |
+| **Consequências** | É uma referência de **sensação**, não de cópia: nenhum modelo, personagem, marca ou arte desses jogos pode ser reproduzido. Orienta as tarefas de arte futuras: o simples vale mais que o elaborado. **Não** decide a origem da arte (a DEC-021 continua PENDENTE) nem paleta, proporções ou número de polígonos. As formas simples provisórias do protótipo (DEC-020) continuam valendo. |
+| **Data / versão** | Decidida por Arthur em 07/11/2026 · registrada em 07/11/2026 (LW-054) |
+| **Relações** | DEC-006, DEC-020, DEC-021, DEC-115 |
+
+---
+
 ## 3. DÚVIDAS ABERTAS EM DESTAQUE
 
 As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o início do trabalho. Os números citados são **hipóteses [HIP]**, não decisões. Pendências só relevantes em fases futuras **não** exigem aprovação antecipada (diretriz 15).
@@ -1926,7 +1942,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-119` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-121` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto
