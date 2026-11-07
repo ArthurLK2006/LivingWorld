@@ -12,3 +12,11 @@ tests/soak/run_game_release --editor     # a mesma medição no binário de DEPU
 ```
 
 Variáveis: `RUNS` (3), `ENSAIOS` (`rota,parado,pausado`), `GODOT_BIN`, `KEEP_DOWNLOAD`. Deixe a janela em primeiro plano e não use o Mac durante a medição. A cópia do projeto sai do `git archive HEAD` (só o que está commitado). Os resultados de cada medição entram no relatório da tarefa que a fez.
+
+## Teste de combate (LW-152, spike SP6)
+
+`run_sp6` abre o jogo real **com janela** e, por cima dele, um teste **descartável** de combate por alvo e habilidades (DEC-117) contra um boneco de treino parado, para Arthur jogar e dizer o que sentiu. O código está em `sp6/`: regras puras (`Sp6Rules`), constantes **[HIP]** (`Sp6Constants`), geometria, boneco, tela e a cena `sp6_main.tscn`. O teste das regras, `sp6/test_sp6_rules.gd`, roda sem janela e entra no `tools/check_all`. Ao fechar a janela, o script imprime o resumo da sessão (golpes, erros, dano total, menor estamina e pior quadro). Valores, roteiro de playtest e resultado: `docs/decisions/0008-spike-sp6-combate.md`.
+
+```bash
+tests/soak/run_sp6
+```

@@ -1,0 +1,14 @@
+#!/bin/sh
+# SPIKE descartável (LW-152/SP6). Abre o jogo real COM JANELA e, por cima dele, o teste de combate por alvo e habilidades
+# (tests/soak/sp6), para Arthur jogar. Ao fechar a janela, o resumo da sessão aparece neste terminal. Não precisa abrir o editor.
+# Argumentos extras vão direto ao Godot, antes da cena (por exemplo, "--headless --quit-after 60" para só conferir que carrega).
+# Uso: tests/soak/run_sp6
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+echo "SP6: abrindo o jogo com o teste de combate. Feche a janela quando terminar para ver o resumo."
+exec "$godot_bin" "$@" --path "$project_dir" res://tests/soak/sp6/sp6_main.tscn
