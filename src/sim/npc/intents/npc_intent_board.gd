@@ -80,27 +80,28 @@ func begin_embodied(npc_id: int, action_id: String, place_id: String, now: int) 
 	return Result.success()
 
 
-## Intents que a apresentação ainda não cumpriu, em CÓPIAS e em ordem crescente de NPC. Só os de quem ainda está em S0.
+## Intents que a apresentação ainda não cumpriu, em CÓPIAS e em ordem crescente de NPC. Só os que ainda valem (ver `has_pending`).
 func peek_pending() -> Array[NpcIntent]:
 	var copies: Array[NpcIntent] = []
 	for npc_id: int in _sorted_pending_ids():
-		if _lod.level_of(npc_id) == NpcLod.LEVEL_S0:
+		if _is_live(npc_id):
 			copies.append(_pending[npc_id].intent.copy())
 	return copies
 
 
-## NPCs com Intent pendente que ainda estão em S0, em ordem crescente de ID (LW-070a: o módulo segura o pensamento deles).
+## NPCs com Intent pendente que ainda valem, em ordem crescente de ID (o módulo segura o pensamento deles depois do fim previsto).
 func pending_ids() -> Array[int]:
 	var ids: Array[int] = []
 	for npc_id: int in _sorted_pending_ids():
-		if _lod.level_of(npc_id) == NpcLod.LEVEL_S0:
+		if _is_live(npc_id):
 			ids.append(npc_id)
 	return ids
 
 
-## O NPC tem Intent pendente (e ainda está em S0)?
+## O NPC tem Intent pendente que ainda vale? Vale enquanto o NPC está em S0, vivo e na MESMA ação que o emitiu (LW-070b): ação trocada,
+## cancelada ou terminada por outro caminho (reavaliação do pensador, morte) tira o Intent da lista sem ninguém precisar avisar o quadro.
 func has_pending(npc_id: int) -> bool:
-	return _pending.has(npc_id) and _lod.level_of(npc_id) == NpcLod.LEVEL_S0
+	return _is_live(npc_id)
 
 
 ## Recebe o resultado da apresentação em `now`. Resultado que não casa com o Intent pendente do NPC (outra ação, tempo limite já
@@ -116,9 +117,9 @@ func report_result(result: NpcActionResult, now: int) -> Result:
 	if not invalid.is_empty():
 		return Result.failure(CODE_INVALID_RESULT, "NpcIntentBoard.report_result: resultado inválido: %s." % invalid)
 	var npc_id: int = result.npc_id
-	if not _pending.has(npc_id) or _lod.level_of(npc_id) != NpcLod.LEVEL_S0:
+	if not _is_live(npc_id):
 		_pending.erase(npc_id)
-		return _discard("o NPC %d não tem Intent pendente (o tempo limite já venceu, o NPC saiu de S0 ou a ação já terminou)" % npc_id)
+		return _discard("o NPC %d não tem Intent pendente (o tempo limite já venceu, o NPC saiu de S0, morreu ou a ação já terminou ou foi trocada)" % npc_id)
 	var intent: NpcIntent = _pending[npc_id].intent
 	if intent.action_serial != result.action_serial:
 		return _discard("o resultado é da ação %d, mas o Intent pendente do NPC %d é da ação %d" % [result.action_serial, npc_id, intent.action_serial])
@@ -158,15 +159,16 @@ func report_positions(batch: Dictionary[int, Vector3]) -> Result:
 
 
 ## A cada passo: cancela, SEM efeito, a ação dos Intents que passaram do tempo limite (o limite é `intent_timeout_min` depois do fim
-## planejado; a partir do minuto `fim + limite` o Intent já venceu) e solta os Intents de quem saiu de S0 (a ação segue abstrata). Devolve
-## os NPCs cancelados por tempo, em ordem crescente (o detector de impasse da LW-073 vai lê-los). Resultado que chegar depois é descartado.
+## planejado; a partir do minuto `fim + limite` o Intent já venceu) e solta os Intents que deixaram de valer (o NPC saiu de S0, a ação segue
+## abstrata; ou a ação foi trocada, ou ele morreu). Devolve os NPCs cancelados por tempo, em ordem crescente (o detector de impasse da LW-073
+## vai lê-los). Resultado que chegar depois é descartado.
 func expire(now: int) -> Array[int]:
 	var cancelled: Array[int] = []
 	if not is_configured():
 		return cancelled
 	for npc_id: int in _sorted_pending_ids():
 		var entry: Pending = _pending[npc_id]
-		if _lod.level_of(npc_id) != NpcLod.LEVEL_S0:
+		if not _is_live(npc_id):
 			_pending.erase(npc_id)
 			continue
 		if now < entry.deadline:
@@ -178,9 +180,9 @@ func expire(now: int) -> Array[int]:
 	return cancelled
 
 
-## Contagens para depuração: Intents pendentes, resultados descartados e Intents vencidos por tempo.
+## Contagens para depuração: Intents pendentes que ainda valem, resultados descartados e Intents vencidos por tempo.
 func debug_summary() -> Dictionary:
-	return {"pending": _pending.size(), "discarded_results": _discarded_results, "timed_out_intents": _timed_out_intents}
+	return {"pending": pending_ids().size(), "discarded_results": _discarded_results, "timed_out_intents": _timed_out_intents}
 
 
 ## Posição do corpo em metros -> centímetros inteiros no plano (x e z; o y é ignorado). Não finita ou fora de 0 até o máximo do mundo:
@@ -230,6 +232,15 @@ func _mismatch_problem(intent: NpcIntent, result: NpcActionResult) -> String:
 func _discard(why: String) -> Result:
 	_discarded_results += 1
 	return Result.failure(CODE_STALE_RESULT, "NpcIntentBoard.report_result: resultado descartado: %s." % why)
+
+
+## O Intent guardado para o NPC ainda vale? Sim se o NPC está em S0, vivo e na ação de contador igual ao do Intent. É a única conta de
+## validade do quadro: quem termina ou troca a ação por outro caminho (o pensador que reavalia, a morte) não precisa avisá-lo.
+func _is_live(npc_id: int) -> bool:
+	if not _pending.has(npc_id) or _lod.level_of(npc_id) != NpcLod.LEVEL_S0:
+		return false
+	var state: NpcState = _states.get(npc_id)
+	return state != null and state.is_alive and not state.action_id.is_empty() and state.action_serial == _pending[npc_id].intent.action_serial
 
 
 func _sorted_pending_ids() -> Array[int]:

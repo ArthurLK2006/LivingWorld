@@ -10,6 +10,9 @@ const WORLD_DIR: String = "res://data/world"
 const WORLD_SEED: int = 5
 const FOCUS_A_M: Vector3 = Vector3(320.0, 10.0, 540.0)
 const FIRST_THINKS_DONE: int = 12
+## LW-070b: às 6h a rotina troca o sono por `eat` (20 min) e o NPC em S0 reavalia como em S1; 6h12 = todos já têm o Intent de `eat`.
+const AFTER_THE_ROUTINE_SWAP: int = 6 * 60 + 12
+const HUNGER: int = 0
 const MAX_S0: int = 50
 const TEMP_ROOT: String = "res://.godot/lw070a_data_tests"
 
@@ -160,6 +163,7 @@ func test_the_game_app_hands_the_npc_to_the_bridge_and_the_whole_chain_works() -
 	var host: SimulationHostNode = SimulationHostNode.new()
 	_hosts.append(host)
 	host.start_new_game(WORLD_SEED, _terrain, _points, _good_setup())
+	assert_true(host.npc.request_set_bodies_available(true).ok, "LW-070b: o teste faz o papel da apresentação e declara que há corpos.")
 	var app: GameAppNode = autofree(GameAppNode.new())
 	app.bind_host(host)
 	var bridge: SimBridge = app.peek_bridge()
@@ -167,7 +171,7 @@ func test_the_game_app_hands_the_npc_to_the_bridge_and_the_whole_chain_works() -
 	assert_true(spawned.result.ok, spawned.result.message)
 	var reported: Result = bridge.request_report_position(spawned.actor_id, FOCUS_A_M, 0.0)
 	assert_true(reported.ok, "O foco do jogador chega ao LOD já no primeiro relato: " + reported.message)
-	host.runner.run_steps(FIRST_THINKS_DONE)
+	host.runner.run_steps(AFTER_THE_ROUTINE_SWAP)
 	var listed: BridgeReplies.NpcIntentsReply = bridge.peek_pending_npc_intents()
 	assert_true(listed.result.ok, listed.result.message)
 	assert_eq(listed.intents.size(), MAX_S0, "A ponte do GameApp entrega os Intents dos 50 NPCs com corpo.")
@@ -184,7 +188,7 @@ func test_the_game_app_hands_the_npc_to_the_bridge_and_the_whole_chain_works() -
 	assert_true(answered.ok, answered.message)
 	var after: NpcModule.NpcQuery = host.npc.peek_npc(first.npc_id)
 	assert_eq(after.action_id, "", "O resultado pela ponte liberou o NPC.")
-	assert_eq(after.need_values[1], 0, "E o alívio do sono entrou (`rest`).")
+	assert_eq(after.need_values[HUNGER], 0, "E o alívio de `eat` entrou (`hunger`).")
 	assert_eq(bridge.peek_pending_npc_intents().intents.size(), count_before - 1, "E o Intent cumprido saiu da lista da ponte.")
 	var stale: Result = bridge.request_report_npc_result(first.npc_id, first.action_serial, BridgeReplies.NpcOutcome.DONE, first.destination)
 	assert_eq(stale.code, NpcIntentBoard.CODE_STALE_RESULT, "O código do `npc` chega à apresentação como está.")

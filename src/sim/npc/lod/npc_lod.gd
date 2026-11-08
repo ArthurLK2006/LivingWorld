@@ -137,6 +137,16 @@ func update(npcs: Dictionary[int, NpcState], now_minutes: int) -> Array[Change]:
 	return changes
 
 
+## Tira TODOS de S0 de uma vez (LW-070b: o interruptor de corpos desligou) e devolve as trocas, em ordem crescente de ID. É o mesmo caminho de
+## quem se afasta (`_leave`): o último relato do corpo vira a posição lógica e a ação segue abstrata. Os focos ficam como estão.
+func release_all(npcs: Dictionary[int, NpcState], now_minutes: int) -> Array[Change]:
+	var changes: Array[Change] = []
+	for npc_id: int in s0_ids():
+		_leave(npc_id, npcs.get(npc_id) as NpcState, now_minutes)
+		changes.append(Change.new(npc_id, LEVEL_S0, LEVEL_S1))
+	return changes
+
+
 func debug_summary() -> Dictionary:
 	return {"configured": _params != null, "focus_count": _foci.size(), "s0_count": _s0.size(), "s0_ids": s0_ids()}
 

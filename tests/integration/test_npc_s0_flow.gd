@@ -23,6 +23,11 @@ const FIRST_THINKS_DONE: int = 12
 const SLEEP: String = "sleep"
 const SLEEP_MIN: int = 480
 const REST: int = 1
+## Valor inicial de `rest` e índice/efeito de `hunger` (data/needs.json e data/action_effects.json), escritos à mão.
+const REST_START_VALUE: int = 10
+const HUNGER: int = 0
+## LW-070b: às 6h a rotina troca o sono por `eat`, e o NPC em S0 reavalia como em S1. 6h12 = todos já trocaram e têm o Intent de `eat` (20 min).
+const AFTER_THE_ROUTINE_SWAP: int = 6 * 60 + 12
 const DAY: int = SimClock.MINUTES_PER_DAY
 const CM_PER_M: float = 100.0
 
@@ -72,6 +77,8 @@ func _rig(s0_on: bool = true, world_seed: int = WORLD_SEED) -> Rig:
 	rig.npc = modules.npc
 	rig.runner.world.context.events.subscribe("LodChanged", rig.on_lod_changed)
 	rig.runner.start_new_game()
+	if s0_on:
+		assert_true(rig.npc.request_set_bodies_available(true).ok, "LW-070b: o teste faz o papel da apresentação e declara que há corpos.")
 	_rigs.append(rig)
 	return rig
 
@@ -170,7 +177,7 @@ func test_an_s0_npc_that_decides_an_action_emits_an_intent_and_nothing_is_applie
 		assert_true(s0.has(intent.npc_id), "Só quem tem corpo emite Intent.")
 		var npc: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
 		assert_eq([npc.action_id, npc.action_serial], [SLEEP, intent.action_serial], "O Intent é da ação que o NPC começou.")
-		assert_eq(npc.needs_updated_at, npc.action_started_at, "Nada foi aplicado desde que a ação começou (nenhuma necessidade foi tocada).")
+		assert_true(npc.need_values[REST] >= REST_START_VALUE, "Nenhum efeito do sono foi aplicado (o `rest` não foi aliviado); o relógio passa nas necessidades a cada pensamento, como em S1.")
 		assert_eq([intent.kind, intent.expected_minutes], [NpcIntent.Kind.ACT_AT_PLACE, SLEEP_MIN])
 	for npc_id: int in rig.npc.peek_npc_ids():
 		if not s0.has(npc_id):
@@ -181,10 +188,11 @@ func test_an_s0_npc_that_decides_an_action_emits_an_intent_and_nothing_is_applie
 
 func test_with_a_pending_intent_the_planned_end_passing_changes_nothing() -> void:
 	var rig: Rig = _rig_with_focus()
-	rig.runner.run_steps(FIRST_THINKS_DONE)
+	rig.runner.run_steps(AFTER_THE_ROUTINE_SWAP)
 	var intent: NpcIntent = _closest_pending(rig)
+	rig.runner.run_steps(rig.npc.peek_npc(intent.npc_id).action_ends_at - rig.now())
 	var before: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
-	rig.runner.run_steps(before.action_ends_at + 5 - rig.now())
+	rig.runner.run_steps(5)
 	assert_gt(rig.now(), before.action_ends_at, "O relógio passou do fim planejado.")
 	var after: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
 	assert_true(rig.npc.intents.has_pending(intent.npc_id), "O Intent segue pendente (o limite é 30 min depois do fim).")
@@ -215,7 +223,7 @@ func test_a_pending_move_intent_does_not_arrive_by_itself() -> void:
 
 func test_a_success_result_applies_the_effects_once_and_the_npc_thinks_again_within_a_minute() -> void:
 	var rig: Rig = _rig_with_focus()
-	rig.runner.run_steps(FIRST_THINKS_DONE)
+	rig.runner.run_steps(AFTER_THE_ROUTINE_SWAP)
 	var intent: NpcIntent = _closest_pending(rig)
 	var before: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
 	rig.runner.run_steps(before.action_ends_at - rig.now())
@@ -224,7 +232,7 @@ func test_a_success_result_applies_the_effects_once_and_the_npc_thinks_again_wit
 	assert_true(reported.ok, reported.message)
 	var after: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
 	assert_eq(after.action_id, "", "O NPC ficou livre.")
-	assert_eq(after.need_values[REST], 0, "`sleep` alivia `rest` em 100: os efeitos entraram.")
+	assert_eq(after.need_values[HUNGER], 0, "`eat` alivia `hunger` em 60: os efeitos entraram.")
 	assert_eq(after.needs_updated_at, before.action_ends_at, "No fim planejado, como no modo abstrato.")
 	assert_true(after.next_think_time <= rig.now() + 1, "Volta a pensar no minuto seguinte, no máximo.")
 	assert_false(rig.npc.intents.has_pending(intent.npc_id))
@@ -266,7 +274,7 @@ func test_a_result_in_the_very_minute_the_intent_was_born_also_wakes_the_npc() -
 
 func test_without_a_result_the_action_is_cancelled_at_the_timeout_without_effect_and_the_npc_thinks_again() -> void:
 	var rig: Rig = _rig_with_focus()
-	rig.runner.run_steps(FIRST_THINKS_DONE)
+	rig.runner.run_steps(AFTER_THE_ROUTINE_SWAP)
 	var intent: NpcIntent = _closest_pending(rig)
 	var before: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
 	var deadline: int = before.action_ends_at + TIMEOUT_MIN
@@ -280,7 +288,7 @@ func test_without_a_result_the_action_is_cancelled_at_the_timeout_without_effect
 	var after: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
 	assert_eq(after.action_serial, intent.action_serial + 1, "A ação foi cancelada e o NPC pensou de novo no mesmo passo.")
 	assert_ne(after.action_id, "", "E já começou outra coisa.")
-	assert_true(after.need_values[REST] >= before.need_values[REST], "Cancelada por tempo: o alívio do sono NÃO entrou.")
+	assert_true(after.need_values[HUNGER] >= before.need_values[HUNGER], "Cancelada por tempo: o alívio de `eat` NÃO entrou.")
 	assert_gt(rig.npc.intents.debug_summary()["timed_out_intents"], 0)
 	var discarded_before: int = _discarded(rig)
 	var late: Result = rig.npc.request_report_npc_result(_result_for(intent, NpcActionResult.Outcome.DONE))

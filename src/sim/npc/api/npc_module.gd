@@ -251,6 +251,31 @@ func request_clear_focus(focus_id: int) -> Result:
 	return lod.clear_focus(focus_id)
 
 
+## Interruptor de corpos (LW-070b; docs/modules/npc.md, seção 6). Só a apresentação sabe se existem corpos para os NPCs: sem eles, um NPC perto
+## do jogador esperaria para sempre um resultado que ninguém dá, e o mundo passaria a mudar só porque o jogador olhou. Com os corpos
+## INDISPONÍVEIS o LOD fica inerte (ninguém entra em S0, nenhum LodChanged sai, nenhuma ação nasce com Intent, `peek_pending_intents` fica vazio)
+## e o hash do mundo não depende do foco. É estado SÓ de memória: não é salvo nem entra no hash. O LOD que vem das `Definitions` (o jogo) nasce
+## SEM corpos, e a apresentação (LW-072) o liga; um módulo montado à mão, sem `Definitions` (os bancos de ensaio do LOD e do protocolo, onde o
+## teste faz o papel da apresentação), nasce com corpos, como era antes. Chamar `request_set_bodies_available` vale nos dois casos.
+var _bodies_available: bool = true
+
+
+## Liga ou desliga os corpos. Desligar tira TODOS de S0 pelo mesmo caminho de quem se afasta (um LodChanged por NPC), solta os Intents pendentes
+## e deixa cada ação seguir abstrata com o tempo que falta; os focos ficam guardados. Ligar de novo volta ao comportamento da LW-070a. Repetir o
+## estado atual não faz nada. Módulo sem `setup()`: NPC_NOT_READY e nada muda.
+func request_set_bodies_available(available: bool) -> Result:
+	if _ctx == null:
+		return Result.failure(CODE_NOT_READY, "NpcModule.request_set_bodies_available: módulo sem setup() (sem relógio nem barramento de eventos); esperado um módulo registrado no World.")
+	if available == _bodies_available:
+		return Result.success()
+	_bodies_available = available
+	if not available:
+		var now: int = _ctx.clock.total_minutes()
+		_publish_lod_changes(lod.release_all(_npcs, now))
+		intents.expire(now)
+	return Result.success()
+
+
 ## Protocolo de Intents do modo S0 (LW-070; docs/modules/npc.md, seção 6). Sem `configure_intents` ele fica desligado: nenhuma intenção sai
 ## e o pedido de resultado falha com NPC_INTENTS_NOT_CONFIGURED. As intenções pendentes não são salvas nem entram no hash.
 var intents: NpcIntentBoard = NpcIntentBoard.new(lod)
@@ -294,27 +319,34 @@ func request_report_npc_positions(batch: Dictionary[int, Vector3]) -> Result:
 
 
 ## LOD e Intents de cada passo (LW-069 e LW-070), chamados pelo começo de `tick`: reclassifica os NPCs (S1 e S0), publica LodChanged só nas
-## trocas e vence os Intents sem resultado. NÃO depende de `Definitions` (os testes do LOD montam o módulo sem elas).
+## trocas e vence os Intents sem resultado. NÃO depende de `Definitions` (os testes do LOD montam o módulo sem elas). Com os corpos
+## indisponíveis (LW-070b) não faz nada: o LOD inerte não gasta nem ID de evento.
 func _tick_s0() -> void:
-	if _ctx == null:
+	if _ctx == null or not _bodies_available:
 		return
 	var now: int = _ctx.clock.total_minutes()
-	for change: NpcLod.Change in lod.update(_npcs, now):
-		_ctx.events.publish(LodChanged.new(change.npc_id, change.from_level, change.to_level))
+	_publish_lod_changes(lod.update(_npcs, now))
 	# LW-070: depois da reclassificação, vence os Intents sem resultado e solta os de quem saiu de S0.
 	intents.expire(now)
 	_hold_embodied_thinking(now)
 
 
-## LW-070a: o NPC com Intent pendente NÃO pensa. O pensador encerraria a ação pelo tempo (`advance`) ou a trocaria por outra, e a ação de quem
-## tem corpo só pode acabar pelo resultado do corpo (sucesso, BLOCKED ou CANCELLED) ou pelo tempo limite do Intent. Por isso o próximo
-## pensamento dele fica sempre no minuto seguinte (nunca vence enquanto o Intent está pendente); quando o Intent acaba, ele já está no ponto
-## de pensar: por resultado, `request_report_npc_result` o acorda; por tempo limite ou saída de S0, `expire` (acima) o libera e ele pensa
-## neste mesmo passo, porque o pensador roda depois.
+func _publish_lod_changes(changes: Array[NpcLod.Change]) -> void:
+	for change: NpcLod.Change in changes:
+		_ctx.events.publish(LodChanged.new(change.npc_id, change.from_level, change.to_level))
+
+
+## LW-070b (antes, LW-070a: o NPC com Intent pendente nunca pensava): o NPC com corpo PENSA como qualquer outro enquanto a ação está dentro do
+## tempo previsto, para reavaliar por necessidade urgente ou crítica, alarme, fim do bloco da rotina e morte (o `EmbodiedActionRunner` faz o
+## pensador respeitar o corpo: o tempo não encerra a ação e trocá-la é cancelá-la). Passado o FIM PREVISTO o corpo está atrasado: aí o NPC só
+## espera o resultado ou o tempo limite do Intent, e o próximo pensamento dele fica no minuto seguinte (o pensador encerraria a ação pelo
+## relógio, ou a trocaria por uma de quem ainda não chegou). Quando o Intent acaba, ele já está no ponto de pensar: por resultado,
+## `request_report_npc_result` o acorda; por tempo limite ou saída de S0, `expire` (acima) o libera e ele pensa neste mesmo passo, porque o
+## pensador roda depois.
 func _hold_embodied_thinking(now: int) -> void:
 	for npc_id: int in intents.pending_ids():
 		var state: NpcState = _npcs.get(npc_id)
-		if state != null:
+		if state != null and state.action_ends_at <= now:
 			state.next_think_time = now + 1
 
 
@@ -324,6 +356,8 @@ func _hold_embodied_thinking(now: int) -> void:
 func _link_lod() -> void:
 	if _definitions == null or _definitions.lod_params == null:
 		return
+	# LW-070b: o LOD do jogo nasce SEM corpos; só a apresentação sabe se eles existem (request_set_bodies_available).
+	_bodies_available = false
 	var linked: Result = lod.configure(_definitions.lod_params)
 	if not linked.ok:
 		push_error("NpcModule.setup: LOD não ligado: %s" % linked.message)
@@ -444,6 +478,7 @@ func debug_summary() -> Dictionary:
 	if food_stub != null:
 		summary["food_stock"] = food_stub.serialize()
 	summary["population_problem"] = _population_problem
+	summary["bodies_available"] = _bodies_available
 	summary["traced_npcs"] = _tracer.traced_count()
 	summary["trace_records_made"] = _tracer.records_made
 	summary["decision_problem"] = _decision_problem_text()
@@ -503,7 +538,8 @@ func _build_decision_runtime() -> String:
 			return "IncomeStub (TEMP-LW-066): %s" % income_problem
 	var occupancy: PlaceOccupancy = PlaceOccupancy.new(_npcs)
 	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food, _definitions.income)
-	var runner: ActionRunner = ActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min)
+	# LW-070b: o runner do jogo respeita o corpo (ver EmbodiedActionRunner); quem tem Intent pendente é o quadro de Intents que diz.
+	var runner: ActionRunner = EmbodiedActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min, intents.has_pending)
 	if not runner.peek_problem().is_empty():
 		return "ActionRunner: %s" % runner.peek_problem()
 	var scorer: UtilityScorer = UtilityScorer.new(_definitions.params, _need_defs, _definitions.traits)
@@ -519,10 +555,11 @@ func _build_decision_runtime() -> String:
 
 
 ## A ÚNICA função que inicia uma ação (LW-063). Modo S1: pelo ActionRunner. Modo S0 (LW-070a, o ponto de extensão preenchido): NPC com corpo e
-## protocolo ligado emite a Intent (`intents.begin_embodied`), que usa o MESMO runner: os efeitos só entram com o resultado do corpo.
+## protocolo ligado emite a Intent (`intents.begin_embodied`), que usa o MESMO runner: os efeitos só entram com o resultado do corpo. Sem corpos
+## disponíveis (LW-070b) nenhuma ação nasce com Intent.
 func _start_action(npc_id: int, action_id: String, place_id: String, now: int) -> Result:
 	_provider.subject = _npcs.get(npc_id)
-	if intents.is_configured() and lod.level_of(npc_id) == NpcLod.LEVEL_S0:
+	if _bodies_available and intents.is_configured() and lod.level_of(npc_id) == NpcLod.LEVEL_S0:
 		return intents.begin_embodied(npc_id, action_id, place_id, now)
 	return _runner.begin(npc_id, action_id, place_id, now)
 
