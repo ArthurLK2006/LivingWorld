@@ -4,7 +4,9 @@ extends SimModule
 ## remover com IDs de ctx.ids que nunca voltam, salvar e carregar, validate e debug_summary. O módulo entra no World e, pelo
 ## serialize(), no state_hash. LW-058: as definições das necessidades (NeedDef, lidas de data/needs.json por quem monta o módulo)
 ## entram pelo CONSTRUTOR, sem global nem autoload; sem elas (padrão) os NPCs nascem com tudo em zero e sem urgência. Ainda NÃO
-## decide, anda, tem rotina nem LOD: isso é das tarefas seguintes. Dependências: só core e a própria pasta; não importa o `character`.
+## decide, anda nem tem LOD: isso é das tarefas seguintes. LW-061: a tabela de rotina (RoutineTable, de data/occupations.json e
+## data/routine_blocks.json) também entra pelo construtor: `peek_routine_action` e a conferência do ofício. Dependências: só core e a
+## própria pasta; não importa o `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -12,6 +14,7 @@ const CODE_INVALID_SPEC: String = "NPC_INVALID_SPEC"
 const CODE_INVALID_SAVE: String = "NPC_INVALID_SAVE"
 const CODE_NO_ID: String = "NPC_NO_ID"
 const CODE_DUPLICATE_ID: String = "NPC_DUPLICATE_ID"
+const CODE_ROUTINE_NOT_CONFIGURED: String = "NPC_ROUTINE_NOT_CONFIGURED"
 const KEY_NPCS: String = "npcs"
 ## Chaves de peek_counts().
 const COUNT_TOTAL: String = "total"
@@ -26,12 +29,15 @@ var _ctx: SimContext
 var _need_defs: Array[NeedDef] = []
 ## Motivo de as definições não servirem (vazio = servem, ou não foram dadas). Conferido uma vez, no construtor.
 var _defs_problem: String = ""
+var _routine: RoutineTable
 var _npcs: Dictionary[int, NpcState] = {}
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
-func _init(need_defs: Array[NeedDef] = []) -> void:
+## `routine`: ofícios e agenda por hora (RoutineLoader); nulo = sem rotina configurada (o ofício do NPC fica como texto sem conferência).
+func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null) -> void:
 	_need_defs = need_defs
+	_routine = routine
 	_defs_problem = "" if need_defs.is_empty() else NeedMath.definitions_problem(need_defs)
 
 
@@ -80,6 +86,14 @@ func peek_npc_ids() -> Array[int]:
 	return _sorted_ids()
 
 
+## A ação da rotina do ofício na hora (0 a 23, a de SimClock.hour_of_day()). Sem rotina configurada, ofício desconhecido ou hora fora de
+## 0 a 23: falha tratada. A rotina diz só o QUÊ; o local vem do PlaceChooser.
+func peek_routine_action(occupation_id: String, hour: int) -> RoutineTable.RoutineQuery:
+	if _routine == null:
+		return RoutineTable.RoutineQuery.new(Result.failure(CODE_ROUTINE_NOT_CONFIGURED, "NpcModule.peek_routine_action: o módulo foi criado sem tabela de rotina."), "")
+	return _routine.peek_action(occupation_id, hour)
+
+
 ## Contagens (chaves COUNT_*): total, vivos, mortos e por tier.
 func peek_counts() -> Dictionary:
 	var counts: Dictionary = {COUNT_TOTAL: _npcs.size(), COUNT_ALIVE: 0, COUNT_DEAD: 0, COUNT_TIER_NORMAL: 0, COUNT_TIER_NOTABLE: 0}
@@ -126,8 +140,8 @@ func on_load(data: Dictionary) -> Result:
 	return Result.success()
 
 
-## Problemas do estado (lista vazia se estiver tudo certo). Referências a ofício, local e ação ficam como texto: cada tarefa futura
-## acrescenta a sua conferência (LW-056, LW-059, LW-061).
+## Problemas do estado (lista vazia se estiver tudo certo). O ofício é conferido contra a tabela de rotina quando o módulo a tem (LW-061);
+## local e ação ficam como texto: cada tarefa futura acrescenta a sua conferência.
 func validate() -> Array[String]:
 	var problems: Array[String] = []
 	if not _defs_problem.is_empty():
@@ -146,6 +160,8 @@ func validate() -> Array[String]:
 		_append_range_problems(problems, npc_id, "traço", state.traits, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
 		if not state.is_alive and not state.action_id.is_empty():
 			problems.append("NPC %d: morto, mas com ação atual '%s'; esperado nenhuma." % [npc_id, state.action_id])
+		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
+			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
 	return problems
 
 
@@ -213,6 +229,8 @@ func _spec_problem(spec: NpcSpec) -> String:
 			return "traço na posição %d com valor %d; esperado de %d a %d" % [index, spec.traits[index], NpcState.VALUE_MIN, NpcState.VALUE_MAX]
 	if spec.x_cm < 0 or spec.x_cm > NpcState.MAX_COORDINATE_CM or spec.z_cm < 0 or spec.z_cm > NpcState.MAX_COORDINATE_CM:
 		return "posição (x_cm %d, z_cm %d) fora da faixa; esperado de 0 a %d" % [spec.x_cm, spec.z_cm, NpcState.MAX_COORDINATE_CM]
+	if _routine != null and not spec.occupation_id.is_empty() and not _routine.has_occupation(spec.occupation_id):
+		return "ofício '%s' inexistente; esperado vazio ou um de: %s" % [spec.occupation_id, ", ".join(_routine.peek_occupation_ids())]
 	return ""
 
 
