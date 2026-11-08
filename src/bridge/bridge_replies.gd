@@ -202,3 +202,44 @@ class TimeSnapshot:
 		total_minutes = clock.total_minutes()
 		is_paused = clock.is_paused()
 		speed = clock.get_speed()
+
+
+## Tipo de uma intenção de NPC (LW-070), espelho de `NpcIntent.Kind` com nomes da ponte: a apresentação nunca cita tipo de `sim/`.
+enum NpcIntentKind { MOVE_TO_PLACE, ACT_AT_PLACE }
+
+## Desfecho que a apresentação devolve de uma intenção (LW-070), espelho de `NpcActionResult.Outcome`. ARRIVED vale para MOVE_TO_PLACE e
+## DONE para ACT_AT_PLACE (os dois são o sucesso); BLOCKED e CANCELLED não aplicam efeito.
+enum NpcOutcome { ARRIVED, DONE, BLOCKED, CANCELLED }
+
+
+## Uma intenção de NPC em S0 que a apresentação ainda não cumpriu (LW-070), em CÓPIA e em unidades de tela: `destination` em metros
+## (x e z do local, y = altura do terreno) e `expected_minutes` em minutos de simulação. `action_serial` volta no resultado.
+class NpcIntentReply:
+	extends RefCounted
+
+	var npc_id: int
+	var action_serial: int
+	var kind: BridgeReplies.NpcIntentKind
+	var place_id: String
+	var destination: Vector3
+	var expected_minutes: int
+
+	func _init(intent: NpcIntent, ground_destination: Vector3) -> void:
+		npc_id = intent.npc_id
+		action_serial = intent.action_serial
+		kind = BridgeReplies.NpcIntentKind.MOVE_TO_PLACE if intent.kind == NpcIntent.Kind.MOVE_TO_PLACE else BridgeReplies.NpcIntentKind.ACT_AT_PLACE
+		place_id = intent.place_id
+		destination = ground_destination
+		expected_minutes = intent.expected_minutes
+
+
+## Resposta de `peek_pending_npc_intents`: `intents` só vale se `result.ok`; em ordem crescente de NPC.
+class NpcIntentsReply:
+	extends RefCounted
+
+	var result: Result
+	var intents: Array[NpcIntentReply]
+
+	func _init(reply_result: Result, copies: Array[NpcIntentReply]) -> void:
+		result = reply_result
+		intents = copies

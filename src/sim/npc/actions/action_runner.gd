@@ -17,6 +17,8 @@ const CODE_CONDITION_NOT_MET: String = "NPC_ACTION_CONDITION_NOT_MET"
 const CODE_ACTION_FAILED: String = "NPC_ACTION_FAILED"
 const CODE_INVALID_PROGRESS: String = "NPC_INVALID_PROGRESS"
 const CODE_PLACE_UNKNOWN: String = "NPC_PLACE_UNKNOWN"
+## A ação do NPC não é a do contador pedido (já terminou, foi cancelada ou é outra, mais nova): protocolo do modo S0 (LW-070).
+const CODE_STALE_ACTION: String = "NPC_ACTION_STALE"
 ## A única ação cuja duração vem da distância (contrato, seção 3); `duration_min` 0 nos dados significa "calculada em execução".
 const GO_TO_PLACE_ID: String = "go_to_place"
 ## Progresso em milésimos: 1000 = ação completa. Ação interrompida aplica o que cumpriu.
@@ -128,6 +130,39 @@ func advance(npc_id: int, now: int) -> AdvanceResult:
 		_arrive(state, target_place_id)
 	_clear_action(state)
 	return AdvanceResult.new(Result.success(), Outcome.COMPLETED)
+
+
+## Modo S0 (LW-070): a apresentação devolveu SUCESSO para a ação de contador `action_serial`. Termina a ação pelo MESMO caminho do
+## `advance`, então os efeitos entram pela função única e o resultado é o do modo S1: necessidades levadas até o fim, efeitos
+## completos, chegada, NPC livre. Se o corpo foi mais rápido que o planejado, o fim passa a ser `now` (a ação acabou antes) e as
+## necessidades vão só até aí. Contador que não confere (ação já terminada, cancelada ou mais nova): NPC_ACTION_STALE, nada muda.
+func finish_embodied(npc_id: int, action_serial: int, now: int) -> AdvanceResult:
+	var found: Result = _ready_status("finish_embodied")
+	if not found.ok:
+		return AdvanceResult.new(found, Outcome.NONE)
+	if not _states.has(npc_id):
+		return AdvanceResult.new(_unknown_npc("finish_embodied", npc_id), Outcome.NONE)
+	var state: NpcState = _states[npc_id]
+	if state.action_id.is_empty() or state.action_serial != action_serial:
+		return AdvanceResult.new(_stale_action("finish_embodied", state, action_serial), Outcome.NONE)
+	state.action_ends_at = mini(state.action_ends_at, now)
+	return advance(npc_id, now)
+
+
+## Modo S0 (LW-070): cancela a ação de contador `action_serial` SEM aplicar efeito algum (BLOCKED ou CANCELLED da apresentação, ou
+## tempo limite do Intent). O NPC fica livre; as necessidades não são tocadas e o contador de ações não volta. Contador que não confere:
+## NPC_ACTION_STALE, nada muda (assim um cancelamento atrasado nunca derruba uma ação nova do mesmo NPC).
+func cancel_action(npc_id: int, action_serial: int) -> Result:
+	var found: Result = _ready_status("cancel_action")
+	if not found.ok:
+		return found
+	if not _states.has(npc_id):
+		return _unknown_npc("cancel_action", npc_id)
+	var state: NpcState = _states[npc_id]
+	if state.action_id.is_empty() or state.action_serial != action_serial:
+		return _stale_action("cancel_action", state, action_serial)
+	_clear_action(state)
+	return Result.success()
 
 
 ## A ÚNICA função que escreve efeitos de ação nas necessidades (os dois modos, S1 e S0, passam por aqui). Cada efeito entra uma vez:
@@ -284,6 +319,11 @@ func _unknown_npc(caller: String, npc_id: int) -> Result:
 
 func _unknown_action(caller: String, action_id: String) -> Result:
 	return Result.failure(CODE_UNKNOWN_ACTION, "ActionRunner.%s: a ação '%s' não está no catálogo (%d ações)." % [caller, action_id, _catalog.size()])
+
+
+func _stale_action(caller: String, state: NpcState, action_serial: int) -> Result:
+	var current: String = "nenhuma ação" if state.action_id.is_empty() else "a ação '%s' de contador %d" % [state.action_id, state.action_serial]
+	return Result.failure(CODE_STALE_ACTION, "ActionRunner.%s: o NPC %d está em %s; esperado a ação de contador %d." % [caller, state.npc_id, current, action_serial])
 
 
 ## Resultado de `advance`: `result` falha só em erro de uso ou em NPC_ACTION_FAILED; `outcome` diz o que aconteceu.

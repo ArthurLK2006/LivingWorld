@@ -6,6 +6,8 @@ extends RefCounted
 ## isso no seu _process (decisão de Arthur de 05/11/2026). As respostas são tipos próprios, com os
 ## valores copiados, para a apresentação nunca precisar citar tipos de `sim/`. Esses tipos moram em `BridgeReplies`
 ## (bridge_replies.gd), fora deste arquivo, para ele não passar do limite de tamanho (LW-053B).
+## LW-070: repasses finos do protocolo de NPC em S0 (intenções pendentes, resultado e posições do corpo) ao `NpcModule`, que a ponte recebe
+## no construtor (opcional), e a entrega do foco do LOD a cada relato de posição do ator. Nenhuma regra de jogo aqui.
 
 const CODE_NO_GAME: String = "BRIDGE_NO_GAME"
 const CODE_NO_TERRAIN: String = "BRIDGE_NO_TERRAIN"
@@ -15,22 +17,29 @@ const CODE_INVALID_ACTOR: String = "BRIDGE_INVALID_ACTOR"
 const CODE_NO_CHARACTER: String = "BRIDGE_NO_CHARACTER"
 ## Há jogo iniciado, mas ele não tem o serviço de interação (começou sem terreno).
 const CODE_NO_INTERACTION: String = "BRIDGE_NO_INTERACTION"
+## A ponte foi criada sem o módulo `npc` (LW-070): as chamadas de NPC falham com este código.
+const CODE_NO_NPC: String = "BRIDGE_NO_NPC"
+## O desfecho recebido não é um dos quatro de `BridgeReplies.NpcOutcome` (só acontece com conversão forçada de inteiro).
+const CODE_INVALID_OUTCOME: String = "BRIDGE_INVALID_OUTCOME"
 
 var _host: SimulationHostNode
 var _terrain: TerrainData
 ## Locais dos assentamentos (LW-074): conteúdo somente leitura, em ordem crescente de id. Não é salvo nem entra no state_hash.
 var _places: Array[Place] = []
+## Módulo `npc` (LW-070), opcional: sem ele as chamadas de NPC falham com BRIDGE_NO_NPC e o relato de posição não entrega foco.
+var _npc: NpcModule
 ## Intenções na ordem de chegada. É estrutura de apresentação: não é salva nem entra no state_hash.
 var _pending_intents: Array[BridgeIntent] = []
 
 
 ## `host` e `terrain` podem ser nulos: as chamadas que dependem deles falham com código, sem derrubar o jogo. `places` é opcional
-## (sem ele, `peek_places` devolve lista vazia) e fica guardado em ordem crescente de id.
-func _init(host: SimulationHostNode, terrain: TerrainData, places: Array[Place] = []) -> void:
+## (sem ele, `peek_places` devolve lista vazia) e fica guardado em ordem crescente de id. `npc` (LW-070) também é opcional.
+func _init(host: SimulationHostNode, terrain: TerrainData, places: Array[Place] = [], npc: NpcModule = null) -> void:
 	_host = host
 	_terrain = terrain
 	_places.assign(places)
 	_places.sort_custom(_is_before)
+	_npc = npc
 
 
 ## Altura do chão (metros) em (x, z). Fora do mapa ou coordenada não numérica: falha tratada do `world`.
@@ -136,11 +145,17 @@ func request_spawn_character() -> BridgeReplies.SpawnCharacterReply:
 
 ## Repassa ao personagem a posição (metros) e a orientação (radianos) que o corpo físico informa. A simulação nunca devolve posição
 ## ao corpo: o fluxo é de um sentido só (arquitetura 6.2). Valor não finito, fora do mapa ou ator desconhecido: falha tratada do módulo.
+## LW-070: com o relato aceito e a ponte ligada ao `npc`, repassa a ele o FOCO do LOD (`request_set_focus`) com a posição que ficou
+## GUARDADA no personagem (como em request_interact), nunca o valor cru. Se o `npc` recusar o foco (ex.: LOD sem parâmetros) a falha dele
+## é devolvida, mas o relato do personagem já foi guardado.
 func request_report_position(actor_id: int, position: Vector3, yaw: float) -> Result:
 	var character: CharacterModule = _character()
 	if character == null:
 		return _missing_character("request_report_position")
-	return character.report_position(actor_id, position, yaw)
+	var reported: Result = character.report_position(actor_id, position, yaw)
+	if not reported.ok or _npc == null:
+		return reported
+	return _npc.request_set_focus(actor_id, character.peek_character(actor_id).position)
 
 
 ## Cópia da posição e da orientação guardadas na simulação para o ator. Ator desconhecido: falha tratada, sem derrubar.
@@ -150,6 +165,52 @@ func peek_character(actor_id: int) -> BridgeReplies.CharacterReply:
 		return BridgeReplies.CharacterReply.new(_missing_character("peek_character"), Vector3.ZERO, 0.0)
 	var query: CharacterQuery = character.peek_character(actor_id)
 	return BridgeReplies.CharacterReply.new(query.result, query.position, query.yaw)
+
+
+## Intenções de NPC em S0 que a apresentação ainda não cumpriu (LW-070), em CÓPIAS, em ordem crescente de NPC, com o destino em metros e a
+## altura do terreno. A ponte só repassa: quem decide o que é uma intenção é o `npc`. Sem terreno: BRIDGE_NO_TERRAIN; sem `npc`: BRIDGE_NO_NPC.
+func peek_pending_npc_intents() -> BridgeReplies.NpcIntentsReply:
+	if _terrain == null:
+		return BridgeReplies.NpcIntentsReply.new(_missing_terrain("peek_pending_npc_intents"), [])
+	if _npc == null:
+		return BridgeReplies.NpcIntentsReply.new(_missing_npc("peek_pending_npc_intents"), [])
+	var copies: Array[BridgeReplies.NpcIntentReply] = []
+	for intent: NpcIntent in _npc.peek_pending_intents():
+		var x_m: float = float(intent.destination_cm.x) / TerrainData.CM_PER_METER
+		var z_m: float = float(intent.destination_cm.y) / TerrainData.CM_PER_METER
+		var ground: TerrainData.HeightQuery = _terrain.peek_height(x_m, z_m)
+		if not ground.result.ok:
+			return BridgeReplies.NpcIntentsReply.new(ground.result, [])
+		copies.append(BridgeReplies.NpcIntentReply.new(intent, Vector3(x_m, ground.height_m, z_m)))
+	return BridgeReplies.NpcIntentsReply.new(Result.success(), copies)
+
+
+## Repassa ao `npc` o resultado que a apresentação devolve de uma intenção (LW-070): o contador da ação que veio na intenção, o desfecho e a
+## posição final do corpo em metros. A ponte não decide nada: sucesso, descarte de ação velha e falhas são do `npc` e os códigos dele passam.
+func request_report_npc_result(npc_id: int, action_serial: int, outcome: BridgeReplies.NpcOutcome, final_position: Vector3) -> Result:
+	if _npc == null:
+		return _missing_npc("request_report_npc_result")
+	var mapped: NpcActionResult.Outcome = NpcActionResult.Outcome.CANCELLED
+	match outcome:
+		BridgeReplies.NpcOutcome.ARRIVED:
+			mapped = NpcActionResult.Outcome.ARRIVED
+		BridgeReplies.NpcOutcome.DONE:
+			mapped = NpcActionResult.Outcome.DONE
+		BridgeReplies.NpcOutcome.BLOCKED:
+			mapped = NpcActionResult.Outcome.BLOCKED
+		BridgeReplies.NpcOutcome.CANCELLED:
+			mapped = NpcActionResult.Outcome.CANCELLED
+		_:
+			return Result.failure(CODE_INVALID_OUTCOME, "SimBridge.request_report_npc_result: desfecho %d desconhecido; esperado ARRIVED, DONE, BLOCKED ou CANCELLED (BridgeReplies.NpcOutcome)." % outcome)
+	return _npc.request_report_npc_result(NpcActionResult.new(npc_id, action_serial, mapped, final_position))
+
+
+## Repassa ao `npc` as posições dos corpos em S0, em lote (NPC -> posição em metros; o corpo relata no máximo a cada 6 quadros de física
+## [HIP]). Cada posição vale por si: as válidas valem mesmo se outra do lote for recusada, e a falha devolvida é a da primeira recusada.
+func request_report_npc_positions(positions: Dictionary[int, Vector3]) -> Result:
+	if _npc == null:
+		return _missing_npc("request_report_npc_positions")
+	return _npc.request_report_npc_positions(positions)
 
 
 ## Enfileira uma intenção. Recusa intenção nula e ator sem ID válido. Nada a consome ainda.
@@ -175,6 +236,7 @@ func pending_intent_count() -> int:
 
 static func _is_before(first: Place, second: Place) -> bool:
 	return first.id < second.id
+
 
 
 func _clock() -> SimClock:
@@ -207,6 +269,10 @@ func _missing_character(caller: String) -> Result:
 	if _host == null or _host.runner == null:
 		return _missing_game(caller)
 	return Result.failure(CODE_NO_CHARACTER, "SimBridge.%s: o jogo atual não tem o módulo do personagem; esperado um jogo iniciado com terreno (SimulationHost.start_new_game(seed, terreno))." % caller)
+
+
+func _missing_npc(caller: String) -> Result:
+	return Result.failure(CODE_NO_NPC, "SimBridge.%s: a ponte foi criada sem o módulo `npc`; esperado SimBridge.new(host, terreno, locais, módulo npc)." % caller)
 
 
 func _missing_game(caller: String) -> Result:

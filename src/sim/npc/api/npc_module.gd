@@ -108,12 +108,48 @@ func request_clear_focus(focus_id: int) -> Result:
 	return lod.clear_focus(focus_id)
 
 
+## Protocolo de Intents do modo S0 (LW-070; docs/modules/npc.md, seção 6). Sem `configure_intents` ele fica desligado: nenhuma intenção sai
+## e o pedido de resultado falha com NPC_INTENTS_NOT_CONFIGURED. As intenções pendentes não são salvas nem entram no hash.
+var intents: NpcIntentBoard = NpcIntentBoard.new(lod)
+
+
+## Cria um ActionRunner sobre a MESMA tabela de NPCs e as MESMAS definições de necessidade deste módulo (o runner lê e escreve os
+## NpcState por referência). Quem monta o módulo o liga ao quadro de Intents com `configure_intents`.
+func create_action_runner(catalog: Array[ActionDef], places: SettlementService = null, provider: ActionConditionProvider = null) -> ActionRunner:
+	return ActionRunner.new(_npcs, catalog, _need_defs, places, provider)
+
+
+## Liga o protocolo de Intents: `runner` vem de `create_action_runner`; `places` é o serviço de locais do `world` (o destino dos Intents).
+func configure_intents(runner: ActionRunner, places: SettlementService, params: NpcIntentParams) -> Result:
+	return intents.configure(runner, _npcs, places, params)
+
+
+## Intents que a apresentação ainda não cumpriu (cópias, em ordem crescente de NPC). Quem os entrega à apresentação é a ponte.
+func peek_pending_intents() -> Array[NpcIntent]:
+	return intents.peek_pending()
+
+
+## Resultado que a apresentação devolve de um Intent (pela ponte). Sucesso faz os efeitos entrarem pela função única do runner; BLOCKED e
+## CANCELLED cancelam a ação sem efeito; resultado de ação velha é descartado e contado (NPC_RESULT_STALE).
+func request_report_npc_result(result: NpcActionResult) -> Result:
+	if _ctx == null:
+		return Result.failure(CODE_NOT_READY, "NpcModule.request_report_npc_result: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
+	return intents.report_result(result, _ctx.clock.total_minutes())
+
+
+## Posições dos corpos em S0, em lote (NPC -> posição em metros), vindas da ponte. Cada posição vale por si (ver NpcIntentBoard).
+func request_report_npc_positions(batch: Dictionary[int, Vector3]) -> Result:
+	return intents.report_positions(batch)
+
+
 ## A cada passo: reclassifica os NPCs (S1 e S0) e publica LodChanged só nas trocas. As outras tarefas do módulo acrescentam aqui o resto do passo.
 func tick(_elapsed_minutes: int) -> void:
 	if _ctx == null:
 		return
 	for change: NpcLod.Change in lod.update(_npcs, _ctx.clock.total_minutes()):
 		_ctx.events.publish(LodChanged.new(change.npc_id, change.from_level, change.to_level))
+	# LW-070: depois da reclassificação, vence os Intents sem resultado e solta os de quem saiu de S0.
+	intents.expire(_ctx.clock.total_minutes())
 
 
 ## IDs viram texto (assim o JSON guarda chaves) e entram em ordem crescente do número.
