@@ -17,6 +17,8 @@ const CODE_CONDITION_NOT_MET: String = "NPC_ACTION_CONDITION_NOT_MET"
 const CODE_ACTION_FAILED: String = "NPC_ACTION_FAILED"
 const CODE_INVALID_PROGRESS: String = "NPC_INVALID_PROGRESS"
 const CODE_PLACE_UNKNOWN: String = "NPC_PLACE_UNKNOWN"
+## O provedor pediu um efeito extra (`extra_effects`) sobre uma necessidade que não existe nas definições.
+const CODE_UNKNOWN_NEED: String = "NPC_UNKNOWN_NEED"
 ## A única ação cuja duração vem da distância (contrato, seção 3); `duration_min` 0 nos dados significa "calculada em execução".
 const GO_TO_PLACE_ID: String = "go_to_place"
 ## Progresso em milésimos: 1000 = ação completa. Ação interrompida aplica o que cumpriu.
@@ -205,13 +207,26 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 		var broken: String = _completion_problem(state, action)
 		if not broken.is_empty():
 			return Result.failure(CODE_ACTION_FAILED, "ActionRunner.apply_effects: NPC %d, ação '%s' falhou ao terminar: %s; nenhum efeito foi aplicado." % [npc_id, action_id, broken])
+	var extras: Array[ActionDef.ActionEffect] = []
+	if _provider != null:
+		extras = _provider.extra_effects(action_id, state.occupation_id)
+	for extra: ActionDef.ActionEffect in extras:
+		if not _need_position.has(extra.need_id):
+			return Result.failure(CODE_UNKNOWN_NEED, "ActionRunner.apply_effects: NPC %d, ação '%s': o provedor pediu efeito sobre a necessidade '%s', que não existe nas definições; nenhum efeito foi aplicado." % [npc_id, action_id, extra.need_id])
 	for effect: ActionDef.ActionEffect in action.effects:
-		var position: int = _need_position[effect.need_id]
-		var scaled: int = IntMath.floor_div(effect.delta * progress_permille, FULL_PROGRESS)
-		state.need_values[position] = clampi(state.need_values[position] + scaled, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
+		_apply_row(state, effect, progress_permille)
+	for extra: ActionDef.ActionEffect in extras:
+		_apply_row(state, extra, progress_permille)
 	if progress_permille == FULL_PROGRESS and _provider != null:
 		_provider.on_action_completed(action_id, state.settlement_id, state.occupation_id)
 	return Result.success()
+
+
+## Uma linha de efeito (da tabela ou do provedor) na necessidade, pela mesma conta: piso de (delta x progresso) / 1000, limitado a 0..100.
+func _apply_row(state: NpcState, effect: ActionDef.ActionEffect, progress_permille: int) -> void:
+	var position: int = _need_position[effect.need_id]
+	var scaled: int = IntMath.floor_div(effect.delta * progress_permille, FULL_PROGRESS)
+	state.need_values[position] = clampi(state.need_values[position] + scaled, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
 
 
 ## A hora (0 a 23) está na janela [de, até)? Janela que cruza a meia-noite (de maior que até) vale de `de` até 24 e de 0 até `até`;

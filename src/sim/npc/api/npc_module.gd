@@ -289,8 +289,15 @@ func _build_decision_runtime() -> String:
 		var food_problem: String = food_stub.check_references(_definitions.places, _routine.peek_occupation_ids())
 		if not food_problem.is_empty():
 			return "FoodStub (TEMP-LW-065): %s" % food_problem
+	if _definitions.income != null:
+		var need_ids: Array[String] = []
+		for def: NeedDef in _need_defs:
+			need_ids.append(def.id)
+		var income_problem: String = _definitions.income.check_references(need_ids, _routine.peek_occupation_ids())
+		if not income_problem.is_empty():
+			return "IncomeStub (TEMP-LW-066): %s" % income_problem
 	var occupancy: PlaceOccupancy = PlaceOccupancy.new(_npcs)
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food, _definitions.income)
 	var runner: ActionRunner = ActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min)
 	if not runner.peek_problem().is_empty():
 		return "ActionRunner: %s" % runner.peek_problem()
@@ -452,6 +459,8 @@ class Definitions:
 	## Opcional: responde `has_food`. Sem ele nenhuma ação que exija comida começa. Em produção é o FoodStub (TEMP-LW-065), com estoque salvo
 	## junto com o módulo; os testes de decisão podem pôr um provedor falso, sem estado.
 	var food: ActionConditionProvider
+	## Opcional (TEMP-LW-066): a renda simbólica de quem trabalha (IncomeStub). Sem ele o trabalho não alivia a necessidade `income`.
+	var income: IncomeStub
 	var walk_speed_cm_per_min: int = ActionRunner.DEFAULT_WALK_SPEED_CM_PER_MIN
 	## Build de desenvolvimento? Só então valem os comandos de depuração do módulo (hoje `request_set_food_stock`). A fronteira do app lê
 	## `OS.is_debug_build()` e entrega aqui; a simulação não lê `OS`. Padrão falso.
