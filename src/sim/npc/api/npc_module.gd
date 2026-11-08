@@ -40,6 +40,8 @@ var _definitions: Definitions
 ## Fluxo de decisão (LW-063): montado no primeiro `tick`, só se as definições estão completas. `_decision_problem` diz por que não.
 var _decision_checked: bool = false
 var _decision_problem: String = ""
+## Por que a população inicial não nasceu (vazio = nasceu, ou não havia plano). Não é salvo: só aparece no debug_summary().
+var _population_problem: String = ""
 var _runner: ActionRunner
 var _provider: NpcThinker.ConditionProvider
 var _thinker: NpcThinker
@@ -102,6 +104,26 @@ func peek_npc(npc_id: int) -> NpcQuery:
 ## IDs dos NPCs em ordem crescente.
 func peek_npc_ids() -> Array[int]:
 	return _sorted_ids()
+
+
+## Jogo novo (LW-067): cria a população inicial do plano de `Definitions.population`, em ordem fixa, com os traços sorteados no fluxo
+## `npc.population` do ctx.rng. Sem plano (o padrão dos testes) não cria ninguém. Plano que não fecha (assentamento ou ofício inexistente,
+## falta de casa ou de local de trabalho com vaga) é erro de DADO: nenhum NPC nasce, `push_error` diz o motivo e o `debug_summary()` o repete.
+func on_new_game(_world_seed: int) -> void:
+	if _definitions == null or _definitions.population == null or _ctx == null:
+		return
+	if _routine == null or _definitions.places == null:
+		_report_population_problem("faltam a tabela de rotina ou o serviço de locais do `world`")
+		return
+	var built: PopulationPlan.BuildResult = _definitions.population.build_specs(_definitions.places, _routine, _ctx.rng)
+	if not built.result.ok:
+		_report_population_problem(built.result.message)
+		return
+	for spec: NpcSpec in built.specs:
+		var created: CreateResult = request_create_npc(spec)
+		if not created.result.ok:
+			_report_population_problem(created.result.message)
+			return
 
 
 ## A cada passo: a fila de pensamento (LW-063). Quem chegou no seu `next_think_time` pensa, até `max_thinks_per_step` por passo.
@@ -241,6 +263,7 @@ func debug_summary() -> Dictionary:
 	var food_stub: FoodStub = _food_stub()
 	if food_stub != null:
 		summary["food_stock"] = food_stub.serialize()
+	summary["population_problem"] = _population_problem
 	summary["decision_problem"] = _decision_problem_text()
 	summary["decision_enabled"] = _thinker != null
 	summary["thinks_last_step"] = _thinker.last_step_thinks if _thinker != null else 0
@@ -362,6 +385,12 @@ func _load_food_stock(data: Dictionary) -> void:
 		food_stub.reset_to_start()
 
 
+## A população inicial não nasceu (ou parou no meio): guarda o motivo e o registra no log, para o erro de dado nunca passar em silêncio.
+func _report_population_problem(detail: String) -> void:
+	_population_problem = detail
+	push_error("NpcModule.on_new_game: população inicial não criada: %s" % detail)
+
+
 ## Nunca visitar o Dictionary pela ordem natural (muda depois de carregar um save).
 func _sorted_ids() -> Array[int]:
 	var ids: Array[int] = []
@@ -461,6 +490,8 @@ class Definitions:
 	var food: ActionConditionProvider
 	## Opcional (TEMP-LW-066): a renda simbólica de quem trabalha (IncomeStub). Sem ele o trabalho não alivia a necessidade `income`.
 	var income: IncomeStub
+	## Opcional (LW-067): quantos NPCs de cada ofício nascem em cada assentamento. Sem ele `on_new_game` não cria ninguém.
+	var population: PopulationPlan
 	var walk_speed_cm_per_min: int = ActionRunner.DEFAULT_WALK_SPEED_CM_PER_MIN
 	## Build de desenvolvimento? Só então valem os comandos de depuração do módulo (hoje `request_set_food_stock`). A fronteira do app lê
 	## `OS.is_debug_build()` e entrega aqui; a simulação não lê `OS`. Padrão falso.
