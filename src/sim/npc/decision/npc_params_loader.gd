@@ -18,6 +18,7 @@ const MAX_MINUTES: int = 1440
 const MAX_THINKS_PER_STEP: int = 100000
 const MAX_TOP_K: int = 16
 const MAX_ALARM_RADIUS_M: int = 10000
+const MAX_T2_LIMIT: int = 1000
 const URGENCY_WEIGHT_FIELDS: Array[String] = ["urgency_weight_comfortable", "urgency_weight_attention", "urgency_weight_urgent", "urgency_weight_critical"]
 
 
@@ -39,6 +40,8 @@ static func build_schema(file_name: String = DEFAULT_FILE) -> DataSchema:
 	schema.add_field("alarm_radius_m", DataSchema.FieldType.INT, false).set_range(0, MAX_ALARM_RADIUS_M)
 	schema.add_field("alarm_safety_pressure", DataSchema.FieldType.INT, false).set_range(0, NpcState.VALUE_MAX)
 	schema.add_field("alarm_window_min", DataSchema.FieldType.INT, false).set_range(0, MAX_MINUTES)
+	# Camadas (LW-077): opcional; ausente vale 0 (sem teto de notáveis).
+	schema.add_field("max_t2", DataSchema.FieldType.INT, false).set_range(0, MAX_T2_LIMIT)
 	return schema
 
 
@@ -94,6 +97,7 @@ static func _build(bundle: DataBundle) -> NpcParams:
 	params.alarm_radius_m = record.get("alarm_radius_m", 0)
 	params.alarm_safety_pressure = record.get("alarm_safety_pressure", 0)
 	params.alarm_window_min = record.get("alarm_window_min", 0)
+	params.max_t2 = record.get("max_t2", 0)
 	return params
 
 

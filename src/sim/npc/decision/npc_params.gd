@@ -34,6 +34,9 @@ var alarm_radius_m: int = 0
 var alarm_safety_pressure: int = 0
 ## Por quantos minutos depois do alarme o NPC no raio continua pesando as reações (fugir demora: andar até casa e ficar lá); 0 = só no pensamento do alarme.
 var alarm_window_min: int = 0
+# Camadas (LW-077).
+## Teto de NPCs VIVOS notáveis (T2) ao mesmo tempo; 0 = sem teto configurado (o padrão dos testes). Com o teto cheio promover é recusado, e ninguém é expulso.
+var max_t2: int = 0
 
 
 ## Peso do nível de urgência (0 a 3); nível fora disso usa o do crítico.

@@ -8,7 +8,8 @@ extends SimModule
 ## data/routine_blocks.json) também entra pelo construtor: `peek_routine_action` e a conferência do ofício. LW-063: com o objeto
 ## `Definitions` (catálogo, traços, parâmetros, serviço de locais e, opcional, o provedor de comida) o módulo DECIDE: `tick` roda a fila de
 ## pensamento (NpcThinker) e toda ação começa pela função única `_start_action` (ponto de extensão do modo S0, LW-070). Sem `Definitions`
-## (padrão) o `tick` não faz nada. Dependências: só core, `world` e a própria pasta; não importa o `character`.
+## (padrão) o `tick` não faz nada. LW-077: `request_promote` e `request_demote` (NpcTiers) mudam o tier entre T1 e T2 com teto global `max_t2`.
+## Dependências: só core, `world` e a própria pasta; não importa o `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -78,6 +79,8 @@ func request_create_npc(spec: NpcSpec) -> CreateResult:
 	var problem: String = _spec_problem(spec)
 	if not problem.is_empty():
 		return CreateResult.new(Result.failure(CODE_INVALID_SPEC, "NpcModule.request_create_npc: pedido inválido: %s." % problem), IdGenerator.NO_ID)
+	if spec.tier == NpcState.TIER_NOTABLE and not NpcTiers.has_room(NpcTiers.count_notable_alive(_npcs), _max_notable()):
+		return CreateResult.new(Result.failure(NpcTiers.CODE_T2_LIMIT_REACHED, "NpcModule.request_create_npc: já há %d NPC(s) notável(is) vivo(s) e o teto (max_t2) é %d; esperado um pedido com tier %d ou uma vaga livre." % [NpcTiers.count_notable_alive(_npcs), _max_notable(), NpcState.TIER_NORMAL]), IdGenerator.NO_ID)
 	var npc_id: int = _ctx.ids.next_id()
 	if npc_id == IdGenerator.NO_ID:
 		return CreateResult.new(Result.failure(CODE_NO_ID, "NpcModule.request_create_npc: o contador de IDs esgotou; não há ID novo."), IdGenerator.NO_ID)
@@ -96,6 +99,23 @@ func request_remove_npc(npc_id: int) -> Result:
 	_npcs.erase(npc_id)
 	_tracer.forget(npc_id)
 	return Result.success()
+
+
+## Promove o NPC de T1 a T2 (LW-077; `tier` precisa ser 2). Teto global `max_t2` dos parâmetros: cheio, `NPC_T2_LIMIT_REACHED` e ninguém é
+## expulso. Só muda o tier: identidade, ofício e rotina ficam como estavam. Regras completas em `NpcTiers.promote`.
+func request_promote(npc_id: int, tier: int) -> Result:
+	if not _npcs.has(npc_id):
+		return _unknown("request_promote", npc_id)
+	return NpcTiers.promote(_npcs[npc_id], tier, NpcTiers.count_notable_alive(_npcs), _max_notable())
+
+
+## Rebaixa o NPC de T2 a T1 (LW-077; `tier` precisa ser 1) e libera a vaga. Antes de mudar o tier chama o ponto de extensão
+## `Definitions.on_demote` (a LW-078 e a LW-079 resumem memória e relações em traços ali). Regras completas em `NpcTiers.demote`.
+func request_demote(npc_id: int, tier: int) -> Result:
+	if not _npcs.has(npc_id):
+		return _unknown("request_demote", npc_id)
+	var on_demote: Callable = _definitions.on_demote if _definitions != null else Callable()
+	return NpcTiers.demote(_npcs[npc_id], tier, on_demote)
 
 
 ## Resumo do NPC, em CÓPIA. ID inexistente devolve falha tratada, nunca derruba o jogo.
@@ -306,6 +326,9 @@ func validate() -> Array[String]:
 			problems.append("NPC %d: morto, mas com critical_since %d; esperado %d." % [npc_id, state.critical_since, NpcState.NO_TIME])
 		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
 			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
+	var tier_problem: String = NpcTiers.limit_problem(NpcTiers.count_notable_alive(_npcs), _max_notable())
+	if not tier_problem.is_empty():
+		problems.append(tier_problem)
 	var food_stub: FoodStub = _food_stub()
 	if food_stub != null:
 		problems.append_array(food_stub.validate())
@@ -512,6 +535,11 @@ func _urgencies_of(state: NpcState) -> PackedInt64Array:
 	return urgencies
 
 
+## Teto de notáveis vivos (`max_t2` dos parâmetros); 0 = sem teto configurado (sem definições ou sem parâmetros também).
+func _max_notable() -> int:
+	return _definitions.params.max_t2 if _definitions != null and _definitions.params != null else 0
+
+
 ## Primeiro problema do pedido de criação (texto vazio se estiver certo).
 func _spec_problem(spec: NpcSpec) -> String:
 	if spec == null:
@@ -588,6 +616,9 @@ class Definitions:
 	## Build de desenvolvimento? Só então valem os comandos de depuração do módulo (hoje `request_set_food_stock`). A fronteira do app lê
 	## `OS.is_debug_build()` e entrega aqui; a simulação não lê `OS`. Padrão falso.
 	var is_development_build: bool = false
+	## Opcional (LW-077): ponto de extensão do rebaixamento. É chamado com o `npc_id`, uma vez por rebaixamento de verdade, ANTES de o tier mudar
+	## (o NPC ainda é notável). A LW-078 e a LW-079 o usarão para resumir memória e relações em traços; hoje só os testes o usam. Sem ele, nada.
+	var on_demote: Callable = Callable()
 
 
 ## Resultado de `request_create_npc`: `npc_id` só vale se `result.ok` (mesmo padrão do SpawnResult do `character`).
