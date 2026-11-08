@@ -63,6 +63,8 @@ var _tracer: DecisionTracer = DecisionTracer.new()
 var _runner: ActionRunner
 var _provider: NpcThinker.ConditionProvider
 var _thinker: NpcThinker
+## Consequências sociais de `talk` e `help` (LW-080): montado junto com o pensador, que avisa quando uma ação termina.
+var _social: SocialActions
 ## A tabela é UMA só e vive o tempo todo do módulo: o runner, a ocupação e o pensador a recebem por referência (on_load a atualiza no lugar).
 var _npcs: Dictionary[int, NpcState] = {}
 ## Memória dos NPCs notáveis (LW-078), por npc_id: só tem entrada quem já guardou algo. Salva junto (chave `memories`).
@@ -417,6 +419,9 @@ func validate() -> Array[String]:
 		problems.append(tier_problem)
 	problems.append_array(NpcMemory.table_problems(_memories, _npcs, _memory_rules_or_null(), _known_kind_ids()))
 	problems.append_array(_relations.problems(_npcs, _relation_rules(), _today() if _ctx != null else -1))
+	for relation: NpcRelation in _relations.sorted_relations():
+		if relation.last_event_day < NpcRelation.NO_EVENT_DAY or (_ctx != null and relation.last_event_day > _today()):
+			problems.append("Relação %s: last_event_day %d fora de %d (nunca) a hoje." % [relation.key(), relation.last_event_day, NpcRelation.NO_EVENT_DAY])
 	var food_stub: FoodStub = _food_stub()
 	if food_stub != null:
 		problems.append_array(food_stub.validate())
@@ -518,7 +523,8 @@ func _build_decision_runtime() -> String:
 		return "UtilityScorer: %s" % scorer.peek_problem()
 	_provider = provider
 	_runner = runner
-	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _kill_npc)
+	_social = SocialActions.new(_npcs, _definitions.params.talk_gain, _definitions.params.talk_limit, _social_relation_values, _adjust_relation, _record_memory)
+	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _kill_npc, _social.on_action_finished)
 	return ""
 
 
@@ -639,12 +645,32 @@ func _max_notable() -> int:
 	return _definitions.params.max_t2 if _definitions != null and _definitions.params != null else 0
 
 
-## Caminho único de ajuste das relações (LW-079): o comando de depuração e, nas LW-080 e LW-083, as ações sociais e a conversa com o jogador.
-## As regras (Q11, limite por NPC, mudanças válidas) estão em `RelationGraph.adjust`. Recusado, nada muda.
+## Caminho único de ajuste das relações (LW-079): o comando de depuração, as ações sociais (LW-080) e, na LW-083, a conversa com o jogador. As regras
+## (Q11, limite por NPC, mudanças válidas) estão em `RelationGraph.adjust`; recusado, nada muda. Ajustou, publica `RelationChanged` (LW-080).
 func _adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> Result:
 	if _ctx == null:
 		return Result.failure(CODE_NOT_READY, "NpcModule.request_adjust_relation: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
-	return _relations.adjust(a_id, b_id, deltas, _ctx.clock.total_minutes(), _relation_rules(), _npcs)
+	var rules: RelationGraph.Rules = _relation_rules()
+	var today: int = _today()
+	var existing: NpcRelation = _relations.find(a_id, b_id)
+	var before: PackedInt64Array = existing.values_at(today, rules.decay_per_day) if existing != null else PackedInt64Array()
+	var adjusted: Result = _relations.adjust(a_id, b_id, deltas, _ctx.clock.total_minutes(), rules, _npcs)
+	if adjusted.ok:
+		# `RelationChanged` (LW-080): relação nova ou com valor diferente, no máximo uma vez por par por dia (o dia vai na própria relação).
+		var relation: NpcRelation = _relations.find(a_id, b_id)
+		var after: PackedInt64Array = relation.values_at(today, rules.decay_per_day)
+		if (before.is_empty() or before != after) and relation.last_event_day < today:
+			relation.last_event_day = today
+			_ctx.events.publish(RelationChanged.new(relation.a_id, relation.b_id, after))
+	return adjusted
+
+
+## As dimensões de hoje do par, ou uma lista vazia se não se conhecem (o que o `SocialActions` pergunta antes de somar o ganho da conversa).
+func _social_relation_values(a_id: int, b_id: int) -> PackedInt64Array:
+	var relation: NpcRelation = _relations.find(a_id, b_id)
+	if relation == null:
+		return PackedInt64Array()
+	return relation.values_at(_today(), _relation_rules().decay_per_day)
 
 
 ## As regras das relações (parâmetros de `Definitions`); sem parâmetros, tudo em 0 (relações não configuradas).

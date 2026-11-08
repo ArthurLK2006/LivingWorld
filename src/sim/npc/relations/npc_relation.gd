@@ -26,6 +26,9 @@ const KEY_B_ID: String = "b_id"
 const KEY_VALUES: String = "values"
 const KEY_MET_AT: String = "met_at"
 const KEY_UPDATED_DAY: String = "updated_day"
+## Dia da última publicação do `RelationChanged` desta relação (LW-080); `NO_EVENT_DAY` = nunca publicou. Fica salvo para continuar igual depois de carregar.
+const KEY_LAST_EVENT_DAY: String = "last_event_day"
+const NO_EVENT_DAY: int = -1
 
 ## O menor ID do par.
 var a_id: int = 0
@@ -37,6 +40,8 @@ var values: PackedInt64Array = PackedInt64Array()
 var met_at: int = 0
 ## Dia (número do dia de simulação) em que `values` foi acertado pela última vez.
 var updated_day: int = 0
+## Dia em que o `RelationChanged` desta relação saiu pela última vez (NO_EVENT_DAY se nunca): o evento é agregado, no máximo um por par por dia.
+var last_event_day: int = NO_EVENT_DAY
 
 
 func _init(first_id: int = 0, second_id: int = 0) -> void:
@@ -115,6 +120,7 @@ func duplicate_relation() -> NpcRelation:
 	copy.values = values.duplicate()
 	copy.met_at = met_at
 	copy.updated_day = updated_day
+	copy.last_event_day = last_event_day
 	return copy
 
 
@@ -122,7 +128,7 @@ func to_dict() -> Dictionary:
 	var saved_values: Array = []
 	for value: int in values:
 		saved_values.append(value)
-	return {KEY_A_ID: a_id, KEY_B_ID: b_id, KEY_VALUES: saved_values, KEY_MET_AT: met_at, KEY_UPDATED_DAY: updated_day}
+	return {KEY_A_ID: a_id, KEY_B_ID: b_id, KEY_VALUES: saved_values, KEY_MET_AT: met_at, KEY_UPDATED_DAY: updated_day, KEY_LAST_EVENT_DAY: last_event_day}
 
 
 ## Lê uma relação do save. Só confere formato e tipos; faixas e coerência são do `validate()` do módulo.
@@ -145,6 +151,11 @@ static func parse(raw_entry: Variant) -> ParseResult:
 		relation.values[index] = int(raw_values[index])
 	relation.met_at = int(entry[KEY_MET_AT])
 	relation.updated_day = int(entry[KEY_UPDATED_DAY])
+	# Campo acrescentado na LW-080: ausente no save = nunca publicou o evento.
+	if entry.has(KEY_LAST_EVENT_DAY):
+		if not MemoryRecord.is_int_like(entry[KEY_LAST_EVENT_DAY]):
+			return ParseResult.new(null, MemoryRecord.bad_field(entry, KEY_LAST_EVENT_DAY, "inteiro"))
+		relation.last_event_day = int(entry[KEY_LAST_EVENT_DAY])
 	if int(entry[KEY_A_ID]) > int(entry[KEY_B_ID]):
 		return ParseResult.new(null, "par fora de ordem: a_id %d maior que b_id %d (o par guarda o menor ID primeiro)" % [int(entry[KEY_A_ID]), int(entry[KEY_B_ID])])
 	return ParseResult.new(relation, "")

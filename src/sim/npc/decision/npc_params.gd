@@ -53,6 +53,11 @@ var relation_decay_per_day: int = 0
 var relation_friend_threshold: int = 0
 ## Afeição negativa (em módulo) a partir da qual a relação é de rivalidade; 0 = o rótulo "rival" nunca aparece.
 var relation_rival_threshold: int = 0
+# Ações sociais (LW-080).
+## Pontos que UMA conversa soma à afeição e à confiança do par; 0 = conversar não muda a relação (mas os dois se conhecem).
+var talk_gain: int = 0
+## Teto que conversar sozinho alcança em afeição e confiança: abaixo dele a conversa soma `talk_gain` sem passar do teto; no teto ou acima, não soma.
+var talk_limit: int = 0
 
 
 ## Peso do nível de urgência (0 a 3); nível fora disso usa o do crítico.

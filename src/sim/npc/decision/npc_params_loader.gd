@@ -54,6 +54,9 @@ static func build_schema(file_name: String = DEFAULT_FILE) -> DataSchema:
 	schema.add_field("relation_decay_per_day", DataSchema.FieldType.INT, false).set_range(0, NpcRelation.MAX_VALUE)
 	schema.add_field("relation_friend_threshold", DataSchema.FieldType.INT, false).set_range(0, NpcRelation.MAX_VALUE)
 	schema.add_field("relation_rival_threshold", DataSchema.FieldType.INT, false).set_range(0, NpcRelation.MAX_VALUE)
+	# Ações sociais (LW-080): opcionais; ausentes valem 0 (conversar não muda a relação).
+	schema.add_field("talk_gain", DataSchema.FieldType.INT, false).set_range(0, NpcRelation.MAX_VALUE)
+	schema.add_field("talk_limit", DataSchema.FieldType.INT, false).set_range(0, NpcRelation.MAX_VALUE)
 	return schema
 
 
@@ -117,6 +120,8 @@ static func _build(bundle: DataBundle) -> NpcParams:
 	params.relation_decay_per_day = record.get("relation_decay_per_day", 0)
 	params.relation_friend_threshold = record.get("relation_friend_threshold", 0)
 	params.relation_rival_threshold = record.get("relation_rival_threshold", 0)
+	params.talk_gain = record.get("talk_gain", 0)
+	params.talk_limit = record.get("talk_limit", 0)
 	return params
 
 

@@ -43,9 +43,12 @@ var _start_action: Callable
 var _tracer: DecisionTracer
 ## Função de morte do módulo (LW-081): (npc_id: int, cause: String, now: int) -> void. Sem ela (testes do pensador solto) ninguém morre.
 var _kill_npc: Callable
+## Aviso de ação terminada (LW-080): (npc_id: int, action_id: String, place_id: String, now: int) -> void, chamado quando uma ação COMPLETA (não quando é
+## interrompida) para o módulo tirar as consequências sociais dela. Sem ele (testes do pensador solto) nada é avisado.
+var _on_action_finished: Callable
 
 
-func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRunner, scorer: UtilityScorer, chooser: PlaceChooser, provider: ConditionProvider, routine: RoutineTable, params: NpcParams, need_defs: Array[NeedDef], actions: Array[ActionDef], places: SettlementService, start_action: Callable, tracer: DecisionTracer = null, kill_npc: Callable = Callable()) -> void:
+func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRunner, scorer: UtilityScorer, chooser: PlaceChooser, provider: ConditionProvider, routine: RoutineTable, params: NpcParams, need_defs: Array[NeedDef], actions: Array[ActionDef], places: SettlementService, start_action: Callable, tracer: DecisionTracer = null, kill_npc: Callable = Callable(), on_action_finished: Callable = Callable()) -> void:
 	_ctx = ctx
 	_states = states
 	_runner = runner
@@ -60,6 +63,7 @@ func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRun
 	_start_action = start_action
 	_tracer = tracer
 	_kill_npc = kill_npc
+	_on_action_finished = on_action_finished
 	for action: ActionDef in actions:
 		_action_by_id[action.id] = action
 
@@ -115,7 +119,10 @@ func think(npc_id: int, now: int, alarm: Alarm = null) -> void:
 		return
 	# Primeiro o fim da ação (o runner leva as necessidades até o MINUTO DO FIM antes de aplicar o efeito, então o resultado não depende do
 	# atraso do pensamento) e só depois o resto do caminho até agora.
+	var action_before: String = state.action_id
 	var progress: ActionRunner.AdvanceResult = _runner.advance(npc_id, now)
+	if progress.outcome == ActionRunner.Outcome.COMPLETED and _on_action_finished.is_valid():
+		_on_action_finished.call(npc_id, action_before, state.place_id, now)
 	if state.needs_updated_at < now:
 		NeedMath.settle(state, _need_defs, now)
 	NeedMath.update_critical(state, _need_defs, now)
