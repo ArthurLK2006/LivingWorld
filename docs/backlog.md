@@ -171,7 +171,7 @@ Ideias fora do escopo atual entram aqui com o que é, por que importa e onde sur
 - Caminhada longa A → B em S0 e tempo limite do Intent nunca foram exercitados no spike; medir no jogo real depois de decidir a velocidade (DEC-123). Surgiu na LW-071.
 - N2 sem caminho na r4 (pedra): destino bloqueado ou faixa sem passagem? A saída não separa os dois casos; só importa se a N2 voltar à mesa (hoje, N1). Surgiu na LW-071.
 - Corpos do segundo foco (povoado B) ficam fora do raio de carga do terreno (sem chão desenhado); tratar na LW-072 se a câmera puder vê-los. Surgiu na LW-071.
-- Tarefa DOC de Arthur (arquivos protegidos): registrar em DECISIONS.md as propostas DEC-122 (navegação N1 e velocidade P1) e DEC-123 (direção P3, com teste de 30 dias e DEC nova) do 0009. Surgiu na LW-071.
+- Tarefa DOC de Arthur (arquivos protegidos): registrar em DECISIONS.md as propostas DEC-122 (navegação N1 e velocidade P1) e DEC-123 (direção P3, com teste de 30 dias e DEC nova) do 0009. Surgiu na LW-071. Feito na LW-071a (08/11/2026).
 - Medir se o tranco do começo de segmento (P2 a 8x, aos 1,5 s da execução 4) vem da troca de velocidade ou da troca de política. Surgiu na LW-071.
 - Registrar a posição do jogador por instante nos ensaios futuros, para cruzar os trancos com a rota. Surgiu na LW-071.
 - Corrigir no 0009, seção "O que o spike NÃO cobre", a frase "Folga real por quadro: o vsync esconde a folga na média (resposta 1)", que contradiz a resposta 1 corrigida. Surgiu na LW-071.
