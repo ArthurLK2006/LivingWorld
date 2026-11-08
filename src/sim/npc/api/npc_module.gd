@@ -42,6 +42,8 @@ var _decision_checked: bool = false
 var _decision_problem: String = ""
 ## Por que a população inicial não nasceu (vazio = nasceu, ou não havia plano). Não é salvo: só aparece no debug_summary().
 var _population_problem: String = ""
+## Rastro de decisão dos NPCs marcados (LW-064): só para olhar, não é salvo nem entra no hash.
+var _tracer: DecisionTracer = DecisionTracer.new()
 var _runner: ActionRunner
 var _provider: NpcThinker.ConditionProvider
 var _thinker: NpcThinker
@@ -88,6 +90,7 @@ func request_remove_npc(npc_id: int) -> Result:
 	if not _npcs.has(npc_id):
 		return _unknown("request_remove_npc", npc_id)
 	_npcs.erase(npc_id)
+	_tracer.forget(npc_id)
 	return Result.success()
 
 
@@ -99,6 +102,25 @@ func peek_npc(npc_id: int) -> NpcQuery:
 	var query: NpcQuery = NpcQuery.new(Result.success(), state)
 	query.need_urgencies = _urgencies_of(state)
 	return query
+
+
+## Marca ou desmarca o NPC para o rastro de decisão (LW-064). SÓ em build de desenvolvimento (`Definitions.is_development_build`); fora dele,
+## `NPC_DEV_ONLY` e nada muda. NPC inexistente: falha tratada. Desmarcar apaga o rastro.
+func request_set_traced(npc_id: int, is_traced: bool) -> Result:
+	if _definitions == null or not _definitions.is_development_build:
+		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_set_traced: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
+	if not _npcs.has(npc_id):
+		return _unknown("request_set_traced", npc_id)
+	_tracer.set_traced(npc_id, is_traced)
+	return Result.success()
+
+
+## Os últimos pensamentos do NPC MARCADO: necessidades, todas as candidatas com cada parcela da pontuação, a ação escolhida e o motivo
+## (cópias; o mais antigo primeiro). NPC não marcado: `NPC_NOT_TRACED`; NPC inexistente: `NPC_UNKNOWN`.
+func explain_decision(npc_id: int) -> DecisionTracer.Explanation:
+	if not _npcs.has(npc_id):
+		return DecisionTracer.Explanation.new(_unknown("explain_decision", npc_id), [])
+	return _tracer.explain(npc_id)
 
 
 ## IDs dos NPCs em ordem crescente.
@@ -212,6 +234,7 @@ func on_load(data: Dictionary) -> Result:
 	for loaded_id: int in loaded:
 		_npcs[loaded_id] = loaded[loaded_id]
 	_load_food_stock(data)
+	_tracer.clear()
 	return Result.success()
 
 
@@ -264,6 +287,8 @@ func debug_summary() -> Dictionary:
 	if food_stub != null:
 		summary["food_stock"] = food_stub.serialize()
 	summary["population_problem"] = _population_problem
+	summary["traced_npcs"] = _tracer.traced_count()
+	summary["trace_records_made"] = _tracer.records_made
 	summary["decision_problem"] = _decision_problem_text()
 	summary["decision_enabled"] = _thinker != null
 	summary["thinks_last_step"] = _thinker.last_step_thinks if _thinker != null else 0
@@ -329,7 +354,7 @@ func _build_decision_runtime() -> String:
 		return "UtilityScorer: %s" % scorer.peek_problem()
 	_provider = provider
 	_runner = runner
-	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action)
+	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer)
 	return ""
 
 

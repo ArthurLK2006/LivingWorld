@@ -32,9 +32,11 @@ var _action_by_id: Dictionary[String, ActionDef] = {}
 var _places: SettlementService
 ## Função de início de ação do módulo: (npc_id: int, action_id: String, place_id: String, now: int) -> Result.
 var _start_action: Callable
+## Rastro de decisão dos NPCs marcados (LW-064); nulo = sem rastro. NPC não marcado não gera custo nem dado.
+var _tracer: DecisionTracer
 
 
-func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRunner, scorer: UtilityScorer, chooser: PlaceChooser, provider: ConditionProvider, routine: RoutineTable, params: NpcParams, need_defs: Array[NeedDef], actions: Array[ActionDef], places: SettlementService, start_action: Callable) -> void:
+func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRunner, scorer: UtilityScorer, chooser: PlaceChooser, provider: ConditionProvider, routine: RoutineTable, params: NpcParams, need_defs: Array[NeedDef], actions: Array[ActionDef], places: SettlementService, start_action: Callable, tracer: DecisionTracer = null) -> void:
 	_ctx = ctx
 	_states = states
 	_runner = runner
@@ -47,6 +49,7 @@ func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRun
 	_actions = actions
 	_places = places
 	_start_action = start_action
+	_tracer = tracer
 	for action: ActionDef in actions:
 		_action_by_id[action.id] = action
 
@@ -87,9 +90,13 @@ func think(npc_id: int, now: int) -> void:
 	var running: bool = progress.outcome == ActionRunner.Outcome.RUNNING
 	_provider.subject = state
 	var routine_action: String = _routine_action_id(state, now)
-	var chosen: Candidate = _choose(_candidates(state, now, running, routine_action))
+	var candidates: Array[Candidate] = _candidates(state, now, running, routine_action)
+	var chosen: Candidate = _choose(candidates)
+	var reason: String = DecisionTracer.REASON_INERTIA if chosen != null and chosen.is_current else (chosen.source if chosen != null else DecisionTracer.REASON_FALLBACK)
 	if chosen == null:
 		chosen = _fallback(state, now)
+	if _tracer != null and _tracer.is_traced(npc_id):
+		_tracer.record(npc_id, now, state.need_values, _candidate_records(candidates), chosen.action.id if chosen != null else "", chosen.place_id if chosen != null else "", reason)
 	if chosen != null and not chosen.is_current and not _is_walking_there(state, chosen, running):
 		_execute(state, chosen, running, now)
 	_schedule(state, now)
@@ -108,24 +115,34 @@ func _routine_action_id(state: NpcState, now: int) -> String:
 ## comida, sem vaga...), ou se não há urgência, a ação da rotina da hora (assim quem não tem como aliviar a fome ainda vai trabalhar, e é o
 ## trabalho do agricultor que repõe a comida). A ação em andamento entra sempre, para a inércia poder mantê-la.
 func _candidates(state: NpcState, now: int, running: bool, routine_action: String) -> Array[Candidate]:
-	var found: Array[Candidate] = _scored(_relieving_actions(state), state, now, running, routine_action)
+	var found: Array[Candidate] = _scored(_relieving_actions(state), state, now, running, routine_action, DecisionTracer.REASON_URGENT_NEED)
 	if found.is_empty() and _action_by_id.has(routine_action):
-		found = _scored([_action_by_id[routine_action]], state, now, running, routine_action)
+		found = _scored([_action_by_id[routine_action]], state, now, running, routine_action, DecisionTracer.REASON_ROUTINE)
 	if running and _action_by_id.has(state.action_id) and not _has_candidate(found, state.action_id):
 		var current: Candidate = _candidate_for(state, _action_by_id[state.action_id], now, running, routine_action)
 		if current != null:
+			current.source = DecisionTracer.REASON_INERTIA
 			found.append(current)
 	return found
 
 
-## Candidatas pontuadas das ações dadas (as que não têm local, não podem começar ou não pontuam ficam de fora).
-func _scored(actions: Array[ActionDef], state: NpcState, now: int, running: bool, routine_action: String) -> Array[Candidate]:
+## Candidatas pontuadas das ações dadas (as que não têm local, não podem começar ou não pontuam ficam de fora). `source`: de onde vieram.
+func _scored(actions: Array[ActionDef], state: NpcState, now: int, running: bool, routine_action: String, source: String) -> Array[Candidate]:
 	var found: Array[Candidate] = []
 	for action: ActionDef in actions:
 		var candidate: Candidate = _candidate_for(state, action, now, running, routine_action)
 		if candidate != null:
+			candidate.source = source
 			found.append(candidate)
 	return found
+
+
+## As candidatas do pensamento como registros do rastro (só chamado para NPC marcado).
+func _candidate_records(candidates: Array[Candidate]) -> Array[DecisionTracer.CandidateRecord]:
+	var records: Array[DecisionTracer.CandidateRecord] = []
+	for candidate: Candidate in candidates:
+		records.append(DecisionTracer.CandidateRecord.new(candidate.action.id, candidate.place_id, candidate.breakdown, candidate.is_current, candidate.source))
+	return records
 
 
 func _has_candidate(found: Array[Candidate], action_id: String) -> bool:
@@ -170,7 +187,7 @@ func _candidate_for(state: NpcState, action: ActionDef, now: int, running: bool,
 	var scored: UtilityScorer.ScoreBreakdown = _scorer.score(state, action, distance_cm, is_current, action.id == routine_action)
 	if not scored.result.ok:
 		return null
-	return Candidate.new(action, place_id, scored.total, is_current)
+	return Candidate.new(action, place_id, scored.total, is_current, scored)
 
 
 ## Escolha (passo 5): ordena, toma as melhores dentro da margem e sorteia com peso (inteiro) no fluxo `npc.decision`.
@@ -266,12 +283,17 @@ class Candidate:
 	var place_id: String
 	var total: int
 	var is_current: bool
+	## As parcelas da pontuação (para o rastro); nulo na espera de reserva, que não é pontuada.
+	var breakdown: UtilityScorer.ScoreBreakdown
+	## De onde veio: motivo de escolha se vencer (URGENT_NEED ou ROUTINE); INERTIA para a ação que só estava em andamento.
+	var source: String = DecisionTracer.REASON_FALLBACK
 
-	func _init(candidate_action: ActionDef, candidate_place_id: String, candidate_total: int, candidate_is_current: bool) -> void:
+	func _init(candidate_action: ActionDef, candidate_place_id: String, candidate_total: int, candidate_is_current: bool, candidate_breakdown: UtilityScorer.ScoreBreakdown = null) -> void:
 		action = candidate_action
 		place_id = candidate_place_id
 		total = candidate_total
 		is_current = candidate_is_current
+		breakdown = candidate_breakdown
 
 
 ## Provedor das condições `has_food` e `place_has_room` do ActionRunner. `place_has_room` = capacidade do `world` menos a ocupação derivada
