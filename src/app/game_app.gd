@@ -10,6 +10,8 @@ const DEFAULT_WORLD_SEED: int = 1
 const GAME_VERSION: String = "0.0.1-dev"
 ## Pasta dos arquivos de terreno lidos na primeira chamada de peek_bridge().
 const TERRAIN_DIR: String = "res://data/world"
+## Pasta dos arquivos de dados do `npc` (necessidades, ações, ofícios, parâmetros, provisórios e população), lida no `_ready` (LW-067).
+const NPC_DATA_DIR: String = "res://data"
 
 ## Pasta lida por peek_bridge(). Pública só para o teste de falha trocá-la; mudar depois da primeira chamada
 ## não recarrega nada.
@@ -22,6 +24,8 @@ var _terrain: TerrainData
 var _is_terrain_loaded: bool = false
 ## Locais dos assentamentos (LW-074), lidos no `_ready` do autoload e entregues à ponte; vazio num GameApp criado à mão (testes).
 var _places: Array[Place] = []
+## Assentamentos lidos junto com os locais; o `npc` (LW-067) monta com eles o serviço de consultas do `world`.
+var _settlements: Array[Settlement] = []
 
 
 func _ready() -> void:
@@ -31,7 +35,7 @@ func _ready() -> void:
 		return
 	bind_host(host)
 	_places = _load_places()
-	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points())
+	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points(), _load_npc_setup())
 
 
 func bind_host(host: SimulationHostNode) -> void:
@@ -79,7 +83,21 @@ func _load_places() -> Array[Place]:
 	if not loaded.result.ok:
 		push_error("GameApp: assentamentos e locais não carregados de '%s': %s" % [terrain_dir, loaded.result.message])
 		return []
+	_settlements = loaded.settlements
 	return loaded.places
+
+
+## Dados do `npc` de NPC_DATA_DIR (LW-067), com o serviço de locais montado dos assentamentos já lidos; nulo (depois de push_error) se não
+## carregarem, e o jogo segue sem NPCs. Sem assentamentos e locais (não carregaram, e o motivo já foi registrado) não há onde pôr NPCs:
+## nulo, sem erro novo.
+func _load_npc_setup() -> NpcSetup:
+	if _settlements.is_empty() or _places.is_empty():
+		return null
+	var setup: NpcSetup = NpcSetup.from_dir(NPC_DATA_DIR, SettlementService.new(_settlements, _places), OS.is_debug_build())
+	if not setup.result.ok:
+		push_error("GameApp: dados do npc não carregados de '%s': %s" % [NPC_DATA_DIR, setup.result.message])
+		return null
+	return setup
 
 
 ## Terreno de terrain_dir, ou nulo (depois de push_error) se não carregar. Sem `quit`: o GameApp também roda

@@ -18,15 +18,15 @@ var interaction: InteractionService
 
 ## Cria um mundo novo, encerrando o anterior se houver. Com `terrain`, registra os módulos do jogo (GameModules); sem ele o mundo
 ## nasce só com o núcleo (testes e ferramentas que não precisam do terreno). `points` são os pontos de interesse já lidos (LW-049).
-## Falha de registro: push_error e o mundo segue sem módulos.
-func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = []) -> void:
+## `npc_setup` (LW-067): os dados do `npc` já lidos; sem ele o `npc` nasce sem NPCs. Falha de registro: push_error e o mundo segue sem módulos.
+func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null) -> void:
 	if runner != null:
 		runner.finish()
 	character = null
 	interaction = null
 	runner = SimulationRunner.new(world_seed)
 	if terrain != null:
-		var modules: GameModules = GameModules.register(runner, terrain, points)
+		var modules: GameModules = GameModules.register(runner, terrain, points, npc_setup)
 		if modules.result.ok:
 			character = modules.character
 			interaction = modules.interaction
