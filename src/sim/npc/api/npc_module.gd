@@ -5,8 +5,10 @@ extends SimModule
 ## serialize(), no state_hash. LW-058: as definições das necessidades (NeedDef, lidas de data/needs.json por quem monta o módulo)
 ## entram pelo CONSTRUTOR, sem global nem autoload; sem elas (padrão) os NPCs nascem com tudo em zero e sem urgência. Ainda NÃO
 ## decide, anda nem tem LOD: isso é das tarefas seguintes. LW-061: a tabela de rotina (RoutineTable, de data/occupations.json e
-## data/routine_blocks.json) também entra pelo construtor: `peek_routine_action` e a conferência do ofício. Dependências: só core e a
-## própria pasta; não importa o `character`.
+## data/routine_blocks.json) também entra pelo construtor: `peek_routine_action` e a conferência do ofício. LW-063: com o objeto
+## `Definitions` (catálogo, traços, parâmetros, serviço de locais e, opcional, o provedor de comida) o módulo DECIDE: `tick` roda a fila de
+## pensamento (NpcThinker) e toda ação começa pela função única `_start_action` (ponto de extensão do modo S0, LW-070). Sem `Definitions`
+## (padrão) o `tick` não faz nada. Dependências: só core, `world` e a própria pasta; não importa o `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -30,14 +32,24 @@ var _need_defs: Array[NeedDef] = []
 ## Motivo de as definições não servirem (vazio = servem, ou não foram dadas). Conferido uma vez, no construtor.
 var _defs_problem: String = ""
 var _routine: RoutineTable
+var _definitions: Definitions
+## Fluxo de decisão (LW-063): montado no primeiro `tick`, só se as definições estão completas. `_decision_problem` diz por que não.
+var _decision_checked: bool = false
+var _decision_problem: String = ""
+var _runner: ActionRunner
+var _provider: NpcThinker.ConditionProvider
+var _thinker: NpcThinker
+## A tabela é UMA só e vive o tempo todo do módulo: o runner, a ocupação e o pensador a recebem por referência (on_load a atualiza no lugar).
 var _npcs: Dictionary[int, NpcState] = {}
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
 ## `routine`: ofícios e agenda por hora (RoutineLoader); nulo = sem rotina configurada (o ofício do NPC fica como texto sem conferência).
-func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null) -> void:
+## `definitions`: o que falta para o módulo DECIDIR (LW-063); nulo = o módulo só guarda estado e o `tick` não faz nada.
+func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definitions: Definitions = null) -> void:
 	_need_defs = need_defs
 	_routine = routine
+	_definitions = definitions
 	_defs_problem = "" if need_defs.is_empty() else NeedMath.definitions_problem(need_defs)
 
 
@@ -59,7 +71,9 @@ func request_create_npc(spec: NpcSpec) -> CreateResult:
 		return CreateResult.new(Result.failure(CODE_NO_ID, "NpcModule.request_create_npc: o contador de IDs esgotou; não há ID novo."), IdGenerator.NO_ID)
 	if _npcs.has(npc_id):
 		return CreateResult.new(Result.failure(CODE_DUPLICATE_ID, "NpcModule.request_create_npc: o ID novo %d já pertence a um NPC (save inconsistente); nada foi sobrescrito." % npc_id), IdGenerator.NO_ID)
-	_npcs[npc_id] = NpcState.from_spec(npc_id, spec, _ctx.clock.total_minutes(), _start_needs())
+	var created: NpcState = NpcState.from_spec(npc_id, spec, _ctx.clock.total_minutes(), _start_needs())
+	created.next_think_time = _first_think_time(npc_id, _ctx.clock.total_minutes())
+	_npcs[npc_id] = created
 	return CreateResult.new(Result.success(), npc_id)
 
 
@@ -84,6 +98,13 @@ func peek_npc(npc_id: int) -> NpcQuery:
 ## IDs dos NPCs em ordem crescente.
 func peek_npc_ids() -> Array[int]:
 	return _sorted_ids()
+
+
+## A cada passo: a fila de pensamento (LW-063). Quem chegou no seu `next_think_time` pensa, até `max_thinks_per_step` por passo.
+func tick(_elapsed_minutes: int) -> void:
+	if _definitions == null or _ctx == null or not _ensure_thinker():
+		return
+	_thinker.run_step(_ctx.clock.total_minutes())
 
 
 ## A ação da rotina do ofício na hora (0 a 23, a de SimClock.hour_of_day()). Sem rotina configurada, ofício desconhecido ou hora fora de
@@ -136,7 +157,9 @@ func on_load(data: Dictionary) -> Result:
 		if parsed.state == null:
 			return _invalid_save("NPC %d: %s" % [npc_id, parsed.error])
 		loaded[npc_id] = parsed.state
-	_npcs = loaded
+	_npcs.clear()
+	for loaded_id: int in loaded:
+		_npcs[loaded_id] = loaded[loaded_id]
 	return Result.success()
 
 
@@ -160,6 +183,8 @@ func validate() -> Array[String]:
 		_append_range_problems(problems, npc_id, "traço", state.traits, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
 		if not state.is_alive and not state.action_id.is_empty():
 			problems.append("NPC %d: morto, mas com ação atual '%s'; esperado nenhuma." % [npc_id, state.action_id])
+		if state.next_think_time < 0:
+			problems.append("NPC %d: next_think_time %d negativo; esperado 0 ou mais." % [npc_id, state.next_think_time])
 		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
 			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
 	return problems
@@ -180,7 +205,78 @@ func debug_summary() -> Dictionary:
 		ordered[label] = by_occupation[label]
 	summary["by_occupation"] = ordered
 	summary["serialize_bytes"] = JSON.stringify(serialize()).to_utf8_buffer().size()
+	summary["decision_problem"] = _decision_problem_text()
+	summary["decision_enabled"] = _thinker != null
+	summary["thinks_last_step"] = _thinker.last_step_thinks if _thinker != null else 0
+	summary["max_thinks_in_a_step"] = _thinker.max_step_thinks if _thinker != null else 0
 	return summary
+
+
+## Por que o módulo não decide (texto vazio = decide): sem `Definitions`, sem setup() ou com definições incompletas ou inválidas. Aparece no
+## debug_summary(), para o módulo nunca ficar parado em silêncio.
+func _decision_problem_text() -> String:
+	if _definitions == null:
+		return "o módulo foi criado sem as definições para decidir (NpcModule.Definitions)"
+	if _thinker != null:
+		return ""
+	if _ctx == null:
+		return "módulo sem setup()"
+	_ensure_thinker()
+	return _decision_problem
+
+
+## Monta o runner, o pontuador e o pensador na primeira vez que o `tick` roda. Falso (e `_decision_problem` preenchido) se faltar algo.
+func _ensure_thinker() -> bool:
+	if _thinker != null:
+		return true
+	if _decision_checked:
+		return false
+	_decision_checked = true
+	_decision_problem = _build_decision_runtime()
+	return _decision_problem.is_empty()
+
+
+## Texto vazio = montou; senão, o que falta ou está inválido.
+func _build_decision_runtime() -> String:
+	if _need_defs.is_empty() or not _defs_problem.is_empty():
+		return "faltam as definições de necessidades (ou estão inválidas)"
+	if _routine == null:
+		return "falta a tabela de rotina"
+	if _definitions.actions.is_empty():
+		return "falta o catálogo de ações"
+	if _definitions.params == null:
+		return "faltam os parâmetros do `npc` (npc_params.json)"
+	if _definitions.places == null:
+		return "falta o serviço de locais do `world`"
+	var occupancy: PlaceOccupancy = PlaceOccupancy.new(_npcs)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food)
+	var runner: ActionRunner = ActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min)
+	if not runner.peek_problem().is_empty():
+		return "ActionRunner: %s" % runner.peek_problem()
+	var scorer: UtilityScorer = UtilityScorer.new(_definitions.params, _need_defs, _definitions.traits)
+	if not scorer.peek_problem().is_empty():
+		return "UtilityScorer: %s" % scorer.peek_problem()
+	_provider = provider
+	_runner = runner
+	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action)
+	return ""
+
+
+## A ÚNICA função que inicia uma ação (LW-063): hoje só o modo S1, pelo ActionRunner. Ponto de extensão do modo S0: a LW-070 acrescenta
+## aqui o ramo que, para NPC com corpo, emite a Intent em vez de começar a ação abstrata.
+func _start_action(npc_id: int, action_id: String, place_id: String, now: int) -> Result:
+	_provider.subject = _npcs.get(npc_id)
+	return _runner.begin(npc_id, action_id, place_id, now)
+
+
+## Minuto do primeiro pensamento: agora mais 1 mais a FASE do NPC (`npc_id` mod intervalo), para os NPCs criados juntos não pensarem todos
+## no mesmo passo. O "mais 1" faz o primeiro pensamento cair sempre DEPOIS do minuto da criação (não depende de o módulo já ter rodado
+## neste passo) e põe as fases em minutos distintos de 1 a `intervalo` (sem fase no minuto da criação, duas fases não se juntam no
+## primeiro passo). Sem parâmetros: agora.
+func _first_think_time(npc_id: int, now: int) -> int:
+	if _definitions == null or _definitions.params == null:
+		return now
+	return now + 1 + npc_id % maxi(1, _definitions.params.think_interval_min)
 
 
 ## Nunca visitar o Dictionary pela ordem natural (muda depois de carregar um save).
@@ -266,6 +362,22 @@ func _read_npc_id(key_text: String) -> int:
 	return value if value >= IdGenerator.FIRST_ID and value <= IdGenerator.MAX_ID else IdGenerator.NO_ID
 
 
+## O que o módulo precisa, além das necessidades e da rotina, para DECIDIR (LW-063). Tudo já lido e validado por quem monta o módulo (os
+## carregadores), sem global nem autoload. Cada tarefa seguinte acrescenta aqui o que for dela, em vez de crescer o construtor.
+class Definitions:
+	extends RefCounted
+
+	var actions: Array[ActionDef] = []
+	## Os quatro traços, na ordem de `order` (TraitLoader).
+	var traits: Array[TraitLoader.TraitDef] = []
+	var params: NpcParams
+	## Serviço de consultas de assentamentos e locais do `world` (conteúdo, fora do save).
+	var places: SettlementService
+	## Opcional: responde `has_food` (TEMP-LW-065). Sem ele nenhuma ação que exija comida começa.
+	var food: ActionConditionProvider
+	var walk_speed_cm_per_min: int = ActionRunner.DEFAULT_WALK_SPEED_CM_PER_MIN
+
+
 ## Resultado de `request_create_npc`: `npc_id` só vale se `result.ok` (mesmo padrão do SpawnResult do `character`).
 class CreateResult:
 	extends RefCounted
@@ -306,6 +418,7 @@ class NpcQuery:
 	var action_started_at: int = 0
 	var action_ends_at: int = 0
 	var action_serial: int = 0
+	var next_think_time: int = 0
 
 	func _init(query_result: Result, state: NpcState) -> void:
 		result = query_result
@@ -332,3 +445,4 @@ class NpcQuery:
 		action_started_at = state.action_started_at
 		action_ends_at = state.action_ends_at
 		action_serial = state.action_serial
+		next_think_time = state.next_think_time

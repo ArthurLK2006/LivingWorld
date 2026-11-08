@@ -14,6 +14,9 @@ const MAX_URGENCY_WEIGHT: int = 100
 const MAX_COST_PER_UNIT: int = 1000
 const MAX_RISK_PERCENT: int = 1000
 const MAX_BONUS: int = 10000
+const MAX_MINUTES: int = 1440
+const MAX_THINKS_PER_STEP: int = 100000
+const MAX_TOP_K: int = 16
 const URGENCY_WEIGHT_FIELDS: Array[String] = ["urgency_weight_comfortable", "urgency_weight_attention", "urgency_weight_urgent", "urgency_weight_critical"]
 
 
@@ -27,6 +30,10 @@ static func build_schema(file_name: String = DEFAULT_FILE) -> DataSchema:
 	schema.add_field("risk_cost_percent", DataSchema.FieldType.INT).set_range(0, MAX_RISK_PERCENT)
 	schema.add_field("inertia_bonus", DataSchema.FieldType.INT).set_range(0, MAX_BONUS)
 	schema.add_field("routine_bonus", DataSchema.FieldType.INT).set_range(0, MAX_BONUS)
+	schema.add_field("think_interval_min", DataSchema.FieldType.INT).set_range(1, MAX_MINUTES)
+	schema.add_field("max_thinks_per_step", DataSchema.FieldType.INT).set_range(1, MAX_THINKS_PER_STEP)
+	schema.add_field("decision_top_k", DataSchema.FieldType.INT).set_range(1, MAX_TOP_K)
+	schema.add_field("decision_margin", DataSchema.FieldType.INT).set_range(0, MAX_BONUS)
 	return schema
 
 
@@ -75,6 +82,10 @@ static func _build(bundle: DataBundle) -> NpcParams:
 	params.risk_cost_percent = record["risk_cost_percent"]
 	params.inertia_bonus = record["inertia_bonus"]
 	params.routine_bonus = record["routine_bonus"]
+	params.think_interval_min = record["think_interval_min"]
+	params.max_thinks_per_step = record["max_thinks_per_step"]
+	params.decision_top_k = record["decision_top_k"]
+	params.decision_margin = record["decision_margin"]
 	return params
 
 

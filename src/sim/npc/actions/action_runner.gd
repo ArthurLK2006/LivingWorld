@@ -98,6 +98,58 @@ func begin(npc_id: int, action_id: String, place_id: String, now: int) -> Result
 	return Result.success()
 
 
+## Diz, SEM alterar nada, o que impediria `begin` agora: texto vazio = a ação pode começar. Confere as mesmas coisas que `begin` (NPC, vida,
+## ação, hora, condições e, em `go_to_place`, o destino); `ignore_busy` não conta o NPC já estar em outra ação (quem decide trocar de ação
+## a interrompe antes de começar a nova). Serve para a ação só ser candidata se ela puder começar.
+func peek_blocker(npc_id: int, action_id: String, place_id: String, now: int, ignore_busy: bool = false) -> String:
+	var found: Result = _ready_status("peek_blocker")
+	if not found.ok:
+		return found.message
+	if not _states.has(npc_id):
+		return _unknown_npc("peek_blocker", npc_id).message
+	var state: NpcState = _states[npc_id]
+	if not state.is_alive:
+		return "o NPC %d está morto" % npc_id
+	if not _catalog.has(action_id):
+		return _unknown_action("peek_blocker", action_id).message
+	var action: ActionDef = _catalog[action_id]
+	if not ignore_busy and not state.action_id.is_empty():
+		return "o NPC %d já está na ação '%s'" % [npc_id, state.action_id]
+	if now < state.needs_updated_at:
+		return "o minuto %d é anterior à última atualização das necessidades (minuto %d)" % [now, state.needs_updated_at]
+	var unmet: String = _unmet_condition(state, action, place_id, now)
+	if not unmet.is_empty():
+		return unmet
+	if action.id == GO_TO_PLACE_ID and not _destination(place_id).result.ok:
+		return _destination(place_id).result.message
+	return ""
+
+
+## Interrompe a ação em andamento: leva as necessidades até `now`, aplica o que ela cumpriu (efeitos proporcionais ao tempo decorrido,
+## nunca 1000: interrompida não é completa) pela mesma função única `apply_effects` e libera o NPC. Sem ação em andamento não faz nada.
+## `go_to_place` interrompido deixa o NPC onde estava.
+func interrupt(npc_id: int, now: int) -> Result:
+	var found: Result = _ready_status("interrupt")
+	if not found.ok:
+		return found
+	if not _states.has(npc_id):
+		return _unknown_npc("interrupt", npc_id)
+	var state: NpcState = _states[npc_id]
+	if state.action_id.is_empty():
+		return Result.success()
+	if not _catalog.has(state.action_id):
+		return _unknown_action("interrupt", state.action_id)
+	var settled: Result = NeedMath.settle(state, _need_defs, maxi(now, state.needs_updated_at))
+	if not settled.ok:
+		return settled
+	var length: int = maxi(1, state.action_ends_at - state.action_started_at)
+	var elapsed: int = clampi(now - state.action_started_at, 0, length)
+	var progress: int = mini(IntMath.floor_div(elapsed * FULL_PROGRESS, length), FULL_PROGRESS - 1)
+	var applied: Result = apply_effects(npc_id, state.action_id, state.action_target_place_id, progress)
+	_clear_action(state)
+	return applied
+
+
 ## Modo S1: termina a ação quando o tempo acaba (`now` a partir de `action_ends_at`). Antes do fim não muda nada. Ao terminar, leva as
 ## necessidades até o MINUTO DO FIM (e não até `now`), aplica os efeitos completos e libera o NPC; assim o resultado não depende de
 ## com que atraso o NPC pensa. Se a regra falhar ao terminar, nenhum efeito é aplicado, o NPC é liberado e o resultado é NPC_ACTION_FAILED.

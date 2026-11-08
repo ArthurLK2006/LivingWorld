@@ -1,12 +1,12 @@
 extends GutTest
 ## LW-060: a "função única" de efeitos de ação (docs/modules/npc.md, seção 3). Varredura dos .gd de src/sim/npc/ (sem mexer em
 ## tools/check_architecture): SÓ o ActionRunner define e chama `apply_effects`; as linhas de efeito do catálogo (`.effects`) só são
-## lidas pelo ActionRunner (aplica), pelo carregador (monta), pela definição (declara) e pelo UtilityScorer (SÓ LÊ, para pontuar; LW-062); e o runner não sorteia. Um controle prova que a
+## lidas pelo ActionRunner (aplica), pelo carregador (monta), pela definição (declara) e pelo UtilityScorer (SÓ LÊ, para pontuar; LW-062) e pelo NpcThinker (SÓ LÊ, para achar as ações que aliviam uma necessidade urgente; LW-063); e o runner não sorteia. Um controle prova que a
 ## própria varredura enxerga uma violação (sem ele o teste poderia passar vazio).
 
 const NPC_DIR: String = "res://src/sim/npc"
 const RUNNER_FILE: String = "action_runner.gd"
-const EFFECT_ROW_FILES: Array[String] = ["action_runner.gd", "action_catalog_loader.gd", "action_def.gd", "utility_scorer.gd"]
+const EFFECT_ROW_FILES: Array[String] = ["action_runner.gd", "action_catalog_loader.gd", "action_def.gd", "utility_scorer.gd", "npc_thinker.gd"]
 const APPLY_CALL_PATTERN: String = "apply_effects\\("
 const APPLY_DEFINITION_PATTERN: String = "func\\s+apply_effects\\("
 const EFFECT_ROWS_PATTERN: String = "\\.effects\\b"
@@ -90,7 +90,7 @@ func test_effect_rows_are_read_only_by_the_runner_the_loader_and_the_definition(
 	var readers: Array[String] = _files_matching(EFFECT_ROWS_PATTERN, sources)
 	assert_gt(readers.size(), 0)
 	for reader: String in readers:
-		assert_true(EFFECT_ROW_FILES.has(reader), "%s mexe nas linhas de efeito do catálogo, o que só o runner, o carregador, a definição e o pontuador (só leitura) podem." % reader)
+		assert_true(EFFECT_ROW_FILES.has(reader), "%s mexe nas linhas de efeito do catálogo, o que só o runner, o carregador, a definição, o pontuador e o pensador (só leitura) podem." % reader)
 	assert_true(readers.has(RUNNER_FILE), "O ActionRunner lê as linhas de efeito para aplicá-las.")
 
 

@@ -19,6 +19,14 @@ var risk_cost_percent: int = 0
 var inertia_bonus: int = 0
 ## Bônus da ação que a rotina do ofício manda fazer na hora.
 var routine_bonus: int = 0
+# Fluxo de decisão e fila de pensamento (LW-063).
+## Minutos entre dois pensamentos de um NPC; a fase de cada um é 1 + `npc_id` mod este valor, para não pensarem todos no mesmo passo.
+var think_interval_min: int = 1
+## Teto de NPCs que pensam num mesmo passo; o excedente espera o passo seguinte (o mais antigo primeiro).
+var max_thinks_per_step: int = 1
+## Quantas das melhores candidatas entram no sorteio, e a que distância (em pontos) da melhor elas ainda entram.
+var decision_top_k: int = 1
+var decision_margin: int = 0
 
 
 ## Peso do nível de urgência (0 a 3); nível fora disso usa o do crítico.

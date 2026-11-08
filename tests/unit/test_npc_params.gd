@@ -8,6 +8,7 @@ const ISSUE_CODE: String = "NPC_PARAMS_INVALID"
 const FIELDS: Array[String] = [
 	"urgency_weight_comfortable", "urgency_weight_attention", "urgency_weight_urgent", "urgency_weight_critical",
 	"time_cost_per_hour", "distance_cost_per_100m", "risk_cost_percent", "inertia_bonus", "routine_bonus",
+	"think_interval_min", "max_thinks_per_step", "decision_top_k", "decision_margin",
 ]
 
 
@@ -15,6 +16,7 @@ func _valid_record() -> Dictionary:
 	return {
 		"id": "default", "urgency_weight_comfortable": 0, "urgency_weight_attention": 1, "urgency_weight_urgent": 3, "urgency_weight_critical": 6,
 		"time_cost_per_hour": 2, "distance_cost_per_100m": 2, "risk_cost_percent": 100, "inertia_bonus": 25, "routine_bonus": 40,
+		"think_interval_min": 10, "max_thinks_per_step": 20, "decision_top_k": 3, "decision_margin": 15,
 	}
 
 
@@ -103,6 +105,40 @@ func test_invalid_data_fails_pointing_at_file_item_and_field() -> void:
 	var bad_id: Dictionary = _valid_record()
 	bad_id["id"] = "Default"
 	_expect_failure("id fora do padrão", [bad_id], [FILE_LABEL, "item 'Default'", "campo 'id'", "snake_case"])
+
+
+func test_the_think_queue_and_choice_parameters_are_range_checked_and_built() -> void:
+	# LW-063: intervalo de pensamento, teto por passo, melhores candidatas no sorteio e margem. Erro e limites de cada um.
+	var out_of_range: Array[Dictionary] = [
+		{"field": "think_interval_min", "value": 0, "fragment": "abaixo do mínimo"},
+		{"field": "think_interval_min", "value": 1441, "fragment": "acima do máximo"},
+		{"field": "max_thinks_per_step", "value": 0, "fragment": "abaixo do mínimo"},
+		{"field": "decision_top_k", "value": 0, "fragment": "abaixo do mínimo"},
+		{"field": "decision_top_k", "value": 17, "fragment": "acima do máximo"},
+		{"field": "decision_margin", "value": -1, "fragment": "abaixo do mínimo"},
+	]
+	for row: Dictionary in out_of_range:
+		var field: String = row["field"]
+		var fragment: String = row["fragment"]
+		var record: Dictionary = _valid_record()
+		record[field] = row["value"]
+		_expect_failure("%s = %s" % [field, str(row["value"])], [record], [FILE_LABEL, "item 'default'", "campo '%s'" % field, fragment])
+	var lowest: Dictionary = _valid_record()
+	lowest["think_interval_min"] = 1
+	lowest["max_thinks_per_step"] = 1
+	lowest["decision_top_k"] = 1
+	lowest["decision_margin"] = 0
+	var accepted_low: NpcParamsLoader.LoadResult = _load_records([lowest])
+	assert_true(accepted_low.result.ok, accepted_low.result.message)
+	assert_eq([accepted_low.params.think_interval_min, accepted_low.params.max_thinks_per_step, accepted_low.params.decision_top_k, accepted_low.params.decision_margin], [1, 1, 1, 0], "Os menores valores permitidos.")
+	var highest: Dictionary = _valid_record()
+	highest["think_interval_min"] = 1440
+	highest["max_thinks_per_step"] = 100000
+	highest["decision_top_k"] = 16
+	highest["decision_margin"] = 10000
+	var accepted_high: NpcParamsLoader.LoadResult = _load_records([highest])
+	assert_true(accepted_high.result.ok, accepted_high.result.message)
+	assert_eq([accepted_high.params.think_interval_min, accepted_high.params.max_thinks_per_step, accepted_high.params.decision_top_k, accepted_high.params.decision_margin], [1440, 100000, 16, 10000], "Os maiores valores permitidos.")
 
 
 func test_the_file_must_have_exactly_one_row() -> void:
