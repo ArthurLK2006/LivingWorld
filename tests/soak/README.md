@@ -20,3 +20,11 @@ Variáveis: `RUNS` (3), `ENSAIOS` (`rota,parado,pausado`), `GODOT_BIN`, `KEEP_DO
 ```bash
 tests/soak/run_sp6
 ```
+
+## Vida dos NPCs sem jogador (LW-068)
+
+`run_npc_life_30d` roda, sem janela, os **100 NPCs do jogo por 30 dias de jogo** (o mundo real: `GameModules`, terreno, pontos e dados de `data/`, sem personagem) e confere os invariantes: todos vivos, necessidades de 0 a 100, comida de 0 ao teto a cada passo, ninguém sem ação por mais de uma hora, `validate()` limpo ao fim de cada dia, pensamentos por passo dentro do teto. Faz três execuções (direta, repetida com a mesma semente e com salvar e carregar no dia 15) e exige o mesmo hash nas três. Leva cerca de 1 minuto e imprime o resumo de cada execução (inclusive quantos minutos a comida ficou em zero). A versão curta, de 7 dias (`npc_life/test_npc_life_7d.gd`, cerca de 17 s), roda no `tools/check_all`; o verificador comum é `npc_life/npc_life_check.gd`. O arquivo da versão longa não começa com `test_` de propósito, para o GUT não o achar sozinho.
+
+```bash
+tests/soak/run_npc_life_30d
+```
