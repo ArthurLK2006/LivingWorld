@@ -90,6 +90,7 @@ Rotas no terreno real, medidas por Arthur em release (execução 1; as execuçõ
 - "ver" (180 s): quadros **INVÁLIDOS** ("a janela perdeu o foco"). Invariantes, rotas e protocolo valem.
 - "medir", execuções 1 e 2: sem aviso de foco, quadros válidos. **Mas** as conversas A e B estavam provavelmente ativas (commits às 11h41, 11h43, 12h02 e 12h11). Por isso **a régua da DEC-119 não é dada aqui como medição oficial.**
 - "medir", execução 3: quadros **INVÁLIDOS** em todos os ensaios. Dela valem só os contadores que não dependem de quadros; saíram iguais aos das execuções 1 e 2. **Nenhuma conclusão deste registro usa quadros da execução 3.**
+- A medição **oficial** é a execução 4, na seção "Medição limpa de Arthur", logo abaixo.
 
 ### Quadros por ensaio (execuções 1 e 2; ms; "régua" = linha da DEC-119 que o teste imprime)
 
@@ -140,6 +141,63 @@ Rotas no terreno real, medidas por Arthur em release (execução 1; as execuçõ
 
 - **Fato:** P1 anda a 4 m/s × velocidade e **todas** as caminhadas chegam atrasadas; P2 anda quase sempre no teto (7 m/s × velocidade) e ainda atrasa a maioria. Nenhum tempo limite venceu nestes ensaios (nenhum fez a rota longa A → B; a conta de que ela venceria continua só no papel). Na pausa, os corpos pararam nas duas políticas.
 
+## Medição limpa de Arthur (08/11/2026, execução 4; OFICIAL)
+
+**Validade:**
+- Fato: comando `RUNS=1 caffeinate -i tests/soak/run_sp2 --release`, commit medido `ba8cf51` (o código do spike é o mesmo de `1ac7aee`), binário de release, Godot 4.7.2-stable, Apple M3, gl_compatibility.
+- Fato: o script confirmou o Mac na tomada antes e depois. Uma primeira tentativa foi barrada porque o Mac estava na bateria e não gerou medição.
+- Fato: a saída não tem nenhuma linha "INVÁLIDO" nem o aviso de quadro acima de 1 s, então os 13 ensaios valem para quadros.
+- Conversas A, B e C paradas e janela à frente: Arthur disse que seguiu o roteiro. **NÃO VERIFICADO pelos dados.**
+- **É a medição OFICIAL da régua da DEC-119 para o spike.** A saída bruta está no apêndice, no fim deste registro.
+
+### Quadros por ensaio (ms)
+
+| Ensaio | Quadros | Média | p99 | Pior | >16,7 | >33 (instante) | Régua |
+|---|---|---|---|---|---|---|---|
+| Alternância (162,4 s) | 19.404 | 8,37 | 13,11 | 55,2 | 19 | 4 (34,0 em 16,0 s; 49,5 em 38,0 s; 55,2 em 51,5 s; 54,1 em 111,5 s) | **fora** |
+| Carga, dois focos | 3.597 | 8,33 | 11,82 | 13,1 | 0 | 0 | dentro |
+| Carga, 100 aglomerados em A | 3.589 | 8,35 | 12,12 | 50,1 | 3 | 1 (50,1 em 11,5 s) | **fora** |
+| P1 1x | 2.392 | 8,35 | 12,21 | 20,9 | 3 | 0 | dentro |
+| P1 2x | 2.398 | 8,33 | 12,38 | 13,8 | 0 | 0 | dentro |
+| P1 4x | 2.395 | 8,34 | 12,13 | 25,4 | 1 | 0 | dentro |
+| P1 8x | 2.398 | 8,33 | 12,03 | 12,7 | 0 | 0 | dentro |
+| P1 pausa | 2.398 | 8,33 | 12,09 | 12,6 | 0 | 0 | dentro |
+| P2 1x | 2.393 | 8,35 | 12,01 | 25,4 | 2 | 0 | dentro |
+| P2 2x | 2.398 | 8,33 | 11,87 | 12,5 | 0 | 0 | dentro |
+| P2 4x | 2.398 | 8,33 | 12,07 | 12,5 | 0 | 0 | dentro |
+| P2 8x | 2.391 | 8,36 | 12,04 | 33,2 | 3 | 1 (33,2 em 1,5 s) | **fora** |
+| P2 pausa | 2.398 | 8,33 | 12,64 | 13,0 | 0 | 0 | dentro |
+| **Total (conta)** | **50.549** | 8,33 a 8,37 | 11,82 a 13,11 | 55,2 | **31** | **6** (0,012%) | **fora em 3 de 13** |
+
+- **Fato:** a parte "média de 60 quadros/s ou mais" da régua é cumprida nos 13 ensaios. Só "nenhum quadro acima de 33 ms" separa "dentro" de "fora".
+- **Os 6 quadros lentos:** 4 na alternância (16,0 s, 38,0 s, 51,5 s e 111,5 s), 1 na carga com os 100 aglomerados (11,5 s) e 1 no P2 a 8x (1,5 s).
+- **Comparação com as execuções 1 e 2 (fato):**
+  - Quadros acima de 33 ms na alternância: 2, 2 e 4 (execuções 1, 2 e 4).
+  - O tranco dos 16,0 s aparece nas três: 366,2 ms, 36,6 ms e 34,0 ms. Os outros caem em instantes diferentes: 126,1 s (execução 1), 88,8 s (execução 2) e 38,0, 51,5 e 111,5 s (execução 4).
+  - Ensaios fora da régua: 2 na execução 1 (alternância e carga com dois focos), 2 na execução 2 (alternância e P2 a 4x) e 3 na execução 4.
+  - **Hipótese:** deixar o Mac livre não fez os trancos sumirem; só o dos 16,0 s se repete sempre.
+- **Contadores (fato):** iguais aos das execuções 1 a 3. Invariantes 0 em 1.804 conferências; histerese com no máximo 1 LodChanged por NPC; pool com 100 criados, 380 retiradas, 280 devoluções, pico de 100, "pool vazio" 40; 691 chegadas, 558 feitas, 613 atrasadas, 354 com teto curto, e zero bloqueadas, descartadas, recusadas, Intents sumidos e ações herdadas. Única diferença: levado ÷ previsto geral 4,70 (antes 4,69).
+- **Custos (fato):** corpos 131,1 µs por quadro de física (pior 1,35 ms); mundo do spike 224,8 µs por quadro (pior 11,67 ms). Nas execuções 1 e 2: corpos 174,3 µs e mundo 282,7 e 272,0 µs.
+- **Teto do que os NPCs podem ter causado num quadro (conta e hipótese):**
+  - Fato pelo código: o custo do mundo é medido no `_process` (passos, diretor, LOD, trocas de corpo, Intents) e o dos corpos no `_physics_process`, um passo por vez. A física roda no padrão de 60 passos por segundo, porque o `project.godot` não muda isso; num quadro de 50 ms cabem 3 ou 4 passos.
+  - Teto: 11,67 + 4 × 1,35 ≈ 17,1 ms. Descontado esse teto, os quadros de 55,2 e 54,1 ms ficam em 38,1 e 37,0 ms, ainda acima de 33 ms; os de 50,1 e 49,5 ms ficam no limite (33,0 e 32,4 ms); os de 34,0 e 33,2 ms não dá para separar.
+  - Como os dois "piores" podem ter ocorrido em quadros diferentes, o teto é generoso.
+  - **Hipótese:** pelo menos dois trancos não vêm do código dos NPCs; podem vir do terreno, do desenho ou do sistema.
+- **Rotas (fato):** os mesmos resultados de chegar ou não, de pontos e de distância das execuções anteriores.
+  - N1: r1 0,07 ms (pior 0,08); r2 0,45 ms (0,45); r3 sem caminho, 0,02 ms (0,03); r4 chega com 82 amostras em pedra, 0,32 ms (0,32).
+  - N2: r1 4,43 ms (pior 21,39); r2 17,97 ms (**85,90**); r3 3,05 ms (14,58); r4 sem caminho, 7,10 ms (33,59).
+- **P1 contra P2 (fato):** igual à tabela da seção anterior, salvo três valores: P1 a 4x, levado ÷ previsto 7,22; **P1 a 8x, levado ÷ previsto 3,89** (antes 3,77 e 3,83); P2 a 4x e a 8x, velocidade vista de 27,77 e 55,05 m/s. A leitura não muda: P1 atrasa 100% das chegadas, e P2 anda quase sempre no teto.
+
+## Decisão de Arthur sobre o Plano B (08/11/2026)
+
+Arthur decidiu "Registrar e seguir", pelo painel, por escrito, depois de ver a medição limpa:
+- (a) o Plano B do cap. 26.3 **não** é aplicado agora: raio S0 de 80 para 50 m e max_s0 de 50 para 30 [HIP] ficam só registrados como opção;
+- (b) a régua da DEC-119 fica registrada como **não cumprida em 3 dos 13 ensaios**; a DEC-119 não muda e não há proposta de tolerância;
+- (c) a causa dos trancos fica **aberta** e passa a ser trabalho da LW-072 (medir por seção no jogo real);
+- (d) se o jogo real, com os corpos ligados, também falhar a régua, o Plano B volta à mesa, por decisão de Arthur.
+
+Continuam valendo N1, P1 e a direção P3; DEC-122 e DEC-123 seguem **só propostas**.
+
 ## Respostas de Arthur ao "ver" (08/11/2026, 11h31, palavra por palavra)
 
 1. Aparecem e somem de forma natural? — "NPCs normais, mas como eles ainda sao cilindros fica meio dificil de distinguir. Como o mapa é muito cru, nao da pra dizer que eles andam e somem de forma bem natural, mas da pro gasto, claro que eles vao interarir entre si, comigo, com o terreno etc."
@@ -152,8 +210,8 @@ Rotas no terreno real, medidas por Arthur em release (execução 1; as execuçõ
 
 ## Perguntas de Arthur sobre a medição (respostas só por leitura do código e dos dados)
 
-1. **8,33 ms constantes.** Fato: nem o `project.godot` nem o código do spike definem `max_fps` ou vsync (a busca por `max_fps`, `vsync` e `fps` não achou nada), então valem os padrões do Godot (vsync ligado, sem limite de quadros). 8,33 ms = 120 quadros/s. **Hipótese:** é o **ritmo da tela (vsync a 120 Hz)**, não o do jogo. Os 6,90 ms da execução 3 (sem foco) coincidem com os 6,90 a 6,96 ms que eu vi sem janela; a causa desse valor **NÃO SEI**. Consequência: a média só diz que o jogo acompanhou a tela; **a folga real não aparece na média**. O que informa são o percentil 99, o pior quadro e as contagens acima de 16,7 e 33 ms.
-2. **Tranco aos 16,0 s da alternância.** Fato pelo código e pela saída: no começo da alternância o jogador anda do ponto de nascimento até x = 330 m, dentro do raio do povoado A. O pool já tinha 60 corpos, e nesse ensaio o limite é 50, então não cria corpo novo. O começo marca 0 em S0 e 76 pedaços de terreno; o meio, 22 em S0 e 132 pedaços. **Hipótese:** nesse instante coincidem muitas entradas em S0 (corpos tirados do pool e ficando visíveis) e o terreno indo de 76 para 132 pedaços, com colisão nos pedaços finos. O teste não mede por seção, então **NÃO SEI** qual parte pesa mais. Os 5 quadros lentos da minha execução sem janela também caíram em entradas no povoado A (20,7 s e cerca de 42 s, pelo tempo da rota). **Hipótese:** é o mesmo tipo de evento; não comprovado.
+1. **8,33 ms de média (resposta corrigida em 08/11/2026, depois da conferência do auditor).** Fato: nem o `project.godot` nem o código do spike definem `max_fps` ou vsync, então valem os padrões do Godot (vsync ligado, sem limite de quadros). 8,33 ms corresponde a 120 quadros/s. A versão anterior desta resposta dizia "hipótese: ritmo da tela (vsync a 120 Hz)"; **retirei essa explicação**, porque contradiz o achado I1 da LW-053 (backlog) e a DEC-119: a tela do MacBook Air M3 de Arthur é de **60 Hz**, e o jogo desenha cerca de 120 quadros/s nela. Fato (execução 4): em 12 dos 13 ensaios a mediana (8,47 a 10,35 ms) fica acima da média (8,33 a 8,37 ms); a exceção é a carga com dois focos (mediana 7,76 ms). Portanto os quadros **não** são uniformes de 8,33 ms. **Hipótese:** quadros curtos e longos se alternam (o laço roda duas vezes por atualização da tela). A causa do ritmo de 120 por segundo **NÃO SEI**, nem a dos 6,90 ms sem foco. Conta: 33 ms = 2 atualizações de uma tela de 60 Hz. Consequência (mantida): a média não mede folga; o que informa são o percentil 99, o pior quadro e as contagens acima de 16,7 e 33 ms.
+2. **Tranco aos 16,0 s da alternância.** Fato pelo código e pela saída: no começo da alternância o jogador anda do ponto de nascimento até x = 330 m, dentro do raio do povoado A. O pool já tinha 60 corpos, e nesse ensaio o limite é 50, então não cria corpo novo. O começo marca 0 em S0 e 76 pedaços de terreno; o meio, 22 em S0 e 132 pedaços. **Hipótese:** nesse instante coincidem muitas entradas em S0 (corpos tirados do pool e ficando visíveis) e o terreno indo de 76 para 132 pedaços, com colisão nos pedaços finos. O teste não mede por seção, então **NÃO SEI** qual parte pesa mais. Os 5 quadros lentos da minha execução sem janela também caíram em entradas no povoado A (20,7 s e cerca de 42 s, pelo tempo da rota). **Hipótese:** é o mesmo tipo de evento; não comprovado. **Execução 4:** o tranco dos 16,0 s se repetiu (34,0 ms); os outros caíram em 38,0, 51,5 e 111,5 s, instantes diferentes dos das execuções 1 e 2 (126,1 s e 88,8 s). **Hipótese:** só o dos 16,0 s está ligado a um ponto fixo da rota.
 3. **"pool vazio 40".** Fato (`sp2_body_pool.gd`, função `take`): conta as vezes em que um corpo foi pedido sem corpo livre. Nesse caso o pool **cria um corpo novo na hora** e segue. O pool começa com 60; no ensaio de carga o limite sobe para 100 em S0, então 40 corpos foram criados na hora (criados 100). No "ver" o limite é 50, logo 0.
 4. **N2 sem caminho na r4.** Fato: com margem de 64 m, a grade vai de x 456 a 944 m e de z 236 a 364 m, dentro do mapa de 1024 m; **a margem não corta** os pontos. A função devolve "sem caminho" tanto quando a célula de destino (880, 300) está bloqueada quanto quando nenhuma passagem cruza a faixa de pedra ou de encosta; a saída não separa os dois casos. A N1 viu 82 de cerca de 180 amostras em pedra. Qual dos dois casos é: **NÃO SEI.**
 5. **Uma execução só, em release:** existe, pela variável `RUNS` do `run_sp2`: `RUNS=1 caffeinate -i tests/soak/run_sp2 --release` (rodado dentro da pasta `.worktrees/lw-071` do projeto). A numeração continua: o arquivo novo será `sp2_release_run_4.txt`.
@@ -179,7 +237,10 @@ Rotas no terreno real, medidas por Arthur em release (execução 1; as execuçõ
 
 - Ligação com o jogo real e a ponte de verdade (conversa A); pensamento e população de verdade (LW-063, LW-067).
 - Construções e água como obstáculo; animação de verdade; 300 NPCs; multidão; jogador parado muito tempo em área densa; outro hardware.
-- **Quadros em release medidos com o Mac livre** (A, B e C paradas): ainda falta; a régua oficial depende disso.
+- **Quadros em release com o Mac livre:** medidos na execução 4 (sem prova de que A, B e C estavam paradas).
+- **Causa dos 6 trancos** da execução 4.
+- **O jogo real com os corpos ligados** (LW-072).
+- **Causa do ritmo de 120 quadros por segundo** numa tela de 60 Hz.
 - **Folga real por quadro:** o vsync esconde a folga na média (resposta 1).
 - **Causa dos trancos** na entrada do povoado (pool, LOD ou terreno): sem medição por seção.
 - **Caminhada longa A → B em S0** e o tempo limite: nenhum ensaio fez; continua só na conta.
@@ -196,11 +257,12 @@ Respostas: ver "Respostas de Arthur ao ver", acima.
 ## Plano B (26.3), se algum número falhar
 
 Quadros fora: raio S0 de 80 → 50 m e `max_s0` de 50 → 30 (valores sugeridos [HIP]). Navegação cara: ficar na N1 e não usar a N2 em execução (só como cálculo pré-feito). Tempo limite em rotas longas: P3, ou tempo limite proporcional à distância (decisão de Arthur).
+- **Decisão de Arthur (08/11/2026): não aplicar agora.** Ver "Decisão de Arthur sobre o Plano B".
 
 ## Conclusão
 
 - **P-a:** zero duplicados, órfãos e teleportes em todas as execuções (contadores, que valem nas três) e nos testes.
-- **P-b:** com 100 em S0, os corpos custam cerca de 0,17 ms por quadro de física. Nas execuções 1 e 2 houve trancos isolados acima de 33 ms, sobretudo na entrada no povoado A. A régua oficial **não está dada**, porque a máquina não estava livre.
+- **P-b:** com 100 em S0, os corpos custam cerca de 0,17 ms por quadro de física. Nas execuções 1 e 2 houve trancos isolados acima de 33 ms, sobretudo na entrada no povoado A. Nas execuções 1 e 2 a régua não era oficial, porque a máquina não estava livre. **Régua oficial (execução 4):** fora em 3 de 13 ensaios; 6 quadros acima de 33 ms em 50.549; média nunca acima de 8,37 ms; invariantes zero. A causa dos trancos está aberta (LW-072). Plano B não aplicado, por decisão de Arthur.
 - **P-c e P-d:** decididas por Arthur (abaixo). **Relógio contra corpo:** a direção é a P3, registrada como proposta separada.
 
 ## Proposta de entrada para DECISIONS.md (número provisório DEC-122; SÓ proposta)
@@ -208,7 +270,7 @@ Quadros fora: raio S0 de 80 → 50 m e `max_s0` de 50 → 30 (valores sugeridos 
 - **Título:** navegação e velocidade dos corpos S0 (resultado do SP2).
 - **Contexto:** SP2 (este registro); decisão de Arthur pelo painel em 08/11/2026.
 - **Decisão proposta:** (1) navegação **N1** (rota reta por pontos, recusa acima de 40°) por ora; revisar quando as construções entrarem como obstáculo (LW-073 e LW-074). (2) velocidade do corpo **P1**: passo natural de 4 m/s [HIP] × velocidade do relógio.
-- **Justificativa:** a N1 passa nas rotas da rotina com 0,07 a 0,45 ms em release; a N2 dá trancos de até 85,7 ms na 1ª rota. A P1 é a mais simples, e Arthur viu a velocidade acompanhar o relógio; a P2 andou quase sempre no teto e ainda atrasou a maioria.
+- **Justificativa:** a N1 passa nas rotas da rotina com 0,07 a 0,45 ms em release; a N2 dá trancos de até 85,9 ms na 1ª rota (execução 4). A P1 é a mais simples, e Arthur viu a velocidade acompanhar o relógio; a P2 andou quase sempre no teto e ainda atrasou a maioria.
 - **Consequências:** a N1 atravessa pedra e recusa morro íngreme sem desvio; a P1 chega sempre atrasada enquanto a DEC-123 não for resolvida.
 
 ## Proposta separada (número provisório DEC-123; SÓ proposta): relógio contra corpo
@@ -225,6 +287,113 @@ Quadros fora: raio S0 de 80 → 50 m e `max_s0` de 50 → 30 (valores sugeridos 
 
 ## Limitações
 
-Minhas execuções: só depuração sem janela. Medição de Arthur: release na tomada, mas com A e B ativas (execuções 1 e 2) e sem foco (execução 3 e "ver"); a régua oficial falta. A ponte não foi usada; o mundo do spike soma ao custo do jogo.
+Minhas execuções: só depuração sem janela. Medição de Arthur: release na tomada, mas com A e B ativas (execuções 1 e 2) e sem foco (execução 3 e "ver"). A execução 4 é a oficial, mas o fato de o Mac estar livre não está provado pelos dados, e ela é uma execução só. A ponte não foi usada; o mundo do spike soma ao custo do jogo.
 
 - **Relação com DEC-NNN:** DEC-016, DEC-035, DEC-039, DEC-040, DEC-119, DEC-120.
+
+## Apêndice: saída bruta da execução 4 (oficial)
+
+```text
+==== RESULTADO PARA COLAR (LW-071, SP2) ====
+LW-071 (SP2): corpos e LOD de NPCs — modo medir
+build de depuração: não
+Motor: Godot 4.7.2-stable (official), macOS, Apple M3
+Renderização: driver opengl3, método gl_compatibility
+ROTAS (terreno real; tempo de cálculo de 5 repetições; a 1ª N2 de cada trecho preenche o cache das células)
+  r1 povoado A, N1 rota reta: chega, 1 pontos, 75 m, 0 amostras em pedra, cálculo médio 0.07 ms, pior 0.08 ms
+  r1 povoado A, N2 grade A*: chega, 17 pontos, 81 m, 0 amostras em pedra, cálculo médio 4.43 ms, pior 21.39 ms
+  r2 de A a B, N1 rota reta: chega, 1 pontos, 495 m, 0 amostras em pedra, cálculo médio 0.45 ms, pior 0.45 ms
+  r2 de A a B, N2 grade A*: chega, 120 pontos, 531 m, 0 amostras em pedra, cálculo médio 17.97 ms, pior 85.90 ms
+  r3 morro íngreme, N1 rota reta: sem caminho, 0 pontos, 0 m, 0 amostras em pedra, cálculo médio 0.02 ms, pior 0.03 ms
+  r3 morro íngreme, N2 grade A*: chega, 23 pontos, 112 m, 3 amostras em pedra, cálculo médio 3.05 ms, pior 14.58 ms
+  r4 pedra, N1 rota reta: chega, 1 pontos, 360 m, 82 amostras em pedra, cálculo médio 0.32 ms, pior 0.32 ms
+  r4 pedra, N2 grade A*: sem caminho, 0 pontos, 0 m, 0 amostras em pedra, cálculo médio 7.10 ms, pior 33.59 ms
+terreno assentou em 0.8 s (76 chunks); jogador nasceu: sim
+faixa de histerese (20 s): maior número de LodChanged de um NPC = 1
+ENSAIO ALTERNÂNCIA (rota pelo povoado A, correndo)
+  quadros 19404, média 8.37 ms, mediana 9.64 ms, percentil 99 13.11 ms, pior (sem os 3 primeiros) 55.2 ms
+  acima de 16,7 ms: 19 · acima de 33 ms: 4 (34.0 ms em 16.0 s; 49.5 ms em 38.0 s; 55.2 ms em 51.5 s; 54.1 ms em 111.5 s)
+  começo: 879 nós, 76 chunks, 0 em S0 | meio: 947 nós, 132 chunks, 22 em S0 | fim: 941 nós, 130 chunks, 0 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): fora
+  duração do ensaio: 162.4 s
+ENSAIO CARGA 30 s, dois focos (jogador no povoado A, foco fixo no B)
+  quadros 3597, média 8.33 ms, mediana 7.76 ms, percentil 99 11.82 ms, pior (sem os 3 primeiros) 13.1 ms
+  acima de 16,7 ms: 0 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  NPCs em S0: 100 · corpos à vista da câmera: 67
+ENSAIO CARGA 30 s, os 100 aglomerados no povoado A (pior caso de desenho)
+  quadros 3589, média 8.35 ms, mediana 8.99 ms, percentil 99 12.12 ms, pior (sem os 3 primeiros) 50.1 ms
+  acima de 16,7 ms: 3 · acima de 33 ms: 1 (50.1 ms em 11.5 s)
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): fora
+  NPCs em S0: 100 · corpos à vista da câmera: 45
+ENSAIO RELÓGIO P1 passo natural a 1x
+  quadros 2392, média 8.35 ms, mediana 9.31 ms, percentil 99 12.21 ms, pior (sem os 3 primeiros) 20.9 ms
+  acima de 16,7 ms: 3 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 16 · chegadas 15 · feitas 24 · tempos limite 0 · descartados 0 · atrasadas 15 · teto curto 0 · velocidade vista 3.99 m/s · levado/previsto 5.33
+ENSAIO RELÓGIO P1 passo natural a 2x
+  quadros 2398, média 8.33 ms, mediana 9.21 ms, percentil 99 12.38 ms, pior (sem os 3 primeiros) 13.8 ms
+  acima de 16,7 ms: 0 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 32 · chegadas 22 · feitas 18 · tempos limite 0 · descartados 0 · atrasadas 22 · teto curto 0 · velocidade vista 7.97 m/s · levado/previsto 2.45
+ENSAIO RELÓGIO P1 passo natural a 4x
+  quadros 2395, média 8.34 ms, mediana 8.96 ms, percentil 99 12.13 ms, pior (sem os 3 primeiros) 25.4 ms
+  acima de 16,7 ms: 1 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 64 · chegadas 92 · feitas 83 · tempos limite 0 · descartados 0 · atrasadas 92 · teto curto 0 · velocidade vista 15.93 m/s · levado/previsto 7.22
+ENSAIO RELÓGIO P1 passo natural a 8x
+  quadros 2398, média 8.33 ms, mediana 8.78 ms, percentil 99 12.03 ms, pior (sem os 3 primeiros) 12.7 ms
+  acima de 16,7 ms: 0 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 128 · chegadas 35 · feitas 46 · tempos limite 0 · descartados 0 · atrasadas 35 · teto curto 0 · velocidade vista 31.55 m/s · levado/previsto 3.89
+ENSAIO RELÓGIO P1 passo natural em PAUSA
+  quadros 2398, média 8.33 ms, mediana 10.14 ms, percentil 99 12.09 ms, pior (sem os 3 primeiros) 12.6 ms
+  acima de 16,7 ms: 0 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 0 · chegadas 0 · feitas 0 · tempos limite 0 · descartados 0 · atrasadas 0 · teto curto 0 · velocidade vista 0.00 m/s · levado/previsto 0.00
+ENSAIO RELÓGIO P2 passo do relógio a 1x
+  quadros 2393, média 8.35 ms, mediana 9.00 ms, percentil 99 12.01 ms, pior (sem os 3 primeiros) 25.4 ms
+  acima de 16,7 ms: 2 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 16 · chegadas 15 · feitas 4 · tempos limite 0 · descartados 0 · atrasadas 14 · teto curto 4 · velocidade vista 6.98 m/s · levado/previsto 3.93
+ENSAIO RELÓGIO P2 passo do relógio a 2x
+  quadros 2398, média 8.33 ms, mediana 9.02 ms, percentil 99 11.87 ms, pior (sem os 3 primeiros) 12.5 ms
+  acima de 16,7 ms: 0 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 32 · chegadas 50 · feitas 50 · tempos limite 0 · descartados 0 · atrasadas 25 · teto curto 50 · velocidade vista 13.82 m/s · levado/previsto 3.00
+ENSAIO RELÓGIO P2 passo do relógio a 4x
+  quadros 2398, média 8.33 ms, mediana 8.47 ms, percentil 99 12.07 ms, pior (sem os 3 primeiros) 12.5 ms
+  acima de 16,7 ms: 0 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 64 · chegadas 132 · feitas 155 · tempos limite 0 · descartados 0 · atrasadas 114 · teto curto 153 · velocidade vista 27.77 m/s · levado/previsto 3.45
+ENSAIO RELÓGIO P2 passo do relógio a 8x
+  quadros 2391, média 8.36 ms, mediana 8.54 ms, percentil 99 12.04 ms, pior (sem os 3 primeiros) 33.2 ms
+  acima de 16,7 ms: 3 · acima de 33 ms: 1 (33.2 ms em 1.5 s)
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): fora
+  minutos de jogo: 128 · chegadas 168 · feitas 145 · tempos limite 0 · descartados 0 · atrasadas 134 · teto curto 147 · velocidade vista 55.05 m/s · levado/previsto 3.85
+ENSAIO RELÓGIO P2 passo do relógio em PAUSA
+  quadros 2398, média 8.33 ms, mediana 10.35 ms, percentil 99 12.64 ms, pior (sem os 3 primeiros) 13.0 ms
+  acima de 16,7 ms: 0 · acima de 33 ms: 0
+  começo: 1099 nós, 124 chunks, 100 em S0 | meio: 1099 nós, 124 chunks, 100 em S0 | fim: 1099 nós, 124 chunks, 100 em S0
+  régua da DEC-119 (média de 60 quadros/s ou mais e nenhum acima de 33 ms; só vale em release, na tomada): dentro
+  minutos de jogo: 0 · chegadas 0 · feitas 0 · tempos limite 0 · descartados 0 · atrasadas 0 · teto curto 0 · velocidade vista 0.00 m/s · levado/previsto 0.00
+CONTADORES
+  invariantes: duplicados 0, órfãos 0, contagem diferente 0, nascimento fora 0, saída fora 0, teleportes 0 (conferências 1804)
+  pool: criados 100, retirados 380, devolvidos 280, pico de ativos 100, pool vazio 40, pedidos duplicados 0, corpos perdidos 0
+  corpos: chegadas 691, feitas 558, bloqueadas 0, descartadas (velhas) 0, recusadas 0, Intents sumidos 0, atrasadas 613, teto curto 354, ações herdadas 0 | rotas 711 (média 0.057 ms, pior 0.169 ms) | velocidade vista 10.00 m/s | tempo levado/previsto 4.70 | custo dos corpos 131.1 µs por quadro de física (pior 1.35 ms)
+  custo do mundo do spike (passos, diretor, LOD, Intents, trocas de corpo) 224.8 µs por quadro, pior quadro 11.67 ms
+  protocolo S0: { "pending": 100, "discarded_results": 0, "timed_out_intents": 0 } · diretor: começos abstratos 0, corpóreos 1275, recusas {  }
+  política final: P2 passo do relógio · navegação final: N1 rota reta
+==== FIM DO RESULTADO ====
+```
