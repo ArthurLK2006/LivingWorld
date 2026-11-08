@@ -1,0 +1,91 @@
+#!/bin/sh
+# SPIKE descartável (LW-071/SP2): corpos e LOD de 100 NPCs por cima do jogo real (tests/soak/sp2). Não precisa abrir o editor.
+# USO:   tests/soak/run_sp2 --ver        janela, binário de DEPURAÇÃO do editor: Arthur anda à vontade por 3 minutos (teclas N, M, B, H)
+#        tests/soak/run_sp2 --medir      janela, DEPURAÇÃO: ensaios automáticos (alternância, carga, relógio); só para comparar
+#        tests/soak/run_sp2 --release    OFICIAL (DEC-119): binário de RELEASE já extraído em $HOME/lw-release-probe/bin, 3 execuções
+#        tests/soak/run_sp2 --headless   sem janela, só os contadores (ensaio curto de alternância)
+# O --release NÃO baixa nada: se o binário não existir, para com erro. Ele copia o projeto do commit (git archive HEAD), troca a cena
+# principal SÓ NA CÓPIA, exporta o .pck e escreve tudo em $HOME/lw-release-probe (sp2.pck, execucao/sp2_release, sp2_release_run_N.txt).
+# Antes do --release: Mac na tomada, tampa aberta, janela à frente, nada mais rodando. Ajustes: GODOT_BIN, RUNS (3), ENSAIOS.
+set -eu
+PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+GODOT_BIN=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+WORK=${WORK:-$HOME/lw-release-probe}
+RUNS=${RUNS:-3}
+ENSAIOS=${ENSAIOS:-alternancia,carga,relogio}
+SCENE=res://tests/soak/sp2/sp2_main.tscn
+fail() { printf 'ERRO: %s\n' "$1" >&2; exit 1; }
+[ -x "$GODOT_BIN" ] || fail "Godot não encontrado em '$GODOT_BIN'. Defina GODOT_BIN."
+MODE=${1:-}
+case "$MODE" in
+    --ver) exec "$GODOT_BIN" --path "$PROJECT_DIR" "$SCENE" -- --modo ver ;;
+    --medir) exec "$GODOT_BIN" --path "$PROJECT_DIR" "$SCENE" -- --modo medir --ensaios "$ENSAIOS" ;;
+    --headless) exec "$GODOT_BIN" --headless --path "$PROJECT_DIR" "$SCENE" -- --modo headless ;;
+    --release) ;;
+    *) fail "Use --ver, --medir, --release ou --headless." ;;
+esac
+
+if [ -n "$(git -C "$PROJECT_DIR" status --porcelain)" ]; then
+    echo "AVISO: há alterações não commitadas. O release roda SÓ o que está no commit $(git -C "$PROJECT_DIR" rev-parse --short HEAD)."
+fi
+echo "Commit medido: $(git -C "$PROJECT_DIR" log --oneline -1)"
+pmset -g batt | head -1
+pmset -g batt | grep -q "AC Power" || fail "O Mac não está na tomada ('AC Power'). Ligue-o e rode de novo: a medição com bateria não vale."
+RELEASE_BIN=$(ls "$WORK"/bin/*release* 2> /dev/null | head -1 || true)
+[ -n "$RELEASE_BIN" ] && [ -x "$RELEASE_BIN" ] || fail "Binário de release ausente em $WORK/bin (este script não baixa nada). Pergunte antes de rodar o run_game_release."
+[ -f "$WORK/.lw-release-probe" ] || fail "A pasta '$WORK' não foi criada pelo run_game_release (falta .lw-release-probe)."
+
+echo "== 1/3 Cópia do projeto em $WORK/projeto_sp2"
+rm -rf "$WORK/projeto_sp2"
+mkdir -p "$WORK/projeto_sp2"
+git -C "$PROJECT_DIR" archive HEAD | tar -x -C "$WORK/projeto_sp2"
+sed "s|^run/main_scene=.*|run/main_scene=\"$SCENE\"|" "$WORK/projeto_sp2/project.godot" > "$WORK/projeto_sp2/project.godot.novo"
+mv "$WORK/projeto_sp2/project.godot.novo" "$WORK/projeto_sp2/project.godot"
+cat > "$WORK/projeto_sp2/export_presets.cfg" <<'PRESET'
+[preset.0]
+
+name="Pacote"
+platform="Linux"
+runnable=false
+export_filter="all_resources"
+include_filter="*.json"
+exclude_filter="addons/*"
+export_path=""
+
+[preset.0.options]
+
+binary_format/embed_pck=false
+PRESET
+
+echo "== 2/3 Exportando o pacote (.pck)"
+"$GODOT_BIN" --headless --path "$WORK/projeto_sp2" --import > /dev/null 2>&1 || true
+rm -f "$WORK/sp2.pck"
+"$GODOT_BIN" --headless --path "$WORK/projeto_sp2" --export-pack "Pacote" "$WORK/sp2.pck" > "$WORK/sp2_exportacao.txt" 2>&1 || true
+[ -s "$WORK/sp2.pck" ] || { cat "$WORK/sp2_exportacao.txt" >&2; fail "A exportação do pacote falhou (saída acima)."; }
+mkdir -p "$WORK/execucao"
+cp "$RELEASE_BIN" "$WORK/execucao/sp2_release"
+chmod +x "$WORK/execucao/sp2_release"
+cp "$WORK/sp2.pck" "$WORK/execucao/sp2_release.pck"
+command -v codesign > /dev/null && codesign --force --sign - "$WORK/execucao/sp2_release" 2> /dev/null || true
+
+echo "== 3/3 $RUNS execução(ões) em release (cerca de 7 minutos cada, com janela; não mexa no Mac)"
+last=0
+for existing in "$WORK"/sp2_release_run_*.txt; do
+    [ -f "$existing" ] || continue
+    number=$(basename "$existing" .txt | sed 's/^sp2_release_run_//')
+    case "$number" in ''|*[!0-9]*) continue;; esac
+    [ "$number" -gt "$last" ] && last=$number
+done
+n=$((last + 1)); end=$((last + RUNS))
+while [ "$n" -le "$end" ]; do
+    out=$WORK/sp2_release_run_$n.txt
+    echo "--- execução $n -> $out"
+    echo "energia (antes): $(pmset -g batt | sed -n 1,2p | tr '\n' ' ')" > "$out"
+    "$WORK/execucao/sp2_release" -- --modo medir --ensaios "$ENSAIOS" >> "$out" 2>&1 || { cat "$out" >&2; fail "A execução $n terminou com erro (saída acima)."; }
+    after=$(pmset -g batt | sed -n 1,2p | tr '\n' ' ')
+    echo "energia (depois): $after" >> "$out"
+    cat "$out"
+    case "$after" in *"AC Power"*) ;; *) fail "O Mac saiu da tomada durante a execução $n: os números não valem; refaça.";; esac
+    n=$((n + 1))
+done
+echo "Pronto. Cole no chat os blocos 'RESULTADO PARA COLAR' acima (ou os arquivos $WORK/sp2_release_run_*.txt)."
