@@ -1,7 +1,7 @@
 class_name NpcSetup
 extends RefCounted
 ## LW-067: monta, a partir dos arquivos de `data/`, TUDO o que o `NpcModule` recebe pelo construtor (necessidades, traços, catálogo de
-## ações, ofícios e rotina, parâmetros, FoodStub, IncomeStub e população), junto com o serviço de locais do `world`. Sem global e sem
+## ações, ofícios e rotina, parâmetros, FoodStub, IncomeStub, tipos de memória e população), junto com o serviço de locais do `world`. Sem global e sem
 ## autoload: o `GameApp` chama `from_dir` uma vez, ao iniciar o jogo, e entrega o resultado ao `GameModules.register`. Qualquer arquivo
 ## ausente ou inválido vira UMA falha tratada (`result`) com o nome do assunto e a mensagem do carregador (arquivo, item e campo); quem
 ## chama decide o que fazer (o `GameApp` registra o erro e o jogo segue sem NPCs). Nunca lança erro nem escreve no log por conta própria.
@@ -43,6 +43,9 @@ static func from_dir(data_dir: String, places: SettlementService, is_development
 	var income: IncomeStubLoader.LoadResult = IncomeStubLoader.load_dir(data_dir)
 	if not income.result.ok:
 		return setup._fail_with("IncomeStub (TEMP-LW-066)", income.result)
+	var memory_kinds: MemoryKindLoader.LoadResult = MemoryKindLoader.load_dir(data_dir)
+	if not memory_kinds.result.ok:
+		return setup._fail_with("tipos de memória", memory_kinds.result)
 	var population: PopulationLoader.LoadResult = PopulationLoader.load_dir(data_dir)
 	if not population.result.ok:
 		return setup._fail_with("população inicial", population.result)
@@ -61,6 +64,7 @@ static func from_dir(data_dir: String, places: SettlementService, is_development
 	assembled.places = places
 	assembled.food = food.stub
 	assembled.income = income.stub
+	assembled.memory_kinds = memory_kinds.kinds
 	assembled.population = population.plan
 	assembled.lod_params = lod.params
 	assembled.intent_params = intents.params

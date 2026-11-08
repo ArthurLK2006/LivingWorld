@@ -8,7 +8,10 @@ extends SimModule
 ## data/routine_blocks.json) também entra pelo construtor: `peek_routine_action` e a conferência do ofício. LW-063: com o objeto
 ## `Definitions` (catálogo, traços, parâmetros, serviço de locais e, opcional, o provedor de comida) o módulo DECIDE: `tick` roda a fila de
 ## pensamento (NpcThinker) e toda ação começa pela função única `_start_action` (ponto de extensão do modo S0, LW-070). Sem `Definitions`
-## (padrão) o `tick` não faz nada. Dependências: só core, `world` e a própria pasta; não importa o `character`.
+## (padrão) o `tick` não faz nada. LW-077: `request_promote` e `request_demote` (NpcTiers) mudam o tier entre T1 e T2 com teto global `max_t2`.
+## LW-078: memória dos notáveis (`NpcMemory`, uma por NPC T2, salva junto): `peek_memories`, gravação por `_record_memory`, descarte na morte e
+## resumo em traços ao rebaixar. LW-079: relações entre pessoas (`RelationGraph`, uma por par, salva junto): `peek_opinion`, ajuste por
+## `_adjust_relation`, descarte na morte e arrumação ao rebaixar. Dependências: só core, `world` e a própria pasta; não importa o `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -25,7 +28,16 @@ const CODE_INVALID_ALARM: String = "NPC_INVALID_ALARM"
 const CODE_DEV_ONLY: String = "NPC_DEV_ONLY"
 ## TEMP-LW-065: sem FoodStub nas definições não há estoque de comida.
 const CODE_FOOD_NOT_CONFIGURED: String = "NPC_FOOD_NOT_CONFIGURED"
+## Memória (LW-078): sem tipos ou sem capacidade configurados; NPC que não é notável; tipo inexistente; pedido de gravação inválido.
+const CODE_MEMORY_NOT_CONFIGURED: String = "NPC_MEMORY_NOT_CONFIGURED"
+const CODE_NOT_NOTABLE: String = "NPC_NOT_NOTABLE"
+const CODE_UNKNOWN_MEMORY_KIND: String = "NPC_UNKNOWN_MEMORY_KIND"
+const CODE_INVALID_MEMORY: String = "NPC_INVALID_MEMORY"
 const KEY_NPCS: String = "npcs"
+## Chave da memória no save: só aparece se algum NPC tem algo guardado (save sem ela carrega com a memória vazia).
+const KEY_MEMORIES: String = "memories"
+## Chave das relações no save: lista que só aparece se existe alguma relação (save sem ela carrega sem relações).
+const KEY_RELATIONS: String = "relations"
 ## Chaves de peek_counts().
 const COUNT_TOTAL: String = "total"
 const COUNT_ALIVE: String = "alive"
@@ -51,8 +63,14 @@ var _tracer: DecisionTracer = DecisionTracer.new()
 var _runner: ActionRunner
 var _provider: NpcThinker.ConditionProvider
 var _thinker: NpcThinker
+## Consequências sociais de `talk` e `help` (LW-080): montado junto com o pensador, que avisa quando uma ação termina.
+var _social: SocialActions
 ## A tabela é UMA só e vive o tempo todo do módulo: o runner, a ocupação e o pensador a recebem por referência (on_load a atualiza no lugar).
 var _npcs: Dictionary[int, NpcState] = {}
+## Memória dos NPCs notáveis (LW-078), por npc_id: só tem entrada quem já guardou algo. Salva junto (chave `memories`).
+var _memories: Dictionary[int, NpcMemory] = {}
+## Relações entre pessoas (LW-079): uma por par, numa tabela só. Salva junto (chave `relations`).
+var _relations: RelationGraph = RelationGraph.new()
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -79,6 +97,8 @@ func request_create_npc(spec: NpcSpec) -> CreateResult:
 	var problem: String = _spec_problem(spec)
 	if not problem.is_empty():
 		return CreateResult.new(Result.failure(CODE_INVALID_SPEC, "NpcModule.request_create_npc: pedido inválido: %s." % problem), IdGenerator.NO_ID)
+	if spec.tier == NpcState.TIER_NOTABLE and not NpcTiers.has_room(NpcTiers.count_notable_alive(_npcs), _max_notable()):
+		return CreateResult.new(Result.failure(NpcTiers.CODE_T2_LIMIT_REACHED, "NpcModule.request_create_npc: já há %d NPC(s) notável(is) vivo(s) e o teto (max_t2) é %d; esperado um pedido com tier %d ou uma vaga livre." % [NpcTiers.count_notable_alive(_npcs), _max_notable(), NpcState.TIER_NORMAL]), IdGenerator.NO_ID)
 	var npc_id: int = _ctx.ids.next_id()
 	if npc_id == IdGenerator.NO_ID:
 		return CreateResult.new(Result.failure(CODE_NO_ID, "NpcModule.request_create_npc: o contador de IDs esgotou; não há ID novo."), IdGenerator.NO_ID)
@@ -95,8 +115,83 @@ func request_remove_npc(npc_id: int) -> Result:
 	if not _npcs.has(npc_id):
 		return _unknown("request_remove_npc", npc_id)
 	_npcs.erase(npc_id)
+	_memories.erase(npc_id)
+	_relations.remove_involving(npc_id)
 	_tracer.forget(npc_id)
 	return Result.success()
+
+
+## Promove o NPC de T1 a T2 (LW-077; `tier` precisa ser 2). Teto global `max_t2` dos parâmetros: cheio, `NPC_T2_LIMIT_REACHED` e ninguém é
+## expulso. Só muda o tier: identidade, ofício e rotina ficam como estavam. Regras completas em `NpcTiers.promote`.
+func request_promote(npc_id: int, tier: int) -> Result:
+	if not _npcs.has(npc_id):
+		return _unknown("request_promote", npc_id)
+	return NpcTiers.promote(_npcs[npc_id], tier, NpcTiers.count_notable_alive(_npcs), _max_notable())
+
+
+## Rebaixa o NPC de T2 a T1 (LW-077; `tier` precisa ser 1) e libera a vaga. Antes de mudar o tier (o NPC ainda é notável) o módulo resume a
+## memória dele em traços permanentes (LW-078) e chama o ponto de extensão `Definitions.on_demote` (`_on_demoting`). Regras em `NpcTiers.demote`.
+func request_demote(npc_id: int, tier: int) -> Result:
+	if not _npcs.has(npc_id):
+		return _unknown("request_demote", npc_id)
+	return NpcTiers.demote(_npcs[npc_id], tier, _on_demoting)
+
+
+## Grava um episódio na memória de um NPC notável (LW-078). Comando de DEPURAÇÃO: só em build de desenvolvimento (`Definitions.is_development_build`);
+## fora dele, `NPC_DEV_ONLY` e nada muda. As ações sociais (LW-080) e a conversa com o jogador (LW-083) gravam pelo mesmo caminho interno.
+func request_record_memory(npc_id: int, kind_id: String, actor_ids: Array[int], place_id: String) -> Result:
+	if _definitions == null or not _definitions.is_development_build:
+		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_record_memory: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
+	return _record_memory(npc_id, kind_id, actor_ids, place_id)
+
+
+## As memórias do NPC, em CÓPIAS (LW-078): os registros, na ordem em que entraram, e os traços permanentes. `kind_filter` vazio = todos os
+## tipos; um tipo que não existe nos dados é falha tratada. NPC cidadão (T1) devolve a lista de registros vazia (e os traços que guardou
+## de quando era notável). ID inexistente: falha tratada.
+func peek_memories(npc_id: int, kind_filter: String = "") -> MemoriesQuery:
+	if not _npcs.has(npc_id):
+		return MemoriesQuery.new(_unknown("peek_memories", npc_id), [], [])
+	var known_kinds: Array[String] = _known_kind_ids()
+	if not kind_filter.is_empty() and not known_kinds.is_empty() and not known_kinds.has(kind_filter):
+		return MemoriesQuery.new(_unknown_kind("peek_memories", kind_filter, known_kinds), [], [])
+	var memory: NpcMemory = _memories.get(npc_id)
+	if memory == null:
+		return MemoriesQuery.new(Result.success(), [], [])
+	return MemoriesQuery.new(Result.success(), memory.copy_records(kind_filter), memory.copy_traits())
+
+
+## O que `a_id` pensa de `b_id` (LW-079): se se conhecem, as cinco dimensões de HOJE (já com o decaimento diário), o rótulo (conhecido, amigo ou
+## rival, pela afeição) e se `b_id` está vivo. A relação é uma só por par: perguntar (b, a) dá as mesmas dimensões. Pelo menos um dos dois precisa
+## ser um NPC; quem não é NPC (o jogador) conta como vivo. NPC morto não tem relações (a morte as descarta): "não se conhecem" e `other_is_alive`
+## falso. Pedido sem sentido (ID fora da faixa ou a mesma pessoa): falha tratada.
+func peek_opinion(a_id: int, b_id: int) -> OpinionQuery:
+	for person_id: int in [a_id, b_id]:
+		if person_id < IdGenerator.FIRST_ID or person_id > IdGenerator.MAX_ID:
+			return OpinionQuery.new(Result.failure(RelationGraph.CODE_INVALID, "NpcModule.peek_opinion: ID %d fora da faixa [%d, %d]." % [person_id, IdGenerator.FIRST_ID, IdGenerator.MAX_ID]))
+	if a_id == b_id:
+		return OpinionQuery.new(Result.failure(RelationGraph.CODE_INVALID, "NpcModule.peek_opinion: uma pessoa (%d) não tem relação com ela mesma." % a_id))
+	if not _npcs.has(a_id) and not _npcs.has(b_id):
+		return OpinionQuery.new(_unknown("peek_opinion", a_id))
+	var query: OpinionQuery = OpinionQuery.new(Result.success())
+	query.other_is_alive = not _npcs.has(b_id) or _npcs[b_id].is_alive
+	var relation: NpcRelation = _relations.find(a_id, b_id)
+	if relation == null:
+		return query
+	var rules: RelationGraph.Rules = _relation_rules()
+	query.is_known = true
+	query.values = relation.values_at(_today(), rules.decay_per_day)
+	query.label = RelationGraph.label_for(query.values[NpcRelation.DIM_AFFECTION], rules)
+	query.met_at = relation.met_at
+	return query
+
+
+## Ajusta (ou cria, o "se conheceram") a relação do par somando `deltas` (cinco, na ordem de NpcRelation.DIM_IDS) (LW-079). Comando de DEPURAÇÃO:
+## só em build de desenvolvimento; fora dele, `NPC_DEV_ONLY` e nada muda. As ações sociais (LW-080) e a conversa com o jogador (LW-083) ajustam
+## pelo mesmo caminho interno (`_adjust_relation`).
+func request_adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> Result:
+	if _definitions == null or not _definitions.is_development_build:
+		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_adjust_relation: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
+	return _adjust_relation(a_id, b_id, deltas)
 
 
 ## Resumo do NPC, em CÓPIA. ID inexistente devolve falha tratada, nunca derruba o jogo.
@@ -388,6 +483,11 @@ func serialize() -> Dictionary:
 	var food_stub: FoodStub = _food_stub()
 	if food_stub != null:
 		data[FoodStub.SAVE_KEY] = food_stub.serialize()
+	var saved_memories: Dictionary = NpcMemory.table_to_dict(_memories)
+	if not saved_memories.is_empty():
+		data[KEY_MEMORIES] = saved_memories
+	if not _relations.is_empty():
+		data[KEY_RELATIONS] = _relations.to_array()
 	return data
 
 
@@ -415,9 +515,17 @@ func on_load(data: Dictionary) -> Result:
 	var stock_problem: String = _food_stock_save_problem(data)
 	if not stock_problem.is_empty():
 		return _invalid_save(stock_problem)
+	var loaded_memories: NpcMemory.TableResult = NpcMemory.parse_table(data.get(KEY_MEMORIES, {}))
+	if not loaded_memories.error.is_empty():
+		return _invalid_save(loaded_memories.error)
+	var loaded_relations: RelationGraph.ParseResult = RelationGraph.parse(data.get(KEY_RELATIONS, []))
+	if not loaded_relations.error.is_empty():
+		return _invalid_save(loaded_relations.error)
 	_npcs.clear()
 	for loaded_id: int in loaded:
 		_npcs[loaded_id] = loaded[loaded_id]
+	_memories = loaded_memories.table
+	_relations = loaded_relations.graph
 	_load_food_stock(data)
 	_tracer.clear()
 	return Result.success()
@@ -453,6 +561,14 @@ func validate() -> Array[String]:
 			problems.append("NPC %d: morto, mas com critical_since %d; esperado %d." % [npc_id, state.critical_since, NpcState.NO_TIME])
 		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
 			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
+	var tier_problem: String = NpcTiers.limit_problem(NpcTiers.count_notable_alive(_npcs), _max_notable())
+	if not tier_problem.is_empty():
+		problems.append(tier_problem)
+	problems.append_array(NpcMemory.table_problems(_memories, _npcs, _memory_rules_or_null(), _known_kind_ids()))
+	problems.append_array(_relations.problems(_npcs, _relation_rules(), _today() if _ctx != null else -1))
+	for relation: NpcRelation in _relations.sorted_relations():
+		if relation.last_event_day < NpcRelation.NO_EVENT_DAY or (_ctx != null and relation.last_event_day > _today()):
+			problems.append("Relação %s: last_event_day %d fora de %d (nunca) a hoje." % [relation.key(), relation.last_event_day, NpcRelation.NO_EVENT_DAY])
 	var food_stub: FoodStub = _food_stub()
 	if food_stub != null:
 		problems.append_array(food_stub.validate())
@@ -477,6 +593,15 @@ func debug_summary() -> Dictionary:
 	var food_stub: FoodStub = _food_stub()
 	if food_stub != null:
 		summary["food_stock"] = food_stub.serialize()
+	var memory_records: int = 0
+	var memory_traits: int = 0
+	for memory: NpcMemory in _memories.values():
+		memory_records += memory.records.size()
+		memory_traits += memory.traits.size()
+	summary["npcs_with_memory"] = _memories.size()
+	summary["memory_records"] = memory_records
+	summary["memory_traits"] = memory_traits
+	summary["relations"] = _relations.relations.size()
 	summary["population_problem"] = _population_problem
 	summary["bodies_available"] = _bodies_available
 	summary["traced_npcs"] = _tracer.traced_count()
@@ -550,7 +675,8 @@ func _build_decision_runtime() -> String:
 		return intents_problem
 	_provider = provider
 	_runner = runner
-	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _kill_npc)
+	_social = SocialActions.new(_npcs, _definitions.params.talk_gain, _definitions.params.talk_limit, _social_relation_values, _adjust_relation, _record_memory)
+	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _kill_npc, _social.on_action_finished)
 	return ""
 
 
@@ -584,6 +710,8 @@ func _kill_npc(npc_id: int, cause: String, now: int) -> void:
 	state.critical_since = NpcState.NO_TIME
 	state.alarm_until = NpcState.NO_TIME
 	state.alarm_place_id = ""
+	_memories.erase(npc_id)
+	_relations.remove_involving(npc_id)
 	_ctx.events.publish(NpcDied.new(npc_id, cause, state.tier))
 
 
@@ -667,6 +795,156 @@ func _urgencies_of(state: NpcState) -> PackedInt64Array:
 	return urgencies
 
 
+## Teto de notáveis vivos (`max_t2` dos parâmetros); 0 = sem teto configurado (sem definições ou sem parâmetros também).
+func _max_notable() -> int:
+	return _definitions.params.max_t2 if _definitions != null and _definitions.params != null else 0
+
+
+## Caminho único de ajuste das relações (LW-079): o comando de depuração, as ações sociais (LW-080) e, na LW-083, a conversa com o jogador. As regras
+## (Q11, limite por NPC, mudanças válidas) estão em `RelationGraph.adjust`; recusado, nada muda. Ajustou, publica `RelationChanged` (LW-080).
+func _adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> Result:
+	if _ctx == null:
+		return Result.failure(CODE_NOT_READY, "NpcModule.request_adjust_relation: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
+	var rules: RelationGraph.Rules = _relation_rules()
+	var today: int = _today()
+	var existing: NpcRelation = _relations.find(a_id, b_id)
+	var before: PackedInt64Array = existing.values_at(today, rules.decay_per_day) if existing != null else PackedInt64Array()
+	var adjusted: Result = _relations.adjust(a_id, b_id, deltas, _ctx.clock.total_minutes(), rules, _npcs)
+	if adjusted.ok:
+		# `RelationChanged` (LW-080): relação nova ou com valor diferente, no máximo uma vez por par por dia (o dia vai na própria relação).
+		var relation: NpcRelation = _relations.find(a_id, b_id)
+		var after: PackedInt64Array = relation.values_at(today, rules.decay_per_day)
+		if (before.is_empty() or before != after) and relation.last_event_day < today:
+			relation.last_event_day = today
+			_ctx.events.publish(RelationChanged.new(relation.a_id, relation.b_id, after))
+	return adjusted
+
+
+## As dimensões de hoje do par, ou uma lista vazia se não se conhecem (o que o `SocialActions` pergunta antes de somar o ganho da conversa).
+func _social_relation_values(a_id: int, b_id: int) -> PackedInt64Array:
+	var relation: NpcRelation = _relations.find(a_id, b_id)
+	if relation == null:
+		return PackedInt64Array()
+	return relation.values_at(_today(), _relation_rules().decay_per_day)
+
+
+## As regras das relações (parâmetros de `Definitions`); sem parâmetros, tudo em 0 (relações não configuradas).
+func _relation_rules() -> RelationGraph.Rules:
+	if _definitions == null or _definitions.params == null:
+		return RelationGraph.Rules.new(0, 0, 0, 0)
+	var params: NpcParams = _definitions.params
+	return RelationGraph.Rules.new(params.relations_capacity, params.relation_decay_per_day, params.relation_friend_threshold, params.relation_rival_threshold)
+
+
+## Dia de simulação de agora (0 se o módulo ainda não passou por setup()).
+func _today() -> int:
+	return IntMath.floor_div(_ctx.clock.total_minutes(), SimClock.MINUTES_PER_DAY) if _ctx != null else 0
+
+
+## Caminho único de gravação na memória (LW-078): o comando de depuração `request_record_memory` e, nas LW-080 e LW-083, as ações sociais e a
+## conversa com o jogador. Só NPC vivo e notável (T2) tem memória; o tipo precisa existir em `data/memory_kinds.json`; até
+## `MemoryRecord.MAX_ACTORS` pessoas, com ID válido, diferentes do dono e entre si. Recusado, nada muda.
+func _record_memory(npc_id: int, kind_id: String, actor_ids: Array[int], place_id: String) -> Result:
+	if _ctx == null:
+		return Result.failure(CODE_NOT_READY, "NpcModule.request_record_memory: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
+	if not _npcs.has(npc_id):
+		return _unknown("request_record_memory", npc_id)
+	var rules: NpcMemory.Rules = _memory_rules_or_null()
+	if rules == null:
+		return Result.failure(CODE_MEMORY_NOT_CONFIGURED, "NpcModule.request_record_memory: memória não configurada; esperado Definitions.memory_kinds com algum tipo e memory_capacity maior que 0 nos parâmetros.")
+	var state: NpcState = _npcs[npc_id]
+	if not state.is_alive:
+		return Result.failure(NpcTiers.CODE_DEAD, "NpcModule.request_record_memory: o NPC %d está morto; esperado um NPC vivo." % npc_id)
+	if state.tier != NpcState.TIER_NOTABLE:
+		return Result.failure(CODE_NOT_NOTABLE, "NpcModule.request_record_memory: o NPC %d é cidadão (T1); só notável (T2) tem memória, então é preciso promovê-lo antes (request_promote)." % npc_id)
+	var known_kinds: Array[String] = _known_kind_ids()
+	if not known_kinds.has(kind_id):
+		return _unknown_kind("request_record_memory", kind_id, known_kinds)
+	var actors_problem: String = _actors_problem(npc_id, actor_ids)
+	if not actors_problem.is_empty():
+		return Result.failure(CODE_INVALID_MEMORY, "NpcModule.request_record_memory: pedido inválido para o NPC %d: %s." % [npc_id, actors_problem])
+	var kind: MemoryKindLoader.KindDef = _kind_by_id(kind_id)
+	var record: MemoryRecord = MemoryRecord.new()
+	record.kind = kind.id
+	record.actors = PackedInt64Array(actor_ids)
+	record.place_id = place_id
+	record.time = _ctx.clock.total_minutes()
+	record.valence = kind.valence
+	record.salience = kind.salience
+	if not _memories.has(npc_id):
+		_memories[npc_id] = NpcMemory.new()
+	_memories[npc_id].remember(record, record.time, rules)
+	return Result.success()
+
+
+## Primeiro problema da lista de pessoas do episódio (texto vazio se está certa).
+func _actors_problem(npc_id: int, actor_ids: Array[int]) -> String:
+	if actor_ids.size() > MemoryRecord.MAX_ACTORS:
+		return "%d pessoas; o máximo é %d" % [actor_ids.size(), MemoryRecord.MAX_ACTORS]
+	for index: int in actor_ids.size():
+		var actor_id: int = actor_ids[index]
+		if actor_id < IdGenerator.FIRST_ID or actor_id > IdGenerator.MAX_ID:
+			return "pessoa %d fora da faixa de IDs [%d, %d]" % [actor_id, IdGenerator.FIRST_ID, IdGenerator.MAX_ID]
+		if actor_id == npc_id:
+			return "o NPC não pode ser uma das pessoas do próprio episódio (%d)" % actor_id
+		if actor_ids.find(actor_id) != index:
+			return "pessoa %d repetida" % actor_id
+	return ""
+
+
+## As regras da memória (parâmetros e tipos de episódio de `Definitions`), ou nulo se a memória não está configurada: sem tipos, ou sem
+## `memory_capacity` maior que 0.
+func _memory_rules_or_null() -> NpcMemory.Rules:
+	if _definitions == null or _definitions.params == null or _definitions.params.memory_capacity <= 0 or _definitions.memory_kinds.is_empty():
+		return null
+	var decays: Dictionary[String, int] = {}
+	for kind: MemoryKindLoader.KindDef in _definitions.memory_kinds:
+		decays[kind.id] = kind.decay_per_day
+	return NpcMemory.Rules.new(_definitions.params.memory_capacity, _definitions.params.trait_threshold, _definitions.params.trait_slots, decays)
+
+
+## Ids dos tipos de episódio configurados (vazio = nenhum configurado).
+func _known_kind_ids() -> Array[String]:
+	var ids: Array[String] = []
+	if _definitions != null:
+		for kind: MemoryKindLoader.KindDef in _definitions.memory_kinds:
+			ids.append(kind.id)
+	return ids
+
+
+func _kind_by_id(kind_id: String) -> MemoryKindLoader.KindDef:
+	if _definitions != null:
+		for kind: MemoryKindLoader.KindDef in _definitions.memory_kinds:
+			if kind.id == kind_id:
+				return kind
+	return null
+
+
+func _unknown_kind(caller: String, kind_id: String, known_kinds: Array[String]) -> Result:
+	return Result.failure(CODE_UNKNOWN_MEMORY_KIND, "NpcModule.%s: tipo de memória '%s' inexistente; esperado um de: %s." % [caller, kind_id, ", ".join(known_kinds)])
+
+
+## Ponto de extensão do rebaixamento (LW-077), chamado por `NpcTiers.demote` ANTES de o tier mudar (o NPC ainda é notável): o módulo resume a
+## memória dele em traços permanentes (LW-078); as relações dele com outro CIDADÃO deixam de valer (Q11), então saem e a afeição de cada uma vira
+## traço também (LW-079); a relação com o jogador fica, com os valores arredondados; as com notáveis ficam. Por último avisa o gancho de fora
+## (`Definitions.on_demote`, usado pelos testes). Sem regras de memória configuradas não há onde guardar traços: as relações saem do mesmo jeito.
+func _on_demoting(npc_id: int) -> void:
+	var now: int = _ctx.clock.total_minutes() if _ctx != null else 0
+	var relation_traits: Dictionary[int, int] = _relations.demote_relations_of(npc_id, now, _relation_rules(), _npcs)
+	var memory: NpcMemory = _memories.get(npc_id)
+	var rules: NpcMemory.Rules = _memory_rules_or_null()
+	if rules != null and (memory != null or not relation_traits.is_empty()):
+		if memory == null:
+			memory = NpcMemory.new()
+			_memories[npc_id] = memory
+		memory.summarize(now, rules)
+		memory.absorb_sums(relation_traits, now, rules)
+		if memory.is_empty():
+			_memories.erase(npc_id)
+	if _definitions != null and _definitions.on_demote.is_valid():
+		_definitions.on_demote.call(npc_id)
+
+
 ## Primeiro problema do pedido de criação (texto vazio se estiver certo).
 func _spec_problem(spec: NpcSpec) -> String:
 	if spec == null:
@@ -747,6 +1025,45 @@ class Definitions:
 	## Build de desenvolvimento? Só então valem os comandos de depuração do módulo (hoje `request_set_food_stock`). A fronteira do app lê
 	## `OS.is_debug_build()` e entrega aqui; a simulação não lê `OS`. Padrão falso.
 	var is_development_build: bool = false
+	## Opcional (LW-077): ponto de extensão do rebaixamento. É chamado com o `npc_id`, uma vez por rebaixamento de verdade, ANTES de o tier mudar
+	## (o NPC ainda é notável). A LW-078 e a LW-079 o usarão para resumir memória e relações em traços; hoje só os testes o usam. Sem ele, nada.
+	var on_demote: Callable = Callable()
+	## Opcional (LW-078): os tipos de episódio (data/memory_kinds.json). Sem eles, ou sem `memory_capacity` nos parâmetros, ninguém grava memória.
+	var memory_kinds: Array[MemoryKindLoader.KindDef] = []
+
+
+## Resultado de `peek_memories`: `result.ok` diz se deu certo; só então as listas valem. São CÓPIAS, na ordem em que os registros entraram.
+class MemoriesQuery:
+	extends RefCounted
+
+	var result: Result
+	var records: Array[MemoryRecord]
+	var traits: Array[NpcMemory.Trait]
+
+	func _init(query_result: Result, found_records: Array[MemoryRecord], found_traits: Array[NpcMemory.Trait]) -> void:
+		result = query_result
+		records = found_records
+		traits = found_traits
+
+
+## Resultado de `peek_opinion`: `result.ok` diz se deu certo; só então os campos valem. `values` é uma CÓPIA, na ordem de NpcRelation.DIM_IDS.
+class OpinionQuery:
+	extends RefCounted
+
+	var result: Result
+	## Se conhecem (existe relação entre os dois).
+	var is_known: bool = false
+	var values: PackedInt64Array = PackedInt64Array()
+	## `acquaintance`, `friend` ou `rival`; vazio se não se conhecem.
+	var label: String = ""
+	## Minuto em que se conheceram (-1 se não se conhecem).
+	var met_at: int = -1
+	## O segundo (`b_id`) está vivo? Quem não é NPC (o jogador) conta como vivo.
+	var other_is_alive: bool = true
+
+	func _init(query_result: Result) -> void:
+		result = query_result
+		values.resize(NpcRelation.DIM_COUNT)
 
 
 ## Resultado de `request_create_npc`: `npc_id` só vale se `result.ok` (mesmo padrão do SpawnResult do `character`).
