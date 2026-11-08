@@ -3,16 +3,23 @@ extends RefCounted
 ## Fluxo de decisão do NPC e fila de pensamento (LW-063; contrato em docs/modules/npc.md, seção 5, e arquitetura 9.7), em modo S1 (sem
 ## corpo). A cada passo, `run_step` deixa pensar só quem chegou no seu `next_think_time`, no máximo `max_thinks_per_step` por passo (o mais
 ## antigo primeiro, empate pelo menor id; o excedente espera). Cada NPC que pensa: (1) leva as necessidades até agora; (2) termina a ação se
-## o tempo dela acabou; (3) monta as candidatas: com necessidade URGENTE (nível 2 ou mais) as ações que a aliviam, senão (ou se nenhuma
+## o tempo dela acabou (e, se uma necessidade LETAL ficou em nível crítico além do limite, o NPC MORRE e nada mais acontece, LW-081); (3) monta as candidatas: com necessidade URGENTE (nível 2 ou mais) as ações que a aliviam, senão (ou se nenhuma
 ## delas pode começar) a ação da ROTINA da hora, mais a ação em andamento (que ganha o bônus de inércia); só entra quem tem local e pode
 ## começar (pré-condições); (4) pontua com o
 ## UtilityScorer; (5) ordena (pontos, depois id da ação, depois id do local), toma até `decision_top_k` dentro de `decision_margin` pontos
 ## da melhor e SORTEIA com peso no fluxo `npc.decision` do ctx.rng; (6) executa pelo ActionRunner, por uma função de início entregue pelo
 ## módulo (ponto de extensão do modo S0, LW-070); fora do local da ação, o primeiro passo é `go_to_place`; trocar de ação interrompe a atual
-## com efeito proporcional; (7) agenda o próximo pensamento. Sem candidata, faz `wait`. Não guarda estado salvo: tudo está no NpcState.
+## com efeito proporcional; (7) agenda o próximo pensamento. Sem candidata, faz `wait`. Alarme (LW-076): `react_to_alarm` faz o NPC no raio
+## pensar já, com a pressão de `safety` e as candidatas `flee` e `help`. Não guarda estado salvo: tudo está no NpcState.
 
 const RNG_STREAM: String = "npc.decision"
 const FALLBACK_ACTION_ID: String = "wait"
+## Reações a um alarme (LW-076): ações do catálogo, achadas por estes ids (como `wait` e `go_to_place`). A necessidade que o alarme sobe.
+const FLEE_ACTION_ID: String = "flee"
+const HELP_ACTION_ID: String = "help"
+const ALARM_ACTION_IDS: Array[String] = [FLEE_ACTION_ID, HELP_ACTION_ID]
+const SAFETY_NEED_ID: String = "safety"
+const CM_PER_METER_INT: int = 100
 
 ## Pensamentos do último passo e o maior número de pensamentos já visto num passo (só observação, não vai no save nem no hash).
 var last_step_thinks: int = 0
@@ -32,9 +39,13 @@ var _action_by_id: Dictionary[String, ActionDef] = {}
 var _places: SettlementService
 ## Função de início de ação do módulo: (npc_id: int, action_id: String, place_id: String, now: int) -> Result.
 var _start_action: Callable
+## Rastro de decisão dos NPCs marcados (LW-064); nulo = sem rastro. NPC não marcado não gera custo nem dado.
+var _tracer: DecisionTracer
+## Função de morte do módulo (LW-081): (npc_id: int, cause: String, now: int) -> void. Sem ela (testes do pensador solto) ninguém morre.
+var _kill_npc: Callable
 
 
-func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRunner, scorer: UtilityScorer, chooser: PlaceChooser, provider: ConditionProvider, routine: RoutineTable, params: NpcParams, need_defs: Array[NeedDef], actions: Array[ActionDef], places: SettlementService, start_action: Callable) -> void:
+func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRunner, scorer: UtilityScorer, chooser: PlaceChooser, provider: ConditionProvider, routine: RoutineTable, params: NpcParams, need_defs: Array[NeedDef], actions: Array[ActionDef], places: SettlementService, start_action: Callable, tracer: DecisionTracer = null, kill_npc: Callable = Callable()) -> void:
 	_ctx = ctx
 	_states = states
 	_runner = runner
@@ -47,6 +58,8 @@ func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRun
 	_actions = actions
 	_places = places
 	_start_action = start_action
+	_tracer = tracer
+	_kill_npc = kill_npc
 	for action: ActionDef in actions:
 		_action_by_id[action.id] = action
 
@@ -74,22 +87,56 @@ static func due_ids(states: Dictionary[int, NpcState], now: int, cap: int) -> Ar
 	return ids
 
 
-## Um pensamento do NPC (passos 1 a 7 do cabeçalho). ID desconhecido ou NPC morto: não faz nada (o registro não é tocado).
-func think(npc_id: int, now: int) -> void:
+## Reação a um alarme (LW-076): o NPC vivo a até `alarm_radius_m` do ponto PENSA JÁ (fora da fila e do teto), com a pressão de `safety`
+## somada e as ações `flee` e `help` entre as candidatas. Fora do raio, morto ou desconhecido: nada acontece.
+func react_to_alarm(npc_id: int, alarm: Alarm, now: int) -> void:
 	if not _states.has(npc_id):
 		return
 	var state: NpcState = _states[npc_id]
 	if not state.is_alive:
 		return
+	var radius_cm: int = _params.alarm_radius_m * CM_PER_METER_INT
+	var delta_x: int = state.x_cm - alarm.x_cm
+	var delta_z: int = state.z_cm - alarm.z_cm
+	if delta_x * delta_x + delta_z * delta_z > radius_cm * radius_cm:
+		return
+	# A janela fica no estado: fugir ou ajudar leva mais de um pensamento (primeiro anda, depois age), e o alarme não pode sumir no meio.
+	state.open_alarm_window(now + _params.alarm_window_min, _nearest_place_id(state, alarm))
+	think(npc_id, now, alarm)
+
+
+## Um pensamento do NPC (passos 1 a 7 do cabeçalho). ID desconhecido ou NPC morto: não faz nada (o registro não é tocado). `alarm`: o
+## pensamento é a reação a um alarme (LW-076).
+func think(npc_id: int, now: int, alarm: Alarm = null) -> void:
+	if not _states.has(npc_id):
+		return
+	var state: NpcState = _states[npc_id]
+	if not state.is_alive:
+		return
+	# Primeiro o fim da ação (o runner leva as necessidades até o MINUTO DO FIM antes de aplicar o efeito, então o resultado não depende do
+	# atraso do pensamento) e só depois o resto do caminho até agora.
+	var progress: ActionRunner.AdvanceResult = _runner.advance(npc_id, now)
 	if state.needs_updated_at < now:
 		NeedMath.settle(state, _need_defs, now)
-	var progress: ActionRunner.AdvanceResult = _runner.advance(npc_id, now)
+	NeedMath.update_critical(state, _need_defs, now)
+	var lethal_cause: String = NeedMath.lethal_cause(state, _need_defs, now)
+	if not lethal_cause.is_empty() and _kill_npc.is_valid():
+		_kill_npc.call(npc_id, lethal_cause, now)
+		return
 	var running: bool = progress.outcome == ActionRunner.Outcome.RUNNING
 	_provider.subject = state
+	if alarm != null:
+		_apply_alarm_pressure(state, alarm)
 	var routine_action: String = _routine_action_id(state, now)
-	var chosen: Candidate = _choose(_candidates(state, now, running, routine_action))
+	var candidates: Array[Candidate] = _candidates(state, now, running, routine_action)
+	if alarm != null or state.alarm_until > now:
+		candidates = _with_alarm_reactions(candidates, state, now, running, routine_action)
+	var chosen: Candidate = _choose(candidates)
+	var reason: String = DecisionTracer.REASON_INERTIA if chosen != null and chosen.is_current else (chosen.source if chosen != null else DecisionTracer.REASON_FALLBACK)
 	if chosen == null:
 		chosen = _fallback(state, now)
+	if _tracer != null and _tracer.is_traced(npc_id):
+		_tracer.record(npc_id, now, state.need_values, _candidate_records(candidates), chosen.action.id if chosen != null else "", chosen.place_id if chosen != null else "", reason)
 	if chosen != null and not chosen.is_current and not _is_walking_there(state, chosen, running):
 		_execute(state, chosen, running, now)
 	_schedule(state, now)
@@ -108,24 +155,34 @@ func _routine_action_id(state: NpcState, now: int) -> String:
 ## comida, sem vaga...), ou se não há urgência, a ação da rotina da hora (assim quem não tem como aliviar a fome ainda vai trabalhar, e é o
 ## trabalho do agricultor que repõe a comida). A ação em andamento entra sempre, para a inércia poder mantê-la.
 func _candidates(state: NpcState, now: int, running: bool, routine_action: String) -> Array[Candidate]:
-	var found: Array[Candidate] = _scored(_relieving_actions(state), state, now, running, routine_action)
+	var found: Array[Candidate] = _scored(_relieving_actions(state), state, now, running, routine_action, DecisionTracer.REASON_URGENT_NEED)
 	if found.is_empty() and _action_by_id.has(routine_action):
-		found = _scored([_action_by_id[routine_action]], state, now, running, routine_action)
+		found = _scored([_action_by_id[routine_action]], state, now, running, routine_action, DecisionTracer.REASON_ROUTINE)
 	if running and _action_by_id.has(state.action_id) and not _has_candidate(found, state.action_id):
 		var current: Candidate = _candidate_for(state, _action_by_id[state.action_id], now, running, routine_action)
 		if current != null:
+			current.source = DecisionTracer.REASON_INERTIA
 			found.append(current)
 	return found
 
 
-## Candidatas pontuadas das ações dadas (as que não têm local, não podem começar ou não pontuam ficam de fora).
-func _scored(actions: Array[ActionDef], state: NpcState, now: int, running: bool, routine_action: String) -> Array[Candidate]:
+## Candidatas pontuadas das ações dadas (as que não têm local, não podem começar ou não pontuam ficam de fora). `source`: de onde vieram.
+func _scored(actions: Array[ActionDef], state: NpcState, now: int, running: bool, routine_action: String, source: String) -> Array[Candidate]:
 	var found: Array[Candidate] = []
 	for action: ActionDef in actions:
 		var candidate: Candidate = _candidate_for(state, action, now, running, routine_action)
 		if candidate != null:
+			candidate.source = source
 			found.append(candidate)
 	return found
+
+
+## As candidatas do pensamento como registros do rastro (só chamado para NPC marcado).
+func _candidate_records(candidates: Array[Candidate]) -> Array[DecisionTracer.CandidateRecord]:
+	var records: Array[DecisionTracer.CandidateRecord] = []
+	for candidate: Candidate in candidates:
+		records.append(DecisionTracer.CandidateRecord.new(candidate.action.id, candidate.place_id, candidate.breakdown, candidate.is_current, candidate.source))
+	return records
 
 
 func _has_candidate(found: Array[Candidate], action_id: String) -> bool:
@@ -150,27 +207,78 @@ func _relieving_actions(state: NpcState) -> Array[ActionDef]:
 ## O NPC já está andando para o local da ação escolhida? Então segue andando: recomeçar a caminhada a cada pensamento nunca a terminaria
 ## se ela durasse mais que o intervalo de pensamento.
 func _is_walking_there(state: NpcState, chosen: Candidate, running: bool) -> bool:
-	return running and state.action_id == ActionRunner.GO_TO_PLACE_ID and state.action_target_place_id == chosen.place_id and not chosen.action.place_kind.is_empty()
+	return running and state.action_id == ActionRunner.GO_TO_PLACE_ID and state.action_target_place_id == chosen.place_id and chosen.needs_place
 
 
 ## A candidata pontuada, ou null se a ação não tem local, não pode começar agora ou não pontua.
-func _candidate_for(state: NpcState, action: ActionDef, now: int, running: bool, routine_action: String) -> Candidate:
+## `forced_place_id`: local já escolhido de fora (o do `help` do alarme); vazio = o PlaceChooser escolhe pelo tipo de local da ação.
+func _candidate_for(state: NpcState, action: ActionDef, now: int, running: bool, routine_action: String, forced_place_id: String = "") -> Candidate:
 	var is_current: bool = running and action.id == state.action_id
 	var place_id: String = state.action_target_place_id
+	var needs_place: bool = not action.place_kind.is_empty() or not forced_place_id.is_empty()
 	var distance_cm: int = 0
 	if not is_current:
-		var chosen_place: PlaceChooser.ChosenPlace = _chooser.place_for(state, action)
-		if not chosen_place.result.ok:
-			return null
-		place_id = chosen_place.place_id
+		if forced_place_id.is_empty():
+			var chosen_place: PlaceChooser.ChosenPlace = _chooser.place_for(state, action)
+			if not chosen_place.result.ok:
+				return null
+			place_id = chosen_place.place_id
+		else:
+			place_id = forced_place_id
 		if not _runner.peek_blocker(state.npc_id, action.id, place_id, now, true).is_empty():
 			return null
-		if not action.place_kind.is_empty():
+		if needs_place:
 			distance_cm = _distance_cm(state, place_id)
 	var scored: UtilityScorer.ScoreBreakdown = _scorer.score(state, action, distance_cm, is_current, action.id == routine_action)
 	if not scored.result.ok:
 		return null
-	return Candidate.new(action, place_id, scored.total, is_current)
+	return Candidate.new(action, place_id, scored.total, is_current, scored, needs_place)
+
+
+## Candidatas da reação a um alarme (LW-076): `flee` (o PlaceChooser a leva para casa) e `help` (o local mais próximo do ponto do alarme)
+## entram junto das candidatas normais, que continuam valendo: se uma delas pontuar mais, o NPC IGNORA o alarme e segue a vida (a inércia
+## ou a rotina vence). Quem já está fazendo a ação de reação não ganha uma segunda candidata igual.
+func _with_alarm_reactions(candidates: Array[Candidate], state: NpcState, now: int, running: bool, routine_action: String) -> Array[Candidate]:
+	var result: Array[Candidate] = []
+	for candidate: Candidate in candidates:
+		if candidate.is_current or not ALARM_ACTION_IDS.has(candidate.action.id):
+			result.append(candidate)
+	for action_id: String in ALARM_ACTION_IDS:
+		if not _action_by_id.has(action_id) or (running and state.action_id == action_id):
+			continue
+		var forced_place_id: String = ""
+		if action_id == HELP_ACTION_ID:
+			forced_place_id = state.alarm_place_id
+			if forced_place_id.is_empty():
+				continue
+		var reaction: Candidate = _candidate_for(state, _action_by_id[action_id], now, running, routine_action, forced_place_id)
+		if reaction != null:
+			reaction.source = DecisionTracer.REASON_INTERRUPTION
+			result.append(reaction)
+	return result
+
+
+## O alarme põe pressão em `safety` (a pressão do arquivo vezes a gravidade), limitada a 100.
+func _apply_alarm_pressure(state: NpcState, alarm: Alarm) -> void:
+	NeedMath.add_pressure(state, _need_defs, SAFETY_NEED_ID, _params.alarm_safety_pressure * alarm.severity)
+
+
+## Id do local (de qualquer tipo) do assentamento do NPC mais próximo do ponto do alarme; empate: menor id. Vazio se o assentamento não tem local.
+func _nearest_place_id(state: NpcState, alarm: Alarm) -> String:
+	var best_id: String = ""
+	var best_distance: int = 0
+	for kind: String in Place.KINDS:
+		var found: SettlementService.PlacesQuery = _places.peek_places_of_kind(state.settlement_id, kind)
+		if not found.result.ok:
+			continue
+		for place: Place in found.places:
+			var delta_x: int = roundi(place.position.x * TerrainData.CM_PER_METER) - alarm.x_cm
+			var delta_z: int = roundi(place.position.z * TerrainData.CM_PER_METER) - alarm.z_cm
+			var distance: int = delta_x * delta_x + delta_z * delta_z
+			if best_id.is_empty() or distance < best_distance or (distance == best_distance and place.id < best_id):
+				best_id = place.id
+				best_distance = distance
+	return best_id
 
 
 ## Escolha (passo 5): ordena, toma as melhores dentro da margem e sorteia com peso (inteiro) no fluxo `npc.decision`.
@@ -216,7 +324,7 @@ func _execute(state: NpcState, chosen: Candidate, running: bool, now: int) -> vo
 	if running:
 		_runner.interrupt(state.npc_id, now)
 	var step_action_id: String = chosen.action.id
-	if not chosen.action.place_kind.is_empty() and state.place_id != chosen.place_id and _action_by_id.has(ActionRunner.GO_TO_PLACE_ID):
+	if chosen.needs_place and state.place_id != chosen.place_id and _action_by_id.has(ActionRunner.GO_TO_PLACE_ID):
 		step_action_id = ActionRunner.GO_TO_PLACE_ID
 	_start_action.call(state.npc_id, step_action_id, chosen.place_id, now)
 
@@ -258,6 +366,20 @@ func _distance_cm(state: NpcState, place_id: String) -> int:
 	return ceili(sqrt(float(delta_x * delta_x + delta_z * delta_z)))
 
 
+## Um alarme que chegou ao `npc` (LW-076): o ponto, em centímetros, e a gravidade.
+class Alarm:
+	extends RefCounted
+
+	var x_cm: int
+	var z_cm: int
+	var severity: int
+
+	func _init(alarm_x_cm: int, alarm_z_cm: int, alarm_severity: int) -> void:
+		x_cm = alarm_x_cm
+		z_cm = alarm_z_cm
+		severity = alarm_severity
+
+
 ## Ação candidata com local e pontuação.
 class Candidate:
 	extends RefCounted
@@ -266,12 +388,20 @@ class Candidate:
 	var place_id: String
 	var total: int
 	var is_current: bool
+	## As parcelas da pontuação (para o rastro); nulo na espera de reserva, que não é pontuada.
+	var breakdown: UtilityScorer.ScoreBreakdown
+	## De onde veio: motivo de escolha se vencer (URGENT_NEED, ROUTINE ou INTERRUPTION); INERTIA para a ação que só estava em andamento.
+	var source: String = DecisionTracer.REASON_FALLBACK
+	## A ação acontece num local (do tipo da ação, ou o `help` do alarme): fora dele o primeiro passo é ir até lá.
+	var needs_place: bool
 
-	func _init(candidate_action: ActionDef, candidate_place_id: String, candidate_total: int, candidate_is_current: bool) -> void:
+	func _init(candidate_action: ActionDef, candidate_place_id: String, candidate_total: int, candidate_is_current: bool, candidate_breakdown: UtilityScorer.ScoreBreakdown = null, candidate_needs_place: bool = false) -> void:
 		action = candidate_action
 		place_id = candidate_place_id
 		total = candidate_total
 		is_current = candidate_is_current
+		breakdown = candidate_breakdown
+		needs_place = candidate_needs_place
 
 
 ## Provedor das condições `has_food` e `place_has_room` do ActionRunner. `place_has_room` = capacidade do `world` menos a ocupação derivada

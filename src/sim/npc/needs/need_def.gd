@@ -16,9 +16,15 @@ var rate_per_hour: int
 var attention: int
 var urgent: int
 var critical: int
+## Consequências de ficar em nível CRÍTICO (LW-081, docs/modules/npc.md, seção 8). `lethal_after_hours` maior que 0 faz da necessidade uma
+## necessidade LETAL (só `hunger` na Fase 2): crítica há `weaken_after_hours` o NPC fica enfraquecido (o `work` rende `weak_effect_percent`
+## por cento) e crítica há `lethal_after_hours` ele morre. 0 nos dois = a necessidade não tem consequência.
+var weaken_after_hours: int
+var lethal_after_hours: int
+var weak_effect_percent: int
 
 
-func _init(need_id: String, need_order: int, need_start_value: int, need_rate_per_hour: int, need_attention: int, need_urgent: int, need_critical: int) -> void:
+func _init(need_id: String, need_order: int, need_start_value: int, need_rate_per_hour: int, need_attention: int, need_urgent: int, need_critical: int, need_weaken_after_hours: int = 0, need_lethal_after_hours: int = 0, need_weak_effect_percent: int = 100) -> void:
 	id = need_id
 	order = need_order
 	start_value = need_start_value
@@ -26,3 +32,6 @@ func _init(need_id: String, need_order: int, need_start_value: int, need_rate_pe
 	attention = need_attention
 	urgent = need_urgent
 	critical = need_critical
+	weaken_after_hours = need_weaken_after_hours
+	lethal_after_hours = need_lethal_after_hours
+	weak_effect_percent = need_weak_effect_percent
