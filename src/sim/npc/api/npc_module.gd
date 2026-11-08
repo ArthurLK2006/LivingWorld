@@ -93,6 +93,29 @@ func peek_counts() -> Dictionary:
 	return counts
 
 
+## LOD lógico (LW-069; docs/modules/npc.md, seção 6). Quem monta o módulo o liga com `lod.configure(LodParams)`; sem isso ele fica
+## desligado (o pedido de foco falha com NPC_LOD_NOT_CONFIGURED e nada muda). O nível dos NPCs não é salvo nem entra no hash.
+var lod: NpcLod = NpcLod.new()
+
+
+## Põe ou move o foco do LOD (ID do ator e posição em metros). Quem entrega a posição é a ponte: o `npc` não importa o `character`.
+func request_set_focus(focus_id: int, position_m: Vector3) -> Result:
+	return lod.set_focus(focus_id, position_m)
+
+
+## Tira o foco do LOD. Foco desconhecido: falha tratada.
+func request_clear_focus(focus_id: int) -> Result:
+	return lod.clear_focus(focus_id)
+
+
+## A cada passo: reclassifica os NPCs (S1 e S0) e publica LodChanged só nas trocas. As outras tarefas do módulo acrescentam aqui o resto do passo.
+func tick(_elapsed_minutes: int) -> void:
+	if _ctx == null:
+		return
+	for change: NpcLod.Change in lod.update(_npcs, _ctx.clock.total_minutes()):
+		_ctx.events.publish(LodChanged.new(change.npc_id, change.from_level, change.to_level))
+
+
 ## IDs viram texto (assim o JSON guarda chaves) e entram em ordem crescente do número.
 func serialize() -> Dictionary:
 	var saved: Dictionary = {}
