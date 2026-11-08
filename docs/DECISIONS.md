@@ -136,6 +136,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-042 | Decisão do NPC por utilidade, com catálogo de ações em dados | PROPOSTA |
 | DEC-043 | Memória episódica limitada, relações e rumores | PROPOSTA |
 | DEC-044 | Uso concreto de IA generativa (se houver): modelo, local ou nuvem, custo e privacidade | PENDENTE |
+| DEC-122 | Navegação e velocidade dos corpos S0 (resultado do SP2) | APROVADA (por ora) |
+| DEC-123 | Relógio contra corpo: direção P3 (resultado do SP2) | APROVADA (somente a direção) |
 
 **ÁREA 6 — SOCIEDADE, ECONOMIA, POLÍTICA E GUERRA**
 
@@ -1772,6 +1774,30 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Data / versão** | Decidida por Arthur em 07/11/2026 · registrada em 07/11/2026 (LW-152) |
 | **Relações** | DEC-053, DEC-066, DEC-067, DEC-080, DEC-117 |
 
+### DEC-122 — Navegação e velocidade dos corpos S0 (resultado do SP2)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA (por ora; a N1 será revista quando as construções entrarem como obstáculo, LW-073 e LW-074) |
+| **Contexto** | O SP2 (LW-071, `docs/decisions/0009-spike-sp2-corpos-e-lod.md`) testou 100 NPCs que ganham corpo perto do jogador (S0) e voltam a ser dados longe (S1), com duas navegações (N1 reta e N2 grade A\*) e duas políticas de velocidade do corpo (P1 e P2). |
+| **Decisão** | (1) Navegação **N1** (rota reta por pontos, recusa acima de 40°) por ora; revisar quando as construções entrarem como obstáculo (LW-073 e LW-074). (2) Velocidade do corpo **P1**: passo natural de 4 m/s [HIP] × velocidade do relógio. |
+| **Justificativa** | A N1 passa nas rotas da rotina com 0,07 a 0,45 ms em release; a N2 dá trancos de até 85,9 ms na 1ª rota (execução 4). A P1 é a mais simples, e Arthur viu a velocidade acompanhar o relógio; a P2 andou quase sempre no teto e ainda atrasou a maioria. Escolha de Arthur pelo painel de decisões em 08/11/2026. |
+| **Consequências** | A N1 atravessa pedra e recusa morro íngreme sem desvio. A P1 chega sempre atrasada enquanto a DEC-123 não for resolvida. Os valores com [HIP] continuam [HIP]. |
+| **Data / versão** | Decidida por Arthur em 08/11/2026 · registrada em 08/11/2026 (LW-071a) |
+| **Relações** | DEC-016, DEC-035, DEC-039, DEC-040, DEC-119, DEC-120, DEC-123 |
+
+### DEC-123 — Relógio contra corpo: direção P3 (resultado do SP2)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA (somente a **direção** P3; os tempos de caminhada só mudam depois do teste de 30 dias e de DEC nova) |
+| **Contexto** | A simulação planeja a caminhada a 8400 cm por minuto de jogo (`DEFAULT_WALK_SPEED_CM_PER_MIN`, `src/sim/npc/actions/action_runner.gd:31`), cerca de 67 m/s a 1x; o corpo anda 4 m/s. No SP2: 613 de 691 chegadas atrasadas; com P1, 100% atrasadas, com levado ÷ previsto de 2,45 a 7,22. |
+| **Decisão** | Direção **P3**: a simulação passará a acompanhar o corpo, com caminhada em torno de **500 cm/min [HIP]**. Conta: 500 cm/min = 5 m por minuto de jogo; a 1x, 1 minuto = 1,25 s, então 5 ÷ 1,25 = **4 m/s**. A rota A → B (495 m) = 495 ÷ 5 ≈ **99 min de jogo** ≈ 99 × 1,25 ≈ **124 s reais** a 1x. É direção, **não tarefa**: nenhuma tarefa de mudança foi criada. |
+| **Justificativa** | Escolha de Arthur pelo painel de decisões em 08/11/2026. **Alternativas rejeitadas por Arthur:** manter os 8400 e aceitar o atraso; tempo limite proporcional ao corpo (quebra a regra de que o mundo não muda porque o jogador olha). |
+| **Consequências** | Quando aplicada, muda todos os tempos de caminhada da simulação (16,8 vezes mais longos): a constante `DEFAULT_WALK_SPEED_CM_PER_MIN` (`action_runner.gd:31`), o parâmetro padrão de `_init` (linha 54) e o cálculo de minutos do `go_to_place` (linha 340); `tests/unit/test_action_runner.gd` (`_runner`, linha 79, e `test_go_to_place_takes_the_distance_divided_by_the_walk_speed_rounded_up`, linha 357); `data/intent_params.json` (`intent_timeout_min` = 30 [HIP], a rever). Exige o teste de vida de 30 dias (`tests/soak/npc_life/soak_npc_life_30d.gd`, rodado por `tests/soak/run_npc_life_30d`) e DEC nova. Até lá, nada muda. |
+| **Data / versão** | Decidida por Arthur em 08/11/2026 · registrada em 08/11/2026 (LW-071a) |
+| **Relações** | DEC-016, DEC-035, DEC-039, DEC-040, DEC-119, DEC-120, DEC-122 |
+
 ---
 
 ## 3. DÚVIDAS ABERTAS EM DESTAQUE
@@ -1957,7 +1983,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-122` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-124` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto

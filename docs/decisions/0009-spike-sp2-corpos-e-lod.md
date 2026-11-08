@@ -267,6 +267,8 @@ Quadros fora: raio S0 de 80 → 50 m e `max_s0` de 50 → 30 (valores sugeridos 
 
 ## Proposta de entrada para DECISIONS.md (número provisório DEC-122; SÓ proposta)
 
+Registrada em DECISIONS.md como DEC-122 em 08/11/2026 (LW-071a).
+
 - **Título:** navegação e velocidade dos corpos S0 (resultado do SP2).
 - **Contexto:** SP2 (este registro); decisão de Arthur pelo painel em 08/11/2026.
 - **Decisão proposta:** (1) navegação **N1** (rota reta por pontos, recusa acima de 40°) por ora; revisar quando as construções entrarem como obstáculo (LW-073 e LW-074). (2) velocidade do corpo **P1**: passo natural de 4 m/s [HIP] × velocidade do relógio.
@@ -274,6 +276,8 @@ Quadros fora: raio S0 de 80 → 50 m e `max_s0` de 50 → 30 (valores sugeridos 
 - **Consequências:** a N1 atravessa pedra e recusa morro íngreme sem desvio; a P1 chega sempre atrasada enquanto a DEC-123 não for resolvida.
 
 ## Proposta separada (número provisório DEC-123; SÓ proposta): relógio contra corpo
+
+Registrada em DECISIONS.md como DEC-123 em 08/11/2026 (LW-071a).
 
 - **Problema (fato, medição de Arthur):** a simulação planeja a caminhada a 8400 cm por minuto de jogo (`src/sim/npc/actions/action_runner.gd:27`), cerca de 67 m/s a 1x; o corpo anda 4 m/s. Resultado: 613 de 691 chegadas atrasadas; com P1, 100% atrasadas, com levado ÷ previsto de 2,45 a 7,22.
 - **Direção de Arthur: P3.** A simulação passa a acompanhar o corpo, com caminhada em torno de **500 cm/min [HIP]**. Conta: 500 cm/min = 5 m por minuto de jogo; a 1x, 1 minuto = 1,25 s, então 5 ÷ 1,25 = **4 m/s**. A rota A → B (495 m) = 495 ÷ 5 ≈ **99 min de jogo** ≈ 99 × 1,25 ≈ **124 s reais** a 1x. É direção, **não tarefa**: a velocidade só muda depois do teste de 30 dias e de DEC nova. O spike **não** muda nada.
