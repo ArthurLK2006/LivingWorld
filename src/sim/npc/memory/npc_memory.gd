@@ -44,6 +44,13 @@ func summarize(now: int, rules: Rules) -> void:
 	for record: MemoryRecord in records:
 		for actor_id: int in record.actors:
 			sums[actor_id] = int(sums.get(actor_id, 0)) + record.valence
+	absorb_sums(sums, now, rules)
+	records.clear()
+
+
+## Transforma valências por pessoa (pessoa -> valência) em traços: as de maior módulo primeiro, empate: o menor ID; soma zero não diz nada e
+## não vira traço; quem já tem traço soma nele. Usada pelo resumo dos registros e, na LW-079, pelo das relações ao rebaixar.
+func absorb_sums(sums: Dictionary[int, int], now: int, rules: Rules) -> void:
 	var actor_ids: Array = sums.keys()
 	actor_ids.sort_custom(func(first: int, second: int) -> bool:
 		if absi(sums[first]) != absi(sums[second]):
@@ -52,7 +59,6 @@ func summarize(now: int, rules: Rules) -> void:
 	for actor_id: int in actor_ids:
 		if sums[actor_id] != 0:
 			_add_to_trait(actor_id, clampi(sums[actor_id], MemoryRecord.MIN_VALENCE, MemoryRecord.MAX_VALENCE), now, rules)
-	records.clear()
 
 
 ## Cópias dos registros, na ordem em que entraram; `kind_filter` vazio = todos.

@@ -44,6 +44,15 @@ var memory_capacity: int = 0
 var trait_threshold: int = 100
 ## Quantos traços permanentes cabem por NPC; 0 = nenhum.
 var trait_slots: int = 0
+# Relações (LW-079).
+## Quantas relações cabem por NPC; 0 = relações não configuradas (o padrão dos testes): nenhuma relação é aceita.
+var relations_capacity: int = 0
+## Pontos que cada dimensão de uma relação perde por dia, rumo a 0.
+var relation_decay_per_day: int = 0
+## Afeição a partir da qual a relação é de amizade; 0 = o rótulo "amigo" nunca aparece.
+var relation_friend_threshold: int = 0
+## Afeição negativa (em módulo) a partir da qual a relação é de rivalidade; 0 = o rótulo "rival" nunca aparece.
+var relation_rival_threshold: int = 0
 
 
 ## Peso do nível de urgência (0 a 3); nível fora disso usa o do crítico.
