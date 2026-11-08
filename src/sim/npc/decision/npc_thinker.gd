@@ -3,7 +3,7 @@ extends RefCounted
 ## Fluxo de decisão do NPC e fila de pensamento (LW-063; contrato em docs/modules/npc.md, seção 5, e arquitetura 9.7), em modo S1 (sem
 ## corpo). A cada passo, `run_step` deixa pensar só quem chegou no seu `next_think_time`, no máximo `max_thinks_per_step` por passo (o mais
 ## antigo primeiro, empate pelo menor id; o excedente espera). Cada NPC que pensa: (1) leva as necessidades até agora; (2) termina a ação se
-## o tempo dela acabou; (3) monta as candidatas: com necessidade URGENTE (nível 2 ou mais) as ações que a aliviam, senão (ou se nenhuma
+## o tempo dela acabou (e, se uma necessidade LETAL ficou em nível crítico além do limite, o NPC MORRE e nada mais acontece, LW-081); (3) monta as candidatas: com necessidade URGENTE (nível 2 ou mais) as ações que a aliviam, senão (ou se nenhuma
 ## delas pode começar) a ação da ROTINA da hora, mais a ação em andamento (que ganha o bônus de inércia); só entra quem tem local e pode
 ## começar (pré-condições); (4) pontua com o
 ## UtilityScorer; (5) ordena (pontos, depois id da ação, depois id do local), toma até `decision_top_k` dentro de `decision_margin` pontos
@@ -34,9 +34,11 @@ var _places: SettlementService
 var _start_action: Callable
 ## Rastro de decisão dos NPCs marcados (LW-064); nulo = sem rastro. NPC não marcado não gera custo nem dado.
 var _tracer: DecisionTracer
+## Função de morte do módulo (LW-081): (npc_id: int, cause: String, now: int) -> void. Sem ela (testes do pensador solto) ninguém morre.
+var _kill_npc: Callable
 
 
-func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRunner, scorer: UtilityScorer, chooser: PlaceChooser, provider: ConditionProvider, routine: RoutineTable, params: NpcParams, need_defs: Array[NeedDef], actions: Array[ActionDef], places: SettlementService, start_action: Callable, tracer: DecisionTracer = null) -> void:
+func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRunner, scorer: UtilityScorer, chooser: PlaceChooser, provider: ConditionProvider, routine: RoutineTable, params: NpcParams, need_defs: Array[NeedDef], actions: Array[ActionDef], places: SettlementService, start_action: Callable, tracer: DecisionTracer = null, kill_npc: Callable = Callable()) -> void:
 	_ctx = ctx
 	_states = states
 	_runner = runner
@@ -50,6 +52,7 @@ func _init(ctx: SimContext, states: Dictionary[int, NpcState], runner: ActionRun
 	_places = places
 	_start_action = start_action
 	_tracer = tracer
+	_kill_npc = kill_npc
 	for action: ActionDef in actions:
 		_action_by_id[action.id] = action
 
@@ -84,9 +87,16 @@ func think(npc_id: int, now: int) -> void:
 	var state: NpcState = _states[npc_id]
 	if not state.is_alive:
 		return
+	# Primeiro o fim da ação (o runner leva as necessidades até o MINUTO DO FIM antes de aplicar o efeito, então o resultado não depende do
+	# atraso do pensamento) e só depois o resto do caminho até agora.
+	var progress: ActionRunner.AdvanceResult = _runner.advance(npc_id, now)
 	if state.needs_updated_at < now:
 		NeedMath.settle(state, _need_defs, now)
-	var progress: ActionRunner.AdvanceResult = _runner.advance(npc_id, now)
+	NeedMath.update_critical(state, _need_defs, now)
+	var lethal_cause: String = NeedMath.lethal_cause(state, _need_defs, now)
+	if not lethal_cause.is_empty() and _kill_npc.is_valid():
+		_kill_npc.call(npc_id, lethal_cause, now)
+		return
 	var running: bool = progress.outcome == ActionRunner.Outcome.RUNNING
 	_provider.subject = state
 	var routine_action: String = _routine_action_id(state, now)

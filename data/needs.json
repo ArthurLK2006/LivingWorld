@@ -1,5 +1,5 @@
 [
-	{"id": "hunger", "order": 0, "start_value": 20, "rate_per_hour": 5, "attention": 40, "urgent": 65, "critical": 90},
+	{"id": "hunger", "order": 0, "start_value": 20, "rate_per_hour": 5, "attention": 40, "urgent": 65, "critical": 90, "weaken_after_hours": 24, "lethal_after_hours": 72, "weak_effect_percent": 50},
 	{"id": "rest", "order": 1, "start_value": 10, "rate_per_hour": 4, "attention": 50, "urgent": 75, "critical": 90},
 	{"id": "safety", "order": 2, "start_value": 0, "rate_per_hour": -5, "attention": 30, "urgent": 60, "critical": 85},
 	{"id": "income", "order": 3, "start_value": 30, "rate_per_hour": 2, "attention": 50, "urgent": 75, "critical": 95},

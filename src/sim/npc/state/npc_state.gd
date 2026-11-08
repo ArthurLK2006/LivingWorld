@@ -45,6 +45,7 @@ const KEY_ACTION_STARTED_AT: String = "action_started_at"
 const KEY_ACTION_ENDS_AT: String = "action_ends_at"
 const KEY_ACTION_SERIAL: String = "action_serial"
 const KEY_NEXT_THINK_TIME: String = "next_think_time"
+const KEY_CRITICAL_SINCE: String = "critical_since"
 ## Campos do save por tipo, para conferir tudo antes de montar o estado.
 const INT_KEYS: Array[String] = [KEY_NAME_NUMBER, KEY_TIER, KEY_DIED_AT, KEY_NEEDS_UPDATED_AT, KEY_X_CM, KEY_Z_CM, KEY_ACTION_STARTED_AT, KEY_ACTION_ENDS_AT, KEY_ACTION_SERIAL]
 const STRING_KEYS: Array[String] = [KEY_NAME_KEY, KEY_DEATH_CAUSE, KEY_SETTLEMENT_ID, KEY_PLACE_ID, KEY_OCCUPATION_ID, KEY_HOME_PLACE_ID, KEY_WORK_PLACE_ID, KEY_ACTION_ID, KEY_ACTION_TARGET_PLACE_ID]
@@ -82,6 +83,8 @@ var action_ends_at: int = 0
 var action_serial: int = 0
 # Pensamento (LW-063): minuto de simulação em que o NPC pensa de novo; a fila de pensamento só processa quem chegou nesse minuto.
 var next_think_time: int = 0
+# Necessidade crítica (LW-081): minuto em que o NPC foi visto pela primeira vez com uma necessidade LETAL em nível crítico (NO_TIME se nenhuma).
+var critical_since: int = NO_TIME
 
 
 func _init(new_npc_id: int) -> void:
@@ -130,6 +133,7 @@ func to_dict() -> Dictionary:
 		KEY_ACTION_ID: action_id, KEY_ACTION_TARGET_PLACE_ID: action_target_place_id,
 		KEY_ACTION_STARTED_AT: action_started_at, KEY_ACTION_ENDS_AT: action_ends_at, KEY_ACTION_SERIAL: action_serial,
 		KEY_NEXT_THINK_TIME: next_think_time,
+		KEY_CRITICAL_SINCE: critical_since,
 	}
 
 
@@ -180,6 +184,11 @@ static func parse(saved_npc_id: int, raw_entry: Variant) -> ParseResult:
 		if not _is_int_like(entry[KEY_NEXT_THINK_TIME]):
 			return ParseResult.new(null, _bad_field(entry, KEY_NEXT_THINK_TIME, "inteiro"))
 		state.next_think_time = int(entry[KEY_NEXT_THINK_TIME])
+	# Campo acrescentado na LW-081: ausente no save = NO_TIME (nenhuma necessidade letal crítica).
+	if entry.has(KEY_CRITICAL_SINCE):
+		if not _is_int_like(entry[KEY_CRITICAL_SINCE]):
+			return ParseResult.new(null, _bad_field(entry, KEY_CRITICAL_SINCE, "inteiro"))
+		state.critical_since = int(entry[KEY_CRITICAL_SINCE])
 	return ParseResult.new(state, "")
 
 

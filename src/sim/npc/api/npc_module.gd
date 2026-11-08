@@ -260,6 +260,10 @@ func validate() -> Array[String]:
 			problems.append("NPC %d: morto, mas com ação atual '%s'; esperado nenhuma." % [npc_id, state.action_id])
 		if state.next_think_time < 0:
 			problems.append("NPC %d: next_think_time %d negativo; esperado 0 ou mais." % [npc_id, state.next_think_time])
+		if state.critical_since < NpcState.NO_TIME:
+			problems.append("NPC %d: critical_since %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.critical_since, NpcState.NO_TIME])
+		if not state.is_alive and state.critical_since != NpcState.NO_TIME:
+			problems.append("NPC %d: morto, mas com critical_since %d; esperado %d." % [npc_id, state.critical_since, NpcState.NO_TIME])
 		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
 			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
 	var food_stub: FoodStub = _food_stub()
@@ -354,7 +358,7 @@ func _build_decision_runtime() -> String:
 		return "UtilityScorer: %s" % scorer.peek_problem()
 	_provider = provider
 	_runner = runner
-	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer)
+	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _kill_npc)
 	return ""
 
 
@@ -363,6 +367,27 @@ func _build_decision_runtime() -> String:
 func _start_action(npc_id: int, action_id: String, place_id: String, now: int) -> Result:
 	_provider.subject = _npcs.get(npc_id)
 	return _runner.begin(npc_id, action_id, place_id, now)
+
+
+## Morte por necessidade crítica prolongada (LW-081): o NPC deixa de estar vivo (`is_alive` falso, causa e minuto guardados), a ação é cancelada
+## SEM efeito, o local é liberado (a ocupação é derivada dos vivos; `place_id` fica vazio) e `NpcDied(npc_id, cause, tier)` é publicado. Fica só a
+## identidade e a causa, para quem guarda o ID (as memórias e relações dele, LW-078 e LW-079, serão descartadas aqui quando existirem).
+func _kill_npc(npc_id: int, cause: String, now: int) -> void:
+	if not _npcs.has(npc_id):
+		return
+	var state: NpcState = _npcs[npc_id]
+	if not state.is_alive:
+		return
+	state.is_alive = false
+	state.death_cause = cause
+	state.died_at = now
+	state.action_id = ""
+	state.action_target_place_id = ""
+	state.action_started_at = 0
+	state.action_ends_at = 0
+	state.place_id = ""
+	state.critical_since = NpcState.NO_TIME
+	_ctx.events.publish(NpcDied.new(npc_id, cause, state.tier))
 
 
 ## Minuto do primeiro pensamento: agora mais 1 mais a FASE do NPC (`npc_id` mod intervalo), para os NPCs criados juntos não pensarem todos

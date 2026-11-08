@@ -17,6 +17,8 @@ const CODE_CONDITION_NOT_MET: String = "NPC_ACTION_CONDITION_NOT_MET"
 const CODE_ACTION_FAILED: String = "NPC_ACTION_FAILED"
 const CODE_INVALID_PROGRESS: String = "NPC_INVALID_PROGRESS"
 const CODE_PLACE_UNKNOWN: String = "NPC_PLACE_UNKNOWN"
+## A ação que rende menos quando o NPC está enfraquecido (LW-081): `work` (docs/modules/npc.md, seção 8).
+const WEAKENED_ACTION_ID: String = "work"
 ## O provedor pediu um efeito extra (`extra_effects`) sobre uma necessidade que não existe nas definições.
 const CODE_UNKNOWN_NEED: String = "NPC_UNKNOWN_NEED"
 ## A única ação cuja duração vem da distância (contrato, seção 3); `duration_min` 0 nos dados significa "calculada em execução".
@@ -213,10 +215,13 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 	for extra: ActionDef.ActionEffect in extras:
 		if not _need_position.has(extra.need_id):
 			return Result.failure(CODE_UNKNOWN_NEED, "ActionRunner.apply_effects: NPC %d, ação '%s': o provedor pediu efeito sobre a necessidade '%s', que não existe nas definições; nenhum efeito foi aplicado." % [npc_id, action_id, extra.need_id])
+	var effect_progress: int = progress_permille
+	if action_id == WEAKENED_ACTION_ID:
+		effect_progress = IntMath.floor_div(progress_permille * NeedMath.work_effect_percent(state, _need_defs, state.needs_updated_at), 100)
 	for effect: ActionDef.ActionEffect in action.effects:
-		_apply_row(state, effect, progress_permille)
+		_apply_row(state, effect, effect_progress)
 	for extra: ActionDef.ActionEffect in extras:
-		_apply_row(state, extra, progress_permille)
+		_apply_row(state, extra, effect_progress)
 	if progress_permille == FULL_PROGRESS and _provider != null:
 		_provider.on_action_completed(action_id, state.settlement_id, state.occupation_id)
 	return Result.success()

@@ -36,13 +36,23 @@ static func advance(value: int, remainder: int, rate_per_hour: int, minutes: int
 	return Advanced.new(clampi(value + points, NpcState.VALUE_MIN, NpcState.VALUE_MAX), new_remainder)
 
 
-## Problema das definições para esta conta (texto vazio se servem): precisa de uma por posição, na ordem de `order`.
+## Problema das definições para esta conta (texto vazio se servem): precisa de uma por posição, na ordem de `order`, e as consequências do
+## nível crítico (LW-081) coerentes (letal: 0 < enfraquecer < letal; senão os dois em 0; rendimento fraco de 1 a 100).
 static func definitions_problem(defs: Array[NeedDef]) -> String:
 	if defs.size() != NpcState.NEED_COUNT:
 		return "%d definições de necessidade; esperado %d (uma por posição, na ordem de `order`)" % [defs.size(), NpcState.NEED_COUNT]
 	for index: int in defs.size():
 		if defs[index].order != index:
 			return "a definição '%s' está na posição %d da lista mas tem order %d; esperado a lista ordenada por `order`" % [defs[index].id, index, defs[index].order]
+		var def: NeedDef = defs[index]
+		if def.weak_effect_percent < 1 or def.weak_effect_percent > 100:
+			return "a necessidade '%s' tem weak_effect_percent %d; esperado de 1 a 100" % [def.id, def.weak_effect_percent]
+		if def.lethal_after_hours < 0 or def.weaken_after_hours < 0:
+			return "a necessidade '%s' tem horas negativas (enfraquecer %d, letal %d)" % [def.id, def.weaken_after_hours, def.lethal_after_hours]
+		if def.lethal_after_hours > 0 and (def.weaken_after_hours <= 0 or def.weaken_after_hours >= def.lethal_after_hours):
+			return "a necessidade letal '%s' precisa de 0 < weaken_after_hours (%d) < lethal_after_hours (%d)" % [def.id, def.weaken_after_hours, def.lethal_after_hours]
+		if def.lethal_after_hours == 0 and def.weaken_after_hours > 0:
+			return "a necessidade '%s' tem weaken_after_hours %d sem ser letal (lethal_after_hours 0)" % [def.id, def.weaken_after_hours]
 	return ""
 
 
@@ -61,6 +71,47 @@ static func settle(state: NpcState, defs: Array[NeedDef], now_minutes: int) -> R
 		state.need_remainders[index] = moved.remainder
 	state.needs_updated_at = now_minutes
 	return Result.success()
+
+
+## Atualiza o `critical_since` do NPC (LW-081): se alguma necessidade LETAL (`lethal_after_hours` maior que 0) está em nível crítico em `now`,
+## guarda o minuto em que isso foi visto pela primeira vez (e mantém enquanto continuar); se nenhuma está, volta a NO_TIME. Chamada logo depois
+## de levar as necessidades até `now`; o instante é o do pensamento (observação), não o minuto exato do cruzamento do limiar. Com mais de uma
+## necessidade letal o contador é UM só, compartilhado [LIM] (na Fase 2 só `hunger` é letal).
+static func update_critical(state: NpcState, defs: Array[NeedDef], now_minutes: int) -> void:
+	if _critical_lethal_need(state, defs) == null:
+		state.critical_since = NpcState.NO_TIME
+	elif state.critical_since == NpcState.NO_TIME:
+		state.critical_since = now_minutes
+
+
+## Id da necessidade letal que já passou do limite em `now` (crítica há `lethal_after_hours` horas ou mais), ou texto vazio se nenhuma.
+static func lethal_cause(state: NpcState, defs: Array[NeedDef], now_minutes: int) -> String:
+	if state.critical_since == NpcState.NO_TIME:
+		return ""
+	for def: NeedDef in defs:
+		if def.lethal_after_hours > 0 and urgency(state.need_values[def.order], def) == URGENCY_CRITICAL and now_minutes - state.critical_since >= def.lethal_after_hours * SimClock.MINUTES_PER_HOUR:
+			return def.id
+	return ""
+
+
+## Rendimento do `work` (por cento) do NPC em `now`: 100 normal; o `weak_effect_percent` da necessidade letal crítica há `weaken_after_hours`
+## horas ou mais (o menor, se houver mais de uma). Sem consequência letal configurada, sempre 100.
+static func work_effect_percent(state: NpcState, defs: Array[NeedDef], now_minutes: int) -> int:
+	var percent: int = 100
+	if state.critical_since == NpcState.NO_TIME:
+		return percent
+	for def: NeedDef in defs:
+		if def.lethal_after_hours > 0 and urgency(state.need_values[def.order], def) == URGENCY_CRITICAL and now_minutes - state.critical_since >= def.weaken_after_hours * SimClock.MINUTES_PER_HOUR:
+			percent = mini(percent, def.weak_effect_percent)
+	return percent
+
+
+## Primeira necessidade letal em nível crítico (por `order`), ou nulo.
+static func _critical_lethal_need(state: NpcState, defs: Array[NeedDef]) -> NeedDef:
+	for def: NeedDef in defs:
+		if def.lethal_after_hours > 0 and urgency(state.need_values[def.order], def) == URGENCY_CRITICAL:
+			return def
+	return null
 
 
 ## Valor e resto de uma necessidade depois de `advance`.
