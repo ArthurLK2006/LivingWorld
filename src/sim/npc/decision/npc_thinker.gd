@@ -294,6 +294,11 @@ class ConditionProvider:
 	func has_food(settlement_id: String) -> bool:
 		return _food != null and _food.has_food(settlement_id)
 
+	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só o FoodStub, TEMP-LW-065).
+	func on_action_completed(action_id: String, settlement_id: String, occupation_id: String) -> void:
+		if _food != null:
+			_food.on_action_completed(action_id, settlement_id, occupation_id)
+
 	func place_has_room(place_id: String) -> bool:
 		var found: SettlementService.PlaceQuery = _places.peek_place(place_id)
 		if not found.result.ok:

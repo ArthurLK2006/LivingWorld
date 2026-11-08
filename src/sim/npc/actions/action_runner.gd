@@ -209,6 +209,8 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 		var position: int = _need_position[effect.need_id]
 		var scaled: int = IntMath.floor_div(effect.delta * progress_permille, FULL_PROGRESS)
 		state.need_values[position] = clampi(state.need_values[position] + scaled, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
+	if progress_permille == FULL_PROGRESS and _provider != null:
+		_provider.on_action_completed(action_id, state.settlement_id, state.occupation_id)
 	return Result.success()
 
 

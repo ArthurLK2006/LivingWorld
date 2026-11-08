@@ -17,6 +17,10 @@ const CODE_INVALID_SAVE: String = "NPC_INVALID_SAVE"
 const CODE_NO_ID: String = "NPC_NO_ID"
 const CODE_DUPLICATE_ID: String = "NPC_DUPLICATE_ID"
 const CODE_ROUTINE_NOT_CONFIGURED: String = "NPC_ROUTINE_NOT_CONFIGURED"
+## Comandos que só existem em build de desenvolvimento (a flag vem em `Definitions.is_development_build`).
+const CODE_DEV_ONLY: String = "NPC_DEV_ONLY"
+## TEMP-LW-065: sem FoodStub nas definições não há estoque de comida.
+const CODE_FOOD_NOT_CONFIGURED: String = "NPC_FOOD_NOT_CONFIGURED"
 const KEY_NPCS: String = "npcs"
 ## Chaves de peek_counts().
 const COUNT_TOTAL: String = "total"
@@ -115,6 +119,24 @@ func peek_routine_action(occupation_id: String, hour: int) -> RoutineTable.Routi
 	return _routine.peek_action(occupation_id, hour)
 
 
+## TEMP-LW-065: estoque de comida do assentamento. Sem FoodStub nas definições, ou assentamento sem regra: falha tratada.
+func peek_food_stock(settlement_id: String) -> FoodStub.StockQuery:
+	var food_stub: FoodStub = _food_stub()
+	if food_stub == null:
+		return FoodStub.StockQuery.new(_food_not_configured("peek_food_stock"), 0, 0)
+	return food_stub.peek_stock(settlement_id)
+
+
+## TEMP-LW-065: define o estoque de comida (de 0 ao teto). SÓ em build de desenvolvimento; fora dele, `NPC_DEV_ONLY` e nada muda.
+func request_set_food_stock(settlement_id: String, amount: int) -> Result:
+	if _definitions == null or not _definitions.is_development_build:
+		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_set_food_stock: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
+	var food_stub: FoodStub = _food_stub()
+	if food_stub == null:
+		return _food_not_configured("request_set_food_stock")
+	return food_stub.request_set_stock(settlement_id, amount)
+
+
 ## Contagens (chaves COUNT_*): total, vivos, mortos e por tier.
 func peek_counts() -> Dictionary:
 	var counts: Dictionary = {COUNT_TOTAL: _npcs.size(), COUNT_ALIVE: 0, COUNT_DEAD: 0, COUNT_TIER_NORMAL: 0, COUNT_TIER_NOTABLE: 0}
@@ -133,7 +155,11 @@ func serialize() -> Dictionary:
 	var saved: Dictionary = {}
 	for npc_id: int in _sorted_ids():
 		saved[str(npc_id)] = _npcs[npc_id].to_dict()
-	return {KEY_NPCS: saved}
+	var data: Dictionary = {KEY_NPCS: saved}
+	var food_stub: FoodStub = _food_stub()
+	if food_stub != null:
+		data[FoodStub.SAVE_KEY] = food_stub.serialize()
+	return data
 
 
 ## Confere tudo antes de alterar o estado: se algo for inválido, o estado fica como estava. Só recusa o que não dá para converter
@@ -157,9 +183,13 @@ func on_load(data: Dictionary) -> Result:
 		if parsed.state == null:
 			return _invalid_save("NPC %d: %s" % [npc_id, parsed.error])
 		loaded[npc_id] = parsed.state
+	var stock_problem: String = _food_stock_save_problem(data)
+	if not stock_problem.is_empty():
+		return _invalid_save(stock_problem)
 	_npcs.clear()
 	for loaded_id: int in loaded:
 		_npcs[loaded_id] = loaded[loaded_id]
+	_load_food_stock(data)
 	return Result.success()
 
 
@@ -187,6 +217,9 @@ func validate() -> Array[String]:
 			problems.append("NPC %d: next_think_time %d negativo; esperado 0 ou mais." % [npc_id, state.next_think_time])
 		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
 			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
+	var food_stub: FoodStub = _food_stub()
+	if food_stub != null:
+		problems.append_array(food_stub.validate())
 	return problems
 
 
@@ -205,6 +238,9 @@ func debug_summary() -> Dictionary:
 		ordered[label] = by_occupation[label]
 	summary["by_occupation"] = ordered
 	summary["serialize_bytes"] = JSON.stringify(serialize()).to_utf8_buffer().size()
+	var food_stub: FoodStub = _food_stub()
+	if food_stub != null:
+		summary["food_stock"] = food_stub.serialize()
 	summary["decision_problem"] = _decision_problem_text()
 	summary["decision_enabled"] = _thinker != null
 	summary["thinks_last_step"] = _thinker.last_step_thinks if _thinker != null else 0
@@ -248,6 +284,11 @@ func _build_decision_runtime() -> String:
 		return "faltam os parâmetros do `npc` (npc_params.json)"
 	if _definitions.places == null:
 		return "falta o serviço de locais do `world`"
+	var food_stub: FoodStub = _food_stub()
+	if food_stub != null:
+		var food_problem: String = food_stub.check_references(_definitions.places, _routine.peek_occupation_ids())
+		if not food_problem.is_empty():
+			return "FoodStub (TEMP-LW-065): %s" % food_problem
 	var occupancy: PlaceOccupancy = PlaceOccupancy.new(_npcs)
 	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food)
 	var runner: ActionRunner = ActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min)
@@ -277,6 +318,41 @@ func _first_think_time(npc_id: int, now: int) -> int:
 	if _definitions == null or _definitions.params == null:
 		return now
 	return now + 1 + npc_id % maxi(1, _definitions.params.think_interval_min)
+
+
+## TEMP-LW-065: o FoodStub real, se o provedor de comida das definições for ele (os testes usam um provedor falso, sem estado salvo).
+func _food_stub() -> FoodStub:
+	if _definitions == null:
+		return null
+	return _definitions.food as FoodStub
+
+
+## TEMP-LW-065
+func _food_not_configured(caller: String) -> Result:
+	return Result.failure(CODE_FOOD_NOT_CONFIGURED, "NpcModule.%s: o módulo foi criado sem FoodStub; não há estoque de comida." % caller)
+
+
+## TEMP-LW-065: problema do trecho de comida do save (texto vazio = pode carregar). Save sem o trecho (de antes do FoodStub) é aceito: o
+## estoque volta ao inicial. Trecho de comida num módulo sem FoodStub é recusado.
+func _food_stock_save_problem(data: Dictionary) -> String:
+	if not data.has(FoodStub.SAVE_KEY):
+		return ""
+	var food_stub: FoodStub = _food_stub()
+	if food_stub == null:
+		return "o save tem estoque de comida ('%s'), mas o módulo foi criado sem FoodStub" % FoodStub.SAVE_KEY
+	return food_stub.check_save(data[FoodStub.SAVE_KEY])
+
+
+## TEMP-LW-065: carrega o estoque já conferido (ou o devolve ao inicial se o save não tem o trecho).
+func _load_food_stock(data: Dictionary) -> void:
+	var food_stub: FoodStub = _food_stub()
+	if food_stub == null:
+		return
+	if data.has(FoodStub.SAVE_KEY):
+		var entries: Dictionary = data[FoodStub.SAVE_KEY]
+		food_stub.load_save(entries)
+	else:
+		food_stub.reset_to_start()
 
 
 ## Nunca visitar o Dictionary pela ordem natural (muda depois de carregar um save).
@@ -373,9 +449,13 @@ class Definitions:
 	var params: NpcParams
 	## Serviço de consultas de assentamentos e locais do `world` (conteúdo, fora do save).
 	var places: SettlementService
-	## Opcional: responde `has_food` (TEMP-LW-065). Sem ele nenhuma ação que exija comida começa.
+	## Opcional: responde `has_food`. Sem ele nenhuma ação que exija comida começa. Em produção é o FoodStub (TEMP-LW-065), com estoque salvo
+	## junto com o módulo; os testes de decisão podem pôr um provedor falso, sem estado.
 	var food: ActionConditionProvider
 	var walk_speed_cm_per_min: int = ActionRunner.DEFAULT_WALK_SPEED_CM_PER_MIN
+	## Build de desenvolvimento? Só então valem os comandos de depuração do módulo (hoje `request_set_food_stock`). A fronteira do app lê
+	## `OS.is_debug_build()` e entrega aqui; a simulação não lê `OS`. Padrão falso.
+	var is_development_build: bool = false
 
 
 ## Resultado de `request_create_npc`: `npc_id` só vale se `result.ok` (mesmo padrão do SpawnResult do `character`).
