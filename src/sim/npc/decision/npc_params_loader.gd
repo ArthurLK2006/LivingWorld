@@ -19,6 +19,8 @@ const MAX_THINKS_PER_STEP: int = 100000
 const MAX_TOP_K: int = 16
 const MAX_ALARM_RADIUS_M: int = 10000
 const MAX_T2_LIMIT: int = 1000
+const MAX_MEMORY_CAPACITY: int = 1000
+const MAX_TRAIT_SLOTS: int = 16
 const URGENCY_WEIGHT_FIELDS: Array[String] = ["urgency_weight_comfortable", "urgency_weight_attention", "urgency_weight_urgent", "urgency_weight_critical"]
 
 
@@ -42,6 +44,10 @@ static func build_schema(file_name: String = DEFAULT_FILE) -> DataSchema:
 	schema.add_field("alarm_window_min", DataSchema.FieldType.INT, false).set_range(0, MAX_MINUTES)
 	# Camadas (LW-077): opcional; ausente vale 0 (sem teto de notáveis).
 	schema.add_field("max_t2", DataSchema.FieldType.INT, false).set_range(0, MAX_T2_LIMIT)
+	# Memória (LW-078): opcionais; ausentes valem 0, 100 e 0 (sem memória configurada, nenhum registro vira traço, nenhum traço cabe).
+	schema.add_field("memory_capacity", DataSchema.FieldType.INT, false).set_range(0, MAX_MEMORY_CAPACITY)
+	schema.add_field("trait_threshold", DataSchema.FieldType.INT, false).set_range(MemoryRecord.MIN_SALIENCE, MemoryRecord.MAX_SALIENCE)
+	schema.add_field("trait_slots", DataSchema.FieldType.INT, false).set_range(0, MAX_TRAIT_SLOTS)
 	return schema
 
 
@@ -98,6 +104,9 @@ static func _build(bundle: DataBundle) -> NpcParams:
 	params.alarm_safety_pressure = record.get("alarm_safety_pressure", 0)
 	params.alarm_window_min = record.get("alarm_window_min", 0)
 	params.max_t2 = record.get("max_t2", 0)
+	params.memory_capacity = record.get("memory_capacity", 0)
+	params.trait_threshold = record.get("trait_threshold", MemoryRecord.MAX_SALIENCE)
+	params.trait_slots = record.get("trait_slots", 0)
 	return params
 
 

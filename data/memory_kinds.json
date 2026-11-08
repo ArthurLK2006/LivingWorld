@@ -1,0 +1,4 @@
+[
+	{"id": "conversation", "valence": 20, "salience": 30, "decay_per_day": 2},
+	{"id": "help_received", "valence": 60, "salience": 70, "decay_per_day": 1}
+]

@@ -37,6 +37,13 @@ var alarm_window_min: int = 0
 # Camadas (LW-077).
 ## Teto de NPCs VIVOS notáveis (T2) ao mesmo tempo; 0 = sem teto configurado (o padrão dos testes). Com o teto cheio promover é recusado, e ninguém é expulso.
 var max_t2: int = 0
+# Memória (LW-078).
+## Quantos registros de memória cabem por NPC notável; 0 = memória não configurada (o padrão dos testes): nenhum registro é aceito.
+var memory_capacity: int = 0
+## Saliência ACIMA da qual um registro vira traço permanente antes de sair da memória; 100 = nenhum registro vira traço (a saliência máxima é 100).
+var trait_threshold: int = 100
+## Quantos traços permanentes cabem por NPC; 0 = nenhum.
+var trait_slots: int = 0
 
 
 ## Peso do nível de urgência (0 a 3); nível fora disso usa o do crítico.
