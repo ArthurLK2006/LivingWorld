@@ -8,6 +8,7 @@ extends Node3D
 const DECORATIONS_PATH: String = "res://data/world/decorations.json"
 ## Configuração do projeto de onde vem o título do jogo mostrado no HUD.
 const GAME_NAME_SETTING: String = "application/config/name"
+const PLACE_VIEW_NAME: String = "PlaceBoxesView"
 
 @onready var _terrain_view: TerrainView = $TerrainView
 @onready var _decoration_view: DecorationView = $DecorationView
@@ -17,6 +18,8 @@ const GAME_NAME_SETTING: String = "application/config/name"
 @onready var _interaction_view: InteractionView = $InteractionView
 @onready var _prompt_label: Label = $HUD/InteractionPrompt
 @onready var _result_label: Label = $HUD/InteractionText
+## As caixas provisórias dos locais (LW-074), criadas aqui em código: acompanham o terreno como a decoração.
+var _place_view: PlaceBoxesView
 ## Os textos de jogo, guardados aqui para viverem tanto quanto a cena.
 var _texts: UiText
 ## Só informa o foco depois de a TerrainView ter sido ligada a uma ponte.
@@ -34,6 +37,12 @@ func _ready() -> void:
 	_hud.setup(bridge, _texts, str(ProjectSettings.get_setting(GAME_NAME_SETTING, "")), GameAppNode.GAME_VERSION)
 	_terrain_view.chunk_loaded.connect(_decoration_view.set_chunk_visible.bind(true))
 	_terrain_view.chunk_unloaded.connect(_decoration_view.set_chunk_visible.bind(false))
+	_place_view = PlaceBoxesView.new()
+	_place_view.name = PLACE_VIEW_NAME
+	add_child(_place_view)
+	_place_view.setup(bridge)
+	_terrain_view.chunk_loaded.connect(_place_view.set_chunk_visible.bind(true))
+	_terrain_view.chunk_unloaded.connect(_place_view.set_chunk_visible.bind(false))
 	_terrain_view.setup(bridge)
 	var decorations: DecorationReader.ReadResult = DecorationReader.read_file(DECORATIONS_PATH)
 	if decorations.result.ok:

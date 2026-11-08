@@ -20,6 +20,8 @@ var _bridge: SimBridge
 ## Terreno lido uma vez só (no _ready do jogo ou na primeira peek_bridge dos testes); nulo se não carregou.
 var _terrain: TerrainData
 var _is_terrain_loaded: bool = false
+## Locais dos assentamentos (LW-074), lidos no `_ready` do autoload e entregues à ponte; vazio num GameApp criado à mão (testes).
+var _places: Array[Place] = []
 
 
 func _ready() -> void:
@@ -28,6 +30,7 @@ func _ready() -> void:
 		push_error("GameApp: autoload SimulationHost não encontrado.")
 		return
 	bind_host(host)
+	_places = _load_places()
 	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points())
 
 
@@ -42,7 +45,7 @@ func bind_host(host: SimulationHostNode) -> void:
 ## cujas consultas falham com BRIDGE_NO_TERRAIN.
 func peek_bridge() -> SimBridge:
 	if _bridge == null:
-		_bridge = SimBridge.new(_host, _terrain_or_load())
+		_bridge = SimBridge.new(_host, _terrain_or_load(), _places)
 	return _bridge
 
 
@@ -65,6 +68,18 @@ func _load_points() -> Array[PointOfInterest]:
 		push_error("GameApp: pontos de interesse não carregados de '%s': %s" % [terrain_dir, loaded.result.message])
 		return []
 	return loaded.points
+
+
+## Locais dos assentamentos de terrain_dir (LW-074); lista vazia (depois de push_error) se não carregarem ou se não houver terreno.
+func _load_places() -> Array[Place]:
+	var terrain: TerrainData = _terrain_or_load()
+	if terrain == null:
+		return []
+	var loaded: SettlementLoader.LoadResult = SettlementLoader.load_dir(terrain_dir, terrain)
+	if not loaded.result.ok:
+		push_error("GameApp: assentamentos e locais não carregados de '%s': %s" % [terrain_dir, loaded.result.message])
+		return []
+	return loaded.places
 
 
 ## Terreno de terrain_dir, ou nulo (depois de push_error) se não carregar. Sem `quit`: o GameApp também roda
