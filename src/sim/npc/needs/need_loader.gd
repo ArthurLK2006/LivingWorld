@@ -4,7 +4,7 @@ extends RefCounted
 ## snake_case, único), `order` (posição no estado do NPC), `start_value` (0 a 100), `rate_per_hour` (inteiro, pode ser negativo) e os
 ## limiares `attention`, `urgent` e `critical` (0 a 100, estritamente crescentes). A tabela precisa ter UMA necessidade por posição, de
 ## 0 a NpcState.NEED_COUNT - 1. Qualquer problema vira falha com arquivo, item e campo. Nunca carrega recurso nem executa nada do arquivo.
-## Os pesos de utilidade e os limites de fome letal (seção 2 do contrato) entram nas tarefas que os usam (LW-062 e LW-081).
+## Os limites de fome letal (`weaken_after_hours`, `lethal_after_hours` e `weak_effect_percent`, opcionais) entraram na LW-081.
 
 const NEEDS_TABLE: String = "needs"
 const DEFAULT_FILE: String = "needs.json"
@@ -12,6 +12,9 @@ const DEFAULT_DIR: String = "res://data"
 const CODE_INVALID: String = "NEED_DATA_INVALID"
 ## Faixa de segurança [HIP] da taxa: mais de 100 pontos por hora satura qualquer necessidade em menos de uma hora.
 const MAX_RATE_PER_HOUR: int = 100
+## Faixas de segurança [HIP] das consequências do nível crítico: até 10 mil horas e um mínimo de 1% de rendimento.
+const MAX_CRITICAL_HOURS: int = 10000
+const MIN_WEAK_EFFECT_PERCENT: int = 1
 
 
 ## Esquema da tabela; o nome do arquivo pode ser trocado (testes).
@@ -22,6 +25,10 @@ static func build_schema(file_name: String = DEFAULT_FILE) -> DataSchema:
 	schema.add_field("rate_per_hour", DataSchema.FieldType.INT).set_range(-MAX_RATE_PER_HOUR, MAX_RATE_PER_HOUR)
 	for threshold: String in ["attention", "urgent", "critical"]:
 		schema.add_field(threshold, DataSchema.FieldType.INT).set_range(NpcState.VALUE_MIN, NpcState.VALUE_MAX)
+	# Consequências do nível crítico (LW-081): opcionais; ausentes valem 0, 0 e 100 (a necessidade não tem consequência).
+	schema.add_field("weaken_after_hours", DataSchema.FieldType.INT, false).set_range(0, MAX_CRITICAL_HOURS)
+	schema.add_field("lethal_after_hours", DataSchema.FieldType.INT, false).set_range(0, MAX_CRITICAL_HOURS)
+	schema.add_field("weak_effect_percent", DataSchema.FieldType.INT, false).set_range(MIN_WEAK_EFFECT_PERCENT, 100)
 	return schema
 
 
@@ -58,6 +65,7 @@ static func check_semantics(bundle: DataBundle) -> void:
 			else:
 				first_owner[order] = item
 		_check_thresholds(bundle, file_path, item, record)
+		_check_critical_consequences(bundle, file_path, item, record)
 
 
 ## `attention` < `urgent` < `critical`; só confere se os três já passaram pelo esquema como inteiros.
@@ -71,10 +79,24 @@ static func _check_thresholds(bundle: DataBundle, file_path: String, item: Strin
 		bundle.add_issue(file_path, item, "critical", "limiares precisam crescer (attention < urgent < critical): critical %d não é maior que urgent %d" % [record["critical"], record["urgent"]])
 
 
+## Consequências do nível crítico (LW-081): letal (`lethal_after_hours` maior que 0) precisa de `weaken_after_hours` maior que 0 e menor que
+## o limite letal; sem consequência letal, `weaken_after_hours` também fica 0 (enfraquecer só faz sentido a caminho da morte).
+static func _check_critical_consequences(bundle: DataBundle, file_path: String, item: String, record: Dictionary) -> void:
+	var weaken: Variant = record.get("weaken_after_hours", 0)
+	var lethal: Variant = record.get("lethal_after_hours", 0)
+	if typeof(weaken) != TYPE_INT or typeof(lethal) != TYPE_INT:
+		return
+	if int(lethal) > 0:
+		if int(weaken) <= 0 or int(weaken) >= int(lethal):
+			bundle.add_issue(file_path, item, "weaken_after_hours", "necessidade letal (lethal_after_hours = %d) precisa de weaken_after_hours maior que 0 e menor que o limite letal; veio %d" % [lethal, weaken])
+	elif int(weaken) > 0:
+		bundle.add_issue(file_path, item, "weaken_after_hours", "weaken_after_hours = %d sem necessidade letal (lethal_after_hours = 0); enfraquecer só faz sentido a caminho da morte" % weaken)
+
+
 static func _build(bundle: DataBundle) -> Array[NeedDef]:
 	var by_order: Dictionary[int, NeedDef] = {}
 	for record: Dictionary in bundle.tables[NEEDS_TABLE]:
-		by_order[record["order"]] = NeedDef.new(str(record["id"]), record["order"], record["start_value"], record["rate_per_hour"], record["attention"], record["urgent"], record["critical"])
+		by_order[record["order"]] = NeedDef.new(str(record["id"]), record["order"], record["start_value"], record["rate_per_hour"], record["attention"], record["urgent"], record["critical"], record.get("weaken_after_hours", 0), record.get("lethal_after_hours", 0), record.get("weak_effect_percent", 100))
 	var defs: Array[NeedDef] = []
 	for order: int in range(NpcState.NEED_COUNT):
 		defs.append(by_order[order])

@@ -21,6 +21,14 @@ Variáveis: `RUNS` (3), `ENSAIOS` (`rota,parado,pausado`), `GODOT_BIN`, `KEEP_DO
 tests/soak/run_sp6
 ```
 
+## Vida dos NPCs sem jogador (LW-068)
+
+`run_npc_life_30d` roda, sem janela, os **100 NPCs do jogo por 30 dias de jogo** (o mundo real: `GameModules`, terreno, pontos e dados de `data/`, sem personagem) e confere os invariantes: todos vivos, necessidades de 0 a 100, comida de 0 ao teto a cada passo, ninguém sem ação por mais de uma hora, `validate()` limpo ao fim de cada dia, pensamentos por passo dentro do teto. Faz três execuções (direta, repetida com a mesma semente e com salvar e carregar no dia 15) e exige o mesmo hash nas três. Leva cerca de 1 minuto e imprime o resumo de cada execução (inclusive quantos minutos a comida ficou em zero). A versão curta, de 7 dias (`npc_life/test_npc_life_7d.gd`, cerca de 17 s), roda no `tools/check_all`; o verificador comum é `npc_life/npc_life_check.gd`. O arquivo da versão longa não começa com `test_` de propósito, para o GUT não o achar sozinho.
+
+```bash
+tests/soak/run_npc_life_30d
+```
+
 ## Corpos e LOD de NPCs (LW-071, spike SP2)
 
 `run_sp2` abre o jogo real e, por cima dele, um teste **descartável** com 100 NPCs que ganham corpo perto do jogador (S0) e voltam a ser dados longe (S1): pool de corpos, navegação N1 (reta) e N2 (grade A\*), políticas de velocidade P1 e P2, invariantes (duplicado, órfão, teleporte) e quadros. O código está em `sp2/` e monta um mundo próprio com os dados reais, porque o jogo ainda não liga o LOD nem o protocolo S0. O teste `sp2/test_sp2_logic.gd` roda sem janela e entra no `tools/check_all`. Modos: `--ver` (Arthur anda 3 minutos; teclas N, M, B e H), `--medir` (ensaios em depuração, só para comparar), `--release` (oficial: reaproveita o binário de `$HOME/lw-release-probe/bin`, não baixa nada) e `--headless` (só contadores). Resultado: `docs/decisions/0009-spike-sp2-corpos-e-lod.md`.

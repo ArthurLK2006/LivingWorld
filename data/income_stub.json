@@ -1,0 +1,7 @@
+[
+	{"id": "income_farmer", "temp_mark": "TEMP-LW-066", "occupation_id": "farmer", "income_relief": 30},
+	{"id": "income_lumberjack", "temp_mark": "TEMP-LW-066", "occupation_id": "lumberjack", "income_relief": 30},
+	{"id": "income_artisan", "temp_mark": "TEMP-LW-066", "occupation_id": "artisan", "income_relief": 30},
+	{"id": "income_guard", "temp_mark": "TEMP-LW-066", "occupation_id": "guard", "income_relief": 30},
+	{"id": "income_innkeeper", "temp_mark": "TEMP-LW-066", "occupation_id": "innkeeper", "income_relief": 30}
+]

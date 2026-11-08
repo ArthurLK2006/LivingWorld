@@ -25,6 +25,10 @@ var _params: NpcIntentParams
 var _pending: Dictionary[int, Pending] = {}
 var _discarded_results: int = 0
 var _timed_out_intents: int = 0
+## Aviso de ação COMPLETA (LW-070c): (npc_id: int, action_id: String, place_id: String, now: int) -> void. É o MESMO gancho que o pensador chama quando
+## o `advance` completa a ação de um NPC sem corpo (as consequências sociais da LW-080); aqui ele roda quando o resultado de SUCESSO do corpo
+## termina a ação, para conversar e ajudar valerem igual com ou sem corpo. Sem ele (o quadro solto, nos testes) nada é avisado.
+var _on_completed: Callable
 
 
 ## `lod_controller`: quem diz quem está em S0 e onde está o corpo (o `lod` do NpcModule).
@@ -56,6 +60,12 @@ func is_configured() -> bool:
 	return _runner != null and _params != null
 
 
+## Liga o aviso de ação completa (ver `_on_completed`). Fica fora de `configure` porque o módulo só cria quem tira a consequência (o
+## `SocialActions`) depois de ligar o quadro.
+func set_completion_hook(on_completed: Callable) -> void:
+	_on_completed = on_completed
+
+
 ## Começa uma ação de um NPC em S0: o runner confere as condições e fixa o fim; em vez de contar o tempo, o quadro emite o Intent
 ## (`go_to_place` vira MOVE_TO_PLACE; as outras ações, ACT_AT_PLACE). Os efeitos NÃO entram agora: só com o resultado de sucesso. NPC
 ## fora de S0 usa o runner abstrato (`begin` e `advance`), então aqui falha com NPC_NOT_IN_S0. O local é conferido ANTES de começar,
@@ -80,20 +90,36 @@ func begin_embodied(npc_id: int, action_id: String, place_id: String, now: int) 
 	return Result.success()
 
 
-## Intents que a apresentação ainda não cumpriu, em CÓPIAS e em ordem crescente de NPC. Só os de quem ainda está em S0.
+## Intents que a apresentação ainda não cumpriu, em CÓPIAS e em ordem crescente de NPC. Só os que ainda valem (ver `has_pending`).
 func peek_pending() -> Array[NpcIntent]:
 	var copies: Array[NpcIntent] = []
 	for npc_id: int in _sorted_pending_ids():
-		if _lod.level_of(npc_id) == NpcLod.LEVEL_S0:
+		if _is_live(npc_id):
 			copies.append(_pending[npc_id].intent.copy())
 	return copies
 
 
+## NPCs com Intent pendente que ainda valem, em ordem crescente de ID (o módulo segura o pensamento deles depois do fim previsto).
+func pending_ids() -> Array[int]:
+	var ids: Array[int] = []
+	for npc_id: int in _sorted_pending_ids():
+		if _is_live(npc_id):
+			ids.append(npc_id)
+	return ids
+
+
+## O NPC tem Intent pendente que ainda vale? Vale enquanto o NPC está em S0, vivo e na MESMA ação que o emitiu (LW-070b): ação trocada,
+## cancelada ou terminada por outro caminho (reavaliação do pensador, morte) tira o Intent da lista sem ninguém precisar avisar o quadro.
+func has_pending(npc_id: int) -> bool:
+	return _is_live(npc_id)
+
+
 ## Recebe o resultado da apresentação em `now`. Resultado que não casa com o Intent pendente do NPC (outra ação, tempo limite já
 ## vencido, NPC fora de S0) é DESCARTADO e contado (NPC_RESULT_STALE), sem mudar nada. Sucesso (ARRIVED ou DONE): os efeitos entram uma
-## vez pela função única e o NPC fica livre; BLOCKED e CANCELLED: a ação é cancelada sem efeito e o NPC fica livre. Em todos os casos
-## aceitos a posição final vira o último relato do corpo. Desfecho que não combina com o tipo, ou posição inválida: recusado, o Intent
-## continua pendente (o tempo limite o cancela se a apresentação não corrigir). O Result de sucesso vale também para BLOCKED e CANCELLED;
+## vez pela função única, o aviso de ação completa sai (LW-070c) e o NPC fica livre; BLOCKED e CANCELLED: a ação é cancelada sem efeito, sem
+## aviso, e o NPC fica livre. Em todos os casos aceitos a posição final vira o último relato do corpo. Desfecho que não combina com o tipo,
+## ou posição inválida: recusado, o Intent continua pendente (o tempo limite o cancela se a apresentação não corrigir). O Result de sucesso
+## vale também para BLOCKED e CANCELLED;
 ## `NPC_ACTION_FAILED` é a falha por regra do runner (uma condição deixou de valer ao terminar): o Intent foi consumido e nada entrou.
 func report_result(result: NpcActionResult, now: int) -> Result:
 	if not is_configured():
@@ -102,9 +128,9 @@ func report_result(result: NpcActionResult, now: int) -> Result:
 	if not invalid.is_empty():
 		return Result.failure(CODE_INVALID_RESULT, "NpcIntentBoard.report_result: resultado inválido: %s." % invalid)
 	var npc_id: int = result.npc_id
-	if not _pending.has(npc_id) or _lod.level_of(npc_id) != NpcLod.LEVEL_S0:
+	if not _is_live(npc_id):
 		_pending.erase(npc_id)
-		return _discard("o NPC %d não tem Intent pendente (o tempo limite já venceu, o NPC saiu de S0 ou a ação já terminou)" % npc_id)
+		return _discard("o NPC %d não tem Intent pendente (o tempo limite já venceu, o NPC saiu de S0, morreu ou a ação já terminou ou foi trocada)" % npc_id)
 	var intent: NpcIntent = _pending[npc_id].intent
 	if intent.action_serial != result.action_serial:
 		return _discard("o resultado é da ação %d, mas o Intent pendente do NPC %d é da ação %d" % [result.action_serial, npc_id, intent.action_serial])
@@ -120,7 +146,14 @@ func report_result(result: NpcActionResult, now: int) -> Result:
 		return reported
 	if not result.is_success():
 		return _runner.cancel_action(npc_id, intent.action_serial)
-	return _runner.finish_embodied(npc_id, intent.action_serial, now).result
+	# LW-070c: o id da ação é lido ANTES de `finish_embodied`, que a limpa. O aviso sai só se o runner diz que a ação COMPLETOU (não se falhou na conferência
+	# final), depois de os efeitos entrarem e antes de o módulo acordar o NPC para pensar.
+	var state: NpcState = _states[npc_id]
+	var action_id: String = state.action_id
+	var finished: ActionRunner.AdvanceResult = _runner.finish_embodied(npc_id, intent.action_serial, now)
+	if finished.outcome == ActionRunner.Outcome.COMPLETED and _on_completed.is_valid():
+		_on_completed.call(npc_id, action_id, state.place_id, now)
+	return finished.result
 
 
 ## Posições do corpo em lote (NPC -> posição em metros), no máximo uma vez a cada 6 quadros de física [HIP]. Cada posição é
@@ -144,15 +177,16 @@ func report_positions(batch: Dictionary[int, Vector3]) -> Result:
 
 
 ## A cada passo: cancela, SEM efeito, a ação dos Intents que passaram do tempo limite (o limite é `intent_timeout_min` depois do fim
-## planejado; a partir do minuto `fim + limite` o Intent já venceu) e solta os Intents de quem saiu de S0 (a ação segue abstrata). Devolve
-## os NPCs cancelados por tempo, em ordem crescente (o detector de impasse da LW-073 vai lê-los). Resultado que chegar depois é descartado.
+## planejado; a partir do minuto `fim + limite` o Intent já venceu) e solta os Intents que deixaram de valer (o NPC saiu de S0, a ação segue
+## abstrata; ou a ação foi trocada, ou ele morreu). Devolve os NPCs cancelados por tempo, em ordem crescente (o detector de impasse da LW-073
+## vai lê-los). Resultado que chegar depois é descartado.
 func expire(now: int) -> Array[int]:
 	var cancelled: Array[int] = []
 	if not is_configured():
 		return cancelled
 	for npc_id: int in _sorted_pending_ids():
 		var entry: Pending = _pending[npc_id]
-		if _lod.level_of(npc_id) != NpcLod.LEVEL_S0:
+		if not _is_live(npc_id):
 			_pending.erase(npc_id)
 			continue
 		if now < entry.deadline:
@@ -164,9 +198,9 @@ func expire(now: int) -> Array[int]:
 	return cancelled
 
 
-## Contagens para depuração: Intents pendentes, resultados descartados e Intents vencidos por tempo.
+## Contagens para depuração: Intents pendentes que ainda valem, resultados descartados e Intents vencidos por tempo.
 func debug_summary() -> Dictionary:
-	return {"pending": _pending.size(), "discarded_results": _discarded_results, "timed_out_intents": _timed_out_intents}
+	return {"pending": pending_ids().size(), "discarded_results": _discarded_results, "timed_out_intents": _timed_out_intents}
 
 
 ## Posição do corpo em metros -> centímetros inteiros no plano (x e z; o y é ignorado). Não finita ou fora de 0 até o máximo do mundo:
@@ -216,6 +250,15 @@ func _mismatch_problem(intent: NpcIntent, result: NpcActionResult) -> String:
 func _discard(why: String) -> Result:
 	_discarded_results += 1
 	return Result.failure(CODE_STALE_RESULT, "NpcIntentBoard.report_result: resultado descartado: %s." % why)
+
+
+## O Intent guardado para o NPC ainda vale? Sim se o NPC está em S0, vivo e na ação de contador igual ao do Intent. É a única conta de
+## validade do quadro: quem termina ou troca a ação por outro caminho (o pensador que reavalia, a morte) não precisa avisá-lo.
+func _is_live(npc_id: int) -> bool:
+	if not _pending.has(npc_id) or _lod.level_of(npc_id) != NpcLod.LEVEL_S0:
+		return false
+	var state: NpcState = _states.get(npc_id)
+	return state != null and state.is_alive and not state.action_id.is_empty() and state.action_serial == _pending[npc_id].intent.action_serial
 
 
 func _sorted_pending_ids() -> Array[int]:

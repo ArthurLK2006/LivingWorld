@@ -1,1 +1,14 @@
-[]
+[
+	{"id": "rest_caution", "action_id": "rest", "trait_id": "caution", "weight": 10},
+	{"id": "sleep_caution", "action_id": "sleep", "trait_id": "caution", "weight": 5},
+	{"id": "rest_sociability", "action_id": "rest", "trait_id": "sociability", "weight": -5},
+	{"id": "wait_sociability", "action_id": "wait", "trait_id": "sociability", "weight": -5},
+	{"id": "work_ambition", "action_id": "work", "trait_id": "ambition", "weight": 15},
+	{"id": "rest_ambition", "action_id": "rest", "trait_id": "ambition", "weight": -10},
+	{"id": "work_loyalty", "action_id": "work", "trait_id": "loyalty", "weight": 10},
+	{"id": "talk_loyalty", "action_id": "talk", "trait_id": "loyalty", "weight": 5},
+	{"id": "flee_caution", "action_id": "flee", "trait_id": "caution", "weight": 20},
+	{"id": "help_loyalty", "action_id": "help", "trait_id": "loyalty", "weight": 20},
+	{"id": "help_sociability", "action_id": "help", "trait_id": "sociability", "weight": 10},
+	{"id": "help_caution", "action_id": "help", "trait_id": "caution", "weight": -10}
+]

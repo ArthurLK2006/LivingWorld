@@ -19,9 +19,10 @@ var interaction: InteractionService
 
 
 ## Registra no `runner` (ainda não iniciado) os módulos do jogo, com o terreno e os pontos de interesse já carregados (`points` pode
-## ser vazio: toda interação então dá "ponto desconhecido"). Terreno nulo ou runner já iniciado: falha tratada em `result`, sem módulo
-## nenhum registrado.
-static func register(runner: SimulationRunner, terrain: TerrainData, points: Array[PointOfInterest] = []) -> GameModules:
+## ser vazio: toda interação então dá "ponto desconhecido"). `npc_setup` (LW-067): os dados do `npc` já lidos (NpcSetup); sem ele, ou com
+## `result` de falha, o `npc` nasce sem definições e sem nenhum NPC (o comportamento dos testes que não precisam de população). Terreno nulo
+## ou runner já iniciado: falha tratada em `result`, sem módulo nenhum registrado.
+static func register(runner: SimulationRunner, terrain: TerrainData, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null) -> GameModules:
 	var modules: GameModules = GameModules.new()
 	if terrain == null:
 		modules.result = Result.failure("GAME_MODULES_NO_TERRAIN", "GameModules.register: terreno nulo; esperado um TerrainData carregado para o módulo '%s'." % CHARACTER_NAME)
@@ -32,8 +33,9 @@ static func register(runner: SimulationRunner, terrain: TerrainData, points: Arr
 		modules.result = registered
 		return modules
 	modules.character = character_module
-	# Sem definições por enquanto: nenhum NPC existe no jogo até a LW-067 (população inicial) ligar os dados.
 	var npc_module: NpcModule = NpcModule.new()
+	if npc_setup != null and npc_setup.result.ok:
+		npc_module = NpcModule.new(npc_setup.need_defs, npc_setup.routine, npc_setup.definitions)
 	registered = runner.register_module(NPC_NAME, npc_module)
 	if not registered.ok:
 		modules.result = registered

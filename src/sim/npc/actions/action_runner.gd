@@ -19,6 +19,10 @@ const CODE_INVALID_PROGRESS: String = "NPC_INVALID_PROGRESS"
 const CODE_PLACE_UNKNOWN: String = "NPC_PLACE_UNKNOWN"
 ## A ação do NPC não é a do contador pedido (já terminou, foi cancelada ou é outra, mais nova): protocolo do modo S0 (LW-070).
 const CODE_STALE_ACTION: String = "NPC_ACTION_STALE"
+## A ação que rende menos quando o NPC está enfraquecido (LW-081): `work` (docs/modules/npc.md, seção 8).
+const WEAKENED_ACTION_ID: String = "work"
+## O provedor pediu um efeito extra (`extra_effects`) sobre uma necessidade que não existe nas definições.
+const CODE_UNKNOWN_NEED: String = "NPC_UNKNOWN_NEED"
 ## A única ação cuja duração vem da distância (contrato, seção 3); `duration_min` 0 nos dados significa "calculada em execução".
 const GO_TO_PLACE_ID: String = "go_to_place"
 ## Progresso em milésimos: 1000 = ação completa. Ação interrompida aplica o que cumpriu.
@@ -98,6 +102,58 @@ func begin(npc_id: int, action_id: String, place_id: String, now: int) -> Result
 	state.action_ends_at = now + duration
 	state.action_serial += 1
 	return Result.success()
+
+
+## Diz, SEM alterar nada, o que impediria `begin` agora: texto vazio = a ação pode começar. Confere as mesmas coisas que `begin` (NPC, vida,
+## ação, hora, condições e, em `go_to_place`, o destino); `ignore_busy` não conta o NPC já estar em outra ação (quem decide trocar de ação
+## a interrompe antes de começar a nova). Serve para a ação só ser candidata se ela puder começar.
+func peek_blocker(npc_id: int, action_id: String, place_id: String, now: int, ignore_busy: bool = false) -> String:
+	var found: Result = _ready_status("peek_blocker")
+	if not found.ok:
+		return found.message
+	if not _states.has(npc_id):
+		return _unknown_npc("peek_blocker", npc_id).message
+	var state: NpcState = _states[npc_id]
+	if not state.is_alive:
+		return "o NPC %d está morto" % npc_id
+	if not _catalog.has(action_id):
+		return _unknown_action("peek_blocker", action_id).message
+	var action: ActionDef = _catalog[action_id]
+	if not ignore_busy and not state.action_id.is_empty():
+		return "o NPC %d já está na ação '%s'" % [npc_id, state.action_id]
+	if now < state.needs_updated_at:
+		return "o minuto %d é anterior à última atualização das necessidades (minuto %d)" % [now, state.needs_updated_at]
+	var unmet: String = _unmet_condition(state, action, place_id, now)
+	if not unmet.is_empty():
+		return unmet
+	if action.id == GO_TO_PLACE_ID and not _destination(place_id).result.ok:
+		return _destination(place_id).result.message
+	return ""
+
+
+## Interrompe a ação em andamento: leva as necessidades até `now`, aplica o que ela cumpriu (efeitos proporcionais ao tempo decorrido,
+## nunca 1000: interrompida não é completa) pela mesma função única `apply_effects` e libera o NPC. Sem ação em andamento não faz nada.
+## `go_to_place` interrompido deixa o NPC onde estava.
+func interrupt(npc_id: int, now: int) -> Result:
+	var found: Result = _ready_status("interrupt")
+	if not found.ok:
+		return found
+	if not _states.has(npc_id):
+		return _unknown_npc("interrupt", npc_id)
+	var state: NpcState = _states[npc_id]
+	if state.action_id.is_empty():
+		return Result.success()
+	if not _catalog.has(state.action_id):
+		return _unknown_action("interrupt", state.action_id)
+	var settled: Result = NeedMath.settle(state, _need_defs, maxi(now, state.needs_updated_at))
+	if not settled.ok:
+		return settled
+	var length: int = maxi(1, state.action_ends_at - state.action_started_at)
+	var elapsed: int = clampi(now - state.action_started_at, 0, length)
+	var progress: int = mini(IntMath.floor_div(elapsed * FULL_PROGRESS, length), FULL_PROGRESS - 1)
+	var applied: Result = apply_effects(npc_id, state.action_id, state.action_target_place_id, progress)
+	_clear_action(state)
+	return applied
 
 
 ## Modo S1: termina a ação quando o tempo acaba (`now` a partir de `action_ends_at`). Antes do fim não muda nada. Ao terminar, leva as
@@ -188,11 +244,29 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 		var broken: String = _completion_problem(state, action)
 		if not broken.is_empty():
 			return Result.failure(CODE_ACTION_FAILED, "ActionRunner.apply_effects: NPC %d, ação '%s' falhou ao terminar: %s; nenhum efeito foi aplicado." % [npc_id, action_id, broken])
+	var extras: Array[ActionDef.ActionEffect] = []
+	if _provider != null:
+		extras = _provider.extra_effects(action_id, state.occupation_id)
+	for extra: ActionDef.ActionEffect in extras:
+		if not _need_position.has(extra.need_id):
+			return Result.failure(CODE_UNKNOWN_NEED, "ActionRunner.apply_effects: NPC %d, ação '%s': o provedor pediu efeito sobre a necessidade '%s', que não existe nas definições; nenhum efeito foi aplicado." % [npc_id, action_id, extra.need_id])
+	var effect_progress: int = progress_permille
+	if action_id == WEAKENED_ACTION_ID:
+		effect_progress = IntMath.floor_div(progress_permille * NeedMath.work_effect_percent(state, _need_defs, state.needs_updated_at), 100)
 	for effect: ActionDef.ActionEffect in action.effects:
-		var position: int = _need_position[effect.need_id]
-		var scaled: int = IntMath.floor_div(effect.delta * progress_permille, FULL_PROGRESS)
-		state.need_values[position] = clampi(state.need_values[position] + scaled, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
+		_apply_row(state, effect, effect_progress)
+	for extra: ActionDef.ActionEffect in extras:
+		_apply_row(state, extra, effect_progress)
+	if progress_permille == FULL_PROGRESS and _provider != null:
+		_provider.on_action_completed(action_id, state.settlement_id, state.occupation_id)
 	return Result.success()
+
+
+## Uma linha de efeito (da tabela ou do provedor) na necessidade, pela mesma conta: piso de (delta x progresso) / 1000, limitado a 0..100.
+func _apply_row(state: NpcState, effect: ActionDef.ActionEffect, progress_permille: int) -> void:
+	var position: int = _need_position[effect.need_id]
+	var scaled: int = IntMath.floor_div(effect.delta * progress_permille, FULL_PROGRESS)
+	state.need_values[position] = clampi(state.need_values[position] + scaled, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
 
 
 ## A hora (0 a 23) está na janela [de, até)? Janela que cruza a meia-noite (de maior que até) vale de `de` até 24 e de 0 até `até`;

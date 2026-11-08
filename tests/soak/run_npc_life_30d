@@ -1,0 +1,10 @@
+#!/bin/sh
+# LW-068: a vida dos 100 NPCs sem jogador por 30 dias de jogo (cerca de um minuto, sem janela). Imprime o resumo de cada execução.
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+exec "$godot_bin" --headless --path "$project_dir" -s res://addons/gut/gut_cmdln.gd "-gtest=res://tests/soak/npc_life/soak_npc_life_30d.gd" -gexit

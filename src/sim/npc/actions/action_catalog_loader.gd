@@ -69,15 +69,21 @@ static func from_tables(tables: Dictionary[String, Array], base_dir: String) -> 
 
 
 static func _finish(bundle: DataBundle) -> LoadResult:
+	check_semantics(bundle)
+	if not bundle.is_valid():
+		return LoadResult.new(Result.failure(CODE_INVALID, bundle.describe_issues()), [])
+	return LoadResult.new(Result.success(), _build(bundle))
+
+
+## Acrescenta ao pacote o que o esquema não vê: traços, necessidades, tipo de local, tipo de condição e pares repetidos. Também usada
+## pelo carregador da rotina (LW-061), que lê estas mesmas tabelas para conferir as ações da agenda.
+static func check_semantics(bundle: DataBundle) -> void:
 	TraitLoader.check_semantics(bundle)
 	NeedLoader.check_semantics(bundle)
 	_check_places(bundle)
 	_check_conditions(bundle)
 	_check_unique_pairs(bundle, EFFECTS_TABLE, "need_id", "efeito")
 	_check_unique_pairs(bundle, TRAIT_WEIGHTS_TABLE, "trait_id", "peso")
-	if not bundle.is_valid():
-		return LoadResult.new(Result.failure(CODE_INVALID, bundle.describe_issues()), [])
-	return LoadResult.new(Result.success(), _build(bundle))
 
 
 ## `place_kind` vazio (qualquer lugar) ou um tipo do vocabulário.

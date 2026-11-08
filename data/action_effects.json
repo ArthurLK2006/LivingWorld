@@ -3,5 +3,7 @@
 	{"id": "eat_hunger", "action_id": "eat", "need_id": "hunger", "delta": -60},
 	{"id": "work_rest", "action_id": "work", "need_id": "rest", "delta": 5},
 	{"id": "rest_rest", "action_id": "rest", "need_id": "rest", "delta": -20},
-	{"id": "talk_social", "action_id": "talk", "need_id": "social", "delta": -30}
+	{"id": "talk_social", "action_id": "talk", "need_id": "social", "delta": -30},
+	{"id": "flee_safety", "action_id": "flee", "need_id": "safety", "delta": -40},
+	{"id": "help_safety", "action_id": "help", "need_id": "safety", "delta": -20}
 ]
