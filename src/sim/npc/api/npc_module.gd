@@ -61,6 +61,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 
 func setup(ctx: SimContext) -> void:
 	_ctx = ctx
+	_link_lod()
 
 
 ## Cria um NPC (ID novo de ctx.ids). Confere o pedido inteiro ANTES de gastar um ID: pedido recusado não altera nada.
@@ -216,7 +217,15 @@ func peek_pending_intents() -> Array[NpcIntent]:
 func request_report_npc_result(result: NpcActionResult) -> Result:
 	if _ctx == null:
 		return Result.failure(CODE_NOT_READY, "NpcModule.request_report_npc_result: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
-	return intents.report_result(result, _ctx.clock.total_minutes())
+	var now: int = _ctx.clock.total_minutes()
+	var npc_id: int = result.npc_id if result != null else IdGenerator.NO_ID
+	var was_embodied: bool = intents.has_pending(npc_id)
+	var reported: Result = intents.report_result(result, now)
+	# LW-070a: o Intent acabou (sucesso, BLOCKED ou CANCELLED): o NPC volta a pensar no minuto seguinte, no máximo. Resultado descartado ou
+	# recusado não mexe em nada.
+	if was_embodied and not intents.has_pending(npc_id):
+		_wake_thinking(npc_id, now)
+	return reported
 
 
 ## Posições dos corpos em S0, em lote (NPC -> posição em metros), vindas da ponte. Cada posição vale por si (ver NpcIntentBoard).
@@ -229,10 +238,51 @@ func request_report_npc_positions(batch: Dictionary[int, Vector3]) -> Result:
 func _tick_s0() -> void:
 	if _ctx == null:
 		return
-	for change: NpcLod.Change in lod.update(_npcs, _ctx.clock.total_minutes()):
+	var now: int = _ctx.clock.total_minutes()
+	for change: NpcLod.Change in lod.update(_npcs, now):
 		_ctx.events.publish(LodChanged.new(change.npc_id, change.from_level, change.to_level))
 	# LW-070: depois da reclassificação, vence os Intents sem resultado e solta os de quem saiu de S0.
-	intents.expire(_ctx.clock.total_minutes())
+	intents.expire(now)
+	_hold_embodied_thinking(now)
+
+
+## LW-070a: o NPC com Intent pendente NÃO pensa. O pensador encerraria a ação pelo tempo (`advance`) ou a trocaria por outra, e a ação de quem
+## tem corpo só pode acabar pelo resultado do corpo (sucesso, BLOCKED ou CANCELLED) ou pelo tempo limite do Intent. Por isso o próximo
+## pensamento dele fica sempre no minuto seguinte (nunca vence enquanto o Intent está pendente); quando o Intent acaba, ele já está no ponto
+## de pensar: por resultado, `request_report_npc_result` o acorda; por tempo limite ou saída de S0, `expire` (acima) o libera e ele pensa
+## neste mesmo passo, porque o pensador roda depois.
+func _hold_embodied_thinking(now: int) -> void:
+	for npc_id: int in intents.pending_ids():
+		var state: NpcState = _npcs.get(npc_id)
+		if state != null:
+			state.next_think_time = now + 1
+
+
+## LW-070a: liga o LOD com os parâmetros das definições (nulos = LOD desligado, como nos testes que montam o módulo sem elas). Fica no `setup`
+## e não no ponto do pensador porque o primeiro relato de posição do jogador chega ANTES do primeiro passo (o pensador só é montado no primeiro
+## `tick`) e o foco falharia com NPC_LOD_NOT_CONFIGURED.
+func _link_lod() -> void:
+	if _definitions == null or _definitions.lod_params == null:
+		return
+	var linked: Result = lod.configure(_definitions.lod_params)
+	if not linked.ok:
+		push_error("NpcModule.setup: LOD não ligado: %s" % linked.message)
+
+
+## LW-070a: liga o protocolo de Intents ao MESMO `ActionRunner` do pensador (nunca a um segundo: um só caminho de efeitos). Sem parâmetros de
+## Intent nas definições nenhuma ação nasce com Intent. Texto vazio = ligou (ou não havia o que ligar); senão, o motivo.
+func _link_intents(runner: ActionRunner) -> String:
+	if _definitions.intent_params == null:
+		return ""
+	var linked: Result = intents.configure(runner, _npcs, _definitions.places, _definitions.intent_params)
+	return "" if linked.ok else "Intents (modo S0): %s" % linked.message
+
+
+## LW-070a: o Intent do NPC acabou por resultado; ele volta a pensar no minuto seguinte, no máximo.
+func _wake_thinking(npc_id: int, now: int) -> void:
+	var state: NpcState = _npcs.get(npc_id)
+	if state != null:
+		state.next_think_time = mini(state.next_think_time, now + 1)
 
 
 ## IDs viram texto (assim o JSON guarda chaves) e entram em ordem crescente do número.
@@ -390,16 +440,21 @@ func _build_decision_runtime() -> String:
 	var scorer: UtilityScorer = UtilityScorer.new(_definitions.params, _need_defs, _definitions.traits)
 	if not scorer.peek_problem().is_empty():
 		return "UtilityScorer: %s" % scorer.peek_problem()
+	var intents_problem: String = _link_intents(runner)
+	if not intents_problem.is_empty():
+		return intents_problem
 	_provider = provider
 	_runner = runner
 	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action)
 	return ""
 
 
-## A ÚNICA função que inicia uma ação (LW-063): hoje só o modo S1, pelo ActionRunner. Ponto de extensão do modo S0: a LW-070 acrescenta
-## aqui o ramo que, para NPC com corpo, emite a Intent em vez de começar a ação abstrata.
+## A ÚNICA função que inicia uma ação (LW-063). Modo S1: pelo ActionRunner. Modo S0 (LW-070a, o ponto de extensão preenchido): NPC com corpo e
+## protocolo ligado emite a Intent (`intents.begin_embodied`), que usa o MESMO runner: os efeitos só entram com o resultado do corpo.
 func _start_action(npc_id: int, action_id: String, place_id: String, now: int) -> Result:
 	_provider.subject = _npcs.get(npc_id)
+	if intents.is_configured() and lod.level_of(npc_id) == NpcLod.LEVEL_S0:
+		return intents.begin_embodied(npc_id, action_id, place_id, now)
 	return _runner.begin(npc_id, action_id, place_id, now)
 
 
@@ -555,6 +610,10 @@ class Definitions:
 	var income: IncomeStub
 	## Opcional (LW-067): quantos NPCs de cada ofício nascem em cada assentamento. Sem ele `on_new_game` não cria ninguém.
 	var population: PopulationPlan
+	## Opcional (LW-070a): parâmetros do LOD lógico (data/lod_params.json). Nulo = LOD desligado: ninguém ganha corpo (S0).
+	var lod_params: LodParams
+	## Opcional (LW-070a): parâmetros dos Intents do modo S0 (data/intent_params.json). Nulo = nenhuma ação nasce com Intent.
+	var intent_params: NpcIntentParams
 	var walk_speed_cm_per_min: int = ActionRunner.DEFAULT_WALK_SPEED_CM_PER_MIN
 	## Build de desenvolvimento? Só então valem os comandos de depuração do módulo (hoje `request_set_food_stock`). A fronteira do app lê
 	## `OS.is_debug_build()` e entrega aqui; a simulação não lê `OS`. Padrão falso.

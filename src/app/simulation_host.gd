@@ -14,6 +14,8 @@ var runner: SimulationRunner
 var character: CharacterModule
 ## Serviço de interação com pontos de interesse do mundo atual (LW-049); nulo quando o jogo começou sem terreno.
 var interaction: InteractionService
+## Módulo `npc` do mundo atual (LW-070a); nulo quando o jogo começou sem terreno. O `GameApp` o entrega à ponte (foco do LOD, Intents e resultados).
+var npc: NpcModule
 
 
 ## Cria um mundo novo, encerrando o anterior se houver. Com `terrain`, registra os módulos do jogo (GameModules); sem ele o mundo
@@ -24,12 +26,14 @@ func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[
 		runner.finish()
 	character = null
 	interaction = null
+	npc = null
 	runner = SimulationRunner.new(world_seed)
 	if terrain != null:
 		var modules: GameModules = GameModules.register(runner, terrain, points, npc_setup)
 		if modules.result.ok:
 			character = modules.character
 			interaction = modules.interaction
+			npc = modules.npc
 		else:
 			push_error("SimulationHost.start_new_game: módulos do jogo não registrados (%s): %s" % [modules.result.code, modules.result.message])
 	runner.start_new_game()
@@ -72,3 +76,4 @@ func _exit_tree() -> void:
 		runner = null
 	character = null
 	interaction = null
+	npc = null

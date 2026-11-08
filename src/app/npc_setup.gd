@@ -46,6 +46,12 @@ static func from_dir(data_dir: String, places: SettlementService, is_development
 	var population: PopulationLoader.LoadResult = PopulationLoader.load_dir(data_dir)
 	if not population.result.ok:
 		return setup._fail_with("população inicial", population.result)
+	var lod: LodParamsLoader.LoadResult = LodParamsLoader.load_dir(data_dir)
+	if not lod.result.ok:
+		return setup._fail_with("LOD lógico (LW-069)", lod.result)
+	var intents: NpcIntentParams.LoadResult = NpcIntentParams.load_dir(data_dir)
+	if not intents.result.ok:
+		return setup._fail_with("Intents do modo S0 (LW-070)", intents.result)
 	setup.need_defs = needs.needs
 	setup.routine = routine_table.table
 	var assembled: NpcModule.Definitions = NpcModule.Definitions.new()
@@ -56,6 +62,8 @@ static func from_dir(data_dir: String, places: SettlementService, is_development
 	assembled.food = food.stub
 	assembled.income = income.stub
 	assembled.population = population.plan
+	assembled.lod_params = lod.params
+	assembled.intent_params = intents.params
 	assembled.is_development_build = is_development_build
 	setup.definitions = assembled
 	return setup

@@ -89,6 +89,20 @@ func peek_pending() -> Array[NpcIntent]:
 	return copies
 
 
+## NPCs com Intent pendente que ainda estão em S0, em ordem crescente de ID (LW-070a: o módulo segura o pensamento deles).
+func pending_ids() -> Array[int]:
+	var ids: Array[int] = []
+	for npc_id: int in _sorted_pending_ids():
+		if _lod.level_of(npc_id) == NpcLod.LEVEL_S0:
+			ids.append(npc_id)
+	return ids
+
+
+## O NPC tem Intent pendente (e ainda está em S0)?
+func has_pending(npc_id: int) -> bool:
+	return _pending.has(npc_id) and _lod.level_of(npc_id) == NpcLod.LEVEL_S0
+
+
 ## Recebe o resultado da apresentação em `now`. Resultado que não casa com o Intent pendente do NPC (outra ação, tempo limite já
 ## vencido, NPC fora de S0) é DESCARTADO e contado (NPC_RESULT_STALE), sem mudar nada. Sucesso (ARRIVED ou DONE): os efeitos entram uma
 ## vez pela função única e o NPC fica livre; BLOCKED e CANCELLED: a ação é cancelada sem efeito e o NPC fica livre. Em todos os casos

@@ -49,7 +49,7 @@ func bind_host(host: SimulationHostNode) -> void:
 ## cujas consultas falham com BRIDGE_NO_TERRAIN.
 func peek_bridge() -> SimBridge:
 	if _bridge == null:
-		_bridge = SimBridge.new(_host, _terrain_or_load(), _places)
+		_bridge = SimBridge.new(_host, _terrain_or_load(), _places, _host.npc if _host != null else null)
 	return _bridge
 
 
