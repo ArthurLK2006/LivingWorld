@@ -320,7 +320,7 @@ func test_the_content_is_not_saved_and_save_and_load_keep_the_hash_and_the_queri
 	bare.run_steps(STEPS_BEFORE_SAVE)
 	assert_eq(original.world.state_hash(), bare.world.state_hash(), "Assentamentos e locais são conteúdo: carregá-los não muda o hash.")
 	var saved: Dictionary = original.capture_game()
-	assert_eq(saved["world"]["modules"].keys(), [GameModules.CHARACTER_NAME], "Nem os assentamentos nem os locais entram no save.")
+	assert_eq(saved["world"]["modules"].keys(), [GameModules.CHARACTER_NAME, GameModules.NPC_NAME], "Nem os assentamentos nem os locais entram no save.")
 	var decoded: DecodedSave = _codec.decode(_codec.encode(saved, GAME_VERSION))
 	assert_true(decoded.result.ok, decoded.result.message)
 	var restored: SimulationRunner = _new_game_runner()
