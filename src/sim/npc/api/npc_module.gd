@@ -17,6 +17,10 @@ const CODE_INVALID_SAVE: String = "NPC_INVALID_SAVE"
 const CODE_NO_ID: String = "NPC_NO_ID"
 const CODE_DUPLICATE_ID: String = "NPC_DUPLICATE_ID"
 const CODE_ROUTINE_NOT_CONFIGURED: String = "NPC_ROUTINE_NOT_CONFIGURED"
+## Alarme (LW-076): tipo do evento, gravidade máxima aceita [HIP] e o código do pedido inválido.
+const ALARM_EVENT_TYPE: String = "AlarmRaised"
+const MAX_ALARM_SEVERITY: int = 10
+const CODE_INVALID_ALARM: String = "NPC_INVALID_ALARM"
 ## Comandos que só existem em build de desenvolvimento (a flag vem em `Definitions.is_development_build`).
 const CODE_DEV_ONLY: String = "NPC_DEV_ONLY"
 ## TEMP-LW-065: sem FoodStub nas definições não há estoque de comida.
@@ -102,6 +106,40 @@ func peek_npc(npc_id: int) -> NpcQuery:
 	var query: NpcQuery = NpcQuery.new(Result.success(), state)
 	query.need_urgencies = _urgencies_of(state)
 	return query
+
+
+## Passou o setup: ouve os alarmes (LW-076). O módulo só reage; quem publica `AlarmRaised` hoje é o comando de depuração abaixo.
+func post_setup() -> void:
+	if _ctx != null:
+		_ctx.events.subscribe(ALARM_EVENT_TYPE, on_alarm_raised)
+
+
+## Faz soar um alarme no ponto (centímetros) com a gravidade dada (1 a MAX_ALARM_SEVERITY): publica `AlarmRaised` (LW-076). SÓ em build de
+## desenvolvimento (`Definitions.is_development_build`); fora dele, `NPC_DEV_ONLY` e nada acontece. Ponto fora do mapa ou gravidade fora da
+## faixa: `NPC_INVALID_ALARM`. Sem tecla nem tela: a tecla é da LW-082.
+func request_raise_alarm(x_cm: int, z_cm: int, severity: int) -> Result:
+	if _definitions == null or not _definitions.is_development_build:
+		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_raise_alarm: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
+	if _ctx == null:
+		return Result.failure(CODE_NOT_READY, "NpcModule.request_raise_alarm: módulo sem setup() (sem barramento de eventos); esperado um módulo registrado no World.")
+	if x_cm < 0 or x_cm > NpcState.MAX_COORDINATE_CM or z_cm < 0 or z_cm > NpcState.MAX_COORDINATE_CM:
+		return Result.failure(CODE_INVALID_ALARM, "NpcModule.request_raise_alarm: ponto (x_cm %d, z_cm %d) fora da faixa; esperado de 0 a %d." % [x_cm, z_cm, NpcState.MAX_COORDINATE_CM])
+	if severity < 1 or severity > MAX_ALARM_SEVERITY:
+		return Result.failure(CODE_INVALID_ALARM, "NpcModule.request_raise_alarm: gravidade %d; esperado de 1 a %d." % [severity, MAX_ALARM_SEVERITY])
+	_ctx.events.publish(AlarmRaised.new(x_cm, z_cm, severity))
+	return Result.success()
+
+
+## Reação ao evento `AlarmRaised` (LW-076): os NPCs vivos a até `alarm_radius_m` do ponto pensam já, em ordem de ID (a pressão de `safety` sobe,
+## `flee` e `help` entram entre as candidatas e a ação atual é interrompida com efeito proporcional se uma reação vencer). Quem ignora segue a vida.
+func on_alarm_raised(event: SimEvent) -> void:
+	var raised: AlarmRaised = event as AlarmRaised
+	if raised == null or _definitions == null or _ctx == null or not _ensure_thinker():
+		return
+	var alarm: NpcThinker.Alarm = NpcThinker.Alarm.new(raised.x_cm, raised.z_cm, raised.severity)
+	var now: int = _ctx.clock.total_minutes()
+	for npc_id: int in _sorted_ids():
+		_thinker.react_to_alarm(npc_id, alarm, now)
 
 
 ## Marca ou desmarca o NPC para o rastro de decisão (LW-064). SÓ em build de desenvolvimento (`Definitions.is_development_build`); fora dele,
@@ -262,6 +300,8 @@ func validate() -> Array[String]:
 			problems.append("NPC %d: next_think_time %d negativo; esperado 0 ou mais." % [npc_id, state.next_think_time])
 		if state.critical_since < NpcState.NO_TIME:
 			problems.append("NPC %d: critical_since %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.critical_since, NpcState.NO_TIME])
+		if state.alarm_until < NpcState.NO_TIME:
+			problems.append("NPC %d: alarm_until %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.alarm_until, NpcState.NO_TIME])
 		if not state.is_alive and state.critical_since != NpcState.NO_TIME:
 			problems.append("NPC %d: morto, mas com critical_since %d; esperado %d." % [npc_id, state.critical_since, NpcState.NO_TIME])
 		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
@@ -387,6 +427,8 @@ func _kill_npc(npc_id: int, cause: String, now: int) -> void:
 	state.action_ends_at = 0
 	state.place_id = ""
 	state.critical_since = NpcState.NO_TIME
+	state.alarm_until = NpcState.NO_TIME
+	state.alarm_place_id = ""
 	_ctx.events.publish(NpcDied.new(npc_id, cause, state.tier))
 
 

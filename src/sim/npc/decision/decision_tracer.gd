@@ -6,7 +6,9 @@ extends RefCounted
 ## monta os registros. O rastro é só para olhar: não é salvo, não entra no hash, não usa sorteio e não muda nenhuma decisão. Quem marca é o
 ## NpcModule (`request_set_traced`, só em build de desenvolvimento). Não há evento "NpcDecided" (seria evento em laço quente, AGENTS 4.14).
 
-## Motivos de a ação ter sido escolhida (`INTERRUPTION`, do alarme, entra com a LW-076).
+## Motivos de a ação ter sido escolhida.
+## O NPC reagiu a um alarme (`flee` ou `help`, LW-076).
+const REASON_INTERRUPTION: String = "INTERRUPTION"
 const REASON_URGENT_NEED: String = "URGENT_NEED"
 const REASON_ROUTINE: String = "ROUTINE"
 const REASON_INERTIA: String = "INERTIA"
@@ -86,7 +88,7 @@ class CandidateRecord:
 	var total: int
 	## Era a ação em andamento do NPC?
 	var is_current: bool
-	## De onde a candidata veio: `URGENT_NEED` (alivia uma necessidade urgente), `ROUTINE` (ação da rotina da hora) ou `INERTIA` (só estava em andamento).
+	## De onde a candidata veio: `URGENT_NEED` (alivia uma necessidade urgente), `ROUTINE` (ação da rotina da hora), `INTERRUPTION` (reação ao alarme) ou `INERTIA` (só estava em andamento).
 	var source: String
 
 	func _init(candidate_action_id: String, candidate_place_id: String, breakdown: UtilityScorer.ScoreBreakdown, candidate_is_current: bool, candidate_source: String) -> void:

@@ -17,6 +17,7 @@ const MAX_BONUS: int = 10000
 const MAX_MINUTES: int = 1440
 const MAX_THINKS_PER_STEP: int = 100000
 const MAX_TOP_K: int = 16
+const MAX_ALARM_RADIUS_M: int = 10000
 const URGENCY_WEIGHT_FIELDS: Array[String] = ["urgency_weight_comfortable", "urgency_weight_attention", "urgency_weight_urgent", "urgency_weight_critical"]
 
 
@@ -34,6 +35,10 @@ static func build_schema(file_name: String = DEFAULT_FILE) -> DataSchema:
 	schema.add_field("max_thinks_per_step", DataSchema.FieldType.INT).set_range(1, MAX_THINKS_PER_STEP)
 	schema.add_field("decision_top_k", DataSchema.FieldType.INT).set_range(1, MAX_TOP_K)
 	schema.add_field("decision_margin", DataSchema.FieldType.INT).set_range(0, MAX_BONUS)
+	# Alarme (LW-076): opcionais; ausentes valem 0 (o alarme não alcança ninguém).
+	schema.add_field("alarm_radius_m", DataSchema.FieldType.INT, false).set_range(0, MAX_ALARM_RADIUS_M)
+	schema.add_field("alarm_safety_pressure", DataSchema.FieldType.INT, false).set_range(0, NpcState.VALUE_MAX)
+	schema.add_field("alarm_window_min", DataSchema.FieldType.INT, false).set_range(0, MAX_MINUTES)
 	return schema
 
 
@@ -86,6 +91,9 @@ static func _build(bundle: DataBundle) -> NpcParams:
 	params.max_thinks_per_step = record["max_thinks_per_step"]
 	params.decision_top_k = record["decision_top_k"]
 	params.decision_margin = record["decision_margin"]
+	params.alarm_radius_m = record.get("alarm_radius_m", 0)
+	params.alarm_safety_pressure = record.get("alarm_safety_pressure", 0)
+	params.alarm_window_min = record.get("alarm_window_min", 0)
 	return params
 
 

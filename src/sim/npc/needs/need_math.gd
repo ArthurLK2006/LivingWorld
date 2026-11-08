@@ -73,6 +73,16 @@ static func settle(state: NpcState, defs: Array[NeedDef], now_minutes: int) -> R
 	return Result.success()
 
 
+## Soma `amount` (pode ser negativo) à pressão da necessidade `need_id` do NPC, limitada a 0..100 (LW-076: o alarme põe pressão em `safety`).
+## Necessidade que não existe nas definições: não faz nada e devolve falso. O resto de variação por hora (`need_remainders`) não muda.
+static func add_pressure(state: NpcState, defs: Array[NeedDef], need_id: String, amount: int) -> bool:
+	for def: NeedDef in defs:
+		if def.id == need_id:
+			state.need_values[def.order] = clampi(state.need_values[def.order] + amount, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
+			return true
+	return false
+
+
 ## Atualiza o `critical_since` do NPC (LW-081): se alguma necessidade LETAL (`lethal_after_hours` maior que 0) está em nível crítico em `now`,
 ## guarda o minuto em que isso foi visto pela primeira vez (e mantém enquanto continuar); se nenhuma está, volta a NO_TIME. Chamada logo depois
 ## de levar as necessidades até `now`; o instante é o do pensamento (observação), não o minuto exato do cruzamento do limiar. Com mais de uma

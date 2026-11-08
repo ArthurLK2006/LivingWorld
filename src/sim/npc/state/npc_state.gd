@@ -46,6 +46,8 @@ const KEY_ACTION_ENDS_AT: String = "action_ends_at"
 const KEY_ACTION_SERIAL: String = "action_serial"
 const KEY_NEXT_THINK_TIME: String = "next_think_time"
 const KEY_CRITICAL_SINCE: String = "critical_since"
+const KEY_ALARM_UNTIL: String = "alarm_until"
+const KEY_ALARM_PLACE_ID: String = "alarm_place_id"
 ## Campos do save por tipo, para conferir tudo antes de montar o estado.
 const INT_KEYS: Array[String] = [KEY_NAME_NUMBER, KEY_TIER, KEY_DIED_AT, KEY_NEEDS_UPDATED_AT, KEY_X_CM, KEY_Z_CM, KEY_ACTION_STARTED_AT, KEY_ACTION_ENDS_AT, KEY_ACTION_SERIAL]
 const STRING_KEYS: Array[String] = [KEY_NAME_KEY, KEY_DEATH_CAUSE, KEY_SETTLEMENT_ID, KEY_PLACE_ID, KEY_OCCUPATION_ID, KEY_HOME_PLACE_ID, KEY_WORK_PLACE_ID, KEY_ACTION_ID, KEY_ACTION_TARGET_PLACE_ID]
@@ -85,6 +87,9 @@ var action_serial: int = 0
 var next_think_time: int = 0
 # Necessidade crítica (LW-081): minuto em que o NPC foi visto pela primeira vez com uma necessidade LETAL em nível crítico (NO_TIME se nenhuma).
 var critical_since: int = NO_TIME
+# Alarme (LW-076): até este minuto (exclusive) o NPC também pesa as reações `flee` e `help`; `alarm_place_id` é o local mais próximo do ponto do alarme (para onde o `help` vai).
+var alarm_until: int = NO_TIME
+var alarm_place_id: String = ""
 
 
 func _init(new_npc_id: int) -> void:
@@ -92,6 +97,13 @@ func _init(new_npc_id: int) -> void:
 	traits = neutral_traits()
 	need_values.resize(NEED_COUNT)
 	need_remainders.resize(NEED_COUNT)
+
+
+## Abre a janela do alarme (LW-076): até o minuto `until` (exclusive) o NPC continua pesando `flee` e `help`, e `nearest_place_id` é o local para
+## onde o `help` vai. Os dois campos andam juntos (um local sem prazo, ou um prazo sem local, não faz sentido), então são gravados num só lugar.
+func open_alarm_window(until: int, nearest_place_id: String) -> void:
+	alarm_until = until
+	alarm_place_id = nearest_place_id
 
 
 ## Traços todos neutros (50), no tamanho do estado.
@@ -134,6 +146,7 @@ func to_dict() -> Dictionary:
 		KEY_ACTION_STARTED_AT: action_started_at, KEY_ACTION_ENDS_AT: action_ends_at, KEY_ACTION_SERIAL: action_serial,
 		KEY_NEXT_THINK_TIME: next_think_time,
 		KEY_CRITICAL_SINCE: critical_since,
+		KEY_ALARM_UNTIL: alarm_until, KEY_ALARM_PLACE_ID: alarm_place_id,
 	}
 
 
@@ -189,6 +202,15 @@ static func parse(saved_npc_id: int, raw_entry: Variant) -> ParseResult:
 		if not _is_int_like(entry[KEY_CRITICAL_SINCE]):
 			return ParseResult.new(null, _bad_field(entry, KEY_CRITICAL_SINCE, "inteiro"))
 		state.critical_since = int(entry[KEY_CRITICAL_SINCE])
+	# Campos acrescentados na LW-076: ausentes no save = sem janela de alarme.
+	if entry.has(KEY_ALARM_UNTIL):
+		if not _is_int_like(entry[KEY_ALARM_UNTIL]):
+			return ParseResult.new(null, _bad_field(entry, KEY_ALARM_UNTIL, "inteiro"))
+		state.alarm_until = int(entry[KEY_ALARM_UNTIL])
+	if entry.has(KEY_ALARM_PLACE_ID):
+		if typeof(entry[KEY_ALARM_PLACE_ID]) != TYPE_STRING:
+			return ParseResult.new(null, _bad_field(entry, KEY_ALARM_PLACE_ID, "texto"))
+		state.alarm_place_id = entry[KEY_ALARM_PLACE_ID]
 	return ParseResult.new(state, "")
 
 

@@ -27,6 +27,13 @@ var max_thinks_per_step: int = 1
 ## Quantas das melhores candidatas entram no sorteio, e a que distância (em pontos) da melhor elas ainda entram.
 var decision_top_k: int = 1
 var decision_margin: int = 0
+# Alarme (LW-076).
+## Raio, em metros, em que o NPC reage a um alarme; 0 = o alarme não alcança ninguém.
+var alarm_radius_m: int = 0
+## Pontos de pressão de `safety` que o alarme põe em quem está no raio (multiplicados pela gravidade do alarme).
+var alarm_safety_pressure: int = 0
+## Por quantos minutos depois do alarme o NPC no raio continua pesando as reações (fugir demora: andar até casa e ficar lá); 0 = só no pensamento do alarme.
+var alarm_window_min: int = 0
 
 
 ## Peso do nível de urgência (0 a 3); nível fora disso usa o do crítico.

@@ -5,5 +5,7 @@
 	{"id": "rest", "duration_min": 60, "place_kind": "rest", "risk": 0, "interruptible": true},
 	{"id": "talk", "duration_min": 30, "place_kind": "social", "risk": 0, "interruptible": true},
 	{"id": "go_to_place", "duration_min": 0, "place_kind": "", "risk": 5, "interruptible": true},
-	{"id": "wait", "duration_min": 10, "place_kind": "", "risk": 0, "interruptible": true}
+	{"id": "wait", "duration_min": 10, "place_kind": "", "risk": 0, "interruptible": true},
+	{"id": "flee", "duration_min": 20, "place_kind": "home", "risk": 0, "interruptible": true},
+	{"id": "help", "duration_min": 20, "place_kind": "", "risk": 10, "interruptible": true}
 ]

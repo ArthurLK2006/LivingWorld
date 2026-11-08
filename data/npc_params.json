@@ -1,3 +1,3 @@
 [
-	{"id": "default", "urgency_weight_comfortable": 0, "urgency_weight_attention": 1, "urgency_weight_urgent": 3, "urgency_weight_critical": 6, "time_cost_per_hour": 2, "distance_cost_per_100m": 2, "risk_cost_percent": 100, "inertia_bonus": 25, "routine_bonus": 40, "think_interval_min": 10, "max_thinks_per_step": 20, "decision_top_k": 3, "decision_margin": 15}
+	{"id": "default", "urgency_weight_comfortable": 0, "urgency_weight_attention": 1, "urgency_weight_urgent": 3, "urgency_weight_critical": 6, "time_cost_per_hour": 2, "distance_cost_per_100m": 2, "risk_cost_percent": 100, "inertia_bonus": 25, "routine_bonus": 40, "think_interval_min": 10, "max_thinks_per_step": 20, "decision_top_k": 3, "decision_margin": 15, "alarm_radius_m": 150, "alarm_safety_pressure": 40, "alarm_window_min": 30}
 ]
