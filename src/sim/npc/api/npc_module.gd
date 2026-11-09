@@ -80,6 +80,8 @@ var _lifecycle: NpcLifecycle
 var _runtime: NpcDecisionRuntime
 ## Conversa do jogador (LW-083b): a validação do pedido, a parada do NPC e o cooldown. Criada no construtor.
 var _player_talk: NpcPlayerTalk
+## Detector de impasse (LW-073): recupera o NPC cuja ação passou do fim previsto sem ninguém encerrá-la. Só memória (não é salvo). Criado no construtor.
+var _impasse: NpcImpasse
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -95,6 +97,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
 	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown)
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine)
+	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action)
 	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
 
 
@@ -105,6 +108,7 @@ func setup(ctx: SimContext) -> void:
 	_persistence.setup(ctx)
 	_lifecycle.setup(ctx)
 	_runtime.setup(ctx)
+	_impasse.setup(ctx)
 
 
 ## Cria um NPC (ID novo de ctx.ids). Confere o pedido inteiro ANTES de gastar um ID: pedido recusado não altera nada.
@@ -258,6 +262,7 @@ func on_new_game(_world_seed: int) -> void:
 func tick(_elapsed_minutes: int) -> void:
 	# Primeiro o LOD e os Intents (LW-069 e LW-070; funcionam sem `Definitions`); depois a fila de pensamento.
 	_bodies.tick()
+	_impasse.tick()
 	_runtime.run_step()
 
 
@@ -365,13 +370,22 @@ func serialize() -> Dictionary:
 ## Confere tudo antes de alterar o estado: se algo for inválido, o estado fica como estava. Só recusa o que não dá para converter
 ## (estrutura, tipos, chave de ID); faixas e coerência ficam com validate() (mesmo critério do `character`).
 func on_load(data: Dictionary) -> Result:
-	return _persistence.on_load(data)
+	var loaded: Result = _persistence.on_load(data)
+	if loaded.ok:
+		_impasse.reset()
+	return loaded
 
 
 ## Problemas do estado (lista vazia se estiver tudo certo). O ofício é conferido contra a tabela de rotina quando o módulo a tem (LW-061);
 ## local e ação ficam como texto: cada tarefa futura acrescenta a sua conferência.
 func validate() -> Array[String]:
 	return _persistence.validate()
+
+
+## As últimas recuperações do detector de impasse (LW-073; as mais antigas primeiro): cópias com `npc_id`, `reason`, `place_id`, `minute`, `action_id` (a cancelada) e
+## `overdue_min`. Fica fora do `debug_summary()` de propósito: o resumo entra na impressão digital do oráculo e não pode mudar enquanto não há impasse.
+func peek_impasse_records() -> Array[Dictionary]:
+	return _impasse.peek_records()
 
 
 ## Contagens por tier, vivos e mortos, ofícios e o tamanho em bytes do serialize() (backlog I4). Só para depuração.
