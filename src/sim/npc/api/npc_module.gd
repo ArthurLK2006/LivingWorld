@@ -14,7 +14,8 @@ extends SimModule
 ## `NpcNotables.adjust_relation`, descarte na morte e arrumação ao rebaixar. LW-081a: o código foi dividido em classes ajudantes (docs/modules/npc.md, "Organização
 ## interna"); o módulo segue como a ÚNICA porta e só delega: `NpcBodies` (passo 1) cuida do LOD, dos Intents e do interruptor de corpos; `NpcNotables`
 ## (passo 2), da memória, das relações e dos tiers; `NpcPersistence` (passo 3), de salvar, carregar, conferir e resumir; `NpcLifecycle` (passo 4), de criar, remover e
-## matar. Dependências: só core, `world` e a própria pasta; não importa o `character`.
+## matar; `NpcDecisionRuntime` (passo 5), da montagem do pensador e de `_start_action`. Dependências: só core, `world` e a própria pasta; não importa o
+## `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -56,18 +57,10 @@ var _need_defs: Array[NeedDef] = []
 var _defs_problem: String = ""
 var _routine: RoutineTable
 var _definitions: Definitions
-## Fluxo de decisão (LW-063): montado no primeiro `tick`, só se as definições estão completas. `_decision_problem` diz por que não.
-var _decision_checked: bool = false
-var _decision_problem: String = ""
 ## Por que a população inicial não nasceu (vazio = nasceu, ou não havia plano). Não é salvo: só aparece no debug_summary().
 var _population_problem: String = ""
 ## Rastro de decisão dos NPCs marcados (LW-064): só para olhar, não é salvo nem entra no hash.
 var _tracer: DecisionTracer = DecisionTracer.new()
-var _runner: ActionRunner
-var _provider: NpcThinker.ConditionProvider
-var _thinker: NpcThinker
-## Consequências sociais de `talk` e `help` (LW-080): montado junto com o pensador, que avisa quando uma ação termina.
-var _social: SocialActions
 ## A tabela é UMA só e vive o tempo todo do módulo: o runner, a ocupação e o pensador a recebem por referência (on_load a atualiza no lugar).
 var _npcs: Dictionary[int, NpcState] = {}
 ## Corpos (LW-081a, passo 1): LOD, Intents, interruptor de corpos, relato do corpo e espera do corpo atrasado. Criado no construtor.
@@ -79,6 +72,8 @@ var _notables: NpcNotables
 var _persistence: NpcPersistence
 ## Vida e morte (LW-081a, passo 4): criar, remover, matar e conferir o pedido de criação. Criada no construtor.
 var _lifecycle: NpcLifecycle
+## Fluxo de decisão (LW-081a, passo 5): provedor, runner, pensador e ações sociais, montados no primeiro `tick`, e a função única que inicia uma ação.
+var _runtime: NpcDecisionRuntime
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -93,6 +88,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_notables = NpcNotables.new(_npcs, _definitions, _unknown)
 	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
 	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown)
+	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine)
 
 
 func setup(ctx: SimContext) -> void:
@@ -101,6 +97,7 @@ func setup(ctx: SimContext) -> void:
 	_notables.setup(ctx)
 	_persistence.setup(ctx)
 	_lifecycle.setup(ctx)
+	_runtime.setup(ctx)
 
 
 ## Cria um NPC (ID novo de ctx.ids). Confere o pedido inteiro ANTES de gastar um ID: pedido recusado não altera nada.
@@ -192,13 +189,7 @@ func request_raise_alarm(x_cm: int, z_cm: int, severity: int) -> Result:
 ## Reação ao evento `AlarmRaised` (LW-076): os NPCs vivos a até `alarm_radius_m` do ponto pensam já, em ordem de ID (a pressão de `safety` sobe,
 ## `flee` e `help` entram entre as candidatas e a ação atual é interrompida com efeito proporcional se uma reação vencer). Quem ignora segue a vida.
 func on_alarm_raised(event: SimEvent) -> void:
-	var raised: AlarmRaised = event as AlarmRaised
-	if raised == null or _definitions == null or _ctx == null or not _ensure_thinker():
-		return
-	var alarm: NpcThinker.Alarm = NpcThinker.Alarm.new(raised.x_cm, raised.z_cm, raised.severity)
-	var now: int = _ctx.clock.total_minutes()
-	for npc_id: int in _sorted_ids():
-		_thinker.react_to_alarm(npc_id, alarm, now)
+	_runtime.react_to_alarm(event, _sorted_ids())
 
 
 ## Marca ou desmarca o NPC para o rastro de decisão (LW-064). SÓ em build de desenvolvimento (`Definitions.is_development_build`); fora dele,
@@ -249,10 +240,7 @@ func on_new_game(_world_seed: int) -> void:
 func tick(_elapsed_minutes: int) -> void:
 	# Primeiro o LOD e os Intents (LW-069 e LW-070; funcionam sem `Definitions`); depois a fila de pensamento.
 	_bodies.tick()
-
-	if _definitions == null or _ctx == null or not _ensure_thinker():
-		return
-	_thinker.run_step(_ctx.clock.total_minutes())
+	_runtime.run_step()
 
 
 ## A ação da rotina do ofício na hora (0 a 23, a de SimClock.hour_of_day()). Sem rotina configurada, ofício desconhecido ou hora fora de
@@ -371,88 +359,8 @@ func validate() -> Array[String]:
 ## Contagens por tier, vivos e mortos, ofícios e o tamanho em bytes do serialize() (backlog I4). Só para depuração.
 func debug_summary() -> Dictionary:
 	var summary: Dictionary = _persistence.debug_summary(peek_counts(), _population_problem)
-	summary["decision_problem"] = _decision_problem_text()
-	summary["decision_enabled"] = _thinker != null
-	summary["thinks_last_step"] = _thinker.last_step_thinks if _thinker != null else 0
-	summary["max_thinks_in_a_step"] = _thinker.max_step_thinks if _thinker != null else 0
+	_runtime.add_summary(summary)
 	return summary
-
-
-## Por que o módulo não decide (texto vazio = decide): sem `Definitions`, sem setup() ou com definições incompletas ou inválidas. Aparece no
-## debug_summary(), para o módulo nunca ficar parado em silêncio.
-func _decision_problem_text() -> String:
-	if _definitions == null:
-		return "o módulo foi criado sem as definições para decidir (NpcModule.Definitions)"
-	if _thinker != null:
-		return ""
-	if _ctx == null:
-		return "módulo sem setup()"
-	_ensure_thinker()
-	return _decision_problem
-
-
-## Monta o runner, o pontuador e o pensador na primeira vez que o `tick` roda. Falso (e `_decision_problem` preenchido) se faltar algo.
-func _ensure_thinker() -> bool:
-	if _thinker != null:
-		return true
-	if _decision_checked:
-		return false
-	_decision_checked = true
-	_decision_problem = _build_decision_runtime()
-	return _decision_problem.is_empty()
-
-
-## Texto vazio = montou; senão, o que falta ou está inválido.
-func _build_decision_runtime() -> String:
-	if _need_defs.is_empty() or not _defs_problem.is_empty():
-		return "faltam as definições de necessidades (ou estão inválidas)"
-	if _routine == null:
-		return "falta a tabela de rotina"
-	if _definitions.actions.is_empty():
-		return "falta o catálogo de ações"
-	if _definitions.params == null:
-		return "faltam os parâmetros do `npc` (npc_params.json)"
-	if _definitions.places == null:
-		return "falta o serviço de locais do `world`"
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		var food_problem: String = food_stub.check_references(_definitions.places, _routine.peek_occupation_ids())
-		if not food_problem.is_empty():
-			return "FoodStub (TEMP-LW-065): %s" % food_problem
-	if _definitions.income != null:
-		var need_ids: Array[String] = []
-		for def: NeedDef in _need_defs:
-			need_ids.append(def.id)
-		var income_problem: String = _definitions.income.check_references(need_ids, _routine.peek_occupation_ids())
-		if not income_problem.is_empty():
-			return "IncomeStub (TEMP-LW-066): %s" % income_problem
-	var occupancy: PlaceOccupancy = PlaceOccupancy.new(_npcs)
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food, _definitions.income)
-	# LW-070b: o runner do jogo respeita o corpo (ver EmbodiedActionRunner); quem tem Intent pendente é o quadro de Intents que diz.
-	var runner: ActionRunner = EmbodiedActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min, intents.has_pending)
-	if not runner.peek_problem().is_empty():
-		return "ActionRunner: %s" % runner.peek_problem()
-	var scorer: UtilityScorer = UtilityScorer.new(_definitions.params, _need_defs, _definitions.traits)
-	if not scorer.peek_problem().is_empty():
-		return "UtilityScorer: %s" % scorer.peek_problem()
-	var intents_problem: String = _bodies.link_intents(runner, _definitions.places, _definitions.intent_params)
-	if not intents_problem.is_empty():
-		return intents_problem
-	_provider = provider
-	_runner = runner
-	_social = SocialActions.new(_npcs, _definitions.params.talk_gain, _definitions.params.talk_limit, _notables.relation_values, _notables.adjust_relation, _notables.record_memory)
-	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _lifecycle.kill, _social.on_action_finished)
-	return ""
-
-
-## A ÚNICA função que inicia uma ação (LW-063). Modo S1: pelo ActionRunner. Modo S0 (LW-070a, o ponto de extensão preenchido): NPC com corpo e
-## protocolo ligado emite a Intent (`intents.begin_embodied`), que usa o MESMO runner: os efeitos só entram com o resultado do corpo. Sem corpos
-## disponíveis (LW-070b) nenhuma ação nasce com Intent.
-func _start_action(npc_id: int, action_id: String, place_id: String, now: int) -> Result:
-	_provider.subject = _npcs.get(npc_id)
-	if _bodies.is_embodied(npc_id):
-		return intents.begin_embodied(npc_id, action_id, place_id, now)
-	return _runner.begin(npc_id, action_id, place_id, now)
 
 
 ## TEMP-LW-065: o FoodStub real, se o provedor de comida das definições for ele (os testes usam um provedor falso, sem estado salvo).
