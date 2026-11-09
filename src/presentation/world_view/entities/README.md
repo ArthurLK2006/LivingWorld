@@ -1,0 +1,3 @@
+Corpos dos NPCs (módulo `presentation`; contrato em `docs/modules/presentation.md`).
+
+Implementado (LW-072b): `NpcView` (o corpo provisório de um NPC em S0: cápsula azul-acinzentada de 0,4 x 1,8 m com nariz à frente e sem colisão; parado fica imóvel, andando quica e se inclina; guarda só o ID do NPC) e `NpcViewPool` (a reserva de corpos: 60 de antemão [HIP], no máximo um corpo por NPC, devolver esconde e nada é apagado durante o jogo; contadores de criados, retirados, devolvidos, pico, pool vazio e duplicados). O corpo ainda não anda pelo mapa, a cena não o cria e nada na ponte o chama: o conjunto S0 (`NpcBodiesView`) vem na LW-072c.
