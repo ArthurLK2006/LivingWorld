@@ -7,7 +7,7 @@ extends GutTest
 ## como artesãos (a rotina real manda conversar das 11h às 12h) e promovidos por `request_promote`; um teste no fim roda o jogo real completo, com os
 ## 100 NPCs. O "corpo" é o próprio teste: o CORPO PERFEITO devolve ARRIVED ou DONE no fim previsto de cada Intent. GÊMEOS: o mesmo mundo (mesma
 ## semente) sem corpos e com corpos ligados às 10h30, meia hora antes da conversa. Compara-se a consequência (relação, memórias e eventos), não o
-## instante: o S1 fecha a ação no pensamento seguinte e o S0, no minuto do resultado, e o NPC com corpo recomeça a ação um minuto depois do S1.
+## instante: o S1 fecha a ação no pensamento que percebe o fim e o S0, no pensamento seguinte ao relato do corpo (LW-070d), então o NPC com corpo recomeça a ação um minuto depois do S1.
 
 const DATA_DIR: String = "res://data"
 const WORLD_SEEDS: Array[int] = [11, 12, 13]
@@ -52,6 +52,9 @@ const CM_PER_M: float = 100.0
 const REAL_GAME_NOTABLES: int = 30
 const REAL_GAME_END_MIN: int = 22 * HOUR
 const COUNT_ALIVE_TOTAL: int = 100
+const GAME_VERSION: String = "0.0.1-test"
+const FAR_SETTLEMENT: String = "test_settlement_b"
+const FAR_HOME: String = "b_home_01"
 
 ## O que o corpo faz com cada Intent que chega ao fim previsto: sempre chega ao destino de quem anda; quem age no local depende da política.
 enum Body { PERFECT, BLOCKS, CANCELS, SILENT }
@@ -61,6 +64,7 @@ enum Mode { NO_BODIES, BOTH, MIXED }
 var _data: NpcLifeCheck.GameData
 var _places: SettlementService
 var _rigs: Array[Rig] = []
+var _codec: JsonSaveCodec = JsonSaveCodec.new()
 
 
 ## Um jogo de teste: o runner, o módulo `npc` e o que o teste anotou do mundo.
@@ -155,6 +159,24 @@ func _make_rig(setup: NpcSetup, world_seed: int) -> Rig:
 	rig.npc = modules.npc
 	rig.runner.world.context.events.subscribe("RelationChanged", rig.on_relation_changed)
 	rig.runner.start_new_game()
+	_rigs.append(rig)
+	return rig
+
+
+## Jogo CARREGADO de um save (LW-070d), com os mesmos dados e a mesma configuração de `_rig` (sem população inicial), sem `start_new_game` e sem corpos.
+func _load_rig(world_seed: int, payload: Dictionary) -> Rig:
+	var setup: NpcSetup = _setup()
+	setup.definitions.population = null
+	var rig: Rig = Rig.new()
+	rig.talk_gain = setup.definitions.params.talk_gain
+	rig.think_interval_min = setup.definitions.params.think_interval_min
+	rig.runner = SimulationRunner.new(world_seed)
+	var modules: GameModules = GameModules.register(rig.runner, _data.terrain, _data.points, setup)
+	assert_true(modules.result.ok, modules.result.message)
+	rig.npc = modules.npc
+	rig.runner.world.context.events.subscribe("RelationChanged", rig.on_relation_changed)
+	var loaded: Result = rig.runner.load_game(payload)
+	assert_true(loaded.ok, loaded.message)
 	_rigs.append(rig)
 	return rig
 
@@ -396,14 +418,14 @@ func test_a_mixed_pair_with_one_body_and_one_without_gets_the_same_as_two_withou
 		assert_gt(mixed.rig.completed.count(TALK), 0, "O participante com corpo terminou a conversa pelo corpo.")
 
 
-# ---------------------------------------------------------------------------------------------------- [LIM] parceiros que terminam no mesmo minuto
+# ---------------------------------------------------------------------------------------------------- parceiros que terminam no mesmo minuto (era a [LIM] da LW-070c)
 
-## [LIM] CONHECIDO, registrado em docs/modules/npc.md (seção 6): se os DOIS parceiros têm corpo e terminam a conversa no MESMO minuto, o par com corpo
-## ganha uma consequência a menos que o par sem corpo. No S1 o primeiro a terminar recomeça a conversa na mesma passagem de pensamento, então o segundo
-## ainda o encontra conversando; no S0 o primeiro só recomeça um minuto depois (o resultado do corpo chega depois do passo), e o segundo resultado do mesmo
-## minuto não acha parceiro. O par misto não perde nada. Este teste FIXA o estado atual para a diferença não mudar sem ninguém ver: se alguém a
-## corrigir (por exemplo fazendo o pensador fechar a ação do corpo, tarefa de contrato), a comparação abaixo passa a ser de igualdade e este teste muda.
-func test_known_limit_embodied_partners_who_finish_in_the_same_minute_get_fewer_consequences() -> void:
+## Era a [LIM] CONHECIDA da LW-070c, RESOLVIDA na LW-070d (docs/modules/npc.md, seção 6): se os DOIS parceiros têm corpo e terminam a conversa no MESMO minuto,
+## o par com corpo ganhava uma consequência a menos que o par sem corpo, porque o relato do corpo fechava a ação na hora e o segundo resultado do mesmo minuto
+## não achava parceiro. Agora o relato só marca o fim e o pensador encerra a ação no pensamento seguinte, NPC por NPC na ordem da fila: o primeiro a terminar
+## recomeça a conversa na mesma passada e o segundo ainda o encontra conversando, como no S1. O par misto continua sem perder nada. As duas comparações de
+## "menos" viraram a igualdade com o gêmeo sem corpos.
+func test_embodied_partners_who_finish_in_the_same_minute_get_the_same_consequences_as_the_twin_without_bodies() -> void:
 	var fillers: int = _setup().definitions.params.think_interval_min - 1
 	var twin: Scenario = _talk_world(WORLD_SEEDS[0], Mode.NO_BODIES, Body.PERFECT, TALK_WINDOW_END_MIN, fillers)
 	var embodied: Scenario = _talk_world(WORLD_SEEDS[0], Mode.BOTH, Body.PERFECT, TALK_WINDOW_END_MIN, fillers)
@@ -412,9 +434,80 @@ func test_known_limit_embodied_partners_who_finish_in_the_same_minute_get_fewer_
 	assert_gt(twin.snapshot.memories[0].size(), 2, "O gêmeo sem corpos conversou mais de duas vezes.")
 	assert_eq(mixed.snapshot.relation, twin.snapshot.relation, "O par misto não perde nada.")
 	assert_eq(mixed.snapshot.memories, twin.snapshot.memories)
-	assert_lt(embodied.snapshot.memories[0].size(), twin.snapshot.memories[0].size(), "[LIM] os dois com corpo, no mesmo minuto, ganham menos registros.")
-	assert_lt(embodied.snapshot.relation[0], twin.snapshot.relation[0], "[LIM] E uma relação menor.")
-	assert_gt(embodied.snapshot.memories[0].size(), 0, "Mas conversam: a consequência existe, só que menos vezes.")
+	assert_eq(embodied.snapshot.memories, twin.snapshot.memories, "Os dois com corpo, no mesmo minuto, ganham os mesmos registros.")
+	assert_eq(embodied.snapshot.relation, twin.snapshot.relation, "E a mesma relação.")
+	assert_eq(embodied.snapshot.events, twin.snapshot.events, "E os mesmos eventos RelationChanged.")
+	assert_gt(embodied.snapshot.memories[0].size(), 0, "E conversam: a consequência existe.")
+	assert_lte(_largest_gap(twin.snapshot.times, embodied.snapshot.times), twin.rig.think_interval_min, "O instante dos registros difere no máximo um intervalo de pensamento.")
+
+
+# ---------------------------------------------------------------------------------------------------- salvar e carregar entre o relato e o pensamento (LW-070d)
+
+## Cidadão sem ofício, em casa no povoado B (a mais de 400 m do convívio): fica em S1 com ou sem corpos, então o mundo que salvou e o carregado o tratam igual.
+## Só ocupa um ID, para os dois notáveis terem a mesma fase de pensamento.
+func _spawn_far_filler(rig: Rig) -> void:
+	var spec: NpcSpec = NpcSpec.new()
+	spec.name_key = "npc.name.villager"
+	spec.settlement_id = FAR_SETTLEMENT
+	spec.home_place_id = FAR_HOME
+	spec.place_id = FAR_HOME
+	var home_cm: Vector2i = _place_cm(FAR_HOME)
+	spec.x_cm = home_cm.x
+	spec.z_cm = home_cm.y
+	var created: NpcModule.CreateResult = rig.npc.request_create_npc(spec)
+	assert_true(created.result.ok, created.result.message)
+
+
+## Os dois notáveis estão com a conversa vencida e o corpo de cada um acabou de relatar o sucesso?
+func _both_talks_are_due(rig: Rig, first_id: int, second_id: int) -> bool:
+	for npc_id: int in [first_id, second_id]:
+		var npc: NpcModule.NpcQuery = rig.npc.peek_npc(npc_id)
+		if npc.action_id != TALK or rig.now() < npc.action_ends_at or not rig.npc.intents.has_pending(npc_id):
+			return false
+	return true
+
+
+## O estado novo que a LW-070d cria: o corpo já relatou o sucesso, então a ação tem o fim marcado e não tem mais Intent, mas o pensador ainda não a encerrou.
+## Salvar e carregar nesse intervalo não pode perder nem dobrar a consequência: o mundo carregado (tudo em S1) encerra a ação no primeiro pensamento e deixa o
+## mesmo que o mundo que não salvou, hash inclusive. Confere também que o `validate()` aceita o estado transitório e que o save o aceita de volta.
+func test_saving_and_loading_between_the_body_report_and_the_next_think_leaves_the_same_world_as_not_saving() -> void:
+	var fillers: int = _setup().definitions.params.think_interval_min - 1
+	var rig: Rig = _rig(WORLD_SEEDS[0])
+	var first_id: int = _spawn(rig, true, HOME_FIRST, WORK_FIRST)
+	for _index: int in fillers:
+		_spawn_far_filler(rig)
+	var second_id: int = _spawn(rig, true, HOME_SECOND, WORK_SECOND)
+	_walk(rig, BODIES_FOR_TALK_MIN, NO_BODIES_EVER, Body.SILENT)
+	_bodies_on(rig)
+	var guard: int = 0
+	while guard < SAFETY_LIMIT_MIN and not _both_talks_are_due(rig, first_id, second_id):
+		rig.runner.step_once()
+		_answer_due(rig, Body.SILENT)
+		guard += 1
+	assert_lt(guard, SAFETY_LIMIT_MIN, "Os dois notáveis chegaram ao fim previsto da primeira conversa.")
+	for npc_id: int in [first_id, second_id]:
+		var intent: NpcIntent = _pending_of(rig, npc_id)
+		var done: NpcActionResult = NpcActionResult.new(npc_id, intent.action_serial, NpcActionResult.Outcome.DONE, _body_of(intent))
+		assert_true(rig.npc.request_report_npc_result(done).ok)
+		assert_eq([rig.npc.peek_npc(npc_id).action_id, rig.npc.intents.has_pending(npc_id)], [TALK, false], "O relato só marcou o fim: a ação segue e o Intent saiu.")
+	assert_eq(_snapshot(rig, first_id, second_id, CONVERSATION_KIND).relation, [0, 0, 0, 0, 0], "Nada saiu ainda: o pensador não pensou.")
+	assert_eq(rig.npc.validate().size(), 0, "O `validate()` aceita o estado transitório: %s" % str(rig.npc.validate()))
+	assert_true(rig.runner.can_capture_game(), "O relato não deixou evento pendente: dá para salvar.")
+	var decoded: DecodedSave = _codec.decode(_codec.encode(rig.runner.capture_game(), GAME_VERSION))
+	var loaded: Rig = _load_rig(WORLD_SEEDS[0], decoded.payload)
+	assert_eq(loaded.npc.validate().size(), 0, "E o mundo carregado também: %s" % str(loaded.npc.validate()))
+	assert_eq(loaded.runner.world.state_hash(), rig.runner.world.state_hash(), "O mundo carregado tem o mesmo hash do salvo.")
+	rig.runner.step_once()
+	loaded.runner.step_once()
+	var kept: Snapshot = _snapshot(rig, first_id, second_id, CONVERSATION_KIND)
+	var reloaded: Snapshot = _snapshot(loaded, first_id, second_id, CONVERSATION_KIND)
+	var gain: int = rig.talk_gain * 2
+	assert_eq(kept.relation, [gain, gain, 0, 0, 0], "No pensamento seguinte as duas conversas saem, uma vez cada (como no S1).")
+	assert_eq([kept.memories[0].size(), kept.memories[1].size()], [2, 2])
+	assert_eq(reloaded.relation, kept.relation, "O mundo carregado deixa a mesma relação, sem perder nem dobrar a consequência.")
+	assert_eq(reloaded.memories, kept.memories, "As mesmas memórias.")
+	assert_eq(reloaded.events, kept.events, "O mesmo evento.")
+	assert_eq(loaded.runner.world.state_hash(), rig.runner.world.state_hash(), "E o mesmo hash depois do pensamento seguinte.")
 
 
 # ---------------------------------------------------------------------------------------------------- (d) o que não é sucesso não deixa nada
@@ -454,6 +547,8 @@ func test_a_repeated_or_late_result_does_not_repeat_the_consequence() -> void:
 	assert_not_null(second_intent, "O segundo também está conversando, com o corpo ainda sem responder.")
 	var done: NpcActionResult = NpcActionResult.new(first_id, first_intent.action_serial, NpcActionResult.Outcome.DONE, _body_of(first_intent))
 	assert_true(rig.npc.request_report_npc_result(done).ok)
+	assert_eq(_snapshot(rig, first_id, second_id, CONVERSATION_KIND).relation, [0, 0, 0, 0, 0], "Logo depois do relato nada saiu: ele só marca o fim (LW-070d).")
+	rig.runner.step_once()
 	var once: Snapshot = _snapshot(rig, first_id, second_id, CONVERSATION_KIND)
 	assert_eq(once.relation, [rig.talk_gain, rig.talk_gain, 0, 0, 0], "O resultado de sucesso fez a consequência sair.")
 	assert_eq([once.memories[0].size(), once.memories[1].size()], [1, 1])

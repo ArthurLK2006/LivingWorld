@@ -190,6 +190,7 @@ func test_a_move_action_emits_move_to_place_with_the_place_center_and_the_travel
 	assert_eq(intent.destination_cm, WORK_CM)
 	assert_eq(intent.expected_minutes, 1, "3000 cm a 8400 cm por minuto: 1 minuto (no mínimo).")
 	assert_true(rig.module.request_report_npc_result(_outcome(npc_id, 1, NpcActionResult.Outcome.ARRIVED)).ok)
+	assert_eq(rig.actions.advance(npc_id, rig.now()).outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 	assert_true(_begin(rig, npc_id, ActionRunner.GO_TO_PLACE_ID, FAR).ok)
 	var longer: NpcIntent = rig.module.peek_pending_intents()[0]
 	assert_eq([longer.expected_minutes, longer.action_serial], [2, 2], "Do centro do trabalho (104000) a FAR (118000): 14000 cm a 8400 por minuto, arredondado para cima, 2 minutos; é a segunda ação do NPC.")
@@ -211,6 +212,8 @@ func test_a_success_result_applies_the_effects_once_and_frees_the_npc() -> void:
 	var body_m: Vector3 = Vector3(1012.34, 0.0, 500.56)
 	var reported: Result = rig.module.request_report_npc_result(_outcome(npc_id, 1, NpcActionResult.Outcome.DONE, body_m))
 	assert_true(reported.ok, reported.message)
+	assert_eq(_hunger(rig, npc_id), START_HUNGER, "O relato só marca o fim: nenhum efeito ainda (LW-070d).")
+	assert_eq(rig.actions.advance(npc_id, rig.now()).outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação: os efeitos entram agora.")
 	var npc: NpcModule.NpcQuery = rig.module.peek_npc(npc_id)
 	assert_eq(npc.need_values[HUNGER], START_HUNGER + EAT_RELIEF, "80 menos 60 da refeição, uma só vez.")
 	assert_eq(npc.action_id, "", "O NPC fica livre para pensar de novo.")
@@ -229,6 +232,7 @@ func test_arriving_moves_the_logical_position_to_the_place_and_the_body_keeps_it
 	rig.runner.step_once()
 	var arrived: Result = rig.module.request_report_npc_result(_outcome(npc_id, 1, NpcActionResult.Outcome.ARRIVED, Vector3(1039.6, 0.0, 500.2)))
 	assert_true(arrived.ok, arrived.message)
+	assert_eq(rig.actions.advance(npc_id, rig.now()).outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 	var npc: NpcModule.NpcQuery = rig.module.peek_npc(npc_id)
 	assert_eq([npc.x_cm, npc.z_cm, npc.place_id], [WORK_CM.x, WORK_CM.y, WORK], "A chegada põe o NPC no centro do local, como no modo S1.")
 	assert_eq(npc.action_id, "")
@@ -246,6 +250,7 @@ func test_s0_and_s1_leave_the_same_needs_whether_the_result_is_on_time_or_late()
 		assert_true(rig.actions.begin(in_s1, "eat", HOME, rig.now()).ok)
 		rig.runner.run_steps(EAT_MIN + lateness)
 		assert_true(rig.module.request_report_npc_result(_outcome(in_s0, 1, NpcActionResult.Outcome.DONE)).ok)
+		assert_eq(rig.actions.advance(in_s0, rig.now()).outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 		assert_eq(rig.actions.advance(in_s1, rig.now()).outcome, ActionRunner.Outcome.COMPLETED)
 		var embodied: NpcModule.NpcQuery = rig.module.peek_npc(in_s0)
 		var abstract: NpcModule.NpcQuery = rig.module.peek_npc(in_s1)
@@ -260,6 +265,7 @@ func test_a_result_before_the_planned_end_finishes_the_action_at_that_minute() -
 	assert_true(_begin(rig, npc_id, "eat", HOME).ok)
 	rig.runner.run_steps(10)
 	assert_true(rig.module.request_report_npc_result(_outcome(npc_id, 1, NpcActionResult.Outcome.DONE)).ok)
+	assert_eq(rig.actions.advance(npc_id, rig.now()).outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 	var npc: NpcModule.NpcQuery = rig.module.peek_npc(npc_id)
 	assert_eq(npc.need_values[HUNGER], START_HUNGER + EAT_RELIEF)
 	assert_eq(npc.needs_updated_at, rig.now(), "A ação acabou antes do planejado: as necessidades vão só até agora.")
@@ -359,6 +365,7 @@ func test_an_outcome_that_does_not_match_the_intent_kind_is_refused_and_the_inte
 	assert_eq(rig.module.peek_pending_intents().size(), 1, "O Intent continua pendente.")
 	assert_eq([rig.module.peek_npc(npc_id).action_id, _hunger(rig, npc_id)], ["eat", START_HUNGER])
 	assert_true(rig.module.request_report_npc_result(_outcome(npc_id, 1, NpcActionResult.Outcome.DONE)).ok)
+	assert_eq(rig.actions.advance(npc_id, rig.now()).outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 	assert_true(_begin(rig, npc_id, ActionRunner.GO_TO_PLACE_ID, WORK).ok)
 	var other: Result = rig.module.request_report_npc_result(_outcome(npc_id, 2, NpcActionResult.Outcome.DONE))
 	assert_eq(other.code, NpcIntentBoard.CODE_OUTCOME_MISMATCH, "DONE não vale para MOVE_TO_PLACE.")
@@ -414,17 +421,17 @@ func test_runner_refusals_pass_through_and_leave_no_second_intent() -> void:
 	assert_eq([intents.size(), intents[0].action_serial], [1, 1], "O primeiro Intent segue intacto.")
 
 
-func test_the_runner_guards_cancel_and_finish_by_action_serial() -> void:
+func test_the_runner_guards_cancel_and_mark_the_end_by_action_serial() -> void:
 	var rig: Rig = _rig()
 	var npc_id: int = _s0_npc(rig)
 	assert_true(_begin(rig, npc_id, "eat", HOME).ok)
 	assert_eq(rig.actions.cancel_action(npc_id, 99).code, ActionRunner.CODE_STALE_ACTION)
-	assert_eq(rig.actions.finish_embodied(npc_id, 99, rig.now()).result.code, ActionRunner.CODE_STALE_ACTION)
+	assert_eq(rig.actions.mark_embodied_end(npc_id, 99, rig.now()).result.code, ActionRunner.CODE_STALE_ACTION)
 	assert_eq(rig.module.peek_npc(npc_id).action_id, "eat", "Contador errado não mexe na ação.")
 	assert_eq(rig.actions.cancel_action(999, 1).code, ActionRunner.CODE_UNKNOWN_NPC)
 	assert_true(rig.actions.cancel_action(npc_id, 1).ok)
 	assert_eq(rig.actions.cancel_action(npc_id, 1).code, ActionRunner.CODE_STALE_ACTION, "Sem ação, nada a cancelar.")
-	assert_eq(rig.actions.finish_embodied(npc_id, 1, rig.now()).outcome, ActionRunner.Outcome.NONE)
+	assert_eq(rig.actions.mark_embodied_end(npc_id, 1, rig.now()).outcome, ActionRunner.Outcome.NONE)
 
 
 func test_an_unconfigured_protocol_fails_visibly_and_changes_nothing() -> void:

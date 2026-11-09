@@ -231,14 +231,15 @@ func test_a_success_result_applies_the_effects_once_and_the_npc_thinks_again_wit
 	var reported: Result = rig.npc.request_report_npc_result(done)
 	assert_true(reported.ok, reported.message)
 	var after: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
-	assert_eq(after.action_id, "", "O NPC ficou livre.")
-	assert_eq(after.need_values[HUNGER], 0, "`eat` alivia `hunger` em 60: os efeitos entraram.")
-	assert_eq(after.needs_updated_at, before.action_ends_at, "No fim planejado, como no modo abstrato.")
+	assert_eq(after.action_id, before.action_id, "Logo depois do relato a ação só tem o fim marcado: o pensador ainda não a encerrou (LW-070d).")
+	assert_gt(after.need_values[HUNGER], 0, "E o efeito de `eat` ainda não entrou: a fome só zera no pensamento seguinte (LW-070d).")
 	assert_true(after.next_think_time <= rig.now() + 1, "Volta a pensar no minuto seguinte, no máximo.")
 	assert_false(rig.npc.intents.has_pending(intent.npc_id))
 	rig.runner.step_once()
 	var thinking: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
-	assert_eq(thinking.action_serial, intent.action_serial + 1, "Pensou de novo no minuto seguinte e começou a próxima ação.")
+	assert_eq(thinking.need_values[HUNGER], 0, "`eat` alivia `hunger` em 60: os efeitos entraram, no pensamento seguinte.")
+	assert_eq(thinking.needs_updated_at, rig.now(), "O pensador aplica o efeito no fim planejado e leva as necessidades até o minuto do pensamento (LW-070d).")
+	assert_eq(thinking.action_serial, intent.action_serial + 1, "Pensou de novo no minuto seguinte, encerrou a ação (o NPC ficou livre) e começou a próxima ação.")
 	var next_intent: NpcIntent = null
 	for waiting_intent: NpcIntent in rig.npc.peek_pending_intents():
 		if waiting_intent.npc_id == intent.npc_id:

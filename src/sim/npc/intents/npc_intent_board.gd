@@ -2,8 +2,8 @@ class_name NpcIntentBoard
 extends RefCounted
 ## Quadro de Intents do modo S0 (LW-070; contrato em docs/modules/npc.md, seção 6, e arquitetura 8.5). Para um NPC em S0, começar uma ação
 ## EMITE um NpcIntent em vez de deixar o ActionRunner abstrato contar o tempo; a apresentação cumpre com o corpo e devolve um
-## NpcActionResult. Só um resultado de SUCESSO faz os efeitos entrarem, e sempre pela função única do ActionRunner (`finish_embodied`, que
-## passa pelo `advance`). BLOCKED e CANCELLED cancelam a ação sem efeito; resultado de ação velha é descartado e contado; Intent sem
+## NpcActionResult. Um resultado de SUCESSO só MARCA o fim da ação (`mark_embodied_end`) e solta o Intent: quem a encerra é o `advance` do pensador,
+## no pensamento seguinte, e os efeitos entram sempre pela função única do ActionRunner (LW-070d). BLOCKED e CANCELLED cancelam a ação sem efeito; resultado de ação velha é descartado e contado; Intent sem
 ## resultado até `intent_timeout_min` depois do fim planejado cancela a ação sem efeito (o NPC volta a poder pensar).
 ## As intenções pendentes são estado de apresentação em curso: NÃO são salvas e não entram no state_hash (um mundo carregado começa com
 ## todos em S1, e a ação de quem estava esperando segue em modo abstrato). Quem sai de S0 perde o Intent; a ação segue abstrata.
@@ -25,10 +25,6 @@ var _params: NpcIntentParams
 var _pending: Dictionary[int, Pending] = {}
 var _discarded_results: int = 0
 var _timed_out_intents: int = 0
-## Aviso de ação COMPLETA (LW-070c): (npc_id: int, action_id: String, place_id: String, now: int) -> void. É o MESMO gancho que o pensador chama quando
-## o `advance` completa a ação de um NPC sem corpo (as consequências sociais da LW-080); aqui ele roda quando o resultado de SUCESSO do corpo
-## termina a ação, para conversar e ajudar valerem igual com ou sem corpo. Sem ele (o quadro solto, nos testes) nada é avisado.
-var _on_completed: Callable
 
 
 ## `lod_controller`: quem diz quem está em S0 e onde está o corpo (o `lod` do NpcModule).
@@ -58,12 +54,6 @@ func configure(runner: ActionRunner, states: Dictionary[int, NpcState], places: 
 
 func is_configured() -> bool:
 	return _runner != null and _params != null
-
-
-## Liga o aviso de ação completa (ver `_on_completed`). Fica fora de `configure` porque o módulo só cria quem tira a consequência (o
-## `SocialActions`) depois de ligar o quadro.
-func set_completion_hook(on_completed: Callable) -> void:
-	_on_completed = on_completed
 
 
 ## Começa uma ação de um NPC em S0: o runner confere as condições e fixa o fim; em vez de contar o tempo, o quadro emite o Intent
@@ -115,12 +105,12 @@ func has_pending(npc_id: int) -> bool:
 
 
 ## Recebe o resultado da apresentação em `now`. Resultado que não casa com o Intent pendente do NPC (outra ação, tempo limite já
-## vencido, NPC fora de S0) é DESCARTADO e contado (NPC_RESULT_STALE), sem mudar nada. Sucesso (ARRIVED ou DONE): os efeitos entram uma
-## vez pela função única, o aviso de ação completa sai (LW-070c) e o NPC fica livre; BLOCKED e CANCELLED: a ação é cancelada sem efeito, sem
-## aviso, e o NPC fica livre. Em todos os casos aceitos a posição final vira o último relato do corpo. Desfecho que não combina com o tipo,
-## ou posição inválida: recusado, o Intent continua pendente (o tempo limite o cancela se a apresentação não corrigir). O Result de sucesso
-## vale também para BLOCKED e CANCELLED;
-## `NPC_ACTION_FAILED` é a falha por regra do runner (uma condição deixou de valer ao terminar): o Intent foi consumido e nada entrou.
+## vencido, NPC fora de S0) é DESCARTADO e contado (NPC_RESULT_STALE), sem mudar nada. Sucesso (ARRIVED ou DONE): o Intent é solto e a ação só
+## tem o fim MARCADO (LW-070d); os efeitos e o aviso de ação completa saem no pensamento seguinte, quando o pensador a encerra pelo `advance`,
+## na mesma ordem do modo sem corpo. BLOCKED e CANCELLED: a ação é cancelada na hora, sem efeito e sem aviso, e o NPC fica livre. Em todos os
+## casos aceitos a posição final vira o último relato do corpo. Desfecho que não combina com o tipo, ou posição inválida: recusado, o Intent
+## continua pendente (o tempo limite o cancela se a apresentação não corrigir). O Result é de sucesso também para BLOCKED e CANCELLED; a
+## falha por regra do runner (`NPC_ACTION_FAILED`, uma condição deixou de valer ao terminar) NÃO volta mais por aqui: aparece no pensamento seguinte.
 func report_result(result: NpcActionResult, now: int) -> Result:
 	if not is_configured():
 		return _unconfigured("report_result")
@@ -146,14 +136,9 @@ func report_result(result: NpcActionResult, now: int) -> Result:
 		return reported
 	if not result.is_success():
 		return _runner.cancel_action(npc_id, intent.action_serial)
-	# LW-070c: o id da ação é lido ANTES de `finish_embodied`, que a limpa. O aviso sai só se o runner diz que a ação COMPLETOU (não se falhou na conferência
-	# final), depois de os efeitos entrarem e antes de o módulo acordar o NPC para pensar.
-	var state: NpcState = _states[npc_id]
-	var action_id: String = state.action_id
-	var finished: ActionRunner.AdvanceResult = _runner.finish_embodied(npc_id, intent.action_serial, now)
-	if finished.outcome == ActionRunner.Outcome.COMPLETED and _on_completed.is_valid():
-		_on_completed.call(npc_id, action_id, state.place_id, now)
-	return finished.result
+	# LW-070d: só marca o fim. Fechar a ação aqui, na hora do relato, fazia o segundo parceiro de uma conversa que termina no mesmo minuto não achar
+	# ninguém falando; quem encerra é o pensador (`advance`), NPC por NPC na ordem da fila, e é ele que chama o gancho social, como no modo sem corpo.
+	return _runner.mark_embodied_end(npc_id, intent.action_serial, now).result
 
 
 ## Posições do corpo em lote (NPC -> posição em metros), no máximo uma vez a cada 6 quadros de física [HIP]. Cada posição é

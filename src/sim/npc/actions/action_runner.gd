@@ -188,21 +188,23 @@ func advance(npc_id: int, now: int) -> AdvanceResult:
 	return AdvanceResult.new(Result.success(), Outcome.COMPLETED)
 
 
-## Modo S0 (LW-070): a apresentação devolveu SUCESSO para a ação de contador `action_serial`. Termina a ação pelo MESMO caminho do
-## `advance`, então os efeitos entram pela função única e o resultado é o do modo S1: necessidades levadas até o fim, efeitos
-## completos, chegada, NPC livre. Se o corpo foi mais rápido que o planejado, o fim passa a ser `now` (a ação acabou antes) e as
-## necessidades vão só até aí. Contador que não confere (ação já terminada, cancelada ou mais nova): NPC_ACTION_STALE, nada muda.
-func finish_embodied(npc_id: int, action_serial: int, now: int) -> AdvanceResult:
-	var found: Result = _ready_status("finish_embodied")
+## Modo S0 (LW-070d; antes, LW-070, era `finish_embodied`): a apresentação devolveu SUCESSO para a ação de contador `action_serial`. Só MARCA o fim:
+## o fim previsto passa a ser o menor entre ele e `now` (corpo mais rápido que o planejado: a ação acabou antes; resultado atrasado: vale o fim
+## planejado) e NADA mais muda. Quem encerra a ação é o `advance` do pensador, no pensamento seguinte, pelo MESMO caminho do modo S1: necessidades
+## levadas até o fim, efeitos completos pela função única, chegada e NPC livre, com o aviso de ação completa e a decisão da próxima ação na mesma
+## passada. Fechar aqui, na hora do relato, deixava o parceiro de uma conversa que termina no mesmo minuto sem ninguém falando. Devolve RUNNING
+## (a ação segue até o `advance`). Contador que não confere (ação já terminada, cancelada ou mais nova): NPC_ACTION_STALE, nada muda.
+func mark_embodied_end(npc_id: int, action_serial: int, now: int) -> AdvanceResult:
+	var found: Result = _ready_status("mark_embodied_end")
 	if not found.ok:
 		return AdvanceResult.new(found, Outcome.NONE)
 	if not _states.has(npc_id):
-		return AdvanceResult.new(_unknown_npc("finish_embodied", npc_id), Outcome.NONE)
+		return AdvanceResult.new(_unknown_npc("mark_embodied_end", npc_id), Outcome.NONE)
 	var state: NpcState = _states[npc_id]
 	if state.action_id.is_empty() or state.action_serial != action_serial:
-		return AdvanceResult.new(_stale_action("finish_embodied", state, action_serial), Outcome.NONE)
+		return AdvanceResult.new(_stale_action("mark_embodied_end", state, action_serial), Outcome.NONE)
 	state.action_ends_at = mini(state.action_ends_at, now)
-	return advance(npc_id, now)
+	return AdvanceResult.new(Result.success(), Outcome.RUNNING)
 
 
 ## Modo S0 (LW-070): cancela a ação de contador `action_serial` SEM aplicar efeito algum (BLOCKED ou CANCELLED da apresentação, ou
