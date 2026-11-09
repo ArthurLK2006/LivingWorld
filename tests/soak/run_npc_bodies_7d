@@ -1,0 +1,10 @@
+#!/bin/sh
+# LW-072h: 7 dias de jogo dos corpos contra o gêmeo sem corpos (cerca de um minuto, sem janela). Imprime a tabela S1 contra S0.
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+exec "$godot_bin" --headless --path "$project_dir" -s res://addons/gut/gut_cmdln.gd "-gtest=res://tests/soak/npc_bodies/soak_npc_bodies_7d.gd" -gexit
