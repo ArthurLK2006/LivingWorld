@@ -145,6 +145,13 @@ func peek_opinion(a_id: int, b_id: int) -> OpinionQuery:
 	return _notables.peek_opinion(a_id, b_id)
 
 
+## As relações do NPC, em CÓPIAS (LW-082b; painel de depuração): uma por pessoa que ele conhece, em ordem crescente do ID da outra, cada uma com as cinco
+## dimensões de HOJE (a mesma conta de `peek_opinion`), o rótulo, o minuto em que se conheceram e se a outra pessoa está viva. No máximo `relations_capacity`
+## por NPC. Cidadão sem relação ou NPC morto: lista vazia, com sucesso. ID inexistente: falha tratada. Só lê.
+func peek_relations(npc_id: int) -> NpcRelationsQuery:
+	return _notables.peek_relations(npc_id)
+
+
 ## Ajusta (ou cria, o "se conheceram") a relação do par somando `deltas` (cinco, na ordem de NpcRelation.DIM_IDS) (LW-079). Comando de DEPURAÇÃO:
 ## só em build de desenvolvimento; fora dele, `NPC_DEV_ONLY` e nada muda. As ações sociais (LW-080) e a conversa com o jogador (LW-083) ajustam
 ## pelo mesmo caminho interno (`NpcNotables.adjust_relation`).
@@ -214,6 +221,15 @@ func explain_decision(npc_id: int) -> DecisionTracer.Explanation:
 ## IDs dos NPCs em ordem crescente.
 func peek_npc_ids() -> Array[int]:
 	return _sorted_ids()
+
+
+## Os ids das necessidades na ordem dos dados (`order` de data/needs.json), em CÓPIA (LW-082b; o painel de depuração nomeia com eles os valores de `peek_npc`).
+## Módulo sem definições de necessidade: lista vazia.
+func peek_need_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for def: NeedDef in _need_defs:
+		ids.append(def.id)
+	return ids
 
 
 ## Jogo novo (LW-067): cria a população inicial do plano de `Definitions.population`, em ordem fixa, com os traços sorteados no fluxo
