@@ -308,3 +308,37 @@ func _missing_game(caller: String) -> Result:
 
 func _missing_terrain(caller: String) -> Result:
 	return Result.failure(CODE_NO_TERRAIN, "SimBridge.%s: terreno não carregado; esperado um TerrainData ao criar a ponte." % caller)
+
+
+
+# ---------------------------------------------------------------------------------------------------- Inspeção de NPC (LW-082c)
+# Consultas só de leitura para o painel de depuração (docs/modules/bridge.md, "Inspeção de NPC"; docs/modules/tools.md). A conta fica em `BridgeNpcInspect`;
+# aqui só se confere a ponte sem `npc` ou sem jogo e se delega. Cada resposta traz cópias e nenhuma exige terreno.
+
+## A lista de todos os NPCs, inclusive os mortos e os sem corpo, em ordem crescente de id. Sem `npc`: BRIDGE_NO_NPC.
+func peek_npc_roster() -> BridgeInspectReplies.NpcRosterReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcRosterReply.new(_missing_npc("peek_npc_roster"))
+	return BridgeNpcInspect.roster(_npc)
+
+
+## O detalhe de um NPC (necessidades, ação, ofício, nível S0 ou S1 e a ação da rotina agora). Sem `npc`: BRIDGE_NO_NPC; sem jogo: BRIDGE_NO_GAME (a hora
+## vem do relógio da simulação); NPC inexistente: NPC_UNKNOWN, do `npc`.
+func peek_npc_detail(npc_id: int) -> BridgeInspectReplies.NpcDetailReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcDetailReply.new(_missing_npc("peek_npc_detail"))
+	var clock: SimClock = _clock()
+	if clock == null:
+		return BridgeInspectReplies.NpcDetailReply.new(_missing_game("peek_npc_detail"))
+	return BridgeNpcInspect.detail(_npc, npc_id, clock.hour_of_day())
+
+
+## Os contadores globais: hora, NPCs por camada e nível, vivos e mortos, Intents pendentes e os problemas do `validate()` do mundo. Sem `npc`:
+## BRIDGE_NO_NPC; sem jogo: BRIDGE_NO_GAME. [LIM] o custo do `validate()` do mundo inteiro não foi medido.
+func peek_simulation_summary() -> BridgeInspectReplies.SimSummaryReply:
+	if _npc == null:
+		return BridgeInspectReplies.SimSummaryReply.new(_missing_npc("peek_simulation_summary"))
+	var time: BridgeReplies.TimeSnapshot = peek_time()
+	if not time.result.ok:
+		return BridgeInspectReplies.SimSummaryReply.new(time.result)
+	return BridgeNpcInspect.summary(_npc, time, _host.runner.world.validate())
