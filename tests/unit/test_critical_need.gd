@@ -4,6 +4,8 @@ extends GutTest
 ## evento `NpcDied(npc_id, cause, tier)` publicado. Com comida o NPC não morre. Salvar e carregar com NPC morto funciona; consultas ao morto não
 ## falham. Mundo de teste montado à mão; os limites de teste são 24 h (enfraquece) e 72 h (morre), os mesmos de data/needs.json.
 
+## Velocidade de caminhada fixada na antiga (8400 cm/min): este teste mede a lógica, não a velocidade padrão; a velocidade padrão (500 cm/min, DEC-123) é coberta em test_action_runner.gd.
+const WALK_SPEED_CM_PER_MIN: int = 8400
 const VILLAGE: String = "village_a"
 const HOME: String = "home_a1"
 const WORK: String = "work_a1"
@@ -94,6 +96,7 @@ func _module(food: ActionConditionProvider, start_hunger: int = 95, hunger_rate:
 		traits.append(TraitLoader.TraitDef.new(TRAIT_IDS[position], position))
 	definitions.traits = traits
 	definitions.params = _params()
+	definitions.walk_speed_cm_per_min = WALK_SPEED_CM_PER_MIN
 	definitions.places = _places()
 	definitions.food = food
 	return NpcModule.new(_need_defs(start_hunger, hunger_rate), _routine(), definitions)
