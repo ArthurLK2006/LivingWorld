@@ -241,7 +241,7 @@ Continuam valendo N1, P1 e a direção P3; DEC-122 e DEC-123 seguem **só propos
 - **Causa dos 6 trancos** da execução 4.
 - **O jogo real com os corpos ligados** (LW-072).
 - **Causa do ritmo de 120 quadros por segundo** numa tela de 60 Hz.
-- **Folga real por quadro:** o vsync esconde a folga na média (resposta 1).
+- **Folga real por quadro:** a média de 8,33 a 8,37 ms não mede folga, porque os quadros não são uniformes (em 12 dos 13 ensaios a mediana fica acima da média) e a causa do ritmo de cerca de 120 quadros por segundo numa tela de 60 Hz continua NÃO SEI (resposta 1).
 - **Causa dos trancos** na entrada do povoado (pool, LOD ou terreno): sem medição por seção.
 - **Caminhada longa A → B em S0** e o tempo limite: nenhum ensaio fez; continua só na conta.
 - **Por que a N2 falha na r4** (resposta 4).
