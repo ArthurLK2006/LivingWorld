@@ -8,9 +8,15 @@ extends Node
 @export var environment_path: NodePath = ^"../Environment"
 @export var sun_path: NodePath = ^"../Sun"
 
+## [HIP] Segundos reais de um minuto simulado a 1x: o ritmo do relógio (SimClock.DEFAULT_REAL_MS_PER_MINUTE = 1250 ms), copiado
+## aqui só para a fração do minuto andar na mesma velocidade; a hora oficial continua vindo da ponte.
+const REAL_SECONDS_PER_MINUTE_AT_1X: float = 1.25
+
 var _bridge: SimBridge
-## Minuto simulado da última luz aplicada: parado ou pausado, nada é reaplicado.
+## Minuto simulado da última luz aplicada.
 var _last_total_minutes: int = -1
+## Quanto do minuto simulado atual já passou (0 a 1, exclusive), contado pelos quadros; zera a cada virada de minuto.
+var _minute_fraction: float = 0.0
 var _time_failure_reported: bool = false
 
 
@@ -28,13 +34,19 @@ func _ready() -> void:
 	refresh()
 
 
-func _process(_delta: float) -> void:
-	refresh()
+func _process(delta: float) -> void:
+	refresh(delta)
 
 
-## Lê a hora pela ponte e aplica a luz da curva do dia e da noite; só reaplica quando o minuto simulado muda.
-## Se a hora falhar: push_error uma vez e a luz fica como está. Devolve falso se nada foi aplicado.
-func refresh() -> bool:
+## Quanto do minuto simulado atual já passou (0 a 1, exclusive).
+func minute_fraction() -> float:
+	return _minute_fraction
+
+
+## Lê a hora pela ponte e aplica a luz da curva do dia e da noite. A hora usada é a oficial mais a fração do minuto, que
+## cresce com `frame_delta` (segundos reais do quadro) na velocidade atual e CONGELA pausado; a virada de minuto zera a fração.
+## Só reaplica quando a hora usada muda. Se a hora falhar: push_error uma vez e a luz fica como está. Devolve falso se nada foi aplicado.
+func refresh(frame_delta: float = 0.0) -> bool:
 	if _bridge == null:
 		return false
 	var time: BridgeReplies.TimeSnapshot = _bridge.peek_time()
@@ -44,10 +56,17 @@ func refresh() -> bool:
 			push_error("AmbientRig: hora simulada indisponível (%s): %s A luz fica como está." % [time.result.code, time.result.message])
 		return false
 	_time_failure_reported = false
+	var fraction: float = 0.0
 	if time.total_minutes == _last_total_minutes:
-		return true
+		fraction = _minute_fraction
+		if not time.is_paused:
+			fraction += maxf(frame_delta, 0.0) * float(time.speed) / REAL_SECONDS_PER_MINUTE_AT_1X
+		fraction = clampf(fraction, 0.0, DayNightCycle.MAX_MINUTE_FRACTION)
+		if fraction == _minute_fraction:
+			return true
 	_last_total_minutes = time.total_minutes
-	return apply_state(DayNightCycle.state_at(config, DayNightCycle.fractional_hour(time.hour_of_day, time.minute_of_hour)))
+	_minute_fraction = fraction
+	return apply_state(DayNightCycle.state_at(config, DayNightCycle.fractional_hour(time.hour_of_day, time.minute_of_hour, fraction)))
 
 
 ## Resolve os nós pelos caminhos e aplica o recurso. Falha visível (push_error) se faltar nó ou recurso válido.
