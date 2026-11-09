@@ -95,7 +95,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
 	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown)
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine)
-	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown)
+	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
 
 
 func setup(ctx: SimContext) -> void:
@@ -164,7 +164,8 @@ func request_adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> 
 ## O jogador (`actor_id`, em `actor_position_m`) pede para conversar com o NPC (LW-083b). Confere, nesta ordem: NPC inexistente, morto, sem corpo (`NPC_NOT_IN_S0`),
 ## posição inválida (`NPC_INVALID_POSITION`), longe (`NPC_TALK_TOO_FAR`, até 3 m do corpo), ocupado (`NPC_TALK_BUSY`: dormindo, fugindo, ajudando ou em alarme) e cooldown
 ## (`NPC_TALK_COOLDOWN`, 60 min). Recusado, NADA muda. Aceito: o NPC interrompe o que fazia, para onde está e conversa (ação `talk_player`), e `text_key` é a chave do
-## texto: `first` ou `known`. Promoção, relação e memória são da LW-083c (`was_promoted` é falso). Módulo sem `setup()`: `NPC_NOT_READY`.
+## texto: `first` ou `known`. Na mesma chamada (LW-083c) o NPC é promovido a T2 se houver vaga (`was_promoted`), a relação com o jogador sobe e, sendo T2, a memória `conversation`
+## é gravada. Antes de tudo o ator é conferido: ID fora da faixa ou NPC é recusado. Módulo sem `setup()`: `NPC_NOT_READY`.
 func request_converse(actor_id: int, actor_position_m: Vector3, npc_id: int) -> ConverseResult:
 	if _ctx == null:
 		return ConverseResult.new(Result.failure(CODE_NOT_READY, "NpcModule.request_converse: módulo sem setup() (sem relógio); esperado um módulo registrado no World."), "", false)
@@ -489,7 +490,7 @@ class OpinionQuery:
 
 
 ## Resultado de `request_converse`: `result.ok` diz se a conversa começou; só então `text_key` vale (a CHAVE do texto, nunca o texto, DEC-036). `was_promoted`: o NPC virou
-## notável nesta conversa (LW-083c; hoje sempre falso).
+## notável nesta conversa (LW-083c).
 class ConverseResult:
 	extends RefCounted
 
