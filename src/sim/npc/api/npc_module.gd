@@ -9,9 +9,13 @@ extends SimModule
 ## `Definitions` (catálogo, traços, parâmetros, serviço de locais e, opcional, o provedor de comida) o módulo DECIDE: `tick` roda a fila de
 ## pensamento (NpcThinker) e toda ação começa pela função única `_start_action` (ponto de extensão do modo S0, LW-070). Sem `Definitions`
 ## (padrão) o `tick` não faz nada. LW-077: `request_promote` e `request_demote` (NpcTiers) mudam o tier entre T1 e T2 com teto global `max_t2`.
-## LW-078: memória dos notáveis (`NpcMemory`, uma por NPC T2, salva junto): `peek_memories`, gravação por `_record_memory`, descarte na morte e
+## LW-078: memória dos notáveis (`NpcMemory`, uma por NPC T2, salva junto): `peek_memories`, gravação por `NpcNotables.record_memory`, descarte na morte e
 ## resumo em traços ao rebaixar. LW-079: relações entre pessoas (`RelationGraph`, uma por par, salva junto): `peek_opinion`, ajuste por
-## `_adjust_relation`, descarte na morte e arrumação ao rebaixar. Dependências: só core, `world` e a própria pasta; não importa o `character`.
+## `NpcNotables.adjust_relation`, descarte na morte e arrumação ao rebaixar. LW-081a: o código foi dividido em classes ajudantes (docs/modules/npc.md, "Organização
+## interna"); o módulo segue como a ÚNICA porta e só delega: `NpcBodies` (passo 1) cuida do LOD, dos Intents e do interruptor de corpos; `NpcNotables`
+## (passo 2), da memória, das relações e dos tiers; `NpcPersistence` (passo 3), de salvar, carregar, conferir e resumir; `NpcLifecycle` (passo 4), de criar, remover e
+## matar; `NpcDecisionRuntime` (passo 5), da montagem do pensador e de `_start_action`. Dependências: só core, `world` e a própria pasta; não importa o
+## `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -53,24 +57,23 @@ var _need_defs: Array[NeedDef] = []
 var _defs_problem: String = ""
 var _routine: RoutineTable
 var _definitions: Definitions
-## Fluxo de decisão (LW-063): montado no primeiro `tick`, só se as definições estão completas. `_decision_problem` diz por que não.
-var _decision_checked: bool = false
-var _decision_problem: String = ""
 ## Por que a população inicial não nasceu (vazio = nasceu, ou não havia plano). Não é salvo: só aparece no debug_summary().
 var _population_problem: String = ""
 ## Rastro de decisão dos NPCs marcados (LW-064): só para olhar, não é salvo nem entra no hash.
 var _tracer: DecisionTracer = DecisionTracer.new()
-var _runner: ActionRunner
-var _provider: NpcThinker.ConditionProvider
-var _thinker: NpcThinker
-## Consequências sociais de `talk` e `help` (LW-080): montado junto com o pensador, que avisa quando uma ação termina.
-var _social: SocialActions
 ## A tabela é UMA só e vive o tempo todo do módulo: o runner, a ocupação e o pensador a recebem por referência (on_load a atualiza no lugar).
 var _npcs: Dictionary[int, NpcState] = {}
-## Memória dos NPCs notáveis (LW-078), por npc_id: só tem entrada quem já guardou algo. Salva junto (chave `memories`).
-var _memories: Dictionary[int, NpcMemory] = {}
-## Relações entre pessoas (LW-079): uma por par, numa tabela só. Salva junto (chave `relations`).
-var _relations: RelationGraph = RelationGraph.new()
+## Corpos (LW-081a, passo 1): LOD, Intents, interruptor de corpos, relato do corpo e espera do corpo atrasado. Criado no construtor.
+var _bodies: NpcBodies
+## Notáveis (LW-081a, passo 2): memória (LW-078), relações (LW-079), promoção e rebaixamento (LW-077) e o descarte na morte. Dona das tabelas de memória e de
+## relações, que são salvas junto (chaves `memories` e `relations`). Criada no construtor.
+var _notables: NpcNotables
+## Estado para fora (LW-081a, passo 3): salvar, carregar, conferir e resumir, com o estoque de comida salvo. Criada no construtor.
+var _persistence: NpcPersistence
+## Vida e morte (LW-081a, passo 4): criar, remover, matar e conferir o pedido de criação. Criada no construtor.
+var _lifecycle: NpcLifecycle
+## Fluxo de decisão (LW-081a, passo 5): provedor, runner, pensador e ações sociais, montados no primeiro `tick`, e a função única que inicia uma ação.
+var _runtime: NpcDecisionRuntime
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -81,60 +84,42 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_routine = routine
 	_definitions = definitions
 	_defs_problem = "" if need_defs.is_empty() else NeedMath.definitions_problem(need_defs)
+	_bodies = NpcBodies.new(lod, intents, _npcs)
+	_notables = NpcNotables.new(_npcs, _definitions, _unknown)
+	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
+	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown)
+	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine)
 
 
 func setup(ctx: SimContext) -> void:
 	_ctx = ctx
-	_link_lod()
+	_bodies.setup(ctx, _definitions.lod_params if _definitions != null else null)
+	_notables.setup(ctx)
+	_persistence.setup(ctx)
+	_lifecycle.setup(ctx)
+	_runtime.setup(ctx)
 
 
 ## Cria um NPC (ID novo de ctx.ids). Confere o pedido inteiro ANTES de gastar um ID: pedido recusado não altera nada.
 func request_create_npc(spec: NpcSpec) -> CreateResult:
-	if _ctx == null:
-		return CreateResult.new(Result.failure(CODE_NOT_READY, "NpcModule.request_create_npc: módulo sem setup() (sem relógio nem IDs); esperado um módulo registrado no World."), IdGenerator.NO_ID)
-	if not _defs_problem.is_empty():
-		return CreateResult.new(Result.failure(CODE_NOT_READY, "NpcModule.request_create_npc: definições de necessidades inválidas: %s." % _defs_problem), IdGenerator.NO_ID)
-	var problem: String = _spec_problem(spec)
-	if not problem.is_empty():
-		return CreateResult.new(Result.failure(CODE_INVALID_SPEC, "NpcModule.request_create_npc: pedido inválido: %s." % problem), IdGenerator.NO_ID)
-	if spec.tier == NpcState.TIER_NOTABLE and not NpcTiers.has_room(NpcTiers.count_notable_alive(_npcs), _max_notable()):
-		return CreateResult.new(Result.failure(NpcTiers.CODE_T2_LIMIT_REACHED, "NpcModule.request_create_npc: já há %d NPC(s) notável(is) vivo(s) e o teto (max_t2) é %d; esperado um pedido com tier %d ou uma vaga livre." % [NpcTiers.count_notable_alive(_npcs), _max_notable(), NpcState.TIER_NORMAL]), IdGenerator.NO_ID)
-	var npc_id: int = _ctx.ids.next_id()
-	if npc_id == IdGenerator.NO_ID:
-		return CreateResult.new(Result.failure(CODE_NO_ID, "NpcModule.request_create_npc: o contador de IDs esgotou; não há ID novo."), IdGenerator.NO_ID)
-	if _npcs.has(npc_id):
-		return CreateResult.new(Result.failure(CODE_DUPLICATE_ID, "NpcModule.request_create_npc: o ID novo %d já pertence a um NPC (save inconsistente); nada foi sobrescrito." % npc_id), IdGenerator.NO_ID)
-	var created: NpcState = NpcState.from_spec(npc_id, spec, _ctx.clock.total_minutes(), _start_needs())
-	created.next_think_time = _first_think_time(npc_id, _ctx.clock.total_minutes())
-	_npcs[npc_id] = created
-	return CreateResult.new(Result.success(), npc_id)
+	return _lifecycle.create(spec)
 
 
 ## Remove o NPC da tabela. O ID não volta: o contador do core só sobe.
 func request_remove_npc(npc_id: int) -> Result:
-	if not _npcs.has(npc_id):
-		return _unknown("request_remove_npc", npc_id)
-	_npcs.erase(npc_id)
-	_memories.erase(npc_id)
-	_relations.remove_involving(npc_id)
-	_tracer.forget(npc_id)
-	return Result.success()
+	return _lifecycle.remove(npc_id)
 
 
 ## Promove o NPC de T1 a T2 (LW-077; `tier` precisa ser 2). Teto global `max_t2` dos parâmetros: cheio, `NPC_T2_LIMIT_REACHED` e ninguém é
 ## expulso. Só muda o tier: identidade, ofício e rotina ficam como estavam. Regras completas em `NpcTiers.promote`.
 func request_promote(npc_id: int, tier: int) -> Result:
-	if not _npcs.has(npc_id):
-		return _unknown("request_promote", npc_id)
-	return NpcTiers.promote(_npcs[npc_id], tier, NpcTiers.count_notable_alive(_npcs), _max_notable())
+	return _notables.promote(npc_id, tier)
 
 
 ## Rebaixa o NPC de T2 a T1 (LW-077; `tier` precisa ser 1) e libera a vaga. Antes de mudar o tier (o NPC ainda é notável) o módulo resume a
-## memória dele em traços permanentes (LW-078) e chama o ponto de extensão `Definitions.on_demote` (`_on_demoting`). Regras em `NpcTiers.demote`.
+## memória dele em traços permanentes (LW-078) e chama o ponto de extensão `Definitions.on_demote` (`NpcNotables`). Regras em `NpcTiers.demote`.
 func request_demote(npc_id: int, tier: int) -> Result:
-	if not _npcs.has(npc_id):
-		return _unknown("request_demote", npc_id)
-	return NpcTiers.demote(_npcs[npc_id], tier, _on_demoting)
+	return _notables.demote(npc_id, tier)
 
 
 ## Grava um episódio na memória de um NPC notável (LW-078). Comando de DEPURAÇÃO: só em build de desenvolvimento (`Definitions.is_development_build`);
@@ -142,22 +127,14 @@ func request_demote(npc_id: int, tier: int) -> Result:
 func request_record_memory(npc_id: int, kind_id: String, actor_ids: Array[int], place_id: String) -> Result:
 	if _definitions == null or not _definitions.is_development_build:
 		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_record_memory: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
-	return _record_memory(npc_id, kind_id, actor_ids, place_id)
+	return _notables.record_memory(npc_id, kind_id, actor_ids, place_id)
 
 
 ## As memórias do NPC, em CÓPIAS (LW-078): os registros, na ordem em que entraram, e os traços permanentes. `kind_filter` vazio = todos os
 ## tipos; um tipo que não existe nos dados é falha tratada. NPC cidadão (T1) devolve a lista de registros vazia (e os traços que guardou
 ## de quando era notável). ID inexistente: falha tratada.
 func peek_memories(npc_id: int, kind_filter: String = "") -> MemoriesQuery:
-	if not _npcs.has(npc_id):
-		return MemoriesQuery.new(_unknown("peek_memories", npc_id), [], [])
-	var known_kinds: Array[String] = _known_kind_ids()
-	if not kind_filter.is_empty() and not known_kinds.is_empty() and not known_kinds.has(kind_filter):
-		return MemoriesQuery.new(_unknown_kind("peek_memories", kind_filter, known_kinds), [], [])
-	var memory: NpcMemory = _memories.get(npc_id)
-	if memory == null:
-		return MemoriesQuery.new(Result.success(), [], [])
-	return MemoriesQuery.new(Result.success(), memory.copy_records(kind_filter), memory.copy_traits())
+	return _notables.peek_memories(npc_id, kind_filter)
 
 
 ## O que `a_id` pensa de `b_id` (LW-079): se se conhecem, as cinco dimensões de HOJE (já com o decaimento diário), o rótulo (conhecido, amigo ou
@@ -165,33 +142,16 @@ func peek_memories(npc_id: int, kind_filter: String = "") -> MemoriesQuery:
 ## ser um NPC; quem não é NPC (o jogador) conta como vivo. NPC morto não tem relações (a morte as descarta): "não se conhecem" e `other_is_alive`
 ## falso. Pedido sem sentido (ID fora da faixa ou a mesma pessoa): falha tratada.
 func peek_opinion(a_id: int, b_id: int) -> OpinionQuery:
-	for person_id: int in [a_id, b_id]:
-		if person_id < IdGenerator.FIRST_ID or person_id > IdGenerator.MAX_ID:
-			return OpinionQuery.new(Result.failure(RelationGraph.CODE_INVALID, "NpcModule.peek_opinion: ID %d fora da faixa [%d, %d]." % [person_id, IdGenerator.FIRST_ID, IdGenerator.MAX_ID]))
-	if a_id == b_id:
-		return OpinionQuery.new(Result.failure(RelationGraph.CODE_INVALID, "NpcModule.peek_opinion: uma pessoa (%d) não tem relação com ela mesma." % a_id))
-	if not _npcs.has(a_id) and not _npcs.has(b_id):
-		return OpinionQuery.new(_unknown("peek_opinion", a_id))
-	var query: OpinionQuery = OpinionQuery.new(Result.success())
-	query.other_is_alive = not _npcs.has(b_id) or _npcs[b_id].is_alive
-	var relation: NpcRelation = _relations.find(a_id, b_id)
-	if relation == null:
-		return query
-	var rules: RelationGraph.Rules = _relation_rules()
-	query.is_known = true
-	query.values = relation.values_at(_today(), rules.decay_per_day)
-	query.label = RelationGraph.label_for(query.values[NpcRelation.DIM_AFFECTION], rules)
-	query.met_at = relation.met_at
-	return query
+	return _notables.peek_opinion(a_id, b_id)
 
 
 ## Ajusta (ou cria, o "se conheceram") a relação do par somando `deltas` (cinco, na ordem de NpcRelation.DIM_IDS) (LW-079). Comando de DEPURAÇÃO:
 ## só em build de desenvolvimento; fora dele, `NPC_DEV_ONLY` e nada muda. As ações sociais (LW-080) e a conversa com o jogador (LW-083) ajustam
-## pelo mesmo caminho interno (`_adjust_relation`).
+## pelo mesmo caminho interno (`NpcNotables.adjust_relation`).
 func request_adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> Result:
 	if _definitions == null or not _definitions.is_development_build:
 		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_adjust_relation: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
-	return _adjust_relation(a_id, b_id, deltas)
+	return _notables.adjust_relation(a_id, b_id, deltas)
 
 
 ## Resumo do NPC, em CÓPIA. ID inexistente devolve falha tratada, nunca derruba o jogo.
@@ -229,13 +189,7 @@ func request_raise_alarm(x_cm: int, z_cm: int, severity: int) -> Result:
 ## Reação ao evento `AlarmRaised` (LW-076): os NPCs vivos a até `alarm_radius_m` do ponto pensam já, em ordem de ID (a pressão de `safety` sobe,
 ## `flee` e `help` entram entre as candidatas e a ação atual é interrompida com efeito proporcional se uma reação vencer). Quem ignora segue a vida.
 func on_alarm_raised(event: SimEvent) -> void:
-	var raised: AlarmRaised = event as AlarmRaised
-	if raised == null or _definitions == null or _ctx == null or not _ensure_thinker():
-		return
-	var alarm: NpcThinker.Alarm = NpcThinker.Alarm.new(raised.x_cm, raised.z_cm, raised.severity)
-	var now: int = _ctx.clock.total_minutes()
-	for npc_id: int in _sorted_ids():
-		_thinker.react_to_alarm(npc_id, alarm, now)
+	_runtime.react_to_alarm(event, _sorted_ids())
 
 
 ## Marca ou desmarca o NPC para o rastro de decisão (LW-064). SÓ em build de desenvolvimento (`Definitions.is_development_build`); fora dele,
@@ -285,11 +239,8 @@ func on_new_game(_world_seed: int) -> void:
 ## A cada passo: a fila de pensamento (LW-063). Quem chegou no seu `next_think_time` pensa, até `max_thinks_per_step` por passo.
 func tick(_elapsed_minutes: int) -> void:
 	# Primeiro o LOD e os Intents (LW-069 e LW-070; funcionam sem `Definitions`); depois a fila de pensamento.
-	_tick_s0()
-
-	if _definitions == null or _ctx == null or not _ensure_thinker():
-		return
-	_thinker.run_step(_ctx.clock.total_minutes())
+	_bodies.tick()
+	_runtime.run_step()
 
 
 ## A ação da rotina do ofício na hora (0 a 23, a de SimClock.hour_of_day()). Sem rotina configurada, ofício desconhecido ou hora fora de
@@ -346,29 +297,13 @@ func request_clear_focus(focus_id: int) -> Result:
 	return lod.clear_focus(focus_id)
 
 
-## Interruptor de corpos (LW-070b; docs/modules/npc.md, seção 6). Só a apresentação sabe se existem corpos para os NPCs: sem eles, um NPC perto
-## do jogador esperaria para sempre um resultado que ninguém dá, e o mundo passaria a mudar só porque o jogador olhou. Com os corpos
-## INDISPONÍVEIS o LOD fica inerte (ninguém entra em S0, nenhum LodChanged sai, nenhuma ação nasce com Intent, `peek_pending_intents` fica vazio)
-## e o hash do mundo não depende do foco. É estado SÓ de memória: não é salvo nem entra no hash. O LOD que vem das `Definitions` (o jogo) nasce
-## SEM corpos, e a apresentação (LW-072) o liga; um módulo montado à mão, sem `Definitions` (os bancos de ensaio do LOD e do protocolo, onde o
-## teste faz o papel da apresentação), nasce com corpos, como era antes. Chamar `request_set_bodies_available` vale nos dois casos.
-var _bodies_available: bool = true
-
-
+## Interruptor de corpos (LW-070b; docs/modules/npc.md, seção 6): só a apresentação sabe se existem corpos para os NPCs; sem eles o LOD fica inerte e o
+## hash do mundo não depende do foco. O estado do interruptor mora no `NpcBodies` (LW-081a); o do jogo nasce SEM corpos e a apresentação (LW-072) o liga.
 ## Liga ou desliga os corpos. Desligar tira TODOS de S0 pelo mesmo caminho de quem se afasta (um LodChanged por NPC), solta os Intents pendentes
 ## e deixa cada ação seguir abstrata com o tempo que falta; os focos ficam guardados. Ligar de novo volta ao comportamento da LW-070a. Repetir o
 ## estado atual não faz nada. Módulo sem `setup()`: NPC_NOT_READY e nada muda.
 func request_set_bodies_available(available: bool) -> Result:
-	if _ctx == null:
-		return Result.failure(CODE_NOT_READY, "NpcModule.request_set_bodies_available: módulo sem setup() (sem relógio nem barramento de eventos); esperado um módulo registrado no World.")
-	if available == _bodies_available:
-		return Result.success()
-	_bodies_available = available
-	if not available:
-		var now: int = _ctx.clock.total_minutes()
-		_publish_lod_changes(lod.release_all(_npcs, now))
-		intents.expire(now)
-	return Result.success()
+	return _bodies.set_available(available)
 
 
 ## Protocolo de Intents do modo S0 (LW-070; docs/modules/npc.md, seção 6). Sem `configure_intents` ele fica desligado: nenhuma intenção sai
@@ -396,17 +331,7 @@ func peek_pending_intents() -> Array[NpcIntent]:
 ## seguinte, pela função única do runner (LW-070d); BLOCKED e CANCELLED cancelam a ação na hora, sem efeito; resultado de ação velha é descartado
 ## e contado (NPC_RESULT_STALE). Não devolve mais NPC_ACTION_FAILED: a falha por regra aparece no pensamento seguinte.
 func request_report_npc_result(result: NpcActionResult) -> Result:
-	if _ctx == null:
-		return Result.failure(CODE_NOT_READY, "NpcModule.request_report_npc_result: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
-	var now: int = _ctx.clock.total_minutes()
-	var npc_id: int = result.npc_id if result != null else IdGenerator.NO_ID
-	var was_embodied: bool = intents.has_pending(npc_id)
-	var reported: Result = intents.report_result(result, now)
-	# LW-070a: o Intent acabou (sucesso, BLOCKED ou CANCELLED): o NPC volta a pensar no minuto seguinte, no máximo. Resultado descartado ou
-	# recusado não mexe em nada.
-	if was_embodied and not intents.has_pending(npc_id):
-		_wake_thinking(npc_id, now)
-	return reported
+	return _bodies.report_result(result)
 
 
 ## Posições dos corpos em S0, em lote (NPC -> posição em metros), vindas da ponte. Cada posição vale por si (ver NpcIntentBoard).
@@ -414,316 +339,28 @@ func request_report_npc_positions(batch: Dictionary[int, Vector3]) -> Result:
 	return intents.report_positions(batch)
 
 
-## LOD e Intents de cada passo (LW-069 e LW-070), chamados pelo começo de `tick`: reclassifica os NPCs (S1 e S0), publica LodChanged só nas
-## trocas e vence os Intents sem resultado. NÃO depende de `Definitions` (os testes do LOD montam o módulo sem elas). Com os corpos
-## indisponíveis (LW-070b) não faz nada: o LOD inerte não gasta nem ID de evento.
-func _tick_s0() -> void:
-	if _ctx == null or not _bodies_available:
-		return
-	var now: int = _ctx.clock.total_minutes()
-	_publish_lod_changes(lod.update(_npcs, now))
-	# LW-070: depois da reclassificação, vence os Intents sem resultado e solta os de quem saiu de S0.
-	intents.expire(now)
-	_hold_embodied_thinking(now)
-
-
-func _publish_lod_changes(changes: Array[NpcLod.Change]) -> void:
-	for change: NpcLod.Change in changes:
-		_ctx.events.publish(LodChanged.new(change.npc_id, change.from_level, change.to_level))
-
-
-## LW-070b (antes, LW-070a: o NPC com Intent pendente nunca pensava): o NPC com corpo PENSA como qualquer outro enquanto a ação está dentro do
-## tempo previsto, para reavaliar por necessidade urgente ou crítica, alarme, fim do bloco da rotina e morte (o `EmbodiedActionRunner` faz o
-## pensador respeitar o corpo: o tempo não encerra a ação e trocá-la é cancelá-la). Passado o FIM PREVISTO o corpo está atrasado: aí o NPC só
-## espera o resultado ou o tempo limite do Intent, e o próximo pensamento dele fica no minuto seguinte (o pensador encerraria a ação pelo
-## relógio, ou a trocaria por uma de quem ainda não chegou). Quando o Intent acaba, ele já está no ponto de pensar: por resultado,
-## `request_report_npc_result` o acorda; por tempo limite ou saída de S0, `expire` (acima) o libera e ele pensa neste mesmo passo, porque o
-## pensador roda depois.
-func _hold_embodied_thinking(now: int) -> void:
-	for npc_id: int in intents.pending_ids():
-		var state: NpcState = _npcs.get(npc_id)
-		if state != null and state.action_ends_at <= now:
-			state.next_think_time = now + 1
-
-
-## LW-070a: liga o LOD com os parâmetros das definições (nulos = LOD desligado, como nos testes que montam o módulo sem elas). Fica no `setup`
-## e não no ponto do pensador porque o primeiro relato de posição do jogador chega ANTES do primeiro passo (o pensador só é montado no primeiro
-## `tick`) e o foco falharia com NPC_LOD_NOT_CONFIGURED.
-func _link_lod() -> void:
-	if _definitions == null or _definitions.lod_params == null:
-		return
-	# LW-070b: o LOD do jogo nasce SEM corpos; só a apresentação sabe se eles existem (request_set_bodies_available).
-	_bodies_available = false
-	var linked: Result = lod.configure(_definitions.lod_params)
-	if not linked.ok:
-		push_error("NpcModule.setup: LOD não ligado: %s" % linked.message)
-
-
-## LW-070a: liga o protocolo de Intents ao MESMO `ActionRunner` do pensador (nunca a um segundo: um só caminho de efeitos). Sem parâmetros de
-## Intent nas definições nenhuma ação nasce com Intent. Texto vazio = ligou (ou não havia o que ligar); senão, o motivo.
-func _link_intents(runner: ActionRunner) -> String:
-	if _definitions.intent_params == null:
-		return ""
-	var linked: Result = intents.configure(runner, _npcs, _definitions.places, _definitions.intent_params)
-	return "" if linked.ok else "Intents (modo S0): %s" % linked.message
-
-
-## LW-070a: o Intent do NPC acabou por resultado; ele volta a pensar no minuto seguinte, no máximo.
-func _wake_thinking(npc_id: int, now: int) -> void:
-	var state: NpcState = _npcs.get(npc_id)
-	if state != null:
-		state.next_think_time = mini(state.next_think_time, now + 1)
-
-
 ## IDs viram texto (assim o JSON guarda chaves) e entram em ordem crescente do número.
 func serialize() -> Dictionary:
-	var saved: Dictionary = {}
-	for npc_id: int in _sorted_ids():
-		saved[str(npc_id)] = _npcs[npc_id].to_dict()
-	var data: Dictionary = {KEY_NPCS: saved}
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		data[FoodStub.SAVE_KEY] = food_stub.serialize()
-	var saved_memories: Dictionary = NpcMemory.table_to_dict(_memories)
-	if not saved_memories.is_empty():
-		data[KEY_MEMORIES] = saved_memories
-	if not _relations.is_empty():
-		data[KEY_RELATIONS] = _relations.to_array()
-	return data
+	return _persistence.serialize()
 
 
 ## Confere tudo antes de alterar o estado: se algo for inválido, o estado fica como estava. Só recusa o que não dá para converter
 ## (estrutura, tipos, chave de ID); faixas e coerência ficam com validate() (mesmo critério do `character`).
 func on_load(data: Dictionary) -> Result:
-	# Variant: valor cru do save (JSON); o tipo é conferido na linha seguinte.
-	var raw_npcs: Variant = data.get(KEY_NPCS)
-	if typeof(raw_npcs) != TYPE_DICTIONARY:
-		return _invalid_save("campo '%s' ausente ou não é um objeto (veio %s)" % [KEY_NPCS, type_string(typeof(raw_npcs))])
-	var entries: Dictionary = raw_npcs
-	var keys: Array = entries.keys()
-	keys.sort()
-	var loaded: Dictionary[int, NpcState] = {}
-	for key: Variant in keys:
-		var npc_id: int = _read_npc_id(str(key))
-		if npc_id == IdGenerator.NO_ID:
-			return _invalid_save("chave de NPC '%s' inválida; esperado um inteiro de %d a %d" % [str(key), IdGenerator.FIRST_ID, IdGenerator.MAX_ID])
-		if loaded.has(npc_id):
-			return _invalid_save("o NPC %d aparece duas vezes (chave '%s')" % [npc_id, str(key)])
-		var parsed: NpcState.ParseResult = NpcState.parse(npc_id, entries[key])
-		if parsed.state == null:
-			return _invalid_save("NPC %d: %s" % [npc_id, parsed.error])
-		loaded[npc_id] = parsed.state
-	var stock_problem: String = _food_stock_save_problem(data)
-	if not stock_problem.is_empty():
-		return _invalid_save(stock_problem)
-	var loaded_memories: NpcMemory.TableResult = NpcMemory.parse_table(data.get(KEY_MEMORIES, {}))
-	if not loaded_memories.error.is_empty():
-		return _invalid_save(loaded_memories.error)
-	var loaded_relations: RelationGraph.ParseResult = RelationGraph.parse(data.get(KEY_RELATIONS, []))
-	if not loaded_relations.error.is_empty():
-		return _invalid_save(loaded_relations.error)
-	_npcs.clear()
-	for loaded_id: int in loaded:
-		_npcs[loaded_id] = loaded[loaded_id]
-	_memories = loaded_memories.table
-	_relations = loaded_relations.graph
-	_load_food_stock(data)
-	_tracer.clear()
-	return Result.success()
+	return _persistence.on_load(data)
 
 
 ## Problemas do estado (lista vazia se estiver tudo certo). O ofício é conferido contra a tabela de rotina quando o módulo a tem (LW-061);
 ## local e ação ficam como texto: cada tarefa futura acrescenta a sua conferência.
 func validate() -> Array[String]:
-	var problems: Array[String] = []
-	if not _defs_problem.is_empty():
-		problems.append("Definições de necessidades inválidas: %s." % _defs_problem)
-	var next_id: int = _next_issued_id()
-	for npc_id: int in _sorted_ids():
-		var state: NpcState = _npcs[npc_id]
-		if npc_id < IdGenerator.FIRST_ID or npc_id > IdGenerator.MAX_ID:
-			problems.append("NPC %d: ID fora da faixa [%d, %d]." % [npc_id, IdGenerator.FIRST_ID, IdGenerator.MAX_ID])
-		elif _ctx != null and npc_id >= next_id:
-			problems.append("NPC %d: ID acima do contador do core (o próximo ID a sair é %d); esse ID nunca foi emitido." % [npc_id, next_id])
-		if state.tier != NpcState.TIER_NORMAL and state.tier != NpcState.TIER_NOTABLE:
-			problems.append("NPC %d: tier %d inválido; esperado %d ou %d." % [npc_id, state.tier, NpcState.TIER_NORMAL, NpcState.TIER_NOTABLE])
-		_append_range_problems(problems, npc_id, "necessidade", state.need_values, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
-		_append_range_problems(problems, npc_id, "resto de necessidade", state.need_remainders, 0, NeedMath.MAX_REMAINDER)
-		_append_range_problems(problems, npc_id, "traço", state.traits, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
-		if not state.is_alive and not state.action_id.is_empty():
-			problems.append("NPC %d: morto, mas com ação atual '%s'; esperado nenhuma." % [npc_id, state.action_id])
-		if state.next_think_time < 0:
-			problems.append("NPC %d: next_think_time %d negativo; esperado 0 ou mais." % [npc_id, state.next_think_time])
-		if state.critical_since < NpcState.NO_TIME:
-			problems.append("NPC %d: critical_since %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.critical_since, NpcState.NO_TIME])
-		if state.alarm_until < NpcState.NO_TIME:
-			problems.append("NPC %d: alarm_until %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.alarm_until, NpcState.NO_TIME])
-		if not state.is_alive and state.critical_since != NpcState.NO_TIME:
-			problems.append("NPC %d: morto, mas com critical_since %d; esperado %d." % [npc_id, state.critical_since, NpcState.NO_TIME])
-		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
-			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
-	var tier_problem: String = NpcTiers.limit_problem(NpcTiers.count_notable_alive(_npcs), _max_notable())
-	if not tier_problem.is_empty():
-		problems.append(tier_problem)
-	problems.append_array(NpcMemory.table_problems(_memories, _npcs, _memory_rules_or_null(), _known_kind_ids()))
-	problems.append_array(_relations.problems(_npcs, _relation_rules(), _today() if _ctx != null else -1))
-	for relation: NpcRelation in _relations.sorted_relations():
-		if relation.last_event_day < NpcRelation.NO_EVENT_DAY or (_ctx != null and relation.last_event_day > _today()):
-			problems.append("Relação %s: last_event_day %d fora de %d (nunca) a hoje." % [relation.key(), relation.last_event_day, NpcRelation.NO_EVENT_DAY])
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		problems.append_array(food_stub.validate())
-	return problems
+	return _persistence.validate()
 
 
 ## Contagens por tier, vivos e mortos, ofícios e o tamanho em bytes do serialize() (backlog I4). Só para depuração.
 func debug_summary() -> Dictionary:
-	var summary: Dictionary = peek_counts()
-	var by_occupation: Dictionary = {}
-	for npc_id: int in _sorted_ids():
-		var occupation: String = _npcs[npc_id].occupation_id
-		var label: String = occupation if not occupation.is_empty() else NO_OCCUPATION_LABEL
-		by_occupation[label] = int(by_occupation.get(label, 0)) + 1
-	var sorted_labels: Array = by_occupation.keys()
-	sorted_labels.sort()
-	var ordered: Dictionary = {}
-	for label: Variant in sorted_labels:
-		ordered[label] = by_occupation[label]
-	summary["by_occupation"] = ordered
-	summary["serialize_bytes"] = JSON.stringify(serialize()).to_utf8_buffer().size()
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		summary["food_stock"] = food_stub.serialize()
-	var memory_records: int = 0
-	var memory_traits: int = 0
-	for memory: NpcMemory in _memories.values():
-		memory_records += memory.records.size()
-		memory_traits += memory.traits.size()
-	summary["npcs_with_memory"] = _memories.size()
-	summary["memory_records"] = memory_records
-	summary["memory_traits"] = memory_traits
-	summary["relations"] = _relations.relations.size()
-	summary["population_problem"] = _population_problem
-	summary["bodies_available"] = _bodies_available
-	summary["traced_npcs"] = _tracer.traced_count()
-	summary["trace_records_made"] = _tracer.records_made
-	summary["decision_problem"] = _decision_problem_text()
-	summary["decision_enabled"] = _thinker != null
-	summary["thinks_last_step"] = _thinker.last_step_thinks if _thinker != null else 0
-	summary["max_thinks_in_a_step"] = _thinker.max_step_thinks if _thinker != null else 0
+	var summary: Dictionary = _persistence.debug_summary(peek_counts(), _population_problem)
+	_runtime.add_summary(summary)
 	return summary
-
-
-## Por que o módulo não decide (texto vazio = decide): sem `Definitions`, sem setup() ou com definições incompletas ou inválidas. Aparece no
-## debug_summary(), para o módulo nunca ficar parado em silêncio.
-func _decision_problem_text() -> String:
-	if _definitions == null:
-		return "o módulo foi criado sem as definições para decidir (NpcModule.Definitions)"
-	if _thinker != null:
-		return ""
-	if _ctx == null:
-		return "módulo sem setup()"
-	_ensure_thinker()
-	return _decision_problem
-
-
-## Monta o runner, o pontuador e o pensador na primeira vez que o `tick` roda. Falso (e `_decision_problem` preenchido) se faltar algo.
-func _ensure_thinker() -> bool:
-	if _thinker != null:
-		return true
-	if _decision_checked:
-		return false
-	_decision_checked = true
-	_decision_problem = _build_decision_runtime()
-	return _decision_problem.is_empty()
-
-
-## Texto vazio = montou; senão, o que falta ou está inválido.
-func _build_decision_runtime() -> String:
-	if _need_defs.is_empty() or not _defs_problem.is_empty():
-		return "faltam as definições de necessidades (ou estão inválidas)"
-	if _routine == null:
-		return "falta a tabela de rotina"
-	if _definitions.actions.is_empty():
-		return "falta o catálogo de ações"
-	if _definitions.params == null:
-		return "faltam os parâmetros do `npc` (npc_params.json)"
-	if _definitions.places == null:
-		return "falta o serviço de locais do `world`"
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		var food_problem: String = food_stub.check_references(_definitions.places, _routine.peek_occupation_ids())
-		if not food_problem.is_empty():
-			return "FoodStub (TEMP-LW-065): %s" % food_problem
-	if _definitions.income != null:
-		var need_ids: Array[String] = []
-		for def: NeedDef in _need_defs:
-			need_ids.append(def.id)
-		var income_problem: String = _definitions.income.check_references(need_ids, _routine.peek_occupation_ids())
-		if not income_problem.is_empty():
-			return "IncomeStub (TEMP-LW-066): %s" % income_problem
-	var occupancy: PlaceOccupancy = PlaceOccupancy.new(_npcs)
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food, _definitions.income)
-	# LW-070b: o runner do jogo respeita o corpo (ver EmbodiedActionRunner); quem tem Intent pendente é o quadro de Intents que diz.
-	var runner: ActionRunner = EmbodiedActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min, intents.has_pending)
-	if not runner.peek_problem().is_empty():
-		return "ActionRunner: %s" % runner.peek_problem()
-	var scorer: UtilityScorer = UtilityScorer.new(_definitions.params, _need_defs, _definitions.traits)
-	if not scorer.peek_problem().is_empty():
-		return "UtilityScorer: %s" % scorer.peek_problem()
-	var intents_problem: String = _link_intents(runner)
-	if not intents_problem.is_empty():
-		return intents_problem
-	_provider = provider
-	_runner = runner
-	_social = SocialActions.new(_npcs, _definitions.params.talk_gain, _definitions.params.talk_limit, _social_relation_values, _adjust_relation, _record_memory)
-	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _kill_npc, _social.on_action_finished)
-	return ""
-
-
-## A ÚNICA função que inicia uma ação (LW-063). Modo S1: pelo ActionRunner. Modo S0 (LW-070a, o ponto de extensão preenchido): NPC com corpo e
-## protocolo ligado emite a Intent (`intents.begin_embodied`), que usa o MESMO runner: os efeitos só entram com o resultado do corpo. Sem corpos
-## disponíveis (LW-070b) nenhuma ação nasce com Intent.
-func _start_action(npc_id: int, action_id: String, place_id: String, now: int) -> Result:
-	_provider.subject = _npcs.get(npc_id)
-	if _bodies_available and intents.is_configured() and lod.level_of(npc_id) == NpcLod.LEVEL_S0:
-		return intents.begin_embodied(npc_id, action_id, place_id, now)
-	return _runner.begin(npc_id, action_id, place_id, now)
-
-
-## Morte por necessidade crítica prolongada (LW-081): o NPC deixa de estar vivo (`is_alive` falso, causa e minuto guardados), a ação é cancelada
-## SEM efeito, o local é liberado (a ocupação é derivada dos vivos; `place_id` fica vazio) e `NpcDied(npc_id, cause, tier)` é publicado. Fica só a
-## identidade e a causa, para quem guarda o ID (as memórias e relações dele, LW-078 e LW-079, serão descartadas aqui quando existirem).
-func _kill_npc(npc_id: int, cause: String, now: int) -> void:
-	if not _npcs.has(npc_id):
-		return
-	var state: NpcState = _npcs[npc_id]
-	if not state.is_alive:
-		return
-	state.is_alive = false
-	state.death_cause = cause
-	state.died_at = now
-	state.action_id = ""
-	state.action_target_place_id = ""
-	state.action_started_at = 0
-	state.action_ends_at = 0
-	state.place_id = ""
-	state.critical_since = NpcState.NO_TIME
-	state.alarm_until = NpcState.NO_TIME
-	state.alarm_place_id = ""
-	_memories.erase(npc_id)
-	_relations.remove_involving(npc_id)
-	_ctx.events.publish(NpcDied.new(npc_id, cause, state.tier))
-
-
-## Minuto do primeiro pensamento: agora mais 1 mais a FASE do NPC (`npc_id` mod intervalo), para os NPCs criados juntos não pensarem todos
-## no mesmo passo. O "mais 1" faz o primeiro pensamento cair sempre DEPOIS do minuto da criação (não depende de o módulo já ter rodado
-## neste passo) e põe as fases em minutos distintos de 1 a `intervalo` (sem fase no minuto da criação, duas fases não se juntam no
-## primeiro passo). Sem parâmetros: agora.
-func _first_think_time(npc_id: int, now: int) -> int:
-	if _definitions == null or _definitions.params == null:
-		return now
-	return now + 1 + npc_id % maxi(1, _definitions.params.think_interval_min)
 
 
 ## TEMP-LW-065: o FoodStub real, se o provedor de comida das definições for ele (os testes usam um provedor falso, sem estado salvo).
@@ -736,29 +373,6 @@ func _food_stub() -> FoodStub:
 ## TEMP-LW-065
 func _food_not_configured(caller: String) -> Result:
 	return Result.failure(CODE_FOOD_NOT_CONFIGURED, "NpcModule.%s: o módulo foi criado sem FoodStub; não há estoque de comida." % caller)
-
-
-## TEMP-LW-065: problema do trecho de comida do save (texto vazio = pode carregar). Save sem o trecho (de antes do FoodStub) é aceito: o
-## estoque volta ao inicial. Trecho de comida num módulo sem FoodStub é recusado.
-func _food_stock_save_problem(data: Dictionary) -> String:
-	if not data.has(FoodStub.SAVE_KEY):
-		return ""
-	var food_stub: FoodStub = _food_stub()
-	if food_stub == null:
-		return "o save tem estoque de comida ('%s'), mas o módulo foi criado sem FoodStub" % FoodStub.SAVE_KEY
-	return food_stub.check_save(data[FoodStub.SAVE_KEY])
-
-
-## TEMP-LW-065: carrega o estoque já conferido (ou o devolve ao inicial se o save não tem o trecho).
-func _load_food_stock(data: Dictionary) -> void:
-	var food_stub: FoodStub = _food_stub()
-	if food_stub == null:
-		return
-	if data.has(FoodStub.SAVE_KEY):
-		var entries: Dictionary = data[FoodStub.SAVE_KEY]
-		food_stub.load_save(entries)
-	else:
-		food_stub.reset_to_start()
 
 
 ## A população inicial não nasceu (ou parou no meio): guarda o motivo e o registra no log, para o erro de dado nunca passar em silêncio.
@@ -775,16 +389,6 @@ func _sorted_ids() -> Array[int]:
 	return ids
 
 
-## Valor inicial das necessidades: o `start_value` de cada definição; sem definições, tudo zero.
-func _start_needs() -> PackedInt64Array:
-	var needs: PackedInt64Array = PackedInt64Array()
-	needs.resize(NpcState.NEED_COUNT)
-	if not _need_defs.is_empty():
-		for def: NeedDef in _need_defs:
-			needs[def.order] = def.start_value
-	return needs
-
-
 ## Nível de urgência de cada necessidade do NPC, pelos limiares dos dados. Sem definições, tudo 0 (não há limiares para comparar).
 func _urgencies_of(state: NpcState) -> PackedInt64Array:
 	var urgencies: PackedInt64Array = PackedInt64Array()
@@ -796,208 +400,8 @@ func _urgencies_of(state: NpcState) -> PackedInt64Array:
 	return urgencies
 
 
-## Teto de notáveis vivos (`max_t2` dos parâmetros); 0 = sem teto configurado (sem definições ou sem parâmetros também).
-func _max_notable() -> int:
-	return _definitions.params.max_t2 if _definitions != null and _definitions.params != null else 0
-
-
-## Caminho único de ajuste das relações (LW-079): o comando de depuração, as ações sociais (LW-080) e, na LW-083, a conversa com o jogador. As regras
-## (Q11, limite por NPC, mudanças válidas) estão em `RelationGraph.adjust`; recusado, nada muda. Ajustou, publica `RelationChanged` (LW-080).
-func _adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> Result:
-	if _ctx == null:
-		return Result.failure(CODE_NOT_READY, "NpcModule.request_adjust_relation: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
-	var rules: RelationGraph.Rules = _relation_rules()
-	var today: int = _today()
-	var existing: NpcRelation = _relations.find(a_id, b_id)
-	var before: PackedInt64Array = existing.values_at(today, rules.decay_per_day) if existing != null else PackedInt64Array()
-	var adjusted: Result = _relations.adjust(a_id, b_id, deltas, _ctx.clock.total_minutes(), rules, _npcs)
-	if adjusted.ok:
-		# `RelationChanged` (LW-080): relação nova ou com valor diferente, no máximo uma vez por par por dia (o dia vai na própria relação).
-		var relation: NpcRelation = _relations.find(a_id, b_id)
-		var after: PackedInt64Array = relation.values_at(today, rules.decay_per_day)
-		if (before.is_empty() or before != after) and relation.last_event_day < today:
-			relation.last_event_day = today
-			_ctx.events.publish(RelationChanged.new(relation.a_id, relation.b_id, after))
-	return adjusted
-
-
-## As dimensões de hoje do par, ou uma lista vazia se não se conhecem (o que o `SocialActions` pergunta antes de somar o ganho da conversa).
-func _social_relation_values(a_id: int, b_id: int) -> PackedInt64Array:
-	var relation: NpcRelation = _relations.find(a_id, b_id)
-	if relation == null:
-		return PackedInt64Array()
-	return relation.values_at(_today(), _relation_rules().decay_per_day)
-
-
-## As regras das relações (parâmetros de `Definitions`); sem parâmetros, tudo em 0 (relações não configuradas).
-func _relation_rules() -> RelationGraph.Rules:
-	if _definitions == null or _definitions.params == null:
-		return RelationGraph.Rules.new(0, 0, 0, 0)
-	var params: NpcParams = _definitions.params
-	return RelationGraph.Rules.new(params.relations_capacity, params.relation_decay_per_day, params.relation_friend_threshold, params.relation_rival_threshold)
-
-
-## Dia de simulação de agora (0 se o módulo ainda não passou por setup()).
-func _today() -> int:
-	return IntMath.floor_div(_ctx.clock.total_minutes(), SimClock.MINUTES_PER_DAY) if _ctx != null else 0
-
-
-## Caminho único de gravação na memória (LW-078): o comando de depuração `request_record_memory` e, nas LW-080 e LW-083, as ações sociais e a
-## conversa com o jogador. Só NPC vivo e notável (T2) tem memória; o tipo precisa existir em `data/memory_kinds.json`; até
-## `MemoryRecord.MAX_ACTORS` pessoas, com ID válido, diferentes do dono e entre si. Recusado, nada muda.
-func _record_memory(npc_id: int, kind_id: String, actor_ids: Array[int], place_id: String) -> Result:
-	if _ctx == null:
-		return Result.failure(CODE_NOT_READY, "NpcModule.request_record_memory: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
-	if not _npcs.has(npc_id):
-		return _unknown("request_record_memory", npc_id)
-	var rules: NpcMemory.Rules = _memory_rules_or_null()
-	if rules == null:
-		return Result.failure(CODE_MEMORY_NOT_CONFIGURED, "NpcModule.request_record_memory: memória não configurada; esperado Definitions.memory_kinds com algum tipo e memory_capacity maior que 0 nos parâmetros.")
-	var state: NpcState = _npcs[npc_id]
-	if not state.is_alive:
-		return Result.failure(NpcTiers.CODE_DEAD, "NpcModule.request_record_memory: o NPC %d está morto; esperado um NPC vivo." % npc_id)
-	if state.tier != NpcState.TIER_NOTABLE:
-		return Result.failure(CODE_NOT_NOTABLE, "NpcModule.request_record_memory: o NPC %d é cidadão (T1); só notável (T2) tem memória, então é preciso promovê-lo antes (request_promote)." % npc_id)
-	var known_kinds: Array[String] = _known_kind_ids()
-	if not known_kinds.has(kind_id):
-		return _unknown_kind("request_record_memory", kind_id, known_kinds)
-	var actors_problem: String = _actors_problem(npc_id, actor_ids)
-	if not actors_problem.is_empty():
-		return Result.failure(CODE_INVALID_MEMORY, "NpcModule.request_record_memory: pedido inválido para o NPC %d: %s." % [npc_id, actors_problem])
-	var kind: MemoryKindLoader.KindDef = _kind_by_id(kind_id)
-	var record: MemoryRecord = MemoryRecord.new()
-	record.kind = kind.id
-	record.actors = PackedInt64Array(actor_ids)
-	record.place_id = place_id
-	record.time = _ctx.clock.total_minutes()
-	record.valence = kind.valence
-	record.salience = kind.salience
-	if not _memories.has(npc_id):
-		_memories[npc_id] = NpcMemory.new()
-	_memories[npc_id].remember(record, record.time, rules)
-	return Result.success()
-
-
-## Primeiro problema da lista de pessoas do episódio (texto vazio se está certa).
-func _actors_problem(npc_id: int, actor_ids: Array[int]) -> String:
-	if actor_ids.size() > MemoryRecord.MAX_ACTORS:
-		return "%d pessoas; o máximo é %d" % [actor_ids.size(), MemoryRecord.MAX_ACTORS]
-	for index: int in actor_ids.size():
-		var actor_id: int = actor_ids[index]
-		if actor_id < IdGenerator.FIRST_ID or actor_id > IdGenerator.MAX_ID:
-			return "pessoa %d fora da faixa de IDs [%d, %d]" % [actor_id, IdGenerator.FIRST_ID, IdGenerator.MAX_ID]
-		if actor_id == npc_id:
-			return "o NPC não pode ser uma das pessoas do próprio episódio (%d)" % actor_id
-		if actor_ids.find(actor_id) != index:
-			return "pessoa %d repetida" % actor_id
-	return ""
-
-
-## As regras da memória (parâmetros e tipos de episódio de `Definitions`), ou nulo se a memória não está configurada: sem tipos, ou sem
-## `memory_capacity` maior que 0.
-func _memory_rules_or_null() -> NpcMemory.Rules:
-	if _definitions == null or _definitions.params == null or _definitions.params.memory_capacity <= 0 or _definitions.memory_kinds.is_empty():
-		return null
-	var decays: Dictionary[String, int] = {}
-	for kind: MemoryKindLoader.KindDef in _definitions.memory_kinds:
-		decays[kind.id] = kind.decay_per_day
-	return NpcMemory.Rules.new(_definitions.params.memory_capacity, _definitions.params.trait_threshold, _definitions.params.trait_slots, decays)
-
-
-## Ids dos tipos de episódio configurados (vazio = nenhum configurado).
-func _known_kind_ids() -> Array[String]:
-	var ids: Array[String] = []
-	if _definitions != null:
-		for kind: MemoryKindLoader.KindDef in _definitions.memory_kinds:
-			ids.append(kind.id)
-	return ids
-
-
-func _kind_by_id(kind_id: String) -> MemoryKindLoader.KindDef:
-	if _definitions != null:
-		for kind: MemoryKindLoader.KindDef in _definitions.memory_kinds:
-			if kind.id == kind_id:
-				return kind
-	return null
-
-
-func _unknown_kind(caller: String, kind_id: String, known_kinds: Array[String]) -> Result:
-	return Result.failure(CODE_UNKNOWN_MEMORY_KIND, "NpcModule.%s: tipo de memória '%s' inexistente; esperado um de: %s." % [caller, kind_id, ", ".join(known_kinds)])
-
-
-## Ponto de extensão do rebaixamento (LW-077), chamado por `NpcTiers.demote` ANTES de o tier mudar (o NPC ainda é notável): o módulo resume a
-## memória dele em traços permanentes (LW-078); as relações dele com outro CIDADÃO deixam de valer (Q11), então saem e a afeição de cada uma vira
-## traço também (LW-079); a relação com o jogador fica, com os valores arredondados; as com notáveis ficam. Por último avisa o gancho de fora
-## (`Definitions.on_demote`, usado pelos testes). Sem regras de memória configuradas não há onde guardar traços: as relações saem do mesmo jeito.
-func _on_demoting(npc_id: int) -> void:
-	var now: int = _ctx.clock.total_minutes() if _ctx != null else 0
-	var relation_traits: Dictionary[int, int] = _relations.demote_relations_of(npc_id, now, _relation_rules(), _npcs)
-	var memory: NpcMemory = _memories.get(npc_id)
-	var rules: NpcMemory.Rules = _memory_rules_or_null()
-	if rules != null and (memory != null or not relation_traits.is_empty()):
-		if memory == null:
-			memory = NpcMemory.new()
-			_memories[npc_id] = memory
-		memory.summarize(now, rules)
-		memory.absorb_sums(relation_traits, now, rules)
-		if memory.is_empty():
-			_memories.erase(npc_id)
-	if _definitions != null and _definitions.on_demote.is_valid():
-		_definitions.on_demote.call(npc_id)
-
-
-## Primeiro problema do pedido de criação (texto vazio se estiver certo).
-func _spec_problem(spec: NpcSpec) -> String:
-	if spec == null:
-		return "pedido nulo; esperado um NpcSpec"
-	if spec.name_key.strip_edges().is_empty():
-		return "name_key vazia; esperado a chave de texto do nome"
-	if spec.name_number < 0:
-		return "name_number %d negativo; esperado 0 ou mais" % spec.name_number
-	if spec.tier != NpcState.TIER_NORMAL and spec.tier != NpcState.TIER_NOTABLE:
-		return "tier %d inválido; esperado %d ou %d" % [spec.tier, NpcState.TIER_NORMAL, NpcState.TIER_NOTABLE]
-	if spec.traits.size() != NpcState.TRAIT_COUNT:
-		return "traits com %d valores; esperado %d (um por traço)" % [spec.traits.size(), NpcState.TRAIT_COUNT]
-	for index: int in spec.traits.size():
-		if spec.traits[index] < NpcState.VALUE_MIN or spec.traits[index] > NpcState.VALUE_MAX:
-			return "traço na posição %d com valor %d; esperado de %d a %d" % [index, spec.traits[index], NpcState.VALUE_MIN, NpcState.VALUE_MAX]
-	if spec.x_cm < 0 or spec.x_cm > NpcState.MAX_COORDINATE_CM or spec.z_cm < 0 or spec.z_cm > NpcState.MAX_COORDINATE_CM:
-		return "posição (x_cm %d, z_cm %d) fora da faixa; esperado de 0 a %d" % [spec.x_cm, spec.z_cm, NpcState.MAX_COORDINATE_CM]
-	if _routine != null and not spec.occupation_id.is_empty() and not _routine.has_occupation(spec.occupation_id):
-		return "ofício '%s' inexistente; esperado vazio ou um de: %s" % [spec.occupation_id, ", ".join(_routine.peek_occupation_ids())]
-	return ""
-
-
-func _append_range_problems(problems: Array[String], npc_id: int, what: String, values: PackedInt64Array, lowest: int, highest: int) -> void:
-	for index: int in values.size():
-		if values[index] < lowest or values[index] > highest:
-			problems.append("NPC %d: %s na posição %d fora de %d a %d (valor %d)." % [npc_id, what, index, lowest, highest, values[index]])
-
-
-## Próximo ID que o contador do core entregaria (0 se o módulo ainda não passou por setup()).
-func _next_issued_id() -> int:
-	if _ctx == null:
-		return IdGenerator.NO_ID
-	# Variant: o contador sai do serialize() do core, que é dado simples.
-	var raw_next: Variant = _ctx.ids.serialize()[IdGenerator.KEY_NEXT_ID]
-	var next_id: int = raw_next
-	return next_id
-
-
 func _unknown(caller: String, npc_id: int) -> Result:
 	return Result.failure(CODE_UNKNOWN, "NpcModule.%s: o NPC %d não existe; esperado um ID devolvido por request_create_npc (há %d NPC(s))." % [caller, npc_id, _npcs.size()])
-
-
-func _invalid_save(detail: String) -> Result:
-	return Result.failure(CODE_INVALID_SAVE, "NpcModule.on_load: %s." % detail)
-
-
-## ID de NPC a partir do texto da chave; NO_ID se não for um inteiro na faixa válida.
-func _read_npc_id(key_text: String) -> int:
-	if not key_text.is_valid_int():
-		return IdGenerator.NO_ID
-	var value: int = key_text.to_int()
-	return value if value >= IdGenerator.FIRST_ID and value <= IdGenerator.MAX_ID else IdGenerator.NO_ID
 
 
 ## O que o módulo precisa, além das necessidades e da rotina, para DECIDIR (LW-063). Tudo já lido e validado por quem monta o módulo (os
