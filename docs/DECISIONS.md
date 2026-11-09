@@ -1,6 +1,6 @@
 # LIVING WORLD — REGISTRO OFICIAL DE DECISÕES (DECISIONS.md)
 
-**Versão do documento:** 0.3 (01/11/2026, após a revisão final e as diretrizes de Arthur das 15:32; ver seção 8)
+**Versão do documento:** 0.4 (09/11/2026; entradas DEC-113 a DEC-123 e totais recontados; a 0.3 é de 01/11/2026; ver seção 8)
 **Data de criação:** 01/11/2026 (horário de Brasília)
 **Responsável pela decisão:** Arthur (dono do produto). **Somente ele aprova.**
 **Função deste documento:** ser a **fonte oficial** do que está decidido, proposto, pendente, descartado ou substituído nos projetos de design e de tecnologia do Living World, para evitar contradições futuras entre o Briefing, o GDD, a arquitetura, o roadmap e o trabalho dos agentes de IA.
@@ -1774,6 +1774,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Data / versão** | Decidida por Arthur em 07/11/2026 · registrada em 07/11/2026 (LW-152) |
 | **Relações** | DEC-053, DEC-066, DEC-067, DEC-080, DEC-117 |
 
+---
+
 ### DEC-122 — Navegação e velocidade dos corpos S0 (resultado do SP2)
 
 | Campo | Conteúdo |
@@ -1785,6 +1787,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Consequências** | A N1 atravessa pedra e recusa morro íngreme sem desvio. A P1 chega sempre atrasada enquanto a DEC-123 não for resolvida. Os valores com [HIP] continuam [HIP]. |
 | **Data / versão** | Decidida por Arthur em 08/11/2026 · registrada em 08/11/2026 (LW-071a) |
 | **Relações** | DEC-016, DEC-035, DEC-039, DEC-040, DEC-119, DEC-120, DEC-123 |
+
+---
 
 ### DEC-123 — Relógio contra corpo: direção P3 (resultado do SP2)
 
@@ -2015,6 +2019,7 @@ Copiar, preencher e usar o próximo número livre (`DEC-124` em diante). **Nunca
 
 | Versão | Data (Brasília) | Alteração |
 |---|---|---|
+| 0.4 | 09/11/2026 | Entradas DEC-113 a DEC-123 criadas desde a 0.3 (LW-023 a LW-071a); totais recontados na LW-071b (APROVADA 62, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 123). Esta rodada (LW-071b e LW-071c) não mudou o status de nenhuma entrada. |
 | 0.3 | 01/11/2026 | Revisão final e diretrizes de Arthur das 15:32. Passaram a APROVADA (com a ressalva indicada na entrada): DEC-012, 015, 016 (só a referência), 022, 041, 050, 051, 062 (só a meta de três), 080 (só a antecipação de SP6 e SP4a), 081, 083 (só os princípios) e 089 (só o serviço). DEC-081 reintitulada. DEC-070: justificativa corrigida (a alocação às fases é proposta; só os nomes e a ordem das fases são de Arthur). Spikes renomeados de S1-S8 para SP1-SP8 (os níveis de simulação continuam S0-S3). Ressalvas dos status visíveis no índice. Nenhuma entrada criada. |
 | 0.2 | 01/11/2026 | Consolidação do pacote documental. Nenhuma entrada mudou de status e nenhuma foi criada. Revisão técnica de Godot 4.x aplicada à TA, ao RM e ao AGENTS (11 correções G1 a G11, ver `CONSISTENCY_REPORT.md` seção 6). Fontes atualizadas para as versões 0.2; consequências das cinco pendências da LW-001 e de DEC-087 ajustadas; seção 4.1 reescrita; nova seção 4.2 (achados C13 a C23). |
 | 0.1 | 01/11/2026 | Criação do registro. 112 entradas: decisões do Briefing Mestre e dos prompts de Arthur (APROVADA), propostas dos documentos GDD, arquitetura e roadmap (PROPOSTA), questões abertas (PENDENTE), alternativas recusadas pela arquitetura (DESCARTADA, com ratificação pendente) e a ordem de marcos do GDD (SUBSTITUÍDA). |

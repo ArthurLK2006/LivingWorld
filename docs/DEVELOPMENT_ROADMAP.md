@@ -518,7 +518,7 @@ flowchart LR
 2. A câmera de terceira pessoa **não entra no terreno** e não treme.
 3. O dia e a noite mudam **de acordo com a hora simulada**; pausar congela tudo.
 4. Aproximar-se de um objeto marcado mostra o *prompt*; interagir mostra o texto vindo da chave de tradução.
-5. **Desempenho:** no hardware-alvo, a meta de quadros é cumprida com o terreno de blockout e as decorações. A LW-033 mediu, mas **não fechou** a meta: Arthur a manteve como proposta em 05/11/2026 (proposta **[PEND]**: média de 60 quadros por segundo e nunca abaixo de 30). A primeira medição no jogo real é em modo release, com o Mac na tomada (DEC-057, condição e).
+5. **Desempenho:** no hardware-alvo, a meta de quadros é cumprida com o terreno de blockout e as decorações. A LW-033 mediu, mas **não fechou** a meta: Arthur a manteve como proposta em 05/11/2026 (a meta foi aprovada depois, na DEC-119, em 07/11/2026: média de 60 quadros por segundo ou mais e nenhum quadro acima de 33 ms, no Mac de Arthur, na tomada, em modo release; a LW-053A mediu o jogo real nessas condições: média de 8,37 a 8,39 ms e nenhum quadro acima de 33 ms, em 3 execuções). A primeira medição no jogo real é em modo release, com o Mac na tomada (DEC-057, condição e).
 6. **Separação:** a simulação roda sem janela com o mesmo hash de antes (a apresentação não altera o estado); `check_architecture` verde com a regra estendida.
 7. Contagem de nós **estável** durante deslocamento longo (sem vazamento).
 8. `check_all` verde; teste de integração da fase verde.
@@ -1548,8 +1548,8 @@ Cada linha: **quando** a decisão é necessária, **o que** decidir e a **recome
 |---|---|---|---|
 | 1 a 5 | LW-001 | **Decididas em 01/11/2026** (DEC-012, 015, 016 só a referência, 022 e 089 só o serviço) | Nada a decidir. Restam, sem bloquear: **hardware mínimo** (DEC-016) — recomendação: publicar como "mínimo testado" depois da LW-179; **visibilidade do repositório** (DEC-089) — recomendação: privada, antes do primeiro push |
 | 6 | LW-010 | Framework de testes (DEC-086) | O que o spike mostrar mais simples para o Codex e mais legível para você |
-| 7 | LW-033 | Terreno próprio ou addon; meta de quadros. Decidido em 05/11/2026: terreno próprio (DEC-057); a meta de quadros segue como proposta [PEND] | O que for mais estável no spike; meta de 60 quadros por segundo com piso de 30 |
-| 8 | LW-071 | Abordagem de navegação dos NPCs | A mais simples que passe no spike SP2 |
+| 7 | LW-033 | Terreno próprio ou addon; meta de quadros. Decidido em 05/11/2026: terreno próprio (DEC-057); a meta de quadros foi aprovada na DEC-119 (07/11/2026) | O que for mais estável no spike; meta de 60 quadros por segundo com piso de 30 |
+| 8 | LW-071 | Abordagem de navegação dos NPCs. Decidido em 08/11/2026: N1 por ora (DEC-122) | A mais simples que passe no spike SP2 |
 | 9 | LW-101 | Diferença aceitável entre caravana e fluxo agregado | Um limite pequeno e simples (por exemplo, poucos por cento na média anual) |
 | 10 | LW-117 | Tipos das 3 facções, polity vizinha de baixa resolução, 5 leis do protótipo | Autoridade local, mercantil e criminosa mínima; vizinho de baixa resolução |
 | 11 | LW-146 | Lista de corte, 3 trajetórias, regra de derrota do jogador | Cortar magia, chefe, propriedades e comando tático; mercador, soldado/guarda e aventureiro; derrota recarrega o último autosave |
