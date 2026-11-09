@@ -243,3 +243,27 @@ class NpcIntentsReply:
 	func _init(reply_result: Result, copies: Array[NpcIntentReply]) -> void:
 		result = reply_result
 		intents = copies
+
+
+## Um corpo que a apresentação deve manter (LW-072a), em CÓPIA e em metros: x e z vêm do LOD e y é a altura do terreno ali.
+class NpcBodyReply:
+	extends RefCounted
+
+	var npc_id: int
+	var position: Vector3
+
+	func _init(body_npc_id: int, ground_position: Vector3) -> void:
+		npc_id = body_npc_id
+		position = ground_position
+
+
+## Resposta de `peek_npc_bodies`: `bodies` só vale se `result.ok`; em ordem crescente de NPC.
+class NpcBodiesReply:
+	extends RefCounted
+
+	var result: Result
+	var bodies: Array[NpcBodyReply]
+
+	func _init(reply_result: Result, copies: Array[NpcBodyReply]) -> void:
+		result = reply_result
+		bodies = copies

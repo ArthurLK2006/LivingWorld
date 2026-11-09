@@ -13,6 +13,8 @@ tests/soak/run_game_release --editor     # a mesma medição no binário de DEPU
 
 Variáveis: `RUNS` (3), `ENSAIOS` (`rota,parado,pausado`), `GODOT_BIN`, `KEEP_DOWNLOAD`. Deixe a janela em primeiro plano e não use o Mac durante a medição. A cópia do projeto sai do `git archive HEAD` (só o que está commitado). Os resultados de cada medição entram no relatório da tarefa que a fez.
 
+**Corpos dos NPCs e custo por seção (LW-072g).** O jogo agora liga os corpos (LW-072f), então os três ensaios já rodam com a `NpcBodiesView` e o `NpcBodyDriver` ligados, e cada ensaio imprime uma linha a mais, "custo por seção, em ms por quadro (média / pior)": `NpcBodiesView`, `NpcBodyDriver` e o "resto do quadro" (o quadro menos as duas seções; o acumulador é `frame_sections.gd`, testado em `tests/unit/test_npc_frame_sections.gd`). Para medir, o script desliga o `_process` da view e o `_physics_process` do motorista e os chama ele mesmo, com o relógio de parede em volta e no mesmo ritmo. O ensaio novo **`povoado`** (30 s) religa o relógio (o `pausado` o deixa parado, e pausado ninguém vira S0), leva-o às 6h45 (só passos da simulação), põe o jogador no centro do povoado A e mede com os NPCs saindo de casa; o relatório mostra os corpos no começo, no meio e no fim e o máximo (no teste sem janela deu 50). O `run_game_release` não inclui o `povoado` por padrão: peça com `ENSAIOS=rota,parado,pausado,povoado tests/soak/run_game_release`. A régua é a DEC-119 (média de 60 quadros por segundo ou mais e nenhum quadro acima de 33 ms, no Mac na tomada, em release).
+
 ## Teste de combate (LW-152, spike SP6)
 
 `run_sp6` abre o jogo real **com janela** e, por cima dele, um teste **descartável** de combate por alvo e habilidades (DEC-117) contra um boneco de treino parado, para Arthur jogar e dizer o que sentiu. O código está em `sp6/`: regras puras (`Sp6Rules`), constantes **[HIP]** (`Sp6Constants`), geometria, boneco, tela e a cena `sp6_main.tscn`. O teste das regras, `sp6/test_sp6_rules.gd`, roda sem janela e entra no `tools/check_all`. Ao fechar a janela, o script imprime o resumo da sessão (golpes, erros, dano total, menor estamina e pior quadro). Valores, roteiro de playtest e resultado: `docs/decisions/0008-spike-sp6-combate.md`.
@@ -35,4 +37,12 @@ tests/soak/run_npc_life_30d
 
 ```bash
 tests/soak/run_sp2 --release
+```
+
+## Corpos contra o gêmeo sem corpos (LW-072h)
+
+`run_npc_bodies_7d` roda, sem janela, **7 dias de jogo** do mesmo mundo em três modos (semente 11, os 100 NPCs reais, o jogador parado no centro de A, 40 NPCs de A promovidos a notáveis para existir consequência social): SOLO (nada em volta), S1 (corpos desligados, amostrado a cada minuto) e S0 (corpos ligados, o `NpcBodyDriver` levando os 50 NPCs mais perto a 4 m/s vezes a velocidade do relógio). A velocidade 8 do relógio só encurta a medição (o corpo anda os mesmos 5 m por minuto de jogo em qualquer velocidade) e a corrida leva cerca de um minuto. Imprime uma tabela S1 contra S0: ações canceladas por causa, o `rest` aplicado nos sonos cancelados, a diferença final das necessidades, o atraso do `DONE` e do `ARRIVED`, os Intents vencidos por caminhada longa, memórias e relações, e se o S1 gêmeo tem o mesmo hash do S1 sozinho. Só usa consultas (`peek_*`): não edita o `npc`. A versão curta (1 dia, no `tools/check_all`) é `npc_bodies/test_npc_bodies_twin.gd`. **[LIM]** o jogador fica parado; o efeito aplicado só é medido para o sono (o das outras ações se mistura com o `IncomeStub`); as necessidades finais são levadas ao último minuto sem o resto da conta (ruído de 1); a 8x o passo de física do corpo é maior (0,53 m).
+
+```bash
+tests/soak/run_npc_bodies_7d
 ```
