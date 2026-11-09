@@ -7,11 +7,13 @@ const HOURS_PER_DAY: float = 24.0
 const MINUTES_PER_HOUR: float = 60.0
 ## 06:00 e 18:00: sol no horizonte. A elevação é a senoide de período de 24 h que passa por zero às 06:00.
 const SUNRISE_HOUR: float = 6.0
+## A fração do minuto fica abaixo de 1: a hora oficial (ponte) assume na virada, então a hora nunca passa do minuto seguinte.
+const MAX_MINUTE_FRACTION: float = 0.999999
 
 
-## Hora fracionária: 06:30 vale 6,5.
-static func fractional_hour(hour_of_day: int, minute_of_hour: int) -> float:
-	return float(hour_of_day) + float(minute_of_hour) / MINUTES_PER_HOUR
+## Hora fracionária: 06:30 vale 6,5. `minute_fraction` é quanto do minuto já passou (limitada a [0, 1)): 06:30 e meio minuto vale 6,508333.
+static func fractional_hour(hour_of_day: int, minute_of_hour: int, minute_fraction: float = 0.0) -> float:
+	return float(hour_of_day) + (float(minute_of_hour) + clampf(minute_fraction, 0.0, MAX_MINUTE_FRACTION)) / MINUTES_PER_HOUR
 
 
 ## e = máximo x sin(TAU x (h - 6) / 24): 06:00 = 0, 12:00 = máximo, 18:00 = 0, 00:00 = -máximo.

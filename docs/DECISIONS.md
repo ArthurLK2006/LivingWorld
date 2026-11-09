@@ -1,6 +1,6 @@
 # LIVING WORLD — REGISTRO OFICIAL DE DECISÕES (DECISIONS.md)
 
-**Versão do documento:** 0.3 (01/11/2026, após a revisão final e as diretrizes de Arthur das 15:32; ver seção 8)
+**Versão do documento:** 0.4 (09/11/2026; entradas DEC-113 a DEC-123 e totais recontados; a 0.3 é de 01/11/2026; ver seção 8)
 **Data de criação:** 01/11/2026 (horário de Brasília)
 **Responsável pela decisão:** Arthur (dono do produto). **Somente ele aprova.**
 **Função deste documento:** ser a **fonte oficial** do que está decidido, proposto, pendente, descartado ou substituído nos projetos de design e de tecnologia do Living World, para evitar contradições futuras entre o Briefing, o GDD, a arquitetura, o roadmap e o trabalho dos agentes de IA.
@@ -138,6 +138,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-044 | Uso concreto de IA generativa (se houver): modelo, local ou nuvem, custo e privacidade | PENDENTE |
 | DEC-122 | Navegação e velocidade dos corpos S0 (resultado do SP2) | APROVADA (por ora) |
 | DEC-123 | Relógio contra corpo: direção P3 (resultado do SP2) | APROVADA (somente a direção) |
+| DEC-124 | Velocidade de caminhada da simulação: 500 cm/min [HIP] (aplicação da direção P3 da DEC-123) | APROVADA |
 
 **ÁREA 6 — SOCIEDADE, ECONOMIA, POLÍTICA E GUERRA**
 
@@ -1774,6 +1775,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Data / versão** | Decidida por Arthur em 07/11/2026 · registrada em 07/11/2026 (LW-152) |
 | **Relações** | DEC-053, DEC-066, DEC-067, DEC-080, DEC-117 |
 
+---
+
 ### DEC-122 — Navegação e velocidade dos corpos S0 (resultado do SP2)
 
 | Campo | Conteúdo |
@@ -1786,6 +1789,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Data / versão** | Decidida por Arthur em 08/11/2026 · registrada em 08/11/2026 (LW-071a) |
 | **Relações** | DEC-016, DEC-035, DEC-039, DEC-040, DEC-119, DEC-120, DEC-123 |
 
+---
+
 ### DEC-123 — Relógio contra corpo: direção P3 (resultado do SP2)
 
 | Campo | Conteúdo |
@@ -1797,6 +1802,20 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Consequências** | Quando aplicada, muda todos os tempos de caminhada da simulação (16,8 vezes mais longos): a constante `DEFAULT_WALK_SPEED_CM_PER_MIN` (`action_runner.gd:31`), o parâmetro padrão de `_init` (linha 54) e o cálculo de minutos do `go_to_place` (linha 340); `tests/unit/test_action_runner.gd` (`_runner`, linha 79, e `test_go_to_place_takes_the_distance_divided_by_the_walk_speed_rounded_up`, linha 357); `data/intent_params.json` (`intent_timeout_min` = 30 [HIP], a rever). Exige o teste de vida de 30 dias (`tests/soak/npc_life/soak_npc_life_30d.gd`, rodado por `tests/soak/run_npc_life_30d`) e DEC nova. Até lá, nada muda. |
 | **Data / versão** | Decidida por Arthur em 08/11/2026 · registrada em 08/11/2026 (LW-071a) |
 | **Relações** | DEC-016, DEC-035, DEC-039, DEC-040, DEC-119, DEC-120, DEC-122 |
+
+---
+
+### DEC-124 — Velocidade de caminhada da simulação: 500 cm/min [HIP] (aplicação da direção P3 da DEC-123)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 09/11/2026. O valor 500 continua sendo [HIP] e pode ser ajustado. |
+| **Contexto** | A DEC-123 aprovou só a direção (a simulação anda na mesma velocidade do corpo). A simulação planejava 8400 cm/min (cerca de 67 m/s a 1x) e o corpo anda 4 m/s. No SP2, 613 de 691 chegadas ficaram atrasadas e, com o passo P1, 100%. A LW-071d aplicou a P3 e mediu. |
+| **Decisão** | `ActionRunner.DEFAULT_WALK_SPEED_CM_PER_MIN` = **500 cm/min [HIP]**. São 5 m por minuto de jogo, 4 m/s a 1x; a rota A para B, de 495 m, leva 99 minutos. O `intent_timeout_min` = 30 [HIP] não muda. |
+| **Justificativa** | **Resultados medidos (antes para depois):** atraso do `ARRIVED` (<=0 / 1 / 2 a 5 / >5 / máx) 270 / 395 / 980 / 870 / 12 para 2.771 / 0 / 0 / 1 / 9. Intents vencidos por tempo 0 para 0. Ações iniciadas (S1 \| S0) 22.740 \| 20.584 para 22.172 \| 20.036. Memórias ao fim (S1 \| S0) 960 \| 925 para 926 \| 923; no dia 1, 330 \| 97 para 271 \| 83. Pares que se conhecem (S1 \| S0) 141 \| 181 para 145 \| 155. Sono cancelado com corpo (`rest` aplicado em média) 1,0 para 1,0. `income` \|S0-S1\| média (máx) 19,31 (87) para 17,79 (82). `hunger` máx da diferença 26 para 63. Reavaliações que cancelam ação no S1 1.811 para 2.735 (+51%). Vida de 30 dias: hash 15c48b777198 para d13b921112ce, problemas 0 para 0, 100 vivos, nenhum NPC parado; minutos com comida zero: A 36.038 para 33.231, B 36.083 para 35.968. `run_sim` de 7 dias, sementes 1, 2 e 3: hashes idênticos. Caminhadas dos 30 dias: 28.421 planejadas, a maior com 16 min, nenhuma acima de 30. **Por quê:** o atraso do corpo some, nada vence por tempo, ninguém morre nem trava, e a mesma conta vale para a simulação e para o corpo. |
+| **Consequências** | Todos os tempos de caminhada ficam 16,8 vezes mais longos e o hash de qualquer mundo com `npc` muda. Seis testes passaram a fixar 8400 e dois (`test_action_runner.gd` e `test_npc_intents.gd`) tiveram a expectativa atualizada para 500 cm/min. **Fica aberto:** caminhadas acima de 150 m (30 min) vencem o `intent_timeout_min` = 30; a rota A para B (99 min) não foi exercitada. A diferença social e de renda entre S0 e S1 não era só atraso (a outra causa é hipótese, não medida). |
+| **Data / versão** | Decidida por Arthur em 09/11/2026 (relatório da LW-071d) · registrada em 09/11/2026 (LW-071e) |
+| **Relações** | DEC-016, DEC-035, DEC-122, DEC-123 |
 
 ---
 
@@ -1983,7 +2002,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-124` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-125` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto
@@ -2015,6 +2034,7 @@ Copiar, preencher e usar o próximo número livre (`DEC-124` em diante). **Nunca
 
 | Versão | Data (Brasília) | Alteração |
 |---|---|---|
+| 0.4 | 09/11/2026 | Entradas DEC-113 a DEC-123 criadas desde a 0.3 (LW-023 a LW-071a); totais recontados na LW-071b (APROVADA 62, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 123). Esta rodada (LW-071b e LW-071c) não mudou o status de nenhuma entrada. |
 | 0.3 | 01/11/2026 | Revisão final e diretrizes de Arthur das 15:32. Passaram a APROVADA (com a ressalva indicada na entrada): DEC-012, 015, 016 (só a referência), 022, 041, 050, 051, 062 (só a meta de três), 080 (só a antecipação de SP6 e SP4a), 081, 083 (só os princípios) e 089 (só o serviço). DEC-081 reintitulada. DEC-070: justificativa corrigida (a alocação às fases é proposta; só os nomes e a ordem das fases são de Arthur). Spikes renomeados de S1-S8 para SP1-SP8 (os níveis de simulação continuam S0-S3). Ressalvas dos status visíveis no índice. Nenhuma entrada criada. |
 | 0.2 | 01/11/2026 | Consolidação do pacote documental. Nenhuma entrada mudou de status e nenhuma foi criada. Revisão técnica de Godot 4.x aplicada à TA, ao RM e ao AGENTS (11 correções G1 a G11, ver `CONSISTENCY_REPORT.md` seção 6). Fontes atualizadas para as versões 0.2; consequências das cinco pendências da LW-001 e de DEC-087 ajustadas; seção 4.1 reescrita; nova seção 4.2 (achados C13 a C23). |
 | 0.1 | 01/11/2026 | Criação do registro. 112 entradas: decisões do Briefing Mestre e dos prompts de Arthur (APROVADA), propostas dos documentos GDD, arquitetura e roadmap (PROPOSTA), questões abertas (PENDENTE), alternativas recusadas pela arquitetura (DESCARTADA, com ratificação pendente) e a ordem de marcos do GDD (SUBSTITUÍDA). |
