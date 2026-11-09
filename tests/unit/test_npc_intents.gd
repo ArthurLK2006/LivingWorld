@@ -3,7 +3,7 @@ extends GutTest
 ## próprio teste cumpre as intenções e devolve os resultados. Mundo montado pelo SimulationRunner (relógio, agendador e eventos de
 ## verdade). Catálogo, necessidades e locais feitos à mão para os números esperados serem calculados na mão: taxas de necessidade zero
 ## (salvo onde o teste compara S0 com S1), `eat` de 20 min que alivia 60 de fome, `wait` de 10 min, `go_to_place` por distância
-## (8400 cm/min: 3000 cm = 1 min; 14000 cm = 2 min). O tempo limite do Intent é 30 min nos testes (o valor real está em
+## (500 cm/min, a velocidade padrão: 3000 cm = 6 min; 14000 cm = 28 min). O tempo limite do Intent é 30 min nos testes (o valor real está em
 ## data/intent_params.json). Um passo do relógio = 1 minuto.
 
 const WORLD_SEED: int = 3
@@ -188,12 +188,12 @@ func test_a_move_action_emits_move_to_place_with_the_place_center_and_the_travel
 	var intent: NpcIntent = rig.module.peek_pending_intents()[0]
 	assert_eq(intent.kind, NpcIntent.Kind.MOVE_TO_PLACE)
 	assert_eq(intent.destination_cm, WORK_CM)
-	assert_eq(intent.expected_minutes, 1, "3000 cm a 8400 cm por minuto: 1 minuto (no mínimo).")
+	assert_eq(intent.expected_minutes, 6, "3000 cm a 500 cm por minuto: 6 minutos.")
 	assert_true(rig.module.request_report_npc_result(_outcome(npc_id, 1, NpcActionResult.Outcome.ARRIVED)).ok)
 	assert_eq(rig.actions.advance(npc_id, rig.now()).outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 	assert_true(_begin(rig, npc_id, ActionRunner.GO_TO_PLACE_ID, FAR).ok)
 	var longer: NpcIntent = rig.module.peek_pending_intents()[0]
-	assert_eq([longer.expected_minutes, longer.action_serial], [2, 2], "Do centro do trabalho (104000) a FAR (118000): 14000 cm a 8400 por minuto, arredondado para cima, 2 minutos; é a segunda ação do NPC.")
+	assert_eq([longer.expected_minutes, longer.action_serial], [28, 2], "Do centro do trabalho (104000) a FAR (118000): 14000 cm a 500 cm por minuto, 28 minutos; é a segunda ação do NPC.")
 
 
 func test_an_action_without_a_place_aims_at_the_current_body_position() -> void:

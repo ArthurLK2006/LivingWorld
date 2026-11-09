@@ -4,6 +4,8 @@ extends GutTest
 ## Só em build de desenvolvimento, não é salvo, não entra no hash e não muda nenhuma decisão. Mundo de teste montado à mão (os números do
 ## teste_decision_flow.gd), com contas fáceis de conferir.
 
+## Velocidade de caminhada fixada na antiga (8400 cm/min): este teste mede a lógica, não a velocidade padrão; a velocidade padrão (500 cm/min, DEC-123) é coberta em test_action_runner.gd.
+const WALK_SPEED_CM_PER_MIN: int = 8400
 const VILLAGE: String = "village_a"
 const HOME: String = "home_a1"
 const WORK: String = "work_a1"
@@ -80,6 +82,7 @@ func _module(start_hunger: int, is_development_build: bool = true) -> NpcModule:
 		traits.append(TraitLoader.TraitDef.new(TRAIT_IDS[position], position))
 	definitions.traits = traits
 	definitions.params = _params()
+	definitions.walk_speed_cm_per_min = WALK_SPEED_CM_PER_MIN
 	definitions.places = _places()
 	definitions.food = FakeFood.new()
 	definitions.is_development_build = is_development_build

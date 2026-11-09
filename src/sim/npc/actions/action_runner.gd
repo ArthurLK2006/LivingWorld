@@ -27,8 +27,9 @@ const CODE_UNKNOWN_NEED: String = "NPC_UNKNOWN_NEED"
 const GO_TO_PLACE_ID: String = "go_to_place"
 ## Progresso em milésimos: 1000 = ação completa. Ação interrompida aplica o que cumpriu.
 const FULL_PROGRESS: int = 1000
-## Velocidade de caminhada [HIP]: cerca de 1,4 m/s, em centímetros por minuto de simulação. A LW-062 a leva para data/npc_params.json.
-const DEFAULT_WALK_SPEED_CM_PER_MIN: int = 8400
+## Velocidade de caminhada [HIP], em centímetros por minuto de simulação (P3 da DEC-123, LW-071d): 500 cm/min = 5 m por minuto de jogo; como 1 minuto de jogo
+## dura 1,25 s reais a 1x, 5 m ÷ 1,25 s = 4 m/s a 1x, a mesma velocidade do corpo S0 (antes eram 8400 cm/min, cerca de 67 m/s a 1x). A LW-062 a leva para data/npc_params.json.
+const DEFAULT_WALK_SPEED_CM_PER_MIN: int = 500
 ## Nenhuma viagem dura menos que isto [HIP], para uma ação de ida não terminar no mesmo minuto em que começa.
 const MIN_TRAVEL_MINUTES: int = 1
 ## Condições que são conferidas DE NOVO ao completar a ação (recurso compartilhado que outro NPC pode ter levado durante a ação). As de

@@ -5,6 +5,8 @@ extends GutTest
 ## fluxo `npc.decision` e a mesma semente dá o mesmo resultado; salvar e carregar no meio não muda nada; definições incompletas desligam o
 ## fluxo sem quebrar nada. As propriedades dos dados reais [HIP] não são fixadas aqui.
 
+## Velocidade de caminhada fixada na antiga (8400 cm/min): este teste mede a lógica, não a velocidade padrão; a velocidade padrão (500 cm/min, DEC-123) é coberta em test_action_runner.gd.
+const WALK_SPEED_CM_PER_MIN: int = 8400
 const VILLAGE: String = "village_a"
 const HOME: String = "home_a1"
 const WORK: String = "work_a1"
@@ -102,6 +104,7 @@ func _definitions(food: ActionConditionProvider, with_snack: bool = false, max_t
 		traits.append(TraitLoader.TraitDef.new(TRAIT_IDS[position], position))
 	definitions.traits = traits
 	definitions.params = _params(max_thinks)
+	definitions.walk_speed_cm_per_min = WALK_SPEED_CM_PER_MIN
 	definitions.places = _places(work_x_m)
 	definitions.food = food
 	return definitions

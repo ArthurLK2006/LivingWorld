@@ -6,6 +6,8 @@ extends GutTest
 ## abaixo de 0; efeito extra numa necessidade inexistente é recusado sem aplicar nada; dado do arquivo (válido e inválido, marca em cada
 ## linha); referências do módulo; e a marca TEMP-LW-066 em cada arquivo do provisório.
 
+## Velocidade de caminhada fixada na antiga (8400 cm/min): este teste mede a lógica, não a velocidade padrão; a velocidade padrão (500 cm/min, DEC-123) é coberta em test_action_runner.gd.
+const WALK_SPEED_CM_PER_MIN: int = 8400
 const VILLAGE: String = "village_a"
 const HOME: String = "home_a"
 const WORK: String = "work_a"
@@ -88,6 +90,7 @@ func _definitions(income: IncomeStub) -> NpcModule.Definitions:
 		traits.append(TraitLoader.TraitDef.new(TRAIT_IDS[position], position))
 	definitions.traits = traits
 	definitions.params = _params()
+	definitions.walk_speed_cm_per_min = WALK_SPEED_CM_PER_MIN
 	definitions.places = _places()
 	definitions.income = income
 	return definitions

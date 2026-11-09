@@ -15,9 +15,15 @@ var _world_seed: int
 var _is_started: bool = false
 
 
-func _init(world_seed: int) -> void:
+## `start_minute` (LW-042b): tempo simulado em que o mundo NOVO começa, em minutos desde o começo do ano 1 (0 = 00:00 do dia 1). Fora da faixa do
+## relógio, `push_error` e o relógio fica em 0. Carregar um save (`load_game`) restaura o tempo salvo por cima deste valor.
+func _init(world_seed: int, start_minute: int = 0) -> void:
 	_world_seed = world_seed
 	var clock: SimClock = SimClock.new()
+	# O relógio já valida a faixa em `on_load` e não muda o estado quando recusa; reaproveitar evita uma segunda regra de faixa.
+	var applied: Result = clock.on_load({SimClock.KEY_TOTAL_MINUTES: start_minute})
+	if not applied.ok:
+		push_error("SimulationRunner._init: tempo inicial %d recusado (%s): %s O relógio começa em 0." % [start_minute, applied.code, applied.message])
 	var context: SimContext = SimContext.new(clock, EventBus.new(clock), WorldRng.new(world_seed), IdGenerator.new())
 	world = World.new(context)
 
