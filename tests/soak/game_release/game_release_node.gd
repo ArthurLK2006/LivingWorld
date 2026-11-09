@@ -90,13 +90,16 @@ func _run() -> void:
 	if trials.has("povoado"):
 		await _enter_settlement()
 		await _measure("POVOADO 30 s com o jogador no centro de A, NPCs saindo de casa", SETTLEMENT_SECONDS)
+		if _max_bodies == 0:
+			print("  ATENÇÃO: o ensaio POVOADO não teve nenhum corpo; os números dele NÃO medem o caso (S0 cheio).")
 	get_tree().quit(0)
 
 
-## Leva o relógio às 6h45 (só passos da simulação, com o jogador longe), põe o jogador no centro de A e espera o terreno assentar: os corpos aparecem quando o
-## jogador começa a relatar a posição.
+## Religa o relógio (o ensaio PAUSADO o deixa parado: pausado, a simulação não anda, o jogador congela e não relata posição, e ninguém vira S0), leva-o às 6h45 (só
+## passos da simulação, com o jogador longe), põe o jogador no centro de A e espera o terreno assentar: os corpos aparecem quando o jogador começa a relatar a posição.
 func _enter_settlement() -> void:
 	var bridge: SimBridge = (get_node("/root/GameApp") as GameAppNode).peek_bridge()
+	bridge.request_pause(false)
 	var now: BridgeReplies.TimeSnapshot = bridge.peek_time()
 	(get_node("/root/SimulationHost") as SimulationHostNode).runner.run_steps(posmod(MORNING_START_MINUTE - (now.hour_of_day * 60 + now.minute_of_hour), SimClock.MINUTES_PER_DAY))
 	_body.global_position = Vector3(SETTLEMENT_A_M.x, bridge.peek_height(SETTLEMENT_A_M.x, SETTLEMENT_A_M.y).height_m + SETTLEMENT_CLEARANCE_M, SETTLEMENT_A_M.y)
