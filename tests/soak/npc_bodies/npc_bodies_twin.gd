@@ -15,6 +15,8 @@ const PHYSICS_DELTA: float = 1.0 / 60.0
 const DAY: int = SimClock.MINUTES_PER_DAY
 ## Quantos NPCs de A (os primeiros por ID) viram notáveis (T2) no começo, nos três mundos: só eles têm memória e relações (data/npc_params.json: teto 40).
 const NOTABLES: int = 40
+## Nomes das necessidades, na ordem de data/needs.json.
+const NEED_NAMES: Array[String] = ["hunger", "rest", "safety", "income", "social"]
 const REST: int = 1
 
 
@@ -244,3 +246,72 @@ static func _finish(rig: Rig, result: Run, days: int) -> void:
 			if arrived:
 				result.walks_ok.append(rig.spy.seen[key]["walk"])
 
+
+## A tabela S1 contra S0 (texto). O `solo` só entra no item (6).
+static func table(solo: Run, twin: Run, bodies: Run, days: int, speed: int) -> String:
+	var lines: Array[String] = ["LW-072h | %d dias | relógio %dx | jogador parado em A | tempo de parede: solo %.1f s, S1 %.1f s, S0 %.1f s" % [days, speed, solo.wall_ms / 1000.0, twin.wall_ms / 1000.0, bodies.wall_ms / 1000.0]]
+	lines.append(_row("", "S1 (sem corpo)", "S0 (com corpo)"))
+	lines.append(_row("(1) ações iniciadas (soma dos contadores, contando as de ir)", twin.count["iniciadas"], bodies.count["iniciadas"]))
+	lines.append(_row("    canceladas por reavaliação, ação COM corpo (havia Intent)", "-", bodies.total("reavaliacao_corpo")))
+	lines.append(_row("    canceladas por reavaliação, ação abstrata (sem Intent)", twin.total("reavaliacao_abstrata"), bodies.total("reavaliacao_abstrata")))
+	lines.append(_row("    canceladas por tempo limite do Intent (contador do sim: %d)" % bodies.count["tempo_limite_sim"], "-", bodies.total("tempo_limite")))
+	lines.append(_row("    canceladas por rota recusada (BLOCKED)", "-", bodies.total("bloqueada")))
+	lines.append(_row("    canceladas por alarme (nenhum foi disparado)", twin.count.get("alarmes", 0), bodies.count.get("alarmes", 0)))
+	lines.append(_row("    saídas de S0 (o Intent some, a ação segue abstrata)", "-", bodies.count.get("saidas_s0", 0)))
+	lines.append(_row("(2) sono cancelado COM corpo (n; `rest` aplicado em média)", "-", _mean(bodies, "reavaliacao_corpo")))
+	lines.append(_row("    sono cancelado abstrato, como no S1 (n; `rest` aplicado em média)", _mean(twin, "reavaliacao_abstrata"), _mean(bodies, "reavaliacao_abstrata")))
+	lines.append(_row("    outras ações canceladas COM corpo / abstratas (só contagem)", _others(twin), _others(bodies)))
+	for index: int in NpcState.NEED_COUNT:
+		lines.append("    %-7s |S0-S1| média, máx: %s | %d NPCs que tiveram corpo: %s" % [NEED_NAMES[index], _gap(bodies, twin, index, false), bodies.exposed.size(), _gap(bodies, twin, index, true)])
+	lines.append(_row("(3) atraso do DONE (min depois do fim previsto): ≤0 / 1 / 2 a 5 / >5 / máx", "n/a", _delays(bodies, "atraso_done")))
+	lines.append(_row("    atraso do ARRIVED (chegada de quem foi a um local): idem", "n/a", _delays(bodies, "atraso_arrived")))
+	lines.append(_row("(4) Intents de ir vencidos por caminhada longa (n; metros min / média / máx)", "-", _stats(bodies.walks_late)))
+	lines.append(_row("    caminhadas de ir que chegaram a tempo (n; metros min / média / máx)", "-", _stats(bodies.walks_ok)))
+	lines.append(_row("(5) registros de memória ao fim", twin.memory_by_day.back(), bodies.memory_by_day.back()))
+	lines.append(_row("    pares que se conhecem | soma das cinco dimensões", "%d | %d" % [twin.relations, twin.relation_sum], "%d | %d" % [bodies.relations, bodies.relation_sum]))
+	lines.append("    memórias ao fim de cada dia, S1: %s | S0: %s" % [str(twin.memory_by_day), str(bodies.memory_by_day)])
+	lines.append(_row("(6) hash do S1 gêmeo (%s) = hash do S1 sozinho (%s)?" % [twin.state_hash.left(10), solo.state_hash.left(10)], "sim" if twin.state_hash == solo.state_hash else "NÃO", ""))
+	return "\n".join(lines)
+
+
+# Variant: a coluna aceita número ou texto.
+static func _row(label: String, s1: Variant, s0: Variant) -> String:
+	return "%-86s %18s %18s" % [label, str(s1), str(s0)]
+
+
+## "n; `rest` aplicado em média" dos sonos cancelados por `cause`.
+static func _mean(measured: Run, cause: String) -> String:
+	var n: int = measured.count.get(cause + ":sleep", 0)
+	return "%d; %.1f" % [n, float(measured.count.get("efeito:%s:sleep" % cause, 0)) / maxf(n, 1.0)]
+
+
+## "COM corpo / abstratas" das ações canceladas por reavaliação que não são sono (o efeito delas se mistura com o IncomeStub, então só se conta).
+static func _others(measured: Run) -> String:
+	return "%d / %d" % [measured.total("reavaliacao_corpo") - measured.count.get("reavaliacao_corpo:sleep", 0), measured.total("reavaliacao_abstrata") - measured.count.get("reavaliacao_abstrata:sleep", 0)]
+
+
+## Média e máximo de |S0 - S1| de uma necessidade, entre todos os NPCs ou só entre os que tiveram corpo.
+static func _gap(bodies: Run, twin: Run, index: int, only_exposed: bool) -> String:
+	var sum: int = 0
+	var worst: int = 0
+	var n: int = 0
+	for npc_id: int in bodies.needs:
+		if not only_exposed or bodies.exposed.has(npc_id):
+			var gap: int = absi(bodies.needs[npc_id][index] - twin.needs[npc_id][index])
+			sum += gap
+			worst = maxi(worst, gap)
+			n += 1
+	return "%.2f, %d" % [float(sum) / maxf(n, 1.0), worst]
+
+
+static func _delays(measured: Run, kind: String) -> String:
+	return " / ".join([measured.count.get(kind + ":0", 0), measured.count.get(kind + ":1", 0), measured.count.get(kind + ":2a5", 0), measured.count.get(kind + ":mais_de_5", 0), measured.count.get(kind + ":maximo", 0)])
+
+
+static func _stats(values: Array[float]) -> String:
+	if values.is_empty():
+		return "0"
+	var sum: float = 0.0
+	for value: float in values:
+		sum += value
+	return "%d; %.1f / %.1f / %.1f" % [values.size(), values.min(), sum / values.size(), values.max()]

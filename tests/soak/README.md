@@ -36,3 +36,11 @@ tests/soak/run_npc_life_30d
 ```bash
 tests/soak/run_sp2 --release
 ```
+
+## Corpos contra o gêmeo sem corpos (LW-072h)
+
+`run_npc_bodies_7d` roda, sem janela, **7 dias de jogo** do mesmo mundo em três modos (semente 11, os 100 NPCs reais, o jogador parado no centro de A, 40 NPCs de A promovidos a notáveis para existir consequência social): SOLO (nada em volta), S1 (corpos desligados, amostrado a cada minuto) e S0 (corpos ligados, o `NpcBodyDriver` levando os 50 NPCs mais perto a 4 m/s vezes a velocidade do relógio). A velocidade 8 do relógio só encurta a medição (o corpo anda os mesmos 5 m por minuto de jogo em qualquer velocidade) e a corrida leva cerca de um minuto. Imprime uma tabela S1 contra S0: ações canceladas por causa, o `rest` aplicado nos sonos cancelados, a diferença final das necessidades, o atraso do `DONE` e do `ARRIVED`, os Intents vencidos por caminhada longa, memórias e relações, e se o S1 gêmeo tem o mesmo hash do S1 sozinho. Só usa consultas (`peek_*`): não edita o `npc`. A versão curta (1 dia, no `tools/check_all`) é `npc_bodies/test_npc_bodies_twin.gd`. **[LIM]** o jogador fica parado; o efeito aplicado só é medido para o sono (o das outras ações se mistura com o `IncomeStub`); as necessidades finais são levadas ao último minuto sem o resto da conta (ruído de 1); a 8x o passo de física do corpo é maior (0,53 m).
+
+```bash
+tests/soak/run_npc_bodies_7d
+```
