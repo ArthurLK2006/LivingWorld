@@ -175,6 +175,7 @@ func test_stale_result_and_timeout() -> void:
 	assert_true(world.module.intents.begin_embodied(npc_id, "wait", "", world.now()).ok)
 	var first_serial: int = world.module.peek_npc(npc_id).action_serial
 	assert_true(world.module.request_report_npc_result(NpcActionResult.new(npc_id, first_serial, NpcActionResult.Outcome.DONE, body_m)).ok, "A primeira ação termina pelo corpo.")
+	assert_eq(world.actions.advance(npc_id, world.now()).outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 	assert_true(world.module.intents.begin_embodied(npc_id, "talk", "a_social_01", world.now()).ok)
 	var before: NpcModule.NpcQuery = world.module.peek_npc(npc_id)
 	var stale: Result = world.module.request_report_npc_result(NpcActionResult.new(npc_id, first_serial, NpcActionResult.Outcome.DONE, body_m))

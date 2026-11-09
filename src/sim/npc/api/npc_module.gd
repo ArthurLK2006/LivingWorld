@@ -392,8 +392,9 @@ func peek_pending_intents() -> Array[NpcIntent]:
 	return intents.peek_pending()
 
 
-## Resultado que a apresentação devolve de um Intent (pela ponte). Sucesso faz os efeitos entrarem pela função única do runner; BLOCKED e
-## CANCELLED cancelam a ação sem efeito; resultado de ação velha é descartado e contado (NPC_RESULT_STALE).
+## Resultado que a apresentação devolve de um Intent (pela ponte). Sucesso só MARCA o fim da ação e acorda o NPC: os efeitos entram no pensamento
+## seguinte, pela função única do runner (LW-070d); BLOCKED e CANCELLED cancelam a ação na hora, sem efeito; resultado de ação velha é descartado
+## e contado (NPC_RESULT_STALE). Não devolve mais NPC_ACTION_FAILED: a falha por regra aparece no pensamento seguinte.
 func request_report_npc_result(result: NpcActionResult) -> Result:
 	if _ctx == null:
 		return Result.failure(CODE_NOT_READY, "NpcModule.request_report_npc_result: módulo sem setup() (sem relógio); esperado um módulo registrado no World.")
@@ -677,8 +678,6 @@ func _build_decision_runtime() -> String:
 	_runner = runner
 	_social = SocialActions.new(_npcs, _definitions.params.talk_gain, _definitions.params.talk_limit, _social_relation_values, _adjust_relation, _record_memory)
 	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _kill_npc, _social.on_action_finished)
-	# LW-070c: a ação do NPC com corpo termina pelo resultado do corpo (o quadro de Intents), e esse caminho avisa o MESMO gancho social do pensador.
-	intents.set_completion_hook(_social.on_action_finished)
 	return ""
 
 

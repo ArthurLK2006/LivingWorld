@@ -140,6 +140,12 @@ func _hunger() -> int:
 	return _npc_module.peek_npc(_npc_id).need_values[HUNGER]
 
 
+## O pensamento seguinte (LW-070d): quem encerra a ação que o relato marcou. O módulo montado à mão não tem pensador; um runner sobre a MESMA tabela de NPCs faz o `advance`.
+func _next_think() -> ActionRunner.AdvanceResult:
+	var places: SettlementService = SettlementService.new(_loaded.settlements, _loaded.places)
+	return _npc_module.create_action_runner(_catalog(), places, FoodAlways.new()).advance(_npc_id, _now())
+
+
 # ---------------------------------------------------------------------------------------------------- foco
 
 func test_a_position_report_delivers_the_stored_position_as_the_focus_of_that_actor() -> void:
@@ -251,11 +257,13 @@ func test_each_outcome_passes_through_the_bridge_with_its_own_effect() -> void:
 	_npc_runner.run_steps(EAT_MIN)
 	var done: Result = _bridge.request_report_npc_result(_npc_id, 1, BridgeReplies.NpcOutcome.DONE, BODY_AT_HOME_M)
 	assert_true(done.ok, done.message)
+	assert_eq(_next_think().outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 	assert_eq(_hunger(), START_HUNGER + EAT_RELIEF, "DONE: os efeitos entraram.")
 	assert_eq(_bridge.peek_pending_npc_intents().intents.size(), 0, "E o Intent saiu da lista.")
 	_begin(_npc_id, ActionRunner.GO_TO_PLACE_ID, WORK)
 	var arrived: Result = _bridge.request_report_npc_result(_npc_id, 2, BridgeReplies.NpcOutcome.ARRIVED, Vector3(WORK_M.x, 0.0, WORK_M.y))
 	assert_true(arrived.ok, arrived.message)
+	assert_eq(_next_think().outcome, ActionRunner.Outcome.COMPLETED, "O pensamento seguinte encerra a ação que o relato marcou (LW-070d).")
 	var npc: NpcModule.NpcQuery = _npc_module.peek_npc(_npc_id)
 	assert_eq([npc.place_id, npc.action_id], [WORK, ""], "ARRIVED: o NPC chegou ao local.")
 	for outcome: BridgeReplies.NpcOutcome in [BridgeReplies.NpcOutcome.BLOCKED, BridgeReplies.NpcOutcome.CANCELLED]:
