@@ -11,6 +11,10 @@ const DAY: int = 1440
 const HUNGER: int = 0
 const REST: int = 1
 const SOCIAL: int = 4
+const FAR_PLACE: String = "far_a"
+## Rota A -> B da DEC-123: 495 m a 5 m por minuto de jogo (500 cm/min) = 99 minutos.
+const ROUTE_AB_M: float = 495.0
+const ROUTE_AB_MIN: int = 99
 
 var _states: Dictionary[int, NpcState] = {}
 
@@ -381,10 +385,10 @@ func test_go_to_place_moves_the_npc_only_when_it_arrives() -> void:
 	state.place_id = ""
 	var runner: ActionRunner = _runner([_action(ActionRunner.GO_TO_PLACE_ID, 0)], [0, 0, 0, 0, 0], null, _world())
 	assert_true(runner.begin(1, ActionRunner.GO_TO_PLACE_ID, WORK, 0).ok)
-	assert_eq(state.action_ends_at, 2)
+	assert_eq(state.action_ends_at, 21, "100,5 m a 500 cm por minuto (velocidade padrão): 21 minutos.")
 	assert_eq(runner.advance(1, 1).outcome, ActionRunner.Outcome.RUNNING)
 	assert_eq([state.x_cm, state.z_cm, state.place_id], [0, 0, ""], "A caminho o NPC ainda não mudou de lugar.")
-	var arrived: ActionRunner.AdvanceResult = runner.advance(1, 2)
+	var arrived: ActionRunner.AdvanceResult = runner.advance(1, 21)
 	assert_eq(arrived.outcome, ActionRunner.Outcome.COMPLETED)
 	assert_eq([state.x_cm, state.z_cm], [10050, 0], "Chegou: a posição lógica é a do destino, em centímetros.")
 	assert_eq(state.place_id, WORK)
@@ -406,6 +410,50 @@ func test_go_to_place_needs_a_known_destination_and_the_world_service() -> void:
 	assert_eq(no_service.code, ActionRunner.CODE_NOT_READY)
 	assert_string_contains(no_service.message, "serviço de locais")
 	assert_true(without_world.begin(1, "wait", HOME, 0).ok, "As outras ações não dependem do `world`.")
+
+
+## Um local só, a `distance_m` metros da origem, para medir a caminhada com a velocidade padrão.
+func _world_with_far_place(distance_m: float) -> SettlementService:
+	var settlements: Array[Settlement] = [Settlement.new(VILLAGE, "settlement.a", Vector3(0.0, 0.0, 0.0))]
+	var places: Array[Place] = [Place.new(FAR_PLACE, VILLAGE, Place.KIND_WORK, Vector3(distance_m, 0.0, 0.0), 10)]
+	return SettlementService.new(settlements, places)
+
+
+## Velocidade padrão (P3 da DEC-123, LW-071d): 500 cm/min [HIP] = 5 m por minuto de jogo = 4 m/s a 1x. A rota A -> B de 495 m leva 99 minutos.
+func test_go_to_place_with_the_default_speed_takes_99_minutes_for_the_495_m_route() -> void:
+	var state: NpcState = _npc(1)
+	state.settlement_id = ""
+	state.place_id = ""
+	var runner: ActionRunner = _runner([_action(ActionRunner.GO_TO_PLACE_ID, 0)], [0, 0, 0, 0, 0], null, _world_with_far_place(ROUTE_AB_M))
+	var started: Result = runner.begin(1, ActionRunner.GO_TO_PLACE_ID, FAR_PLACE, 1000)
+	assert_true(started.ok, started.message)
+	assert_eq(state.action_ends_at, 1000 + ROUTE_AB_MIN, "495 m a 500 cm por minuto: 99 minutos de jogo.")
+
+
+## Limites da velocidade padrão: 5 m é 1 minuto exato e 1 cm a mais arredonda para 2; 150 m é 30 minutos (o `intent_timeout_min` dos dados) e 1 cm a mais, 31.
+func test_go_to_place_with_the_default_speed_rounds_up_at_the_minute_boundaries() -> void:
+	var cases: Array[Array] = [
+		["5 m: 1 minuto exato", 5.0, 1],
+		["5,01 m: 1 cm a mais, 2 minutos", 5.01, 2],
+		["150 m: 30 minutos, o tempo limite do Intent", 150.0, 30],
+		["150,01 m: 1 cm a mais, 31 minutos", 150.01, 31],
+	]
+	for case: Array in cases:
+		_states.clear()
+		var state: NpcState = _npc(1)
+		state.settlement_id = ""
+		state.place_id = ""
+		var runner: ActionRunner = _runner([_action(ActionRunner.GO_TO_PLACE_ID, 0)], [0, 0, 0, 0, 0], null, _world_with_far_place(case[1]))
+		assert_true(runner.begin(1, ActionRunner.GO_TO_PLACE_ID, FAR_PLACE, 0).ok, case[0])
+		assert_eq(state.action_ends_at, case[2], case[0])
+
+
+func test_a_walk_speed_of_zero_or_less_is_still_rejected() -> void:
+	_npc(1)
+	for speed: int in [0, -1, -ActionRunner.DEFAULT_WALK_SPEED_CM_PER_MIN]:
+		var runner: ActionRunner = ActionRunner.new(_states, [_action("wait", 10)], _need_defs([0, 0, 0, 0, 0]), null, null, speed)
+		assert_string_contains(runner.peek_problem(), "velocidade de caminhada", "Velocidade %d: o runner não deveria servir." % speed)
+		assert_eq(runner.begin(1, "wait", HOME, 0).code, ActionRunner.CODE_NOT_READY, "Velocidade %d: não começa ação." % speed)
 
 
 # ---------------------------------------------------------------------------------------------------- erros de uso

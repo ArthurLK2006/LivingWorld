@@ -5,6 +5,8 @@ extends GutTest
 ## alarme faz o NPC cauteloso fugir, o leal e sociável ajudar e o frio ignorar. Mundo de teste montado à mão, com contas fáceis de conferir:
 ## cada NPC tem a nota de cada reação calculada no comentário do teste.
 
+## Velocidade de caminhada fixada na antiga (8400 cm/min): este teste mede a lógica, não a velocidade padrão; a velocidade padrão (500 cm/min, DEC-123) é coberta em test_action_runner.gd.
+const WALK_SPEED_CM_PER_MIN: int = 8400
 const VILLAGE: String = "village_a"
 const HOME: String = "home_a1"
 const WORK: String = "work_a1"
@@ -99,6 +101,7 @@ func _module(is_development_build: bool = true, top_k: int = 1, margin: int = 0)
 		traits.append(TraitLoader.TraitDef.new(TRAIT_IDS[position], position))
 	definitions.traits = traits
 	definitions.params = _params(top_k, margin)
+	definitions.walk_speed_cm_per_min = WALK_SPEED_CM_PER_MIN
 	definitions.places = _places()
 	definitions.is_development_build = is_development_build
 	return NpcModule.new(_need_defs(), _routine(), definitions)

@@ -9,6 +9,8 @@ extends GutTest
 ## semente) sem corpos e com corpos ligados às 10h30, meia hora antes da conversa. Compara-se a consequência (relação, memórias e eventos), não o
 ## instante: o S1 fecha a ação no pensamento que percebe o fim e o S0, no pensamento seguinte ao relato do corpo (LW-070d), então o NPC com corpo recomeça a ação um minuto depois do S1.
 
+## Velocidade de caminhada fixada na antiga (8400 cm/min): este teste mede a lógica, não a velocidade padrão; a velocidade padrão (500 cm/min, DEC-123) é coberta em test_action_runner.gd.
+const WALK_SPEED_CM_PER_MIN: int = 8400
 const DATA_DIR: String = "res://data"
 const WORLD_SEEDS: Array[int] = [11, 12, 13]
 const ACTOR_ID: int = 77
@@ -146,6 +148,7 @@ func _place_cm(place_id: String) -> Vector2i:
 func _setup() -> NpcSetup:
 	var setup: NpcSetup = NpcSetup.from_dir(DATA_DIR, SettlementService.new(_data.settlements, _data.places), true)
 	assert_true(setup.result.ok, setup.result.message)
+	setup.definitions.walk_speed_cm_per_min = WALK_SPEED_CM_PER_MIN
 	return setup
 
 
