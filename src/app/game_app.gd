@@ -8,6 +8,9 @@ extends Node
 ## Provisórios até existirem a tela de novo jogo e o versionamento (Fase 0).
 const DEFAULT_WORLD_SEED: int = 1
 const GAME_VERSION: String = "0.0.1-dev"
+## [HIP] Hora em que o jogo NOVO começa (LW-042b): 05:45, uns 7 minutos antes de a claridade começar a subir (cerca de 5h52; o sol nasce às 6h na
+## apresentação, `DayNightCycle.SUNRISE_HOUR`), para o amanhecer aparecer logo ao abrir o jogo. Carregar um save restaura o tempo salvo.
+const NEW_GAME_START_MINUTE: int = 345
 ## Pasta dos arquivos de terreno lidos na primeira chamada de peek_bridge().
 const TERRAIN_DIR: String = "res://data/world"
 ## Pasta dos arquivos de dados do `npc` (necessidades, ações, ofícios, parâmetros, provisórios e população), lida no `_ready` (LW-067).
@@ -34,8 +37,14 @@ func _ready() -> void:
 		push_error("GameApp: autoload SimulationHost não encontrado.")
 		return
 	bind_host(host)
+	start_default_game(host)
+
+
+## Lê os dados e começa o jogo novo padrão no `host` dado: semente DEFAULT_WORLD_SEED e hora NEW_GAME_START_MINUTE. Saiu do `_ready` para o teste
+## usar um host próprio, sem reiniciar o mundo dos autoloads.
+func start_default_game(host: SimulationHostNode) -> void:
 	_places = _load_places()
-	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points(), _load_npc_setup())
+	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points(), _load_npc_setup(), NEW_GAME_START_MINUTE)
 
 
 func bind_host(host: SimulationHostNode) -> void:

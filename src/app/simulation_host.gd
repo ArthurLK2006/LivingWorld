@@ -21,13 +21,14 @@ var npc: NpcModule
 ## Cria um mundo novo, encerrando o anterior se houver. Com `terrain`, registra os módulos do jogo (GameModules); sem ele o mundo
 ## nasce só com o núcleo (testes e ferramentas que não precisam do terreno). `points` são os pontos de interesse já lidos (LW-049).
 ## `npc_setup` (LW-067): os dados do `npc` já lidos; sem ele o `npc` nasce sem NPCs. Falha de registro: push_error e o mundo segue sem módulos.
-func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null) -> void:
+## `start_minute` (LW-042b): tempo simulado em que o mundo novo começa, repassado ao `SimulationRunner`; o padrão 0 é 00:00 do dia 1.
+func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null, start_minute: int = 0) -> void:
 	if runner != null:
 		runner.finish()
 	character = null
 	interaction = null
 	npc = null
-	runner = SimulationRunner.new(world_seed)
+	runner = SimulationRunner.new(world_seed, start_minute)
 	if terrain != null:
 		var modules: GameModules = GameModules.register(runner, terrain, points, npc_setup)
 		if modules.result.ok:
