@@ -108,6 +108,8 @@ func validate() -> Array[String]:
 			problems.append("NPC %d: critical_since %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.critical_since, NpcState.NO_TIME])
 		if state.alarm_until < NpcState.NO_TIME:
 			problems.append("NPC %d: alarm_until %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.alarm_until, NpcState.NO_TIME])
+		if state.last_player_talk_at < NpcState.NO_TIME:
+			problems.append("NPC %d: last_player_talk_at %d inválido; esperado %d (nunca) ou um minuto de 0 em diante." % [npc_id, state.last_player_talk_at, NpcState.NO_TIME])
 		if not state.is_alive and state.critical_since != NpcState.NO_TIME:
 			problems.append("NPC %d: morto, mas com critical_since %d; esperado %d." % [npc_id, state.critical_since, NpcState.NO_TIME])
 		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
