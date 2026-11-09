@@ -8,6 +8,7 @@ extends RefCounted
 ## (bridge_replies.gd), fora deste arquivo, para ele não passar do limite de tamanho (LW-053B).
 ## LW-070: repasses finos do protocolo de NPC em S0 (intenções pendentes, resultado e posições do corpo) ao `NpcModule`, que a ponte recebe
 ## no construtor (opcional), e a entrega do foco do LOD a cada relato de posição do ator. Nenhuma regra de jogo aqui.
+## LW-072a: o interruptor de corpos e a consulta dos corpos a manter (os NPCs em S0), para a apresentação desenhar os NPCs.
 
 const CODE_NO_GAME: String = "BRIDGE_NO_GAME"
 const CODE_NO_TERRAIN: String = "BRIDGE_NO_TERRAIN"
@@ -211,6 +212,32 @@ func request_report_npc_positions(positions: Dictionary[int, Vector3]) -> Result
 	if _npc == null:
 		return _missing_npc("request_report_npc_positions")
 	return _npc.request_report_npc_positions(positions)
+
+
+## Repassa ao `npc` se a apresentação tem corpos para os NPCs em S0 (LW-072a). Sem corpos o `npc` mantém todos em S1; o jogo nasce sem eles e a
+## apresentação os liga. A ponte não decide nada: o Result do `npc` volta como está. Sem `npc`: BRIDGE_NO_NPC.
+func request_set_bodies_available(available: bool) -> Result:
+	if _npc == null:
+		return _missing_npc("request_set_bodies_available")
+	return _npc.request_set_bodies_available(available)
+
+
+## Os corpos que a apresentação deve manter agora (LW-072a): os NPCs em S0, em CÓPIAS e em ordem crescente de NPC, com a posição em metros
+## (x e z do LOD, y = altura do terreno). Lista vazia enquanto não há corpos ou ninguém está perto. A apresentação CONSULTA a cada quadro (sem
+## sinal); quem decide quem está em S0 é o LOD do `npc`. Sem terreno: BRIDGE_NO_TERRAIN; sem `npc`: BRIDGE_NO_NPC.
+func peek_npc_bodies() -> BridgeReplies.NpcBodiesReply:
+	if _terrain == null:
+		return BridgeReplies.NpcBodiesReply.new(_missing_terrain("peek_npc_bodies"), [])
+	if _npc == null:
+		return BridgeReplies.NpcBodiesReply.new(_missing_npc("peek_npc_bodies"), [])
+	var copies: Array[BridgeReplies.NpcBodyReply] = []
+	for npc_id: int in _npc.lod.s0_ids():
+		var spot_m: Vector2 = Vector2(_npc.lod.position_of(npc_id)) / TerrainData.CM_PER_METER
+		var ground: TerrainData.HeightQuery = _terrain.peek_height(spot_m.x, spot_m.y)
+		if not ground.result.ok:
+			return BridgeReplies.NpcBodiesReply.new(ground.result, [])
+		copies.append(BridgeReplies.NpcBodyReply.new(npc_id, Vector3(spot_m.x, ground.height_m, spot_m.y)))
+	return BridgeReplies.NpcBodiesReply.new(Result.success(), copies)
 
 
 ## Enfileira uma intenção. Recusa intenção nula e ator sem ID válido. Nada a consome ainda.
