@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais atualizados em 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
+**Totais atualizados em 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -1919,7 +1919,7 @@ Os oito desvios do RM (seção 0.13-B) são **PROPOSTAS**, exceto a ordem das fa
 
 ### 5.2 Todas as decisões APROVADAS (lista rápida)
 
-DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicionada), 013, 014, 015, 016 (só a referência), 017, 018, 020, 022, 025, 026, 027 (princípio), 035, 036, 037, 041, 045, 046, 050 (composição inicial), 051, 062 (meta de três), 072, 073, 080 (só a antecipação de SP6 e SP4a), 081, 083 (princípios), 089 (só o serviço), 090, 091, 092, 093, 094 (estrutura), 095, 096, 097, 100, 101.
+DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicionada), 013, 014, 015, 016 (só a referência), 017, 018, 020, 022, 025, 026, 027 (princípio), 035, 036, 037, 041, 045, 046, 050 (composição inicial), 051, 057, 062 (meta de três), 072, 073, 080 (só a antecipação de SP6 e SP4a), 081, 082 (só JSON validado), 083 (princípios), 084 (formato de save do protótipo), 086 (GUT 9.7.1), 089 (só o serviço), 090, 091, 092, 093, 094 (estrutura), 095, 096, 097, 100, 101, 113 (só a régua da LW-023), 114 (reversível), 115, 116, 117 (só a direção), 118, 119, 120, 121 (só como ponto de partida), 122 (por ora), 123 (só a direção).
 
 ---
 
