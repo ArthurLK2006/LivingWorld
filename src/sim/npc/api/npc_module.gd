@@ -13,7 +13,8 @@ extends SimModule
 ## resumo em traços ao rebaixar. LW-079: relações entre pessoas (`RelationGraph`, uma por par, salva junto): `peek_opinion`, ajuste por
 ## `NpcNotables.adjust_relation`, descarte na morte e arrumação ao rebaixar. LW-081a: o código foi dividido em classes ajudantes (docs/modules/npc.md, "Organização
 ## interna"); o módulo segue como a ÚNICA porta e só delega: `NpcBodies` (passo 1) cuida do LOD, dos Intents e do interruptor de corpos; `NpcNotables`
-## (passo 2), da memória, das relações e dos tiers. Dependências: só core, `world` e a própria pasta; não importa o `character`.
+## (passo 2), da memória, das relações e dos tiers; `NpcPersistence` (passo 3), de salvar, carregar, conferir e resumir. Dependências: só core, `world` e a
+## própria pasta; não importa o `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -74,6 +75,8 @@ var _bodies: NpcBodies
 ## Notáveis (LW-081a, passo 2): memória (LW-078), relações (LW-079), promoção e rebaixamento (LW-077) e o descarte na morte. Dona das tabelas de memória e de
 ## relações, que são salvas junto (chaves `memories` e `relations`). Criada no construtor.
 var _notables: NpcNotables
+## Estado para fora (LW-081a, passo 3): salvar, carregar, conferir e resumir, com o estoque de comida salvo. Criada no construtor.
+var _persistence: NpcPersistence
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -86,12 +89,14 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_defs_problem = "" if need_defs.is_empty() else NeedMath.definitions_problem(need_defs)
 	_bodies = NpcBodies.new(lod, intents, _npcs)
 	_notables = NpcNotables.new(_npcs, _definitions, _unknown)
+	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
 
 
 func setup(ctx: SimContext) -> void:
 	_ctx = ctx
 	_bodies.setup(ctx, _definitions.lod_params if _definitions != null else null)
 	_notables.setup(ctx)
+	_persistence.setup(ctx)
 
 
 ## Cria um NPC (ID novo de ctx.ids). Confere o pedido inteiro ANTES de gastar um ID: pedido recusado não altera nada.
@@ -366,117 +371,24 @@ func request_report_npc_positions(batch: Dictionary[int, Vector3]) -> Result:
 
 ## IDs viram texto (assim o JSON guarda chaves) e entram em ordem crescente do número.
 func serialize() -> Dictionary:
-	var saved: Dictionary = {}
-	for npc_id: int in _sorted_ids():
-		saved[str(npc_id)] = _npcs[npc_id].to_dict()
-	var data: Dictionary = {KEY_NPCS: saved}
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		data[FoodStub.SAVE_KEY] = food_stub.serialize()
-	var saved_memories: Dictionary = _notables.memories_to_dict()
-	if not saved_memories.is_empty():
-		data[KEY_MEMORIES] = saved_memories
-	if _notables.has_relations():
-		data[KEY_RELATIONS] = _notables.relations_to_array()
-	return data
+	return _persistence.serialize()
 
 
 ## Confere tudo antes de alterar o estado: se algo for inválido, o estado fica como estava. Só recusa o que não dá para converter
 ## (estrutura, tipos, chave de ID); faixas e coerência ficam com validate() (mesmo critério do `character`).
 func on_load(data: Dictionary) -> Result:
-	# Variant: valor cru do save (JSON); o tipo é conferido na linha seguinte.
-	var raw_npcs: Variant = data.get(KEY_NPCS)
-	if typeof(raw_npcs) != TYPE_DICTIONARY:
-		return _invalid_save("campo '%s' ausente ou não é um objeto (veio %s)" % [KEY_NPCS, type_string(typeof(raw_npcs))])
-	var entries: Dictionary = raw_npcs
-	var keys: Array = entries.keys()
-	keys.sort()
-	var loaded: Dictionary[int, NpcState] = {}
-	for key: Variant in keys:
-		var npc_id: int = _read_npc_id(str(key))
-		if npc_id == IdGenerator.NO_ID:
-			return _invalid_save("chave de NPC '%s' inválida; esperado um inteiro de %d a %d" % [str(key), IdGenerator.FIRST_ID, IdGenerator.MAX_ID])
-		if loaded.has(npc_id):
-			return _invalid_save("o NPC %d aparece duas vezes (chave '%s')" % [npc_id, str(key)])
-		var parsed: NpcState.ParseResult = NpcState.parse(npc_id, entries[key])
-		if parsed.state == null:
-			return _invalid_save("NPC %d: %s" % [npc_id, parsed.error])
-		loaded[npc_id] = parsed.state
-	var stock_problem: String = _food_stock_save_problem(data)
-	if not stock_problem.is_empty():
-		return _invalid_save(stock_problem)
-	var loaded_notables: NpcNotables.ParsedSave = _notables.parse_save(data.get(KEY_MEMORIES, {}), data.get(KEY_RELATIONS, []))
-	if not loaded_notables.error.is_empty():
-		return _invalid_save(loaded_notables.error)
-	_npcs.clear()
-	for loaded_id: int in loaded:
-		_npcs[loaded_id] = loaded[loaded_id]
-	_notables.replace_with(loaded_notables)
-	_load_food_stock(data)
-	_tracer.clear()
-	return Result.success()
+	return _persistence.on_load(data)
 
 
 ## Problemas do estado (lista vazia se estiver tudo certo). O ofício é conferido contra a tabela de rotina quando o módulo a tem (LW-061);
 ## local e ação ficam como texto: cada tarefa futura acrescenta a sua conferência.
 func validate() -> Array[String]:
-	var problems: Array[String] = []
-	if not _defs_problem.is_empty():
-		problems.append("Definições de necessidades inválidas: %s." % _defs_problem)
-	var next_id: int = _next_issued_id()
-	for npc_id: int in _sorted_ids():
-		var state: NpcState = _npcs[npc_id]
-		if npc_id < IdGenerator.FIRST_ID or npc_id > IdGenerator.MAX_ID:
-			problems.append("NPC %d: ID fora da faixa [%d, %d]." % [npc_id, IdGenerator.FIRST_ID, IdGenerator.MAX_ID])
-		elif _ctx != null and npc_id >= next_id:
-			problems.append("NPC %d: ID acima do contador do core (o próximo ID a sair é %d); esse ID nunca foi emitido." % [npc_id, next_id])
-		if state.tier != NpcState.TIER_NORMAL and state.tier != NpcState.TIER_NOTABLE:
-			problems.append("NPC %d: tier %d inválido; esperado %d ou %d." % [npc_id, state.tier, NpcState.TIER_NORMAL, NpcState.TIER_NOTABLE])
-		_append_range_problems(problems, npc_id, "necessidade", state.need_values, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
-		_append_range_problems(problems, npc_id, "resto de necessidade", state.need_remainders, 0, NeedMath.MAX_REMAINDER)
-		_append_range_problems(problems, npc_id, "traço", state.traits, NpcState.VALUE_MIN, NpcState.VALUE_MAX)
-		if not state.is_alive and not state.action_id.is_empty():
-			problems.append("NPC %d: morto, mas com ação atual '%s'; esperado nenhuma." % [npc_id, state.action_id])
-		if state.next_think_time < 0:
-			problems.append("NPC %d: next_think_time %d negativo; esperado 0 ou mais." % [npc_id, state.next_think_time])
-		if state.critical_since < NpcState.NO_TIME:
-			problems.append("NPC %d: critical_since %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.critical_since, NpcState.NO_TIME])
-		if state.alarm_until < NpcState.NO_TIME:
-			problems.append("NPC %d: alarm_until %d inválido; esperado %d (nenhuma) ou um minuto de 0 em diante." % [npc_id, state.alarm_until, NpcState.NO_TIME])
-		if not state.is_alive and state.critical_since != NpcState.NO_TIME:
-			problems.append("NPC %d: morto, mas com critical_since %d; esperado %d." % [npc_id, state.critical_since, NpcState.NO_TIME])
-		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
-			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
-	problems.append_array(_notables.problems())
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		problems.append_array(food_stub.validate())
-	return problems
+	return _persistence.validate()
 
 
 ## Contagens por tier, vivos e mortos, ofícios e o tamanho em bytes do serialize() (backlog I4). Só para depuração.
 func debug_summary() -> Dictionary:
-	var summary: Dictionary = peek_counts()
-	var by_occupation: Dictionary = {}
-	for npc_id: int in _sorted_ids():
-		var occupation: String = _npcs[npc_id].occupation_id
-		var label: String = occupation if not occupation.is_empty() else NO_OCCUPATION_LABEL
-		by_occupation[label] = int(by_occupation.get(label, 0)) + 1
-	var sorted_labels: Array = by_occupation.keys()
-	sorted_labels.sort()
-	var ordered: Dictionary = {}
-	for label: Variant in sorted_labels:
-		ordered[label] = by_occupation[label]
-	summary["by_occupation"] = ordered
-	summary["serialize_bytes"] = JSON.stringify(serialize()).to_utf8_buffer().size()
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		summary["food_stock"] = food_stub.serialize()
-	_notables.add_summary(summary)
-	summary["population_problem"] = _population_problem
-	summary["bodies_available"] = _bodies.is_available()
-	summary["traced_npcs"] = _tracer.traced_count()
-	summary["trace_records_made"] = _tracer.records_made
+	var summary: Dictionary = _persistence.debug_summary(peek_counts(), _population_problem)
 	summary["decision_problem"] = _decision_problem_text()
 	summary["decision_enabled"] = _thinker != null
 	summary["thinks_last_step"] = _thinker.last_step_thinks if _thinker != null else 0
@@ -607,29 +519,6 @@ func _food_not_configured(caller: String) -> Result:
 	return Result.failure(CODE_FOOD_NOT_CONFIGURED, "NpcModule.%s: o módulo foi criado sem FoodStub; não há estoque de comida." % caller)
 
 
-## TEMP-LW-065: problema do trecho de comida do save (texto vazio = pode carregar). Save sem o trecho (de antes do FoodStub) é aceito: o
-## estoque volta ao inicial. Trecho de comida num módulo sem FoodStub é recusado.
-func _food_stock_save_problem(data: Dictionary) -> String:
-	if not data.has(FoodStub.SAVE_KEY):
-		return ""
-	var food_stub: FoodStub = _food_stub()
-	if food_stub == null:
-		return "o save tem estoque de comida ('%s'), mas o módulo foi criado sem FoodStub" % FoodStub.SAVE_KEY
-	return food_stub.check_save(data[FoodStub.SAVE_KEY])
-
-
-## TEMP-LW-065: carrega o estoque já conferido (ou o devolve ao inicial se o save não tem o trecho).
-func _load_food_stock(data: Dictionary) -> void:
-	var food_stub: FoodStub = _food_stub()
-	if food_stub == null:
-		return
-	if data.has(FoodStub.SAVE_KEY):
-		var entries: Dictionary = data[FoodStub.SAVE_KEY]
-		food_stub.load_save(entries)
-	else:
-		food_stub.reset_to_start()
-
-
 ## A população inicial não nasceu (ou parou no meio): guarda o motivo e o registra no log, para o erro de dado nunca passar em silêncio.
 func _report_population_problem(detail: String) -> void:
 	_population_problem = detail
@@ -687,36 +576,8 @@ func _spec_problem(spec: NpcSpec) -> String:
 	return ""
 
 
-func _append_range_problems(problems: Array[String], npc_id: int, what: String, values: PackedInt64Array, lowest: int, highest: int) -> void:
-	for index: int in values.size():
-		if values[index] < lowest or values[index] > highest:
-			problems.append("NPC %d: %s na posição %d fora de %d a %d (valor %d)." % [npc_id, what, index, lowest, highest, values[index]])
-
-
-## Próximo ID que o contador do core entregaria (0 se o módulo ainda não passou por setup()).
-func _next_issued_id() -> int:
-	if _ctx == null:
-		return IdGenerator.NO_ID
-	# Variant: o contador sai do serialize() do core, que é dado simples.
-	var raw_next: Variant = _ctx.ids.serialize()[IdGenerator.KEY_NEXT_ID]
-	var next_id: int = raw_next
-	return next_id
-
-
 func _unknown(caller: String, npc_id: int) -> Result:
 	return Result.failure(CODE_UNKNOWN, "NpcModule.%s: o NPC %d não existe; esperado um ID devolvido por request_create_npc (há %d NPC(s))." % [caller, npc_id, _npcs.size()])
-
-
-func _invalid_save(detail: String) -> Result:
-	return Result.failure(CODE_INVALID_SAVE, "NpcModule.on_load: %s." % detail)
-
-
-## ID de NPC a partir do texto da chave; NO_ID se não for um inteiro na faixa válida.
-func _read_npc_id(key_text: String) -> int:
-	if not key_text.is_valid_int():
-		return IdGenerator.NO_ID
-	var value: int = key_text.to_int()
-	return value if value >= IdGenerator.FIRST_ID and value <= IdGenerator.MAX_ID else IdGenerator.NO_ID
 
 
 ## O que o módulo precisa, além das necessidades e da rotina, para DECIDIR (LW-063). Tudo já lido e validado por quem monta o módulo (os
