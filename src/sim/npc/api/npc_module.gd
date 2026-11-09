@@ -13,8 +13,8 @@ extends SimModule
 ## resumo em traços ao rebaixar. LW-079: relações entre pessoas (`RelationGraph`, uma por par, salva junto): `peek_opinion`, ajuste por
 ## `NpcNotables.adjust_relation`, descarte na morte e arrumação ao rebaixar. LW-081a: o código foi dividido em classes ajudantes (docs/modules/npc.md, "Organização
 ## interna"); o módulo segue como a ÚNICA porta e só delega: `NpcBodies` (passo 1) cuida do LOD, dos Intents e do interruptor de corpos; `NpcNotables`
-## (passo 2), da memória, das relações e dos tiers; `NpcPersistence` (passo 3), de salvar, carregar, conferir e resumir. Dependências: só core, `world` e a
-## própria pasta; não importa o `character`.
+## (passo 2), da memória, das relações e dos tiers; `NpcPersistence` (passo 3), de salvar, carregar, conferir e resumir; `NpcLifecycle` (passo 4), de criar, remover e
+## matar. Dependências: só core, `world` e a própria pasta; não importa o `character`.
 
 const CODE_NOT_READY: String = "NPC_NOT_READY"
 const CODE_UNKNOWN: String = "NPC_UNKNOWN"
@@ -77,6 +77,8 @@ var _bodies: NpcBodies
 var _notables: NpcNotables
 ## Estado para fora (LW-081a, passo 3): salvar, carregar, conferir e resumir, com o estoque de comida salvo. Criada no construtor.
 var _persistence: NpcPersistence
+## Vida e morte (LW-081a, passo 4): criar, remover, matar e conferir o pedido de criação. Criada no construtor.
+var _lifecycle: NpcLifecycle
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -90,6 +92,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_bodies = NpcBodies.new(lod, intents, _npcs)
 	_notables = NpcNotables.new(_npcs, _definitions, _unknown)
 	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
+	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown)
 
 
 func setup(ctx: SimContext) -> void:
@@ -97,38 +100,17 @@ func setup(ctx: SimContext) -> void:
 	_bodies.setup(ctx, _definitions.lod_params if _definitions != null else null)
 	_notables.setup(ctx)
 	_persistence.setup(ctx)
+	_lifecycle.setup(ctx)
 
 
 ## Cria um NPC (ID novo de ctx.ids). Confere o pedido inteiro ANTES de gastar um ID: pedido recusado não altera nada.
 func request_create_npc(spec: NpcSpec) -> CreateResult:
-	if _ctx == null:
-		return CreateResult.new(Result.failure(CODE_NOT_READY, "NpcModule.request_create_npc: módulo sem setup() (sem relógio nem IDs); esperado um módulo registrado no World."), IdGenerator.NO_ID)
-	if not _defs_problem.is_empty():
-		return CreateResult.new(Result.failure(CODE_NOT_READY, "NpcModule.request_create_npc: definições de necessidades inválidas: %s." % _defs_problem), IdGenerator.NO_ID)
-	var problem: String = _spec_problem(spec)
-	if not problem.is_empty():
-		return CreateResult.new(Result.failure(CODE_INVALID_SPEC, "NpcModule.request_create_npc: pedido inválido: %s." % problem), IdGenerator.NO_ID)
-	if spec.tier == NpcState.TIER_NOTABLE and not NpcTiers.has_room(NpcTiers.count_notable_alive(_npcs), _notables.max_notable()):
-		return CreateResult.new(Result.failure(NpcTiers.CODE_T2_LIMIT_REACHED, "NpcModule.request_create_npc: já há %d NPC(s) notável(is) vivo(s) e o teto (max_t2) é %d; esperado um pedido com tier %d ou uma vaga livre." % [NpcTiers.count_notable_alive(_npcs), _notables.max_notable(), NpcState.TIER_NORMAL]), IdGenerator.NO_ID)
-	var npc_id: int = _ctx.ids.next_id()
-	if npc_id == IdGenerator.NO_ID:
-		return CreateResult.new(Result.failure(CODE_NO_ID, "NpcModule.request_create_npc: o contador de IDs esgotou; não há ID novo."), IdGenerator.NO_ID)
-	if _npcs.has(npc_id):
-		return CreateResult.new(Result.failure(CODE_DUPLICATE_ID, "NpcModule.request_create_npc: o ID novo %d já pertence a um NPC (save inconsistente); nada foi sobrescrito." % npc_id), IdGenerator.NO_ID)
-	var created: NpcState = NpcState.from_spec(npc_id, spec, _ctx.clock.total_minutes(), _start_needs())
-	created.next_think_time = _first_think_time(npc_id, _ctx.clock.total_minutes())
-	_npcs[npc_id] = created
-	return CreateResult.new(Result.success(), npc_id)
+	return _lifecycle.create(spec)
 
 
 ## Remove o NPC da tabela. O ID não volta: o contador do core só sobe.
 func request_remove_npc(npc_id: int) -> Result:
-	if not _npcs.has(npc_id):
-		return _unknown("request_remove_npc", npc_id)
-	_npcs.erase(npc_id)
-	_notables.forget(npc_id)
-	_tracer.forget(npc_id)
-	return Result.success()
+	return _lifecycle.remove(npc_id)
 
 
 ## Promove o NPC de T1 a T2 (LW-077; `tier` precisa ser 2). Teto global `max_t2` dos parâmetros: cheio, `NPC_T2_LIMIT_REACHED` e ninguém é
@@ -459,7 +441,7 @@ func _build_decision_runtime() -> String:
 	_provider = provider
 	_runner = runner
 	_social = SocialActions.new(_npcs, _definitions.params.talk_gain, _definitions.params.talk_limit, _notables.relation_values, _notables.adjust_relation, _notables.record_memory)
-	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _kill_npc, _social.on_action_finished)
+	_thinker = NpcThinker.new(_ctx, _npcs, runner, scorer, PlaceChooser.new(_definitions.places, occupancy), provider, _routine, _definitions.params, _need_defs, _definitions.actions, _definitions.places, _start_action, _tracer, _lifecycle.kill, _social.on_action_finished)
 	return ""
 
 
@@ -471,40 +453,6 @@ func _start_action(npc_id: int, action_id: String, place_id: String, now: int) -
 	if _bodies.is_embodied(npc_id):
 		return intents.begin_embodied(npc_id, action_id, place_id, now)
 	return _runner.begin(npc_id, action_id, place_id, now)
-
-
-## Morte por necessidade crítica prolongada (LW-081): o NPC deixa de estar vivo (`is_alive` falso, causa e minuto guardados), a ação é cancelada
-## SEM efeito, o local é liberado (a ocupação é derivada dos vivos; `place_id` fica vazio) e `NpcDied(npc_id, cause, tier)` é publicado. Fica só a
-## identidade e a causa, para quem guarda o ID (as memórias e relações dele, LW-078 e LW-079, serão descartadas aqui quando existirem).
-func _kill_npc(npc_id: int, cause: String, now: int) -> void:
-	if not _npcs.has(npc_id):
-		return
-	var state: NpcState = _npcs[npc_id]
-	if not state.is_alive:
-		return
-	state.is_alive = false
-	state.death_cause = cause
-	state.died_at = now
-	state.action_id = ""
-	state.action_target_place_id = ""
-	state.action_started_at = 0
-	state.action_ends_at = 0
-	state.place_id = ""
-	state.critical_since = NpcState.NO_TIME
-	state.alarm_until = NpcState.NO_TIME
-	state.alarm_place_id = ""
-	_notables.forget(npc_id)
-	_ctx.events.publish(NpcDied.new(npc_id, cause, state.tier))
-
-
-## Minuto do primeiro pensamento: agora mais 1 mais a FASE do NPC (`npc_id` mod intervalo), para os NPCs criados juntos não pensarem todos
-## no mesmo passo. O "mais 1" faz o primeiro pensamento cair sempre DEPOIS do minuto da criação (não depende de o módulo já ter rodado
-## neste passo) e põe as fases em minutos distintos de 1 a `intervalo` (sem fase no minuto da criação, duas fases não se juntam no
-## primeiro passo). Sem parâmetros: agora.
-func _first_think_time(npc_id: int, now: int) -> int:
-	if _definitions == null or _definitions.params == null:
-		return now
-	return now + 1 + npc_id % maxi(1, _definitions.params.think_interval_min)
 
 
 ## TEMP-LW-065: o FoodStub real, se o provedor de comida das definições for ele (os testes usam um provedor falso, sem estado salvo).
@@ -533,16 +481,6 @@ func _sorted_ids() -> Array[int]:
 	return ids
 
 
-## Valor inicial das necessidades: o `start_value` de cada definição; sem definições, tudo zero.
-func _start_needs() -> PackedInt64Array:
-	var needs: PackedInt64Array = PackedInt64Array()
-	needs.resize(NpcState.NEED_COUNT)
-	if not _need_defs.is_empty():
-		for def: NeedDef in _need_defs:
-			needs[def.order] = def.start_value
-	return needs
-
-
 ## Nível de urgência de cada necessidade do NPC, pelos limiares dos dados. Sem definições, tudo 0 (não há limiares para comparar).
 func _urgencies_of(state: NpcState) -> PackedInt64Array:
 	var urgencies: PackedInt64Array = PackedInt64Array()
@@ -552,28 +490,6 @@ func _urgencies_of(state: NpcState) -> PackedInt64Array:
 	for def: NeedDef in _need_defs:
 		urgencies[def.order] = NeedMath.urgency(state.need_values[def.order], def)
 	return urgencies
-
-
-## Primeiro problema do pedido de criação (texto vazio se estiver certo).
-func _spec_problem(spec: NpcSpec) -> String:
-	if spec == null:
-		return "pedido nulo; esperado um NpcSpec"
-	if spec.name_key.strip_edges().is_empty():
-		return "name_key vazia; esperado a chave de texto do nome"
-	if spec.name_number < 0:
-		return "name_number %d negativo; esperado 0 ou mais" % spec.name_number
-	if spec.tier != NpcState.TIER_NORMAL and spec.tier != NpcState.TIER_NOTABLE:
-		return "tier %d inválido; esperado %d ou %d" % [spec.tier, NpcState.TIER_NORMAL, NpcState.TIER_NOTABLE]
-	if spec.traits.size() != NpcState.TRAIT_COUNT:
-		return "traits com %d valores; esperado %d (um por traço)" % [spec.traits.size(), NpcState.TRAIT_COUNT]
-	for index: int in spec.traits.size():
-		if spec.traits[index] < NpcState.VALUE_MIN or spec.traits[index] > NpcState.VALUE_MAX:
-			return "traço na posição %d com valor %d; esperado de %d a %d" % [index, spec.traits[index], NpcState.VALUE_MIN, NpcState.VALUE_MAX]
-	if spec.x_cm < 0 or spec.x_cm > NpcState.MAX_COORDINATE_CM or spec.z_cm < 0 or spec.z_cm > NpcState.MAX_COORDINATE_CM:
-		return "posição (x_cm %d, z_cm %d) fora da faixa; esperado de 0 a %d" % [spec.x_cm, spec.z_cm, NpcState.MAX_COORDINATE_CM]
-	if _routine != null and not spec.occupation_id.is_empty() and not _routine.has_occupation(spec.occupation_id):
-		return "ofício '%s' inexistente; esperado vazio ou um de: %s" % [spec.occupation_id, ", ".join(_routine.peek_occupation_ids())]
-	return ""
 
 
 func _unknown(caller: String, npc_id: int) -> Result:
