@@ -1,8 +1,17 @@
-10/11/2026 18:57 (Brasília) · PRONTA PARA REVISÃO · LW-085e: `check_all` verde no HEAD `b07771a` do ramo `lw-085e-regras-e-decisoes` (já empurrado); NÃO entrou no `main`: só com "APROVADO LW-085e"; o Godot da A está parado
+10/11/2026 19:06 (Brasília) · CONCLUÍDA · LW-085e: no `main` (`9dbcebc`) pelo seu "APROVADO LW-085e" (Fase B, junção sem conflito, `check_all` verde, sem tag); o Godot da A está parado
 
-# RELATÓRIO — LW-085e: Regras e decisões da revisão da Fase 2     Status: PRONTA PARA REVISÃO (NÃO está no `main`)
+# RELATÓRIO — LW-085e: Regras e decisões da revisão da Fase 2     Status: PRONTA PARA REVISÃO (já no `main` pelo seu `APROVADO LW-085e`; falta a sua auditoria do texto)
 
-> **Em uma frase:** só texto, nenhum código. Abaixo estão o ANTES e o DEPOIS exatos das sete linhas do `AGENTS.md` que mudaram e as três entradas novas do `DECISIONS.md`. **Nada entra no `main` até você digitar, nesta conversa, exatamente: `APROVADO LW-085e`** (e a Fase B começa na hora, sem esperar mais nada, como você mandou).
+> **Em uma frase:** só texto, nenhum código. Abaixo estão o ANTES e o DEPOIS exatos das sete linhas do `AGENTS.md` que mudaram e as três entradas novas do `DECISIONS.md`. **Você digitou `APROVADO LW-085e` e a Fase B foi feita na hora: está no `main` (`9dbcebc`)**; o ANTES e o DEPOIS abaixo são o que entrou.
+
+## FASE B (feita na hora em que você digitou `APROVADO LW-085e`, 10/11/2026)
+
+- **B0, junção:** o `main` remoto estava em `497ab78`, o mesmo que já estava dentro do ramo; não havia o que juntar, nenhum conflito.
+- **B1, status:** a linha da LW-085e no `ROADMAP_STATUS.md` passou de "pronta para revisão" para "concluída" (commit `9dbcebc`). Placar por `grep`, antes e depois, no ramo e no `main`: status 1 "31 de 32" e 1 "86 de 192"; README 2 e 2. Igual.
+- **B2, `tools/check_all` no HEAD final `9dbcebc`** (19:02:35 a 19:06:04): **VERDE** — 124 scripts, **1.194 testes, 1.194 passando**, 261.693 asserts, 175,7 s, 313 scripts sem aviso de compilação, nenhum "SCRIPT ERROR" nem "Parse Error". Foi a única rodada da Fase B.
+- **B3, envio:** ensaio (`--dry-run`) dos dois envios; depois `git push origin lw-085e-regras-e-decisoes` e `git push origin HEAD:refs/heads/main`, **sem `--force`**. O `main` foi de `497ab78` para `9dbcebc` por avanço simples (fast-forward). **Sem tag:** as únicas tags do remoto continuam `fase-0-concluida` e `fase-1-concluida`, de antes.
+- **Arquivos protegidos no `main` por esta fase:** só `AGENTS.md` (7 linhas) e `docs/DECISIONS.md` (as três entradas e o cabeçalho), nos trechos que você citou. Os outros quatro arquivos tocados (`ROADMAP_STATUS.md`, `backlog.md`, `0011-revisao-fase-2.md`, `npc.md`) não são protegidos.
+- **Depois disto eu paro** (regra 13): nenhuma tarefa nova foi iniciada.
 
 ## O que mudou no `AGENTS.md` (ANTES e DEPOIS, copiados do Git)
 
@@ -139,15 +148,15 @@ Tudo no worktree `lw-085e`, no HEAD final `b07771a` (depois da junção com o `m
 ## 8. Riscos
 - O 4.15 do `AGENTS.md` diz "atualize `save_version`" e, na frase seguinte, que fica em 2. Quem ler só a primeira metade pode subir o número; a DEC-127 e a frase nova cobrem, mas a leitura fica mais pesada.
 - A tolerância de 1,5× foi escrita no 5.2 sem dizer se vale também para os ~8 arquivos (12?) ou só para as linhas. O 5.2 diz "tolerância de 1,5×" no fim da frase dos dois limites, como na sua ordem.
-- O `AGENTS.md` e o `DECISIONS.md` são arquivos protegidos: só entram no `main` com o seu `APROVADO LW-085e`.
+- O `AGENTS.md` e o `DECISIONS.md` são arquivos protegidos: entraram no `main` só com o seu `APROVADO LW-085e`, nos trechos que você citou.
 - O comentário de `src/sim/npc/api/npc_module.gd:418` continua dizendo "não pode mudar enquanto não há impasse" (fora desta tarefa; está no backlog).
 
 ## 9. Pendências
-- **Fase B, na hora em que você digitar `APROVADO LW-085e` aqui (sem esperar "janela livre"; a regra do "rodando" você mandou ignorar):** junção com o `main` sem conflito, `check_all` verde, nenhum arquivo protegido além de `DECISIONS.md` e `AGENTS.md` nos trechos citados, contagem por `grep` inalterada, sem tag; depois paro.
+- **Fase B:** feita (ver a seção acima). Falta só a sua auditoria do texto do `AGENTS.md` e das três entradas.
 - **Para você conferir (não é teste de jogo):** ler o ANTES e o DEPOIS acima (sete linhas) e as três entradas; dizer se a frase do 4.15 está como você queria.
 
 ## ACOMPANHAMENTO
 - **Avanço:** a LW-085e é subtarefa e não entra na conta; a Fase 2 e o projeto seguem como no `main` (31 de 32 e 86 de 192, conferidos por `grep` neste ramo).
 - **Próxima tarefa recomendada:** a LW-086 (validação da Fase 2, sua passada na janela). Não iniciada.
-- **Decisões que dependem de você:** (1) `APROVADO LW-085e` para a Fase B (recomendo aprovar: só texto, nenhum código, `check_all` verde). (2) A frase do 4.15 deve dizer "exceção"? Recomendo deixar como está (curta, como você pediu). (3) A tolerância de 1,5× vale também para o número de arquivos da tarefa? Recomendo dizer isso no 5.2 se for essa a sua intenção.
-- **Git:** 5 commits no ramo `lw-085e-regras-e-decisoes` (HEAD `b07771a`), empurrados **só** o ramo da tarefa e o `status-a`; nada no `main`, nenhuma tag, sem `--force`.
+- **Decisões que dependem de você:** (1) A frase do 4.15 deve dizer "exceção"? Recomendo deixar como está (curta, como você pediu). (2) A tolerância de 1,5× vale também para o número de arquivos da tarefa? Recomendo dizer isso no 5.2 se for essa a sua intenção.
+- **Git:** 6 commits no ramo `lw-085e-regras-e-decisoes` (HEAD `9dbcebc`), todos no `main` por avanço simples (`497ab78` → `9dbcebc`); ramo, `main` e `status-a` empurrados; nenhuma tag, sem `--force`, sem apagar ramo ou worktree.
