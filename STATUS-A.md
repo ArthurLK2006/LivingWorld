@@ -1,62 +1,153 @@
-10/11/2026 18:50 (Brasília) · rodando · LW-085e: check_all no HEAD final (`1ff78a7`) do ramo `lw-085e-regras-e-decisoes`; só a A usa o Godot agora
+10/11/2026 18:57 (Brasília) · PRONTA PARA REVISÃO · LW-085e: `check_all` verde no HEAD `b07771a` do ramo `lw-085e-regras-e-decisoes` (já empurrado); NÃO entrou no `main`: só com "APROVADO LW-085e"; o Godot da A está parado
 
-# RELATÓRIO — LW-085a: A ponte cita só a `api/` do `npc`     Status: PRONTA PARA REVISÃO (já no `main` pela Fase B automática que Arthur autorizou)
+# RELATÓRIO — LW-085e: Regras e decisões da revisão da Fase 2     Status: PRONTA PARA REVISÃO (NÃO está no `main`)
+
+> **Em uma frase:** só texto, nenhum código. Abaixo estão o ANTES e o DEPOIS exatos das sete linhas do `AGENTS.md` que mudaram e as três entradas novas do `DECISIONS.md`. **Nada entra no `main` até você digitar, nesta conversa, exatamente: `APROVADO LW-085e`** (e a Fase B começa na hora, sem esperar mais nada, como você mandou).
+
+## O que mudou no `AGENTS.md` (ANTES e DEPOIS, copiados do Git)
+
+Sete linhas mudaram e nenhuma outra (conferido por `git diff` contra o `main` `497ab78`: 7 linhas acrescentadas e 7 removidas). Em palavras simples: o limite de ~300 linhas por arquivo e o de ~300 linhas e ~8 arquivos por tarefa passam a contar só código e teste, com folga de 1,5×; os itens 11 e 16.2 repetem a mesma contagem; o item 4.15 ganha uma frase dizendo que o `save_version` fica em 2 até o "save congelado"; e a versão sobe para 0.4 no cabeçalho e no rodapé.
+
+### Cabeçalho (versão)
+
+**ANTES:**
+
+> **Versão 0.3 · 01/11/2026 (Brasília) · Leitura obrigatória para todo agente de programação (Codex ou outro).**
+
+**DEPOIS:**
+
+> **Versão 0.4 · 10/11/2026 (Brasília) · Leitura obrigatória para todo agente de programação (Codex ou outro).**
+
+### Item 4.5 (tamanho de arquivo)
+
+**ANTES:**
+
+> 5. **Funções pequenas, uma responsabilidade.** Arquivo até ~300 linhas; passou disso, proponha divisão.
+
+**DEPOIS:**
+
+> 5. **Funções pequenas, uma responsabilidade.** Arquivo até ~300 linhas, contando só código e teste (sem comentário, linha em branco, `.uid` nem documento), com tolerância de 1,5× (~450 linhas); passou do teto, **PARE** e proponha a divisão (DEC-126).
+
+### Item 4.15 (save_version)
+
+**ANTES:**
+
+> 15. **Estado novo exige** `serialize`/`on_load`, `validate()` e `debug_summary()`. Mudou o estado salvo → atualize `save_version` e o **teste de ida e volta**. Migração de save antigo só depois do "save congelado" (DEC-083); antes disso, save antigo é rejeitado com mensagem clara.
+
+**DEPOIS:**
+
+> 15. **Estado novo exige** `serialize`/`on_load`, `validate()` e `debug_summary()`. Mudou o estado salvo → atualize `save_version` e o **teste de ida e volta**. Migração de save antigo só depois do "save congelado" (DEC-083); antes disso, save antigo é rejeitado com mensagem clara. Enquanto o "save congelado" não existir, o `save_version` fica em 2 (DEC-127).
+
+### Item 5.2 (tamanho de tarefa)
+
+**ANTES:**
+
+> 2. **Limite de tamanho:** até ~300 linhas alteradas e ~8 arquivos, contando testes. Passou? **PARE e proponha a divisão.**
+
+**DEPOIS:**
+
+> 2. **Limite de tamanho:** até ~300 linhas alteradas e ~8 arquivos, contando só código e teste (sem comentário, linha em branco, `.uid` nem documento), com tolerância de 1,5×. Passou do teto? **PARE e proponha a divisão** (DEC-126).
+
+### Item 11 (autorrevisão, 1ª caixa)
+
+**ANTES:**
+
+> - [ ] Só tocou arquivos do escopo? Dentro de ~300 linhas e ~8 arquivos?
+
+**DEPOIS:**
+
+> - [ ] Só tocou arquivos do escopo? Dentro de ~300 linhas e ~8 arquivos (só código e teste, tolerância de 1,5×; ver 5.2)?
+
+### Item 16.2 (quando parar)
+
+**ANTES:**
+
+> - passar de ~300 linhas / ~8 arquivos / mais de um módulo;
+
+**DEPOIS:**
+
+> - passar de ~300 linhas / ~8 arquivos (só código e teste, tolerância de 1,5×; ver 5.2) / mais de um módulo;
+
+### Rodapé (versão)
+
+**ANTES:**
+
+> **Fim do AGENTS.md — versão 0.3.**
+
+**DEPOIS:**
+
+> **Fim do AGENTS.md — versão 0.4.**
+
+
+## As três entradas novas do `DECISIONS.md` (em palavras simples)
+
+Todas com status **APROVADA**, decisão sua de 10/11/2026, a partir de `docs/decisions/0011-revisao-fase-2.md`. O texto completo (contexto, decisão, justificativa, consequências, relações) está em `docs/DECISIONS.md` (DEC-126 a DEC-128, antes da seção 7 "Como acrescentar").
+
+- **DEC-126 — Tamanho de arquivo e de tarefa: contar só código, com tolerância de 1,5×.** O limite conta só código e teste (sem comentário, linha em branco, `.uid` nem documento), com folga de 1,5× (cerca de 450 linhas de código por arquivo). Passou do teto: **PARE** e proponha a divisão. A mesma contagem vale para a tarefa (~300 linhas e ~8 arquivos). **Nada é dividido agora.** Contexto: seis arquivos passavam de 300 linhas contando tudo (o maior, `npc_module.gd`, 603 linhas; 336 só de código); por esta contagem nenhum passa. Relações: DEC-087, DEC-093.
+- **DEC-127 — `save_version` continua em 2 até o "save congelado".** O `AGENTS.md` (4.15) manda subir o número quando o estado salvo muda; a decisão é manter 2 até o congelamento. Quem protege os saves é o teste de ida e volta (roda no `check_all`) e a validação do `on_load`. Hoje não existe save de jogador, então nada se perde; o número não distingue os saves da Fase 2 entre si. Vale como exceção ao 4.15 (decisão APROVADA manda mais que o `AGENTS.md`). Relações: DEC-083, DEC-084.
+- **DEC-128 — As cinco ações de entrada acrescentadas ao `project.godot` na LW-082g foram autorizadas.** `inspector_toggle` (F3), `inspector_toggle_alt` (Tab), `inspector_next` (N), `inspector_previous` (B) e `inspector_trace` (T): 25 linhas, só acréscimos (commit `89c8182`), cobertas pela sua autorização escrita da LW-082g ("só ADICIONAR ações de entrada"). Fica registrado para a auditoria; não é desvio. Qualquer outra mudança no `project.godot` continua exigindo autorização expressa. Relações: DEC-087, DEC-125.
+
+Junto vieram (como na LW-071f, e você aprovou manter): as 3 linhas do índice na Área 10, os totais recontados (**128 entradas, 67 APROVADAS**, 19 com ressalva; PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1), a versão 0.5 do documento, a linha 0.5 do histórico e o "próximo número livre" (DEC-129). O índice tem 128 linhas e o corpo 128 entradas, sem número repetido. **Nenhuma entrada existente foi alterada:** as únicas linhas antigas removidas são a da versão, a dos totais (reescrita com a nova na frente) e a do "próximo número livre". O `DECISIONS.md` do `main` não tinha ganhado entrada nova (conferido), então a numeração ficou DEC-126 a DEC-128.
 
 ## 1. Resumo
-A ponte (`src/bridge`) citava 8 classes internas do `npc` fora da porta `api/` e nenhuma verificação percebia (achado I-1 da minha revisão e I1 da revisão C). Agora ela cita só classes de `src/sim/npc/api/`: três visões de dados puros novas, seis constantes reexportadas e duas consultas novas no `NpcModule`. A **regra D** do `tools/check_architecture` impede que volte. Nada mudou no comportamento do jogo.
+As três decisões que você tomou na revisão da Fase 2 (`0011`) viraram DEC-126, DEC-127 e DEC-128 no `DECISIONS.md`. O `AGENTS.md` passou a contar tamanho só em código e teste com folga de 1,5× (itens 4.5, 5.2, 11 e 16.2), ganhou a frase do `save_version` no 4.15 e subiu para a versão 0.4. Corrigi duas linhas do `npc.md` (as nove impressões do oráculo são cinco de `5a7d453` e quatro da LW-073b), a frase do `0011` sobre DEC-083/084 e acrescentei quatro linhas ao meio do backlog. Juntei o `main` (`497ab78`) no ramo. Nenhum código foi tocado.
 
 ## 2. Arquivos criados
-- `src/sim/npc/api/npc_trace_view.gd` — visão do rastro de decisão (`NpcTraceView.of(explanation)`)
-- `src/sim/npc/api/npc_memory_view.gd` — visão das memórias e traços (`NpcMemoryView.of(query)`)
-- `src/sim/npc/api/npc_routine_view.gd` — visão da ação da rotina (`NpcRoutineView.of(query)`)
-- `tests/unit/test_npc_api_door.gd` — 8 testes da porta
-- 4 arquivos `.uid` dos scripts novos
+- Nenhum.
 
-## 3. Arquivos modificados
-- `docs/modules/npc.md` (+13 linhas) e `docs/modules/bridge.md` (12 linhas trocadas): **contrato primeiro**, no commit `a6d554b`
-- `src/sim/npc/api/npc_module.gd` (+17): 6 constantes reexportadas (`CODE_NOT_IN_S0`, `CODE_INVALID_POSITION`, `CODE_DEAD`, `CODE_RELATION_INVALID`, `CODE_RELATION_NOT_ALLOWED`, `LEVEL_S0`), `peek_level_of(npc_id)` e `peek_s0_count()`
-- `src/bridge/bridge_npc_inspect.gd`, `bridge_replies.gd`, `bridge_inspect_replies.gd` (comentário): passam a usar só a `api/`; apaguei uma das 3 linhas em branco que sobravam entre duas funções (ficaram 2, o padrão do arquivo)
-- `tools/check_architecture` (+16 −5): regra D; `tests/test_check_architecture.sh` (+20): casos da regra D
-- `docs/ROADMAP_STATUS.md` (+1 linha de sub-tarefa; a contagem não muda) e `docs/backlog.md` (+3 itens)
+## 3. Arquivos modificados (contra o `main` `497ab78`)
+- `AGENTS.md` — 7 linhas trocadas (as acima).
+- `docs/DECISIONS.md` — +49 −3: três entradas, três linhas no índice, totais, versão 0.5, histórico, "próximo número".
+- `docs/modules/npc.md` — 2 linhas (136 e 220): "nove impressões" agora diz cinco de `5a7d453` e quatro da LW-073b (commit `5346091`; a explicação está no item do detector de impasse).
+- `docs/backlog.md` — +4 linhas no meio do arquivo: M4 da C (teste que lista quem escreve em `need_values`), M6 da C (`CM_PER_METER` repetido), M9 da C (a LW-094 deve avisar que remover o `FoodStub` muda o save) e o comentário de `npc_module.gd:418` ("não pode mudar enquanto não há impasse").
+- `docs/ROADMAP_STATUS.md` — +1 linha (LW-085e, subtarefa; **a contagem não muda**).
+- `docs/decisions/0011-revisao-fase-2.md` — 1 linha: DEC-083 e DEC-084 passam ao status do índice (APROVADAS com ressalva: a 083 só nos princípios; a 084 como formato de save do protótipo).
+
+Commits no ramo `lw-085e-regras-e-decisoes`: `4eb495c`, `9402fd2`, `c19cdd3` (junção com o `main` `497ab78`), `1ff78a7`, `b07771a` (HEAD final).
 
 ## 4. Decisões técnicas
-- **O desenho mudou em relação à minha proposta I-1, e Arthur aprovou.** Eu propunha trocar os tipos de retorno de `explain_decision`, `peek_memories` e `peek_routine_action`. Isso obrigaria a editar o oráculo (`test_npc_split_oracle.gd:188-198` declara variáveis com esses tipos) e cerca de dez testes, e a ordem era não editar o oráculo. Em vez disso: três visões na `api/` com construtor estático `of(...)`, e a ponte escreve `NpcTraceView.of(npc.explain_decision(id))`, sem nomear classe interna. Nenhuma assinatura pública mudou. A troca dos retornos ficou no backlog.
-- **Regra D:** `src/bridge/` e `src/tools/` só citam, de um módulo de `src/sim` que tenha pasta `api/` (hoje só o `npc`), as classes que moram nessa pasta. Módulo sem `api/` (usa `internal/`, regra C), `src/app` e `src/persistence` ficam de fora. A mensagem final continua "nove verificações" (a D é mais uma letra da verificação de camadas).
-- **Nomes das constantes:** `CODE_RELATION_INVALID` e `CODE_RELATION_NOT_ALLOWED` (e não `CODE_INVALID`/`CODE_NOT_ALLOWED`), para não confundir com `CODE_INVALID_SPEC` etc. que já existem no módulo.
-- **Proposta de entrada para `DECISIONS.md`:** nenhuma.
+- **Junção com o `main` (`497ab78`).** Dois conflitos, ambos de linhas acrescentadas (`docs/backlog.md` e `docs/ROADMAP_STATUS.md`); mantive as duas partes em cada um. Nenhum outro conflito. O `README.md` entrou sem conflito.
+- **Frase do 4.15.** Acrescentei no fim do item: "Enquanto o "save congelado" não existir, o `save_version` fica em 2 (DEC-127)." Não mexi no resto do item. Ele ainda começa com "Mudou o estado salvo → atualize `save_version`"; a frase nova é a exceção. **Dúvida sua:** se prefere que a frase diga "exceção" com todas as letras (ver Decisões que dependem de você).
+- **Itens 11 e 16.2.** Acrescentei entre parênteses "(só código e teste, tolerância de 1,5×; ver 5.2)", sem outra mudança.
+- **Textos de DEC-126 e DEC-127.** Escritos antes da sua resposta, diziam que os itens 11, 16.2 e 4.15 ficavam como proposta; atualizei para dizer que foram alinhados (commit `b07771a`).
+- **Placar.** Depois da junção, por `grep`: `ROADMAP_STATUS.md` 1 vez "31 de 32" e 1 vez "86 de 192"; `README.md` 2 e 2. Igual ao `main`. A minha linha não escreve o placar.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma além das três já incluídas por ordem sua.
 
 ## 5. Testes executados
-- `tools/check_architecture`, `check_input_keys`, `check_literal_text` (antes do Godot): aprovados.
-- `tests/test_check_architecture.sh`: aprovado; a regra D nova: 2 violações detectadas e 6 casos aceitos. Contra uma cópia do `main` anterior (`5e8f8b4`), a regra D acusa **12 linhas** da ponte (bem as de antes); na árvore nova passa.
-- `godot --headless --path . --import`: saiu 0, sem erro.
-- `tools/check_all` (rodada 1, árvore com o código): **VERDE**, 122 scripts, **1.188 testes (1.188 passando)**, 261.585 asserts, 307 scripts sem aviso de compilação.
-- `tools/check_all` (rodada 2, no HEAD final `a9c68e1`): **VERDE**, os mesmos números.
-- Bateria de identidade, `main` (`5e8f8b4`, checkout `lw-073c`) contra o ramo da 085a, um Godot de cada vez: oráculo (`test_npc_split_oracle.gd`), `tests/soak/run_npc_life_30d`, `tests/soak/run_npc_impasse_30d`, `tools/run_sim --days 7 --seed 1`, `2` e `3`.
+Tudo no worktree `lw-085e`, no HEAD final `b07771a` (depois da junção com o `main` `497ab78` e de todos os commits da tarefa).
+
+- `git fetch origin` e `git merge --no-ff origin/main` — 2 conflitos (só linhas acrescentadas em `docs/backlog.md` e `docs/ROADMAP_STATUS.md`), resolvidos mantendo as duas partes; `grep` de marcadores `<<<<<<<` e `>>>>>>>` em `AGENTS.md`, `docs/` e `README.md` — nenhum sobrou.
+- `grep -c` do placar em `docs/ROADMAP_STATUS.md` e `README.md` (antes no `main`, depois da junção, depois dos commits finais) — iguais nas três vezes: status 1 "31 de 32" e 1 "86 de 192"; README 2 e 2.
+- Contagem das entradas do `DECISIONS.md` por script de shell: 128 linhas de índice, 128 cabeçalhos, 0 números repetidos.
+- `git diff -U0 origin/main HEAD -- AGENTS.md` — exatamente 7 linhas trocadas (cabeçalho, 4.5, 4.15, 5.2, 11, 16.2 e rodapé); `git diff --numstat origin/main HEAD -- docs/DECISIONS.md` — 49 acrescentadas e 3 removidas (versão, totais e "próximo número").
+- `tools/check_architecture` — "nove verificações aprovadas"; `tools/check_input_keys` e `tools/check_literal_text` — aprovados.
+- `"/Applications/Godot 2.app/Contents/MacOS/Godot" --headless --path . --import` — concluiu e criou `.godot`.
+- **`tools/check_all` (rodada que vale, 18:52:31 a 18:56:00 de 10/11/2026, Brasília, HEAD `b07771a`) — `VERDE: arquitetura, dados e etapa de testes aprovadas.` (saída 0).** Antes dela houve duas tentativas que **não valem** e não rodaram teste (explicadas em "Problemas encontrados"): uma parada por mim e uma vermelha em 14 s por eu ter chamado `godot` fora do PATH.
+- Bateria de identidade (oráculo, vida de 30 dias, impasse de 30 dias, `run_sim`): **NÃO EXECUTADA** — a tarefa não toca código, `data/` nem testes; a diferença para o `main` é só texto.
+- Testes manuais: nenhum (não há o que jogar; é só texto).
 
 ## 6. Resultados
-- **Oráculo:** as 9 impressões saíram **iguais** (`6e12b3067120`, `506a4a23ce89`, `7008d3b19d38`, `84ca55684e34`, `ce14b1e45954`, `142733eb318f`, `00794d5a27b6`, `3e1d080d2eed`, `f9469ccc5a9d`). Não editei o oráculo.
-- **Vida de 30 dias:** hash `d13b921112ce` nas 3 linhas, problemas 0; as 3 linhas são idênticas às do `main` fora do tempo em ms.
-- **Soak de impasse de 30 dias:** 0 recuperações, 0 registros, hash `d13b921112ce`, igual ao `main`.
-- **`run_sim` 7 dias, sementes 1, 2 e 3:** saídas **idênticas** às do `main` (diff vazio).
-- Critério de aceite cumprido? **Sim**, pelo que mediu: a ponte não cita mais classe interna do `npc` (a regra D prova, na árvore real e no caso falso), sem mudar comportamento (oráculo, hash e `run_sim` iguais), sem `save_version`, sem evento, sem dado novo, sem editar o oráculo.
-- Tamanho: cerca de 326 linhas de código e teste (sem comentário nem linha em branco), 10 arquivos; dentro do teto de 1,5x, então não dividi em 085a1 e 085a2.
+- **`tools/check_all` verde:** 124 scripts, **1.194 testes, 1.194 passando, 0 falhando**, 261.693 asserts, 173 s; 313 scripts sem aviso de compilação; dados e `run_sim` aprovados; nenhum "SCRIPT ERROR" nem "Parse Error" na saída. O resumo do GUT mostra "Warnings 1" e "Deprecated 1" (o "Deprecated" é o que o backlog já cita; esta tarefa não toca código). As linhas `_test_the_scripts` na saída são o rastro das mensagens de erro que os próprios testes provocam e esperam ("ExpectedError").
+- **Critério de aceite (cada item da sua ordem):** (1) DEC-126, DEC-127 e DEC-128 acrescentadas, APROVADA, 10/11/2026, no número livre seguinte, sem alterar entrada existente — conferido por contagem de índice e por `git diff` (só versão, totais e "próximo número" saíram). (2) `AGENTS.md`: 4.5, 5.2, 11, 16.2, 4.15, cabeçalho e rodapé; nenhuma outra linha — conferido por `git diff` (7 e 7). (3) `npc.md`: 2 linhas, sem código. (4) Quatro linhas no meio do backlog. (5) Linha da LW-085e como subtarefa; contagem igual por `grep`. (6) `0011`: frase de DEC-083 e DEC-084 no status do índice. (7) Junção com o `main` `497ab78`: 2 conflitos só de linhas acrescentadas; placar igual ao `main`; o `DECISIONS.md` do `main` não ganhou entrada.
+- **Não verificado:** nada além do que está em "Testes executados" como NÃO EXECUTADO. Não comparei os números do `check_all` com os do `main`; o ramo não muda código.
 
 ## 7. Problemas encontrados
-- A minha estimativa original de "≈ 30 linhas de ajuste de testes" estava errada para o desenho que eu propus (cerca de 60 referências em 10 arquivos, mais o oráculo): foi o que levou à mudança de desenho acima.
-- O `run_sim` imprime "Módulos: 0": ele não registra o `npc`, então **não exercita esta mudança**; quem prova a identidade de comportamento é o oráculo e o soak de 30 dias.
-- O GUT mostra "Warnings 1" no resumo (junto da linha `[DEPRECATED] wait_frames`, que o GUT imprime); nenhum arquivo da 085a usa `wait_frames`, mas **não comparei o número com o `main`**.
-- Um deslize meu de shell no meio (um `echo ======` no zsh) perdeu uma saída; refiz o comando e não afetou nenhum resultado.
+- **Meu vigia esperou à toa cerca de 45 minutos (de 18:03, quando a C parou, até 18:49).** Ele procurava a palavra "rodando" em qualquer lugar da primeira linha do `STATUS-C.md`, e a C escreveu "Nada rodando" (negado). Você já fixou a regra: "rodando" só vale como estado ("· rodando ·"). Não rodei Godot nesse tempo.
+- **Rodadas de `check_all` que não valem.** (1) Parei a primeira por mim mesmo, com cerca de um minuto, ao perceber que DEC-126 e DEC-127 ainda diziam que 11, 16.2 e 4.15 ficavam como proposta; corrigi, commitei e comecei de novo. (2) A segunda voltou **VERMELHA em 14 s por erro do meu comando:** o `godot` não existe no PATH desta shell, então a importação não rodou, o cache de classes não foi criado e todo `class_name` deu "Could not find type"; nenhum teste foi executado. O Godot do projeto é `/Applications/Godot 2.app/Contents/MacOS/Godot` (`GODOT_BIN`, como em `tools/check_prerequisites`). (3) A terceira, com a importação feita pelo Godot certo, é a que vale (abaixo). Foi mais de uma rodada, e não a "uma vez" que você pediu; as duas primeiras não chegaram a rodar teste. Depois você liberou o Mac ("aguenta tudo ao mesmo tempo") e mandou ignorar o "rodando" e o "janela livre"; a rodada válida já estava feita e verde.
+- **Divergência antiga, já resolvida pela sua decisão:** o `0011` dizia DEC-083 e DEC-084 "pendentes e PROPOSTA" e o índice diz APROVADA com ressalva; o `0011` agora segue o índice.
 
 ## 8. Riscos
-- A regra D confere **nomes de classe**: não enxerga o tipo que volta de uma chamada sem nome nem de variável com tipo inferido (`:=`), nem classe interna de arquivo, nem `preload` por caminho. Está escrito no cabeçalho do script e no `npc.md`.
-- Os retornos de `explain_decision`, `peek_memories` e `peek_routine_action` continuam de tipo interno; `SimBridge.peek_npc_bodies` ainda lê o membro público `lod` (`sim_bridge.gd:250-251`). Os dois no backlog.
-- As constantes reexportadas referenciam outra classe em `const`; o Godot 4.7.2 aceitou (`check_all` verde).
+- O 4.15 do `AGENTS.md` diz "atualize `save_version`" e, na frase seguinte, que fica em 2. Quem ler só a primeira metade pode subir o número; a DEC-127 e a frase nova cobrem, mas a leitura fica mais pesada.
+- A tolerância de 1,5× foi escrita no 5.2 sem dizer se vale também para os ~8 arquivos (12?) ou só para as linhas. O 5.2 diz "tolerância de 1,5×" no fim da frase dos dois limites, como na sua ordem.
+- O `AGENTS.md` e o `DECISIONS.md` são arquivos protegidos: só entram no `main` com o seu `APROVADO LW-085e`.
+- O comentário de `src/sim/npc/api/npc_module.gd:418` continua dizendo "não pode mudar enquanto não há impasse" (fora desta tarefa; está no backlog).
 
 ## 9. Pendências
-- **Teste manual curto para Arthur** (a ponte do painel mudou de caminho; os testes de ponte cobrem, mas a janela não foi vista): em build de desenvolvimento, abrir o painel (F3), escolher um NPC perto do jogador e conferir (1) o nível S0 na lista e no detalhe, (2) o contador de S0 no resumo, (3) com a tecla T marcado, o rastro aparece, (4) as memórias de um notável (depois de conversar) e a ação da rotina no detalhe. Nada deve parecer diferente de antes.
-- Decisões que dependem de Arthur (as de antes seguem valendo): I-3 (script de medição do custo do painel), I-4 (autorização do `project.godot` pela 082g), M-1 (`last_player_talk_at` sem subir `save_version`) e o item novo do backlog (trocar os retornos por tipos da `api/`).
+- **Fase B, na hora em que você digitar `APROVADO LW-085e` aqui (sem esperar "janela livre"; a regra do "rodando" você mandou ignorar):** junção com o `main` sem conflito, `check_all` verde, nenhum arquivo protegido além de `DECISIONS.md` e `AGENTS.md` nos trechos citados, contagem por `grep` inalterada, sem tag; depois paro.
+- **Para você conferir (não é teste de jogo):** ler o ANTES e o DEPOIS acima (sete linhas) e as três entradas; dizer se a frase do 4.15 está como você queria.
 
 ## ACOMPANHAMENTO
-- Avanço: LW-085a pronta para revisão e já no `main`. A Fase 2 segue em 29 de 32 (90,6%) e o projeto em 84 de 192 (43,8%): sub-tarefa não entra na conta (conferido por grep antes e depois).
-- Próxima tarefa recomendada: **LW-085** (revisão arquitetural da Fase 2), agora sem o achado da ponte. **Não iniciada**, como manda a regra 13.
-- Git: `main` = `a9c68e1`, enviado **em avanço rápido** (`5e8f8b4..a9c68e1`, dry-run antes), **sem tag e sem `--force`**; ramo `lw-085a-ponte-porta-api` enviado (3 commits: `a6d554b` contrato, `71d0012` código e testes, `a9c68e1` status e backlog); este ramo (`status-a`) só com `STATUS-A.md` e `REVISAO-085-A.md`. Nada rodando em segundo plano da A (o único Godot ativo é o da B, em `lw-084b`); a pasta principal não foi tocada.
+- **Avanço:** a LW-085e é subtarefa e não entra na conta; a Fase 2 e o projeto seguem como no `main` (31 de 32 e 86 de 192, conferidos por `grep` neste ramo).
+- **Próxima tarefa recomendada:** a LW-086 (validação da Fase 2, sua passada na janela). Não iniciada.
+- **Decisões que dependem de você:** (1) `APROVADO LW-085e` para a Fase B (recomendo aprovar: só texto, nenhum código, `check_all` verde). (2) A frase do 4.15 deve dizer "exceção"? Recomendo deixar como está (curta, como você pediu). (3) A tolerância de 1,5× vale também para o número de arquivos da tarefa? Recomendo dizer isso no 5.2 se for essa a sua intenção.
+- **Git:** 5 commits no ramo `lw-085e-regras-e-decisoes` (HEAD `b07771a`), empurrados **só** o ramo da tarefa e o `status-a`; nada no `main`, nenhuma tag, sem `--force`.
