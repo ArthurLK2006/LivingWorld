@@ -31,7 +31,7 @@ O Mac já tem um **worktree** (uma cópia da pasta do projeto, em ramo próprio)
 
 Isso abre **a janela do jogo direto** (sem o editor), com tudo da Fase 2. Se preferir o editor: acrescente `--editor` ao comando e aperte **F5**. Se o seu Godot estiver em outro lugar, troque o caminho do programa. **Para fechar:** **Command+Q** (ou o botão vermelho da janela).
 
-Você deve ver o terreno aparecendo aos poucos em volta de uma cápsula laranja (você), com árvores e pedras, e, no canto superior esquerdo, o HUD (data e hora simuladas, a velocidade e a dica da pausa). **O jogo nasce às 05:45**, ainda escuro. Se o jogo abrir em **build de desenvolvimento** (o normal quando aberto por este comando), o painel de depuração de NPC funciona (F3). Em outro tipo de build ele nem existe.
+Você deve ver o terreno aparecendo aos poucos em volta de uma cápsula laranja (você), com árvores e pedras, e, no canto superior esquerdo, o HUD (data e hora simuladas, a velocidade e a dica da pausa). **O jogo nasce às 05:45**, ainda escuro. Se o jogo abrir em **build de desenvolvimento** (o normal quando aberto por este comando), o painel de depuração de NPC funciona (**Tab**, ou **fn+F3**; no Mac, **F3** sozinho abre o Mission Control). Em outro tipo de build ele nem existe.
 
 ## 2. As teclas (conferidas em `src/app/input_actions.gd` e no `project.godot`)
 | O que faz | Tecla |
@@ -45,9 +45,11 @@ Você deve ver o terreno aparecendo aos poucos em volta de uma cápsula laranja 
 | Girar a câmera | **←** e **→**, ou **botão direito do mouse** segurado e arrastado |
 | Câmera mais baixa ou mais alta | **↑** e **↓**, ou arrastar o mouse (com o botão direito) para cima e para baixo |
 | Zoom (de 4 a 40 m) | **roda do mouse** |
-| **Painel de depuração de NPC**: abrir e fechar | **F3** ou **Tab** |
+| **Painel de depuração de NPC**: abrir e fechar | **Tab** (ou **fn+F3**; no Mac, **F3** sozinho abre o Mission Control) |
 | Painel: próximo NPC e NPC anterior | **N** e **B** (ou clicar na lista) |
 | Painel: marcar o NPC para guardar o rastro da decisão | **T** |
+
+**Atenção (Mac):** **F3** sozinho abre o **Mission Control**, e não o painel; use **Tab** ou **fn+F3**. (Corrigido na LW-086, depois da passada de Arthur na janela, em 10/11/2026: o roteiro original dizia F3.)
 
 Só existem **1x e 2x** (não há 4x nem 8x). A 2x, **1 minuto de jogo dura 0,625 s reais**: 1 hora de jogo = 37,5 s, um dia = 15 min.
 
@@ -64,7 +66,7 @@ Os itens 1, 2, 3, 5 e 8 são feitos **na mesma sessão**, porque o dia precisa p
 |---|---|---|
 | 0:00 | 05:45 | Abra o jogo (seção 1). **Não** aperte 2 ainda. |
 | 0:00 a 0:45 | 05:45 a 06:15 | **Corra** (Shift + W) para o leste pelo caminho, passe os dois marcos ciano, ande uns 100 m e vire à direita: o povoado A. **Pare entre as caixas e aperte 2.** |
-| 0:45 a 2:45 | 06:15 a 09:30 | **Item 1**: as cápsulas saem das casas, comem e às **07:00** vão para as caixas azuis. **Item 3** (painel): F3, N, T e ler, 3 vezes. |
+| 0:45 a 2:45 | 06:15 a 09:30 | **Item 1**: as cápsulas saem das casas, comem e às **07:00** vão para as caixas azuis. **Item 3** (painel): Tab, N, T e ler, 3 vezes. |
 | 2:45 a 4:45 | 09:30 a 12:40 | **Item 5**: conversar (E) com um NPC que trabalha; olhe o painel dele. Artesãos conversam às 11:00 (caixa amarela): **item 1**. |
 | 4:45 a 6:45 | 12:40 a 15:50 | **Item 2**: afaste-se e volte 3 vezes (veja o item 2). |
 | 6:45 a 8:15 | 15:50 a 18:15 | Volte ao povoado. **Item 5** de novo: segunda conversa com o mesmo NPC ("reconhece"). |
@@ -74,7 +76,7 @@ Os itens 1, 2, 3, 5 e 8 são feitos **na mesma sessão**, porque o dia precisa p
 Se perder um momento (um NPC já foi embora, ou você se distraiu), **o dia seguinte repete tudo**. Aperte **P** para pausar enquanto lê o painel (o painel continua funcionando com o relógio parado) e **P** de novo para continuar.
 
 **1. Fiquei parado no povoado por alguns minutos de jogo e vi NPCs saindo de casa, indo ao trabalho, comendo, conversando e voltando a dormir.**
-- **Faça na janela:** na sessão acima, fique entre as caixas do povoado A e olhe as cápsulas enquanto a hora passa (a 2x depois que você chegar). Abra o painel (**F3**) e olhe a **lista**: cada linha mostra `nome · ofício · ação · S0/S1` (por exemplo `Aldeão 12 · farmer · work · S0`).
+- **Faça na janela:** na sessão acima, fique entre as caixas do povoado A e olhe as cápsulas enquanto a hora passa (a 2x depois que você chegar). Abra o painel (**Tab**) e olhe a **lista**: cada linha mostra `nome · ofício · ação · S0/S1` (por exemplo `Aldeão 12 · farmer · work · S0`).
 - **O que olhar:** (a) até as **07:00** (você chega por volta das 06:15) as cápsulas estão nas casas (vermelhas) e saem delas; a lista mostra `eat`; (b) às **07:00** vão para as caixas **azuis** e a lista mostra `work`; (c) às **12:00** voltam a comer; (d) à noite, **19:00 a 22:00**, vão às caixas **amarelas** (`talk`); (e) depois das **22:00** as cápsulas voltam para as **casas** (a lista mostra `go_to_place`, que é a caminhada, e depois `sleep`) e ficam paradas junto delas.
 - **Estar certo:** você vê as cinco coisas (sair, trabalhar, comer, conversar, dormir) acontecendo, em horas parecidas com a rotina acima, sem NPC parado para sempre no meio do caminho.
 - **Não é defeito:** as cápsulas andam em **linha reta** e atravessam casas e pedras (navegação N1, DEC-122, "por ora"); sem animação além de andar e parar; chegam **um pouco atrasadas** em relação ao horário (toda caminhada com corpo atrasa); só aparecem NPCs a menos de uns 80 m e no máximo 50; nomes e cores provisórios.
@@ -85,7 +87,7 @@ Se perder um momento (um NPC já foi embora, ou você se distraiu), **o dia segu
   Roda 7 dias de jogo dos 100 NPCs sem jogador e confere que todos vivem, que ninguém fica sem ação por mais de uma hora, que as necessidades ficam de 0 a 100 e que repetir dá o mesmo resultado. **Resultado de hoje: 4/4 passaram.** O soak de 30 dias (`tests/soak/run_npc_life_30d`) está no item 6.
 
 **2. Afastei-me e voltei várias vezes: ninguém duplicou, sumiu de repente ou "teleportou".**
-- **Faça na janela:** a partir do povoado A, **corra para longe**: para o **oeste**, pelo caminho, até o **primeiro marco ciano** (uns 165 m, uns 25 s correndo, o bastante para passar dos 120 m), espere uns 5 s e **volte** correndo. Repita **3 vezes** (cerca de 2 minutos reais). Depois chegue perto de uma cápsula e ande em volta dela. No painel (F3), a linha **"Níveis: N com corpo (S0)"** do resumo cai a **0** quando você está longe e volta a subir quando você volta.
+- **Faça na janela:** a partir do povoado A, **corra para longe**: para o **oeste**, pelo caminho, até o **primeiro marco ciano** (uns 165 m, uns 25 s correndo, o bastante para passar dos 120 m), espere uns 5 s e **volte** correndo. Repita **3 vezes** (cerca de 2 minutos reais). Depois chegue perto de uma cápsula e ande em volta dela. No painel (Tab), a linha **"Níveis: N com corpo (S0)"** do resumo cai a **0** quando você está longe e volta a subir quando você volta.
 - **O que olhar:** (a) **duplicar:** nunca duas cápsulas no mesmo lugar nem uma "sombra" ao lado de outra; (b) **sumir:** **perto de você (menos de uns 80 m)** nenhuma cápsula some ou aparece do nada; **só** some quando você passa de uns 120 m (isso é o esperado); (c) **teleporte:** nenhuma cápsula dá um salto de posição de um quadro para o outro.
 - **Estar certo:** ao voltar, as cápsulas reaparecem **onde a rotina diria que elas estariam** (não todas empilhadas na mesma caixa).
 - **Não é defeito:** a cápsula andar atrás de uma casa; chegar atrasada; o número de cápsulas variar (cap de 50); alguém estar dormindo e parado.
@@ -100,10 +102,10 @@ Se perder um momento (um NPC já foi embora, ou você se distraiu), **o dia segu
 - **Sem prova automática permanente:** **o teleporte**. O spike SP2 (código descartável em `tests/soak/sp2`, fora do `check_all`) tinha um detector de teleporte e achou **zero** duplicados, órfãos e teleportes (`docs/decisions/0009-spike-sp2-corpos-e-lod.md`); isso é registro, não um teste que roda a cada mudança. **A sua janela é a prova do teleporte.**
 
 **3. Selecionei 3 NPCs no painel e entendi por que cada um fez o que fez.**
-- **Faça na janela:** aperte **F3**. À direita aparece o painel (cerca de 35% da tela, semitransparente): em cima o **resumo do mundo** (hora, quantos NPCs vivos, camadas T1 e T2, S0 e S1, Intents, problemas do `validate()`), no meio a **lista** dos 100 NPCs e embaixo o **detalhe** do selecionado. Aperte **N** para escolher um NPC (ou clique na lista), aperte **T** para **marcar o rastro** e espere uns 10 minutos de jogo (**6 s reais a 2x**, o NPC pensa a cada 10 min). Leia o bloco **"Rastro da decisão"**. Faça com **3 NPCs** diferentes (**N** troca para o próximo, **B** volta). Prefira um que esteja trabalhando, um que esteja indo comer e um que esteja conversando.
+- **Faça na janela:** aperte **Tab** (ou **fn+F3**; **F3** sozinho, no Mac, abre o Mission Control). À direita aparece o painel (cerca de 35% da tela, semitransparente): em cima o **resumo do mundo** (hora, quantos NPCs vivos, camadas T1 e T2, S0 e S1, Intents, problemas do `validate()`), no meio a **lista** dos 100 NPCs e embaixo o **detalhe** do selecionado. Aperte **N** para escolher um NPC (ou clique na lista), aperte **T** para **marcar o rastro** e espere uns 10 minutos de jogo (**6 s reais a 2x**, o NPC pensa a cada 10 min). Leia o bloco **"Rastro da decisão"**. Faça com **3 NPCs** diferentes (**N** troca para o próximo, **B** volta). Prefira um que esteja trabalhando, um que esteja indo comer e um que esteja conversando.
 - **O que olhar:** cada linha do rastro diz `Minuto M: escolheu <ação> em <local> (<MOTIVO>)`, e logo abaixo as **candidatas** com a nota total e as partes (benefício, personalidade, tempo, distância, risco, inércia). Os motivos são: **ROUTINE** (a rotina do ofício manda nessa hora), **URGENT_NEED** (uma necessidade está urgente, como fome acima de 65), **INERTIA** (continuar o que já fazia), **INTERRUPTION** (um alarme interrompeu) e **FALLBACK** (nada serviu: espera). O detalhe também mostra as cinco **necessidades** (fome, descanso, segurança, renda, social), a ação, o ofício, as **memórias** e as **relações**.
 - **Estar certo:** para cada um dos 3 NPCs você consegue dizer, lendo o painel, **por que** ele fez aquilo (por exemplo: "às 07:00 ele escolheu `work` por ROUTINE; `eat` tinha nota menor porque a fome ainda estava baixa").
-- **Não é defeito:** os rótulos aparecem em inglês e em maiúsculas (ids dos dados, crus de propósito); só o NPC **marcado** com **T** tem rastro (os outros dizem "Sem marca"); o painel não existe fora de build de desenvolvimento; **com o painel aberto pode haver um pequeno tranco uma vez por segundo** (o resumo roda o `validate()` do mundo; com 300 NPCs mediu ~20 ms por chamada, linha da LW-085c no `docs/ROADMAP_STATUS.md`); feche o painel (F3) antes de responder as perguntas de fluidez.
+- **Não é defeito:** os rótulos aparecem em inglês e em maiúsculas (ids dos dados, crus de propósito); só o NPC **marcado** com **T** tem rastro (os outros dizem "Sem marca"); o painel não existe fora de build de desenvolvimento; **com o painel aberto pode haver um pequeno tranco uma vez por segundo** (o resumo roda o `validate()` do mundo; com 300 NPCs mediu ~20 ms por chamada, linha da LW-085c no `docs/ROADMAP_STATUS.md`); feche o painel (Tab) antes de responder as perguntas de fluidez; **a dica escrita no próprio painel ainda diz "F3 ou Tab fecha"** (texto do jogo, no backlog): no Mac vale Tab (ou fn+F3).
 - **Prova automática de apoio:**
   ```bash
   tools/run_tests res://tests/unit/test_decision_trace.gd
@@ -121,7 +123,7 @@ Se perder um momento (um NPC já foi embora, ou você se distraiu), **o dia segu
   O que prova: **o mesmo alarme** faz o NPC **cauteloso fugir, o leal e sociável ajudar e o frio ignorar** (`test_the_same_alarm_makes_the_coward_flee_the_helper_help_and_the_stoic_ignore`); a reação segue a **personalidade e não a ordem dos NPCs** (`test_the_reaction_follows_the_personality_not_the_order_of_the_npcs`); o raio é inclusivo e só vivos dentro dele reagem; a gravidade multiplica a pressão sem passar de 100; quem trabalhava é interrompido com efeito proporcional, foge e a rotina volta; o mesmo alarme com a mesma semente dá o mesmo mundo, **inclusive salvando no meio da fuga**; e **no jogo real** (100 NPCs, dados reais) o povoado inteiro (60) está no raio, **alguns fogem ou ajudam e outros ignoram e seguem a vida**, e o outro povoado, longe, não reage (`test_the_real_world_a_village_reacts_the_other_far_away_does_not_and_life_goes_on`). **Resultado de hoje: 11/11 passaram (425 asserts).** **Passou se** terminar com `11/11 passed.` e `---- All tests passed! ----`.
 
 **5. Conversei com um NPC, saí, salvei, recarreguei e ele me reconheceu.**
-- **Faça na janela (conversar e ser reconhecido; não há botão de salvar):** com o relógio a 2x, chegue a **menos de 3 m** de uma cápsula que esteja **trabalhando** (caixa azul) até aparecer **[E] Interagir** e aperte **E**. Deve aparecer **"A pessoa para e conversa com você."** e a cápsula **para** por uns 6 minutos de jogo (4 s reais a 2x). No painel (F3), com esse NPC selecionado, ele agora é **notável (T2)**, tem **uma memória** de `conversation` e **uma relação** com você (afeição 3, confiança 3). Afaste-se, espere **mais de 1 hora de jogo (40 s reais a 2x)**, volte e aperte **E** de novo: deve aparecer **"A pessoa reconhece você e para para conversar."** (`known`). Se o aviso disser **"Vocês acabaram de conversar. Volte daqui a pouco."**, é o intervalo de 60 min de jogo: espere mais um pouco.
+- **Faça na janela (conversar e ser reconhecido; não há botão de salvar):** com o relógio a 2x, chegue a **menos de 3 m** de uma cápsula que esteja **trabalhando** (caixa azul) até aparecer **[E] Interagir** e aperte **E**. Deve aparecer **"A pessoa para e conversa com você."** e a cápsula **para** por uns 6 minutos de jogo (4 s reais a 2x). No painel (Tab), com esse NPC selecionado, ele agora é **notável (T2)**, tem **uma memória** de `conversation` e **uma relação** com você (afeição 3, confiança 3). Afaste-se, espere **mais de 1 hora de jogo (40 s reais a 2x)**, volte e aperte **E** de novo: deve aparecer **"A pessoa reconhece você e para para conversar."** (`known`). Se o aviso disser **"Vocês acabaram de conversar. Volte daqui a pouco."**, é o intervalo de 60 min de jogo: espere mais um pouco.
 - **Estar certo:** a 1ª conversa diz "para e conversa", a 2ª diz "**reconhece você**", e o painel mostra a relação e a memória guardadas.
 - **Não é defeito:** o NPC **não se vira para você** (backlog); os nove textos de conversa são provisórios; "A pessoa está ocupada e não responde." se ele dorme, foge ou ajuda; a ação que ele fazia **recomeça do zero** depois; só 40 NPCs podem virar notáveis (T2); "Ninguém responde." se o NPC estiver sem corpo (S1).
 - **Prova automática (salvar e recarregar):**
@@ -156,7 +158,7 @@ Se perder um momento (um NPC já foi embora, ou você se distraiu), **o dia segu
 - **Atenção (não é defeito):** no jogo normal **zerar o estoque não mata ninguém**, porque os lavradores trabalham, repõem a comida e comem; a morte só acontece sem produção ou com o corpo travado, como nos testes.
 
 **8. Confirmei que não há dinheiro, mercado nem facções (ainda).**
-- **Faça na janela:** olhe a tela inteira durante a sessão. **Não pode existir:** valor em dinheiro, preço, loja, mercado, menu, inventário, facção, bandeira ou lei, nem nada que fale disso no HUD ou no painel (o painel mostra só necessidades, ação, ofício, rastro, memórias e relações). **Deve existir:** terreno, céu, sol, árvores e pedras, a sua cápsula, as cápsulas dos NPCs, as caixas coloridas, o HUD e (F3) o painel.
+- **Faça na janela:** olhe a tela inteira durante a sessão. **Não pode existir:** valor em dinheiro, preço, loja, mercado, menu, inventário, facção, bandeira ou lei, nem nada que fale disso no HUD ou no painel (o painel mostra só necessidades, ação, ofício, rastro, memórias e relações). **Deve existir:** terreno, céu, sol, árvores e pedras, a sua cápsula, as cápsulas dos NPCs, as caixas coloridas, o HUD e (Tab) o painel.
 - **Prova por busca (não é teste automático):** no Terminal, na pasta do projeto:
   ```bash
   ls src/sim
@@ -167,11 +169,11 @@ Se perder um momento (um NPC já foi embora, ou você se distraiu), **o dia segu
 **9. Andar e olhar o mundo com gente é agradável o bastante para eu querer continuar? Anotei o que incomoda.** Responda no fim (seções 4 e 5).
 
 ## 4. Perguntas de fluidez (resposta curta)
-Como na Fase 1 (P1 e P2), agora com NPCs na tela. **Feche o painel (F3) antes de responder** (ele tem custo próprio). Aceito por você: o SP2 "por ora" (DEC-122); você vai observar a fluidez ao jogar.
+Como na Fase 1 (P1 e P2), agora com NPCs na tela. **Feche o painel (Tab) antes de responder** (ele tem custo próprio). Aceito por você: o SP2 "por ora" (DEC-122); você vai observar a fluidez ao jogar.
 - **P1.** O **seu** movimento (andar, correr, pular) está **fluido** com cápsulas de NPC na tela, ou aos trancos? (Teste perto das caixas, com 20 a 50 cápsulas à vista.)
 - **P2.** A **câmera treme** quando você gira ou anda perto do povoado?
 - **P3.** Os **NPCs andam** de forma fluida, ou aos pulos? Algum **saltou de lugar** ou ficou **preso** (parado no caminho)?
-- **P4.** Com o **painel aberto (F3)** você nota um tranco **uma vez por segundo**? (Esperado e conhecido; diga se incomoda.)
+- **P4.** Com o **painel aberto (Tab)** você nota um tranco **uma vez por segundo**? (Esperado e conhecido; diga se incomoda.)
 - Por quê: a régua oficial do SP2 (DEC-119, média ≥ 60 quadros/s) falhou em 3 de 13 ensaios e a causa dos trancos ficou aberta (LW-072); os números de quadros não estão no repositório. A sua resposta é o dado que falta.
 
 ## 5. Como responder (a Claude, o revisor)
