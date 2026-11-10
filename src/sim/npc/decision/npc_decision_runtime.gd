@@ -99,6 +99,14 @@ func begin_talk_player(npc_id: int) -> Result:
 	return started
 
 
+## Cancela, SEM efeito, a ação de contador `action_serial` do NPC (o detector de impasse, LW-073): é o `ActionRunner.cancel_action` do fluxo montado. Sem
+## definições, sem `setup` ou com o fluxo que não monta: falha tratada, nada muda.
+func cancel_action(npc_id: int, action_serial: int) -> Result:
+	if _definitions == null or _ctx == null or not _ensure_thinker():
+		return Result.failure(NpcModule.CODE_NOT_READY, "NpcDecisionRuntime.cancel_action: %s." % problem_text())
+	return _runner.cancel_action(npc_id, action_serial)
+
+
 ## Por que o módulo não decide (texto vazio = decide): sem `Definitions`, sem setup() ou com definições incompletas ou inválidas. Aparece no
 ## debug_summary(), para o módulo nunca ficar parado em silêncio.
 func problem_text() -> String:

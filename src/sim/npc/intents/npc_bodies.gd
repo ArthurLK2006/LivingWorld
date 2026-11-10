@@ -89,15 +89,26 @@ func report_result(result: NpcActionResult) -> Result:
 
 ## LOD e Intents de cada passo (LW-069 e LW-070), chamados pelo começo do `tick` do módulo: reclassifica os NPCs (S1 e S0), publica LodChanged só nas
 ## trocas e vence os Intents sem resultado. NÃO depende de `Definitions` (os testes do LOD montam o módulo sem elas). Com os corpos indisponíveis
-## (LW-070b) não faz nada: o LOD inerte não gasta nem ID de evento.
-func tick() -> void:
+## (LW-070b) não faz nada: o LOD inerte não gasta nem ID de evento. Devolve os NPCs cujo Intent venceu por tempo neste passo (em ordem crescente de ID; a ação
+## deles já foi cancelada): o detector de impasse (LW-073b) os lê.
+func tick() -> Array[int]:
+	var expired: Array[int] = []
 	if _ctx == null or not _bodies_available:
-		return
+		return expired
 	var now: int = _ctx.clock.total_minutes()
 	_publish_lod_changes(_lod.update(_npcs, now))
 	# LW-070: depois da reclassificação, vence os Intents sem resultado e solta os de quem saiu de S0.
-	_intents.expire(now)
+	expired = _intents.expire(now)
 	_hold_embodied_thinking(now)
+	return expired
+
+
+## Tira UM NPC de S0 (LW-073b, o detector de impasse): o corpo volta ao pool pelo mesmo `LodChanged` de quem se afasta, e o NPC volta a S0 no passo seguinte se
+## ainda estiver perto do foco. Sem efeito se ele não está em S0.
+func release_body(npc_id: int) -> void:
+	if _ctx == null:
+		return
+	_publish_lod_changes(_lod.release(_npcs, npc_id, _ctx.clock.total_minutes()))
 
 
 func _publish_lod_changes(changes: Array[NpcLod.Change]) -> void:

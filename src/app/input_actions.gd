@@ -24,8 +24,15 @@ const SPEED_DOUBLE: StringName = &"speed_double"
 const CAMERA_ORBIT: StringName = &"camera_orbit"
 const ZOOM_IN: StringName = &"zoom_in"
 const ZOOM_OUT: StringName = &"zoom_out"
+## Painel de depuração de NPC (LW-082g; só em build de desenvolvimento): F3 e Tab abrem e fecham (duas ações, uma tecla cada), N e B trocam de NPC e T marca o rastro [HIP].
+const INSPECTOR_TOGGLE: StringName = &"inspector_toggle"
+const INSPECTOR_TOGGLE_ALT: StringName = &"inspector_toggle_alt"
+const INSPECTOR_NEXT: StringName = &"inspector_next"
+const INSPECTOR_PREVIOUS: StringName = &"inspector_previous"
+const INSPECTOR_TRACE: StringName = &"inspector_trace"
 
 const ALL: Array[StringName] = [
 	MOVE_FORWARD, MOVE_BACK, MOVE_LEFT, MOVE_RIGHT, RUN, JUMP, INTERACT, PAUSE,
 	LOOK_LEFT, LOOK_RIGHT, LOOK_UP, LOOK_DOWN, SPEED_NORMAL, SPEED_DOUBLE, CAMERA_ORBIT, ZOOM_IN, ZOOM_OUT,
+	INSPECTOR_TOGGLE, INSPECTOR_TOGGLE_ALT, INSPECTOR_NEXT, INSPECTOR_PREVIOUS, INSPECTOR_TRACE,
 ]
