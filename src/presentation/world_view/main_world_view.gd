@@ -27,6 +27,8 @@ var _texts: UiText
 ## Os corpos dos NPCs em S0 (LW-072f) e o motorista que os leva até os Intents, criados em código como as caixas dos locais.
 var _bodies_view: NpcBodiesView
 var _body_driver: NpcBodyDriver
+## O painel de depuração de NPC (LW-082g): só existe em build de desenvolvimento (nulo fora dele).
+var _npc_inspector: NpcInspectorPanel
 ## Só informa o foco depois de a TerrainView ter sido ligada a uma ponte.
 var _is_terrain_ready: bool = false
 
@@ -62,6 +64,7 @@ func _ready() -> void:
 	_terrain_view.set_focus(_focus_position())
 	_is_terrain_ready = true
 	set_process(true)
+	_npc_inspector = NpcInspectorMount.mount(self, bridge, _texts, OS.is_debug_build())
 
 
 ## Os corpos dos NPCs (LW-072f). A `NpcBodiesView` liga o interruptor de corpos da simulação ao ser ligada à ponte e o motorista é ligado logo em seguida, neste

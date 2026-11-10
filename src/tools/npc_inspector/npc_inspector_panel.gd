@@ -4,7 +4,7 @@ extends CanvasLayer
 ## do mundo e, do NPC selecionado, necessidades, ação, ofício, rastro, memórias e relações. Fica na lateral direita, semitransparente, e o jogo continua
 ## rodando. Só LÊ: consulta a ponte (`peek_*`) e entrega as respostas ao `NpcInspectorModel`, que decide o que mostrar; a ÚNICA escrita é `toggle_trace`, que
 ## marca ou desmarca o NPC para o rastro (`request_set_npc_traced`; decisão de Arthur). Todo texto vem de data/text/pt_br.json (`UiText`); os ids dos dados
-## aparecem crus. Começa FECHADO. Quem abre, fecha e troca de NPC por tecla é a LW-082g; aqui só estão os métodos.
+## aparecem crus. Começa FECHADO. As teclas (LW-082g) entram só como AÇÕES nomeadas (`InputActions`, nenhuma tecla escrita aqui): abrir e fechar valem sempre; próximo, anterior e marcar só com o painel aberto.
 
 ## Valores [HIP]: a camada fica acima do HUD, a largura é a fração da tela e a cor é de fundo semitransparente. 4 atualizações por segundo e o resumo do
 ## mundo, que é mais caro, cerca de 1 vez por segundo (decisão de Arthur, Q6).
@@ -122,6 +122,24 @@ func toggle_trace() -> void:
 	refresh()
 
 
+## Trata a ação de entrada e devolve verdadeiro se o evento era dela. F3 e Tab (duas ações) abrem e fecham; N, B e T só valem com o painel aberto (fechado, deixam o evento passar).
+func handle_action(event: InputEvent) -> bool:
+	if event.is_action_pressed(InputActions.INSPECTOR_TOGGLE) or event.is_action_pressed(InputActions.INSPECTOR_TOGGLE_ALT):
+		toggle()
+		return true
+	if not visible:
+		return false
+	if event.is_action_pressed(InputActions.INSPECTOR_NEXT):
+		select_next()
+	elif event.is_action_pressed(InputActions.INSPECTOR_PREVIOUS):
+		select_previous()
+	elif event.is_action_pressed(InputActions.INSPECTOR_TRACE):
+		toggle_trace()
+	else:
+		return false
+	return true
+
+
 ## Consulta a ponte (lista, e do selecionado o detalhe, o rastro, as memórias e as relações), entrega ao modelo e redesenha.
 func refresh() -> void:
 	if _bridge == null:
@@ -164,6 +182,11 @@ func _process(delta: float) -> void:
 	if _refresh_left_s <= 0.0:
 		_refresh_left_s = REFRESH_INTERVAL_S
 		refresh()
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if handle_action(event):
+		get_viewport().set_input_as_handled()
 
 
 func _on_list_item_selected(index: int) -> void:
