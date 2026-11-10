@@ -1,4 +1,4 @@
-10/11/2026 13:13 (Brasília) — CONCLUÍDA
+10/11/2026 15:11 (Brasília) · rodando · LW-085b e LW-085d: Godot pesado (--import, check_all, oráculo, soak de 30 dias, run_sim) e Fase B automática; o relatório abaixo é o da revisão anterior e será substituído ao parar
 
 RELATÓRIO — REVISÃO CRUZADA PRÉ-LW-085 (núcleo do `npc` e LW-083)        Status: PRONTA PARA REVISÃO (revisão entregue; nada corrigido, por ordem)
 
