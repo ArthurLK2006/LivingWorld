@@ -1,33 +1,43 @@
-10/11/2026 13:08 (Brasília) · CONCLUÍDA · LW-073, Fase B (refeita, opção A de Arthur)
+10/11/2026 13:18 (Brasília) · CONCLUÍDA · Revisão cruzada pré-LW-085 (LW-082 e LW-083), só leitura
 
-# RELATÓRIO CURTO — LW-073, Fase B
+# RELATÓRIO — Revisão cruzada pré-LW-085 (agente revisor, AGENTS §11)
 
-**Resultado:** o `main` foi de `4f50f84` para **`5e8f8b4`** em avanço rápido, na primeira rodada. Sem tag, sem `--force`. A pilha da LW-073 (073a, 073b, 073c) está no `main`.
+**Status:** CONCLUÍDA (revisão entregue). Não implementei nada, não corrigi nada e **não rodei o Godot** (a outra conversa está medindo tempo). A revisão completa, com arquivo e linha, está em **`REVISAO-085-A.md`** neste mesmo ramo.
 
-## B0: junção
-- Ramo: `lw-073c-soak-30d-impasse` (topo da pilha). `origin/main` = `4f50f84` (já com a LW-082).
-- Merge `5338cbc`. Único conflito: `docs/ROADMAP_STATUS.md`, **só a linha 3 (cabeçalho)**, que os dois lados alteraram. As linhas de tabela (a minha LW-073 e a LW-082 do main) juntaram sozinhas. O `npc_module.gd` e o `npc.md` juntaram sozinhos.
-- Resolução: a linha do main + a LW-073 nas duas listas (e "da LW-060 à LW-073") + contagens **main + 1**. Conferido por `diff` contra cada pai: só o cabeçalho e a linha da tarefa do outro lado diferem; nenhuma linha se perdeu.
-- Contagem por `grep`: main mostrava **28 de 32 (87,5%) e 83 de 192 (43,2%)**; depois: **29 de 32 (90,6%) e 84 de 192 (43,8%)**. README com os mesmos números (commit `5e8f8b4`), com a LW-082 acrescentada à lista.
+## 1. Resumo
+Revisei o que não escrevi: LW-082 (painel de NPC, 082a a 082h) e LW-083 (conversa, 083a a 083f), já no `main` (`5e8f8b4`). **Nenhum achado bloqueante. 4 importantes, 8 menores.** O painel só escreve numa linha (a marcação do rastro), não há evento novo, nenhum teste foi enfraquecido, não há dinheiro nem mercado antecipados, nenhuma marca `TEMP` nova.
 
-## B2: bateria inteira (depois do `--import`)
-- `check_all` **VERDE**: 121 scripts, 1.180 testes, 261.521 asserts, zero erro de script, zero avisos (303 scripts verificados).
-- Oráculo: as 5 impressões que não podem mudar (`intents`, `alarm`, `resumed`, `switches`, `real_game`) **iguais**; as 4 constantes (`talk`, `save`, `demote`, `starved`) são as autorizadas por Arthur (valores completos conferidos) e o obtido é igual a elas.
-- Vida de 30 dias: `d13b921112ce` nas 3 linhas, problemas 0, **igual ao main atual** (`4f50f84`, medido num checkout limpo).
-- `run_sim` 7 dias, sementes 1, 2 e 3: **iguais ao main atual**. Tabela de 7 dias dos corpos: **idêntica**.
-- Soak de impasse de 30 dias: **0 recuperações**, 0 registros, hash `d13b921112ce`.
+## 2. Achados importantes (cada um com proposta de até ~300 linhas no arquivo da revisão)
+- **I-1. A ponte cita classes internas do `npc`, fora da porta `api`** (`bridge_npc_inspect.gd:59,75,85,89,96,121,132,157`; `bridge_replies.gd:165-175`), e o `npc` devolve tipos internos. Antes da LW-083a a ponte não citava nenhuma. O `check_architecture` **não enxerga** (só protege pastas `internal/` e o `npc` não tem). Proposta: tipos de resposta em `api/`, dois acessos novos, constantes reexportadas e uma regra D no script (≈ 200 a 260 linhas, 8 a 9 arquivos, contrato primeiro).
+- **I-2. Arquivos acima de ~300 linhas:** `npc_module.gd` 603 (+52 por 082/083), `npc_thinker.gd` 455, `sim_bridge.gd` 391 (+81), `npc_notables.gd` 308. Proposta de desvio: isentar as duas fachadas (só delegam) e dividir `npc_thinker.gd` (hipótese de corte minha, não conferida).
+- **I-3. Custo do painel não medido:** `peek_simulation_summary` chama `world.validate()` a cada ≈ 1 s (`sim_bridge.gd:360`) e a lista é refeita a cada 0,25 s (`npc_inspector_panel.gd:14-15,177-185`). Em release o painel nem é criado (`npc_inspector_mount.gd:12-14`; `main_world_view.gd:67`). Proposta: script de medição em `tests/soak/` (≈ 70 a 90 linhas), só depois que a medição de quadros terminar.
+- **I-4. `project.godot` (protegido) alterado pela 082g** (`89c8182`, +25 linhas, 5 ações de entrada) sem autorização visível no repositório; a 083e escolheu não mexer nele. Pode estar na tarefa de outra conversa. Proposta: Arthur confirma e o status da LW-082 registra.
 
-## B3: envio
-- `--dry-run` e push do ramo (`1db3925..5e8f8b4`); `merge-base --is-ancestor origin/main HEAD` verdadeiro; push `lw-073c-soak-30d-impasse:main` = `4f50f84..5e8f8b4`.
+## 3. Menores (resumo)
+M-1 `last_player_talk_at` salvo sem subir `save_version` (documentado, compatível) · M-2 comentário "A ÚNICA função" de efeitos ignora `NeedMath.add_pressure` · M-3 alcance e cooldown da conversa em constantes, não em dados · M-4 alcance de 3 m duplicado na apresentação (guardado por teste) · M-5 `src/tools/` fora de `check_architecture` e `check_literal_text` · M-6 `docs/modules/README.md` sem `tools.md` · M-7 três linhas em branco (`bridge_npc_inspect.gd:80-82`) · M-8 `FAILURE_KEYS` junta códigos de classes diferentes.
 
-## Estado do Git
-- `main` = `5e8f8b46e133`. `lw-073c-soak-30d-impasse` = `5e8f8b4`; `lw-073b-impasse-s0` = `5346091`; `lw-073a-detector-impasse` = `906887d`. Tags: só `fase-0-concluida` e `fase-1-concluida`.
-- Este ramo (`status-a`) nunca vai para o main e só recebe `STATUS-A.md` e `REVISAO-085-A.md`.
-- Nada rodando em segundo plano. A pasta principal não foi tocada.
+## 4. Critérios da LW-085
+Limites do `npc`: parcial (I-1, I-2) · catálogo em dados: OK (`data/actions.json:11`, `data/memory_kinds.json:2`) · função única de efeitos: OK para ações (`action_runner.gd:232`) · ponte fina: parcial · dinheiro e mercado: OK (nenhum) · marcas `TEMP`: só `TEMP-LW-065` e `TEMP-LW-066`, antigas · custo de memória e relações: limitado por dados (`max_t2` 40, `memory_capacity` 24, `relations_capacity` 16 → no máximo ≈ 960 memórias e ≈ 640 relações de notáveis, conta minha; bytes **não medidos**) · resultado do SP2: fora do que li.
 
-## Riscos e não verificado
-- Nada visto em janela. Em S0, a recuperação de um NPC solta e recoloca o corpo (só testado com apresentação simulada). A sequência de vencimentos e o registro somem ao carregar um save. Limite de 60 min e registro de 32 são **[HIP]**.
-- A Fase B da LW-082 (outra conversa) entrou no main enquanto eu verificava; por isso a rodada foi refeita, como autorizado.
+## 5. Testes executados
+**NÃO EXECUTADO** (por ordem: sem Godot). Só leitura: `git show`, `git diff`, `git log`, `grep`, `find`, `wc`. O `check_all` verde que cito (1.180 testes, no `main` `5e8f8b4`) é o da Fase B da LW-073, e mostra que os testes passam, não que testam o certo.
 
-## Próximo passo
-- Revisão cruzada pré-LW-085 (LW-082 e LW-083), só leitura, sem Godot. Resultado em `REVISAO-085-A.md`.
+## 6. Não verificado
+Painel na janela (critério do roadmap, para Arthur); custo em ms e bytes; autorização do `project.godot`; leitura linha a linha de `npc_inspector_model.gd`, do resto do painel, de `bridge_inspect_replies.gd`, `npc_notables.gd`, `npc_decision_runtime.gd` e dos 6 testes novos (só `grep`, tamanhos e diffs); SP2.
+
+## 7. Estado do Git
+- `main` = `5e8f8b4`, sem tag nova, sem `--force`; nada foi enviado ao `main` neste passo.
+- Este ramo (`status-a`) tem só `STATUS-A.md` e `REVISAO-085-A.md` de diferença para o `main`; **nunca vai para o `main`**.
+- Nada rodando em segundo plano; a pasta principal não foi tocada.
+
+## 8. Decisões que dependem de Arthur (com a recomendação)
+1. I-4: confirmar a alteração do `project.godot` pela 082g. *Recomendo confirmar e registrar.*
+2. I-1: corrigir na LW-085 (com regra D no `check_architecture`) ou registrar desvio. *Recomendo corrigir.*
+3. I-2: isentar as fachadas e dividir só `npc_thinker.gd`. *Recomendo.*
+4. I-3: autorizar o script de medição após a medição de quadros. *Recomendo.*
+5. M-1: manter o campo opcional registrado. *Recomendo manter.*
+
+## ACOMPANHAMENTO
+- Avanço: item 2 (revisão cruzada) concluído; **paro aqui**, como mandado.
+- Próxima tarefa recomendada: LW-085 (revisão arquitetural da Fase 2), usando `REVISAO-085-A.md` como entrada. **Não iniciada.**
+- Git: ramo `status-a` com um commit "status a: revisão cruzada pré-LW-085, CONCLUÍDA"; push só desse ramo.
