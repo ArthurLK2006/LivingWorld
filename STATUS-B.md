@@ -1,4 +1,4 @@
-10/11/2026 16:14 (Brasília) — CONCLUÍDA: LW-084 (084a, 084b e 084c) no `main` em `1dd2fb4` (Fase B automática, avanço rápido, sem tag); sem Godot pesado meu agora; a LW-085c é a próxima
+10/11/2026 16:15 (Brasília) — CONCLUÍDA: LW-084 no `main` (`1dd2fb4`); LW-085c rodando (Godot pesado meu: medição do painel, previsão de 20 a 30 min); o resto do arquivo é o relatório da LW-084
 
 # RELATÓRIO — LW-084: Soak longo (300 NPCs por 1 ano, com alternância S1 ↔ S0)     Status: PRONTA PARA REVISÃO (já no `main`, pela Fase B automática)
 
