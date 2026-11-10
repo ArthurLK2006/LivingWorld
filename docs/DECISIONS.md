@@ -1,6 +1,6 @@
 # LIVING WORLD — REGISTRO OFICIAL DE DECISÕES (DECISIONS.md)
 
-**Versão do documento:** 0.4 (09/11/2026; entradas DEC-113 a DEC-123 e totais recontados; a 0.3 é de 01/11/2026; ver seção 8)
+**Versão do documento:** 0.4 (09/11/2026; entradas DEC-113 a DEC-125 e totais recontados; a 0.3 é de 01/11/2026; ver seção 8)
 **Data de criação:** 01/11/2026 (horário de Brasília)
 **Responsável pela decisão:** Arthur (dono do produto). **Somente ele aprova.**
 **Função deste documento:** ser a **fonte oficial** do que está decidido, proposto, pendente, descartado ou substituído nos projetos de design e de tecnologia do Living World, para evitar contradições futuras entre o Briefing, o GDD, a arquitetura, o roadmap e o trabalho dos agentes de IA.
@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais atualizados em 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
+**Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -139,6 +139,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-122 | Navegação e velocidade dos corpos S0 (resultado do SP2) | APROVADA (por ora) |
 | DEC-123 | Relógio contra corpo: direção P3 (resultado do SP2) | APROVADA (somente a direção) |
 | DEC-124 | Velocidade de caminhada da simulação: 500 cm/min [HIP] (aplicação da direção P3 da DEC-123) | APROVADA |
+| DEC-125 | Painel de depuração de NPC: leitura pela ponte e a única escrita permitida | APROVADA |
 
 **ÁREA 6 — SOCIEDADE, ECONOMIA, POLÍTICA E GUERRA**
 
@@ -1801,7 +1802,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Justificativa** | Escolha de Arthur pelo painel de decisões em 08/11/2026. **Alternativas rejeitadas por Arthur:** manter os 8400 e aceitar o atraso; tempo limite proporcional ao corpo (quebra a regra de que o mundo não muda porque o jogador olha). |
 | **Consequências** | Quando aplicada, muda todos os tempos de caminhada da simulação (16,8 vezes mais longos): a constante `DEFAULT_WALK_SPEED_CM_PER_MIN` (`action_runner.gd:31`), o parâmetro padrão de `_init` (linha 54) e o cálculo de minutos do `go_to_place` (linha 340); `tests/unit/test_action_runner.gd` (`_runner`, linha 79, e `test_go_to_place_takes_the_distance_divided_by_the_walk_speed_rounded_up`, linha 357); `data/intent_params.json` (`intent_timeout_min` = 30 [HIP], a rever). Exige o teste de vida de 30 dias (`tests/soak/npc_life/soak_npc_life_30d.gd`, rodado por `tests/soak/run_npc_life_30d`) e DEC nova. Até lá, nada muda. |
 | **Data / versão** | Decidida por Arthur em 08/11/2026 · registrada em 08/11/2026 (LW-071a) |
-| **Relações** | DEC-016, DEC-035, DEC-039, DEC-040, DEC-119, DEC-120, DEC-122 |
+| **Relações** | DEC-016, DEC-035, DEC-039, DEC-040, DEC-119, DEC-120, DEC-122, DEC-124 |
 
 ---
 
@@ -1816,6 +1817,18 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Consequências** | Todos os tempos de caminhada ficam 16,8 vezes mais longos e o hash de qualquer mundo com `npc` muda. Seis testes passaram a fixar 8400 e dois (`test_action_runner.gd` e `test_npc_intents.gd`) tiveram a expectativa atualizada para 500 cm/min. **Fica aberto:** caminhadas acima de 150 m (30 min) vencem o `intent_timeout_min` = 30; a rota A para B (99 min) não foi exercitada. A diferença social e de renda entre S0 e S1 não era só atraso (a outra causa é hipótese, não medida). |
 | **Data / versão** | Decidida por Arthur em 09/11/2026 (relatório da LW-071d) · registrada em 09/11/2026 (LW-071e) |
 | **Relações** | DEC-016, DEC-035, DEC-122, DEC-123 |
+
+### DEC-125 — Painel de depuração de NPC: leitura pela ponte e a única escrita permitida
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 09/11/2026. |
+| **Contexto** | O roadmap pede que o painel de depuração de NPC (LW-082) "só leia", mas o rastro de decisão só existe para o NPC marcado, e marcar é uma escrita de depuração. |
+| **Decisão** | (1) Painel em `src/tools/`, só em build de desenvolvimento e sem autoload novo. (2) Seleção por lista de todos os NPCs e teclas de próximo e anterior; o clique no corpo fica no backlog. (3) Abre e fecha com F3 (e Tab). (4) Uma tecla própria marca o NPC para o rastro (`request_set_npc_traced`), sem marcar ao selecionar; é a ÚNICA escrita permitida e fica declarada como exceção. (5) "Lista do estado da simulação" = lista de todos os NPCs mais contadores globais. (6) Rótulos fixos por chave de texto e ids dos dados crus. (7) Relações "mais fortes" = maior soma dos módulos das cinco dimensões, empate pelo menor id do outro. |
+| **Justificativa** | Sem a marca não há rastro, e o rastro é o que o roadmap quer explicar. |
+| **Consequências** | O teste da LW-082h prova que hash, RNG e IDs ficam iguais. Layout, ritmo, 10 memórias, 10 relações e as teclas são [HIP]. Nome do pedido: `request_set_npc_traced`, como está no pedido de Arthur; o módulo `npc` hoje expõe `request_set_traced(npc_id, is_traced)`. |
+| **Data / versão** | Decidida por Arthur em 09/11/2026 · registrada em 09/11/2026 (LW-071f) |
+| **Relações** | DEC-022, DEC-023, DEC-024, DEC-072, DEC-107, DEC-116 |
 
 ---
 
@@ -1938,7 +1951,7 @@ Os oito desvios do RM (seção 0.13-B) são **PROPOSTAS**, exceto a ordem das fa
 
 ### 5.2 Todas as decisões APROVADAS (lista rápida)
 
-DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicionada), 013, 014, 015, 016 (só a referência), 017, 018, 020, 022, 025, 026, 027 (princípio), 035, 036, 037, 041, 045, 046, 050 (composição inicial), 051, 057, 062 (meta de três), 072, 073, 080 (só a antecipação de SP6 e SP4a), 081, 082 (só JSON validado), 083 (princípios), 084 (formato de save do protótipo), 086 (GUT 9.7.1), 089 (só o serviço), 090, 091, 092, 093, 094 (estrutura), 095, 096, 097, 100, 101, 113 (só a régua da LW-023), 114 (reversível), 115, 116, 117 (só a direção), 118, 119, 120, 121 (só como ponto de partida), 122 (por ora), 123 (só a direção).
+DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicionada), 013, 014, 015, 016 (só a referência), 017, 018, 020, 022, 025, 026, 027 (princípio), 035, 036, 037, 041, 045, 046, 050 (composição inicial), 051, 057, 062 (meta de três), 072, 073, 080 (só a antecipação de SP6 e SP4a), 081, 082 (só JSON validado), 083 (princípios), 084 (formato de save do protótipo), 086 (GUT 9.7.1), 089 (só o serviço), 090, 091, 092, 093, 094 (estrutura), 095, 096, 097, 100, 101, 113 (só a régua da LW-023), 114 (reversível), 115, 116, 117 (só a direção), 118, 119, 120, 121 (só como ponto de partida), 122 (por ora), 123 (só a direção), 124, 125.
 
 ---
 
@@ -2002,7 +2015,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-125` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-126` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto
@@ -2034,7 +2047,7 @@ Copiar, preencher e usar o próximo número livre (`DEC-125` em diante). **Nunca
 
 | Versão | Data (Brasília) | Alteração |
 |---|---|---|
-| 0.4 | 09/11/2026 | Entradas DEC-113 a DEC-123 criadas desde a 0.3 (LW-023 a LW-071a); totais recontados na LW-071b (APROVADA 62, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 123). Esta rodada (LW-071b e LW-071c) não mudou o status de nenhuma entrada. |
+| 0.4 | 09/11/2026 | Entradas DEC-113 a DEC-125 criadas desde a 0.3 (LW-023 a LW-071f); totais recontados na LW-071b (APROVADA 62, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 123) e de novo na LW-071f (APROVADA 64, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 125). A LW-071b e a LW-071c não mudaram o status de nenhuma entrada; a LW-071e registrou a DEC-124 e a LW-071f registrou a DEC-125 (as duas APROVADAS por Arthur em 09/11/2026) e acrescentou a DEC-124 às Relações da DEC-123. |
 | 0.3 | 01/11/2026 | Revisão final e diretrizes de Arthur das 15:32. Passaram a APROVADA (com a ressalva indicada na entrada): DEC-012, 015, 016 (só a referência), 022, 041, 050, 051, 062 (só a meta de três), 080 (só a antecipação de SP6 e SP4a), 081, 083 (só os princípios) e 089 (só o serviço). DEC-081 reintitulada. DEC-070: justificativa corrigida (a alocação às fases é proposta; só os nomes e a ordem das fases são de Arthur). Spikes renomeados de S1-S8 para SP1-SP8 (os níveis de simulação continuam S0-S3). Ressalvas dos status visíveis no índice. Nenhuma entrada criada. |
 | 0.2 | 01/11/2026 | Consolidação do pacote documental. Nenhuma entrada mudou de status e nenhuma foi criada. Revisão técnica de Godot 4.x aplicada à TA, ao RM e ao AGENTS (11 correções G1 a G11, ver `CONSISTENCY_REPORT.md` seção 6). Fontes atualizadas para as versões 0.2; consequências das cinco pendências da LW-001 e de DEC-087 ajustadas; seção 4.1 reescrita; nova seção 4.2 (achados C13 a C23). |
 | 0.1 | 01/11/2026 | Criação do registro. 112 entradas: decisões do Briefing Mestre e dos prompts de Arthur (APROVADA), propostas dos documentos GDD, arquitetura e roadmap (PROPOSTA), questões abertas (PENDENTE), alternativas recusadas pela arquitetura (DESCARTADA, com ratificação pendente) e a ordem de marcos do GDD (SUBSTITUÍDA). |
