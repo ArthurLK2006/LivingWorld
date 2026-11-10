@@ -1,73 +1,65 @@
-10/11/2026 17:50 (Brasília) · rodando · LW-086a: check_all da Fase B (só documentos); depois preparo o worktree da janela; o relatório abaixo é o da LW-085 e será substituído ao parar
+10/11/2026 17:36 (Brasília) — CONCLUÍDA: LW-086a no `main` (`7cb70f2`, Fase B automática, sem tag); worktree da janela pronto. LW-085 (Fase B): AGUARDANDO a sua frase "APROVADO LW-085" (a 085c já está no `main`). Nada rodando.
 
-RELATÓRIO FINAL — LW-085: Revisão arquitetural da Fase 2        Status: PRONTA PARA REVISÃO (falta a sua auditoria e a sua frase de aprovação)
+RELATÓRIO — LW-086a (DOC): preparação da validação da Fase 2        Status: PRONTA PARA REVISÃO (já no `main` pela Fase B automática; a auditoria de Arthur não foi feita)
 
-Li antes: AGENTS (inteiro), linha da LW-085 (`docs/DEVELOPMENT_ROADMAP.md:632`), as duas revisões (A: `REVISAO-085-A.md`, ramo `status-a`; C: `REVISAO-085-C.md`, ramo `status-c`), os relatórios da A (`STATUS-A.md`, LW-085a) e da B (`STATUS-B.md`, LW-084), `docs/decisions/` (0009, 0010, 0011), `docs/ROADMAP_STATUS.md` e `docs/events.md`. Decisões: DEC-119, 122 (APROVADA por ora), 123 (só a direção), 124, 125; DEC-083 e DEC-084 (save); DEC-040 e DEC-071 (PENDENTE/PROPOSTA, valores [HIP]). Base: `main` = `1dd2fb4`.
+Li antes: AGENTS (inteiro), `docs/DEVELOPMENT_ROADMAP.md` (2.A, 2.C, 2.F, 2.G, 2.H, 2.I, 2.J, linhas da LW-054 e LW-086 e o Anexo D), `docs/fase-1/LW-054-roteiro-para-arthur.md` e `LW-054-relatorio-de-fechamento.md` (formato), `docs/ROADMAP_STATUS.md`, `docs/modules/npc.md`, os 18 arquivos de teste que cito (cabeçalhos e nomes dos testes; os principais lidos por inteiro), os dados (`routine_blocks`, `actions`, `places`, `settlements`, `needs`, `pt_br.json`), `README.md` e os relatórios da A (085a) e da B (084 e 085c). Decisões: DEC-122 (você aceitou o "por ora"), DEC-119 (régua de quadros), DEC-083/084, DEC-040 e DEC-071 ([HIP]).
 
 1. RESUMO
-As duas revisões cruzadas (A e C, só leitura) não acharam defeito de código bloqueante. O que era importante foi corrigido ou registrado: a ponte só cita a `api/` do `npc` (085a, com regra nova no `check_architecture`), o cruzamento impasse × conversa ganhou teste (085b), as três decisões de Arthur estão registradas (0011) e a LW-084 mediu o custo de memória e relações em 1 ano com 300 NPCs (estável). **Falta só a 085c** (custo do painel de NPC): "085c: pendente". A LW-085 não está concluída: depende da sua auditoria e da sua frase.
+O roteiro da sua validação está no `main`, no mesmo lugar e formato da Fase 1 (`docs/fase-2/`). Os 8 itens da checklist 2.H têm "faça na janela" ou "prova automática" (comando exato, o que o teste prova, resultado de hoje), há uma sessão de janela de cerca de 13 minutos, perguntas de fluidez e a tabela de 2.F e 2.J com o que falta. **Dois pontos sem prova automática estão ditos com todas as letras: o teleporte (item 2) e o item 8.** Um worktree pronto abre a janela com um comando. Nenhum código, tecla ou comando novo.
 
-2. TABELA DOS 8 CRITÉRIOS (linha da LW-085, `docs/DEVELOPMENT_ROADMAP.md:632`)
-| # | Critério | Resultado | Evidência |
-|---|---|---|---|
-| 1 | Limites do módulo `npc` | **OK, com ressalvas registradas** | Porta `src/sim/npc/api/` (8 classes, 3 delas as visões da 085a); a ponte só cita a `api/` (regra D: acusava 12 linhas no `main` anterior, hoje 0). Tamanho pela regra do 0011 (só código, folga 1,5× ≈ 450): o maior é `npc_module.gd` com 346 linhas de código (620 no total), depois `npc_thinker.gd` 328, `action_runner.gd` 304. Ressalvas: classes aninhadas do módulo ficam onde estão (decisão); retornos de `explain_decision`, `peek_memories` e `peek_routine_action` seguem de tipo interno (a ponte lê pelas visões) e `peek_npc_bodies` ainda lê o membro público `lod` (backlog) |
-| 2 | Catálogo em dados | **OK, com ressalva** | Ações (incluindo `talk_player`), necessidades, ofícios, tipos de memória, parâmetros do `npc`, estoque e renda em `data/*.json`. Ressalva: ids de conteúdo repetidos como constantes (`"work"` em 3 arquivos, `"help"` em 2…) e alcance (3 m) e cooldown (60 min) da conversa em constantes [HIP]; os dois estão no backlog |
-| 3 | Função única de efeitos | **OK** | `ActionRunner.apply_effects` é o único ponto que aplica efeitos de ação, nos dois modos (S1 e S0), guardado por `test_action_single_path.gd` e provado equivalente pela LW-075. `talk_player` não tem efeitos. O comentário agora diz a verdade: `NeedMath.settle` e `NeedMath.add_pressure` (alarme) também escrevem em `need_values`, mas não são efeito de ação |
-| 4 | Ponte fina | **OK (depois da 085a)** | `SimBridge` só delega e formata; cita só `api/`; a regra D guarda. Ressalva: `sim_bridge.gd` 391 linhas (236 de código) e o resumo do painel chama `world.validate()` do mundo inteiro a cada ~1 s: o custo é a 085c (pendente) |
-| 5 | Sem dinheiro e mercado antecipados | **OK** | Busca por `ledger`, `money`, `price`, `market`, `trade`, `gold`, `wage` em `src/sim/npc` e `data/*.json`: só os comentários dos dois stubs ("sem dinheiro, preço, Ledger ou mercado"); `market_reserved` é vocabulário de local que já existia |
-| 6 | Marcas `TEMP` | **OK** | Só `TEMP-LW-065` (`FoodStub`, sai na LW-094) e `TEMP-LW-066` (`IncomeStub`, sai na LW-095), no código, nos dados e no Anexo D; nenhuma marca nova nas LW-082 a LW-085; zero `TODO`, `print(`, `await`, `@warning_ignore` e `static var` em `src/sim`, `src/bridge` e `src/tools`. Ressalva: o estoque do `FoodStub` entra no save, então a LW-094 muda o formato dele |
-| 7 | Custo de memória e relações | **OK, medido** | LW-084: 300 NPCs [HIP], 40 notáveis, 8 execuções de 1 ano em depuração: 300 vivos o tempo todo, **0 mortes, 0 erro de `validate()`**, hash igual dentro de cada padrão (`5141d7e7a84b` e `50af223b6f51`). Memória estática +1,83 a +1,92 MiB **só nos primeiros 30 dias**; do dia 30 ao 360, 0 a 0,1 MiB; objetos estáveis (4.175 a 4.226). Save 19,6 a 20,4 KiB comprimido (338 a 345 KiB sem comprimir), estável. Passo: média 2,3 a 2,7 ms em depuração e 1,75 a 1,87 ms em release (régua [HIP] ~3 ms); passos acima de 10 ms existem (0,1 a 0,4%) e são só informativos por decisão sua. Os 40 notáveis saturam: memórias 24/24 (teto), relações 8 a 16 de 16, traços 0 (o limiar 80 nunca é atingido). **Limites:** corpo falso, conversa do jogador fora do soak, ano em release não rodado, e o custo do painel é a 085c |
-| 8 | Resultado do SP2 | **Registrado, com pontos abertos** | `docs/decisions/0009-spike-sp2-corpos-e-lod.md` (proposta) e DEC-122 (APROVADA por ora), DEC-123 (só a direção), DEC-124. Abertos: a régua oficial falhou em 3 de 13 ensaios e a causa dos trancos ficou aberta; a navegação N1 é reta e atravessa pedra (backlog); toda caminhada em S0 chega atrasada em relação ao S1; os números de quadros não estão no repositório. A LW-084 **não** mede isso (corpo falso) |
+2. ARQUIVOS CRIADOS
+- `docs/fase-2/LW-086-roteiro-para-arthur.md` (217 linhas) — o que você faz: abrir o jogo, teclas, os 8 itens, fluidez, como responder, resultado de hoje dos testes
+- `docs/fase-2/LW-086-relatorio-de-fechamento.md` (112 linhas) — RASCUNHO: números, entregáveis, tabelas 2.F e 2.J, retrospectiva e decisões antes da Fase 3
+- Worktree `/Users/arthurlk/LivingWorld/.worktrees/validacao-fase-2` (fora do repositório; em `origin/main` `7cb70f2`, importação feita)
 
-3. O QUE FOI CORRIGIDO
-- **LW-084 (B)** — resolveu o bloqueio de processo B1 da revisão C: o soak de 300 NPCs por 1 ano existe e rodou limpo.
-- **LW-085a (A)** — a ponte cita só a `api/` do `npc` (visões de dados puros + 6 constantes reexportadas + `peek_level_of` e `peek_s0_count`) e a regra D do `tools/check_architecture` impede a volta (I-1 da A, I1 da C). Sem mudança de comportamento: oráculo, hashes e `run_sim` iguais.
-- **LW-085b (C)** — teste do impasse com a conversa (I3 da C): `test_impasse_conversation.gd`, com controle de mutação (quatro defeitos injetados foram pegos); comentários do oráculo (cinco impressões de `5a7d453`, quatro da LW-073b) e de `ActionRunner.apply_effects` acertados (M1 em parte e M4 da C, M-2 da A), sem mudar código.
-- **LW-085d (C)** — `docs/events.md` com os ouvintes reais (M2), índice de contratos com o `tools.md` (M-6 da A), texto da 082 e da 083 e hora inicial 05:45 no README, nota do `project.godot` na linha da LW-082, backlog.
+3. ARQUIVOS MODIFICADOS
+- `docs/ROADMAP_STATUS.md` — +1 linha (a da LW-086a, de subtarefa). A contagem não mudou: script e `grep` antes e depois iguais ("30 de 32" ×1 no status e ×2 no README; "85 de 192" ×1 e ×2; 30 de 30 linhas de tarefa concluídas). Escrevi a linha sem repetir esses números, de propósito. A LW-086 não foi contada.
 
-4. O QUE FOI REGISTRADO
-- `docs/decisions/0011-revisao-fase-2.md` (três decisões de Arthur): (1) arquivos grandes aceitos, contando só código, folga 1,5×, nada dividido agora, classes aninhadas do `npc_module.gd` ficam; (2) `save_version` em 2 até o "save congelado"; (3) as cinco ações de entrada (F3, Tab, N, B, T) no `project.godot` da 082g, autorizadas ("só ADICIONAR ações de entrada").
-- `docs/decisions/0010-soak-longo-300-npcs.md` (B): resultados, rótulos e proposta de régua de memória.
-- Linha da LW-082 no `ROADMAP_STATUS.md` com o registro do `project.godot`.
+4. DECISÕES TÉCNICAS
+- **Lugar e formato:** `docs/fase-2/`, o mesmo par da Fase 1 (roteiro + fechamento); por isso dois arquivos em vez de um `docs/validacao-fase-2.md`.
+- **Como a janela cabe em 13 minutos:** uma sessão só, a 2x (1 minuto real = 96 de jogo). Corra a 1x até o povoado A (chega às ~06:15, a tempo de ver o povoado acordar) e aperte 2 ao chegar; os itens 1, 2, 3, 5 e 8 acontecem em paralelo enquanto o dia passa (22:00, "voltar a dormir", cai no minuto ~10). Tempos são **[estimativa]**, não medi com a janela.
+- **O que é janela e o que é prova** (sem teclas novas): janela = 1, 2, 3, 8 e a conversa do 5; prova = 4 (alarme), 6 (dias acelerados), 7 (comida a zero) e salvar e recarregar do 5. Cada teste citado foi **lido e rodado hoje**; só citei o que prova mesmo o que o item pede.
+- **Sem prova, dito com todas as letras:** (a) **teleporte:** só o spike SP2 (descartável, fora do `check_all`) e a janela; (b) **item 8:** não há teste GUT, só a busca por texto reproduzível e a janela; (c) **2.F #8:** ação nova só por JSON tem teste, **ofício novo não** (marquei "parcial").
+- **Cuidado de fluidez:** com o painel aberto o resumo (`world.validate()`) roda a ~1 s e a 085c mediu ~20 ms por chamada com 300 NPCs; as perguntas P1 a P3 pedem o painel fechado e a P4 pergunta do tranco com ele aberto.
+- Worktree em `origin/main` **detached**, `--import` feito; comando exato abaixo.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova nesta tarefa (as do registro 0011 seguem no relatório da LW-085).
 
-5. O QUE FOI PARA O BACKLOG (`docs/backlog.md`, já no `main`)
-- C/085d: alcance e cooldown da conversa em dados; alcance de 3 m duplicado (sim e apresentação); `src/tools/` fora de `check_architecture` e `check_literal_text`; trava de desenvolvimento copiada 5 vezes em `npc_module.gd`; ids de conteúdo em constantes; "Deprecated 1" do GUT (`wait_frames`, desde a LW-020/021).
-- A/085a: trocar os retornos de `explain_decision`, `peek_memories` e `peek_routine_action` por tipos da `api/`; `peek_npc_bodies` lê o membro público `lod`; a regra D só vale para módulos com pasta `api/` e deixa `src/app` e `src/persistence` de fora.
-- B/084: ano em release; dividir o medidor (330 linhas); laço de controle intercalado; notáveis no teto de memórias.
-- Antes: navegação com curvas e desvio de obstáculos (N1, DEC-122); o NPC se virar para o jogador; ação interrompida pela conversa não é retomada; teto de 40 do T2.
+**Comando para abrir a janela (copiar e colar no Terminal):**
+```bash
+"/Applications/Godot 2.app/Contents/MacOS/Godot" --path /Users/arthurlk/LivingWorld/.worktrees/validacao-fase-2
+```
+Com o editor: o mesmo comando mais `--editor`, e F5. Fechar: Command+Q.
 
-6. AINDA ABERTO SEM LINHA NO BACKLOG (proposta minha; não editei o `main`)
-- **M4:** teste que lista os arquivos que escrevem em `need_values` e falha se aparecer outro (~30 linhas); hoje `test_action_single_path.gd` só olha os efeitos de ação.
-- **M1 (resto):** `docs/modules/npc.md` (linhas 136 e 220) ainda diz "nove impressões tiradas de `5a7d453`" e o comentário de `npc_module.gd` (linha 418) diz que o resumo "não pode mudar enquanto não há impasse"; ficaram fora do que você autorizou.
-- **M6:** `CM_PER_METER` repetido em `npc_thinker.gd` e `npc_player_talk.gd`, havendo `TerrainData.CM_PER_METER`.
-- **M9:** a LW-094 deve dizer que remover o `FoodStub` muda o save.
-- **085c (custo do painel; I-3 da A, M7 da C):** pendente.
+5. TESTES EXECUTADOS
+- Lote das provas citadas (`tools/run_tests <arquivo>`, 18 arquivos, em `origin/main` `d1b0fa2`): **todos VERDES** (alarme 11/11; necessidade crítica 17/17; `FoodStub` 19/19; conversa com salvar e recarregar 1/1; corpos na cena real 5/5, corpos na tela 7/7, pool 10/10, LOD 20/20; rastro 10/10, ponte do rastro 6/6, painel 6/6; limite de T2 13/13; catálogo 17/17; equivalência 4/4; vida de 7 dias 4/4; ano curto 4/4; oráculo 2/2; impasse × conversa 2/2).
+- `tests/soak/run_npc_life_30d` (3 execuções, 26 s cada): vivos no mínimo 100, parado 0 min, problemas 0, hash `d13b921112ce` nas três.
+- `sh tools/check_architecture .`, `check_input_keys`, `check_literal_text`: verdes.
+- `tools/check_all` **duas vezes** (HEAD `3fc9a04` e HEAD final `7cb70f2`): **VERDE**, 124 scripts, **1.194 testes**, 261.693 asserts, 313 scripts sem aviso de compilação, 0 erros de script, 3 min 31 s ("Warnings 1 / Deprecated 1" do GUT já existia).
+- Fumaça do worktree da janela: `--headless --path ... --quit-after 300` rodou a cena principal sem erro. **A janela em si não foi aberta por mim** (é a sua passada).
+- NÃO EXECUTADO: o ano de 300 NPCs (cita-se a LW-084; ~21 min por execução); oráculo, hash de 30 dias e `run_sim` contra o `main` (a tarefa é só documento; a Fase B de documento não os pede).
 
-7. ARQUIVOS DESTA ENTREGA
-- Criados: nenhum no projeto (este relatório fica só no ramo `status-c`).
-- Modificados: nenhum no `main`. **Preparei, sem enviar,** a linha da LW-085 no `ROADMAP_STATUS.md` (estado "em auditoria"; não conta como concluída; a contagem continua 30 de 32 e a conferência por script deu 31 linhas de tarefa, 30 concluídas): ramo local `lw-085-final` (commit `5574c11`, só em `.worktrees/lw-085-fb`), nunca enviado. Texto: "Relatório final entregue em 10/11/2026; a LW-085 NÃO está concluída e não entra na conta: falta a auditoria e a frase de aprovação de Arthur", com corrigido, registrado, medido, pendente e limite.
+6. RESULTADOS
+- Critérios 2.F: **7 cumpridos e 3 parciais** (2 desempenho: picos acima de 10 ms existem, você já os decidiu informativos; 3 LOD: teleporte e quadros dependem da sua janela; 8 dados: ofício novo por JSON sem teste). 2.J: **30 de 32 tarefas**, REV aguarda a sua frase, VAL é esta, tag não criada, status em 93,8%.
+- Fase B (condições): junção sem conflito (avanço rápido de `d1b0fa2` por `3fc9a04` e `7cb70f2`), `check_all` verde no HEAD final, nenhum arquivo protegido (só `docs/ROADMAP_STATUS.md` e `docs/fase-2/`), contagem inalterada por grep, **sem tag**, sem `--force`.
 
-8. TESTES EXECUTADOS
-- Nenhum novo nesta etapa (relatório). Os resultados que cito são de execuções minhas e dos outros: `check_all` VERDE em `8b910f1` (123 scripts, 1.190 testes, 261.668 asserts) e VERDE em `1dd2fb4` pela B (124 scripts, 1.194 testes, 261.693 asserts); oráculo, vida de 30 dias e `run_sim` iguais nas três junções (A, C e B). Reconferi por busca (sem Godot) os critérios 1, 4, 5 e 6 em `1dd2fb4`: `rg` na ponte sem classe interna do `npc`, sem dinheiro e mercado, sem `TODO`, `print(` ou `await`.
-- **NÃO EXECUTADO** (por não caber numa revisão e por ordem): o painel e a conversa na janela; frames do SP2; o custo do painel (085c); o ano em release.
+7. PROBLEMAS ENCONTRADOS (todos meus)
+- **Marcador solto no `main` por ~10 minutos:** o primeiro envio (`3fc9a04`) levou a palavra `RESULTADO_CHECK_ALL` no rascunho do fechamento. Achei na releitura e corrigi em `7cb70f2`, junto de outros acertos da releitura (a rotina de comer por ofício estava imprecisa para guardas e estalajadeiro; o marco de distância do item 2; um `go_to_place` antes do `sleep`). Refiz o `check_all`.
+- Um comando meu travou esperando entrada (um `cat` sem arquivo) e custou uns 10 minutos; refiz pelo caminho certo. O primeiro `test_npc_year_short.gd` não imprimiu nada por cache de importação velho (a lição da Fase 1 voltou); com `--import` passou, e o roteiro tem a observação.
+- Os horários que escrevi nas linhas "rodando" deste arquivo estavam adiantados em até 25 minutos (17:05, 17:30 e 17:50, contra 17:08, ~17:20 e 17:25 reais); este ficou com a hora real.
+- **A LW-085, no meu relatório final, dizia "085c pendente": já não é verdade** (a 085c entrou no `main` em `d1b0fa2`, 16:29). A linha da LW-085 que preparei (ramo local `lw-085-final`) vai ser atualizada com o resultado da 085c quando você digitar a frase.
 
-9. PROBLEMAS ENCONTRADOS
-- Dois conflitos de `docs/backlog.md` quase aconteceram na mesma tarde (comigo e com a B: as duas pontas acrescentam linhas no fim). Pela sua regra, cada um moveu as próprias linhas para o meio do arquivo em vez de resolver à mão. Isso tende a se repetir.
-- A premissa errada do meu teste (a sequência de vencimentos não começa na conversa) foi corrigida na 085b e está explicada lá.
-- O `status-a` carrega a árvore inteira do projeto (e o `status-c`, o meu, também): só os arquivos de status diferem do `main`.
+8. RISCOS
+- O cronograma de 13 minutos é uma conta, não uma medição na janela; se o povoado for mais difícil de achar sem coordenadas, passa de 13.
+- Os textos do painel são ids crus em inglês; o roteiro avisa, mas pode confundir.
+- O teleporte só tem a sua janela como prova.
 
-10. RISCOS
-- A 085c pode mostrar que o `validate()` do mundo, chamado a cada ~1 s com o painel aberto, é caro com 300 NPCs; só afeta build de desenvolvimento.
-- Os 40 notáveis saturam as memórias em 1 ano: se a Fase 3 quiser memória que não sature, tetos e limiar de traços precisam de decisão.
-- A janela do jogo ainda não viu o painel (F3) nem a conversa (E perto de um NPC), e a ponte do painel mudou de caminho na 085a.
-- O soak da B usa corpo falso e foco que "teletransporta": o custo de S0 é o do protocolo e do LOD, não de física, navegação ou desenho.
-
-11. PENDÊNCIAS
-- **085c:** pendente (B está medindo; sem ramo no remoto às 16:16).
-- **Teste manual para você (janela, em build de desenvolvimento):** (1) F3 ou Tab abre o painel; (2) N e B trocam de NPC e a lista mostra S0/S1; (3) T marca o rastro e o rastro aparece; (4) perto de um NPC, E conversa: ele para, a conversa mostra o texto provisório e o painel mostra a memória e a relação; (5) nada deve parecer diferente do que era antes da 085a.
+9. PENDÊNCIAS
+- **Sua passada na janela** (~13 min) e a conferência das provas; depois, "LW-086 assinada, com a ressalva de janela mais prova automática" ou a lista do que falhou (formato na seção 5 do roteiro).
+- **LW-085, Fase B:** só quando você digitar exatamente **APROVADO LW-085** (a 085c já está no `main`; se não estivesse, eu esperaria 6 vezes 10 minutos). A contagem vai então para 31 de 32 e 86 de 192, com as mesmas condições e sem tag. **Ainda não digitou.**
+- Tag `fase-2-concluida`: só com a sua autorização.
 
 ACOMPANHAMENTO
-- Avanço: LW-085 com relatório final entregue; Fase 2 segue em 30 de 32 (93,8%); a LW-085 NÃO está contada. Falta a auditoria e a sua frase, a 085c e a LW-086 (validação sua).
-- Próxima tarefa recomendada: auditoria da LW-085 e, depois da sua frase, a LW-086. **Não iniciadas.**
-- Decisões que dependem de Arthur (com a minha recomendação): (1) aprovar a LW-085 depois da auditoria, esperando ou não a 085c (recomendo esperar: é curta e é o único critério sem número); (2) registrar a proposta de entrada para o `DECISIONS.md` com as três decisões do 0011 (recomendo); (3) atualizar o AGENTS 4.5 e 5.2 com a contagem de 1,5× (recomendo); (4) aceitar o SP2 "por ora" (DEC-122) com os pontos abertos ou pedir medição de quadros na LW-086 (recomendo medir na janela durante a LW-086); (5) a régua definitiva de memória da B (no máximo 0,5 MiB entre o dia 30 e o 360; observado 0 a 0,1) e o que fazer com a saturação das memórias dos notáveis; (6) liberar a resolução automática de conflito só de acréscimo em `docs/backlog.md` (recomendo; já aconteceu duas vezes hoje); (7) quais itens do backlog (ids em dados, alcance e cooldown em dados, tipos da `api/`) entram antes da Fase 3 (recomendo ids e tipos da `api/`).
-- Git: nada novo no `main` nesta etapa (`main` = `1dd2fb4`). Ramo local `lw-085-final` (`5574c11`) com a linha da LW-085 em auditoria, **nunca enviado**. Neste ramo `status-c`: só `STATUS-C.md` e `REVISAO-085-C.md`.
+- Avanço: LW-086a concluída e no `main`. Fase 2 segue em **30 de 32 (93,8%)**; projeto em **85 de 192 (44,3%)**. LW-085: relatório final entregue, em auditoria (não contada). LW-086: não feita.
+- Próxima tarefa recomendada: **sua passada na janela (LW-086)** e, antes dela, **"APROVADO LW-085"** se concordar com o relatório. Não iniciadas.
+- Decisões que dependem de Arthur: (1) as decisões do relatório da LW-085 (entrada no `DECISIONS.md`, AGENTS 4.5 e 5.2, régua de memória, resolução automática de conflito só de acréscimo no backlog); (2) aceitar os 3 critérios parciais de 2.F ou pedir testes pequenos (ofício novo por JSON; teleporte), recomendo pedir só o do ofício; (3) as decisões antes da Fase 3 (seção 7 do rascunho do fechamento).
+- Git: `main` = `7cb70f2` (avanço rápido, sem `--force`, sem tag); ramo `lw-086a-roteiro-de-validacao` enviado (`3fc9a04`, `7cb70f2`); worktree `validacao-fase-2` só local; ramo local `lw-085-final` (linha da LW-085 em auditoria) **nunca enviado**. Neste ramo `status-c`: só `STATUS-C.md` e `REVISAO-085-C.md`.
