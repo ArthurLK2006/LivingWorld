@@ -1,112 +1,89 @@
-10/11/2026 18:11 (Brasília) — CONCLUÍDA — PRÉ-VOO PRONTO: LW-085f no `main` (`497ab78`, Fase B automática, sem tag) e pré-voo da Fase 3 abaixo (só leitura; nada criado, nenhum Godot); parei (regra 13)
+10/11/2026 19:16 (Brasília) — CONCLUÍDA: LW-087b (`lw-087b-contrato-economy`, `7747c1d`) e LW-087d (`lw-087d-eventos-e-dados`, `98ca6c5`) prontas para revisão como RASCUNHO nos ramos, **fora do `main`**, sem Fase B; `check_all` verde nos dois; parei (regra 13)
 
-# RELATÓRIO — LW-085f: correções da LW-085c e itens do backlog     Status: PRONTA PARA REVISÃO (já no `main` pela Fase B automática)
+# RELATÓRIO — LW-087b: contrato do módulo `economy`     Status: PRONTA PARA REVISÃO, **RASCUNHO (não está no `main`)**
 
 ## 1. RESUMO
-Corrigi o intervalo do `refresh` da lista na linha da LW-085c (de "3,5 a 4,4 ms" para "de 4,1 a 4,4 ms"; os 3,5 ms eram do teste de 1 dia) e registrei no **meio** do `docs/backlog.md` as três linhas que você mandou: a régua provisória de memória (sem virar teste), o ritmo do resumo do painel (as duas opções e os números medidos) e o painel com 1 ano de jogo (não rodar). Só texto: nenhum código, teste nem dado. A linha da LW-085f entrou como subtarefa e a contagem não mudou.
+Escrevi a ficha `docs/modules/economy.md`, no padrão do `npc.md` e do `world.md`: o módulo é o **dono único** de estoque, preço e dinheiro; o `Ledger` (`transfer`, `mint`, `burn`, contas, motivo, teste de ouro); bens e inventário por dono; mercados e preço (razão estoque/alvo, faixa, suavização, spread, profundidade); `request_trade` atômico e `TradeRules` neutra; produção e salário; consumo; contratos com custódia; a API (`peek_*`, `request_*`, `on_*`), os eventos, o dado → dono, os arquivos de dados, o rastreio por tarefa (LW-087 a LW-116) e **14 pontos em aberto com recomendação**. As suas decisões de 10/11/2026 entram como incorporadas. Só documento.
 
 ## 2. ARQUIVOS CRIADOS
-Nenhum.
+- `docs/modules/economy.md`: o contrato (218 linhas).
 
 ## 3. ARQUIVOS MODIFICADOS
-- `docs/ROADMAP_STATUS.md`: um número trocado na linha da LW-085c (só ele, conferido por `git diff --word-diff`: `-3,5 +4,1`) e +1 linha (a da LW-085f, entre a da 085d e a da 086a).
-- `docs/backlog.md`: +3 linhas, logo depois das linhas da 084b e antes de "Magias, armas e outras habilidades" (meio do arquivo, não no fim).
-- Contra o `main` (`fbd6ac0`): 2 arquivos, 5 inserções e 1 remoção. Nenhum arquivo protegido.
+Nenhum. Contra o `main` (`9dbcebc`): 1 arquivo novo. Não toquei em `DECISIONS.md`, roadmap, README, `data/`, código nem testes.
 
 ## 4. DECISÕES TÉCNICAS
-- **Não repeti o que já existia no backlog:** a linha do ano em release (`run_npc_year_release`), a do laço de controle intercalado, a da saturação das memórias dos notáveis (24/24 no teto) e a da divisão do `npc_year_meter.gd` (330 linhas) já estavam lá desde a 084b. Foram 3 linhas novas, não 5.
-- **O cálculo da opção A do painel é conta, não medida:** com o resumo a cada 5 s, 19,9 a 22,3 ms divididos por 5 mais 4 vezes 4,1 a 4,4 dá cerca de 20 a 22 ms por segundo. A linha do backlog diz "conta, não medida".
-- **Citação da P4:** conferi no roteiro (`docs/fase-2/LW-086-roteiro-para-arthur.md`, linha 174): "painel aberto (F3), tranco uma vez por segundo?". É o que a linha do backlog cita.
-- Sem proposta de entrada para o `DECISIONS.md`.
+- **O que veio dos documentos** (GDD 12 e 13, arquitetura 11, roadmap 3.D, as suas decisões): a lista inteira das seções 1 a 9 que não leva `[PROPOSTA]`.
+- **Onde os documentos não decidem, não escolhi em silêncio:** cada ponto virou **`[PROPOSTA]` numerada (Q1 a Q14)** com a recomendação, na seção 15. Os que mais pedem a sua palavra:
+  - **Q4:** o roadmap (LW-092) diz "conta do proprietário", mas "propriedade complexa" é "não fazer" (3.J). Recomendo o **próprio local de produção como dono** (conta e inventário próprios).
+  - **Q5:** o mercado paga o produtor com a conta dele; sem fundos, `ECON_MARKET_NO_FUNDS`.
+  - **Q9:** nenhum documento diz **quais bens saciam qual necessidade**. Recomendo `bread` por inteiro e `grain` menos [HIP], em `goods.json`.
+  - **Q10:** ofícios (só existem `farmer`, `lumberjack`, `artisan`, `guard`, `innkeeper`; faltariam `miner` e `shepherd`), locais `work` suficientes e **distribuição das cadeias pelos 3 povoados** (recomendo que nenhum seja autossuficiente). **Muda `population.json` e os hashes do `npc`.**
+  - **Q3:** o motivo do `mint` inicial no roadmap é `inicio_de_jogo`; recomendo `game_start` (identificadores em inglês, DEC-022).
+  - **Q8:** o `npc` chama `request_work_shift(place_id, worker_id, minutos)`, o salário sai na hora da conta do local e, uma vez por hora, o local compra insumos e vende excedente ao mercado do povoado.
+- **Escolhas de forma (minhas, rotuladas):** códigos `ECON_*`; tipos de resposta em `economy/api/` (lição da LW-085a); a economia registrada **antes** do `npc`; conservação **de bens** simétrica à do dinheiro (Q13); `peek_quote` para consultar o custo sem executar.
+- **Sobre o "PARE e pergunte":** entendi como "não decidir em silêncio". Como nenhum ponto impedia de escrever o contrato, **não parei** e entreguei tudo como proposta rotulada. Se você preferia que eu parasse e perguntasse antes de escrever, diga e passo a perguntar.
+- **Proposta de entrada para o `DECISIONS.md`:** nenhuma nova (o registro das DEC-047, DEC-049 e DEC-054 é da LW-087a).
 
 ## 5. TESTES EXECUTADOS
-- `tools/check_all` no HEAD final (`497ab78`), solto e vigiado, Mac na tomada, sem outro Godot (o vigia anotou os processos a cada 15 s): **VERDE: 124 scripts, 1194 testes, 261.693 asserts, 168,5 s; sem aviso novo (o "Warnings 1 / Deprecated 1" do GUT é o de sempre)**.
-- Contagem por `grep`, antes e depois (e no `main`): "31 de 32" (README 2, status 1) e "86 de 192" (README 2, status 1), mais "31 de 32 tarefas concluídas" (2), "86 de 192 tarefas" (3) e "31 de 32 concluídas" (1): **iguais no ramo e no `main`**.
-- Comparação do oráculo, do soak de 30 dias e do `run_sim` com o `main`: **NÃO EXECUTADA**, por não constar nas condições desta tarefa e porque o ramo difere do `main` só em dois `.md` (`git diff --stat origin/main HEAD`): código e dados são os mesmos bytes.
+- `tools/check_all` no HEAD final (`7747c1d`): **VERDE: 124 scripts, 1194 testes, 261.693 asserts, sem aviso novo (o "Warnings 1 / Deprecated 1" do GUT é o de sempre); 172,5 s; o vigia anotou que outra conversa rodou Godot no worktree `lw-087c` ao mesmo tempo, sem efeito no resultado**. Antes da junção com o `main`, no HEAD `3b73309`, também ficou verde (124 scripts, 1194 testes).
+- Autorrevisão: `git diff --check` limpo; 1 arquivo; nenhum protegido; nenhum teste tocado.
 
 ## 6. RESULTADOS
-Aceite cumprido: o número foi corrigido, as três linhas estão no meio do backlog, a linha da LW-085f está como subtarefa e a contagem não mudou.
+Aceite da LW-087b cumprido no que cabe a um rascunho: ficha com os campos do modelo e os tópicos pedidos. Nada foi executado além do `check_all` (só documento).
 
 ## 7. PROBLEMAS ENCONTRADOS
-- **Erro meu, corrigido antes de publicar:** o texto da linha da LW-085f dizia "31 de 32 e 86 de 192", e isso subiu de 1 para 2 a ocorrência do placar no `ROADMAP_STATUS.md` (a conferência por `grep` pegou). Tirei os números do texto num commit à parte (`497ab78`); não reescrevi histórico.
-- O `STATUS-C.md` diz "Nada rodando": a palavra "rodando" aparece, mas negada. Tratei como livre (o `pgrep` não via Godot). Se preferir, a C pode dizer "parado" em vez disso, para a regra de procurar a palavra não dar falso alarme.
-- Escrevi "18:07" no "rodando" do `STATUS-B.md` sem consultar o relógio; o `check_all` começou às 18:06 e terminou às 18:09. Sem efeito prático.
+- **O `main` andou durante o trabalho** (a LW-085e da A: `AGENTS.md` versão 0.4, DEC-126 a DEC-128). Juntei o `main` atual no ramo (`7747c1d`, sem conflito, **não é a Fase B**) e passei a citar a DEC-127 e o AGENTS 4.15 na regra do save.
+- **Referência pendurada:** a seção 13 aponta `docs/economy/dados.md`, que está no ramo da 087d; só resolve quando os dois entrarem.
+- **Documentos que se contradizem** (achados ao escrever, além dos 6 do pré-voo): LW-092 "conta do proprietário" × 3.J "propriedade complexa" (Q4); o roadmap escreve o motivo em português (Q3).
 
 ## 8. RISCOS
-Nenhum novo: só texto. As três linhas dependem do que o roteiro e o registro `0010` dizem hoje.
+Os 14 pontos são proposta: se você responder diferente na LW-087a, as seções 3 a 8 mudam. A distribuição das cadeias (Q10) mexe em dados do `npc`. A fórmula do preço (Q6, Q7) é calibração (LW-112); o contrato só exige propriedades testáveis.
 
 ## 9. PENDÊNCIAS
-Nenhuma da 085f. Nenhum teste manual.
-
-## ACOMPANHAMENTO (085f)
-- **Avanço:** Fase 2 em 31 de 32 (96,9%) e projeto em 86 de 192 (44,8%), como no `main`; falta a LW-086 (sua validação).
-- **Git:** `main` em `497ab78` por avanço rápido de `fbd6ac0` (sem tag, sem `--force`); ramo `lw-085f-correcoes-da-085c` publicado; worktree `.worktrees/lw-085f` mantido; nada tocado nas pilhas da A e da C. Commits: `f9916b3` (conteúdo), `c58d93f` (junção), `b479d3c` (linha de status) e `497ab78` (tirei o placar do texto).
-
-- **Próxima tarefa recomendada:** nenhuma minha (regra 13). A Fase 3 **não** começa antes de você fechar a Fase 2 (LW-086). **Não iniciada:** LW-087.
-- **Decisões que dependem de você:** as do pré-voo abaixo (seções b e c), cada uma com a recomendação.
-- O relatório anterior (LW-084 e LW-085c) está no commit `92d2302` deste ramo.
+Suas respostas a Q1 a Q14 (recomendações na seção 15 da ficha). Nenhum teste manual.
 
 ---
 
-# PRÉ-VOO DA FASE 3 (ECONOMIA): só leitura
+# RELATÓRIO — LW-087d: eventos econômicos e modelos de dados     Status: PRONTA PARA REVISÃO, **RASCUNHO (não está no `main`)**
 
-Nada criado: nenhum ramo, arquivo, dado ou código da Fase 3; nenhum Godot; a LW-087 **não** foi iniciada. **Li:** GDD 12 e 13; arquitetura 11 (e 3.2, 8.6, 15.4, 17.5); roadmap 3.A a 3.J e Anexos D, E e F; `DECISIONS.md` (DEC-046 a 049, 040, 041, 054, 071, 078, 082 a 084, 100, 112); `docs/events.md`; `docs/modules/` (**não existe `economy.md`**; a pasta `src/sim/economy/` só tem um README "reservado"); `data.md`, `npc.md` (seção 9) e `world.md`; o código dos provisórios. As tarefas LW-087 a LW-095 **não citam nenhuma DEC pelo número**.
+## 1. RESUMO
+Cataloguei em `docs/events.md` os eventos econômicos do cap. 11.9 da arquitetura como **"planejado, LW-0NN"** (nenhum como pronto) e escrevi `docs/economy/dados.md`, com os modelos de dados em **tabelas planas** (`goods`, `owner_kinds`, `market_targets`, `price_params`, `recipes`, `recipe_inputs`, `recipe_outputs`, `production_sites`), os 10 bens, as 10 receitas das 4 cadeias, as regras de validação e as constantes de preço. Só documento.
 
-**Em uma frase:** o desenho é bom, mas há **6 contradições ou buracos** (seção c) e **4 decisões suas** antes da LW-087 (seção b).
+## 2. ARQUIVOS CRIADOS
+- `docs/economy/dados.md` (153 linhas).
 
-## b) Decisões de que a Fase 3 depende
+## 3. ARQUIVOS MODIFICADOS
+- `docs/events.md` (+13 −4): o total passa de 6 para 15 eventos catalogados (6 existentes ou implementados e 9 planejados); a definição de "planejado"; a linha do `NpcDied` ganha a economia como ouvinte **previsto**; 9 linhas novas; e o parágrafo "considerados e não incluídos".
+- Contra o `main` (`9dbcebc`): 2 arquivos. Nada protegido além do que você citou; sem `data/`, código ou testes.
 
-| Decisão | Status | Falta decidir | Recomendação |
-|---|---|---|---|
-| DEC-047 dinheiro inteiro e `Ledger` | PROPOSTA | aprovar | **Aprovar** (o AGENTS 4.11 já a usa como regra) |
-| DEC-049 `TradeRules` única inversão | PROPOSTA | aprovar | **Aprovar** (na Fase 3 só a versão neutra) |
-| DEC-048 comércio em 2 escalas | PROPOSTA | nada agora | Manter até o SP7; o limite de diferença é a sua decisão nº 9 do Anexo F, na LW-101 |
-| DEC-041 sem T0 e sem LOD S2/S3 · DEC-054 uma só moeda | APROVADA · PROPOSTA | nada | Valem; aprovar a DEC-054 com a 047 |
-| DEC-040 escala de NPCs (300) | **PENDENTE** | nada que bloqueie | A economia não depende do número; manter [HIP] |
-| DEC-082/083/084 dados e save | APROVADAS (em parte) | "save congelado": sim ou não (contradição 5) | **Não** congelar |
-| DEC-046, 100, 071, 078 | APROVADA, APROVADA, PROPOSTA, PROPOSTA | nada | Seguir (nomes genéricos; produção por hora, preço ao fim do dia) |
-| **[HIP] 3 assentamentos** | hipótese | confirmar | Confirmar (hoje há 2; o 3º nasce na LW-097) |
-| **[HIP] 8 a 12 bens, 4 cadeias** | hipótese | aprovar a lista (é o aceite da LW-087) | **10 bens:** grão, farinha, pão · madeira, tábua · minério, metal, ferramenta · lã, tecido. Cadeias: grão→farinha→pão; madeira→tábua (madeira também é o combustível); minério+madeira→metal→ferramenta; lã→tecido. Armas e roupas ficam para depois |
+## 4. DECISÕES TÉCNICAS
+- **Eventos planejados (9):** `PriceChanged`, `ShortageDeclared`, `ShortageEnded` (LW-090); `ProductionStopped`, `ProductionResumed` (LW-092); `ContractOffered`, `ContractCompleted`, `ContractFailed` (LW-096); e o `RouteStateChanged` (do `world`, LW-097), que não é da economia mas ela o ouve (menor 9, decidido). Cargas e crônica são `[PROPOSTA]`; onde a arquitetura 17.5 não diz (`ProductionStopped`, `ProductionResumed`, `ContractFailed`), escolhi e rotulei.
+- **Três eventos do cap. 11.9 ficaram sem linha, de propósito:** `CaravanAttacked`, `RouteCargoLost` e `BusinessBankrupt` não têm tarefa na Fase 3 (combate de caravanas, bandidos e propriedade complexa são "não fazer", 3.J). Estão no parágrafo "considerados e não incluídos". Se você os quer como "planejado", diga a tarefa.
+- **Onde os modelos de dados ficam (o que o padrão manda):** (1) a **lista** dos arquivos e o dono do dado ficam no contrato do módulo, como no `npc.md` e no `world.md` (é a seção 13 da 087b); (2) as **colunas e regras** ficam em documento próprio por área, como o precedente `docs/world/relevo-do-terreno-de-blockout.md`: **`docs/economy/dados.md`**. Não pus as colunas na ficha porque as duas tarefas são ramos paralelos e conflitariam no mesmo arquivo; (3) `data/economy/README.md` só nasce com os dados reais (como o `data/world/README.md`), e `data/` é protegido.
+- **Ponto aberto D1:** quatro colunas citam id de outro módulo (`need_id`, `occupation_id`, `settlement_id`, `place_id`); a economia não pode importar o `npc`, então o carregador não pode usar `set_ref` nas tabelas dele. Recomendo `STRING` livre e uma **conferência de dados entre módulos**, junto do verificador de ids de conteúdo (que já é pré-requisito da LW-093).
+- **Não inventei números:** só os dois do GDD (faixa de preço 5000 e 30000 pontos-base, [HIP]); quantidades das receitas, valores dos bens e demais constantes ficam "[HIP] a propor".
+- **Proposta de entrada para o `DECISIONS.md`:** nenhuma.
 
-## c) Contradições e buracos
+## 5. TESTES EXECUTADOS
+- `tools/check_all` no HEAD final (`98ca6c5`): **VERDE: 124 scripts, 1194 testes, 261.693 asserts, sem aviso novo (o "Warnings 1 / Deprecated 1" do GUT é o de sempre); 170,4 s; o vigia anotou que outra conversa rodou Godot no worktree `lw-087c` ao mesmo tempo, sem efeito no resultado**. O `check_architecture` só confere que evento **do código** está no catálogo (não o contrário), então as linhas "planejado" não o afetam.
+- Autorrevisão: `git diff --check` limpo; 15 linhas na tabela de eventos (6 + 9).
 
-1. **Dono do inventário.** Roadmap LW-089 e LW-105: inventário de NPC, jogador, local e mercado na `economy`. Arquitetura 15.4: `Inventory` é dado do `character` ("itens, equipamentos, contêineres"), mas também "bens comuns são quantidades na economia". **Recomendo:** a `economy` guarda as **quantidades** de todo dono, por ID; o equipamento em instâncias (`character`) fica para a Fase 5.
-2. **Fluxo agregado × DEC-041.** GDD 12.5 e arquitetura 11.6 põem o fluxo agregado em "S2"; a DEC-041 (APROVADA) deixa o LOD S2/S3 fora; o roadmap cria o `TradeFlow` na LW-100. Com 3 assentamentos nada é "S2". **Recomendo:** manter o roadmap (o SP7 decide) e escrever que o `TradeFlow` é abstração econômica por rota, sem depender de S2.
-3. **Direção `npc` ↔ `economy`.** Arquitetura 8.6: o `npc` "consulta a `economy` por interface"; 11.10: a economia usa o `npc` "só por IDs e eventos"; o cap. 11 não define essa interface e a DEC-049 proíbe uma segunda inversão. **Recomendo:** o `npc` importa só `economy/api` (mesma camada, mão única, já permitido); a economia nunca importa o `npc` (contrato de trabalho chega por evento).
-4. **Dinheiro inicial tarde demais.** A LW-094 tira o `FoodStub` e exige 30 dias verdes, mas o `mint` inicial só nasce na LW-095. Sem dinheiro, guarda, estalajadeiro, artesão e lenhador não compram comida. **Recomendo:** o `mint` inicial entra na LW-093 (ou a 095 vem antes da 094).
-5. **Migração de save × "save congelado".** LW-111: "save da Fase 2 migra"; AGENTS 4.15 e decisão 0011: `save_version` fica em 2 e save antigo é rejeitado até o congelamento (DEC-083), que ninguém declarou. **Recomendo:** não congelar; a LW-111 troca "migra" por "rejeita com mensagem clara".
-6. **`check_temp` × documentos.** LW-114 falha com qualquer `TEMP-LW-` "no repositório", mas as marcas ficam para sempre no Anexo D, no `npc.md` e no status. **Recomendo:** escopo `src/`, `data/`, `tests/`, `tools/`, `scenes/`, **fora de `docs/`**.
+## 6. RESULTADOS
+Aceite cumprido no que cabe a um rascunho: eventos com publicador, ouvintes, carga, crônica e a tarefa que o cria; modelos de dados em tabelas planas com os 10 bens e as 4 cadeias.
 
-**Menores (registrar na LW-087a):** (7) GDD 12.5 [P1] cita "tributos"; o roadmap 3.J diz "não fazer impostos": valem os do roadmap. (8) Alvo de estoque = "dias de consumo" (arq. 11.5), mas o consumo vem depois do mercado: na Fase 3 o alvo é dado fixo. (9) `RouteStateChanged` e o comando "fechar rota" do checklist 3.H: nenhuma tarefa os cria; pôr na LW-097. (10) A arquitetura 11.10 lista `entities`, que não existe: a economia usa IDs de `ctx.ids`, como o `npc`. (11) `TradeRules` "entregue pelo `app`" (3.2) ou "pela `SimContext`" (11.8): sem efeito na Fase 3.
+## 7. PROBLEMAS ENCONTRADOS
+O `main` andou (LW-085e); juntei o `main` atual (`98ca6c5`, sem conflito, **não é a Fase B**). O `events.md` e o `dados.md` apontam para `docs/modules/economy.md` (ramo da 087b), referência pendurada até os dois entrarem.
 
-## d) Divisão da LW-087 e ordem das tarefas
+## 8. RISCOS
+As cargas dos eventos e as colunas são proposta e mudam se você responder diferente na LW-087a. A conferência entre módulos (D1) ainda não tem dono.
 
-**LW-087 em 4 partes (DOC):** **087a** (precisa de você): respostas da seção c, os 10 bens, 4 cadeias e 3 assentamentos · **087b:** `docs/modules/economy.md` (dono único de estoque, preço e dinheiro; `Ledger`, mercado, `request_trade`, `TradeRules`, produção, contratos) · **087c:** extensões do `world.md` (rotas, 3º assentamento) e do `npc.md` (comprar, vender, salário, fim dos provisórios) · **087d:** os 11 eventos do cap. 11.9 em `docs/events.md` e os modelos de dados (`goods`, `recipes` em tabelas planas, parâmetros de preço). A 087a vai primeiro; **087b, 087c e 087d em paralelo** (arquivos diferentes).
+## 9. PENDÊNCIAS
+Sua resposta ao D1 e sobre os três eventos sem tarefa. A LW-087c (extensões do `world.md` e do `npc.md`) **não foi iniciada** (não estava na autorização).
 
-**Grandes demais para o limite** (~300 linhas, ~8 arquivos, 1 módulo): **088** (antes, uma casca 088a: `EconomyModule` com `api/` vazia, para 088 e 089 não editarem a mesma porta), **090**, **092**, **093**, **094** (8 arquivos de teste e o save), **095** e **098**: cada uma em duas ou três partes (por exemplo 094a: comida do mercado convive com o `FoodStub`; 094b: remover o `FoodStub`).
+---
 
-**Trabalho em paralelo sem tocar nos mesmos arquivos** (por pasta, não por pessoa):
-
-| Frente | Ordem | Observação |
-|---|---|---|
-| **Economia** (`src/sim/economy/`, `data/goods`, `recipes`) | 088a → (088 ‖ 089) → (090 ‖ 092) → 091 → 096 → 100 → 101 → 103 | 090 e 092 não dependem um do outro |
-| **`npc`** (`src/sim/npc/`, `data/actions*`, `npc_setup.gd`, testes de vida) | 093 → 094/095 → 104 | **um agente só:** `npc_module.gd`, `action_runner.gd` e `npc_persistence.gd` são comuns a todas |
-| **Mundo e apresentação** (`world`, `data/world`, `bridge`, `presentation`) | 097 → 099 → 105 → 106 → 107 | a 097 pode andar já ao lado da economia, **mas muda `population.json` e os hashes do `npc`** |
-| **Só leitura** | 108 (painel) · 114 (`check_temp`, só `tools/`, depois de 094 e 095) | cabem ao lado de qualquer frente |
-| **Fim de fase (em série)** | 109 → 110 → 111 → 112 → 113 → 115 → 116 | mesmos soaks |
-
-Conflitos prováveis (resolvem-se mantendo as duas partes): `ROADMAP_STATUS.md`, `README.md`, `backlog.md`, `events.md` e a porta `economy/api/`.
-
-## e) Backlog a fazer ANTES da Fase 3
-
-| Item | Por que antes | Tamanho | Quando |
-|---|---|---|---|
-| **Dividir `npc_module.gd`, `npc_thinker.gd`, `action_runner.gd`** (backlog L139; 620, 455 e 416 linhas, ~346, ~328 e ~304 de código) | a 093, 094 e 095 mexem nos três; dividir depois gera conflito | **G:** refatoração, mesma saída (oráculo, hash de 30 dias, `run_sim`) | antes da LW-093 |
-| **Ids de conteúdo em dados** (L175: `"work"`, `"help"`, `"flee"`...) | a 093 cria `buy`/`sell` e a 095 mexe em `work`; hoje um id mudado em `data/` quebra o código sem aviso | **P:** verificador de ~60 linhas | antes da LW-093 |
-| **Save do `FoodStub`** (fora do backlog; está no `npc.md` e em `npc_persistence.gd`, chave `food_stock`) | remover o estoque muda o save com `save_version` em 2 | **P:** tirar a chave, rejeitar save antigo com mensagem clara, teste | dentro da LW-094b |
-| **Apagar `test_food_stub.gd` e `test_income_stub.gd`** | AGENTS 9.5 proíbe apagar teste sem explicar | **P**, mas pede **sua autorização escrita** no texto da 094 e da 095 | no prompt da 094 e da 095 |
-| **`data` com listas aninhadas** (L114) | receitas têm insumos e produtos em lista | **M** (~250 linhas), ou **zero** com tabelas planas | decidir na 087a; **recomendo tabelas planas** |
-| **Tipos de retorno da `api/` do `npc`** (L206) | porta limpa antes de a economia chamá-la; edita o oráculo (precisa da sua ordem) | **M:** ~12 arquivos | pode esperar a LW-115 |
-| **Tamanho do save** (L117; DEC-084: reavaliar perto de 1 MB; hoje ~340 KiB sem comprimir) | contas, inventários e mercados vão crescê-lo | **P:** medir | LW-109 |
-
-**Para levar à LW-087a:** aprovar DEC-047 e DEC-049; confirmar 3 assentamentos, os 10 bens e as 4 cadeias; responder as contradições 1 a 6; decidir se a refatoração do `npc` vem antes da LW-093.
+## ACOMPANHAMENTO
+- **Avanço:** Fase 2 em 31 de 32 (a LW-086 é sua validação); Fase 3 não começou. Dois rascunhos de documento prontos nos ramos, **fora do `main`**.
+- **Próxima tarefa recomendada:** nenhuma minha (regra 13). Depois de você fechar a Fase 2: LW-087a (registro das DEC-047, DEC-049 e DEC-054 e as respostas de Q1 a Q14 e D1), que decide o que entra nos dois rascunhos.
+- **Decisões que dependem de você:** Q1 a Q14 do contrato (a seção 15 tem a recomendação de cada um) e o D1.
+- **Git:** `lw-087b-contrato-economy` em `7747c1d` e `lw-087d-eventos-e-dados` em `98ca6c5`, publicados só como ramos; **nada no `main`, sem tag, sem Fase B**. Worktrees mantidos: `.worktrees/lw-087b` e `.worktrees/lw-087d`. O relatório anterior (LW-085f e o pré-voo) está no commit `a23f5ae` do ramo `status-b`.
