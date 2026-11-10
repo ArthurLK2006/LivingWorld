@@ -5,6 +5,9 @@ extends RefCounted
 ## módulo segue sendo a única porta e só delega aqui. A montagem é preguiçosa: acontece no primeiro `tick` (`run_step`), só se as definições estão completas.
 ## A tabela de NPCs é a do módulo (a mesma, por referência). O módulo dá as peças prontas (corpos, Intents, notáveis, ciclo de vida e rastro).
 
+## LW-083a: a ação de conversar com o jogador (data/actions.json: 6 min [HIP], sem efeitos e sem local; só nasce por pedido, nunca por decisão do NPC).
+const TALK_PLAYER_ACTION_ID: String = "talk_player"
+
 var _npcs: Dictionary[int, NpcState]
 var _bodies: NpcBodies
 var _intents: NpcIntentBoard
@@ -62,6 +65,38 @@ func react_to_alarm(event: SimEvent, npc_ids: Array[int]) -> void:
 	var now: int = _ctx.clock.total_minutes()
 	for npc_id: int in npc_ids:
 		_thinker.react_to_alarm(npc_id, alarm, now)
+
+
+## A parada para conversar (LW-083a): o NPC com corpo (S0) interrompe o que fazia e começa `talk_player`; a Intent é ACT_AT_PLACE de local vazio, então o
+## corpo fica onde está até o fim previsto, e o NPC só volta a pensar nesse fim (`schedule`, a regra do pensador). Confere TUDO antes de interromper:
+## recusado, nada muda. A interrupção é a do alarme (`ActionRunner.interrupt`; com corpo, cancela SEM efeito) e o início é a função única. Recusas:
+## NPC_NOT_READY, NPC desconhecido ou morto, NPC_NOT_IN_S0 (sem corpo), NPC_ACTION_BUSY (já conversando: a conversa não se renova) e a condição do
+## runner. Se o início falhar depois da interrupção (não deveria: foi conferido), o NPC fica livre e pensa no horário que já tinha. Relação, promoção
+## e memória não são daqui (LW-083c).
+func begin_talk_player(npc_id: int) -> Result:
+	if _definitions == null or _ctx == null or not _ensure_thinker():
+		return Result.failure(NpcModule.CODE_NOT_READY, "NpcDecisionRuntime.begin_talk_player: %s." % problem_text())
+	var state: NpcState = _npcs.get(npc_id)
+	if state == null:
+		return Result.failure(ActionRunner.CODE_UNKNOWN_NPC, "NpcDecisionRuntime.begin_talk_player: o NPC %d não existe; esperado um ID da tabela de NPCs." % npc_id)
+	if not state.is_alive:
+		return Result.failure(ActionRunner.CODE_NOT_ALIVE, "NpcDecisionRuntime.begin_talk_player: o NPC %d está morto; esperado um NPC vivo." % npc_id)
+	if not _bodies.is_embodied(npc_id):
+		return Result.failure(NpcLod.CODE_NOT_IN_S0, "NpcDecisionRuntime.begin_talk_player: o NPC %d não tem corpo (não está em S0); só quem tem corpo para e conversa." % npc_id)
+	if state.action_id == TALK_PLAYER_ACTION_ID:
+		return Result.failure(ActionRunner.CODE_BUSY, "NpcDecisionRuntime.begin_talk_player: o NPC %d já está conversando (até o minuto %d)." % [npc_id, state.action_ends_at])
+	var now: int = _ctx.clock.total_minutes()
+	var blocker: String = _runner.peek_blocker(npc_id, TALK_PLAYER_ACTION_ID, "", now, true)
+	if not blocker.is_empty():
+		return Result.failure(ActionRunner.CODE_CONDITION_NOT_MET, "NpcDecisionRuntime.begin_talk_player: NPC %d: %s." % [npc_id, blocker])
+	if not state.action_id.is_empty():
+		var interrupted: Result = _runner.interrupt(npc_id, now)
+		if not interrupted.ok:
+			return interrupted
+	var started: Result = _start_action(npc_id, TALK_PLAYER_ACTION_ID, "", now)
+	if started.ok:
+		_thinker.schedule(state, now)
+	return started
 
 
 ## Por que o módulo não decide (texto vazio = decide): sem `Definitions`, sem setup() ou com definições incompletas ou inválidas. Aparece no

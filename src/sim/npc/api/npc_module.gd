@@ -37,6 +37,10 @@ const CODE_MEMORY_NOT_CONFIGURED: String = "NPC_MEMORY_NOT_CONFIGURED"
 const CODE_NOT_NOTABLE: String = "NPC_NOT_NOTABLE"
 const CODE_UNKNOWN_MEMORY_KIND: String = "NPC_UNKNOWN_MEMORY_KIND"
 const CODE_INVALID_MEMORY: String = "NPC_INVALID_MEMORY"
+## Conversa com o jogador (LW-083b): longe demais, NPC ocupado (dormindo, fugindo, ajudando ou em alarme) e cooldown da última conversa.
+const CODE_TALK_TOO_FAR: String = "NPC_TALK_TOO_FAR"
+const CODE_TALK_BUSY: String = "NPC_TALK_BUSY"
+const CODE_TALK_COOLDOWN: String = "NPC_TALK_COOLDOWN"
 const KEY_NPCS: String = "npcs"
 ## Chave da memória no save: só aparece se algum NPC tem algo guardado (save sem ela carrega com a memória vazia).
 const KEY_MEMORIES: String = "memories"
@@ -74,6 +78,8 @@ var _persistence: NpcPersistence
 var _lifecycle: NpcLifecycle
 ## Fluxo de decisão (LW-081a, passo 5): provedor, runner, pensador e ações sociais, montados no primeiro `tick`, e a função única que inicia uma ação.
 var _runtime: NpcDecisionRuntime
+## Conversa do jogador (LW-083b): a validação do pedido, a parada do NPC e o cooldown. Criada no construtor.
+var _player_talk: NpcPlayerTalk
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -89,6 +95,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
 	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown)
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine)
+	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
 
 
 func setup(ctx: SimContext) -> void:
@@ -152,6 +159,17 @@ func request_adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> 
 	if _definitions == null or not _definitions.is_development_build:
 		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_adjust_relation: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
 	return _notables.adjust_relation(a_id, b_id, deltas)
+
+
+## O jogador (`actor_id`, em `actor_position_m`) pede para conversar com o NPC (LW-083b). Confere, nesta ordem: NPC inexistente, morto, sem corpo (`NPC_NOT_IN_S0`),
+## posição inválida (`NPC_INVALID_POSITION`), longe (`NPC_TALK_TOO_FAR`, até 3 m do corpo), ocupado (`NPC_TALK_BUSY`: dormindo, fugindo, ajudando ou em alarme) e cooldown
+## (`NPC_TALK_COOLDOWN`, 60 min). Recusado, NADA muda. Aceito: o NPC interrompe o que fazia, para onde está e conversa (ação `talk_player`), e `text_key` é a chave do
+## texto: `first` ou `known`. Na mesma chamada (LW-083c) o NPC é promovido a T2 se houver vaga (`was_promoted`), a relação com o jogador sobe e, sendo T2, a memória `conversation`
+## é gravada. Antes de tudo o ator é conferido: ID fora da faixa ou NPC é recusado. Módulo sem `setup()`: `NPC_NOT_READY`.
+func request_converse(actor_id: int, actor_position_m: Vector3, npc_id: int) -> ConverseResult:
+	if _ctx == null:
+		return ConverseResult.new(Result.failure(CODE_NOT_READY, "NpcModule.request_converse: módulo sem setup() (sem relógio); esperado um módulo registrado no World."), "", false)
+	return _player_talk.converse(actor_id, actor_position_m, npc_id, _ctx.clock.total_minutes())
 
 
 ## Resumo do NPC, em CÓPIA. ID inexistente devolve falha tratada, nunca derruba o jogo.
@@ -469,6 +487,21 @@ class OpinionQuery:
 	func _init(query_result: Result) -> void:
 		result = query_result
 		values.resize(NpcRelation.DIM_COUNT)
+
+
+## Resultado de `request_converse`: `result.ok` diz se a conversa começou; só então `text_key` vale (a CHAVE do texto, nunca o texto, DEC-036). `was_promoted`: o NPC virou
+## notável nesta conversa (LW-083c).
+class ConverseResult:
+	extends RefCounted
+
+	var result: Result
+	var text_key: String
+	var was_promoted: bool
+
+	func _init(converse_result: Result, key: String, promoted: bool) -> void:
+		result = converse_result
+		text_key = key
+		was_promoted = promoted
 
 
 ## Resultado de `request_create_npc`: `npc_id` só vale se `result.ok` (mesmo padrão do SpawnResult do `character`).

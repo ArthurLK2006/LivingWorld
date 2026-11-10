@@ -6,7 +6,7 @@ extends GutTest
 
 const DATA_DIR: String = "res://data"
 const ISSUE_CODE: String = "ACTION_DATA_INVALID"
-const ACTION_IDS: Array[String] = ["sleep", "eat", "work", "rest", "talk", "go_to_place", "wait", "flee", "help"]
+const ACTION_IDS: Array[String] = ["sleep", "eat", "work", "rest", "talk", "go_to_place", "wait", "flee", "help", "talk_player"]
 const EFFECTS_FILE: String = "action_effects.json"
 const CONDITIONS_FILE: String = "action_conditions.json"
 const WEIGHTS_FILE: String = "action_trait_weights.json"
@@ -145,7 +145,7 @@ func test_a_new_action_added_only_by_data_passes_validation() -> void:
 	tables["action_trait_weights"].append({"id": "gather_wood_caution", "action_id": "gather_wood", "trait_id": "caution", "weight": -5})
 	var loaded: ActionCatalogLoader.LoadResult = _load(tables)
 	assert_true(loaded.result.ok, loaded.result.message)
-	assert_eq(loaded.actions.size(), 10)
+	assert_eq(loaded.actions.size(), 11)
 	var added: ActionDef = _action(loaded.actions, "gather_wood")
 	assert_eq(added.duration_min, 120)
 	assert_eq(added.place_kind, "work")

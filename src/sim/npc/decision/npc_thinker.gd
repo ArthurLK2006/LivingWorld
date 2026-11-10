@@ -146,7 +146,7 @@ func think(npc_id: int, now: int, alarm: Alarm = null) -> void:
 		_tracer.record(npc_id, now, state.need_values, _candidate_records(candidates), chosen.action.id if chosen != null else "", chosen.place_id if chosen != null else "", reason)
 	if chosen != null and not chosen.is_current and not _is_walking_there(state, chosen, running):
 		_execute(state, chosen, running, now)
-	_schedule(state, now)
+	schedule(state, now)
 
 
 ## Ação da rotina do ofício na hora ("" se o NPC não tem ofício ou a agenda não responde).
@@ -336,8 +336,9 @@ func _execute(state: NpcState, chosen: Candidate, running: bool, now: int) -> vo
 	_start_action.call(state.npc_id, step_action_id, chosen.place_id, now)
 
 
-## Próximo pensamento (passo 7): daqui a `think_interval_min`, ou no fim da ação se ela acaba antes; nunca no mesmo minuto.
-func _schedule(state: NpcState, now: int) -> void:
+## Próximo pensamento (passo 7): daqui a `think_interval_min`, ou no fim da ação se ela acaba antes; nunca no mesmo minuto. Público desde a LW-083a:
+## quem começa uma ação por pedido, fora do pensamento (a parada para conversar), agenda pela MESMA regra.
+func schedule(state: NpcState, now: int) -> void:
 	var next_time: int = now + _params.think_interval_min
 	if not state.action_id.is_empty():
 		next_time = mini(next_time, state.action_ends_at)

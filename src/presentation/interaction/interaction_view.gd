@@ -5,7 +5,8 @@ extends Node3D
 ## "[tecla] Interagir" enquanto houver um e, ao apertar a ação `interact`, pede a interação pela ponte e mostra o texto devolvido por
 ## alguns segundos. A detecção do ponto próximo é só DICA VISUAL (distância horizontal, a mesma regra do mundo): quem decide é a
 ## simulação, que confere a distância pela posição guardada no personagem. Todo texto vem de data/text/pt_br.json (UiText); o código
-## só conhece chaves. Sem regra de jogo. Contrato: docs/modules/presentation.md.
+## só conhece chaves. Sem regra de jogo. LW-083e: a mesma tecla também conversa com o NPC a até 3 m (`InteractionTarget` escolhe; o mais perto vence e o NPC ganha o
+## empate); o texto é o da chave da resposta da ponte. Contrato: docs/modules/presentation.md.
 
 ## Valores [HIP]: quanto tempo o texto do resultado fica na tela (s) e o desenho do marcador (m).
 const RESULT_TEXT_SECONDS: float = 5.0
@@ -34,6 +35,9 @@ var _result_label: Label
 var _points: Array[BridgeReplies.PointReply] = []
 var _markers: Dictionary[String, MeshInstance3D] = {}
 var _nearest_id: String = ""
+## Os corpos dos NPCs (LW-083e), opcional: sem eles a tecla só alcança pontos de interesse, como antes. `_target` é o alvo do último `refresh`.
+var _bodies: NpcBodiesView
+var _target: InteractionTarget = InteractionTarget.new()
 var _result_left_s: float = 0.0
 
 
@@ -67,6 +71,11 @@ func setup(bridge: SimBridge, player: PlayerBody, terrain: TerrainView, texts: U
 	return true
 
 
+## Liga a view aos corpos dos NPCs (LW-083e): a mesma tecla `interact` passa a alcançar também o NPC a até 3 m. Opcional e independente do `setup`.
+func set_npc_bodies(bodies: NpcBodiesView) -> void:
+	_bodies = bodies
+
+
 ## Quantos marcadores existem (um por ponto, criados uma vez em `setup`).
 func marker_count() -> int:
 	return _markers.size()
@@ -91,8 +100,9 @@ func _process(delta: float) -> void:
 func refresh() -> void:
 	if _bridge == null:
 		return
-	_nearest_id = _nearest_point_in_reach()
-	_prompt_label.visible = not _nearest_id.is_empty()
+	_target = _choose_target()
+	_nearest_id = _target.point_id
+	_prompt_label.visible = _target.kind != InteractionTarget.Kind.NONE
 	if _prompt_label.visible:
 		_prompt_label.text = _texts.get_text(KEY_PROMPT, {"key": _interact_key_label()})
 	for point_id: String in _markers:
@@ -115,6 +125,8 @@ func tick(delta_seconds: float) -> void:
 func interact() -> bool:
 	if _bridge == null or _is_game_paused():
 		return false
+	if _target.kind == InteractionTarget.Kind.NPC:
+		return _talk_to(_target.npc_id)
 	var target_id: String = _nearest_id if not _nearest_id.is_empty() else _nearest_point_overall()
 	if target_id.is_empty():
 		_show_result(_texts.get_text(KEY_FAILED))
@@ -125,6 +137,13 @@ func interact() -> bool:
 		return true
 	_show_result(_texts.get_text(_failure_key(reply.result.code)))
 	return false
+
+
+## Conversa com o NPC (LW-083e): o texto mostrado é o da chave da resposta da ponte (a da conversa ou a da recusa). Devolve se a conversa começou.
+func _talk_to(npc_id: int) -> bool:
+	var reply: BridgeReplies.ConverseReply = _bridge.request_converse(_player.get_actor_id(), npc_id)
+	_show_result(_texts.get_text(reply.text_key))
+	return reply.result.ok
 
 
 ## Pausa do relógio, lida pela ponte; hora indisponível conta como não pausado.
@@ -158,15 +177,15 @@ func _horizontal_distance_m(point: BridgeReplies.PointReply) -> float:
 	return Vector2(_player.global_position.x - point.x, _player.global_position.z - point.z).length()
 
 
-func _nearest_point_in_reach() -> String:
-	var best_id: String = ""
-	var best_m: float = INF
-	for point: BridgeReplies.PointReply in _points:
-		var distance_m: float = _horizontal_distance_m(point)
-		if distance_m <= point.reach_m and distance_m < best_m:
-			best_id = point.id
-			best_m = distance_m
-	return best_id
+## O alvo da tecla agora: o ponto ou o NPC mais perto dentro do alcance (o NPC ganha o empate). Só entram corpos visíveis (com terreno desenhado).
+func _choose_target() -> InteractionTarget:
+	var bodies: Dictionary[int, Vector3] = {}
+	if _bodies != null:
+		for npc_id: int in _bodies.active_ids():
+			var view: NpcView = _bodies.pool().body_of(npc_id)
+			if view.visible:
+				bodies[npc_id] = view.global_position
+	return InteractionTarget.choose(Vector2(_player.global_position.x, _player.global_position.z), _points, bodies)
 
 
 func _nearest_point_overall() -> String:
@@ -212,5 +231,6 @@ func _clear() -> void:
 	_markers.clear()
 	_points = []
 	_nearest_id = ""
+	_target = InteractionTarget.new()
 	_result_left_s = 0.0
 	_bridge = null

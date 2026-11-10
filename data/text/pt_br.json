@@ -13,5 +13,14 @@
 	"ui.hud_date": "ano {year}, dia {day}, {hour}:{minute}",
 	"ui.hud_pause_hint": "[{key}] pausar ou continuar",
 	"ui.hud_pace_paused": "PAUSADO",
-	"ui.hud_pace_speed": "{speed}x"
+	"ui.hud_pace_speed": "{speed}x",
+	"npc.talk.first": "A pessoa para e conversa com você.",
+	"npc.talk.known": "A pessoa reconhece você e para para conversar.",
+	"npc.talk.too_far": "Chegue mais perto para conversar.",
+	"npc.talk.busy": "A pessoa está ocupada e não responde.",
+	"npc.talk.cooldown": "Vocês acabaram de conversar. Volte daqui a pouco.",
+	"npc.talk.no_body": "Ninguém responde.",
+	"npc.talk.gone": "Essa pessoa não está mais aqui.",
+	"npc.talk.invalid_actor": "Você não pode conversar agora.",
+	"npc.talk.failed": "Não foi possível conversar."
 }
