@@ -52,6 +52,12 @@ class Report:
 	var memory_by_day: PackedInt64Array = PackedInt64Array()
 	var objects_by_day: PackedInt64Array = PackedInt64Array()
 	var save_bytes: PackedInt64Array = PackedInt64Array()
+	## O mesmo save sem comprimir (o JSON do payload), medido junto do comprimido.
+	var save_raw_bytes: PackedInt64Array = PackedInt64Array()
+	## No fim, de cada notável (T2) vivo: registros de memória, traços permanentes e relações.
+	var notable_memories: PackedInt32Array = PackedInt32Array()
+	var notable_traits: PackedInt32Array = PackedInt32Array()
+	var notable_relations: PackedInt32Array = PackedInt32Array()
 	var min_alive: int = -1
 	var dead: int = 0
 	var s0_peak: int = 0
@@ -103,11 +109,24 @@ class Report:
 		lines.append("soak: %d NPCs | %d min de jogo | %d ms de parede | vivos no mínimo %d, mortos %d | problemas %d | hash %s" % [npcs, minutes, wall_ms, min_alive, dead, problems.size(), state_hash.left(12)])
 		lines.append("passo (us): média %.1f | p99,9 %d | máximo %d (passo %d) | acima de %d us: %d | acima de %d us: %d" % [mean_step_usec(), percentile_usec(0.999), percentile_usec(1.0), slowest_minute(), STEP_BUDGET_USEC, steps_over(STEP_BUDGET_USEC), STEP_PEAK_USEC, steps_over(STEP_PEAK_USEC)])
 		lines.append("memória estática (MiB) a cada %d dias: %s | crescimento %.2f MiB" % [SAMPLE_EVERY_DAYS, _every(memory_by_day, MIB), float(memory_growth()) / MIB])
-		lines.append("objetos a cada %d dias: %s | save comprimido (KiB): %s" % [SAMPLE_EVERY_DAYS, _every(objects_by_day, 1.0), _every(save_bytes, 1024.0, 1)])
+		lines.append("objetos a cada %d dias: %s | save comprimido (KiB): %s | save sem comprimir (KiB): %s" % [SAMPLE_EVERY_DAYS, _every(objects_by_day, 1.0), _every(save_bytes, 1024.0, 1), _every(save_raw_bytes, 1024.0, 1)])
+		lines.append("%d notáveis no fim (mín/média/máx): memórias %s | traços %s | relações %s" % [notable_memories.size(), _span(notable_memories), _span(notable_traits), _span(notable_relations)])
 		lines.append("corpos: pico %d | média %.1f | entradas em S0 %d" % [s0_peak, float(s0_sum) / float(maxi(minutes, 1)), s0_entries])
 		for module_name: String in modules:
 			lines.append("agendador, %s: %s" % [module_name, JSON.stringify(modules[module_name])])
 		return "\n".join(lines)
+
+	static func _span(values: PackedInt32Array) -> String:
+		if values.is_empty():
+			return "-"
+		var sum: int = 0
+		var lowest: int = values[0]
+		var highest: int = values[0]
+		for value: int in values:
+			sum += value
+			lowest = mini(lowest, value)
+			highest = maxi(highest, value)
+		return "%d/%.1f/%d" % [lowest, float(sum) / float(values.size()), highest]
 
 	## De `step` em `step` valores, mais o último.
 	static func _every(values: PackedInt64Array, unit: float, step: int = SAMPLE_EVERY_DAYS) -> String:
@@ -160,6 +179,7 @@ static func run(data: NpcLifeCheck.GameData, config: Config) -> Report:
 	report.minutes = rig.runner.world.context.clock.total_minutes()
 	report.state_hash = rig.runner.world.state_hash()
 	report.modules = _module_stats(rig.runner.scheduler.debug_summary())
+	_count_notables(rig, report)
 	rig.runner.finish()
 	report.wall_ms = IntMath.floor_div(Time.get_ticks_usec() - started_usec, 1000)
 	return report
@@ -283,9 +303,22 @@ static func _sample_day(rig: Rig, report: Report, day: int, config: Config) -> v
 	for problem: String in rig.npc.validate():
 		report.add_problem("fim do dia %d: npc.validate: %s" % [day, problem])
 	if day % SAMPLE_EVERY_DAYS == 0 or day == config.days:
-		report.save_bytes.append(JsonSaveCodec.new().encode(rig.runner.capture_game(), GAME_VERSION).size())
+		var payload: Dictionary = rig.runner.capture_game()
+		report.save_bytes.append(JsonSaveCodec.new().encode(payload, GAME_VERSION).size())
+		report.save_raw_bytes.append(JSON.stringify(payload, "", true, true).to_utf8_buffer().size())
 		if config.progress:
 			print("dia %d: memória %.1f MiB, objetos %d, mortos %d, corpos agora %d" % [day, float(report.memory_by_day[day]) / MIB, report.objects_by_day[day], report.dead, rig.in_s0.size()])
+
+
+## Memórias, traços e relações de cada notável (T2) vivo, só por consultas `peek_*`.
+static func _count_notables(rig: Rig, report: Report) -> void:
+	for npc_id: int in rig.npc.peek_npc_ids():
+		var state: NpcModule.NpcQuery = rig.npc.peek_npc(npc_id)
+		if state.is_alive and state.tier == NpcState.TIER_NOTABLE:
+			var memories: NpcModule.MemoriesQuery = rig.npc.peek_memories(npc_id)
+			report.notable_memories.append(memories.records.size())
+			report.notable_traits.append(memories.traits.size())
+			report.notable_relations.append(rig.npc.peek_relations(npc_id).entries.size())
 
 
 static func _module_stats(scheduler_summary: Dictionary) -> Dictionary:

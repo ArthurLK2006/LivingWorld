@@ -68,3 +68,12 @@ DAYS=30 RUNS=1 tests/soak/run_npc_year   # um mês só
 ```
 
 A versão curta, `npc_year/test_npc_year_short.gd` (1 dia, 300 NPCs, cerca de 13 s), roda no `tools/check_all`: confere os invariantes, o mesmo hash ao repetir e ao salvar e carregar com o foco longe, o padrão `stress` trocando corpos mais vezes que o `base`, e o crescimento da memória abaixo de 2 MiB em 1 dia (**[HIP]**, justificado por uma medição; a régua definitiva de "sem crescimento de memória" só vem depois da primeira medição de um ano). **[LIM]** build de depuração (os tempos são o pior caso, não o release); o jogador não conversa nem anda de verdade (só o foco troca de ponto).
+
+### Soak longo em release (LW-084c)
+
+`run_npc_year_release [base|stress]` mede o mesmo soak no binário de **release** (3 execuções, laço de controle em cada uma; reaproveita o binário de `$HOME/lw-release-probe/bin`, grava em `$HOME/lw-release-probe/npc_year/<data-hora>`; Mac na tomada). Em release a memória estática não existe (sai 0); só os objetos valem. Ele segue o método do `run_game_release` (cópia do projeto com a cena principal trocada só na cópia, `.pck` exportado com o Godot do editor, binário de release com o `.pck` ao lado) e a regra da DEC-113 como **proposta de trabalho** (a DEC-113 foi aprovada só para a LW-023). Variáveis: `DAYS` (30), `RUNS` (3), `CONTROL` (1) e `GODOT_BIN`. Além dos números do medidor, imprime onde caem os passos acima de 10 ms em relação às trocas de foco do ator e compara a taxa deles com a do laço de controle (espera ocupada com a mesma duração média, sem o código do jogo). Os resultados da LW-084 estão em `docs/decisions/0010-soak-longo-300-npcs.md`.
+
+```bash
+tests/soak/run_npc_year_release base                 # 30 dias, 3 execuções, com controle (cerca de 9 minutos)
+DAYS=360 RUNS=1 CONTROL=0 tests/soak/run_npc_year_release base   # um ano sem controle (cerca de 15 minutos)
+```
