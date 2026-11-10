@@ -31,6 +31,14 @@ tests/soak/run_sp6
 tests/soak/run_npc_life_30d
 ```
 
+## Detector de impasse em 30 dias (LW-073c)
+
+`run_npc_impasse_30d` roda os mesmos 100 NPCs por 30 dias de jogo (semente 11, sem corpos e sem personagem) e confere que o detector de impasse (LW-073) **não recupera ninguém** em vida normal: nenhum evento `NpcImpasseRecovered`, registro vazio e `validate()` limpo. Imprime o hash do mundo, que é o mesmo do `run_npc_life_30d`. A versão de 7 dias está em `tests/unit/test_impasse.gd`, no `check_all`.
+
+```bash
+tests/soak/run_npc_impasse_30d
+```
+
 ## Corpos e LOD de NPCs (LW-071, spike SP2)
 
 `run_sp2` abre o jogo real e, por cima dele, um teste **descartável** com 100 NPCs que ganham corpo perto do jogador (S0) e voltam a ser dados longe (S1): pool de corpos, navegação N1 (reta) e N2 (grade A\*), políticas de velocidade P1 e P2, invariantes (duplicado, órfão, teleporte) e quadros. O código está em `sp2/` e monta um mundo próprio com os dados reais, porque o jogo ainda não liga o LOD nem o protocolo S0. O teste `sp2/test_sp2_logic.gd` roda sem janela e entra no `tools/check_all`. Modos: `--ver` (Arthur anda 3 minutos; teclas N, M, B e H), `--medir` (ensaios em depuração, só para comparar), `--release` (oficial: reaproveita o binário de `$HOME/lw-release-probe/bin`, não baixa nada) e `--headless` (só contadores). Resultado: `docs/decisions/0009-spike-sp2-corpos-e-lod.md`.
