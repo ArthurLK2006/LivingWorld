@@ -1,4 +1,4 @@
-10/11/2026 16:22 (Brasília) — CONCLUÍDA: relatório final da LW-085 entregue (PRONTA PARA REVISÃO; a LW-085 NÃO é contada como concluída; 085c: pendente). Nada rodando; nada novo no `main`.
+10/11/2026 17:05 (Brasília) · rodando · LW-086a: Godot (lote de provas citadas no roteiro; depois check_all da Fase B); o relatório abaixo é o da LW-085 e será substituído ao parar
 
 RELATÓRIO FINAL — LW-085: Revisão arquitetural da Fase 2        Status: PRONTA PARA REVISÃO (falta a sua auditoria e a sua frase de aprovação)
 
