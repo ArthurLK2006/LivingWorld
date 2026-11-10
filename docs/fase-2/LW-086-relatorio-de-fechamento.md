@@ -7,7 +7,7 @@ A Fase 2 ("primeira sociedade") entregou NPCs que **vivem sozinhos** (necessidad
 
 ## 2. NÚMEROS DA FASE (fatos)
 - **Git, de `fase-1-concluida` (`ac4c61f`, 07/11/2026) até `origin/main` (`d1b0fa2`, 10/11/2026):** 156 commits; `git diff --shortstat`: **443 arquivos alterados, 36.240 linhas acrescentadas e 380 removidas** (inclui documentos, dados e testes). Em `src/`: 131 arquivos `.gd` e 15.651 linhas, das quais **7.551 no módulo `npc`**.
-- **Testes:** **1.194 testes (124 scripts, 261.693 asserts)** no `check_all` verde da LW-085c (B, no `main` `d1b0fa2`); no fechamento da Fase 1 eram **471**. RESULTADO_CHECK_ALL
+- **Testes:** **1.194 testes (124 scripts, 261.693 asserts)** no `check_all` verde da LW-085c (B, no `main` `d1b0fa2`); no fechamento da Fase 1 eram **471**. **No HEAD da LW-086a (`3fc9a04`, só documentos a mais):** `tools/check_all` **VERDE**, 124 scripts, 1.194 testes (todos passando), 261.693 asserts, 313 scripts sem aviso de compilação e 0 erros de script (3 min 31 s). O "Warnings 1 / Deprecated 1" do GUT já existia antes (`wait_frames` desde a LW-020/021; backlog).
 - **Decisões:** DEC-122 (corpos e navegação, "por ora"), DEC-123 (direção P3), DEC-124 (velocidade 500 cm/min), DEC-125 (painel de depuração), mais os registros técnicos 0009 (SP2), 0010 (soak de 1 ano) e 0011 (revisão: três decisões suas).
 - **Medições (LW-084, 10/11/2026):** 300 NPCs por 1 ano em 8 execuções: 300 vivos, 0 mortes, 0 erro de `validate()`, mesmo hash dentro de cada padrão; memória estática +1,9 MiB só nos primeiros 30 dias; save ~20 KiB comprimido; passo médio 2,3 a 2,7 ms (depuração) e 1,75 a 1,87 ms (release).
 
