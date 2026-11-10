@@ -1,4 +1,5 @@
-10/11/2026 13:18 (Brasília) · CONCLUÍDA · Revisão cruzada pré-LW-085 (LW-082 e LW-083), só leitura
+10/11/2026 14:55 (Brasília) · rodando · LW-085a (ponte só cita a api/ do npc): Godot pesado (--import, check_all, oráculo, soak de 30 dias, run_sim); o relatório abaixo é o da revisão anterior e será substituído ao parar
+
 
 # RELATÓRIO — Revisão cruzada pré-LW-085 (agente revisor, AGENTS §11)
 
