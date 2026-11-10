@@ -3,7 +3,7 @@
 **Rascunho escrito em 10/11/2026 (horário de Brasília), na LW-086a.** Ainda **não** é o relatório final: ele só vira final depois da LW-085 aprovada e da sua validação (LW-086). Segue o formato de `docs/fase-1/LW-054-relatorio-de-fechamento.md`. O roteiro do que você faz está em `docs/fase-2/LW-086-roteiro-para-arthur.md`. Rótulos: **fato** (com origem), **[HIP]** (valor de trabalho), **proposta**, **pendente**.
 
 ## 1. RESUMO (rascunho)
-A Fase 2 ("primeira sociedade") entregou NPCs que **vivem sozinhos** (necessidades, rotina por ofício, decisão por utilidade, relações e memória nos notáveis), ganham **corpo** quando você chega perto, podem ser **vistos por dentro** no painel de depuração e **conversam** com você. Não há dinheiro, mercado nem facções: só dois provisórios marcados `TEMP`. **Placar de hoje:** **30 de 32 tarefas concluídas (93,8%)**; faltam a **LW-085** (relatório final entregue, **aguarda a sua frase "APROVADO LW-085"**) e a **LW-086** (esta validação). Se as duas forem aprovadas: **32 de 32 (100%)** e **87 de 192 do projeto (45,3%)**; com só a LW-085: 31 de 32 (96,9%) e 86 de 192 (44,8%). A tag `fase-2-concluida` **só com a sua autorização**.
+A Fase 2 ("primeira sociedade") entregou NPCs que **vivem sozinhos** (necessidades, rotina por ofício, decisão por utilidade, relações e memória nos notáveis), ganham **corpo** quando você chega perto, podem ser **vistos por dentro** no painel de depuração e **conversam** com você. Não há dinheiro, mercado nem facções: só dois provisórios marcados `TEMP`. **Placar de hoje:** **31 de 32 tarefas concluídas (96,9%)** e **86 de 192 do projeto (44,8%)**: a **LW-085** foi **aprovada por você em 10/11/2026**; falta a **LW-086** (esta validação). Aprovada ela: **32 de 32 (100%)** e **87 de 192 (45,3%)**. A tag `fase-2-concluida` **só com a sua autorização**.
 
 ## 2. NÚMEROS DA FASE (fatos)
 - **Git, de `fase-1-concluida` (`ac4c61f`, 07/11/2026) até `origin/main` (`d1b0fa2`, 10/11/2026):** 156 commits; `git diff --shortstat`: **443 arquivos alterados, 36.240 linhas acrescentadas e 380 removidas** (inclui documentos, dados e testes). Em `src/`: 131 arquivos `.gd` e 15.651 linhas, das quais **7.551 no módulo `npc`**.
@@ -45,13 +45,13 @@ A Fase 2 ("primeira sociedade") entregou NPCs que **vivem sozinhos** (necessidad
 **Definição de concluído 2.J:**
 | # | Condição | Estado de hoje | O que falta |
 |---|---|---|---|
-| 1 | As 32 tarefas concluídas | **30 de 32** | LW-085 (aprovar) e LW-086 (validar) |
+| 1 | As 32 tarefas concluídas | **31 de 32** | LW-086 (validar) |
 | 2 | Critérios de 2.F cumpridos | **7 cumpridos, 3 parciais** (2, 3 e 8) | A sua passada na janela (3), a decisão sobre picos (2) e sobre o ofício por JSON (8) |
-| 3 | REV (LW-085) e VAL (LW-086) aprovadas, sem achado crítico aberto | **LW-085: relatório final entregue, achados críticos abertos: nenhum**; **aguarda "APROVADO LW-085"**. LW-086: **não feita** | A sua frase e a sua validação |
+| 3 | REV (LW-085) e VAL (LW-086) aprovadas, sem achado crítico aberto | **LW-085: aprovada por você em 10/11/2026, achados críticos abertos: nenhum.** LW-086: **não feita** | A sua validação |
 | 4 | Decisão do SP2 registrada | **Feita**: DEC-122 APROVADA "por ora", DEC-123 (direção), DEC-124; registro 0009. Você aceitou o "por ora" e vai observar a fluidez | Reabrir só se a janela mostrar trancos |
 | 5 | `FoodStub` e `IncomeStub` no Anexo D com tarefa de remoção | **Feita** | Nada |
 | 6 | Tag `fase-2-concluida` no remoto | **Não criada** | **Só com a sua autorização** (AGENTS, seção 10) |
-| 7 | Status em 100% para a fase | **93,8% (30 de 32)** | Vira 100% com as LW-085 e LW-086 concluídas |
+| 7 | Status em 100% para a fase | **96,9% (31 de 32)** | Vira 100% com a LW-086 concluída |
 
 ## 5. RESPOSTAS DE ARTHUR À CHECKLIST 2.H (LW-086)
 *(a preencher depois da sua passada e das provas; formato na seção 5 do roteiro)*
@@ -102,7 +102,7 @@ A Fase 2 ("primeira sociedade") entregou NPCs que **vivem sozinhos** (necessidad
 | 11 | **Ofício novo só por JSON** (2.F, critério 8): sem teste | Parcial | Uma tarefa pequena, só teste, antes da Fase 3 (a Fase 3 vai mexer nos ofícios) |
 
 ## 8. PENDÊNCIAS E RESSALVAS ABERTAS
-- **LW-085:** aguarda a sua frase **"APROVADO LW-085"** (a 085c, custo do painel, já está no `main`).
+- **LW-085:** aprovada por você em 10/11/2026 (a 085c, custo do painel, já estava no `main`).
 - **A sua validação (LW-086):** roteiro pronto; assinatura **com a ressalva** de janela mais prova automática.
 - **Teleporte:** sem teste permanente; só o SP2 e a sua janela (roteiro, item 2).
 - **Item 8 da checklist (sem dinheiro, mercado nem facções):** sem teste GUT; a prova é a busca por texto e a sua janela.
