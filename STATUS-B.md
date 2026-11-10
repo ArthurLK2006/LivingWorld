@@ -1,4 +1,63 @@
-10/11/2026 16:15 (Brasília) — CONCLUÍDA: LW-084 no `main` (`1dd2fb4`); LW-085c rodando (Godot pesado meu: medição do painel, previsão de 20 a 30 min); o resto do arquivo é o relatório da LW-084
+10/11/2026 16:29 (Brasília) — CONCLUÍDA: LW-084 (`main` em `1dd2fb4`) e LW-085c (`main` em `d1b0fa2`, Fase B automática, sem tag); sem Godot meu; parei (regra 13)
+
+# RELATÓRIO — LW-085c: custo do painel de NPC com 300 NPCs     Status: PRONTA PARA REVISÃO (já no `main`, pela Fase B automática)
+
+## 1. RESUMO
+O painel de depuração de NPC custa, com 300 NPCs e 30 dias de jogo, **cerca de 37 a 39 ms por segundo** (3,7% a 3,9% do tempo) enquanto está aberto, em build de depuração. A maior parte é o resumo do mundo, que o painel pede a cada ~1 s e que chama `world.validate()`: **19 a 22 ms por chamada** (eram 3,9 ms com 1 dia de jogo). A lista de 300 NPCs com um NPC selecionado, refeita a cada 0,25 s, custa só **4,1 a 4,4 ms** (3,5 ms no teste rápido, com 1 dia de jogo). No quadro em que as duas atualizações caem juntas (uma vez por segundo, quando o resumo dispara junto com a lista), o custo típico é de ~24 ms, acima dos 16,7 ms de um quadro de 60 por segundo. O painel só existe em build de desenvolvimento, então o release não é afetado. Só medi e relatei; nada em `src/`.
+
+## 2. ARQUIVOS CRIADOS (commit `5a94c32`)
+- `tests/soak/npc_panel/soak_npc_panel_cost.gd` (+ `.uid`) — o script de medição (98 linhas, 78 de código)
+- `tests/soak/run_npc_panel_cost` — script de terminal (11 linhas, 8 de código; `LW_PANEL_DAYS` muda os dias de aquecimento, padrão 30)
+- Total: 86 linhas de código (alvo 70 a 90; teto 1,5×).
+
+## 3. ARQUIVOS MODIFICADOS
+- `tests/soak/npc_year/npc_year_meter.gd` — +5 −4 linhas: `scaled_setup` ficou público e ganhou o parâmetro `development_build` (o mesmo mundo ×3 da LW-084). Nenhum teste mexido; `test_npc_year_short.gd` segue verde.
+- `docs/ROADMAP_STATUS.md` — +1 linha (a da LW-085c, de subtarefa; a contagem não muda).
+- Nenhum arquivo protegido; nada em `src/` nem em `data/`.
+
+## 4. DECISÕES TÉCNICAS
+- Medi o **painel real** (`NpcInspectorPanel` com a ponte, os textos e os nós), não só a ponte: `panel.refresh()` (lista + detalhe, rastro, memórias e relações do selecionado) e `panel.refresh_summary()`; mais `world.validate()` e `peek_simulation_summary` separados, para ver quem pesa.
+- Mundo: o da LW-084 (300 NPCs, 40 notáveis), montado em build de desenvolvimento como no teste do painel, com **30 dias de jogo** de aquecimento: o notável mais cheio já estava com 40 registros (24 memórias + 16 relações, os tetos) e o custo do detalhe é o pior caso.
+- Intervalos lidos do próprio painel (`REFRESH_INTERVAL_S` 0,25 e `SUMMARY_INTERVAL_S` 1,0), não copiados. Só imprime; **não reprova por tempo**. Não editei o README (a ordem era só o script).
+- **Proposta para a LW-085 (decisão sua):** manter a lista a 4 Hz (custa ~4,4 ms) e **mudar o resumo de 1 s para ~5 s [HIP]**, ou rodar o `validate()` só sob demanda (uma tecla); isso tira ~16 ms por segundo e acaba com o quadro de ~24 ms a cada segundo. Não otimizei nada (AGENTS 4.18: a medição é para decidir).
+
+## 5. TESTES EXECUTADOS
+- `tools/check_gdscript_warnings`: sem avisos (313 scripts). Teste rápido `LW_PANEL_DAYS=1 tests/soak/run_npc_panel_cost`: 1/1 passou.
+- Medição: `tests/soak/run_npc_panel_cost` ×3 com 30 dias, de 16:13 a 16:18, Mac na tomada; o vigia só viu os 3 godot meus (nenhum outro).
+- `tools/check_all` no HEAD final (`d1b0fa2`): **VERDE**, 124 scripts, 1194 testes, 261.693 asserts, 0 avisos novos, 220,8 s. O soak de custo não entra (não começa com `test_`).
+- Contra o `main` (`1dd2fb4`, em worktree separado): oráculo do `npc` passa nos dois e o arquivo é idêntico; soak de 30 dias `d13b921112ce` ×3 nos dois; `run_sim --days 7` sementes 1, 2 e 3 iguais.
+- Fase B: B0 `main` em `1dd2fb4` (30 de 32, 85 de 192); B1 sem conflito (o `main` não andou; sem junção); B3 contagem por `grep` antes e depois: "30 de 32" ×3 e "85 de 192" ×3, sem mudança; B4 avanço rápido `1dd2fb4..d1b0fa2`; nenhum arquivo protegido; nenhum teste removido, enfraquecido ou pulado.
+
+## 6. RESULTADOS (depuração, 300 NPCs, 30 dias de jogo; média / p99 / máximo, em µs)
+| | exec. 1 | exec. 2 | exec. 3 |
+|---|---|---|---|
+| `world.validate()` | 19.859 / 34.843 / 72.603 | 19.265 / 20.205 / 21.269 | 20.017 / 28.012 / 66.021 |
+| `peek_simulation_summary` (ponte) | 20.884 / 49.182 / 71.081 | 19.878 / 26.940 / 96.515 | 22.281 / 79.239 / 241.490 |
+| `refresh_summary` (painel) | 21.173 / 42.872 / 149.018 | 19.411 / 21.491 / 22.118 | 20.121 / 31.113 / 32.482 |
+| `refresh`, notável selecionado | 4.429 / 4.985 / 5.386 | 4.423 / 5.858 / 8.201 | 4.367 / 4.728 / 4.829 |
+| `refresh`, cidadão selecionado | 4.449 / 9.131 / 9.949 | 4.053 / 4.303 / 4.843 | 4.187 / 8.110 / 9.869 |
+| custo por segundo, painel aberto | 38,9 ms (3,9%) | 37,1 ms (3,7%) | 37,6 ms (3,8%) |
+
+- O `validate()` é ~95% do resumo. O resumo + a lista no mesmo quadro: ~24 a 26 ms em média (147% a 154% do quadro de 16,7 ms; 72% a 78% do teto de 33 ms da régua de quadro do SP2/DEC-119); com o p99, 26 a 52 ms.
+- **O `validate()` cresce com o tempo de jogo:** 3,9 ms com 1 dia (teste rápido) e 19 a 20 ms com 30 dias. Como o notável mais cheio já estava no teto de registros no dia 30, espero que pare de crescer, mas **não medi com 1 ano**.
+- Os máximos altos (149 ms, 241 ms) aparecem uma vez por execução e não se repetem: indício de ruído da máquina, não prova.
+
+## 7. PROBLEMAS ENCONTRADOS
+- **Erro meu, já no `main`:** a linha da LW-085c no `ROADMAP_STATUS.md` diz que o `refresh` da lista custa "de 3,5 a 4,4 ms" nas 3 execuções; nas 3 execuções de 30 dias foi de 4,1 a 4,4 ms (os 3,5 ms são do teste rápido, de 1 dia). O custo por segundo e o resto da linha estão certos. Conserto proposto (1 linha de documento, que não empurrei sem a sua ordem): trocar "de 3,5 a 4,4 ms" por "de 4,1 a 4,4 ms" naquela linha.
+- Nada mais falhou. O `world.validate()` ser caro (e o painel chamá-lo a cada segundo) era a dúvida do achado I-3 e foi confirmada: o próprio status da LW-082 dizia que o custo "não foi verificado".
+
+## 8. RISCOS
+- Medido em depuração, sem janela: o painel desenhado na tela (texto, lista) custa mais do que os nós sem desenho. O custo com 1 ano de jogo não foi medido. O painel só roda em build de desenvolvimento (não afeta o release nem a medição de quadros da LW-053A).
+
+## 9. PENDÊNCIAS
+- **Decisão que depende de Arthur (para a LW-085):** reduzir o ritmo do resumo do painel (recomendo 1 s → ~5 s [HIP], ou `validate()` só sob demanda). Se quiser o número com 1 ano de jogo antes de decidir, rodo `LW_PANEL_DAYS=360 tests/soak/run_npc_panel_cost` (~25 min).
+- Testes manuais: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: LW-084 e LW-085c no `main`; Fase 2 em 30 de 32 (a LW-085 e o que falta são de vocês). Próxima tarefa recomendada: nenhuma minha (parei na regra 13).
+- Git: `main` = `d1b0fa2`; ramos `lw-085c-custo-do-painel` e os da LW-084 mantidos no remoto; sem tag; worktrees `lw-084a`, `lw-084b`, `lw-084c`, `lw-085c`, `ref-main` e `status-b` mantidos em `.worktrees/`. Este ramo (`status-b`) nunca vai para o `main`.
+
+---
 
 # RELATÓRIO — LW-084: Soak longo (300 NPCs por 1 ano, com alternância S1 ↔ S0)     Status: PRONTA PARA REVISÃO (já no `main`, pela Fase B automática)
 
