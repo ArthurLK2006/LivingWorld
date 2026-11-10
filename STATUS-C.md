@@ -1,4 +1,75 @@
-10/11/2026 20:28 (Brasília) — CONCLUÍDA: TAREFA 2 (revisão cruzada, só leitura, dos rascunhos da B) entregue abaixo: 1 bloqueante, 6 importantes, 5 menores; Q1 a Q14 e D1 não respondidas. Nada foi mudado nos ramos da B. Seguindo para a Tarefa 3 (meu world.md e npc.md no ramo lw-087c). Nada rodando.
+10/11/2026 20:38 (Brasília) — CONCLUÍDA: TAREFA 3 (ajuste dos meus rascunhos world.md e npc.md, ramo lw-087c) entregue: commit 187c20c enviado, check_all VERDE (1.194 de 1.194). Nada no main, sem Fase B, sem tag; main intocado (8dcc81d). Parei (regra 13), aguardando suas decisões (seção 9). Nada rodando.
+
+# TAREFA 3 — RELATÓRIO — LW-087c: ajuste dos meus rascunhos `world.md` e `npc.md` depois das suas decisões (DOC)        Status: PRONTA PARA REVISÃO
+
+Li antes: AGENTS (seções 0, 3, 8, 10, 14 e 15; versão 0.4), os meus dois rascunhos (diff contra o `main`), a minha revisão da Tarefa 2, e, para registrar o impacto de `miner` e `shepherd` com fatos e não de memória: `data/occupations.json`, `routine_blocks.json`, `population.json`, `income_stub.json`, `food_stub.json`, `data/world/places.json`, `population_plan.gd`, `routine_loader.gd`, `income_stub.gd` e `place.gd`. Decisões: DEC-022, 126 e 127 (APROVADAS); DEC-047, 049 e 054 seguem PROPOSTA no `DECISIONS.md` (o registro é seu).
+
+## 1. RESUMO
+Os dois rascunhos agora refletem as suas decisões de 10/11/2026 (Q10, Q19, Q22) e deixam **claro quem decidiu cada ponto**: o que é **seu** e o que é **padrão de trabalho do revisor** (PROPOSTA, que você pode aprovar ou trocar). `inicio_de_jogo` virou `game_start` (DEC-022), o impacto de `miner` e `shepherd` está registrado com números do `main` e entrou **uma pergunta nova** (Q23) que as suas decisões abriram. Só os dois arquivos mudaram; nada foi para o `main`, nada de Fase B, nada de tag.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (só documentos; ramo `lw-087c-extensoes-world-npc`, commit `187c20c`)
+- `docs/modules/world.md` — Q-W1 a Q-W6 de "em aberto" para "decididas" (origem escrita em cada uma); Q10 e o aviso de capacidade dos locais `work`; o `RouteStateChanged` ficou com `route_id` e `new_state`; a renomeação `market_reserved` → `market` na LW-093 detalhada.
+- `docs/modules/npc.md` — seção 14 (14.2, 14.4, 14.6, 14.7, 14.8) e linhas LW-093, LW-097 e LW-104 da tabela da seção 12 atualizadas; **14.9** reescrita ("decididas e abertas", com a origem); **14.10 nova** (impacto de `miner` e `shepherd`).
+- Neste commit: ≈ +43 e −31 linhas. Contra o `main`, o ramo difere **só** nesses dois arquivos (+105 e −2). O `main` não foi tocado (`8dcc81d`). Merge do `main` no ramo: só para ficar em dia (`9de1582`), sem a Fase B.
+
+## 4. DECISÕES TÉCNICAS
+**Quem decidiu o quê (como está escrito nos dois arquivos):**
+
+| Ponto | Decisão | Origem |
+|---|---|---|
+| **Q10** ofícios e cadeias | criar `miner` e `shepherd` (só dados); 4 cadeias distribuídas pelos 3 povoados, **nenhum autossuficiente**; população do 3º povoado e hashes novos na LW-097, **com a sua aprovação dos valores novos** | **Arthur** |
+| **Q19** como `buy` vira candidata | **A**: mesmo mecanismo de utilidade, por valor derivado (herda o alívio da necessidade que o bem atende, descontados preço e distância); sem rotina fixa e sem planejador | **Arthur** |
+| **Q22** emprego | população inicial **nasce empregada** (`work_place_id` de dados, como hoje); vaga nova por `ContractOffered`, aceita por utilidade | **Arthur** |
+| Q-W1 a Q-W5 | triângulo A–B, A–C e B–C; só `open` e `closed`; nenhum campo extra na rota; `market_reserved` → `market` na LW-093; não ampliar o terreno | **revisor** (PROPOSTA) |
+| Q-W6 | aceitar a mudança de hash na LW-097 | **revisor** (PROPOSTA); o **aval aos valores novos é seu** (você o disse ao decidir a Q10) |
+| Q18 | **A**: evento de pagamento alivia `income`; pagamento por hora de produção aos trabalhadores atribuídos | **revisor** (PROPOSTA) |
+| Q20 | só comida na Fase 3 (`bread` e `grain` comestíveis) | **revisor** (PROPOSTA) |
+| Q21 | **A**: o `npc` abre a conta pela `economy/api` ao criar o NPC; a economia faz o `mint` inicial (`game_start`); a economia é registrada **antes** do `npc` | **revisor** (PROPOSTA) |
+
+- **`game_start`:** troquei `inicio_de_jogo` pelo nome em inglês (DEC-022) na tabela da LW-093 e em 14.4; as duas menções que sobram dizem de propósito que o roadmap escreve `inicio_de_jogo` (o roadmap é protegido).
+- **Payload do `RouteStateChanged`:** tirei o estado anterior (`route_id`, `new_state`), igual à arquitetura 17.3 e ao catálogo da D (`docs/events.md`). Eu tinha prometido isso na revisão (achado 9).
+- **Impacto de `miner` e `shepherd` (14.10), com fatos:** `occupations.json` +2 linhas; **rotina:** cada ofício tem agenda própria que cobre as 24 h (o `RoutineLoader` rejeita ofício sem agenda): cerca de **20 linhas novas** (`farmer` tem 9 blocos, `lumberjack` 10); **`income_stub.json` não exige linha** por ofício (sem linha, o ofício novo só não alivia `income` ao trabalhar enquanto o provisório existir); **população:** hoje a capacidade dos locais `work` é **exatamente igual** à população (A: 5 × 12 = 60 e B: 5 × 8 = 40), então qualquer NPC a mais pede locais `work` novos (senão `NPC_POPULATION_NO_ROOM`); **hashes:** o sorteio dos traços na criação usa o gerador do mundo, então NPCs a mais mudam o oráculo, o hash de 30 dias e o `run_sim`.
+- **O que eu NÃO decidi e deixei escrito como pendente:** (a) **Q23, nova:** hoje o NPC recebe o **primeiro** local `work` com vaga, em ordem de `id`; nada liga `miner` à mina. **Recomendo** uma coluna opcional `work_place_id` em `data/population.json` (mudança de **formato de dado**: precisa da sua aprovação, AGENTS 16.2); (b) como `sell` vira candidata (a Q19 só tratou `buy`); (c) qual tarefa do `npc` implementa o aceite de vaga e como o emprego **termina**; (d) o evento de pagamento da Q18 não existe no catálogo da D.
+- **Avisos de conflito com os rascunhos da B** (escritos nos meus arquivos, sem editar nada dela): a seção 6 do `economy.md` (salário na hora, por minuto) diverge da Q18; a seção 8 e a linha do `ContractOffered` em `docs/events.md` (aceitar contrato é [FUT]) **contradizem a sua Q22** (revisão cruzada, achados 1 e 2).
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova minha; o registro de Q10, Q19 e Q22 como decisões suas é da LW-087a.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD final `187c20c`**: **VERDE**. Arquitetura (nove verificações aprovadas), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 169,6 s (3 min 21 s no total). Mesmos números do `main`, como esperado para uma tarefa só de documentos.
+- `godot --headless --path . --import`: **NÃO EXECUTADO** neste worktree (`godot` não está no PATH do meu terminal: saída 127). O `check_all` rodou sozinho e ficou verde.
+- Conferências por busca: `inicio_de_jogo` só aparece nas 2 menções explicativas; `git diff origin/main...HEAD` lista só `npc.md` e `world.md`.
+- NÃO EXECUTADO: oráculo, soak de 30 dias e `run_sim` contra os dados novos (os dados não foram criados: é desenho).
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.194 de 1.194). Falhos e pulados: 0. Critério da tarefa cumprido **por leitura do diff**: `game_start` no lugar de `inicio_de_jogo`; Q-W1 a Q-W6 e Q18 a Q22 como "decididas" com a origem certa; impacto de `miner` e `shepherd` registrado (ofício, rotina, população, hashes).
+
+## 7. PROBLEMAS ENCONTRADOS
+- Os worktrees locais da B (`lw-087b`, `lw-087d`) estão **2 commits à frente do remoto, só por junção com o `main`**: o conteúdo dos três arquivos que revisei não mudou (conferido por `git diff --stat`).
+- Os contratos da B e este arquivo ainda **se contradizem** em Q18 e Q22 (acima): precisa da B corrigir (revisão cruzada, achados 1 e 2) e da LW-087a alinhar.
+- Os dois rascunhos citam o `STATUS-C.md` (ramo `status-c`) como fonte, como já citavam o `STATUS-B.md`: são referências a arquivos **fora do `main`**; limpar quando a revisão for registrada.
+
+## 8. RISCOS
+- **Q20 (só comida):** tábua, ferramenta e tecido ficam sem comprador entre os NPCs; hipótese de acúmulo de estoque e de o mercado ficar sem dinheiro (revisão cruzada, achado 3). Decisão de design **sua**; a minha PROPOSTA de só comida não a resolve.
+- **Q23** muda o formato de `population.json`; sem ela o mineiro pode ser mandado para o local de trabalho errado.
+- Os valores dos hashes só existem quando a LW-097 rodar; **você aprova os valores novos**, como combinou.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar ou trocar** as minhas PROPOSTAs de trabalho: Q-W1 a Q-W6, Q18, Q20 e Q21 (**recomendo aprovar**, com a ressalva do item 2).
+2. **Q20 e o risco do achado 3:** demanda mínima de bens que não são comida, um sumidouro simples, ou aceitar e provar no soak da LW-110 com plano B (**recomendo decidir antes da 087a**).
+3. **Q23:** coluna opcional `work_place_id` em `data/population.json` (**recomendo**); alternativa: a economia designa os trabalhadores.
+4. **`sell`:** o mesmo mecanismo de utilidade da Q19, definido na LW-093 (**recomendo**).
+5. **Aceite de vaga e fim do emprego:** qual tarefa implementa (LW-104 ou uma própria depois da LW-096) e como o emprego termina (**recomendo** tarefa própria depois da LW-096).
+6. **A B** corrigir `economy.md` (seções 6 e 8) e `docs/events.md` (linha do `ContractOffered`) conforme a revisão cruzada; **a LW-087a** registrar Q10, Q19 e Q22 e a lista de divergências do roadmap.
+7. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3 não iniciada**; os rascunhos 087b, 087c e 087d seguem **fora do `main`** até você escrever que podem entrar (a 087a, da A, não está no remoto e eu não a li).
+- Próxima tarefa recomendada: **LW-087a (A)**. **Não iniciada.** Parei aqui (regra 13).
+- Git: ramo `lw-087c-extensoes-world-npc` enviado (`187c20c`); `status-c` enviado; `main` = `8dcc81d`, intocado; nenhuma tag nova; nada de Fase B; sem `--force`.
+
+---
 
 # TAREFA 2 — REVISÃO CRUZADA (só leitura) dos rascunhos da B: LW-087b (`economy.md`) e LW-087d (`dados.md`, `events.md`)        Status: PRONTA PARA REVISÃO
 
