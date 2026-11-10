@@ -1,0 +1,11 @@
+#!/bin/sh
+# LW-085c: o custo do painel de depuração de NPC com 300 NPCs [HIP], sem janela. Só mede e imprime (não reprova por tempo). Leva cerca de 2 minutos no build de depuração
+# (30 dias de jogo para encher as memórias dos notáveis, mais as medições). LW_PANEL_DAYS muda os dias (30). Mac quieto, sem outro Godot, para os tempos valerem.
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+exec "$godot_bin" --headless --path "$project_dir" -s res://addons/gut/gut_cmdln.gd "-gtest=res://tests/soak/npc_panel/soak_npc_panel_cost.gd" -gexit

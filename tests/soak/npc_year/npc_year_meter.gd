@@ -185,12 +185,13 @@ static func run(data: NpcLifeCheck.GameData, config: Config) -> Report:
 	return report
 
 
-## Dados do jogo com a capacidade dos locais e a população multiplicadas por SCALE (só em memória).
-static func _scaled_setup(data: NpcLifeCheck.GameData) -> NpcSetup:
+## Dados do jogo com a capacidade dos locais e a população multiplicadas por SCALE (só em memória). Público desde a LW-085c (a medição do painel usa o mesmo mundo);
+## `development_build` liga o que só existe em build de desenvolvimento.
+static func scaled_setup(data: NpcLifeCheck.GameData, development_build: bool = false) -> NpcSetup:
 	var places: Array[Place] = []
 	for place: Place in data.places:
 		places.append(Place.new(place.id, place.settlement_id, place.kind, place.position, place.capacity * SCALE))
-	var setup: NpcSetup = NpcSetup.from_dir(DATA_DIR, SettlementService.new(data.settlements, places))
+	var setup: NpcSetup = NpcSetup.from_dir(DATA_DIR, SettlementService.new(data.settlements, places), development_build)
 	if setup.result.ok:
 		var rows: Array[PopulationPlan.PopulationRow] = []
 		for row: PopulationPlan.PopulationRow in setup.definitions.population.peek_rows():
@@ -204,7 +205,7 @@ static func _build(data: NpcLifeCheck.GameData, world_seed: int, report: Report)
 	if not data.problem.is_empty():
 		report.add_problem("dados do jogo: %s" % data.problem)
 		return null
-	var setup: NpcSetup = _scaled_setup(data)
+	var setup: NpcSetup = scaled_setup(data)
 	if not setup.result.ok:
 		report.add_problem("dados do npc: %s" % setup.result.message)
 		return null
