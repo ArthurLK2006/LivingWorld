@@ -86,6 +86,14 @@ func peek_opinion(a_id: int, b_id: int) -> NpcModule.OpinionQuery:
 	return query
 
 
+## As relações do NPC, em CÓPIAS (LW-082b): uma por pessoa que ele conhece, em ordem crescente do ID da outra, com as dimensões de HOJE (a mesma conta de
+## `peek_opinion`). ID inexistente: falha tratada. Morto não tem relações (a morte as descartou): lista vazia, com sucesso.
+func peek_relations(npc_id: int) -> NpcRelationsQuery:
+	if not _npcs.has(npc_id):
+		return NpcRelationsQuery.new(_not_found("peek_relations", npc_id))
+	return NpcRelationsQuery.build(_relations, _npcs, npc_id, _today(), _relation_rules())
+
+
 ## Caminho único de ajuste das relações (LW-079): o comando de depuração, as ações sociais (LW-080) e, na LW-083, a conversa com o jogador. As regras
 ## (Q11, limite por NPC, mudanças válidas) estão em `RelationGraph.adjust`; recusado, nada muda. Ajustou, publica `RelationChanged` (LW-080).
 func adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> Result:

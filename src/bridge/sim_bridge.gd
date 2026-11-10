@@ -324,3 +324,68 @@ func _missing_game(caller: String) -> Result:
 
 func _missing_terrain(caller: String) -> Result:
 	return Result.failure(CODE_NO_TERRAIN, "SimBridge.%s: terreno não carregado; esperado um TerrainData ao criar a ponte." % caller)
+
+
+
+# ---------------------------------------------------------------------------------------------------- Inspeção de NPC (LW-082c)
+# Consultas só de leitura para o painel de depuração (docs/modules/bridge.md, "Inspeção de NPC"; docs/modules/tools.md). A conta fica em `BridgeNpcInspect`;
+# aqui só se confere a ponte sem `npc` ou sem jogo e se delega. Cada resposta traz cópias e nenhuma exige terreno.
+
+## A lista de todos os NPCs, inclusive os mortos e os sem corpo, em ordem crescente de id. Sem `npc`: BRIDGE_NO_NPC.
+func peek_npc_roster() -> BridgeInspectReplies.NpcRosterReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcRosterReply.new(_missing_npc("peek_npc_roster"))
+	return BridgeNpcInspect.roster(_npc)
+
+
+## O detalhe de um NPC (necessidades, ação, ofício, nível S0 ou S1 e a ação da rotina agora). Sem `npc`: BRIDGE_NO_NPC; sem jogo: BRIDGE_NO_GAME (a hora
+## vem do relógio da simulação); NPC inexistente: NPC_UNKNOWN, do `npc`.
+func peek_npc_detail(npc_id: int) -> BridgeInspectReplies.NpcDetailReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcDetailReply.new(_missing_npc("peek_npc_detail"))
+	var clock: SimClock = _clock()
+	if clock == null:
+		return BridgeInspectReplies.NpcDetailReply.new(_missing_game("peek_npc_detail"))
+	return BridgeNpcInspect.detail(_npc, npc_id, clock.hour_of_day())
+
+
+## Os contadores globais: hora, NPCs por camada e nível, vivos e mortos, Intents pendentes e os problemas do `validate()` do mundo. Sem `npc`:
+## BRIDGE_NO_NPC; sem jogo: BRIDGE_NO_GAME. [LIM] o custo do `validate()` do mundo inteiro não foi medido.
+func peek_simulation_summary() -> BridgeInspectReplies.SimSummaryReply:
+	if _npc == null:
+		return BridgeInspectReplies.SimSummaryReply.new(_missing_npc("peek_simulation_summary"))
+	var time: BridgeReplies.TimeSnapshot = peek_time()
+	if not time.result.ok:
+		return BridgeInspectReplies.SimSummaryReply.new(time.result)
+	return BridgeNpcInspect.summary(_npc, time, _host.runner.world.validate())
+
+
+## O rastro de decisão do NPC MARCADO (cópias, do mais antigo ao mais novo). NPC não marcado: NPC_NOT_TRACED, do `npc`, que o painel lê como "sem marca";
+## inexistente: NPC_UNKNOWN. Sem `npc`: BRIDGE_NO_NPC.
+func peek_npc_trace(npc_id: int) -> BridgeInspectReplies.NpcTraceReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcTraceReply.new(_missing_npc("peek_npc_trace"))
+	return BridgeNpcInspect.trace(_npc, npc_id)
+
+
+## As memórias e os traços permanentes do NPC (cópias; só o notável T2 tem registros). Sem `npc`: BRIDGE_NO_NPC; inexistente: NPC_UNKNOWN.
+func peek_npc_memories(npc_id: int) -> BridgeInspectReplies.NpcMemoriesReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcMemoriesReply.new(_missing_npc("peek_npc_memories"))
+	return BridgeNpcInspect.memories(_npc, npc_id)
+
+
+## As relações do NPC (cópias, em ordem crescente do id da outra pessoa). Sem `npc`: BRIDGE_NO_NPC; inexistente: NPC_UNKNOWN.
+func peek_npc_relations(npc_id: int) -> BridgeInspectReplies.NpcRelationsReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcRelationsReply.new(_missing_npc("peek_npc_relations"))
+	return BridgeNpcInspect.relations(_npc, npc_id)
+
+
+## COMANDO DE DEPURAÇÃO, a ÚNICA escrita da inspeção (decisão de Arthur, 09/11/2026): marca ou desmarca o NPC para o rastro de decisão. Repassa a
+## `request_set_traced` do `npc` e devolve o `Result` dele como está: NPC_DEV_ONLY fora de build de desenvolvimento (e nada muda), NPC_UNKNOWN para NPC
+## inexistente. Só mexe no sinalizador volátil de depuração: não é salvo e não entra no `state_hash`. Sem `npc`: BRIDGE_NO_NPC.
+func request_set_npc_traced(npc_id: int, is_traced: bool) -> Result:
+	if _npc == null:
+		return _missing_npc("request_set_npc_traced")
+	return _npc.request_set_traced(npc_id, is_traced)

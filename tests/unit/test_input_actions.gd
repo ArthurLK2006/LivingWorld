@@ -2,7 +2,7 @@ extends GutTest
 ## LW-044: mapa de entradas. Todas as ações existem no InputMap com as teclas de E1 (por tecla física), nenhuma tecla vale para
 ## duas ações, e a pausa do GameApp é tratada pela AÇÃO, sem tecla fixa. Sem janela.
 
-const ACTION_COUNT: int = 17
+const ACTION_COUNT: int = 22
 const GAME_APP_SOURCE: String = "res://src/app/game_app.gd"
 const UNSPECIFIED: KeyLocation = KEY_LOCATION_UNSPECIFIED
 ## Teclas padrão da decisão E1 de Arthur (DEC-116): ação -> [tecla física, localização].
@@ -21,6 +21,11 @@ const EXPECTED_KEYS: Dictionary[StringName, Array] = {
 	InputActions.LOOK_DOWN: [KEY_DOWN, KEY_LOCATION_UNSPECIFIED],
 	InputActions.SPEED_NORMAL: [KEY_1, KEY_LOCATION_UNSPECIFIED],
 	InputActions.SPEED_DOUBLE: [KEY_2, KEY_LOCATION_UNSPECIFIED],
+	InputActions.INSPECTOR_TOGGLE: [KEY_F3, KEY_LOCATION_UNSPECIFIED],
+	InputActions.INSPECTOR_TOGGLE_ALT: [KEY_TAB, KEY_LOCATION_UNSPECIFIED],
+	InputActions.INSPECTOR_NEXT: [KEY_N, KEY_LOCATION_UNSPECIFIED],
+	InputActions.INSPECTOR_PREVIOUS: [KEY_B, KEY_LOCATION_UNSPECIFIED],
+	InputActions.INSPECTOR_TRACE: [KEY_T, KEY_LOCATION_UNSPECIFIED],
 }
 ## Botões de mouse da decisão D3 do lote 3: ação -> botão (botão direito arrastado gira a câmera, a roda dá zoom).
 const MOUSE_BUTTONS: Dictionary[StringName, MouseButton] = {
