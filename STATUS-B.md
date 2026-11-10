@@ -1,131 +1,112 @@
-10/11/2026 18:07 (Brasília) — rodando: LW-085f (check_all no HEAD final do ramo lw-085f-correcoes-da-085c, só documentos); o relatório abaixo é o da LW-084 e da LW-085c e será substituído ao parar
+10/11/2026 18:11 (Brasília) — CONCLUÍDA — PRÉ-VOO PRONTO: LW-085f no `main` (`497ab78`, Fase B automática, sem tag) e pré-voo da Fase 3 abaixo (só leitura; nada criado, nenhum Godot); parei (regra 13)
 
-# RELATÓRIO — LW-085c: custo do painel de NPC com 300 NPCs     Status: PRONTA PARA REVISÃO (já no `main`, pela Fase B automática)
+# RELATÓRIO — LW-085f: correções da LW-085c e itens do backlog     Status: PRONTA PARA REVISÃO (já no `main` pela Fase B automática)
 
 ## 1. RESUMO
-O painel de depuração de NPC custa, com 300 NPCs e 30 dias de jogo, **cerca de 37 a 39 ms por segundo** (3,7% a 3,9% do tempo) enquanto está aberto, em build de depuração. A maior parte é o resumo do mundo, que o painel pede a cada ~1 s e que chama `world.validate()`: **19 a 22 ms por chamada** (eram 3,9 ms com 1 dia de jogo). A lista de 300 NPCs com um NPC selecionado, refeita a cada 0,25 s, custa só **4,1 a 4,4 ms** (3,5 ms no teste rápido, com 1 dia de jogo). No quadro em que as duas atualizações caem juntas (uma vez por segundo, quando o resumo dispara junto com a lista), o custo típico é de ~24 ms, acima dos 16,7 ms de um quadro de 60 por segundo. O painel só existe em build de desenvolvimento, então o release não é afetado. Só medi e relatei; nada em `src/`.
+Corrigi o intervalo do `refresh` da lista na linha da LW-085c (de "3,5 a 4,4 ms" para "de 4,1 a 4,4 ms"; os 3,5 ms eram do teste de 1 dia) e registrei no **meio** do `docs/backlog.md` as três linhas que você mandou: a régua provisória de memória (sem virar teste), o ritmo do resumo do painel (as duas opções e os números medidos) e o painel com 1 ano de jogo (não rodar). Só texto: nenhum código, teste nem dado. A linha da LW-085f entrou como subtarefa e a contagem não mudou.
 
-## 2. ARQUIVOS CRIADOS (commit `5a94c32`)
-- `tests/soak/npc_panel/soak_npc_panel_cost.gd` (+ `.uid`) — o script de medição (98 linhas, 78 de código)
-- `tests/soak/run_npc_panel_cost` — script de terminal (11 linhas, 8 de código; `LW_PANEL_DAYS` muda os dias de aquecimento, padrão 30)
-- Total: 86 linhas de código (alvo 70 a 90; teto 1,5×).
+## 2. ARQUIVOS CRIADOS
+Nenhum.
 
 ## 3. ARQUIVOS MODIFICADOS
-- `tests/soak/npc_year/npc_year_meter.gd` — +5 −4 linhas: `scaled_setup` ficou público e ganhou o parâmetro `development_build` (o mesmo mundo ×3 da LW-084). Nenhum teste mexido; `test_npc_year_short.gd` segue verde.
-- `docs/ROADMAP_STATUS.md` — +1 linha (a da LW-085c, de subtarefa; a contagem não muda).
-- Nenhum arquivo protegido; nada em `src/` nem em `data/`.
+- `docs/ROADMAP_STATUS.md`: um número trocado na linha da LW-085c (só ele, conferido por `git diff --word-diff`: `-3,5 +4,1`) e +1 linha (a da LW-085f, entre a da 085d e a da 086a).
+- `docs/backlog.md`: +3 linhas, logo depois das linhas da 084b e antes de "Magias, armas e outras habilidades" (meio do arquivo, não no fim).
+- Contra o `main` (`fbd6ac0`): 2 arquivos, 5 inserções e 1 remoção. Nenhum arquivo protegido.
 
 ## 4. DECISÕES TÉCNICAS
-- Medi o **painel real** (`NpcInspectorPanel` com a ponte, os textos e os nós), não só a ponte: `panel.refresh()` (lista + detalhe, rastro, memórias e relações do selecionado) e `panel.refresh_summary()`; mais `world.validate()` e `peek_simulation_summary` separados, para ver quem pesa.
-- Mundo: o da LW-084 (300 NPCs, 40 notáveis), montado em build de desenvolvimento como no teste do painel, com **30 dias de jogo** de aquecimento: o notável mais cheio já estava com 40 registros (24 memórias + 16 relações, os tetos) e o custo do detalhe é o pior caso.
-- Intervalos lidos do próprio painel (`REFRESH_INTERVAL_S` 0,25 e `SUMMARY_INTERVAL_S` 1,0), não copiados. Só imprime; **não reprova por tempo**. Não editei o README (a ordem era só o script).
-- **Proposta para a LW-085 (decisão sua):** manter a lista a 4 Hz (custa ~4,4 ms) e **mudar o resumo de 1 s para ~5 s [HIP]**, ou rodar o `validate()` só sob demanda (uma tecla); isso tira ~16 ms por segundo e acaba com o quadro de ~24 ms a cada segundo. Não otimizei nada (AGENTS 4.18: a medição é para decidir).
+- **Não repeti o que já existia no backlog:** a linha do ano em release (`run_npc_year_release`), a do laço de controle intercalado, a da saturação das memórias dos notáveis (24/24 no teto) e a da divisão do `npc_year_meter.gd` (330 linhas) já estavam lá desde a 084b. Foram 3 linhas novas, não 5.
+- **O cálculo da opção A do painel é conta, não medida:** com o resumo a cada 5 s, 19,9 a 22,3 ms divididos por 5 mais 4 vezes 4,1 a 4,4 dá cerca de 20 a 22 ms por segundo. A linha do backlog diz "conta, não medida".
+- **Citação da P4:** conferi no roteiro (`docs/fase-2/LW-086-roteiro-para-arthur.md`, linha 174): "painel aberto (F3), tranco uma vez por segundo?". É o que a linha do backlog cita.
+- Sem proposta de entrada para o `DECISIONS.md`.
 
 ## 5. TESTES EXECUTADOS
-- `tools/check_gdscript_warnings`: sem avisos (313 scripts). Teste rápido `LW_PANEL_DAYS=1 tests/soak/run_npc_panel_cost`: 1/1 passou.
-- Medição: `tests/soak/run_npc_panel_cost` ×3 com 30 dias, de 16:13 a 16:18, Mac na tomada; o vigia só viu os 3 godot meus (nenhum outro).
-- `tools/check_all` no HEAD final (`d1b0fa2`): **VERDE**, 124 scripts, 1194 testes, 261.693 asserts, 0 avisos novos, 220,8 s. O soak de custo não entra (não começa com `test_`).
-- Contra o `main` (`1dd2fb4`, em worktree separado): oráculo do `npc` passa nos dois e o arquivo é idêntico; soak de 30 dias `d13b921112ce` ×3 nos dois; `run_sim --days 7` sementes 1, 2 e 3 iguais.
-- Fase B: B0 `main` em `1dd2fb4` (30 de 32, 85 de 192); B1 sem conflito (o `main` não andou; sem junção); B3 contagem por `grep` antes e depois: "30 de 32" ×3 e "85 de 192" ×3, sem mudança; B4 avanço rápido `1dd2fb4..d1b0fa2`; nenhum arquivo protegido; nenhum teste removido, enfraquecido ou pulado.
+- `tools/check_all` no HEAD final (`497ab78`), solto e vigiado, Mac na tomada, sem outro Godot (o vigia anotou os processos a cada 15 s): **VERDE: 124 scripts, 1194 testes, 261.693 asserts, 168,5 s; sem aviso novo (o "Warnings 1 / Deprecated 1" do GUT é o de sempre)**.
+- Contagem por `grep`, antes e depois (e no `main`): "31 de 32" (README 2, status 1) e "86 de 192" (README 2, status 1), mais "31 de 32 tarefas concluídas" (2), "86 de 192 tarefas" (3) e "31 de 32 concluídas" (1): **iguais no ramo e no `main`**.
+- Comparação do oráculo, do soak de 30 dias e do `run_sim` com o `main`: **NÃO EXECUTADA**, por não constar nas condições desta tarefa e porque o ramo difere do `main` só em dois `.md` (`git diff --stat origin/main HEAD`): código e dados são os mesmos bytes.
 
-## 6. RESULTADOS (depuração, 300 NPCs, 30 dias de jogo; média / p99 / máximo, em µs)
-| | exec. 1 | exec. 2 | exec. 3 |
-|---|---|---|---|
-| `world.validate()` | 19.859 / 34.843 / 72.603 | 19.265 / 20.205 / 21.269 | 20.017 / 28.012 / 66.021 |
-| `peek_simulation_summary` (ponte) | 20.884 / 49.182 / 71.081 | 19.878 / 26.940 / 96.515 | 22.281 / 79.239 / 241.490 |
-| `refresh_summary` (painel) | 21.173 / 42.872 / 149.018 | 19.411 / 21.491 / 22.118 | 20.121 / 31.113 / 32.482 |
-| `refresh`, notável selecionado | 4.429 / 4.985 / 5.386 | 4.423 / 5.858 / 8.201 | 4.367 / 4.728 / 4.829 |
-| `refresh`, cidadão selecionado | 4.449 / 9.131 / 9.949 | 4.053 / 4.303 / 4.843 | 4.187 / 8.110 / 9.869 |
-| custo por segundo, painel aberto | 38,9 ms (3,9%) | 37,1 ms (3,7%) | 37,6 ms (3,8%) |
-
-- O `validate()` é ~95% do resumo. O resumo + a lista no mesmo quadro: ~24 a 26 ms em média (147% a 154% do quadro de 16,7 ms; 72% a 78% do teto de 33 ms da régua de quadro do SP2/DEC-119); com o p99, 26 a 52 ms.
-- **O `validate()` cresce com o tempo de jogo:** 3,9 ms com 1 dia (teste rápido) e 19 a 20 ms com 30 dias. Como o notável mais cheio já estava no teto de registros no dia 30, espero que pare de crescer, mas **não medi com 1 ano**.
-- Os máximos altos (149 ms, 241 ms) aparecem uma vez por execução e não se repetem: indício de ruído da máquina, não prova.
+## 6. RESULTADOS
+Aceite cumprido: o número foi corrigido, as três linhas estão no meio do backlog, a linha da LW-085f está como subtarefa e a contagem não mudou.
 
 ## 7. PROBLEMAS ENCONTRADOS
-- **Erro meu, já no `main`:** a linha da LW-085c no `ROADMAP_STATUS.md` diz que o `refresh` da lista custa "de 3,5 a 4,4 ms" nas 3 execuções; nas 3 execuções de 30 dias foi de 4,1 a 4,4 ms (os 3,5 ms são do teste rápido, de 1 dia). O custo por segundo e o resto da linha estão certos. Conserto proposto (1 linha de documento, que não empurrei sem a sua ordem): trocar "de 3,5 a 4,4 ms" por "de 4,1 a 4,4 ms" naquela linha.
-- Nada mais falhou. O `world.validate()` ser caro (e o painel chamá-lo a cada segundo) era a dúvida do achado I-3 e foi confirmada: o próprio status da LW-082 dizia que o custo "não foi verificado".
+- **Erro meu, corrigido antes de publicar:** o texto da linha da LW-085f dizia "31 de 32 e 86 de 192", e isso subiu de 1 para 2 a ocorrência do placar no `ROADMAP_STATUS.md` (a conferência por `grep` pegou). Tirei os números do texto num commit à parte (`497ab78`); não reescrevi histórico.
+- O `STATUS-C.md` diz "Nada rodando": a palavra "rodando" aparece, mas negada. Tratei como livre (o `pgrep` não via Godot). Se preferir, a C pode dizer "parado" em vez disso, para a regra de procurar a palavra não dar falso alarme.
+- Escrevi "18:07" no "rodando" do `STATUS-B.md` sem consultar o relógio; o `check_all` começou às 18:06 e terminou às 18:09. Sem efeito prático.
 
 ## 8. RISCOS
-- Medido em depuração, sem janela: o painel desenhado na tela (texto, lista) custa mais do que os nós sem desenho. O custo com 1 ano de jogo não foi medido. O painel só roda em build de desenvolvimento (não afeta o release nem a medição de quadros da LW-053A).
+Nenhum novo: só texto. As três linhas dependem do que o roteiro e o registro `0010` dizem hoje.
 
 ## 9. PENDÊNCIAS
-- **Decisão que depende de Arthur (para a LW-085):** reduzir o ritmo do resumo do painel (recomendo 1 s → ~5 s [HIP], ou `validate()` só sob demanda). Se quiser o número com 1 ano de jogo antes de decidir, rodo `LW_PANEL_DAYS=360 tests/soak/run_npc_panel_cost` (~25 min).
-- Testes manuais: nenhum.
+Nenhuma da 085f. Nenhum teste manual.
 
-## ACOMPANHAMENTO
-- Avanço: LW-084 e LW-085c no `main`; Fase 2 em 30 de 32 (a LW-085 e o que falta são de vocês). Próxima tarefa recomendada: nenhuma minha (parei na regra 13).
-- Git: `main` = `d1b0fa2`; ramos `lw-085c-custo-do-painel` e os da LW-084 mantidos no remoto; sem tag; worktrees `lw-084a`, `lw-084b`, `lw-084c`, `lw-085c`, `ref-main` e `status-b` mantidos em `.worktrees/`. Este ramo (`status-b`) nunca vai para o `main`.
+## ACOMPANHAMENTO (085f)
+- **Avanço:** Fase 2 em 31 de 32 (96,9%) e projeto em 86 de 192 (44,8%), como no `main`; falta a LW-086 (sua validação).
+- **Git:** `main` em `497ab78` por avanço rápido de `fbd6ac0` (sem tag, sem `--force`); ramo `lw-085f-correcoes-da-085c` publicado; worktree `.worktrees/lw-085f` mantido; nada tocado nas pilhas da A e da C. Commits: `f9916b3` (conteúdo), `c58d93f` (junção), `b479d3c` (linha de status) e `497ab78` (tirei o placar do texto).
+
+- **Próxima tarefa recomendada:** nenhuma minha (regra 13). A Fase 3 **não** começa antes de você fechar a Fase 2 (LW-086). **Não iniciada:** LW-087.
+- **Decisões que dependem de você:** as do pré-voo abaixo (seções b e c), cada uma com a recomendação.
+- O relatório anterior (LW-084 e LW-085c) está no commit `92d2302` deste ramo.
 
 ---
 
-# RELATÓRIO — LW-084: Soak longo (300 NPCs por 1 ano, com alternância S1 ↔ S0)     Status: PRONTA PARA REVISÃO (já no `main`, pela Fase B automática)
+# PRÉ-VOO DA FASE 3 (ECONOMIA): só leitura
 
-## 1. RESUMO
-O soak de 1 ano com 300 NPCs [HIP] roda limpo. Em 8 execuções de 1 ano (depuração: 1 pré-medição, 4 do padrão `base`, 3 do `stress`) e 3 de 30 dias em release: **300 vivos o tempo todo, zero mortes, zero erro de `validate()`, zero erro de script e o mesmo hash dentro de cada padrão** (inclusive salvando e carregando no meio). O passo médio fica em 1,75 a 2,66 ms (régua [HIP] de ~3 ms); os passos acima de 10 ms existem, mas pela sua decisão são só informativos. A memória cresce ~1,9 MiB só nos primeiros 30 dias e fica plana; o save fica em ~20 KiB comprimido, estável. Entrou no `main` com status +1 (conferido por `grep`): Fase 2 em **30 de 32** e projeto em **85 de 192**.
+Nada criado: nenhum ramo, arquivo, dado ou código da Fase 3; nenhum Godot; a LW-087 **não** foi iniciada. **Li:** GDD 12 e 13; arquitetura 11 (e 3.2, 8.6, 15.4, 17.5); roadmap 3.A a 3.J e Anexos D, E e F; `DECISIONS.md` (DEC-046 a 049, 040, 041, 054, 071, 078, 082 a 084, 100, 112); `docs/events.md`; `docs/modules/` (**não existe `economy.md`**; a pasta `src/sim/economy/` só tem um README "reservado"); `data.md`, `npc.md` (seção 9) e `world.md`; o código dos provisórios. As tarefas LW-087 a LW-095 **não citam nenhuma DEC pelo número**.
 
-## 2. ARQUIVOS CRIADOS
-- **084a** (`63c0f0a`): `tests/soak/npc_year/npc_year_meter.gd` (o medidor), `test_npc_year_short.gd` (1 dia, no `check_all`, 4 testes), `soak_npc_year.gd` (o ano, fora do `check_all`) e `tests/soak/run_npc_year`.
-- **084c** (`629aa40`): `tests/soak/npc_year/npc_year_release_node.gd` e `npc_year_release_main.tscn`, e `tests/soak/run_npc_year_release`.
-- **084b** (`872d846`): `docs/decisions/0010-soak-longo-300-npcs.md`.
-- (mais os `.uid` dos scripts novos)
+**Em uma frase:** o desenho é bom, mas há **6 contradições ou buracos** (seção c) e **4 decisões suas** antes da LW-087 (seção b).
 
-## 3. ARQUIVOS MODIFICADOS
-- `tests/soak/README.md` — +14 linhas (084a) e +9 (084b: parágrafo do release, com o texto aprovado por você).
-- `tests/soak/npc_year/npc_year_meter.gd` e `test_npc_year_short.gd` — na 084b: +37 e +3 linhas (contagem de memórias, traços e relações dos notáveis; save sem comprimir). O medidor ficou com **330 linhas** (acima de ~300): linha no backlog para dividir.
-- `docs/backlog.md` — +4 linhas (ano em release; dividir o medidor; laço de controle intercalado; notáveis no teto de memórias).
-- `docs/ROADMAP_STATUS.md` (+linhas da LW-084, 084a, 084b e 084c; contagens) e `README.md` (contagens e uma frase): só na Fase B.
-- Tamanhos: 084a = 349 linhas de código e teste (estimativa 250, teto 375); 084c = 132 (estimativa 120, teto 180).
-- Nenhum arquivo protegido; nada em `data/`, `src/` nem em `project.godot`; nenhum teste removido, enfraquecido ou pulado (o ramo só acrescenta em `tests/`).
+## b) Decisões de que a Fase 3 depende
 
-## 4. DECISÕES TÉCNICAS
-- Seguiram as suas respostas: os 300 e o ×3 nascem no código do teste e são [HIP] (DEC-040 PENDENTE); régua de tempo [HIP] (DEC-071 PROPOSTA); o que reprova é só morte, `validate()`, erro de script ou hash diferente entre execuções; a régua dos picos é release com a taxa do controle (DEC-113 como proposta de trabalho), depuração informativa.
-- **Download não feito:** o binário de release do Godot 4.7.2 já estava em `$HOME/lw-release-probe/bin` e os modelos de macOS oficiais já estão instalados; comparados sem a assinatura, o slice x86_64 é idêntico e o arm64 difere em 2 bytes do cabeçalho. Não reconferi o SHA-512 do pacote de 1,28 GB (não o baixei).
-- **Conflito evitado na Fase B (aviso):** a junção com o `main` teria conflitado em `docs/backlog.md` (os dois lados acrescentaram linhas no fim). A sua regra só tolera conflito em `ROADMAP_STATUS.md` ou `README.md`; em vez de resolver à mão, movi as minhas 4 linhas do fim para o meio do arquivo num commit seguinte (`b97d03f`, mesmo texto, outro lugar) e a junção ficou limpa. Se preferia que eu tivesse parado, diga.
-- Salvar e carregar só dá o mesmo hash com o foco longe (o save não guarda corpos): o teste e o soak salvam nesse momento. Com NPCs em S0 no instante do salvamento o hash seria outro; não medi em escala.
-- Memória: constante [HIP] de 2 MiB por dia na versão curta (medição: +0,29 MiB em 1 dia). **Proposta de régua definitiva [HIP]** (a decidir por você): crescimento da memória estática entre o dia 30 e o dia 360 de no máximo **0,5 MiB** (observado: 0 a 0,1 MiB; oscilação máxima no meio do ano, 0,4 MiB).
-- Não propus entrada nova para o `DECISIONS.md`.
+| Decisão | Status | Falta decidir | Recomendação |
+|---|---|---|---|
+| DEC-047 dinheiro inteiro e `Ledger` | PROPOSTA | aprovar | **Aprovar** (o AGENTS 4.11 já a usa como regra) |
+| DEC-049 `TradeRules` única inversão | PROPOSTA | aprovar | **Aprovar** (na Fase 3 só a versão neutra) |
+| DEC-048 comércio em 2 escalas | PROPOSTA | nada agora | Manter até o SP7; o limite de diferença é a sua decisão nº 9 do Anexo F, na LW-101 |
+| DEC-041 sem T0 e sem LOD S2/S3 · DEC-054 uma só moeda | APROVADA · PROPOSTA | nada | Valem; aprovar a DEC-054 com a 047 |
+| DEC-040 escala de NPCs (300) | **PENDENTE** | nada que bloqueie | A economia não depende do número; manter [HIP] |
+| DEC-082/083/084 dados e save | APROVADAS (em parte) | "save congelado": sim ou não (contradição 5) | **Não** congelar |
+| DEC-046, 100, 071, 078 | APROVADA, APROVADA, PROPOSTA, PROPOSTA | nada | Seguir (nomes genéricos; produção por hora, preço ao fim do dia) |
+| **[HIP] 3 assentamentos** | hipótese | confirmar | Confirmar (hoje há 2; o 3º nasce na LW-097) |
+| **[HIP] 8 a 12 bens, 4 cadeias** | hipótese | aprovar a lista (é o aceite da LW-087) | **10 bens:** grão, farinha, pão · madeira, tábua · minério, metal, ferramenta · lã, tecido. Cadeias: grão→farinha→pão; madeira→tábua (madeira também é o combustível); minério+madeira→metal→ferramenta; lã→tecido. Armas e roupas ficam para depois |
 
-## 5. TESTES EXECUTADOS
-- `tools/check_all` no HEAD juntado (`5173282`) e no HEAD final (`1dd2fb4`): **VERDE nos dois**, 124 scripts, **1194 testes**, 261.693 asserts, 0 avisos do GDScript (o "Warnings 1 / Deprecated 1" do GUT já existia), 203 a 210 s. Antes da série: 112 scripts e 1121 testes.
-- **Comparação com o `main` (`8b910f1`), em worktree separado:** oráculo do `npc` (`test_npc_split_oracle`) passa nos dois e o arquivo é idêntico; soak de 30 dias `tests/soak/run_npc_life_30d`: hash `d13b921112ce` nas 3 execuções dos dois; `tools/run_sim --days 7`: sementes 1, 2 e 3 iguais (`a0c13ca0…`, `00101d8c…`, `d4ca1885…`).
-- Ano ×3 do `base` (13:25 a 14:28, nenhum outro Godot): `RUNS=3 tests/soak/run_npc_year base`, VERDE; ano ×3 do `stress` e a execução extra do `base`: VERDE (com ruído de outros Godot, como combinado); pré-medição e release de 30 dias: números abaixo.
-- Git na Fase B: B0 `main` em `8b910f1` (29 de 32, 84 de 192); B1 junção limpa; B2 acima; B3 contagem por `grep` (antes: "29 de 32" e "84 de 192" 3 vezes cada, no README e no status; depois: "30 de 32" e "85 de 192" 3 vezes cada, e a lista do cabeçalho tem 30 IDs); B4 avanço rápido `8b910f1..1dd2fb4`.
+## c) Contradições e buracos
 
-## 6. RESULTADOS
-| 1 ano, depuração | hash | média | p99,9 | máximo | > 10 ms | parede |
-|---|---|---|---|---|---|---|
-| pré-medição `base` (sem a LW-073; ruído) | `5141d7e7a84b` | 2344 µs | 12.306 | 208.954 | 723 | 20,9 min |
-| `base` 1, 2, 3 (nenhum outro Godot) | `5141d7e7a84b` ×3 | 2358, 2358, 2403 | 12.701, 11.207, 13.837 | 206.453, 276.270, 292.911 | 785, 625, 844 | 21,0 a 21,4 min |
-| `base` 4 (extra, com notáveis; ruído) | `5141d7e7a84b` | 2316 | 9.208 | 751.912 | 447 | 20,6 min |
-| `stress` 1, 2, 3 (ruído) | `50af223b6f51` ×3 | 2389, 2661, 2417 | 13.163, 25.003, 10.567 | 238.610, 372.890, 672.018 | 812, 2062, 571 | 21,2 a 23,6 min |
+1. **Dono do inventário.** Roadmap LW-089 e LW-105: inventário de NPC, jogador, local e mercado na `economy`. Arquitetura 15.4: `Inventory` é dado do `character` ("itens, equipamentos, contêineres"), mas também "bens comuns são quantidades na economia". **Recomendo:** a `economy` guarda as **quantidades** de todo dono, por ID; o equipamento em instâncias (`character`) fica para a Fase 5.
+2. **Fluxo agregado × DEC-041.** GDD 12.5 e arquitetura 11.6 põem o fluxo agregado em "S2"; a DEC-041 (APROVADA) deixa o LOD S2/S3 fora; o roadmap cria o `TradeFlow` na LW-100. Com 3 assentamentos nada é "S2". **Recomendo:** manter o roadmap (o SP7 decide) e escrever que o `TradeFlow` é abstração econômica por rota, sem depender de S2.
+3. **Direção `npc` ↔ `economy`.** Arquitetura 8.6: o `npc` "consulta a `economy` por interface"; 11.10: a economia usa o `npc` "só por IDs e eventos"; o cap. 11 não define essa interface e a DEC-049 proíbe uma segunda inversão. **Recomendo:** o `npc` importa só `economy/api` (mesma camada, mão única, já permitido); a economia nunca importa o `npc` (contrato de trabalho chega por evento).
+4. **Dinheiro inicial tarde demais.** A LW-094 tira o `FoodStub` e exige 30 dias verdes, mas o `mint` inicial só nasce na LW-095. Sem dinheiro, guarda, estalajadeiro, artesão e lenhador não compram comida. **Recomendo:** o `mint` inicial entra na LW-093 (ou a 095 vem antes da 094).
+5. **Migração de save × "save congelado".** LW-111: "save da Fase 2 migra"; AGENTS 4.15 e decisão 0011: `save_version` fica em 2 e save antigo é rejeitado até o congelamento (DEC-083), que ninguém declarou. **Recomendo:** não congelar; a LW-111 troca "migra" por "rejeita com mensagem clara".
+6. **`check_temp` × documentos.** LW-114 falha com qualquer `TEMP-LW-` "no repositório", mas as marcas ficam para sempre no Anexo D, no `npc.md` e no status. **Recomendo:** escopo `src/`, `data/`, `tests/`, `tools/`, `scenes/`, **fora de `docs/`**.
 
-Em todas: 300 vivos, **0 mortes**, 0 problemas de `validate()`. A 3ª de cada padrão salva e carrega no dia 180 e dá o mesmo hash. O hash do `base` é o mesmo da pré-medição (sem a LW-073): o detector não mudou o ano.
+**Menores (registrar na LW-087a):** (7) GDD 12.5 [P1] cita "tributos"; o roadmap 3.J diz "não fazer impostos": valem os do roadmap. (8) Alvo de estoque = "dias de consumo" (arq. 11.5), mas o consumo vem depois do mercado: na Fase 3 o alvo é dado fixo. (9) `RouteStateChanged` e o comando "fechar rota" do checklist 3.H: nenhuma tarefa os cria; pôr na LW-097. (10) A arquitetura 11.10 lista `entities`, que não existe: a economia usa IDs de `ctx.ids`, como o `npc`. (11) `TradeRules` "entregue pelo `app`" (3.2) ou "pela `SimContext`" (11.8): sem efeito na Fase 3.
 
-**Release, 30 dias, `base`, 3 execuções** (nenhum outro Godot; carga do Mac 3 a 5,6): hash `28cfa2f2b844` ×3; média 1752, 1871 e 1783 µs; passos acima de 10 ms: 3, 106 e 12, contra 0, 18 e 23 do laço de controle (**inconclusivo**: o controle roda depois da simulação e não vê a mesma perturbação; nenhum pico caiu nos 5 min depois de uma troca de foco). O release é ~20% mais rápido que a depuração e dá o mesmo hash. **A memória estática vem 0 em release** (só os objetos valem). Ano em release: não feito (decisão sua; backlog).
+## d) Divisão da LW-087 e ordem das tarefas
 
-**Para a revisão LW-085 (o que você pediu):**
-- **Notáveis no fim do ano (40, mín/média/máx):** `stress`: memórias **24/24,0/24** (todos no teto `memory_capacity` 24), traços **0/0,0/0** (o limiar de 80 nunca é atingido), relações **10/14,7/16** (teto 16). `base`: memórias **24/24,0/24**, traços **0/0,0/0**, relações **8/14,6/16**.
-- **Crescimento da memória:** +1,83 a +1,92 MiB nas 7 execuções de 1 ano em depuração, **todo nos primeiros 30 dias**; do dia 30 ao 360, 0 a 0,1 MiB. Objetos: entre 4.175 e 4.226 do dia 30 ao 360.
-- **Save:** comprimido (gzip) 19,6 a 20,4 KiB; sem comprimir 338 a 345 KiB; **estáveis** do dia 30 ao 360 (variação de até 3%).
-- **Corpos (falsos):** pico 50, média 33,3; entradas em S0: 103.819 (`base`) e 676.741 (`stress`).
-- **O que o SP2 já mostrou (`docs/decisions/0009`):** com corpos reais, zero duplicados, órfãos e teleportes; cerca de 0,13 a 0,17 ms por quadro de física com 100 corpos; na medição oficial, 6 quadros acima de 33 ms em 50.549 (fora da régua da DEC-119 em 3 de 13 ensaios; a causa dos trancos ficou aberta para a LW-072); a navegação N1 (reta) passa nas rotas da rotina e atravessa pedra; toda caminhada em S0 chega atrasada em relação ao S1 (o S1 planeja ~67 m/s). O soak da LW-084 **não** mede nada disso (corpo falso).
+**LW-087 em 4 partes (DOC):** **087a** (precisa de você): respostas da seção c, os 10 bens, 4 cadeias e 3 assentamentos · **087b:** `docs/modules/economy.md` (dono único de estoque, preço e dinheiro; `Ledger`, mercado, `request_trade`, `TradeRules`, produção, contratos) · **087c:** extensões do `world.md` (rotas, 3º assentamento) e do `npc.md` (comprar, vender, salário, fim dos provisórios) · **087d:** os 11 eventos do cap. 11.9 em `docs/events.md` e os modelos de dados (`goods`, `recipes` em tabelas planas, parâmetros de preço). A 087a vai primeiro; **087b, 087c e 087d em paralelo** (arquivos diferentes).
 
-## 7. PROBLEMAS ENCONTRADOS
-- O Mac é compartilhado: as execuções do `stress`, a extra do `base` e a pré-medição tiveram outros Godot por perto (rótulo "ruído"); houve passos de até 752 ms. Como a simulação é idêntica entre execuções (mesmo hash) e o passo mais lento cai em minutos diferentes a cada vez, o indício é de máquina, não de passo caro do código; **não é prova**.
-- O primeiro rascunho do soak tinha um parâmetro que sombreava `Node.name` (aviso do GDScript): corrigido antes do commit.
-- O monitor de memória estática não existe em release.
+**Grandes demais para o limite** (~300 linhas, ~8 arquivos, 1 módulo): **088** (antes, uma casca 088a: `EconomyModule` com `api/` vazia, para 088 e 089 não editarem a mesma porta), **090**, **092**, **093**, **094** (8 arquivos de teste e o save), **095** e **098**: cada uma em duas ou três partes (por exemplo 094a: comida do mercado convive com o `FoodStub`; 094b: remover o `FoodStub`).
 
-## 8. RISCOS
-- Corpo falso e foco que "teletransporta": o custo de S0 medido é o do protocolo e do LOD, não de física, navegação ou desenho. A conversa do jogador fora do soak.
-- 300 NPCs é [HIP] (DEC-040 PENDENTE); a régua de ~10 ms não separa ruído de código com o laço de controle atual.
-- Os 40 notáveis saturam as memórias em 1 ano: se a LW-085 quiser memória que não sature, os tetos e o limiar de traços (80) precisam de decisão.
+**Trabalho em paralelo sem tocar nos mesmos arquivos** (por pasta, não por pessoa):
 
-## 9. PENDÊNCIAS
-- **Decisões que dependem de Arthur:** (1) a régua definitiva de memória (0,5 MiB entre o dia 30 e o 360?); (2) o conflito de `backlog.md` evitado em vez de resolvido (seção 4); (3) o ano em release e o controle intercalado, só se a LW-085 pedir.
-- Testes manuais: nenhum (a LW-084 não muda o jogo).
-- **Próxima: LW-085c** (custo do painel de NPC com 300 NPCs). A primeira linha de `STATUS-A.md` e de `STATUS-C.md` não tem "rodando" e não há outro Godot agora; começo pelo script (sem Godot) e só rodo Godot com essa condição, marcando "rodando" aqui.
+| Frente | Ordem | Observação |
+|---|---|---|
+| **Economia** (`src/sim/economy/`, `data/goods`, `recipes`) | 088a → (088 ‖ 089) → (090 ‖ 092) → 091 → 096 → 100 → 101 → 103 | 090 e 092 não dependem um do outro |
+| **`npc`** (`src/sim/npc/`, `data/actions*`, `npc_setup.gd`, testes de vida) | 093 → 094/095 → 104 | **um agente só:** `npc_module.gd`, `action_runner.gd` e `npc_persistence.gd` são comuns a todas |
+| **Mundo e apresentação** (`world`, `data/world`, `bridge`, `presentation`) | 097 → 099 → 105 → 106 → 107 | a 097 pode andar já ao lado da economia, **mas muda `population.json` e os hashes do `npc`** |
+| **Só leitura** | 108 (painel) · 114 (`check_temp`, só `tools/`, depois de 094 e 095) | cabem ao lado de qualquer frente |
+| **Fim de fase (em série)** | 109 → 110 → 111 → 112 → 113 → 115 → 116 | mesmos soaks |
 
-## ACOMPANHAMENTO
-- Avanço: LW-084 concluída e no `main`; Fase 2 em 30 de 32.
-- Git: `main` = `1dd2fb4` (084a `63c0f0a`, 084c `629aa40` + junção `b12f54b`, 084b `872d846`, `b97d03f`, junção `5173282`, status `1dd2fb4`); ramos `lw-084a-medidor-soak-ano`, `lw-084c-medicao-release` e `lw-084b-registro-do-ano` mantidos no remoto; sem tag; este ramo (`status-b`) nunca vai para o `main`.
+Conflitos prováveis (resolvem-se mantendo as duas partes): `ROADMAP_STATUS.md`, `README.md`, `backlog.md`, `events.md` e a porta `economy/api/`.
+
+## e) Backlog a fazer ANTES da Fase 3
+
+| Item | Por que antes | Tamanho | Quando |
+|---|---|---|---|
+| **Dividir `npc_module.gd`, `npc_thinker.gd`, `action_runner.gd`** (backlog L139; 620, 455 e 416 linhas, ~346, ~328 e ~304 de código) | a 093, 094 e 095 mexem nos três; dividir depois gera conflito | **G:** refatoração, mesma saída (oráculo, hash de 30 dias, `run_sim`) | antes da LW-093 |
+| **Ids de conteúdo em dados** (L175: `"work"`, `"help"`, `"flee"`...) | a 093 cria `buy`/`sell` e a 095 mexe em `work`; hoje um id mudado em `data/` quebra o código sem aviso | **P:** verificador de ~60 linhas | antes da LW-093 |
+| **Save do `FoodStub`** (fora do backlog; está no `npc.md` e em `npc_persistence.gd`, chave `food_stock`) | remover o estoque muda o save com `save_version` em 2 | **P:** tirar a chave, rejeitar save antigo com mensagem clara, teste | dentro da LW-094b |
+| **Apagar `test_food_stub.gd` e `test_income_stub.gd`** | AGENTS 9.5 proíbe apagar teste sem explicar | **P**, mas pede **sua autorização escrita** no texto da 094 e da 095 | no prompt da 094 e da 095 |
+| **`data` com listas aninhadas** (L114) | receitas têm insumos e produtos em lista | **M** (~250 linhas), ou **zero** com tabelas planas | decidir na 087a; **recomendo tabelas planas** |
+| **Tipos de retorno da `api/` do `npc`** (L206) | porta limpa antes de a economia chamá-la; edita o oráculo (precisa da sua ordem) | **M:** ~12 arquivos | pode esperar a LW-115 |
+| **Tamanho do save** (L117; DEC-084: reavaliar perto de 1 MB; hoje ~340 KiB sem comprimir) | contas, inventários e mercados vão crescê-lo | **P:** medir | LW-109 |
+
+**Para levar à LW-087a:** aprovar DEC-047 e DEC-049; confirmar 3 assentamentos, os 10 bens e as 4 cadeias; responder as contradições 1 a 6; decidir se a refatoração do `npc` vem antes da LW-093.
