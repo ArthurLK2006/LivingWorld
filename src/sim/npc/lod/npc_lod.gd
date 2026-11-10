@@ -147,6 +147,16 @@ func release_all(npcs: Dictionary[int, NpcState], now_minutes: int) -> Array[Cha
 	return changes
 
 
+## Tira UM NPC de S0 (LW-073b: o detector de impasse o reinicia) pelo mesmo caminho de quem se afasta (`_leave`): o último relato do corpo vira a posição lógica e a
+## ação segue abstrata. Devolve a troca (vazia se ele não estava em S0). Os focos ficam como estão: no passo seguinte o NPC volta a S0 se ainda estiver perto.
+func release(npcs: Dictionary[int, NpcState], npc_id: int, now_minutes: int) -> Array[Change]:
+	var changes: Array[Change] = []
+	if _s0.has(npc_id):
+		_leave(npc_id, npcs.get(npc_id) as NpcState, now_minutes)
+		changes.append(Change.new(npc_id, LEVEL_S0, LEVEL_S1))
+	return changes
+
+
 func debug_summary() -> Dictionary:
 	return {"configured": _params != null, "focus_count": _foci.size(), "s0_count": _s0.size(), "s0_ids": s0_ids()}
 

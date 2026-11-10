@@ -80,7 +80,7 @@ var _lifecycle: NpcLifecycle
 var _runtime: NpcDecisionRuntime
 ## Conversa do jogador (LW-083b): a validação do pedido, a parada do NPC e o cooldown. Criada no construtor.
 var _player_talk: NpcPlayerTalk
-## Detector de impasse (LW-073): recupera o NPC cuja ação passou do fim previsto sem ninguém encerrá-la. Só memória (não é salvo). Criado no construtor.
+## Detector de impasse (LW-073): recupera o NPC cuja ação passou do fim previsto sem ninguém encerrá-la, ou cujos Intents venceram por tempo em sequência. Só memória (não é salvo). Criado no construtor.
 var _impasse: NpcImpasse
 
 
@@ -97,7 +97,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
 	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown)
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine)
-	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action)
+	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action, NpcImpasse.DEFAULT_LIMIT_MIN, intents.has_pending, _bodies.release_body)
 	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
 
 
@@ -261,8 +261,7 @@ func on_new_game(_world_seed: int) -> void:
 ## A cada passo: a fila de pensamento (LW-063). Quem chegou no seu `next_think_time` pensa, até `max_thinks_per_step` por passo.
 func tick(_elapsed_minutes: int) -> void:
 	# Primeiro o LOD e os Intents (LW-069 e LW-070; funcionam sem `Definitions`); depois a fila de pensamento.
-	_bodies.tick()
-	_impasse.tick()
+	_impasse.tick(_bodies.tick())
 	_runtime.run_step()
 
 
