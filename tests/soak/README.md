@@ -46,3 +46,17 @@ tests/soak/run_sp2 --release
 ```bash
 tests/soak/run_npc_bodies_7d
 ```
+
+## Soak longo com 300 NPCs (LW-084a)
+
+`run_npc_year [base|stress]` roda, sem janela, **300 NPCs [HIP] por 360 dias de jogo** (um ano) e mede o tempo de cada passo, a memória estática e os objetos de cada dia, o tamanho do save (comprimido), os NPCs mortos, os corpos e o hash. O medidor é `npc_year/npc_year_meter.gd`: o jogo real (`GameModules`, dados de `data/`), com a capacidade dos locais e a população **multiplicadas por 3 em memória** (`SCALE`; `data/` não muda; os 300 e o fator são hipóteses, a DEC-040 está pendente), 40 notáveis (T2) e um ator cujo foco anda em ciclo entre o povoado A, o B e um ponto longe de tudo, para os corpos entrarem e saírem de S0. O **corpo é falso**: só cumpre o protocolo dos Intents (chega e termina na hora prevista), sem Node e sem janela. O **padrão** é parâmetro: `base` (o foco troca de ponto a cada 480 min) ou `stress` (a cada 30 min). A conversa do jogador não entra no soak.
+
+Só é falha: erro de `validate()` do mundo ou do `npc` (conferido ao fim de cada dia), erro de script ou hash diferente entre as execuções. Morte de NPC é **registrada**, não reprova. A régua de tempo (passo médio dentro de ~3 ms e nenhum passo acima de ~10 ms) é **[HIP]** e só aparece nos números (`STEP_BUDGET_USEC`, `STEP_PEAK_USEC`), não numa asserção: o resultado vai para o relatório da tarefa. Uma execução leva de 15 a 20 minutos no build de depuração; com `RUNS=3` (o padrão) são três: direta, repetida e com salvar e carregar no meio (numa virada de dia, com o foco longe: o save não guarda corpos, então com corpos ativos o hash depois de carregar seria outro). `RUNS=1` faz só a direta. O andamento sai a cada 30 dias e o log completo fica em `$TMPDIR/npc_year.log` (ou em `LOG`).
+
+```bash
+RUNS=1 tests/soak/run_npc_year base      # uma execução direta (cerca de 15 a 20 minutos)
+tests/soak/run_npc_year stress           # direta, repetida e com salvar e carregar no meio
+DAYS=30 RUNS=1 tests/soak/run_npc_year   # um mês só
+```
+
+A versão curta, `npc_year/test_npc_year_short.gd` (1 dia, 300 NPCs, cerca de 13 s), roda no `tools/check_all`: confere os invariantes, o mesmo hash ao repetir e ao salvar e carregar com o foco longe, o padrão `stress` trocando corpos mais vezes que o `base`, e o crescimento da memória abaixo de 2 MiB em 1 dia (**[HIP]**, justificado por uma medição; a régua definitiva de "sem crescimento de memória" só vem depois da primeira medição de um ano). **[LIM]** build de depuração (os tempos são o pior caso, não o release); o jogador não conversa nem anda de verdade (só o foco troca de ponto).

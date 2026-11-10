@@ -1,0 +1,29 @@
+#!/bin/sh
+# LW-084a: o soak LONGO, sem janela: 300 NPCs [HIP] por um ano de jogo (360 dias), com a alternância S1 <-> S0 (o foco anda entre o povoado A, o B e um ponto longe).
+# Leva de 10 a 20 minutos POR EXECUÇÃO no build de depuração; com RUNS=3 (o padrão) são três execuções: direta, repetida e com salvar e carregar no meio.
+# USO:    tests/soak/run_npc_year [base|stress]          (base: o foco troca de ponto a cada 480 min; stress: a cada 30 min)
+# AJUSTES (variáveis de ambiente): DAYS (360), RUNS (3; use 1 para só a execução direta), GODOT_BIN, LOG (padrão: $TMPDIR/npc_year.log, mantido ao fim).
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+pattern=${1:-base}
+log=${LOG:-${TMPDIR:-/tmp}/npc_year.log}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+case "$pattern" in
+    base|stress) ;;
+    *) echo "ERRO: padrão '$pattern' inválido; use base ou stress." >&2; exit 1 ;;
+esac
+status_file=$(mktemp "${TMPDIR:-/tmp}/livingworld-year.XXXXXX") || exit 1
+trap 'rm -f "$status_file"' EXIT HUP INT TERM
+{
+    LW_YEAR_PATTERN=$pattern LW_YEAR_DAYS=${DAYS:-360} LW_YEAR_RUNS=${RUNS:-3} "$godot_bin" --headless --path "$project_dir" -s res://addons/gut/gut_cmdln.gd "-gtest=res://tests/soak/npc_year/soak_npc_year.gd" -gexit 2>&1
+    echo $? > "$status_file"
+} | tee "$log"
+if [ "$(cat "$status_file")" != "0" ] || grep -E 'SCRIPT ERROR|Parse Error' "$log" > /dev/null; then
+    echo "VERMELHO: o soak falhou (log em $log)." >&2
+    exit 1
+fi
+echo "VERDE: o soak terminou sem falhas (log em $log)."
