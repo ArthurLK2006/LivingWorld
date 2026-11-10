@@ -137,7 +137,7 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 | Item | Situação |
 |---|---|
 | Documentos de planejamento (briefing, GDD, arquitetura, roadmap, decisões, regras para agentes) | Prontos (v0.3) |
-| Projeto Godot 4.7.2 (`project.godot`) e cena inicial | Existem. A cena mostra o terreno de teste de 1 km² (planície, colina, vale e caminho, com colisão por chunk, carregado só em volta do jogador), com céu, sol com sombras e névoa que seguem a hora simulada (dia e noite) e árvores e pedras sobre a grama, e o HUD (título, versão, data e hora simuladas, pausa ou velocidade), mais um morro íngreme de teste (LW-047A) e dois marcadores de interação (LW-049 e LW-050). Um personagem provisório (cápsula laranja) anda, corre e pula sobre o terreno, visto de uma câmera de terceira pessoa elevada. As teclas são ações nomeadas do `InputMap`: W, A, S e D andam, Shift esquerdo corre, Espaço pula, o botão direito do mouse arrastado e as setas giram a câmera, a roda dá zoom, E interage com o ponto de interesse próximo, 1 e 2 mudam a velocidade do relógio e P pausa o relógio e congela o personagem (a câmera continua girando) |
+| Projeto Godot 4.7.2 (`project.godot`) e cena inicial | Existem. A cena mostra o terreno de teste de 1 km² (planície, colina, vale e caminho, com colisão por chunk, carregado só em volta do jogador), com céu, sol com sombras e névoa que seguem a hora simulada (dia e noite) e árvores e pedras sobre a grama, e o HUD (título, versão, data e hora simuladas, pausa ou velocidade), mais um morro íngreme de teste (LW-047A) e dois marcadores de interação (LW-049 e LW-050). Um personagem provisório (cápsula laranja) anda, corre e pula sobre o terreno, visto de uma câmera de terceira pessoa elevada. As teclas são ações nomeadas do `InputMap`: W, A, S e D andam, Shift esquerdo corre, Espaço pula, o botão direito do mouse arrastado e as setas giram a câmera, a roda dá zoom, E interage com o ponto de interesse próximo ou, a menos de 3 m de um NPC, conversa com ele (LW-083: o NPC para e conversa, vira notável se houver vaga e a relação e a memória ficam gravadas; os textos são provisórios), 1 e 2 mudam a velocidade do relógio e P pausa o relógio e congela o personagem (a câmera continua girando). Só em build de desenvolvimento, F3 ou Tab abre o painel de depuração de NPC (LW-082: lista os NPCs, N e B trocam de NPC e T marca o rastro; o painel só lê, salvo essa marcação) |
 | Núcleo da simulação (`src/core`) | Relógio, sorteios repetíveis, IDs, eventos, agendador, mundo e hash de estado, todos testados e rodando **sem janela** |
 | Dados (`src/data`) | Leitor e validador de arquivos JSON |
 | Salvamento (`src/persistence`) | Salvar e carregar com checksum, versões, migração, backups e recuperação |
@@ -150,7 +150,7 @@ A arquitetura técnica (camadas, módulos, formato de dados e de save) está **p
 | Item | Situação |
 |---|---|
 | Personagem e câmera de jogo definitivos | **Só os provisórios** (Fase 1): uma cápsula laranja que anda, corre e pula, com limites de inclinação, borda do mapa e queda (LW-045 e LW-047), e uma câmera de terceira pessoa elevada, com órbita e zoom (LW-046). Ainda sem animação; o corpo relata a posição à simulação (LW-048), interage com pontos de interesse de teste (LW-049 e LW-050) e congela com a pausa (LW-051). O SP4a segue como código descartável de medição em `tests/soak/sp4a` |
-| NPCs, economia, política, facções, combate | **NPCs só provisórios:** 100 NPCs de teste nos dois povoados de teste, com necessidades, rotina por ofício e relações (e memória nos notáveis), que perto do jogador aparecem como cápsulas (LW-057 a LW-083). Economia, política, facções e combate: **nenhum** de verdade |
+| NPCs, economia, política, facções, combate | **NPCs só provisórios:** 100 NPCs de teste nos dois povoados de teste, com necessidades, rotina por ofício e relações (e memória nos notáveis), que perto do jogador aparecem como cápsulas (LW-057 a LW-083) e com quem o jogador pode conversar (LW-083). Há um painel de depuração de NPC, só em build de desenvolvimento (LW-082). Economia, política, facções e combate: **nenhum** de verdade |
 | Conteúdo do jogo em `data/` | **Nenhum** de verdade (só o terreno de teste de blockout em `data/world/`, LW-037, e dados de teste em `tests/fixtures/`) |
 | Executável jogável | **Não existe** |
 
@@ -177,7 +177,7 @@ A Fase 1 está **concluída**: a LW-032 (contratos mínimos), a LW-033 (spike SP
 
 ### 6.1 Hoje
 
-Existem: `project.godot`, `scenes/main.tscn`, `data/world/` (terreno de teste, decorações e pontos de interesse), `data/text/` (textos de jogo por chave), `assets/environment/` (recurso do ambiente), `src/` (`app`, `bridge`, `core`, `data`, `persistence`, `sim/world`, `sim/character`, `presentation/ui`, `presentation/world_view` com `terrain`, `environment` e `decoration`, `presentation/player`, `presentation/camera`, `presentation/text`, `presentation/interaction`, mais pastas reservadas com um `README`), `tests/` (`unit`, `integration`, `soak`, `fixtures`), `tools/` (comandos de verificação e simulação) e `docs/` (planejamento, decisões técnicas em `docs/decisions/` e contratos em `docs/modules/`).
+Existem: `project.godot`, `scenes/main.tscn`, `data/world/` (terreno de teste, decorações e pontos de interesse), `data/text/` (textos de jogo por chave), `assets/environment/` (recurso do ambiente), `src/` (`app`, `bridge`, `core`, `data`, `persistence`, `sim/world`, `sim/character`, `presentation/ui`, `presentation/world_view` com `terrain`, `environment` e `decoration`, `presentation/player`, `presentation/camera`, `presentation/text`, `presentation/interaction`, `tools` com o painel de depuração de NPC (LW-082), mais pastas reservadas com um `README`), `tests/` (`unit`, `integration`, `soak`, `fixtures`), `tools/` (comandos de verificação e simulação) e `docs/` (planejamento, decisões técnicas em `docs/decisions/` e contratos em `docs/modules/`).
 
 ### 6.2 Estrutura **planejada** (parte já existe; ver 6.1)
 
@@ -207,7 +207,7 @@ living-world/
 │   ├── persistence/         ← salvar e carregar (existe)
 │   ├── bridge/              ← ponte entre simulação e visual (planejado)
 │   ├── presentation/        ← o que o jogador vê e usa (`ui/`, `world_view/`, `player/` e `camera/` têm conteúdo; o resto é planejado)
-│   └── tools/               ← ferramentas de depuração (planejado)
+│   └── tools/               ← ferramentas de depuração (existe: o painel de depuração de NPC, LW-082)
 ├── scenes/  assets/  addons/
 ├── tests/                   ← unit, integration, soak, fixtures (existem)
 └── tools/                   ← comandos de verificação (existe)
@@ -271,7 +271,7 @@ Agentes de IA não instalam nada sem autorização (regra do `AGENTS.md`); quem 
 
 1. Abra o Godot 4.7.2 e, no gerenciador de projetos, escolha **Importar**.
 2. Selecione o arquivo `project.godot` na raiz do repositório e abra o projeto.
-3. Aperte **F5** para executar. Você deve ver o terreno de teste (planície verde com um caminho cor de areia e uma colina ao longe) aparecendo aos poucos em volta de uma cápsula laranja, o personagem provisório, visto de uma câmera de terceira pessoa, com árvores e pedras, e, no canto superior esquerdo, o HUD com o título, a versão e a **data e hora simuladas avançando**. O jogo nasce à **meia-noite** (tudo azul-escuro) e, a 1x, só amanhece depois de cerca de 7,5 minutos reais. **P** pausa e continua o relógio e **congela o personagem** (a câmera continua girando), e **1** e **2** mudam a velocidade (1x e 2x). Perto de um marcador ciano aparece **[E] Interagir**; **E** mostra o texto do ponto. **W, A, S e D** andam, **Shift** esquerdo corre e **Espaço** pula; o **botão direito do mouse** arrastado ou as **setas** giram a câmera, e a **roda** dá zoom.
+3. Aperte **F5** para executar. Você deve ver o terreno de teste (planície verde com um caminho cor de areia e uma colina ao longe) aparecendo aos poucos em volta de uma cápsula laranja, o personagem provisório, visto de uma câmera de terceira pessoa, com árvores e pedras, e, no canto superior esquerdo, o HUD com o título, a versão e a **data e hora simuladas avançando**. O jogo nasce à **meia-noite** (tudo azul-escuro) e, a 1x, só amanhece depois de cerca de 7,5 minutos reais. **P** pausa e continua o relógio e **congela o personagem** (a câmera continua girando), e **1** e **2** mudam a velocidade (1x e 2x). Perto de um marcador ciano aparece **[E] Interagir**; **E** mostra o texto do ponto e, a menos de 3 m de um NPC, conversa com ele (LW-083). Em build de desenvolvimento, **F3** ou **Tab** abre o painel de depuração de NPC (**N** e **B** trocam de NPC e **T** marca o rastro). **W, A, S e D** andam, **Shift** esquerdo corre e **Espaço** pula; o **botão direito do mouse** arrastado ou as **setas** giram a câmera, e a **roda** dá zoom.
 
 O painel "Saída" não deve mostrar mensagens vermelhas.
 
