@@ -1,8 +1,9 @@
 extends GutTest
 ## LW-085b (achado I3 da revisão cruzada da LW-085): o detector de impasse (LW-073) e a conversa do jogador (LW-083) JUNTOS, sem janela e com o jogo real de res://data às 07:00 (host,
 ## ponte, terreno, 100 NPCs), como na LW-083f. Nenhum teste cruzava os dois: o NPC que para para conversar tem uma Intent `talk_player` que o corpo precisa cumprir, e aqui o corpo NUNCA
-## relata (não há apresentação). A conversa vence por tempo (o Intent cancela a ação sem efeito), o NPC volta a decidir, o vencimento seguinte fecha uma sequência de
-## `NpcImpasse.DEFAULT_LIMIT_MIN` minutos e ele é recuperado (`result_timeout`, corpo solto, casa). O que a conversa deixou (T2, relação com o jogador, memória e o minuto dela, que é o
+## relata (não há apresentação). A conversa vence por tempo (o Intent cancela a ação sem efeito), o NPC volta a decidir e, mais tarde, uma sequência de vencimentos que dura
+## `NpcImpasse.DEFAULT_LIMIT_MIN` minutos ou mais o recupera (`result_timeout`, corpo solto, casa). A sequência NÃO começa no vencimento da conversa: sem resposta do corpo a fome sobe e o NPC troca
+## o trabalho por decisão (não por vencimento), o que quebra a sequência; ela recomeça no vencimento seguinte (visto na primeira execução: 70 min de sequência contra 227 desde a conversa). O que a conversa deixou (T2, relação com o jogador, memória e o minuto dela, que é o
 ## cooldown) não pode se perder em nenhum desses passos. CONTROLE (como o da 082h): o retrato "o que a conversa deixou" é o instrumento do teste, e o controle prova, por mutação de uma
 ## cópia dele, que a comparação acusa cada perda.
 
@@ -135,14 +136,14 @@ func test_a_talk_the_body_never_answers_times_out_and_the_npc_is_then_recovered_
 	assert_eq(_record_of_the_npc(), {}, "Um vencimento só é tratado pelo tempo limite do Intent: ainda não há impasse.")
 	assert_eq(_lost(left, _left_by_the_talk()), [] as Array[String], "A conversa que venceu por tempo não desfez nada.")
 	assert_eq(_host.npc.request_converse(_actor_id, _spot, _npc_id).result.code, NpcModule.CODE_TALK_COOLDOWN, "E o cooldown continua valendo.")
-	# 2. O vencimento seguinte fecha a sequência de LIMIT_MIN minutos e o NPC é recuperado.
+	# 2. Mais tarde uma sequência de vencimentos de LIMIT_MIN minutos ou mais fecha e o NPC é recuperado.
 	var recovered_at: int = _step_until(_is_recovered)
 	var record: Dictionary = _record_of_the_npc()
 	assert_false(record.is_empty(), "Sem ninguém responder, o NPC é recuperado em até um dia de jogo.")
 	var npc: NpcModule.NpcQuery = _host.npc.peek_npc(_npc_id)
 	assert_eq([record.get(NpcImpasse.KEY_REASON), record.get(NpcImpasse.KEY_PLACE_ID), record.get(NpcImpasse.KEY_MINUTE)], [NpcImpasse.REASON_RESULT_TIMEOUT, npc.home_place_id, recovered_at], "Recuperado pelo vencimento e posto em casa.")
-	assert_eq(record.get(NpcImpasse.KEY_OVERDUE_MIN), recovered_at - timed_out_at, "A sequência começou no vencimento da conversa.")
-	assert_gte(recovered_at - timed_out_at, LIMIT_MIN, "E durou o limite do detector.")
+	var sequence_min: int = record.get(NpcImpasse.KEY_OVERDUE_MIN, -1)
+	assert_between(sequence_min, LIMIT_MIN, recovered_at - timed_out_at, "A sequência durou ao menos o limite e começou depois do vencimento da conversa (ou nele).")
 	assert_ne(npc.action_id, TALK, "O NPC não voltou à conversa.")
 	assert_eq(_lost(left, _left_by_the_talk()), [] as Array[String], "Depois da recuperação, T2, relação, memória e cooldown são os que a conversa deixou.")
 	assert_eq(_host.runner.world.validate().size(), 0, str(_host.runner.world.validate()))
