@@ -134,6 +134,22 @@ func request_interact(actor_id: int, poi_id: String) -> BridgeReplies.InteractRe
 	return BridgeReplies.InteractReply.new(outcome.result, outcome.poi_id, outcome.text_key)
 
 
+## Pede ao NPC para conversar com o ator (LW-083d). Como em `request_interact`, a posição do ator vem SEMPRE do que está guardado no personagem, nunca da
+## apresentação; o resto é do `npc` (`NpcModule.request_converse`). A resposta traz sempre a chave do texto: a da conversa (`first`, `known`) ou a da recusa, pelo código.
+## Sem `npc`: BRIDGE_NO_NPC; sem o personagem ou ator desconhecido: a falha dele. Em todas as falhas a chave é a da recusa ou a genérica.
+func request_converse(actor_id: int, npc_id: int) -> BridgeReplies.ConverseReply:
+	if _npc == null:
+		return BridgeReplies.ConverseReply.new(_missing_npc("request_converse"), "", false)
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgeReplies.ConverseReply.new(_missing_character("request_converse"), "", false)
+	var stored: CharacterQuery = character.peek_character(actor_id)
+	if not stored.result.ok:
+		return BridgeReplies.ConverseReply.new(stored.result, "", false)
+	var outcome: NpcModule.ConverseResult = _npc.request_converse(actor_id, stored.position, npc_id)
+	return BridgeReplies.ConverseReply.new(outcome.result, outcome.text_key, outcome.was_promoted)
+
+
 ## Pede o nascimento de um personagem (ID novo, no ponto de nascimento do terreno). Quem pede é quem guarda o `actor_id`: a ponte
 ## não é dona de "o jogador" e pode atender vários atores. `actor_id` só vale se `result.ok`.
 func request_spawn_character() -> BridgeReplies.SpawnCharacterReply:

@@ -58,6 +58,7 @@ func _ready() -> void:
 		_camera.setup(bridge, _player)
 		_interaction_view.setup(bridge, _player, _terrain_view, _texts, _prompt_label, _result_label)
 	_setup_npc_bodies(bridge)
+	_interaction_view.set_npc_bodies(_bodies_view)
 	_terrain_view.set_focus(_focus_position())
 	_is_terrain_ready = true
 	set_process(true)

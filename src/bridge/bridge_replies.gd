@@ -155,6 +155,35 @@ class InteractReply:
 		text_key = reached_text_key
 
 
+## Resposta de `request_converse` (LW-083d): `text_key` é SEMPRE a chave do texto a mostrar, nunca o texto (DEC-036). Se a conversa começou, é a que o `npc` escolheu
+## (`first` ou `known`); se não, é a da recusa, pelo código de falha (`FAILURE_KEYS`); código sem chave própria (os da ponte e os do personagem) usa `FALLBACK_KEY`.
+## `was_promoted` diz se o NPC virou notável nesta conversa (pode ser verdadeiro mesmo com falha depois da parada).
+class ConverseReply:
+	extends RefCounted
+
+	const FALLBACK_KEY: String = "npc.talk.failed"
+	const FAILURE_KEYS: Dictionary[String, String] = {
+		NpcModule.CODE_TALK_TOO_FAR: "npc.talk.too_far",
+		NpcModule.CODE_TALK_BUSY: "npc.talk.busy",
+		NpcModule.CODE_TALK_COOLDOWN: "npc.talk.cooldown",
+		NpcLod.CODE_NOT_IN_S0: "npc.talk.no_body",
+		NpcTiers.CODE_DEAD: "npc.talk.gone",
+		NpcModule.CODE_UNKNOWN: "npc.talk.gone",
+		RelationGraph.CODE_INVALID: "npc.talk.invalid_actor",
+		RelationGraph.CODE_NOT_ALLOWED: "npc.talk.invalid_actor",
+		NpcLod.CODE_INVALID_POSITION: "npc.talk.invalid_actor",
+	}
+
+	var result: Result
+	var text_key: String
+	var was_promoted: bool
+
+	func _init(reply_result: Result, chosen_text_key: String, promoted: bool) -> void:
+		result = reply_result
+		text_key = chosen_text_key if reply_result.ok else FAILURE_KEYS.get(reply_result.code, FALLBACK_KEY)
+		was_promoted = promoted
+
+
 ## Resposta de `peek_terrain_layout`: só vale se `result.ok`. `cells` e `chunk_count` são (x, z); `size_m` é o
 ## tamanho do mapa em metros. Convenções de nós, células e chunks em docs/modules/world.md.
 class TerrainLayoutReply:

@@ -48,6 +48,7 @@ const KEY_NEXT_THINK_TIME: String = "next_think_time"
 const KEY_CRITICAL_SINCE: String = "critical_since"
 const KEY_ALARM_UNTIL: String = "alarm_until"
 const KEY_ALARM_PLACE_ID: String = "alarm_place_id"
+const KEY_LAST_PLAYER_TALK_AT: String = "last_player_talk_at"
 ## Campos do save por tipo, para conferir tudo antes de montar o estado.
 const INT_KEYS: Array[String] = [KEY_NAME_NUMBER, KEY_TIER, KEY_DIED_AT, KEY_NEEDS_UPDATED_AT, KEY_X_CM, KEY_Z_CM, KEY_ACTION_STARTED_AT, KEY_ACTION_ENDS_AT, KEY_ACTION_SERIAL]
 const STRING_KEYS: Array[String] = [KEY_NAME_KEY, KEY_DEATH_CAUSE, KEY_SETTLEMENT_ID, KEY_PLACE_ID, KEY_OCCUPATION_ID, KEY_HOME_PLACE_ID, KEY_WORK_PLACE_ID, KEY_ACTION_ID, KEY_ACTION_TARGET_PLACE_ID]
@@ -90,6 +91,8 @@ var critical_since: int = NO_TIME
 # Alarme (LW-076): até este minuto (exclusive) o NPC também pesa as reações `flee` e `help`; `alarm_place_id` é o local mais próximo do ponto do alarme (para onde o `help` vai).
 var alarm_until: int = NO_TIME
 var alarm_place_id: String = ""
+# Conversa com o jogador (LW-083b): minuto em que o NPC começou a última (NO_TIME se nunca); o cooldown da próxima conta daqui. Só vai para o save quando difere do padrão.
+var last_player_talk_at: int = NO_TIME
 
 
 func _init(new_npc_id: int) -> void:
@@ -135,7 +138,7 @@ static func from_spec(new_npc_id: int, spec: NpcSpec, now_minutes: int, start_ne
 
 ## Dados simples para o save (números, texto, listas): o ID do NPC é a chave de quem guarda, não entra aqui.
 func to_dict() -> Dictionary:
-	return {
+	var saved: Dictionary = {
 		KEY_NAME_KEY: name_key, KEY_NAME_NUMBER: name_number, KEY_TIER: tier,
 		KEY_IS_ALIVE: is_alive, KEY_DEATH_CAUSE: death_cause, KEY_DIED_AT: died_at,
 		KEY_TRAITS: _to_array(traits), KEY_NEED_VALUES: _to_array(need_values),
@@ -148,6 +151,10 @@ func to_dict() -> Dictionary:
 		KEY_CRITICAL_SINCE: critical_since,
 		KEY_ALARM_UNTIL: alarm_until, KEY_ALARM_PLACE_ID: alarm_place_id,
 	}
+	# Só quando houve conversa: o NPC que nunca falou com o jogador salva (e entra no hash) exatamente como antes da LW-083b.
+	if last_player_talk_at != NO_TIME:
+		saved[KEY_LAST_PLAYER_TALK_AT] = last_player_talk_at
+	return saved
 
 
 ## Estado a partir de um registro salvo. Só recusa o que não dá para converter (campo ausente, tipo errado, número com fração,
@@ -211,6 +218,11 @@ static func parse(saved_npc_id: int, raw_entry: Variant) -> ParseResult:
 		if typeof(entry[KEY_ALARM_PLACE_ID]) != TYPE_STRING:
 			return ParseResult.new(null, _bad_field(entry, KEY_ALARM_PLACE_ID, "texto"))
 		state.alarm_place_id = entry[KEY_ALARM_PLACE_ID]
+	# Campo acrescentado na LW-083b: ausente no save = nunca conversou com o jogador.
+	if entry.has(KEY_LAST_PLAYER_TALK_AT):
+		if not _is_int_like(entry[KEY_LAST_PLAYER_TALK_AT]):
+			return ParseResult.new(null, _bad_field(entry, KEY_LAST_PLAYER_TALK_AT, "inteiro"))
+		state.last_player_talk_at = int(entry[KEY_LAST_PLAYER_TALK_AT])
 	return ParseResult.new(state, "")
 
 
