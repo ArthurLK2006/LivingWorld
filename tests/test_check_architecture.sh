@@ -150,6 +150,25 @@ lw036_violations=$((new_violations - lw029a_violations))
 lw036_clean=$((new_clean - lw029a_clean))
 new_violations=$lw029a_violations
 new_clean=$lw029a_clean
+# LW-085a: regra D. ProbeDoor mora na api/ de sim/npc (módulo com api/); ProbeInner mora em sim/npc/lod, fora da api/. A ponte e as ferramentas só citam a api/.
+mkdir -p "$fixture/src/sim/npc/api" "$fixture/src/sim/npc/lod"
+printf 'Contrato de teste\n' > "$fixture/src/sim/npc/README.md"
+printf 'class_name ProbeDoor\nextends RefCounted\n' > "$fixture/src/sim/npc/api/probe_door.gd"
+printf 'class_name ProbeInner\nextends RefCounted\n' > "$fixture/src/sim/npc/lod/probe_inner.gd"
+check_passes 'classes de prova da api/ e do interior do módulo, sem citação, passam'
+expect_violation src/bridge/violation.gd 'var inner: ProbeInner' 'violation.gd:1: "ProbeInner" (src/sim/npc/lod/probe_inner.gd) é interna de src/sim/npc/, que tem pasta api/' 'ponte cita classe interna de módulo com api/'
+expect_violation src/tools/violation.gd 'var inner: ProbeInner' 'violation.gd:1: "ProbeInner" (src/sim/npc/lod/probe_inner.gd) é interna de src/sim/npc/, que tem pasta api/' 'tools cita classe interna de módulo com api/'
+expect_clean src/bridge/clean.gd 'var door: ProbeDoor' 'ponte cita classe da api/'
+expect_clean src/tools/clean.gd 'var door: ProbeDoor' 'tools cita classe da api/'
+expect_clean src/sim/npc/lod/inside.gd 'var door: ProbeDoor = ProbeInner.new()' 'o interior do módulo cita a própria classe interna'
+expect_clean src/app/composition.gd 'var inner: ProbeInner' 'src/app (raiz de composição) fica de fora da regra D'
+expect_clean src/bridge/clean.gd 'var terrain: ProbeTerrain' 'módulo sem pasta api/ (sim/world) citado pela ponte continua permitido'
+expect_clean src/bridge/commented.gd '## usa ProbeInner só em comentário' 'comentário de linha inteira não conta na regra D'
+lw085a_violations=$((new_violations - lw029a_violations))
+lw085a_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
+rm "$fixture/src/sim/npc/api/probe_door.gd" "$fixture/src/sim/npc/lod/probe_inner.gd" "$fixture/src/sim/npc/README.md"
 rm "$fixture/src/core/probe_core.gd" "$fixture/src/sim/world/probe_terrain.gd" "$fixture/src/bridge/probe_bridge.gd" "$fixture/src/presentation/probe_view.gd" "$fixture/src/sim/world/internal/probe_secret.gd"
 rm "$fixture/src/sim/world/README.md"
 check_violation 'contrato ausente' 'world/README.md'
@@ -158,3 +177,4 @@ echo 'LW-016: 1 evento catalogado aprovado e 2 eventos fora do catálogo detecta
 echo 'LW-021: autoloads permitidos aprovados e 1 autoload extra detectado.'
 echo "LW-029A: $new_violations violações detectadas e $new_clean casos aceitos (sorteio, tempo, estático, Node em persistence, relógio e barramento)."
 echo "LW-036: $lw036_violations violações detectadas e $lw036_clean casos aceitos (camada superior, apresentação, classe privada de internal/, comentário) e a árvore real aprovada."
+echo "LW-085a: $lw085a_violations violações detectadas e $lw085a_clean casos aceitos (regra D: a ponte e tools só citam a api/ de um módulo que tem api/; módulo sem api/, src/app e comentário ficam de fora)."

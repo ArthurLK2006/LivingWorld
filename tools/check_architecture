@@ -96,9 +96,12 @@ fi
 # arquitetura e conta como 6 (limitação); pastas sem camada (ai_text, net, tools) ficam de fora.
 # (A) um arquivo não cita class_name de camada estritamente maior; (B) a apresentação não cita class_name de
 # src/sim (fala com a simulação só pela ponte); (C) class_name declarada em uma pasta internal/ só é citada
-# dentro do módulo dono (a pasta que contém internal/). Citação = palavra inteira. Só nestas regras novas,
-# linhas inteiras de comentário (começam com #) não contam; código com comentário no fim continua varrido.
-# [LIM] Não vê classes internas (`class X:`) nem referências por caminho (`preload`).
+# dentro do módulo dono (a pasta que contém internal/); (D) (LW-085a) a ponte (src/bridge) e as ferramentas (src/tools)
+# só citam, de um módulo de src/sim que tenha pasta api/, as classes que moram nessa pasta api/ (AGENTS 5.1: "apenas a porta
+# de entrada"); módulo sem api/ fica de fora, e src/app (raiz de composição) e src/persistence também. Citação = palavra inteira.
+# Só nestas regras novas, linhas inteiras de comentário (começam com #) não contam; código com comentário no fim continua varrido.
+# [LIM] Não vê classes internas (`class X:`) nem referências por caminho (`preload`); a regra D também não vê o tipo que volta de
+# uma chamada sem nome nem o de uma variável com tipo inferido (`:=`).
 gd_files=$(rg --files --glob '*.gd' "$root/src" 2>/dev/null | sort)
 if [ -n "$gd_files" ]; then
     layer_report=$(awk -v pass=1 -v prefix="$root/src/" '
@@ -113,12 +116,17 @@ if [ -n "$gd_files" ]; then
         if (path ~ /^presentation\//) return 7
         return -1
     }
-    FNR == 1 { rel = substr(FILENAME, length(prefix) + 1) }
+    FNR == 1 {
+        rel = substr(FILENAME, length(prefix) + 1)
+        if (match(rel, /^sim\/[^\/]+\/api\//)) has_api[substr(rel, 1, RLENGTH - 4)] = 1
+    }
     pass == 1 && /^class_name[[:space:]]+[A-Za-z0-9_]+/ {
         where[$2] = rel
         class_layer[$2] = layer_of(rel)
         cut = index(rel, "/internal/")
         if (cut > 0) owner[$2] = substr(rel, 1, cut)
+        if (match(rel, /^sim\/[^\/]+\//)) module_of[$2] = substr(rel, 1, RLENGTH)
+        if (rel ~ /^sim\/[^\/]+\/api\//) is_api[$2] = 1
         next
     }
     pass == 2 && $0 !~ /^[[:space:]]*#/ {
@@ -135,6 +143,8 @@ if [ -n "$gd_files" ]; then
                 printf "B|%s:%d: \"%s\" (src/%s) citada pela apresentação; esperado falar com a simulação só pela ponte (bridge).\n", FILENAME, FNR, name, where[name]
             if ((name in owner) && index(rel, owner[name]) != 1)
                 printf "C|%s:%d: \"%s\" (src/%s) é privada de src/%s; esperado citar só dentro do módulo.\n", FILENAME, FNR, name, where[name], owner[name]
+            if (rel ~ /^(bridge|tools)\// && (name in module_of) && (module_of[name] in has_api) && !(name in is_api))
+                printf "D|%s:%d: \"%s\" (src/%s) é interna de src/%s, que tem pasta api/; esperado citar só classes de src/%sapi/.\n", FILENAME, FNR, name, where[name], module_of[name], module_of[name]
         }
     }' $gd_files pass=2 $gd_files 2>&1)
     layer_code=$?
@@ -142,11 +152,12 @@ if [ -n "$gd_files" ]; then
         printf '%s\n%s\n' 'ERRO: busca de import fora das camadas falhou' "$layer_report"
         failed=1
     else
-        for layer_rule in A B C; do
+        for layer_rule in A B C D; do
             case $layer_rule in
                 A) layer_label='import de camada superior' ;;
                 B) layer_label='apresentação cita classe da simulação' ;;
                 C) layer_label='classe privada (internal/) citada fora do módulo' ;;
+                D) layer_label='classe interna de módulo com api/ citada pela ponte ou por tools' ;;
             esac
             layer_part=$(printf '%s\n' "$layer_report" | sed -n "s/^$layer_rule|//p")
             if [ -n "$layer_part" ]; then

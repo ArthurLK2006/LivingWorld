@@ -2,7 +2,8 @@ class_name BridgeNpcInspect
 extends RefCounted
 ## A conta das consultas de inspeção de NPC da ponte (LW-082c; contrato em docs/modules/bridge.md, "Inspeção de NPC"). O `SimBridge` só delega para cá,
 ## porque ele já passa de 300 linhas. Sem estado e sem regra de jogo: cada função só LÊ o módulo `npc` (ou os valores que a ponte entrega) e devolve
-## CÓPIAS. Quem confere a ponte sem `npc` ou sem jogo é o `SimBridge`, antes de chamar.
+## CÓPIAS. Quem confere a ponte sem `npc` ou sem jogo é o `SimBridge`, antes de chamar. LW-085a: só cita classes de `src/sim/npc/api/` (as visões
+## `NpcTraceView`, `NpcMemoryView` e `NpcRoutineView`, os códigos e o nível reexportados pelo `NpcModule`); a regra D do `tools/check_architecture` confere.
 
 
 ## A lista de todos os NPCs, em ordem crescente de id, inclusive os mortos e os sem corpo.
@@ -56,7 +57,7 @@ static func detail(npc: NpcModule, npc_id: int, hour_of_day: int) -> BridgeInspe
 	reply.action_serial = query.action_serial
 	reply.next_think_time = query.next_think_time
 	if not query.occupation_id.is_empty():
-		var routine: RoutineTable.RoutineQuery = npc.peek_routine_action(query.occupation_id, hour_of_day)
+		var routine: NpcRoutineView = NpcRoutineView.of(npc.peek_routine_action(query.occupation_id, hour_of_day))
 		if routine.result.ok:
 			reply.routine_action_id = routine.action_id
 	return reply
@@ -72,28 +73,27 @@ static func summary(npc: NpcModule, time: BridgeReplies.TimeSnapshot, world_prob
 	reply.npc_dead = counts[NpcModule.COUNT_DEAD]
 	reply.npc_tier_normal = counts[NpcModule.COUNT_TIER_NORMAL]
 	reply.npc_tier_notable = counts[NpcModule.COUNT_TIER_NOTABLE]
-	reply.npc_s0 = npc.lod.s0_ids().size()
+	reply.npc_s0 = npc.peek_s0_count()
 	reply.npc_s1 = maxi(0, reply.npc_alive - reply.npc_s0)
 	reply.pending_intents = npc.peek_pending_intents().size()
 	reply.problems.assign(world_problems)
 	return reply
 
 
-
 ## O rastro do NPC marcado (cópias, do mais antigo ao mais novo). NPC não marcado: `NPC_NOT_TRACED`, que o `npc` devolve e passa como está.
 static func trace(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcTraceReply:
-	var explanation: DecisionTracer.Explanation = npc.explain_decision(npc_id)
+	var explanation: NpcTraceView = NpcTraceView.of(npc.explain_decision(npc_id))
 	if not explanation.result.ok:
 		return BridgeInspectReplies.NpcTraceReply.new(explanation.result)
 	var records: Array[BridgeInspectReplies.NpcTraceRecord] = []
-	for source: DecisionTracer.DecisionRecord in explanation.records:
+	for source: NpcTraceView.Record in explanation.records:
 		var record: BridgeInspectReplies.NpcTraceRecord = BridgeInspectReplies.NpcTraceRecord.new()
 		record.minute = source.minute
 		record.need_values = source.need_values.duplicate()
 		record.chosen_action_id = source.chosen_action_id
 		record.chosen_place_id = source.chosen_place_id
 		record.reason = source.reason
-		for found: DecisionTracer.CandidateRecord in source.candidates:
+		for found: NpcTraceView.Candidate in source.candidates:
 			var candidate: BridgeInspectReplies.NpcTraceCandidate = BridgeInspectReplies.NpcTraceCandidate.new()
 			candidate.action_id = found.action_id
 			candidate.place_id = found.place_id
@@ -114,11 +114,11 @@ static func trace(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcTraceR
 
 ## As memórias e os traços permanentes do NPC, sem filtro de tipo (cópias). Cidadão (T1): registros vazios.
 static func memories(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcMemoriesReply:
-	var query: NpcModule.MemoriesQuery = npc.peek_memories(npc_id)
+	var query: NpcMemoryView = NpcMemoryView.of(npc.peek_memories(npc_id))
 	var reply: BridgeInspectReplies.NpcMemoriesReply = BridgeInspectReplies.NpcMemoriesReply.new(query.result)
 	if not query.result.ok:
 		return reply
-	for source: MemoryRecord in query.records:
+	for source: NpcMemoryView.Entry in query.records:
 		var entry: BridgeInspectReplies.NpcMemoryEntry = BridgeInspectReplies.NpcMemoryEntry.new()
 		entry.kind = source.kind
 		entry.actors = source.actors.duplicate()
@@ -129,7 +129,7 @@ static func memories(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcMem
 		entry.source = source.source
 		entry.confidence = source.confidence
 		reply.records.append(entry)
-	for source: NpcMemory.Trait in query.traits:
+	for source: NpcMemoryView.TraitEntry in query.traits:
 		var memory_trait: BridgeInspectReplies.NpcTraitEntry = BridgeInspectReplies.NpcTraitEntry.new()
 		memory_trait.actor_id = source.actor_id
 		memory_trait.valence = source.valence
@@ -154,6 +154,6 @@ static func relations(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcRe
 
 
 static func _level_of(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcLevel:
-	if npc.lod.level_of(npc_id) == NpcLod.LEVEL_S0:
+	if npc.peek_level_of(npc_id) == NpcModule.LEVEL_S0:
 		return BridgeInspectReplies.NpcLevel.S0
 	return BridgeInspectReplies.NpcLevel.S1
