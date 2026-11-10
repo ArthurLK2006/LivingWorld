@@ -1,4 +1,4 @@
-10/11/2026 15:08 (Brasília) · CONCLUÍDA · LW-085a: a ponte cita só a api/ do npc (no main, `a9c68e1`); o Godot da A está parado
+10/11/2026 18:50 (Brasília) · rodando · LW-085e: check_all no HEAD final (`1ff78a7`) do ramo `lw-085e-regras-e-decisoes`; só a A usa o Godot agora
 
 # RELATÓRIO — LW-085a: A ponte cita só a `api/` do `npc`     Status: PRONTA PARA REVISÃO (já no `main` pela Fase B automática que Arthur autorizou)
 
