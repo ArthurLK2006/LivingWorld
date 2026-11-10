@@ -135,7 +135,7 @@ Antes de alterar qualquer arquivo, escreva em **palavras simples**: (a) a tarefa
 12. **IDs:** número inteiro, **nunca reutilizado**. Entre módulos, passe o **ID**, nunca o objeto.
 13. **Comunicação entre módulos: três canais, só três.** `peek_*` (consulta, devolve cópia/resumo), `request_*` (comando, devolve `Result`), evento no `EventBus` (fato no passado). **Signals do Godot ficam só na apresentação.**
 14. **Eventos:** nome em `PascalCase` no passado, carga pequena (IDs e valores), sem eventos em laços quentes, **catalogado em `docs/events.md`** ao ser criado.
-15. **Estado novo exige** `serialize`/`on_load`, `validate()` e `debug_summary()`. Mudou o estado salvo → atualize `save_version` e o **teste de ida e volta**. Migração de save antigo só depois do "save congelado" (DEC-083); antes disso, save antigo é rejeitado com mensagem clara.
+15. **Estado novo exige** `serialize`/`on_load`, `validate()` e `debug_summary()`. Mudou o estado salvo → atualize `save_version` e o **teste de ida e volta**. Migração de save antigo só depois do "save congelado" (DEC-083); antes disso, save antigo é rejeitado com mensagem clara. Enquanto o "save congelado" não existir, o `save_version` fica em 2 (DEC-127).
 16. **Nunca** carregue `.tres`, `.res`, `.tscn`, `.gd` ou objetos a partir de saves ou de pastas do usuário. Saves e dados são **dados simples** (DEC-084, proposta).
 17. **Sem avaliação dinâmica de código**, reflexão ou meta-programação (DEC-107, descarte proposto pela arquitetura).
 18. **Sem otimização sem medição.** Toda otimização cita a medição que a motivou.
@@ -267,7 +267,7 @@ Um módulo **só importa módulos de camada menor ou igual**, e **apenas a porta
 ## 11. REVISÃO DE ALTERAÇÕES
 
 **Autorrevisão obrigatória antes de entregar** (leia o seu próprio `git diff` inteiro):
-- [ ] Só tocou arquivos do escopo? Dentro de ~300 linhas e ~8 arquivos?
+- [ ] Só tocou arquivos do escopo? Dentro de ~300 linhas e ~8 arquivos (só código e teste, tolerância de 1,5×; ver 5.2)?
 - [ ] Respeita camadas, `api`, um dono por dado, três canais?
 - [ ] Sem `Node` na simulação, sem aleatoriedade/tempo soltos, sem `float` em dinheiro?
 - [ ] Tudo tipado, sem avisos, sem números mágicos, sem código morto, `print` ou `TODO` solto?
@@ -401,7 +401,7 @@ Dentro do escopo e sem tocar contrato, formato de dados/save, decisões nem depe
 - depender de decisão **PENDENTE**, ou contrariar **APROVADA**, **DESCARTADA** ou a arquitetura;
 - houver **conflito** entre documentos ou ambiguidade de design;
 - precisar de **ferramenta, dependência, addon, autoload, serviço ou rede**;
-- passar de ~300 linhas / ~8 arquivos / mais de um módulo;
+- passar de ~300 linhas / ~8 arquivos (só código e teste, tolerância de 1,5×; ver 5.2) / mais de um módulo;
 - precisar **remover** algo existente ou tocar **arquivo protegido**;
 - um valor **[HIP]** teria de virar constante definitiva;
 - o comportamento de jogo (regra, interface, balanceamento) **não estiver descrito** no GDD.
@@ -421,4 +421,4 @@ PROPOSTA DE DESVIO
 
 ---
 
-**Fim do AGENTS.md — versão 0.3.**
+**Fim do AGENTS.md — versão 0.4.**
