@@ -1,64 +1,54 @@
-10/11/2026 19:16 (Brasília) — CONCLUÍDA: LW-087c, PRONTA PARA REVISÃO, **RASCUNHO (NÃO está no `main`)**; ramo `lw-087c-extensoes-world-npc` (`6dae235`). Fase B NÃO feita, sem tag. Parada: aguardo a assinatura da LW-086. Nada rodando.
+10/11/2026 20:22 (Brasília) — CONCLUÍDA: TAREFA 1 (LW-086, fechamento da Fase 2) no `main` (`8dcc81d`) e tag `fase-2-concluida` criada e enviada. Fase 2 em 32 de 32 (100%); projeto em 87 de 192 (45,3%). Seguindo para a Tarefa 2 (revisão) e a Tarefa 3. Nada rodando.
 
-RELATÓRIO — LW-087c (DOC): extensões dos contratos de `world` e `npc` para a Fase 3 (Economia)        Status: PRONTA PARA REVISÃO — RASCUNHO em ramo (não está no `main`)
+# TAREFA 1 — RELATÓRIO — LW-086: validação e fechamento da Fase 2        Status: PRONTA PARA REVISÃO (já no `main`; a auditoria de Arthur não foi feita)
 
-Li antes: AGENTS (inteiro), o pré-voo da B (`STATUS-B.md`, ramo `status-b`, seções b, c e d), `docs/DEVELOPMENT_ROADMAP.md` (3.A a 3.J e as linhas da LW-087 a LW-116), GDD 12 (12.3 a 12.5), arquitetura 5.2, 5.5, 8.6, 11 (inteiro) e 17.4 e 17.5, `docs/modules/world.md` e `docs/modules/npc.md` (inteiros), `docs/events.md`, `docs/world/relevo-do-terreno-de-blockout.md` e o código que o texto cita (`src/core/world/world.gd`, `NpcPersistence`, `FoodStub`, `IncomeStub`, o oráculo). Decisões: DEC-047, DEC-049 e DEC-054 (aprovadas por você hoje; **o `DECISIONS.md` ainda traz PROPOSTA nas três**: o registro é seu), DEC-046, DEC-040 (PENDENTE), DEC-041, DEC-126, DEC-127 e DEC-128 (APROVADAS, já no `main`).
+Li antes: AGENTS (seções 0, 10, 12, 14 e 15 de novo; versão 0.4), `docs/fase-2/LW-086-roteiro-para-arthur.md` e `docs/fase-2/LW-086-relatorio-de-fechamento.md` (os dois, inteiros), `docs/DEVELOPMENT_ROADMAP.md` 2.F, 2.H e 2.J, `docs/ROADMAP_STATUS.md` (cabeçalho, bullets de ressalvas e as linhas da 082, 083 e 086a), o README (linhas 9, 140, 165, 170 e 274), os documentos que citam F3 e as duas tags anteriores (`git tag -n`, `git cat-file -t`). Decisões: DEC-122 (aceita "por ora"), DEC-126, DEC-127 e DEC-128 (APROVADAS, no `main`); DEC-047, 049 e 054 seguem PROPOSTA no `DECISIONS.md` (conferido).
 
 1. RESUMO
-Os dois contratos ganharam o que a Fase 3 exige deles, **só em texto e só como PLANEJADO**. `world.md`: rotas entre assentamentos (comprimento, dificuldade, risco), o 3º povoado, o estado de rota, o evento `RouteStateChanged` e o comando de fechar rota (hoje nenhuma tarefa os cria: o texto os põe na LW-097). `npc.md` (seção 14 nova): comprar e vender, consumo do inventário, salário e a necessidade `income`, o fim do `FoodStub` e do `IncomeStub` (LW-094 e LW-095), o save do `FoodStub` que muda na LW-094b e a consulta à economia só por `economy/api`. **Onde GDD e arquitetura não decidem, não decidi:** são 11 pontos em aberto com a minha recomendação (seção 9 abaixo). Nenhum código, dado, evento ou tecla.
+A Fase 2 está fechada em texto e em Git: relatório de fechamento sem "rascunho", com as respostas de Arthur e as três ressalvas de 2.F com todas as letras; roteiro, README e contratos corrigidos para Tab (ou fn+F3); linha da LW-086 e placar (32 de 32 e 87 de 192) no status e no README; `check_all` verde no HEAD final; `main` por avanço simples; tag `fase-2-concluida` criada e enviada no commit final, depois do `check_all` verde e da fase em 32 de 32 no `main`.
 
 2. ARQUIVOS CRIADOS
 - Nenhum.
 
-3. ARQUIVOS MODIFICADOS (`git diff origin/main...HEAD`: 2 arquivos, 93 inserções e 2 remoções)
-- `docs/modules/world.md` (+27): aviso de rascunho no topo e a seção "Extensão da Fase 3: rotas entre assentamentos e o 3º povoado".
-- `docs/modules/npc.md` (+68, −2): aviso no cabeçalho, "(hoje; na Fase 3 …)" nas dependências, uma remissão na seção 9, cinco linhas planejadas no rastreio (seção 12: LW-093, 094, 095, 097 e 104) e a **seção 14** (14.1 a 14.9).
-- Nenhum arquivo protegido; `docs/events.md` e o `ROADMAP_STATUS.md` **não** foram tocados (a linha planejada de `RouteStateChanged` entra na LW-087d).
+3. ARQUIVOS MODIFICADOS (7 documentos, 110 inserções e 77 remoções; nenhum protegido, nenhum código)
+- `docs/fase-2/LW-086-relatorio-de-fechamento.md` — sem "RASCUNHO"; seção 1 (placar e as 3 ressalvas), 2 (números e DEC-126 a 128), 3 (entregáveis 8, 9 e 11), 4 (tabelas 2.F e 2.J), **5 (as respostas de Arthur, só as palavras dele)**, 6 (retrospectiva, com a lição da tecla F3 e a da estimativa de tempo), 7 (itens 4, 5, 10 e 11 decididos), 8 e 9.
+- `docs/fase-2/LW-086-roteiro-para-arthur.md` — 11 pontos com F3 trocados para "Tab (ou fn+F3)", mais um aviso do Mac logo abaixo da tabela de teclas.
+- `docs/ROADMAP_STATUS.md` — cabeçalho (CONCLUÍDA, 32 de 32, 100%, tag, 87 de 192, 45,3%), a linha da **LW-086** (concluída com ressalvas, **sem o placar no texto**), um bullet em "Pendências e ressalvas" e uma frase de atualização nas linhas da LW-082 e da LW-083.
+- `README.md` — estado da Fase 2 (CONCLUÍDA), a LW-086, a tag, os números e a tecla do painel (Tab, ou fn+F3).
+- `docs/modules/app.md` e `docs/modules/tools.md` — nota de que F3 sozinho é o Mission Control no Mac.
+- `docs/backlog.md` — +1 linha **no meio do arquivo** (linha 180 de 213): a dica escrita no jogo ainda diz "F3 ou Tab fecha".
 
 4. DECISÕES TÉCNICAS
-- **Forma:** uma seção própria por arquivo, marcada PLANEJADA/RASCUNHO, mais avisos curtos nos pontos que hoje dizem outra coisa (o `npc` "não importa `economy`" ganhou "hoje; na Fase 3 …"). O texto de hoje não foi reescrito.
-- **Aplicadas as suas decisões de hoje:** 3 povoados; 10 bens e 4 cadeias (citados, a lista é da economia); DEC-047/049/054; as 6 recomendações da B (a `economy` guarda as quantidades de todo dono; o `npc` importa só `economy/api` e a economia nunca importa o `npc`; contrato de trabalho por evento; `mint` inicial na LW-093; não congelar o save e a LW-111 rejeita save antigo; `check_temp` fora de `docs/`); arquivos grandes do `npc` sem divisão (DEC-126: com o PARE perto de 450 linhas de código).
-- **Duas confirmações no código** (não confiei só nos documentos): `World.serialize` grava uma entrada por módulo registrado, mesmo vazia, então o estado de rota (módulo `world` registrado) **muda o `state_hash` de todo jogo**; e `World.on_load` **já recusa** save sem a entrada de um módulo registrado (`WORLD_MODULE_DATA_MISSING`), que é o caminho do "rejeita save antigo".
-- **Não fixei nomes da economia** (consulta de saldo, de inventário, retirada para consumo): são do `economy.md` (LW-087b).
-- **Proposta de entrada para `DECISIONS.md`** (você decide; não editei o arquivo): (a) mudar para **APROVADA por Arthur em 10/11/2026** o status da DEC-047, da DEC-049 e da DEC-054; (b) uma entrada nova "Escala e regras do protótipo da Fase 3" com as suas decisões de hoje: 3 povoados, os 10 bens e as 4 cadeias genéricos, e as seis recomendações da B. Justificativa: são o que as LW-087a a 087d e a LW-093 em diante vão citar; sem o registro elas dependem de mensagem.
+- **As três ressalvas de 2.F, escritas com todas as letras** (relatório, seções 1, 4, 5, 7 e 8; linha da LW-086 e bullet no status): (1) critério 2: picos acima de ~10 ms **informativos**; (2) critério 3: teleporte e quadros **pela janela dele**, sem teste automático do teleporte; (3) critério 8: "ofício novo só por JSON" **sem teste**, vira a **LW-093b**, tarefa pequena só de teste antes da LW-093, a registrar pela A na LW-087a (conferido: hoje não consta no roadmap nem no status).
+- **O placar não está dentro do texto da linha de status** (nem "32 de 32" nem "87 de 192"): a contagem por grep ficou limpa.
+- **Fora da sua lista (pequeno, e digo qual):** (a) uma frase de atualização nas linhas da LW-082 e da LW-083 do status, porque diziam "não verificado na janela" e a sua passada fechou isso; (b) notas de F3 em `app.md` e `tools.md` (documentos de contrato, não protegidos); (c) no README, "a conversa vista na janela por Arthur" e a ressalva da LW-082 fechada. Se preferir sem, desfaço.
+- **O hash da tag não está nos documentos** (a tag aponta para o commit que os contém). Na Fase 1 houve um commit seguinte, "registro da tag" (`307a9db`); aqui não o fiz, porque a sua ordem foi tag no commit final. Se quiser o registro, é um commit só de documentos, e preciso do seu pedido.
+- Proposta de entrada para `DECISIONS.md`: nenhuma nova.
 
 5. TESTES EXECUTADOS
-- `sh tools/check_architecture .`, `check_input_keys`, `check_literal_text`: verdes.
-- `tools/check_all` **no HEAD final `6dae235`** (com o `main` `9dbcebc` juntado no ramo): **VERDE**, 124 scripts, **1.194 testes (todos passando)**, 261.693 asserts, 313 scripts sem aviso de compilação, 0 erros de script, 3 min 24 s. Rodei antes um no HEAD anterior (`10a9e11`, sem o `main` juntado), também VERDE, com os mesmos números; o segundo é o que vale (a regra era uma vez no HEAD final; o `main` andou no meio do trabalho).
-- Junção a seco com o `main` (`git merge-tree`): sem conflito.
-- NÃO EXECUTADO: oráculo, soak de 30 dias e `run_sim` (só documentos).
+- `tools/check_all` no `main` `9dbcebc` (antes de editar, para citar no relatório): **VERDE**, 124 scripts, 1.194 testes, 261.693 asserts, 313 scripts sem aviso, 0 erros de script, 170 s.
+- `tools/check_all` **no HEAD final `8dcc81d`**: **VERDE**, 124 scripts, **1.194 testes (todos passando)**, 261.693 asserts, 313 scripts sem aviso de compilação, 0 erros de script, 3 min 27 s ("Warnings 1 / Deprecated 1" do GUT, o de sempre).
+- `check_architecture`, `check_input_keys`, `check_literal_text`: verdes.
+- Contagem **por grep, antes** (status/README): `31 de 32` 1/2, `86 de 192` 1/2, `96,9` 1/2, `44,8` 1/2, `32 de 32` 0/0, `87 de 192` 0/0, `45,3` 0/0. **Depois, no arquivo e no `main` remoto (`git show origin/main:…`):** `32 de 32` 1/2, `87 de 192` 1/2, `45,3` 1/2, e os quatro antigos 0/0; 32 de 32 linhas de tarefa da Fase 2 concluídas (script) e 32 IDs únicos na lista do cabeçalho.
+- NÃO EXECUTADO: oráculo, soak de 30 dias e `run_sim` contra o `main` (só documentos; nada em `src/`, `data/` ou `tests/`).
 
-6. RESULTADOS
-Aceite cumprido ponto a ponto. (a) `world.md`: rotas com comprimento, dificuldade e risco ✓; o 3º povoado ✓; `RouteStateChanged` e o comando de fechar rota, com o registro de que **nascem na LW-097** ✓. (b) `npc.md`: comprar e vender ✓; salário ✓; consumo a partir do inventário ✓; fim do `FoodStub` e do `IncomeStub` nas LW-094 e LW-095 ✓; o save do `FoodStub` que muda na LW-094b ✓; a consulta do `npc` à economia só por `economy/api` ✓. Tudo marcado PLANEJADO; nenhuma linha diz "implementada" para coisa nova; nenhum código.
+6. RESULTADOS (Fase B)
+B0: `git fetch origin '+refs/heads/main:refs/remotes/origin/main'`; o `main` não andou (`9dbcebc`); **só o `main`**, nenhum ramo `lw-087*` foi juntado. B1: um commit (`8dcc81d`). B2: verde. B3: `git push origin HEAD:refs/heads/main` (`9dbcebc..8dcc81d`, avanço simples, sem `--force`) e ramo `lw-086-fechamento-fase-2`. **Tag:** `git tag fase-2-concluida 8dcc81d` (tag **leve**, `git cat-file -t` = `commit`, como `fase-0-concluida` e `fase-1-concluida`; `git tag -n` mostra o assunto do commit) e `git push origin refs/tags/fase-2-concluida`; `git ls-remote --tags` lista as três. A tag aponta para o commit final do `main`. Nenhuma tag além dessa.
 
 7. PROBLEMAS ENCONTRADOS
-- **O `main` andou** (LW-085e: DEC-126 a DEC-128, AGENTS 0.4): juntei o `main` **no ramo** (nunca o contrário) e passei a citar DEC-126 e DEC-127 no texto; sem conflito.
-- **O roadmap (arquivo protegido) pede coisas que o contrato já contradiz ou não cobre; mudar é sua decisão:** (i) a linha da LW-097 não cita o evento nem o comando de fechar rota, mas o checklist 3.H e as LW-100, LW-104 e LW-110 dependem deles; (ii) a LW-111 diz "save da Fase 2 migra" e a sua decisão é "rejeita"; (iii) a LW-114 diz "no repositório" e a sua decisão exclui `docs/`; (iv) o roadmap põe o `mint` inicial na LW-095 e você o pôs na LW-093.
-- **A topologia de 3 povoados não dá, com um único fechamento, "muda o caminho" (LW-097) e "gera escassez no destino" (3.F e 3.H):** é a Q-W1.
-- **O oráculo muda duas vezes:** a LW-094b o obriga a refazer a fase `starved` (ela usa `request_set_food_stock`), e a LW-097 muda todos os hashes (módulo `world` registrado e 3º povoado). Os valores novos são decisão sua, como na LW-073b.
-- **Apagar `test_food_stub.gd` (19 testes) e `test_income_stub.gd` (13) exige a sua autorização escrita** no texto da LW-094b e da LW-095 (AGENTS 9.5); o texto diz isso.
+- **F3 (levantamento, só leitura):** no **jogo**, o texto da dica do painel diz F3: `data/text/pt_br.json:27` (`tools.npc_inspector.hint`: "F3 ou Tab fecha · N próximo · B anterior · T marca o rastro"). O HUD e o código de `src/presentation` não citam F3. Também citam F3, sem mudar nada: comentários de `src/app/input_actions.gd:27` e `src/tools/npc_inspector/npc_inspector_panel.gd:125`, os testes `test_npc_inspector_activation.gd` e `test_input_actions.gd` (a tecla ligada é F3 de fato, `KEY_F3`). **Anotado em `docs/backlog.md` (linha 180) e aqui; nenhum código nem dado do jogo foi mexido.**
+- **Protegidos que citam F3 e não toquei:** `DECISIONS.md` (DEC-125, "Abre e fecha com F3 (e Tab)", e o texto da DEC-128 sobre a tecla ligada) e `docs/decisions/0011-revisao-fase-2.md` descrevem a tecla ligada (continua verdadeiro); `DEVELOPMENT_ROADMAP.md` só tem nós de um diagrama chamados "F3".
+- A sua mensagem chegou duas vezes na conversa (a primeira cortada no meio da Tarefa 3); tratei como uma só, com o texto completo da segunda.
 
 8. RISCOS
-- O texto de `world.md` e `npc.md` é **proposta**: se você não responder as 11 perguntas antes da LW-087a, a 087b e as tarefas da Fase 3 vão escolher sozinhas ou parar.
-- A posição do 3º povoado ((560 m, 860 m)) é [HIP] e não foi conferida por teste de inclinação (só a LW-097 pode).
+- A tag está no `main` e no remoto; apagar ou mover tag exige o seu pedido (AGENTS 10.6).
+- A dica do painel no jogo ainda diz F3: quem ler só a tela vai tentar F3 no Mac.
 
-9. PENDÊNCIAS: AS 11 PERGUNTAS (recomendação minha; nada está decidido nos arquivos)
-| # | Pergunta | Recomendação |
-|---|---|---|
-| Q-W1 | Topologia das rotas dos 3 povoados | Triângulo (A–B, A–C, B–C): atende "muda o caminho"; a escassez vem do caminho longo ser mais lento e arriscado e de o teste poder fechar **duas** rotas; a calibração (LW-112) confirma |
-| Q-W2 | Estados da rota | Só `open` e `closed`; "perigosa" reservada sem comportamento |
-| Q-W3 | Campos extras da rota (`capacity`, `kind`) | Nenhum agora; o `TradeFlow` (LW-100) acrescenta o que precisar |
-| Q-W4 | Nome do tipo de local `market_reserved` quando passar a ter comportamento | Renomear para `market` na LW-093 |
-| Q-W5 | Posição do 3º povoado e terreno | Não ampliar o terreno; escolher a posição pelo teste de inclinação |
-| Q-W6 | O módulo `world` registrado muda todo hash (oráculo, soak de 30 dias, `run_sim`) | Aceitar e atualizar na LW-097 **com a sua aprovação dos valores novos** |
-| Q18 | Como o dinheiro recebido alivia `income` | Um evento de pagamento ouvido pelo `npc` (escritor a mais de `need_values`, com teste que lista os escritores); pagamento por hora de produção, aos atribuídos |
-| Q19 | Como `buy` vira candidata (o pré-requisito de `eat`) | Valor derivado: `buy` herda o alívio da necessidade que o bem atende, descontados preço e distância |
-| Q20 | O que o NPC consome | Só comida na Fase 3; pelo menos um bem do início da cadeia comestível (risco R3.3); a lista é sua, na 087a |
-| Q21 | Como a economia conhece os NPCs (contas, dinheiro inicial) sem importar o `npc` | O `npc` chama a `economy/api` ao criar o NPC; a economia faz o `mint` inicial (sem evento novo) |
-| Q22 | Como o NPC consegue o emprego (contrato por evento) | Emprego estático para a população inicial (a economia o aprende pela chamada da Q21) e `ContractOffered` mais `request_accept_contract` para vaga nova |
+9. PENDÊNCIAS
+- LW-093b no roadmap (A, LW-087a). Registro no `DECISIONS.md` de DEC-047/049/054 e da escala da Fase 3 (seu). Divergências do roadmap com decisões suas (LW-097, LW-111, LW-114, `mint`). Texto da dica (backlog).
+- Teste manual: nenhum novo.
 
 ACOMPANHAMENTO
-- Avanço: LW-087c escrita como **rascunho**; a Fase 3 **não começou**. Fase 2 segue em 31 de 32 (96,9%) e projeto em 86 de 192 (44,8%); só falta a LW-086 (a sua passada na janela). Nenhuma contagem mudou.
-- Próxima tarefa recomendada: a **LW-086** (sua assinatura) e, depois, a **LW-087a** (respostas às 11 perguntas e à lista de bens). **Não iniciadas.**
-- Decisões que dependem de Arthur: as 11 perguntas acima; registrar DEC-047/049/054 e a entrada da escala da Fase 3; o que fazer com as quatro divergências do roadmap (item 7); autorizar por escrito a remoção dos testes dos provisórios no texto da LW-094b e da LW-095.
-- Git: **nada no `main`** (`9dbcebc`, inalterado), **sem tag**, sem Fase B. Ramo `lw-087c-extensoes-world-npc` enviado (`10a9e11`, junção `be101e2` e `6dae235`); worktree `.worktrees/lw-087c` mantido. Neste ramo `status-c`: só `STATUS-C.md` e `REVISAO-085-C.md`.
+- Avanço: **Fase 2 CONCLUÍDA, 32 de 32 (100%)**; projeto 87 de 192 (45,3%). Fase 3 não iniciada.
+- Próxima tarefa recomendada: LW-087a (A). **Não iniciada.**
+- Git: `main` = `8dcc81d`; tag `fase-2-concluida` = `8dcc81d` (leve), enviada; ramo `lw-086-fechamento-fase-2` enviado; worktree `.worktrees/lw-086`. Neste ramo `status-c`: só `STATUS-C.md` e `REVISAO-085-C.md`.
