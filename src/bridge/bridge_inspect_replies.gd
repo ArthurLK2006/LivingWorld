@@ -97,3 +97,104 @@ class SimSummaryReply:
 
 	func _init(reply_result: Result) -> void:
 		result = reply_result
+
+
+## Uma candidata de um pensamento do rastro: as parcelas da pontuação (`total` é a soma delas) e de onde ela veio (`source`).
+class NpcTraceCandidate:
+	extends RefCounted
+
+	var action_id: String = ""
+	var place_id: String = ""
+	var benefit: int = 0
+	var personality: int = 0
+	var time_cost: int = 0
+	var distance_cost: int = 0
+	var risk_cost: int = 0
+	var inertia_bonus: int = 0
+	var routine_bonus: int = 0
+	var total: int = 0
+	## Era a ação em andamento do NPC?
+	var is_current: bool = false
+	var source: String = ""
+
+
+## Um pensamento do NPC marcado: as necessidades naquele minuto, todas as candidatas, a ação escolhida (vazia se não fez nada) e o motivo.
+class NpcTraceRecord:
+	extends RefCounted
+
+	var minute: int = 0
+	var need_values: PackedInt64Array = PackedInt64Array()
+	var candidates: Array[NpcTraceCandidate] = []
+	var chosen_action_id: String = ""
+	var chosen_place_id: String = ""
+	var reason: String = ""
+
+
+## Resposta de `peek_npc_trace`: `records` só vale se `result.ok`, do mais antigo ao mais novo. NPC não marcado: `result` falha com `NPC_NOT_TRACED`.
+class NpcTraceReply:
+	extends RefCounted
+
+	var result: Result
+	var records: Array[NpcTraceRecord] = []
+
+	func _init(reply_result: Result, listed: Array[NpcTraceRecord] = []) -> void:
+		result = reply_result
+		records = listed
+
+
+## Um registro de memória do NPC notável (T2).
+class NpcMemoryEntry:
+	extends RefCounted
+
+	var kind: String = ""
+	var actors: PackedInt64Array = PackedInt64Array()
+	var place_id: String = ""
+	var time: int = 0
+	var valence: int = 0
+	var salience: int = 0
+	var source: String = ""
+	var confidence: int = 0
+
+
+## Um traço permanente de memória: o que o NPC sente por uma pessoa e desde quando (minuto).
+class NpcTraitEntry:
+	extends RefCounted
+
+	var actor_id: int = 0
+	var valence: int = 0
+	var since: int = 0
+
+
+## Resposta de `peek_npc_memories`: os campos só valem se `result.ok`; os registros, na ordem em que entraram.
+class NpcMemoriesReply:
+	extends RefCounted
+
+	var result: Result
+	var records: Array[NpcMemoryEntry] = []
+	var traits: Array[NpcTraitEntry] = []
+
+	func _init(reply_result: Result) -> void:
+		result = reply_result
+
+
+## Uma relação do NPC com `other_id`: as cinco dimensões de hoje (afeição, confiança, respeito, medo, dívida), o rótulo, quando se conheceram e se a outra
+## pessoa está viva.
+class NpcRelationEntry:
+	extends RefCounted
+
+	var other_id: int = 0
+	var values: PackedInt64Array = PackedInt64Array()
+	var label: String = ""
+	var met_at: int = 0
+	var other_is_alive: bool = true
+
+
+## Resposta de `peek_npc_relations`: `entries` só vale se `result.ok`; em ordem crescente do id da outra pessoa.
+class NpcRelationsReply:
+	extends RefCounted
+
+	var result: Result
+	var entries: Array[NpcRelationEntry] = []
+
+	func _init(reply_result: Result) -> void:
+		result = reply_result

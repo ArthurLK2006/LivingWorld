@@ -358,3 +358,34 @@ func peek_simulation_summary() -> BridgeInspectReplies.SimSummaryReply:
 	if not time.result.ok:
 		return BridgeInspectReplies.SimSummaryReply.new(time.result)
 	return BridgeNpcInspect.summary(_npc, time, _host.runner.world.validate())
+
+
+## O rastro de decisão do NPC MARCADO (cópias, do mais antigo ao mais novo). NPC não marcado: NPC_NOT_TRACED, do `npc`, que o painel lê como "sem marca";
+## inexistente: NPC_UNKNOWN. Sem `npc`: BRIDGE_NO_NPC.
+func peek_npc_trace(npc_id: int) -> BridgeInspectReplies.NpcTraceReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcTraceReply.new(_missing_npc("peek_npc_trace"))
+	return BridgeNpcInspect.trace(_npc, npc_id)
+
+
+## As memórias e os traços permanentes do NPC (cópias; só o notável T2 tem registros). Sem `npc`: BRIDGE_NO_NPC; inexistente: NPC_UNKNOWN.
+func peek_npc_memories(npc_id: int) -> BridgeInspectReplies.NpcMemoriesReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcMemoriesReply.new(_missing_npc("peek_npc_memories"))
+	return BridgeNpcInspect.memories(_npc, npc_id)
+
+
+## As relações do NPC (cópias, em ordem crescente do id da outra pessoa). Sem `npc`: BRIDGE_NO_NPC; inexistente: NPC_UNKNOWN.
+func peek_npc_relations(npc_id: int) -> BridgeInspectReplies.NpcRelationsReply:
+	if _npc == null:
+		return BridgeInspectReplies.NpcRelationsReply.new(_missing_npc("peek_npc_relations"))
+	return BridgeNpcInspect.relations(_npc, npc_id)
+
+
+## COMANDO DE DEPURAÇÃO, a ÚNICA escrita da inspeção (decisão de Arthur, 09/11/2026): marca ou desmarca o NPC para o rastro de decisão. Repassa a
+## `request_set_traced` do `npc` e devolve o `Result` dele como está: NPC_DEV_ONLY fora de build de desenvolvimento (e nada muda), NPC_UNKNOWN para NPC
+## inexistente. Só mexe no sinalizador volátil de depuração: não é salvo e não entra no `state_hash`. Sem `npc`: BRIDGE_NO_NPC.
+func request_set_npc_traced(npc_id: int, is_traced: bool) -> Result:
+	if _npc == null:
+		return _missing_npc("request_set_npc_traced")
+	return _npc.request_set_traced(npc_id, is_traced)

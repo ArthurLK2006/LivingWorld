@@ -79,6 +79,80 @@ static func summary(npc: NpcModule, time: BridgeReplies.TimeSnapshot, world_prob
 	return reply
 
 
+
+## O rastro do NPC marcado (cópias, do mais antigo ao mais novo). NPC não marcado: `NPC_NOT_TRACED`, que o `npc` devolve e passa como está.
+static func trace(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcTraceReply:
+	var explanation: DecisionTracer.Explanation = npc.explain_decision(npc_id)
+	if not explanation.result.ok:
+		return BridgeInspectReplies.NpcTraceReply.new(explanation.result)
+	var records: Array[BridgeInspectReplies.NpcTraceRecord] = []
+	for source: DecisionTracer.DecisionRecord in explanation.records:
+		var record: BridgeInspectReplies.NpcTraceRecord = BridgeInspectReplies.NpcTraceRecord.new()
+		record.minute = source.minute
+		record.need_values = source.need_values.duplicate()
+		record.chosen_action_id = source.chosen_action_id
+		record.chosen_place_id = source.chosen_place_id
+		record.reason = source.reason
+		for found: DecisionTracer.CandidateRecord in source.candidates:
+			var candidate: BridgeInspectReplies.NpcTraceCandidate = BridgeInspectReplies.NpcTraceCandidate.new()
+			candidate.action_id = found.action_id
+			candidate.place_id = found.place_id
+			candidate.benefit = found.benefit
+			candidate.personality = found.personality
+			candidate.time_cost = found.time_cost
+			candidate.distance_cost = found.distance_cost
+			candidate.risk_cost = found.risk_cost
+			candidate.inertia_bonus = found.inertia_bonus
+			candidate.routine_bonus = found.routine_bonus
+			candidate.total = found.total
+			candidate.is_current = found.is_current
+			candidate.source = found.source
+			record.candidates.append(candidate)
+		records.append(record)
+	return BridgeInspectReplies.NpcTraceReply.new(Result.success(), records)
+
+
+## As memórias e os traços permanentes do NPC, sem filtro de tipo (cópias). Cidadão (T1): registros vazios.
+static func memories(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcMemoriesReply:
+	var query: NpcModule.MemoriesQuery = npc.peek_memories(npc_id)
+	var reply: BridgeInspectReplies.NpcMemoriesReply = BridgeInspectReplies.NpcMemoriesReply.new(query.result)
+	if not query.result.ok:
+		return reply
+	for source: MemoryRecord in query.records:
+		var entry: BridgeInspectReplies.NpcMemoryEntry = BridgeInspectReplies.NpcMemoryEntry.new()
+		entry.kind = source.kind
+		entry.actors = source.actors.duplicate()
+		entry.place_id = source.place_id
+		entry.time = source.time
+		entry.valence = source.valence
+		entry.salience = source.salience
+		entry.source = source.source
+		entry.confidence = source.confidence
+		reply.records.append(entry)
+	for source: NpcMemory.Trait in query.traits:
+		var memory_trait: BridgeInspectReplies.NpcTraitEntry = BridgeInspectReplies.NpcTraitEntry.new()
+		memory_trait.actor_id = source.actor_id
+		memory_trait.valence = source.valence
+		memory_trait.since = source.since
+		reply.traits.append(memory_trait)
+	return reply
+
+
+## As relações do NPC (cópias de `peek_relations`, em ordem crescente do id da outra pessoa).
+static func relations(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcRelationsReply:
+	var query: NpcRelationsQuery = npc.peek_relations(npc_id)
+	var reply: BridgeInspectReplies.NpcRelationsReply = BridgeInspectReplies.NpcRelationsReply.new(query.result)
+	for source: NpcRelationsQuery.Entry in query.entries:
+		var entry: BridgeInspectReplies.NpcRelationEntry = BridgeInspectReplies.NpcRelationEntry.new()
+		entry.other_id = source.other_id
+		entry.values = source.values.duplicate()
+		entry.label = source.label
+		entry.met_at = source.met_at
+		entry.other_is_alive = source.other_is_alive
+		reply.entries.append(entry)
+	return reply
+
+
 static func _level_of(npc: NpcModule, npc_id: int) -> BridgeInspectReplies.NpcLevel:
 	if npc.lod.level_of(npc_id) == NpcLod.LEVEL_S0:
 		return BridgeInspectReplies.NpcLevel.S0
