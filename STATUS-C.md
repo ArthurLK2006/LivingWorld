@@ -1,51 +1,57 @@
-10/11/2026 15:11 (Brasília) · rodando · LW-085b e LW-085d: Godot pesado (--import, check_all, oráculo, soak de 30 dias, run_sim) e Fase B automática; o relatório abaixo é o da revisão anterior e será substituído ao parar
+10/11/2026 15:25 (Brasília) — PARADA: LW-085b e LW-085d no `main` (`8b910f1`, Fase B automática); espero a LW-084 (B) para o relatório final da LW-085. Godot pesado liberado.
 
-RELATÓRIO — REVISÃO CRUZADA PRÉ-LW-085 (núcleo do `npc` e LW-083)        Status: PRONTA PARA REVISÃO (revisão entregue; nada corrigido, por ordem)
+RELATÓRIO — LW-085b e LW-085d (teste do impasse com a conversa; documentos da revisão da Fase 2)        Status: PRONTA PARA REVISÃO (já no `main` pela Fase B automática; a auditoria de Arthur não foi feita)
 
-Li antes: AGENTS (seções 0, 3, 11, 14, 15), a linha da LW-085 em `docs/DEVELOPMENT_ROADMAP.md:632`, `docs/modules/npc.md`, `docs/events.md`, `docs/ROADMAP_STATUS.md`, `docs/decisions/0009-spike-sp2-corpos-e-lod.md`, Anexo D do roadmap. Decisões de que dependo: DEC-119 e DEC-122 (APROVADAS; a 122 "por ora"), DEC-125 (já no `main`), DEC-083 (save congelado, não vale ainda).
+Li antes: AGENTS (inteiro), linha da LW-085 no roadmap (`docs/DEVELOPMENT_ROADMAP.md:632`), `docs/modules/npc.md`, `docs/events.md`, `docs/ROADMAP_STATUS.md`, `docs/decisions/` (MODELO e 0009), a revisão A (`REVISAO-085-A.md`, ramo `status-a`) e o relatório da B (`STATUS-B.md`). Decisões: DEC-083 e DEC-084 (save; a 083 só nos princípios), DEC-119/122/124/125. As três decisões novas são de Arthur (mensagem de 10/11/2026).
 
 1. RESUMO
-O núcleo do `npc` e a conversa (LW-083) estão, no conjunto, em ordem para a LW-085: não achei defeito de código bloqueante. Achei 1 bloqueio de processo (a LW-084, soak de 300 NPCs por 1 ano, não existe e a LW-085 depende dela), 3 achados importantes e 9 menores. A revisão completa, com arquivo e linha de cada achado, está em `REVISAO-085-C.md` (mesmo ramo). Base: `origin/main` em `5e8f8b4` (a LW-073 entrou no `main` às 12:58, durante a revisão).
+O teste que faltava (achado I3 da minha revisão: impasse × conversa) existe e passa; foi provado por mutação do código. Dois comentários foram acertados sem mexer em código. Os documentos da revisão estão no `main`: registro 0011 (três decisões de Arthur), nota do `project.godot` na linha da LW-082, ouvintes reais de eventos, índice de contratos, texto da 082/083 e hora inicial no README, e itens no backlog. `check_all` verde no HEAD final; oráculo, vida de 30 dias, impasse de 30 dias e `run_sim` iguais aos do `main`.
 
 2. ARQUIVOS CRIADOS
-- `REVISAO-085-C.md` e `STATUS-C.md`, só no ramo `status-c`. Nada no `main`.
+- `tests/integration/test_impasse_conversation.gd` (+ `.uid`) — o teste novo (116 linhas de código; 2 testes, 83 asserts, 1,2 s)
+- `docs/decisions/0011-revisao-fase-2.md` — registro das três decisões de Arthur (arquivos grandes, `save_version`, `project.godot` da 082g)
 
 3. ARQUIVOS MODIFICADOS
-- Nenhum do projeto.
+- `tests/integration/test_npc_split_oracle.gd` — só comentário (+6 linhas): as impressões são cinco de `5a7d453` e quatro (`talk`, `save`, `demote`, `starved`) da LW-073b (`5346091`), por decisão de Arthur; o código sem comentários tem o mesmo SHA-256 e as nove impressões não mudaram
+- `src/sim/npc/actions/action_runner.gd` — só comentário (+1 linha): `apply_effects` é a única função de EFEITOS DE AÇÃO; `NeedMath.settle` e `NeedMath.add_pressure` também escrevem em `need_values` (mesma prova do SHA-256)
+- `docs/ROADMAP_STATUS.md` — nota do `project.godot` e correção do "índice e README pendentes" na linha da LW-082; duas linhas de subtarefa (085b, 085d). A contagem da Fase 2 não mudou (29 de 29 linhas de tarefa concluídas, por script, antes e depois)
+- `docs/events.md` — linhas 12-13: `LodChanged` e `NpcDied` não têm ouvinte hoje (só o `AlarmRaised` tem, conferido por busca de `subscribe(`); parágrafo que define a coluna "Ouvintes"
+- `docs/modules/README.md` — índice com o `tools.md` e o estado real do `npc` (já tem código)
+- `README.md` — texto da 082 e da 083 em 5 pontos e a hora inicial do jogo (05:45, antes 'meia-noite'; conferido: `NEW_GAME_START_MINUTE` = 345, `SUNRISE_HOUR` = 6.0, 1250 ms por minuto de jogo). Contagens e porcentagens idênticas, comparadas por script
+- `docs/backlog.md` — 5 linhas novas (alcance e cooldown da conversa em dados; 3 m duplicado; `src/tools/` fora dos dois verificadores; trava de desenvolvimento copiada 5 vezes; ids de conteúdo em constantes) e a linha do "Deprecated" atualizada (o `wait_frames` vem da LW-020/021, commit `d55bd29`)
 
 4. DECISÕES TÉCNICAS
-- Nenhuma. Propostas de correção estão em `REVISAO-085-C.md` (cada uma com até ~300 linhas) e dependem de Arthur (seção 6 de lá).
+- **Premissa errada minha, corrigida no teste novo:** eu esperava que a sequência de vencimentos que fecha o impasse começasse no vencimento da conversa. A 1ª execução deu 70 min contra 227 desde a conversa. Depuração (teste temporário, apagado): sem resposta do corpo o NPC volta a trabalhar, a fome sobe e ele troca o trabalho por decisão, o que quebra a sequência. A asserção passou a exigir que a sequência dure ao menos o limite e não passe do tempo desde a conversa. Nenhum teste existente foi tocado.
+- **Conflito evitado, não resolvido à mão:** a junção com o `main` (com a 085a) conflitou em `docs/backlog.md` (as duas pontas acrescentaram linhas no fim). A regra manda parar em conflito fora do `ROADMAP_STATUS`/README, então desfiz a junção e movi as 5 linhas novas para junto da linha do "Deprecated" (mesmo conteúdo, commit `15a90a7`); a junção ficou limpa. Se Arthur preferir que eu tivesse parado, é só dizer.
+- Reaproveitei o cache de importação (`.godot`, ignorado pelo git) de um worktree idêntico ao `main` para rodar só o teste novo enquanto a A usava o Godot; depois rodei `--import` de verdade.
+- **Proposta de entrada para DECISIONS.md** (não editei o arquivo): *Título:* "Decisões da revisão da Fase 2 (LW-085)". *Contexto:* revisões A e C. *Decisão (Arthur, 10/11/2026):* (1) o limite de ~300 linhas por arquivo (AGENTS 4.5) e de ~300 linhas e ~8 arquivos por tarefa (5.2) conta só código (e teste), sem comentário, linha em branco, `.uid` nem documento, com folga de 1,5×; nada é dividido agora e as classes aninhadas do `npc_module.gd` ficam onde estão; (2) `save_version` fica em 2 até o "save congelado" (a garantia é o teste de ida e volta e o `on_load`); (3) as cinco ações de entrada do `project.godot` na 082g foram autorizadas ("só ADICIONAR ações de entrada"). *Justificativa:* revisões A e C; dividir agora custaria ~310 linhas movidas sem ganho; não há save de jogador. *Consequências:* o AGENTS continua dizendo "~300 linhas" até Arthur atualizá-lo; antes do congelamento é preciso fixar o número final do save. Texto completo no `docs/decisions/0011-revisao-fase-2.md`.
 
 5. TESTES EXECUTADOS
-- `sh tools/check_architecture .` sobre a árvore extraída de `5e8f8b4`: "Arquitetura: nove verificações aprovadas."
-- `sh tools/check_input_keys .`: "Teclas fixas: nenhuma encontrada em src/."
-- `sh tools/check_literal_text .`: "Texto literal: nenhum texto de interface escrito direto em src/presentation e src/app."
-- `tools/check_all`, oráculo, soaks e `run_sim`: **NÃO EXECUTADOS** (ordem de Arthur: sem Godot, a B está medindo tempo). Os números que cito do `check_all` (119 scripts, 1.166 testes, 260.989 asserts) vêm do relatório da LW-082, não os reproduzi.
+- Teste novo sozinho (`-gtest=res://tests/integration/test_impasse_conversation.gd`): 2/2, 83 asserts. A 1ª execução falhou (item 4) e foi corrigida.
+- Mutações temporárias no worktree de integração (sem commit, revertidas): recuperação apagando `last_player_talk_at` — PEGA; recuperação rebaixando a T1 — PEGA; vencimento do Intent apagando o minuto da conversa — PEGA (e a 2ª conversa foi aceita, o que também reprova); vencimento do Intent rebaixando a T1 — PEGA. Uma mutação num caminho que o jogo não usa (`NpcDecisionRuntime.cancel_action`) passou: era o lugar errado, refeita no certo.
+- `sh tools/check_architecture .`, `tools/check_input_keys`, `tools/check_literal_text`, `tests/test_check_architecture.sh`: verdes.
+- `godot --headless --path . --import`: ok; gerou só o `.uid` do teste novo.
+- `tools/check_all` no HEAD de integração `3b3a07b` e de novo no HEAD final `8b910f1` (só documentos de diferença): **VERDE**, 123 scripts, **1.190 testes (1.190 passando)**, 261.668 asserts, 308 scripts sem aviso de compilação, 0 erros de script. O `main` anterior (`a9c68e1`) tinha 122 scripts e 1.188 testes: a diferença é exatamente o meu script e os meus 2 testes. ("Warnings 1 / Deprecated 1" do GUT já existia antes, B também o viu.)
+- Comparação com o `main` `a9c68e1` (worktree-base): oráculo (9 impressões), vida de 30 dias (`d13b921112ce`, 3 execuções), impasse de 30 dias (`d13b921112ce`, 0 recuperações) e `run_sim` 30 dias das sementes 1 a 3 (`732907967efd…`, `3f852d2cdfc3…`, `59aa7f9949f2…`): **idênticos**; só muda o relógio em ms.
 
 6. RESULTADOS
-Achados:
-- **BLOQUEANTE (processo) B1:** LW-084 inexistente (`docs/modules/npc.md:216` a prevê em `tests/soak/test_npc_soak_1y.gd`, que não existe). Sem ela, "custo de memória e relações" fica sem medição de 1 ano.
-- **IMPORTANTE I1:** a ponte cita classes internas do `npc` (`bridge_replies.gd:169-174`, `bridge_npc_inspect.gd:132,157`) e o `check_architecture` não tem regra da porta `api`. Correção proposta: ~80 linhas, 5 a 6 arquivos.
-- **IMPORTANTE I2:** `npc_module.gd` 603 linhas (336 de código) e `npc_thinker.gd` 455 (328). Divisão proposta em 2 passos de movimento puro (~170 e ~140 linhas); as classes aninhadas do módulo (221 referências) não recomendo mover: pede decisão registrada. Também acima de 300: `action_runner.gd` 415, `sim_bridge.gd` 391, `npc_memory.gd` 325, `npc_notables.gd` 308 (sem divisão agora).
-- **IMPORTANTE I3:** nenhum teste junta impasse e conversa (`talk_player` com corpo que não responde). Teste proposto: ≤ ~90 linhas.
-- **MENORES M1 a M9:** comentários do oráculo desatualizados; `docs/events.md:12-13` fala de ouvintes que não existem; trava de desenvolvimento copiada 5 vezes; `NeedMath.add_pressure` como segundo escritor de `need_values`; ids de conteúdo em constantes; números repetidos; `validate()` do mundo inteiro no painel sem medição; `save_version` segue 2; save do `FoodStub`.
-Critérios do roadmap: função única de efeitos OK; sem dinheiro e mercado antecipados OK; marcas `TEMP` OK (16 arquivos, Anexo D com LW-094 e LW-095); catálogo em dados OK com ressalva; ponte fina e limites do módulo com ressalva (I1 e I2); custo de memória sem medição; SP2 registrado (0009 e DEC-122), com pontos abertos.
-Testes enfraquecidos: nenhum além da troca das 4 impressões do oráculo (LW-073b), que foi decisão de Arthur e está explicada em `npc.md:76`.
+Todas as condições da Fase B conferem: junção sem conflito; `check_all` verde no HEAD final; oráculo, hash de 30 dias e `run_sim` iguais; nenhum teste removido, enfraquecido ou pulado (só acréscimo; no oráculo, só comentário); nenhum arquivo protegido além do que Arthur citou (`project.godot`, AGENTS, GDD, arquitetura, DECISIONS e roadmap intocados); as linhas 085b e 085d não mudam a contagem. Tamanho da 085b: 116 linhas de código (teto 1,5× da proposta de ~90 = 135); a 085d é só documento.
 
 7. PROBLEMAS ENCONTRADOS
-- Os tamanhos que Arthur citou (557 e 344) não batem com os que medi (603 e 391 em `5e8f8b4`); 455 e 308 batem.
-- O `main` andou durante a revisão (`4f50f84` → `5e8f8b4`); refiz as leituras nos arquivos afetados.
+- A premissa errada e o conflito do backlog (item 4).
+- O `status-a` carrega a árvore inteira do projeto, e não só os arquivos de status (vi ao ler a revisão A); não toquei.
+- Na revisão A, M-6 (índice sem o `tools.md`) e M-7 (3 linhas em branco em `bridge_npc_inspect.gd:80-82`): a M-6 está resolvida aqui; a M-7 é código e ficou de fora (só comentários em `src/`).
 
 8. RISCOS
-- A ponte quebra se o `npc` for refatorado por dentro (I1).
-- Se Arthur quiser conversar na janela (LW-086) antes de I3, o cruzamento impasse × conversa vai ser exercitado só na mão.
+- A regra de 1,5× vale por decisão de Arthur, mas o AGENTS ainda diz o contrário.
+- O teste novo depende da dinâmica do jogo real (semente 5, 07:00): se a rotina mudar, o NPC escolhido ou o tempo até a recuperação mudam (a asserção usa limites, e não valores fixos, de propósito).
 
 9. PENDÊNCIAS
-- O que NÃO verifiquei (lista completa na seção 5 de `REVISAO-085-C.md`): nada rodado no Godot; `check_all` verde em `5e8f8b4` não confirmado por mim; causa exata da mudança das impressões do oráculo (li, não reproduzi); `src/app` (raiz de composição) não revisado; janela do jogo; custo e memória.
-- Teste manual para Arthur: nenhum novo.
+- **Relatório final da LW-085:** espera a LW-084 (B) entrar no `main`; a 085a já entrou (`a9c68e1`); a 085c fica "pendente" se não existir. Vou esperar com `sleep 600` e `git fetch`, até 18 vezes.
+- Nada para Arthur testar na janela por causa destas duas tarefas.
 
 ACOMPANHAMENTO
-- Avanço: revisão cruzada pré-LW-085 concluída (item 4 da mensagem de Arthur). Falta: decisões abaixo; a LW-085 em si não foi iniciada.
-- Próxima tarefa recomendada: LW-084 (soak longo) antes da LW-085; ou, se Arthur preferir, I1 e I3 como tarefas pequenas primeiro. **Não iniciada.**
-- Decisões que dependem de Arthur: (a) B1: fazer a LW-084 antes (recomendo); (b) I1: autorizar a regra nova no `check_architecture` (recomendo sim); (c) I2: autorizar os passos 1 e 2 e registrar decisão sobre as classes aninhadas (recomendo aceitar); (d) I3: autorizar o teste impasse × conversa (recomendo sim); (e) M8: linha em `docs/decisions/` sobre `save_version` antes do "save congelado" (recomendo).
-- Git: nada commitado no projeto. Neste ramo, um commit "status c: revisão pré-LW-085, CONCLUÍDA" e push só de `status-c`. Nada foi enviado ao `main`. README e `docs/modules/README.md` ficam para a revisão da LW-085, como Arthur mandou.
+- Avanço: LW-085b e LW-085d feitas e no `main`; LW-085 (revisão) em andamento: falta o relatório final. A LW-085 não é contada como concluída.
+- Próxima tarefa recomendada: o relatório final da LW-085 (minha) quando a LW-084 entrar no `main`; depois a LW-086 (validação de Arthur). Não iniciada.
+- Decisões que dependem de Arthur: (a) registrar ou não a proposta de entrada para o `DECISIONS.md` (recomendo registrar, é uma entrada só); (b) atualizar o AGENTS (4.5 e 5.2) com a regra de contagem de 1,5× (recomendo); (c) o conflito do backlog: concordo com a minha saída (mover as linhas)? (recomendo manter).
+- Git: `main` = `8b910f1` (avanço rápido de `a9c68e1`, sem `--force`, sem tag); ramos `lw-085b-teste-impasse-conversa` (`cc90445`, `a415021`, `2789ed8`) e `lw-085d-documentos` (`cbf3e7d`, `5d9cb6d`, `15a90a7`) enviados; o ramo `lw-085-fase-b` (integração) ficou só local. Neste ramo `status-c`: só `STATUS-C.md` e `REVISAO-085-C.md`.
