@@ -5,7 +5,10 @@ extends GutTest
 ## das memórias e das opiniões): 1) LOD, Intents, interruptor de corpos, relatos, corpo atrasado e alarme; 2) memória, relações, promoção,
 ## rebaixamento, morte e a conversa de dois notáveis; 3) serialize, on_load, validate e debug_summary, com salvar e carregar no meio; 4) criar,
 ## remover e matar NPC (e a população inicial); 5) a montagem do provedor, do runner, do pensador e das ações sociais, e `_start_action`. Os valores
-## esperados saíram do commit 5a7d453, ANTES da divisão: se um mudar de propósito, o valor novo é decisão de Arthur, nunca um ajuste para o teste passar.
+## esperados saíram do commit 5a7d453, ANTES da divisão, e cinco deles seguem os mesmos até hoje (intents, alarm, resumed, switches e real_game). Os outros
+## quatro (talk, save, demote e starved) foram trocados na LW-073b (commit 5346091), por decisão de Arthur em 10/11/2026: o NPC LATE, de corpo mais atrasado que o
+## tempo limite do Intent, passou a ser recuperado pelo detector de impasse (`result_timeout`), e isso muda o mundo dali em diante. Se um mudar de propósito, o valor
+## novo é decisão de Arthur, nunca um ajuste para o teste passar.
 
 const WORLD_SEED: int = 11
 const ACTOR_ID: int = 77
@@ -39,7 +42,7 @@ const T_SAVE: int = 14 * HOUR
 const T_AFTER_LOAD: int = 14 * HOUR + 30
 const T_DEMOTE: int = DAY + 6 * HOUR
 const T_STARVED: int = 4 * DAY + 9 * HOUR
-## Impressões digitais esperadas, por fase (SHA-256 completo), tiradas do commit 5a7d453.
+## Impressões digitais esperadas, por fase (SHA-256 completo). Cinco são as de 5a7d453; `talk`, `save`, `demote` e `starved` são as da LW-073b (ver o cabeçalho).
 const EXPECTED: Dictionary[String, String] = {
 	"intents": "6e12b306712071a5b758b11a2ef2b89c0e52ef02e60f195a99c66621ccefeb8b",
 	"alarm": "506a4a23ce894ca08835fd285997b04ca86015eacc45213156f4c7975bdaadc1",
@@ -205,7 +208,7 @@ func _fingerprint(rig: Rig) -> String:
 	return "\n".join(parts).sha256_text()
 
 
-## Confere a impressão digital da fase contra a de 5a7d453 e imprime o começo dela (para comparar execuções).
+## Confere a impressão digital da fase contra a esperada (a de 5a7d453 ou, nas quatro trocadas, a da LW-073b) e imprime o começo dela (para comparar execuções).
 func _check(rig: Rig, phase: String) -> void:
 	var fingerprint: String = _fingerprint(rig)
 	print("oráculo %s (minuto %d): %s" % [phase, rig.now(), fingerprint.left(12)])

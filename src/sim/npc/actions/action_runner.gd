@@ -224,7 +224,8 @@ func cancel_action(npc_id: int, action_serial: int) -> Result:
 	return Result.success()
 
 
-## A ÚNICA função que escreve efeitos de ação nas necessidades (os dois modos, S1 e S0, passam por aqui). Cada efeito entra uma vez:
+## A ÚNICA função que escreve efeitos de AÇÃO nas necessidades (os dois modos, S1 e S0, passam por aqui). Não é o único escritor de `need_values`: o tempo passando
+## (`NeedMath.settle`) e a pressão de segurança do alarme (`NeedMath.add_pressure`, LW-076, chamada pelo pensador) também escrevem, e não são efeito de ação. Cada efeito entra uma vez:
 ## piso de (delta x progresso) / 1000, limitado a 0..100. Progresso 1000 é a ação completa e antes confere de novo as condições de
 ## RECHECKED_AT_COMPLETION (se falharem: NPC_ACTION_FAILED, sem efeito); progresso menor é ação interrompida e aplica só o que cumpriu.
 ## Sem sorteio. QUEM CHAMA leva as necessidades até o minuto do efeito antes (NeedMath.settle). `_place_id` é do contrato e fica para os
