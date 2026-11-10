@@ -1,4 +1,4 @@
-10/11/2026 17:36 (Brasília) — CONCLUÍDA: LW-086a no `main` (`7cb70f2`, Fase B automática, sem tag); worktree da janela pronto. LW-085 (Fase B): AGUARDANDO a sua frase "APROVADO LW-085" (a 085c já está no `main`). Nada rodando.
+10/11/2026 17:59 (Brasília) · rodando · LW-085 Fase B (APROVADO LW-085): check_all no HEAD final; o relatório abaixo é o da LW-086a e será substituído ao parar
 
 RELATÓRIO — LW-086a (DOC): preparação da validação da Fase 2        Status: PRONTA PARA REVISÃO (já no `main` pela Fase B automática; a auditoria de Arthur não foi feita)
 
