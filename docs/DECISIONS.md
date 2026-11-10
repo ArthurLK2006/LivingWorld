@@ -1,6 +1,6 @@
 # LIVING WORLD — REGISTRO OFICIAL DE DECISÕES (DECISIONS.md)
 
-**Versão do documento:** 0.4 (09/11/2026; entradas DEC-113 a DEC-125 e totais recontados; a 0.3 é de 01/11/2026; ver seção 8)
+**Versão do documento:** 0.5 (10/11/2026; entradas DEC-126 a DEC-128 acrescentadas e totais recontados; a 0.4 é de 09/11/2026; ver seção 8)
 **Data de criação:** 01/11/2026 (horário de Brasília)
 **Responsável pela decisão:** Arthur (dono do produto). **Somente ele aprova.**
 **Função deste documento:** ser a **fonte oficial** do que está decidido, proposto, pendente, descartado ou substituído nos projetos de design e de tecnologia do Living World, para evitar contradições futuras entre o Briefing, o GDD, a arquitetura, o roadmap e o trabalho dos agentes de IA.
@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
+**Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -228,6 +228,9 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-099 | Lista de corte (ordem de sacrifício) e sistemas que não se cortam | PROPOSTA |
 | DEC-100 | Não inventar nomes definitivos sem necessidade; propostas criativas rotuladas | APROVADA |
 | DEC-101 | Separação do escopo em visão de longo prazo, sistemas previstos, primeiro protótipo e funcionalidades futuras | APROVADA |
+| DEC-126 | Tamanho de arquivo e de tarefa: contar só código, com tolerância de 1,5× | APROVADA |
+| DEC-127 | `save_version` continua em 2 até o "save congelado" | APROVADA |
+| DEC-128 | As cinco ações de entrada acrescentadas ao `project.godot` na LW-082g foram autorizadas | APROVADA |
 
 **ÁREA 11 — ALTERNATIVAS DESCARTADAS**
 
@@ -1832,6 +1835,48 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
+### DEC-126 — Tamanho de arquivo e de tarefa: contar só código, com tolerância de 1,5×
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | O `AGENTS.md` pedia arquivos de até ~300 linhas (4.5) e tarefas de ~300 linhas e ~8 arquivos (5.2). Seis arquivos de `src/sim/npc` e `src/bridge` passam disso contando tudo (entre parênteses, só código): `npc_module.gd` 603 (336), `npc_thinker.gd` 455 (328), `action_runner.gd` 415 (304), `sim_bridge.gd` 391 (236), `npc_memory.gd` 325 (236) e `npc_notables.gd` 308 (213). Medido em `origin/main` `5e8f8b4`. Em `npc_module.gd` as classes aninhadas (linhas ~456 a 603) têm 221 referências no projeto. |
+| **Decisão** | O limite conta **só código e teste**, sem comentário, linha em branco, `.uid` nem documento, com **tolerância de 1,5×** (cerca de 450 linhas de código por arquivo). Passou do teto: **PARE e proponha a divisão**. A mesma contagem vale para o tamanho de cada tarefa (~300 linhas e ~8 arquivos). **Nada é dividido agora**, e as classes aninhadas do `npc_module.gd` ficam onde estão. |
+| **Justificativa** | Escolha de Arthur entre três opções: dividir já (o pensador em duas classes, ~170 linhas movidas, e os comandos de depuração do módulo em outro arquivo, ~140); aceitar com uma regra de contagem; deixar como está sem registrar. Dividir já mexeria em código estável e muito referenciado. |
+| **Consequências** | Por esta contagem nenhum arquivo de `src/` passa do limite (o maior tem 336 linhas de código). O texto dos itens 4.5 e 5.2 do `AGENTS.md` passa a dizer isso (versão 0.4, LW-085e); os itens 11 (autorrevisão) e 16.2 ainda repetem "~300 linhas / ~8 arquivos" e ficam como proposta no relatório da LW-085e, para Arthur decidir. Se um desses arquivos chegar perto de 450 linhas de código, a divisão volta à pauta; ela está descrita na revisão C (achado I2). |
+| **Data / versão** | `docs/decisions/0011-revisao-fase-2.md`, seção 1 · decidida por Arthur em 10/11/2026 (mensagem que autorizou as subtarefas LW-085b e LW-085d) · registrada em 10/11/2026 (LW-085e) |
+| **Relações** | DEC-087, DEC-093 |
+
+---
+
+### DEC-127 — `save_version` continua em 2 até o "save congelado"
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | O `AGENTS.md` (4.15) manda atualizar `save_version` quando o estado salvo muda. `CURRENT_SAVE_VERSION` vale 2 desde a LW-026 (`src/persistence/json_save_codec.gd:9`) e o estado salvo do `npc` cresceu depois (por exemplo `last_player_talk_at`, LW-083b, gravado só quando difere de -1). A DEC-083 (aprova só os princípios, entre eles adiar as migrações complexas; nas consequências dela, até o "save congelado" o save de versão antiga é rejeitado com mensagem clara) e a arquitetura (cap. 18, "proporcionalidade") deixam a migração para depois do "save congelado" (proposta: depois da validação da Fase 4). Não existe tela de salvar: os únicos saves hoje são os dos testes. |
+| **Decisão** | O número fica em **2** até o "save congelado". A garantia de cada mudança de estado é o teste de ida e volta (roda no `check_all`) e a validação de `on_load`. |
+| **Justificativa** | Escolha de Arthur entre três opções: subir o número a cada mudança, como o `AGENTS.md` manda; manter 2 até o congelamento; subir só uma vez, agora. Como não há save de jogador, nada se perde hoje. |
+| **Consequências** | O número **não distingue** os saves da Fase 2 entre si; quem protege é o `on_load` (confere tipos, faixas e campos, com mensagem clara) e o teste de ida e volta. Esta entrada vale como exceção ao item 4.15 do `AGENTS.md` até o congelamento (decisão APROVADA vale mais que o `AGENTS.md`); o texto do 4.15 não foi mudado e a mudança fica como proposta no relatório da LW-085e. Antes do congelamento é preciso fixar o número final e a política de migração: a DEC-083 aprova só os princípios e deixa o resto em aberto, e a DEC-084 vale como formato do protótipo; fixar isso é decisão de Arthur. |
+| **Data / versão** | `docs/decisions/0011-revisao-fase-2.md`, seção 2 · decidida por Arthur em 10/11/2026 (mensagem que autorizou as subtarefas LW-085b e LW-085d) · registrada em 10/11/2026 (LW-085e) |
+| **Relações** | DEC-083, DEC-084 |
+
+---
+
+### DEC-128 — As cinco ações de entrada acrescentadas ao `project.godot` na LW-082g foram autorizadas
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | O `project.godot` é arquivo protegido (`AGENTS.md` 12.5: só se a tarefa mandar). A LW-082g (commit `89c8182`) acrescentou **25 linhas**, as ações `inspector_toggle` (F3), `inspector_toggle_alt` (Tab), `inspector_next` (N), `inspector_previous` (B) e `inspector_trace` (T), sem remover nem alterar nada do arquivo. A revisão A (achado I-4) apontou o arquivo protegido. |
+| **Decisão** | Arthur **autorizou por escrito** na LW-082g: "só ADICIONAR ações de entrada". O que foi feito cabe exatamente nisso (verificado com `git show 89c8182 -- project.godot`: só linhas acrescentadas, todas das cinco ações). Não é desvio: fica registrado para a auditoria. |
+| **Justificativa** | A autorização foi escrita, específica e da tarefa em curso (`AGENTS.md`, seção 0). |
+| **Consequências** | As teclas são [HIP] e entram só como ações nomeadas (`InputActions`); o painel só abre em build de desenvolvimento. A linha da LW-082 no `ROADMAP_STATUS.md` leva o mesmo registro. Qualquer outra mudança em `project.godot` continua exigindo autorização expressa. |
+| **Data / versão** | `docs/decisions/0011-revisao-fase-2.md`, seção 3 · decidida por Arthur em 10/11/2026 (mensagem que autorizou as subtarefas LW-085b e LW-085d; a autorização original é da LW-082g) · registrada em 10/11/2026 (LW-085e) |
+| **Relações** | DEC-087, DEC-125 |
+
+---
+
 ## 3. DÚVIDAS ABERTAS EM DESTAQUE
 
 As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o início do trabalho. Os números citados são **hipóteses [HIP]**, não decisões. Pendências só relevantes em fases futuras **não** exigem aprovação antecipada (diretriz 15).
@@ -2015,7 +2060,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-126` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-129` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto
@@ -2047,6 +2092,7 @@ Copiar, preencher e usar o próximo número livre (`DEC-126` em diante). **Nunca
 
 | Versão | Data (Brasília) | Alteração |
 |---|---|---|
+| 0.5 | 10/11/2026 | Entradas DEC-126, DEC-127 e DEC-128 acrescentadas (LW-085e), as três APROVADAS por Arthur em 10/11/2026, a partir de `docs/decisions/0011-revisao-fase-2.md`: arquivos e tarefas contados só em código com tolerância de 1,5×; `save_version` em 2 até o "save congelado"; as cinco ações de entrada do `project.godot` da LW-082g. Totais recontados (APROVADA 67, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 128). Nenhuma entrada existente foi alterada. |
 | 0.4 | 09/11/2026 | Entradas DEC-113 a DEC-125 criadas desde a 0.3 (LW-023 a LW-071f); totais recontados na LW-071b (APROVADA 62, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 123) e de novo na LW-071f (APROVADA 64, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 125). A LW-071b e a LW-071c não mudaram o status de nenhuma entrada; a LW-071e registrou a DEC-124 e a LW-071f registrou a DEC-125 (as duas APROVADAS por Arthur em 09/11/2026) e acrescentou a DEC-124 às Relações da DEC-123. |
 | 0.3 | 01/11/2026 | Revisão final e diretrizes de Arthur das 15:32. Passaram a APROVADA (com a ressalva indicada na entrada): DEC-012, 015, 016 (só a referência), 022, 041, 050, 051, 062 (só a meta de três), 080 (só a antecipação de SP6 e SP4a), 081, 083 (só os princípios) e 089 (só o serviço). DEC-081 reintitulada. DEC-070: justificativa corrigida (a alocação às fases é proposta; só os nomes e a ordem das fases são de Arthur). Spikes renomeados de S1-S8 para SP1-SP8 (os níveis de simulação continuam S0-S3). Ressalvas dos status visíveis no índice. Nenhuma entrada criada. |
 | 0.2 | 01/11/2026 | Consolidação do pacote documental. Nenhuma entrada mudou de status e nenhuma foi criada. Revisão técnica de Godot 4.x aplicada à TA, ao RM e ao AGENTS (11 correções G1 a G11, ver `CONSISTENCY_REPORT.md` seção 6). Fontes atualizadas para as versões 0.2; consequências das cinco pendências da LW-001 e de DEC-087 ajustadas; seção 4.1 reescrita; nova seção 4.2 (achados C13 a C23). |

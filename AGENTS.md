@@ -1,6 +1,6 @@
 # AGENTS.md — Living World
 
-**Versão 0.3 · 01/11/2026 (Brasília) · Leitura obrigatória para todo agente de programação (Codex ou outro).**
+**Versão 0.4 · 10/11/2026 (Brasília) · Leitura obrigatória para todo agente de programação (Codex ou outro).**
 Este arquivo manda em **como trabalhar**. Quem decide **o que construir** é Arthur, o dono do produto, e só ele. Agentes **propõem; nunca aprovam**.
 Só Arthur altera este arquivo. Se achar que uma regra está errada, **registre a proposta no relatório** e continue obedecendo à regra.
 
@@ -125,7 +125,7 @@ Antes de alterar qualquer arquivo, escreva em **palavras simples**: (a) a tarefa
 2. **Tipagem obrigatória (DEC-013):** toda variável, parâmetro e retorno com tipo. Coleções tipadas (`Array[int]` etc.; aninhadas, como `Array[Array[int]]`, não existem: use `Array` simples). `Variant` só com justificativa em comentário, por exemplo na fronteira com JSON. Use `:=` apenas quando o tipo for óbvio na mesma linha.
 3. **Sem avisos.** Código novo compila sem avisos do GDScript. Em clone novo, rode antes `godot --headless --path . --import`. Parâmetro sem uso leva prefixo `_`; `seed` é nome reservado, use `world_seed`. **Não desligue avisos nem use `@warning_ignore`** para fugir de um problema.
 4. **Classes:** `class_name` em tipos compartilhados. Estado da simulação em `RefCounted`/classes de dados **sem Node**. `Resource` (`.tres`) só para conteúdo visual de autoria no editor.
-5. **Funções pequenas, uma responsabilidade.** Arquivo até ~300 linhas; passou disso, proponha divisão.
+5. **Funções pequenas, uma responsabilidade.** Arquivo até ~300 linhas, contando só código e teste (sem comentário, linha em branco, `.uid` nem documento), com tolerância de 1,5× (~450 linhas); passou do teto, **PARE** e proponha a divisão (DEC-126).
 6. **Sem números mágicos.** Valores de jogo vão para `data/` ou para constante nomeada.
 7. **Sem estado global mutável** na simulação (`static var` mutável proibido). Autoloads: no máximo os previstos na arquitetura (`GameApp`, `SimulationHost`, `Debug`, `Settings` opcional). **Novo autoload exige autorização.**
 8. **Sem `await`** em código da simulação. Assíncrono só em apresentação, persistência (thread) e `ai_text`.
@@ -162,7 +162,7 @@ Um módulo **só importa módulos de camada menor ou igual**, e **apenas a porta
 
 ### 5.2 Regras
 1. **Uma tarefa = um módulo** (mais testes e dados). Tocou dois? Pare e proponha divisão ou uma tarefa de contrato antes.
-2. **Limite de tamanho:** até ~300 linhas alteradas e ~8 arquivos, contando testes. Passou? **PARE e proponha a divisão.**
+2. **Limite de tamanho:** até ~300 linhas alteradas e ~8 arquivos, contando só código e teste (sem comentário, linha em branco, `.uid` nem documento), com tolerância de 1,5×. Passou do teto? **PARE e proponha a divisão** (DEC-126).
 3. **Um dono por dado.** Só o módulo dono escreve em seu dado. Os outros leem por consulta ou pedem por comando/evento.
 4. **Alerta de acoplamento (avise no relatório):** módulo importando mais de 3 outros · arquivo alterando dado alheio · função que só testa com o jogo inteiro · renomear algo exige editar muitos módulos.
 5. **Um módulo só nasce na tarefa que o cria.** Pastas vazias levam só um `README`. Não crie classes, campos ou eventos "para depois".
