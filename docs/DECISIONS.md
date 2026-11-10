@@ -1,6 +1,6 @@
 # LIVING WORLD — REGISTRO OFICIAL DE DECISÕES (DECISIONS.md)
 
-**Versão do documento:** 0.5 (10/11/2026; entradas DEC-126 a DEC-128 acrescentadas e totais recontados; a 0.4 é de 09/11/2026; ver seção 8)
+**Versão do documento:** 0.6 (10/11/2026; DEC-047, DEC-049 e DEC-054 aprovadas e entradas DEC-129 a DEC-162 acrescentadas (LW-087a) e totais recontados; a 0.5 é de 10/11/2026 (LW-085e); ver seção 8)
 **Data de criação:** 01/11/2026 (horário de Brasília)
 **Responsável pela decisão:** Arthur (dono do produto). **Somente ele aprova.**
 **Função deste documento:** ser a **fonte oficial** do que está decidido, proposto, pendente, descartado ou substituído nos projetos de design e de tecnologia do Living World, para evitar contradições futuras entre o Briefing, o GDD, a arquitetura, o roadmap e o trabalho dos agentes de IA.
@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
+**Totais atualizados em 10/11/2026 (LW-087a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 82 (20 com ressalva) · PROPOSTA: 51 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 162**. Desde a LW-085e: a DEC-047, a DEC-049 e a DEC-054 passaram de PROPOSTA a APROVADA; entraram 12 entradas APROVADAS por Arthur (DEC-129 a DEC-137 e DEC-142 a DEC-144) e 22 entradas PROPOSTA decididas pelo revisor (DEC-138 a DEC-141 e DEC-145 a DEC-162); a ressalva nova é a DEC-129 (valores seguem [HIP]). **Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -140,6 +140,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-123 | Relógio contra corpo: direção P3 (resultado do SP2) | APROVADA (somente a direção) |
 | DEC-124 | Velocidade de caminhada da simulação: 500 cm/min [HIP] (aplicação da direção P3 da DEC-123) | APROVADA |
 | DEC-125 | Painel de depuração de NPC: leitura pela ponte e a única escrita permitida | APROVADA |
+| DEC-143 | Comprar é escolhida pelo mesmo mecanismo de utilidade (valor derivado), sem rotina fixa e sem planejador | APROVADA |
+| DEC-144 | A população inicial nasce empregada; a vaga nova é oferecida por evento e aceita pela utilidade | APROVADA |
 
 **ÁREA 6 — SOCIEDADE, ECONOMIA, POLÍTICA E GUERRA**
 
@@ -147,14 +149,37 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|---|
 | DEC-045 | Organizações agem sem intervenção do jogador | APROVADA |
 | DEC-046 | Economia funcional e conectada | APROVADA |
-| DEC-047 | Dinheiro e quantidades em números inteiros, com livro-razão (`Ledger`) | PROPOSTA |
+| DEC-047 | Dinheiro e quantidades em números inteiros, com livro-razão (`Ledger`) | APROVADA |
 | DEC-048 | Comércio simulado em duas escalas (detalhada e agregada) | PROPOSTA |
-| DEC-049 | `TradeRules` como único ponto em que a política altera a economia | PROPOSTA |
+| DEC-049 | `TradeRules` como único ponto em que a política altera a economia | APROVADA |
 | DEC-050 | Composição de facções e polities do protótipo (3 facções; 2 polities, uma simplificada) | APROVADA (composição inicial) |
 | DEC-051 | Polity vizinha de baixa resolução (em vez de quarta facção completa) | APROVADA |
 | DEC-052 | Escala de conflitos: incidente, escaramuça, batalha, cerco e guerra | PROPOSTA |
 | DEC-053 | Escala das batalhas no protótipo (limite de combatentes e modo de resolução) | PENDENTE |
-| DEC-054 | Itens fora do protótipo (cercos, exércitos grandes, intriga, sucessão, magia ampla, domesticação, famílias,… | PROPOSTA |
+| DEC-054 | Itens fora do protótipo (cercos, exércitos grandes, intriga, sucessão, magia ampla, domesticação, famílias,… | APROVADA |
+| DEC-129 | Escala da economia do protótipo: 3 povoados, 10 bens genéricos e 4 cadeias de produção | APROVADA (valores seguem [HIP]) |
+| DEC-130 | A `economy` guarda as quantidades de bens de todo dono, por ID | APROVADA |
+| DEC-131 | O `TradeFlow` é uma abstração econômica por rota, sem depender de S2 | APROVADA |
+| DEC-132 | O `npc` importa só `economy/api`; a economia nunca importa o `npc`; o contrato de trabalho chega por evento | APROVADA |
+| DEC-133 | O dinheiro inicial (`mint`) existe antes de a LW-094 remover o `FoodStub` | APROVADA |
+| DEC-138 | Tributos e impostos: na Fase 3 valem as regras do roadmap, não o "tributos" [P1] do GDD | PROPOSTA |
+| DEC-139 | O alvo de estoque de cada mercado é dado fixo na Fase 3 | PROPOSTA |
+| DEC-140 | `RouteStateChanged` e o comando de fechar rota pertencem à LW-097 | PROPOSTA |
+| DEC-141 | Dois acertos de texto da arquitetura: IDs de `ctx.ids` (sem `entities`) e `TradeRules` entregue ao construtor | PROPOSTA |
+| DEC-142 | Ofícios `miner` e `shepherd` só em dados, cadeias distribuídas pelos 3 povoados e 3º povoado na LW-097 | APROVADA |
+| DEC-145 | Quem abre as contas: cada dono abre a sua (o `npc` pela `economy/api`) e a economia faz o `mint` inicial | PROPOSTA |
+| DEC-146 | Dono morto: a conta e o inventário se fecham ao ouvir `NpcDied`, sem sair da soma | PROPOSTA |
+| DEC-147 | Motivos do `Ledger` em inglês (`game_start`), em conjunto fechado, e saldos iniciais por tipo de dono | PROPOSTA |
+| DEC-148 | O local de produção é dono de si (conta e inventário próprios) | PROPOSTA |
+| DEC-149 | O mercado tem conta própria e paga o produtor com ela | PROPOSTA |
+| DEC-150 | Forma do preço: inversa do estoque sobre o alvo, com spread e profundidade | PROPOSTA |
+| DEC-151 | Trabalho, salário e vendas dos locais | PROPOSTA |
+| DEC-152 | O salário alivia a necessidade `income` por um evento de pagamento ouvido pelo `npc` | PROPOSTA |
+| DEC-153 | Na Fase 3 o NPC só consome comida: o pão sacia a fome por inteiro e o grão, menos | PROPOSTA |
+| DEC-154 | Perecibilidade: o campo existe e não faz nada na Fase 3 | PROPOSTA |
+| DEC-155 | `CaravanAttacked`, `RouteCargoLost` e `BusinessBankrupt` não entram na Fase 3 | PROPOSTA |
+| DEC-156 | Conservação de bens, simétrica à do dinheiro | PROPOSTA |
+| DEC-157 | Contratos: `labor` (minutos de trabalho num local) e `delivery` (bem no destino) | PROPOSTA |
 
 **ÁREA 7 — MUNDO FÍSICO E ESPACIAL**
 
@@ -168,6 +193,11 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-060 | Clima e estações fora do protótipo | PROPOSTA |
 | DEC-061 | Mundo autoral de uma região; sem geração procedural no protótipo | PROPOSTA |
 | DEC-118 | Terreno de teste do protótipo (Fase 1) | APROVADA |
+| DEC-158 | As três rotas formam um triângulo (A–B, A–C e B–C) | PROPOSTA |
+| DEC-159 | A rota tem só os estados `open` e `closed` e nenhum campo extra | PROPOSTA |
+| DEC-160 | O tipo de local `market_reserved` é renomeado para `market` na LW-093 | PROPOSTA |
+| DEC-161 | O terreno de blockout não é ampliado para o 3º povoado | PROPOSTA |
+| DEC-162 | A LW-097 aceita a mudança de hash e atualiza o oráculo, com a aprovação de Arthur dos valores novos | PROPOSTA |
 
 **ÁREA 8 — JOGADOR, PROGRESSÃO, COMBATE E EVENTOS**
 
@@ -211,6 +241,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-113 | Régua de pico do SP1 (LW-023): release decide, por taxa e com laço de controle | APROVADA (somente como régua de medição da LW-023; redação na arquitetura segue PROPOSTA) |
 | DEC-114 | Visibilidade do repositório | APROVADA (reversível) |
 | DEC-119 | Meta de quadros do protótipo | APROVADA |
+| DEC-134 | O save não é congelado na Fase 3: a LW-111 rejeita o save antigo com mensagem clara | APROVADA |
 
 **ÁREA 10 — PROCESSO, ESCOPO E MÉTODO DE TRABALHO**
 
@@ -231,6 +262,9 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-126 | Tamanho de arquivo e de tarefa: contar só código, com tolerância de 1,5× | APROVADA |
 | DEC-127 | `save_version` continua em 2 até o "save congelado" | APROVADA |
 | DEC-128 | As cinco ações de entrada acrescentadas ao `project.godot` na LW-082g foram autorizadas | APROVADA |
+| DEC-135 | O `check_temp` (LW-114) olha `src/`, `data/`, `tests/`, `tools/` e `scenes/`, e não `docs/` | APROVADA |
+| DEC-136 | Não dividir `npc_module.gd`, `npc_thinker.gd` nem `action_runner.gd` antes da LW-093 | APROVADA |
+| DEC-137 | Duas subtarefas pequenas antes da LW-093: LW-093a (ids de conteúdo) e LW-093b (ofício só por JSON) | APROVADA |
 
 **ÁREA 11 — ALTERNATIVAS DESCARTADAS**
 
@@ -839,12 +873,12 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PROPOSTA |
+| **Status** | APROVADA por Arthur em 10/11/2026 (antes: PROPOSTA). |
 | **Contexto** | Economia que cria ou perde dinheiro sem explicação quebra a simulação. |
 | **Decisão** | Proposta da TA (11.3, 11.4, 26.2): dinheiro e quantidades em inteiros; todo movimento de dinheiro passa por um livro-razão com conservação verificável; fontes e sumidouros explícitos. Uma moeda no protótipo (GDD 24.3 deixa "múltiplas moedas" fora). |
 | **Justificativa** | Evita erro de arredondamento e permite teste de conservação. |
-| **Consequências** | Se aprovada, vira regra de revisão e teste automático (`check_all`). |
-| **Data / versão** | TA 0.1 cap. 11.3 e 11.4 · GDD 0.1 cap. 12.3 · registrada em 01/11/2026 |
+| **Consequências** | Se aprovada, vira regra de revisão e teste automático (`check_all`). **Aprovada por Arthur em 10/11/2026 (LW-087a):** vale como regra de revisão e de teste (o `AGENTS.md` 4.11 já a usa); a LW-088 implementa o `Ledger` e o teste de conservação. Uma só moeda: DEC-054. |
+| **Data / versão** | TA 0.1 cap. 11.3 e 11.4 · GDD 0.1 cap. 12.3 · registrada em 01/11/2026 · aprovada por Arthur em 10/11/2026 (LW-087a; `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 6) |
 | **Relações** | DEC-046, DEC-048 |
 
 ### DEC-048 — Comércio simulado em duas escalas (detalhada e agregada)
@@ -863,12 +897,12 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PROPOSTA |
+| **Status** | APROVADA por Arthur em 10/11/2026 (antes: PROPOSTA). |
 | **Contexto** | Política e economia precisam se afetar sem se acoplar (embargo, imposto, tarifa). |
 | **Decisão** | Proposta da TA (11.8, 13.5, 26.2): a política publica regras em uma interface (`TradeRules`) que a economia consulta; a economia não conhece facções nem leis. |
 | **Justificativa** | Mantém a regra "um dono por dado". |
-| **Consequências** | Qualquer novo efeito político sobre a economia passa por essa interface. |
-| **Data / versão** | TA 0.1 cap. 11.8 e 13.5 · registrada em 01/11/2026 |
+| **Consequências** | Qualquer novo efeito político sobre a economia passa por essa interface. **Aprovada por Arthur em 10/11/2026 (LW-087a):** é a única inversão de dependência do projeto; na Fase 3 só existe a versão neutra (nada proibido, nenhuma tarifa); regras reais de política só na Fase 4 (DEC-138). |
+| **Data / versão** | TA 0.1 cap. 11.8 e 13.5 · registrada em 01/11/2026 · aprovada por Arthur em 10/11/2026 (LW-087a; `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 6) |
 | **Relações** | DEC-046, DEC-048, DEC-075 |
 
 ### DEC-050 — Composição de facções e polities do protótipo (3 facções; 2 polities, uma simplificada)
@@ -923,12 +957,12 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PROPOSTA |
+| **Status** | APROVADA por Arthur em 10/11/2026 (antes: PROPOSTA). |
 | **Contexto** | O BM descreve uma visão grande e pede um protótipo pequeno (DEC-091). É preciso dizer o que fica de fora. |
 | **Decisão** | Proposta do GDD (24.3, rotulada "[CONF/PROP]") e do RM (0.14, Anexo E): os itens do título ficam **fora do protótipo**. Os itens "multiplayer" e "IA generativa" já estão cobertos por decisões de Arthur (DEC-018 e DEC-036: sem obrigação e opcional); o restante é apenas proposta. |
 | **Justificativa** | Mantém o protótipo executável por uma pessoa com agentes. |
-| **Consequências** | Cada item pode voltar por decisão de Arthur, com ID novo. O destino de cada um está no RM Anexo E. |
-| **Data / versão** | GDD 0.1 cap. 24.3 · RM 0.1 cap. 0.14 e Anexo E · registrada em 01/11/2026 |
+| **Consequências** | Cada item pode voltar por decisão de Arthur, com ID novo. O destino de cada um está no RM Anexo E. **Aprovada por Arthur em 10/11/2026 (LW-087a), a entrada inteira:** o que a Decisão acima chama de "apenas proposta" passa a valer também; na Fase 3 vale em especial "uma só moeda" (DEC-047). Cada item do título pode voltar por decisão nova de Arthur, com ID novo (Anexo E do roadmap). |
+| **Data / versão** | GDD 0.1 cap. 24.3 · RM 0.1 cap. 0.14 e Anexo E · registrada em 01/11/2026 · aprovada por Arthur em 10/11/2026 (LW-087a; `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 6) |
 | **Relações** | DEC-018, DEC-034, DEC-036, DEC-053, DEC-091, DEC-098 |
 
 ---
@@ -1877,6 +1911,482 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
+### DEC-129 — Escala da economia do protótipo: 3 povoados, 10 bens genéricos e 4 cadeias de produção
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026 (a escala e a lista; os valores numéricos seguem [HIP]). |
+| **Contexto** | O roadmap (3.B) e o GDD (12.5, [P1]) davam "3 assentamentos, 8 a 12 bens, 4 cadeias" como hipótese [HIP]; a lista de bens e de cadeias é o aceite da LW-087. Hoje existem 2 assentamentos; o terceiro nasce na LW-097. |
+| **Decisão** | Escala da Fase 3: **3 povoados** (assentamentos); **10 bens genéricos**: grão, farinha, pão; madeira, tábua; minério, metal, ferramenta; lã, tecido; **4 cadeias**: grão → farinha → pão; madeira → tábua (a madeira também é combustível); minério + madeira → metal → ferramenta; lã → tecido. Armas e roupas ficam para depois. Quantidades, preços, salários e taxas seguem [HIP] e ficam em `data/`. |
+| **Justificativa** | Recomendação do pré-voo da Fase 3 (seção b), aceita por Arthur: uma lista que fecha quatro cadeias (alimento, construção, metal e tecido) e cabe no que o GDD já propunha (8 a 12 bens, 4 cadeias). |
+| **Consequências** | A LW-089 cria os 10 bens e a LW-092 as 4 cadeias; a LW-097 cria o terceiro povoado. Trocar a lista exige decisão nova. Os nomes são identificadores de trabalho, não nomes definitivos (DEC-100). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 1 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-040, DEC-041, DEC-046, DEC-091, DEC-100 |
+
+---
+
+### DEC-130 — A `economy` guarda as quantidades de bens de todo dono, por ID
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | O roadmap (LW-089 e LW-105) põe o inventário de NPC, jogador, local de produção e mercado na `economy`; a arquitetura (15.4) dá o `Inventory` ao `character` ("itens, equipamentos, contêineres") e também trata bens comuns como quantidades da economia. Duas fontes para a mesma quantidade quebrariam o teste de conservação de bens. |
+| **Decisão** | A `economy` é dona das **quantidades** de bens de todo dono (NPC, jogador, local de produção e mercado), guardadas por ID. O **equipamento em instâncias** (itens únicos, com estado) fica no `character` e só entra na Fase 5. |
+| **Justificativa** | Um dono por dado (AGENTS 5.2, regra 3). Recomendação do pré-voo (seção c, item 1), aceita por Arthur. |
+| **Consequências** | A LW-089 e a LW-105 passam a dizer isso. Nenhum item em instância na Fase 3. O contrato do `character` (Fase 5) trata do equipamento. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 2.1 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-046, DEC-047, DEC-054 |
+
+---
+
+### DEC-131 — O `TradeFlow` é uma abstração econômica por rota, sem depender de S2
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | O GDD (12.5) e a arquitetura (11.6) põem o fluxo agregado em "S2"; a DEC-041 (APROVADA) deixa o LOD S2/S3 fora do protótipo; o roadmap cria o `TradeFlow` na LW-100. Com 3 povoados nada é "S2". |
+| **Decisão** | O `TradeFlow` (LW-100) é uma **abstração econômica por rota** e **não depende de S2**. O roadmap segue como está: o SP7 (LW-101) decide se caravanas e fluxo coexistem ou se fica um só modo. |
+| **Justificativa** | Respeita a DEC-041 (sem S2) sem mudar o roadmap. Recomendação do pré-voo (seção c, item 2), aceita por Arthur. |
+| **Consequências** | A LW-100 passa a dizer isso. A DEC-048 segue PROPOSTA até o SP7; a LW-102 (alternância por `LodChanged`) segue condicional. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 2.2 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-039, DEC-041, DEC-048 |
+
+---
+
+### DEC-132 — O `npc` importa só `economy/api`; a economia nunca importa o `npc`; o contrato de trabalho chega por evento
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | A arquitetura (8.6) diz que o `npc` "consulta a `economy` por interface"; a 11.10 diz que a economia usa o `npc` "só por IDs e eventos"; o cap. 11 não define essa interface, e a DEC-049 admite uma única inversão (`TradeRules`). |
+| **Decisão** | O `npc` importa **somente** `economy/api` (mesma camada 3, mão única, já permitida pelo AGENTS 5.1). A `economy` **nunca importa o `npc`**. O contrato de trabalho (o vínculo de um trabalhador com um local de produção) chega à economia **por evento**. |
+| **Justificativa** | Não cria segunda inversão nem dependência circular (risco R3.5 do roadmap). Recomendação do pré-voo (seção c, item 3), aceita por Arthur. |
+| **Consequências** | A LW-093 e a LW-095 passam a dizer isso; a revisão LW-115 já confere "economia sem importar internos do `npc`". O evento do vínculo e a carga dele ficam para a LW-087d. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 2.3 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-047, DEC-049 |
+
+---
+
+### DEC-133 — O dinheiro inicial (`mint`) existe antes de a LW-094 remover o `FoodStub`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | A LW-094 tira o `FoodStub` e exige 30 dias verdes, mas o `mint` do dinheiro inicial só nasce na LW-095. Sem dinheiro, guarda, estalajadeiro, artesão e lenhador não compram comida. |
+| **Decisão** | O `mint` inicial (motivo `game_start`; o roadmap dizia `inicio_de_jogo`, ver DEC-147) entra na **LW-093**; a alternativa aceita é a **LW-095 vir antes da LW-094**. A escolha entre as duas é feita quando a LW-093 for preparada. |
+| **Justificativa** | Recomendação do pré-voo (seção c, item 4), aceita por Arthur nos dois formatos. |
+| **Consequências** | A LW-093, a LW-094 e a LW-095 passam a dizer isso (roadmap). O vocabulário do motivo e os saldos iniciais estão na DEC-147. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 2.4 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-047, DEC-054, DEC-132, DEC-147 |
+
+---
+
+### DEC-134 — O save não é congelado na Fase 3: a LW-111 rejeita o save antigo com mensagem clara
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | A LW-111 dizia "save da Fase 2 migra e carrega" e previa incremento de `save_version` com migração simples. O AGENTS 4.15 e a DEC-127 mantêm `save_version` em 2 e rejeitam save antigo até o "save congelado" (DEC-083), que ninguém declarou. |
+| **Decisão** | O save **não é congelado** na Fase 3. A LW-111 troca "migra" por "**rejeita com mensagem clara**". O `save_version` continua em 2 (DEC-127); a garantia é o teste de ida e volta exato e a validação do `on_load`. |
+| **Justificativa** | Coerente com a DEC-127 e o AGENTS 4.15; não existe save de jogador. Recomendação do pré-voo (seção c, item 5), aceita por Arthur. |
+| **Consequências** | A LW-111, o critério 9 de 3.F e a linha "Determinismo e save" de 3.G passam a dizer isso. Migração de save antigo só depois do "save congelado", por decisão futura de Arthur. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 2.5 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-083, DEC-084, DEC-127 |
+
+---
+
+### DEC-135 — O `check_temp` (LW-114) olha `src/`, `data/`, `tests/`, `tools/` e `scenes/`, e não `docs/`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | A LW-114 falha com qualquer `TEMP-LW-` "no repositório", mas as marcas ficam para sempre no Anexo D do roadmap, no `npc.md` e no status. |
+| **Decisão** | A busca vale para `src/`, `data/`, `tests/`, `tools/` e `scenes/`, **fora de `docs/`**. |
+| **Justificativa** | O que importa é que o código e os dados não carreguem provisório; documento é registro e deve citar as marcas. Recomendação do pré-voo (seção c, item 6), aceita por Arthur. |
+| **Consequências** | A LW-114, o aceite da LW-094 e da LW-095 (a "busca pela marca") e o Anexo D passam a dizer isso. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 2.6 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-087, DEC-127 |
+
+---
+
+### DEC-136 — Não dividir `npc_module.gd`, `npc_thinker.gd` nem `action_runner.gd` antes da LW-093
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | O pré-voo (seção e) recomendou dividir os três arquivos antes da LW-093, porque a 093, a 094 e a 095 mexem nos três (segundo o pré-voo: 620, 455 e 416 linhas; cerca de 346, 328 e 304 de código). A DEC-126 já aceita arquivos de até ~450 linhas de código. |
+| **Decisão** | **Não dividir.** Os três arquivos ficam como estão; nenhuma refatoração antes da LW-093. |
+| **Justificativa** | Por esta contagem nenhum dos três passa do limite (DEC-126); dividir mexeria em código estável e muito referenciado. |
+| **Consequências** | Se um deles chegar perto de 450 linhas de código, a divisão volta à pauta (DEC-126). A frente do `npc` deve ficar com um agente só, porque os três arquivos são comuns à 093, à 094 e à 095. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 3 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-126 |
+
+---
+
+### DEC-137 — Duas subtarefas pequenas antes da LW-093: LW-093a (ids de conteúdo) e LW-093b (ofício só por JSON)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | (a) Ids de conteúdo (`"work"`, `"help"`, `"flee"`...) estão escritos no código e repetidos; um id mudado em `data/` quebra o código sem aviso (backlog, linha dos "ids de conteúdo"). A LW-093 cria `buy` e `sell` e a LW-095 mexe em `work`. (b) O critério 8 de 2.F ("adicionar uma ação ou um ofício só editando JSON funciona e é validado") ficou parcial na Fase 2: a ação tem teste, o ofício não (`docs/fase-2/LW-086-relatorio-de-fechamento.md`). |
+| **Decisão** | O roadmap ganha, antes da LW-093, a **LW-093a** (verificador de ids de conteúdo, cerca de 60 linhas, mais a conferência dos ids que os dados de um módulo citam de outro, pergunta D1 da B) e a **LW-093b** (teste de que um ofício novo, só por JSON, funciona e é validado; só teste, nenhum código de jogo). A LW-093 passa a depender das duas. Nomes e ordem (escolha do redator do roadmap): LW-093a, depois LW-093b, ambas antes da LW-093. |
+| **Justificativa** | Escolha de Arthur no lugar de dividir os três arquivos grandes (DEC-136): resolve o que dói de verdade (id solto e ofício sem prova) com duas tarefas pequenas. A LW-093b vem da ressalva ao critério 8 de 2.F, decidida por Arthur em 10/11/2026. |
+| **Consequências** | LW-093a e LW-093b são subtarefas: não entram na contagem das 30 tarefas da Fase 3. A LW-093a também confere os ids que as tabelas da economia citam de outros módulos (`need_id`, `occupation_id`, `settlement_id` e `place_id`; pergunta D1 da B): isso aumenta o escopo. **Estimativa [HIP], não medida:** de cerca de 60 para cerca de 100 linhas de código, mais cerca de 40 de teste; continua dentro do limite do AGENTS 5.2 (DEC-126). Como a conferência precisa das tabelas da economia, a LW-093a passa a depender da LW-089 e da LW-092. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 3 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-042, DEC-126, DEC-136 |
+
+---
+
+### DEC-138 — Tributos e impostos: na Fase 3 valem as regras do roadmap, não o "tributos" [P1] do GDD
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O GDD (12.5, [P1]) cita "tributos" entre os itens da economia; o roadmap (3.J) manda "não fazer" impostos e tarifas reais nesta fase (a `TradeRules` fica neutra). |
+| **Decisão** | Na Fase 3 **não há tributos nem impostos**: valem as regras do roadmap. Os tributos ficam para a Fase 4. |
+| **Justificativa** | O roadmap é a sequência de trabalho; a `TradeRules` neutra (DEC-049) é a única entrada da política na economia. Menor 7 do pré-voo, decidido pelo revisor na delegação de menores. |
+| **Consequências** | Nenhuma tarefa da Fase 3 cria tributo, imposto ou tarifa real. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.1 (menor 7) · decidida pelo revisor (Claude) em 10/11/2026 (delegação de menores) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-049, DEC-054 |
+
+---
+
+### DEC-139 — O alvo de estoque de cada mercado é dado fixo na Fase 3
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A arquitetura (11.5) define o estoque-alvo como "dias de consumo da população local", mas na Fase 3 o consumo vem depois do mercado. |
+| **Decisão** | O alvo de estoque é um **dado fixo** por mercado e por bem, em `data/`; a regra "dias de consumo" fica para depois. Os valores seguem [HIP]. |
+| **Justificativa** | Permite construir o mercado e o preço sem depender do consumo. Menor 8 do pré-voo, decidido pelo revisor na delegação de menores. |
+| **Consequências** | A LW-090 lê o alvo de dados; a calibração (LW-112) ajusta os valores. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.1 (menor 8) · decidida pelo revisor (Claude) em 10/11/2026 (delegação de menores) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-046, DEC-129 |
+
+---
+
+### DEC-140 — `RouteStateChanged` e o comando de fechar rota pertencem à LW-097
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O checklist 3.H ("fechei uma rota") e o aceite da LW-097 ("rota fechada muda o caminho") supõem rota fechada, isto é, o evento `RouteStateChanged` e um comando de fechar rota, mas nenhuma tarefa os cria. |
+| **Decisão** | A **LW-097** cria o evento `RouteStateChanged` e o comando de fechar rota (de teste e depuração). |
+| **Justificativa** | É a tarefa que cria as rotas. Menor 9 do pré-voo, decidido pelo revisor na delegação de menores. |
+| **Consequências** | A linha da LW-097 no roadmap ainda não diz isso (a LW-087a não mudou o escopo de outras tarefas); vale esta entrada até o ajuste. O evento entra em `docs/events.md` pela LW-087d. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.1 (menor 9) · decidida pelo revisor (Claude) em 10/11/2026 (delegação de menores) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-046, DEC-129 |
+
+---
+
+### DEC-141 — Dois acertos de texto da arquitetura: a economia usa IDs de `ctx.ids` (sem o módulo `entities`) e o `TradeRules` é entregue ao construtor
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | (a) A arquitetura (11.10) lista `entities` entre as dependências da economia, mas a pasta `src/sim/entities/` só tem um README e nenhuma tarefa da Fase 3 cria o módulo. (b) O `TradeRules` é "entregue pelo `app`" (3.2) ou "pela `SimContext`" (11.8): na Fase 3 isso não tem efeito, porque só existe a versão neutra. |
+| **Decisão** | (a) A economia usa IDs de `ctx.ids`, como o `npc`, sem módulo `entities`. (b) O `TradeRules` é entregue à economia ao construí-la (construtor); o texto da arquitetura é alinhado na Fase 4, quando a política criar regras reais. |
+| **Justificativa** | Menores 10 e 11 do pré-voo, decididos pelo revisor na delegação de menores; a parte (b) coincide com o rascunho da B em `docs/modules/economy.md` (ramo `lw-087b`). São a mesma natureza: correção de texto da arquitetura sem efeito de código na Fase 3. |
+| **Consequências** | Nada muda em código ou dados agora; o `TECHNICAL_ARCHITECTURE.md` não foi alterado por esta tarefa. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.1 (menores 10 e 11) · decidida pelo revisor (Claude) em 10/11/2026 (delegação de menores) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-047, DEC-049 |
+
+---
+
+### DEC-142 — Ofícios `miner` e `shepherd` só em dados, cadeias distribuídas pelos 3 povoados e 3º povoado na LW-097
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | Os ofícios de hoje são `farmer`, `lumberjack`, `artisan`, `guard` e `innkeeper`; faltam quem minere e quem crie ovelhas, e cada povoado precisa de locais `work` suficientes (pergunta Q10 do contrato da B). |
+| **Decisão** | Criar os ofícios `miner` e `shepherd` **só em dados** (reaproveitar `farmer`, `lumberjack` e `artisan` onde couber). **Distribuir as 4 cadeias pelos 3 povoados de modo que nenhum se baste sozinho**, para haver motivo de comerciar. A população e os locais do terceiro povoado, e os hashes novos do `npc`, ficam para a **LW-097**, com a **aprovação de Arthur dos valores novos**. |
+| **Justificativa** | Escolha de Arthur sobre a Q10 (recomendação da B). |
+| **Consequências** | A LW-097 muda `population.json` e os hashes do `npc` (DEC-162). O número de NPCs do terceiro povoado segue [HIP] (DEC-040, PENDENTE). Nada é criado agora. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 4 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-040, DEC-129, DEC-162 |
+
+---
+
+### DEC-143 — Comprar é escolhida pelo mesmo mecanismo de utilidade (valor derivado), sem rotina fixa e sem planejador
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | Hoje `eat` exige `has_food`; sem comida ela deixa de ser candidata e a fome só sobe. `buy` não alivia necessidade, e a utilidade só pontua alívio, então `buy` nunca seria escolhida; o roadmap (LW-093) só pede "ajuste do catálogo e dos pré-requisitos" (pergunta Q19 do `npc.md` da 087c). Opções: (A) valor derivado; (B) `buy` na rotina, em horas fixas; (C) um pequeno planejador de pré-requisitos (o GDD 9 o reserva a T2 e T3). |
+| **Decisão** | **(A).** `buy` herda o alívio da necessidade que o bem atende (dado de `goods`), descontados o preço e a distância; a utilidade segue sendo o **único** mecanismo de decisão. **Sem rotina fixa e sem planejador.** |
+| **Justificativa** | Escolha de Arthur sobre a Q19. Mantém a decisão do NPC por utilidade com catálogo em dados (DEC-042). |
+| **Consequências** | A LW-093 implementa. O dado de `goods` precisa dizer qual necessidade o bem atende e quanto alivia (DEC-153). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 4 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-042, DEC-153 |
+
+---
+
+### DEC-144 — A população inicial nasce empregada; a vaga nova é oferecida por evento e aceita pela utilidade
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | O roadmap tem contrato de trabalho avulso e de entrega (LW-096) e salário fixo para os trabalhadores do local (LW-095): são coisas diferentes. A decisão "o contrato de trabalho chega por evento" é a DEC-132 (pergunta Q22 do `npc.md` da 087c). |
+| **Decisão** | A população inicial **nasce empregada**: o `work_place_id` vem de dados (`population.json`, como hoje) e a economia o aprende na chamada que abre a conta do NPC (DEC-145). A **vaga nova** é oferecida pela economia por evento (`ContractOffered`) e o NPC a **aceita pela utilidade**. A economia não precisa enumerar NPCs. |
+| **Justificativa** | Escolha de Arthur sobre a Q22 (emprego estático no início do jogo e evento só quando há vaga). |
+| **Consequências** | A LW-095 e a LW-096 seguem isso; o evento `ContractOffered` já consta do catálogo do cap. 11.9. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 4 · decidida por Arthur em 10/11/2026 (mensagem que autorizou a LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-132, DEC-143, DEC-145 |
+
+---
+
+### DEC-145 — Quem abre as contas: cada dono abre a sua (o `npc` pela `economy/api`) e a economia faz o `mint` inicial
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A economia precisa conhecer as contas de NPCs, jogador, mercados, locais e contratos sem importar o `npc` (perguntas Q1 da B e Q21 da C: a mesma decisão vista dos dois lados). |
+| **Decisão** | Cada dono abre a sua conta: a economia abre `market`, `site` e `contract`; o `npc` abre a de cada NPC ao criá-lo, **chamando a `economy/api`** (a economia é registrada antes do `npc`); a ponte abre a do jogador. Comando `request_open_owner(owner_id, kind)`, idempotente, com o `mint` inicial do tipo (motivo `game_start`, DEC-147); na mesma chamada a economia recebe o vínculo do NPC com o local de trabalho (DEC-144). Sem evento `NpcCreated`. |
+| **Justificativa** | Mão única, sem evento novo (opção A da Q21 da C; recomendação da Q1 da B). |
+| **Consequências** | A `api` da economia precisa existir e estar montada antes de o `npc` criar a população. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendações da B (Q1) e da C (Q21 A) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-132, DEC-144, DEC-147 |
+
+---
+
+### DEC-146 — Dono morto: a conta e o inventário se fecham ao ouvir `NpcDied`, sem sair da soma
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Quando um NPC morre, o dinheiro e os bens dele não podem sumir da conservação (pergunta Q2 da B). |
+| **Decisão** | A economia fecha a conta e o inventário do dono ao ouvir `NpcDied`, **mantendo-os na soma da conservação**. Herança é "não fazer" (roadmap 3.J). |
+| **Justificativa** | Recomendação da B. Preserva o teste de conservação diário. |
+| **Consequências** | A economia assina `NpcDied` (já publicado pelo `npc`). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q2) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-047, DEC-054 |
+
+---
+
+### DEC-147 — Motivos do `Ledger` em inglês (`game_start`), em conjunto fechado, e saldos iniciais por tipo de dono
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap chama o motivo do dinheiro inicial de `inicio_de_jogo`; a DEC-022 manda identificadores em inglês (pergunta Q3 da B). |
+| **Decisão** | O motivo é **`game_start`**, e não `inicio_de_jogo`. Os motivos formam um **conjunto fechado**, em constantes. Os saldos iniciais por tipo de dono ficam em `owner_kinds.json` [HIP]. |
+| **Justificativa** | Recomendação da B; DEC-022. |
+| **Consequências** | A LW-093 e a LW-095 passam a dizer `game_start` (feito no roadmap pela LW-087a). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q3) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-022, DEC-047, DEC-133, DEC-145 |
+
+---
+
+### DEC-148 — O local de produção é dono de si (conta e inventário próprios)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap (LW-092) fala em "conta do proprietário", mas "propriedade complexa" é "não fazer" (3.J) (pergunta Q4 da B). |
+| **Decisão** | O **próprio local** é o dono, com conta e inventário próprios, `mint` inicial `game_start` e receita das vendas. |
+| **Justificativa** | Recomendação da B: evita criar propriedade complexa na Fase 3. |
+| **Consequências** | A LW-092 e a LW-095 usam a conta do local para pagar salários. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q4) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-130, DEC-147 |
+
+---
+
+### DEC-149 — O mercado tem conta própria e paga o produtor com ela
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O mercado compra do produtor e vende ao consumidor; sem fundos a compra falha (pergunta Q5 da B). |
+| **Decisão** | Conta de mercado com `mint` inicial e receita das vendas (o spread deixa margem); sem fundos, o erro é `ECON_MARKET_NO_FUNDS`; **sem sumidouro** na Fase 3. |
+| **Justificativa** | Recomendação da B. |
+| **Consequências** | A conta do mercado nasce com o `mint` inicial do tipo (DEC-147). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q5) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-047, DEC-148 |
+
+---
+
+### DEC-150 — Forma do preço: inversa do estoque sobre o alvo, com spread e profundidade
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap (LW-090) pede preço pela razão estoque/alvo, faixa, suavização, spread e profundidade, sem fixar as fórmulas (perguntas Q6 e Q7 da B, a mesma decisão). |
+| **Decisão** | O preço segue a forma da seção 4 do contrato: inversa do estoque sobre o alvo, limitada à faixa e suavizada, com **testes por propriedade**. O spread é em pontos-base; a ordem percorre a curva unidade a unidade, com teto de ordem. A curva exata é calibração (LW-112) [HIP]. |
+| **Justificativa** | Recomendação da B. |
+| **Consequências** | A LW-090 implementa; constantes em `data/`. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q6 e Q7) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-139 |
+
+---
+
+### DEC-151 — Trabalho, salário e vendas dos locais
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Falta definir como o NPC trabalha num local e como o local compra insumos e vende excedente (pergunta Q8 da B). |
+| **Decisão** | `request_work_shift(place_id, ...)`, com salário na hora; uma vez por hora, o local compra insumos e vende o excedente ao mercado do povoado (contrato, seção 6). |
+| **Justificativa** | Recomendação da B. |
+| **Consequências** | **Limitação:** a pergunta Q18 da C (DEC-152) fala em pagar "por hora de produção, aos trabalhadores atribuídos"; as duas redações precisam ser conciliadas na revisão do `economy.md` (087b) e do `npc.md` (087c). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q8) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-148, DEC-152 |
+
+---
+
+### DEC-152 — O salário alivia a necessidade `income` por um evento de pagamento ouvido pelo `npc`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap diz que `income` passa a ser atendida pelo dinheiro recebido; o GDD e a arquitetura não dizem como (pergunta Q18 da C). Opções: (A) evento de pagamento ouvido pelo `npc`; (B) efeito fixo de `income` na ação `work`, sem ligação com o dinheiro; (C) pressão de `income` derivada do saldo. |
+| **Decisão** | **(A).** Um evento de pagamento, ouvido pelo `npc`, alivia `income` em proporção ao valor (um escritor a mais de `need_values`; ver o backlog sobre os escritores). A economia paga **por hora de produção, aos trabalhadores atribuídos**, sem depender de a ação `work` terminar (em S0 ela depende do corpo). |
+| **Justificativa** | A opção B desmente o roadmap e a C troca o modelo das necessidades. Recomendação da C. |
+| **Consequências** | O `npc` passa a ouvir o evento de pagamento (a carga fica para a LW-087d). Ver a limitação da DEC-151. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.4 · recomendação da C (Q18 A) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-132, DEC-144, DEC-151 |
+
+---
+
+### DEC-153 — Na Fase 3 o NPC só consome comida: o pão sacia a fome por inteiro e o grão, menos
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Nenhum documento diz quais bens saciam o quê (perguntas Q9 da B e Q20 da C, a mesma decisão). As cinco necessidades (fome, descanso, segurança, renda e social) não são atendidas por ferramenta, tábua, metal nem tecido. |
+| **Decisão** | `need_id` e `need_relief` em `goods.json`: `bread` sacia `hunger` com o alívio cheio e `grain` com alívio menor [HIP] (o GDD 12.3 põe grão em alimento). **Só comida** é consumida na Fase 3; os demais bens são insumo de produção ou mercadoria de comércio. |
+| **Justificativa** | Com o grão comestível, a vida sem jogador sobrevive enquanto a cadeia se estabiliza (risco R3.3 do roadmap). Recomendações da B e da C. |
+| **Consequências** | A LW-089 grava os dois campos; a LW-093 os usa para o valor derivado de `buy` (DEC-143). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seções 5.2 e 5.4 · recomendações da B (Q9) e da C (Q20) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-129, DEC-143 |
+
+---
+
+### DEC-154 — Perecibilidade: o campo existe e não faz nada na Fase 3
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Bens podem estragar, mas a Fase 3 não precisa disso (pergunta Q11 da B). |
+| **Decisão** | O campo de perecibilidade existe (0 = não perece), **sem comportamento** na Fase 3. |
+| **Justificativa** | Recomendação da B. |
+| **Consequências** | Nenhum bem perece na Fase 3. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q11) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-156 |
+
+---
+
+### DEC-155 — `CaravanAttacked`, `RouteCargoLost` e `BusinessBankrupt` não entram na Fase 3
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A arquitetura (11.9) lista esses três eventos, mas nenhuma tarefa da Fase 3 os cria, e o roadmap (3.J) deixa de fora o combate de caravanas e bandidos (pergunta Q12 da B). |
+| **Decisão** | **Não criar** os três eventos na Fase 3. Ficam em `docs/events.md` como "considerados e não incluídos". |
+| **Justificativa** | Recomendação da B; segue o "Não fazer" de 3.J. |
+| **Consequências** | Nenhum código publica esses eventos. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q12) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-054 |
+
+---
+
+### DEC-156 — Conservação de bens, simétrica à do dinheiro
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap exige conservação do dinheiro, mas não diz o mesmo dos bens (pergunta Q13 da B). |
+| **Decisão** | Bens só **nascem** por produção e por `game_start`, e só **morrem** por consumo (e `spoiled`, reservado). O soak confere a conservação de bens por dia. |
+| **Justificativa** | Recomendação da B: a mesma disciplina do `Ledger`. |
+| **Consequências** | O soak de conservação (LW-109) passa a conferir também os bens, por dia. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q13) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-047, DEC-154 |
+
+---
+
+### DEC-157 — Contratos: `labor` (minutos de trabalho num local) e `delivery` (bem no destino)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap (LW-096) cita trabalho avulso e entrega, sem definir o que cumpre cada um (pergunta Q14 da B). |
+| **Decisão** | `labor` = minutos de trabalho num local; `delivery` = bem entregue no destino. Se quem aceitou abandona, o contrato espera o prazo e a custódia volta ao emissor. |
+| **Justificativa** | Recomendação da B. |
+| **Consequências** | A LW-096 implementa. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação da B (Q14) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-144 |
+
+---
+
+### DEC-158 — As três rotas formam um triângulo (A–B, A–C e B–C)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap pede "rota fechada muda o caminho" (LW-097) e "fechar uma rota gera escassez" (3.F e 3.H). Um grafo de 3 povoados não dá os dois com um único fechamento (pergunta Q-W1 da C). |
+| **Decisão** | O grafo é um **triângulo**. A escassez vem de o caminho longo ser mais lento e mais arriscado e de o teste de perturbação poder fechar **duas** rotas; a calibração (LW-112) confirma. |
+| **Justificativa** | Recomendação da C: atende "muda o caminho" e deixa a escassez calibrável. |
+| **Consequências** | A LW-097 cria três rotas em `data/world/routes.json`. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.3 · recomendação da C (Q-W1) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-129, DEC-140 |
+
+---
+
+### DEC-159 — A rota tem só os estados `open` e `closed` e nenhum campo extra
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A arquitetura (5.2) cita `capacidade` e `tipo` na rota; o roadmap não. Nenhum sistema da Fase 3 produz perigo (perguntas Q-W2 e Q-W3 da C). |
+| **Decisão** | Só os estados `open` e `closed` ("perigosa" fica reservada). **Nenhum campo extra** agora: quem precisar (por exemplo o `TradeFlow`, LW-100) acrescenta um campo opcional com a própria tarefa. |
+| **Justificativa** | Recomendação da C; combate de caravanas e bandidos estão fora (3.J). |
+| **Consequências** | O estado de rota é o primeiro estado que o `world` possui (DEC-162). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.3 · recomendação da C (Q-W2 e Q-W3) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-131, DEC-158 |
+
+---
+
+### DEC-160 — O tipo de local `market_reserved` é renomeado para `market` na LW-093
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O `market_reserved` passa a ter comportamento na Fase 3 (o NPC compra e vende indo até ele); o nome "reservado" fica estranho (pergunta Q-W4 da C). |
+| **Decisão** | Renomear para **`market`** na LW-093, quando a primeira ação (`buy` e `sell`, `place_kind` do catálogo) o usar. |
+| **Justificativa** | Recomendação da C: são 2 linhas de dados, a constante de `Place.KINDS`, a paleta e os testes. |
+| **Consequências** | A LW-093 faz o renome; o texto da LW-093 no roadmap não foi alterado por esta tarefa. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.3 · recomendação da C (Q-W4) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-143 |
+
+---
+
+### DEC-161 — O terreno de blockout não é ampliado para o 3º povoado
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap (LW-097) admite ampliar o terreno "se preciso"; há planície livre (o vale ocupa x de 160 a 440 e z de 610 a 890; a colina, x de 540 a 860 e z de 140 a 460) (pergunta Q-W5 da C). |
+| **Decisão** | **Não ampliar o terreno.** A posição do terceiro povoado é escolhida pelo teste de inclinação; só se falhar, o terreno é ampliado. |
+| **Justificativa** | Recomendação da C: há planície livre; o terreno só é ampliado se a posição falhar no teste. |
+| **Consequências** | A LW-097 testa a posição (perto de 560 m, 860 m é o palpite [HIP]). |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.3 · recomendação da C (Q-W5) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-129, DEC-142 |
+
+---
+
+### DEC-162 — A LW-097 aceita a mudança de hash e atualiza o oráculo, com a aprovação de Arthur dos valores novos
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Registrar o módulo `world` muda todo `state_hash` (pergunta Q-W6 da C). A alternativa, guardar o estado de rota dentro de outro módulo, fere "um dono por dado". |
+| **Decisão** | **Aceitar** a mudança. A própria LW-097 atualiza o oráculo, o hash de 30 dias e o `run_sim`, **com a aprovação de Arthur dos valores novos** (a mesma aprovação vale para os hashes novos do `npc` da DEC-142). |
+| **Justificativa** | Recomendação da C: a mudança é consequência do estado de rota. |
+| **Consequências** | Nenhum hash do `npc` ou do mundo muda antes da LW-097. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.3 · recomendação da C (Q-W6) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-142, DEC-159 |
+
+---
+
 ## 3. DÚVIDAS ABERTAS EM DESTAQUE
 
 As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o início do trabalho. Os números citados são **hipóteses [HIP]**, não decisões. Pendências só relevantes em fases futuras **não** exigem aprovação antecipada (diretriz 15).
@@ -2060,7 +2570,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-129` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-163` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto
@@ -2092,6 +2602,7 @@ Copiar, preencher e usar o próximo número livre (`DEC-129` em diante). **Nunca
 
 | Versão | Data (Brasília) | Alteração |
 |---|---|---|
+| 0.6 | 10/11/2026 | DEC-047, DEC-049 e DEC-054 passaram de PROPOSTA a APROVADA por Arthur (LW-087a) e foram acrescentadas as entradas DEC-129 a DEC-162, a partir de `docs/decisions/0012-pre-voo-da-fase-3.md`. **APROVADAS por Arthur (12):** escala da economia (3 povoados, 10 bens, 4 cadeias); as seis correções do pré-voo (dono das quantidades, `TradeFlow` sem S2, `npc` e `economy` só por `economy/api` e evento, `mint` inicial antes da LW-094, save não congelado, escopo do `check_temp`); não dividir os três arquivos do `npc` e as subtarefas LW-093a e LW-093b; e as perguntas Q10 (ofícios e cadeias), Q19 (comprar por utilidade) e Q22 (emprego). **PROPOSTA, decididas pelo revisor (22), padrão de trabalho e não APROVADAS:** os menores 7 a 11 do pré-voo e as respostas às perguntas Q1 a Q9, Q11 a Q14, Q18, Q20 e Q21 (contratos da `economy` e do `npc`) e Q-W1 a Q-W6 (rotas e 3º povoado). Totais recontados por script (APROVADA: 82 (20 com ressalva), PROPOSTA: 51, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 162). Das entradas antigas só mudaram o status, a consequência e a data das três citadas; nenhuma outra foi alterada. |
 | 0.5 | 10/11/2026 | Entradas DEC-126, DEC-127 e DEC-128 acrescentadas (LW-085e), as três APROVADAS por Arthur em 10/11/2026, a partir de `docs/decisions/0011-revisao-fase-2.md`: arquivos e tarefas contados só em código com tolerância de 1,5×; `save_version` em 2 até o "save congelado"; as cinco ações de entrada do `project.godot` da LW-082g. Totais recontados (APROVADA 67, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 128). Nenhuma entrada existente foi alterada. |
 | 0.4 | 09/11/2026 | Entradas DEC-113 a DEC-125 criadas desde a 0.3 (LW-023 a LW-071f); totais recontados na LW-071b (APROVADA 62, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 123) e de novo na LW-071f (APROVADA 64, com 19 com ressalva · PROPOSTA 32 · PENDENTE 18 · DESCARTADA 10 · SUBSTITUÍDA 1 = 125). A LW-071b e a LW-071c não mudaram o status de nenhuma entrada; a LW-071e registrou a DEC-124 e a LW-071f registrou a DEC-125 (as duas APROVADAS por Arthur em 09/11/2026) e acrescentou a DEC-124 às Relações da DEC-123. |
 | 0.3 | 01/11/2026 | Revisão final e diretrizes de Arthur das 15:32. Passaram a APROVADA (com a ressalva indicada na entrada): DEC-012, 015, 016 (só a referência), 022, 041, 050, 051, 062 (só a meta de três), 080 (só a antecipação de SP6 e SP4a), 081, 083 (só os princípios) e 089 (só o serviço). DEC-081 reintitulada. DEC-070: justificativa corrigida (a alocação às fases é proposta; só os nomes e a ordem das fases são de Arthur). Spikes renomeados de S1-S8 para SP1-SP8 (os níveis de simulação continuam S0-S3). Ressalvas dos status visíveis no índice. Nenhuma entrada criada. |
