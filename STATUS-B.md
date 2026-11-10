@@ -1,4 +1,4 @@
-10/11/2026 16:29 (Brasília) — CONCLUÍDA: LW-084 (`main` em `1dd2fb4`) e LW-085c (`main` em `d1b0fa2`, Fase B automática, sem tag); sem Godot meu; parei (regra 13)
+10/11/2026 18:07 (Brasília) — rodando: LW-085f (check_all no HEAD final do ramo lw-085f-correcoes-da-085c, só documentos); o relatório abaixo é o da LW-084 e da LW-085c e será substituído ao parar
 
 # RELATÓRIO — LW-085c: custo do painel de NPC com 300 NPCs     Status: PRONTA PARA REVISÃO (já no `main`, pela Fase B automática)
 
