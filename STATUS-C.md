@@ -1,4 +1,4 @@
-10/11/2026 17:05 (Brasília) · rodando · LW-086a: Godot (lote de provas citadas no roteiro; depois check_all da Fase B); o relatório abaixo é o da LW-085 e será substituído ao parar
+10/11/2026 17:30 (Brasília) · PARADA · LW-086a: escrevendo o roteiro (sem Godot agora); o relatório abaixo é o da LW-085 e será substituído ao concluir
 
 RELATÓRIO FINAL — LW-085: Revisão arquitetural da Fase 2        Status: PRONTA PARA REVISÃO (falta a sua auditoria e a sua frase de aprovação)
 
