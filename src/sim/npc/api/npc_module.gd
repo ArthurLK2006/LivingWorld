@@ -41,6 +41,13 @@ const CODE_INVALID_MEMORY: String = "NPC_INVALID_MEMORY"
 const CODE_TALK_TOO_FAR: String = "NPC_TALK_TOO_FAR"
 const CODE_TALK_BUSY: String = "NPC_TALK_BUSY"
 const CODE_TALK_COOLDOWN: String = "NPC_TALK_COOLDOWN"
+## Códigos e nível que a ponte mapeia (LW-085a): a `api` os reexporta, como alias dos originais (mesmos valores), para quem está fora do módulo nunca citar `NpcLod`, `NpcTiers` nem `RelationGraph`.
+const CODE_NOT_IN_S0: String = NpcLod.CODE_NOT_IN_S0
+const CODE_INVALID_POSITION: String = NpcLod.CODE_INVALID_POSITION
+const CODE_DEAD: String = NpcTiers.CODE_DEAD
+const CODE_RELATION_INVALID: String = RelationGraph.CODE_INVALID
+const CODE_RELATION_NOT_ALLOWED: String = RelationGraph.CODE_NOT_ALLOWED
+const LEVEL_S0: int = NpcLod.LEVEL_S0
 const KEY_NPCS: String = "npcs"
 ## Chave da memória no save: só aparece se algum NPC tem algo guardado (save sem ela carrega com a memória vazia).
 const KEY_MEMORIES: String = "memories"
@@ -333,6 +340,16 @@ func request_set_focus(focus_id: int, position_m: Vector3) -> Result:
 ## Tira o foco do LOD. Foco desconhecido: falha tratada.
 func request_clear_focus(focus_id: int) -> Result:
 	return lod.clear_focus(focus_id)
+
+
+## O nível de simulação do NPC (LW-085a): `LEVEL_S0` se está em S0; senão o de S1, inclusive para NPC inexistente (como `lod.level_of`). Só lê.
+func peek_level_of(npc_id: int) -> int:
+	return lod.level_of(npc_id)
+
+
+## Quantos NPCs estão em S0 agora (LW-085a; o tamanho de `lod.s0_ids()`). Só lê.
+func peek_s0_count() -> int:
+	return lod.s0_ids().size()
 
 
 ## Interruptor de corpos (LW-070b; docs/modules/npc.md, seção 6): só a apresentação sabe se existem corpos para os NPCs; sem eles o LOD fica inerte e o

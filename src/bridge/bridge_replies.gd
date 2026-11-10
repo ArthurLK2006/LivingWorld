@@ -166,12 +166,12 @@ class ConverseReply:
 		NpcModule.CODE_TALK_TOO_FAR: "npc.talk.too_far",
 		NpcModule.CODE_TALK_BUSY: "npc.talk.busy",
 		NpcModule.CODE_TALK_COOLDOWN: "npc.talk.cooldown",
-		NpcLod.CODE_NOT_IN_S0: "npc.talk.no_body",
-		NpcTiers.CODE_DEAD: "npc.talk.gone",
+		NpcModule.CODE_NOT_IN_S0: "npc.talk.no_body",
+		NpcModule.CODE_DEAD: "npc.talk.gone",
 		NpcModule.CODE_UNKNOWN: "npc.talk.gone",
-		RelationGraph.CODE_INVALID: "npc.talk.invalid_actor",
-		RelationGraph.CODE_NOT_ALLOWED: "npc.talk.invalid_actor",
-		NpcLod.CODE_INVALID_POSITION: "npc.talk.invalid_actor",
+		NpcModule.CODE_RELATION_INVALID: "npc.talk.invalid_actor",
+		NpcModule.CODE_RELATION_NOT_ALLOWED: "npc.talk.invalid_actor",
+		NpcModule.CODE_INVALID_POSITION: "npc.talk.invalid_actor",
 	}
 
 	var result: Result

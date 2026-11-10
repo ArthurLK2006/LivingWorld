@@ -4,7 +4,7 @@ extends RefCounted
 ## `BridgeReplies`, cada resposta traz um `Result` e CÓPIAS dos valores, para quem consome (o painel de depuração, em `src/tools/`) nunca precisar citar
 ## tipo de `sim/`. Não tem estado nem método: é só o lugar dos tipos. Vivem à parte do `BridgeReplies` porque ele já tem perto de 270 linhas.
 
-## Nível de simulação do NPC (arquitetura 5): S0 = com corpo, S1 = só dados. Vem de `lod.level_of` do `npc`.
+## Nível de simulação do NPC (arquitetura 5): S0 = com corpo, S1 = só dados. Vem de `peek_level_of` do `npc`.
 enum NpcLevel { S0, S1 }
 
 ## Camadas do NPC, copiadas de `NpcState.TIER_NORMAL` e `NpcState.TIER_NOTABLE` (quem consome não pode citar `NpcState`);
