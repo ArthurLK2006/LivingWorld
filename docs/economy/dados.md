@@ -1,6 +1,6 @@
 # Modelos de dados da economia (Fase 3)
 
-Estado: **RASCUNHO da LW-087d (10/11/2026), fora do `main`, não aprovado.** Arthur autorizou adiantar este documento enquanto a Fase 2 não fecha; só entra no `main` quando ele escrever que a Fase 2 fechou e que pode entrar. **Nenhum arquivo de `data/`, nenhum esquema em código e nenhum teste foi criado:** isto descreve os modelos que as tarefas LW-089, LW-090 e LW-092 vão criar. Rótulos: **decisão**, **aprovado por Arthur em 10/11/2026** (o registro em `DECISIONS.md` é da LW-087a), **[PROPOSTA]**, **[HIP]** (número de trabalho, não é requisito) e **[LIM]**. Nomes de bens, receitas e ofícios são **genéricos e provisórios** (DEC-100, APROVADA). Os nomes de tabelas, de colunas e de ids são os do contrato `docs/modules/economy.md` (LW-087b, ramo `lw-087b-contrato-economy`), que este documento **não repete**: ele só acrescenta o nível de coluna.
+Estado: **RASCUNHO da LW-087d (10/11/2026), fora do `main`, não aprovado.** Arthur autorizou adiantar este documento enquanto a Fase 2 não fechava; a Fase 2 fechou em 10/11/2026 (tag `fase-2-concluida`), mas só entra no `main` quando ele escrever que pode entrar. **Nenhum arquivo de `data/`, nenhum esquema em código e nenhum teste foi criado:** isto descreve os modelos que as tarefas LW-089, LW-090 e LW-092 vão criar. Rótulos: **decisão**, **aprovado por Arthur em 10/11/2026** (o registro em `DECISIONS.md` é da LW-087a), **decidido pelo revisor** (decisão de Claude na delegação de menores de Arthur, 10/11/2026: vale como [PROPOSTA]), **[PROPOSTA]**, **[HIP]** (número de trabalho, não é requisito) e **[LIM]**. Nomes de bens, receitas e ofícios são **genéricos e provisórios** (DEC-100, APROVADA). Os nomes de tabelas, de colunas e de ids são os do contrato `docs/modules/economy.md` (LW-087b, ramo `lw-087b-contrato-economy`), que este documento **não repete**: ele só acrescenta o nível de coluna.
 
 ## Onde fica este documento (o que o padrão do projeto manda)
 
@@ -17,7 +17,7 @@ Estado: **RASCUNHO da LW-087d (10/11/2026), fora do `main`, não aprovado.** Art
 - **Dinheiro e quantidades são `INT`**; proporções em **pontos-base** (`_bp`, 10000 = 1,0), também `INT`. Nenhum `FLOAT` nestas tabelas (AGENTS 4.11).
 - Referência entre tabelas (`set_ref`) só funciona **dentro da mesma leitura**: o carregador da economia lê as tabelas abaixo **juntas** (como o `npc` faz com as suas seis). Vocabulário fechado (por exemplo, `category`) e regras de mais de um campo ou de mais de uma linha (par único, mínimo menor que máximo) são conferidos **no carregador**, com `ECON_DATA_INVALID` e mensagem de arquivo, item e campo (padrão de `SETTLEMENT_DATA_INVALID`).
 - Pasta: **`data/economy/`** [PROPOSTA], como `data/world/` (`data/` hoje tem os arquivos do `npc` soltos, e o `npc.md` já prevê subpasta como alternativa).
-- **Ponto aberto D1 (referências entre módulos).** Quatro colunas citam ids de **outro** módulo: `need_id` (de `needs`, do `npc`), `occupation_id` (de `occupations`, do `npc`), `settlement_id` e `place_id` (de `world/settlements` e `world/places`). A economia **não importa o `npc`** (decidido), então o carregador **não** consegue pedir `set_ref` para as tabelas do `npc`. **Recomendo:** essas colunas são `STRING` livres no esquema da economia e uma **conferência de dados entre módulos** (no `app`, ao montar o jogo, e num teste) confere que cada id existe; ela combina com o **verificador pequeno de ids de conteúdo**, que já é pré-requisito da LW-093. As colunas `settlement_id` e `place_id` poderiam ser `set_ref` se o `world` publicar o esquema das suas tabelas (camada menor; permitido), mas a mesma conferência cobre os dois casos.
+- **D1 (referências entre módulos): decidido pelo revisor, vale como [PROPOSTA].** Quatro colunas citam ids de **outro** módulo: `need_id` (de `needs`) e `occupation_id` (de `occupations`), tabelas do `npc`; `settlement_id` e `place_id` (de `world/settlements` e `world/places`); e, em `population.json`, o `work_place_id` que entra com a LW-097. A economia **não importa o `npc`** (decidido por Arthur), então o carregador **não** pede `set_ref` para as tabelas dos outros módulos: essas colunas são **`STRING` livres** no esquema da economia e uma **conferência de dados entre módulos** confere que cada id existe na tabela do dono. A conferência mora no **verificador LW-093a** (o verificador de ids de conteúdo, pré-requisito da LW-093, decidido por Arthur): o escopo dele **cresce** de cerca de **60** para cerca de **150 a 200 linhas de código e teste** (um arquivo de verificação e um de teste, com caso positivo e negativo para cada coluna), dentro do teto da DEC-126, e precisa vir **depois da LW-092** (quando as tabelas da economia existem) e antes da LW-093.
 
 ## Os 10 bens e as 4 cadeias (decisão de Arthur, 10/11/2026; escala [HIP])
 
@@ -49,7 +49,7 @@ Estado: **RASCUNHO da LW-087d (10/11/2026), fora do `main`, não aprovado.** Art
 | `need_id` | `STRING` (opcional) | só em bem de consumo; id de `needs` (D1); vazio nos demais |
 | `need_relief` | `INT` (opcional) | só com `need_id`; 1 ou mais (quanto 1 unidade alivia, na escala de pressão 0 a 100 do `npc`); contrato, Q9 |
 
-Regras: `need_id` e `need_relief` vêm **juntos** ou nenhum; todo bem tem uma receita que o produz (conferência cruzada com `recipe_outputs`). **Quais bens saciam o quê** não está decidido (contrato, Q9; recomendação: `bread` alivia `hunger` por inteiro e `grain` menos [HIP]).
+Regras: `need_id` e `need_relief` vêm **juntos** ou nenhum; todo bem tem uma receita que o produz (conferência cruzada com `recipe_outputs`). **Quais bens saciam o quê** (contrato, Q9, decidido pelo revisor): `bread` alivia `hunger` por inteiro e `grain` menos [HIP]; só esses dois levam `need_id` e `need_relief` na Fase 3 (Q20 do `npc.md`), os outros oito não.
 
 ## `owner_kinds.json` (LW-089): tipos de dono
 
@@ -61,7 +61,7 @@ Cinco linhas: `npc`, `player`, `site`, `market`, `contract`.
 | `weight_capacity` | `INT` | 0 ou mais; **0 = sem inventário** (só o `contract`, que é só conta) |
 | `initial_balance` | `INT` | 0 ou mais; vira o `mint` inicial `game_start` ao abrir o dono (contrato, seção 3); [HIP] |
 
-[LIM] Um saldo inicial único por tipo; saldo por ofício ou por pessoa não está decidido (contrato, Q3 e Q10).
+[LIM] Um saldo inicial único por tipo; saldo por ofício ou por pessoa não está decidido (contrato, Q3 e Q15).
 
 ## `market_targets.json` (LW-090): estoque por (assentamento, bem)
 
@@ -73,7 +73,7 @@ Cinco linhas: `npc`, `player`, `site`, `market`, `contract`.
 | `target_stock` | `INT` | 0 ou mais; **0 = bem não negociado nesse mercado**; dado **fixo** na Fase 3 (decidido; "dias de consumo" é calibração, LW-112) |
 | `initial_stock` | `INT` | 0 ou mais |
 
-Regras (no carregador): o par (`settlement_id`, `good_id`) é **único**; todo assentamento tem pelo menos um bem com `target_stock` maior que 0. Com 3 povoados e 10 bens são até 30 linhas; **quais bens cada povoado negocia** é distribuição de conteúdo (contrato, Q10) e não está decidida.
+Regras (no carregador): o par (`settlement_id`, `good_id`) é **único**; todo assentamento tem pelo menos um bem com `target_stock` maior que 0. Com 3 povoados e 10 bens são **30 linhas**: cada mercado negocia os **10 bens** (`target_stock` maior que 0), para a importação poder ser comprada [PROPOSTA]; **quem produz o quê** está em `production_sites` (abaixo).
 
 ## `price_params.json` (LW-090): constantes de preço (uma linha só, `id` = `price_defaults`)
 
@@ -101,9 +101,10 @@ Faixas e regras (no carregador): colunas `_bp` de 0 a 100000; **`min_factor_bp` 
 |---|---|---|
 | `id` | `STRING` | um dos 10 ids abaixo |
 | `name_key` | `STRING` | `recipe.<id>.name`; texto em `pt_br.json` |
-| `occupation_id` | `STRING` | ofício que trabalha nela (id de `occupations`, D1) |
-| `work_minutes` | `INT` | 1 ou mais; minutos de trabalho, somados de quem trabalhar, para um lote |
-| `wage_per_minute` | `INT` | 0 ou mais; pago pela conta do local ao trabalhador (contrato, seção 6); [HIP] |
+| `occupation_id` | `STRING` | ofício **esperado** nela (id de `occupations`, D1); a economia não confere o ofício de quem é atribuído (isso é do `npc`) |
+| `workers_per_batch` | `INT` | 1 ou mais; quantos trabalhadores atribuídos fazem um lote por hora; [HIP] |
+| `max_batches_per_hour` | `INT` | 1 ou mais; teto de lotes por hora; [HIP] |
+| `wage_per_hour` | `INT` | 0 ou mais; pago a cada trabalhador atribuído, por hora em que o local produz, pela conta do local (contrato, seção 6; Q18 A do `npc.md`); [HIP] |
 
 **`recipe_inputs.json`** e **`recipe_outputs.json`:** mesmo formato, uma linha por (receita, bem).
 
@@ -114,9 +115,9 @@ Faixas e regras (no carregador): colunas `_bp` de 0 a 100000; **`min_factor_bp` 
 | `good_id` | `STRING` | referência a `goods` (`set_ref`) |
 | `quantity` | `INT` | 1 ou mais |
 
-Regras (no carregador e num teste de dados): o par (`recipe_id`, `good_id`) é **único** em cada tabela; toda receita tem **pelo menos uma saída**; as quatro de **extração** não têm nenhuma linha de insumo; nenhum bem é insumo e saída da mesma receita. **[PROPOSTA]** Regra de **margem**: em cada receita, o valor dos produtos (soma de `quantity` × `base_value`) é **maior** que o dos insumos mais o salário do lote (`work_minutes` × `wage_per_minute`), senão o local não consegue pagar o salário com a venda e para por `NO_FUNDS`; é condição necessária, não suficiente (o spread e o soak da LW-110 e da LW-112 dão a prova).
+Regras (no carregador e num teste de dados): o par (`recipe_id`, `good_id`) é **único** em cada tabela; toda receita tem **pelo menos uma saída**; as quatro de **extração** não têm nenhuma linha de insumo; nenhum bem é insumo e saída da mesma receita. **[PROPOSTA]** Regra de **margem**: em cada receita, o valor dos produtos (soma de `quantity` × `base_value`) é **maior** que o dos insumos mais o salário do lote (`workers_per_batch` × `wage_per_hour`), senão o local não consegue pagar o salário com a venda e para por `NO_FUNDS`; é condição necessária, não suficiente (o spread e o soak da LW-110 e da LW-112 dão a prova).
 
-**As 10 receitas** (ids em inglês; a coluna de ofício é **[PROPOSTA]**, contrato Q10: só `farmer` e `lumberjack` existem hoje e já cobrem as duas primeiras; `miner` e `shepherd` seriam ofícios novos em dados; o restante reaproveita `artisan` ou ganha ofício novo, a decidir):
+**As 10 receitas** (ids em inglês). Os ofícios **`miner` e `shepherd` foram decididos por Arthur** (só em dados); a coluna de ofício das demais é **[PROPOSTA]**: `farmer` e `lumberjack` já existem e o resto reaproveita `artisan`:
 
 | id | Nome (`recipe.<id>.name`) | Tipo | Insumos | Produtos | Ofício [PROPOSTA] |
 |---|---|---|---|---|---|
@@ -137,12 +138,39 @@ Regras (no carregador e num teste de dados): o par (`recipe_id`, `good_id`) é *
 
 | Coluna | Tipo | Regra |
 |---|---|---|
-| `id` | `STRING` | por convenção `site_<settlement_id>_<recipe_id>` (único) |
+| `id` | `STRING` | por convenção `site_<a, b ou c>_<recipe_id>` (único) |
 | `settlement_id` | `STRING` | id de `world/settlements` (D1) |
-| `place_id` | `STRING` | um local de tipo `work` de `world/places`, **um local por sítio** (D1) |
+| `place_id` | `STRING` | um local de tipo `work` de `world/places` do mesmo povoado, **um por local de produção** (D1) |
 | `recipe_id` | `STRING` | referência a `recipes` (`set_ref`) |
 
-Cada linha vira um local de produção (`site_id` inteiro de `ctx.ids`) em `on_new_game`. **Quantos locais, em quais povoados e com quais receitas** é distribuição de conteúdo (contrato, Q10), a decidir; pede locais `work` que talvez ainda não existam em `places.json` e muda `population.json` e os hashes do `npc` (LW-097). Este rascunho **não** escreve nenhuma linha.
+Cada linha vira um local de produção (`site_id` inteiro de `ctx.ids`) em `on_new_game`, dono do tipo `site` (conta e inventário próprios, contrato Q4).
+
+**Distribuição das 4 cadeias pelos 3 povoados.** Arthur decidiu o princípio (**nenhum povoado se baste sozinho**) e a criação dos ofícios `miner` e `shepherd`; **a tabela é [PROPOSTA/HIP]**, com nomes genéricos (DEC-100), para ele aprovar na LW-087a. São **12 locais de produção**, e o `place_id` de cada um é escolhido na LW-092 e na LW-097:
+
+| id (convenção) | Povoado | Receita | Ofício esperado |
+|---|---|---|---|
+| `site_a_grow_grain` | A (`test_settlement_a`) | `grow_grain` | `farmer` |
+| `site_a_mill_flour` | A | `mill_flour` | `artisan` |
+| `site_a_cut_wood` | A | `cut_wood` | `lumberjack` |
+| `site_a_saw_plank` | A | `saw_plank` | `artisan` |
+| `site_b_grow_grain` | B (`test_settlement_b`) | `grow_grain` | `farmer` |
+| `site_b_cut_wood` | B | `cut_wood` | `lumberjack` |
+| `site_b_bake_bread` | B | `bake_bread` | `artisan` |
+| `site_b_shear_wool` | B | `shear_wool` | `shepherd` |
+| `site_b_weave_fabric` | B | `weave_fabric` | `artisan` |
+| `site_c_mine_ore` | C (3º povoado, `test_settlement_c`, LW-097) | `mine_ore` | `miner` |
+| `site_c_smelt_metal` | C | `smelt_metal` | `artisan` |
+| `site_c_forge_tool` | C | `forge_tool` | `artisan` |
+
+**Quem depende de quem:** A não faz `bread` nem `fabric` (do B) nem `metal` e `tool` (do C); B não faz `flour` nem `plank` (do A) nem `metal` e `tool` (do C); C não faz `wood` (do A ou do B), comida (`grain` do A ou do B, `bread` do B), `plank` nem `fabric`.
+
+**Regras (no carregador e num teste de dados) [PROPOSTA]:** `place_id` único; o local é de tipo `work` e do mesmo povoado (conferência entre módulos, D1); **para cada povoado existe pelo menos um bem de consumo ou insumo que só outros povoados produzem**; todo bem tem pelo menos um local que o produza e toda receita é usada por pelo menos um local.
+
+**Locais `work` e população (dados de outros módulos, que a LW-097 muda).** Hoje A e B têm 5 locais `work` cada (capacidade 12 e 8) e a população os preenche **por vaga, sem ligar ofício a local**; a distribuição pede 12 locais de produção, cada um com um local `work` próprio e capacidade para a equipe. A **LW-097 acrescenta** os locais `work` que faltam e o terceiro povoado, e as linhas de `population.json` passam a trazer o **`work_place_id`** (coluna nova, decisão de Arthur de a população nascer empregada por dados; o carregador do `npc` passa a aceitar a coluna, mudança pequena de código) [PROPOSTA]. A população do 3º povoado e os **hashes novos** (o oráculo e o soak de 30 dias; o `run_sim` não muda, porque não registra módulos) são da LW-097, **com a aprovação de Arthur dos valores novos**. Guardas e estalajadeiros não têm local de produção (contrato, Q15) e o povoado C não produz comida (contrato, Q17).
+
+## Ofícios novos (dado do `npc`)
+
+`occupations.json` ganha **`miner`** (mineiro) e **`shepherd`** (pastor), cada um com `work_place_kind` `work`, **só em dados** (decisão de Arthur). Entram com a LW-092 ou a LW-097. Os nomes são genéricos e provisórios (DEC-100).
 
 ## O que mais vem dos mesmos arquivos de contrato
 
@@ -150,4 +178,4 @@ Cada linha vira um local de produção (`site_id` inteiro de `ctx.ids`) em `on_n
 
 ## Testes previstos para estes dados (nas tarefas que criam cada tabela)
 
-Arquivo real carrega e devolve os objetos tipados; **dado inválido falha** apontando arquivo, item e campo (campo ausente, tipo errado, campo desconhecido, id repetido, referência quebrada, faixa inválida, vocabulário fora do fechado, par repetido, `min_factor_bp` maior que `max_factor_bp`); a regra de margem e a de "um bem, uma receita"; carregar duas vezes dá o mesmo resultado; `tools/validate_data` aceita a pasta `data/economy/` e roda dentro do `check_all`.
+Arquivo real carrega e devolve os objetos tipados; **dado inválido falha** apontando arquivo, item e campo (campo ausente, tipo errado, campo desconhecido, id repetido, referência quebrada, faixa inválida, vocabulário fora do fechado, par repetido, `min_factor_bp` maior que `max_factor_bp`); a regra de margem e a de "um bem, uma receita"; **nenhum povoado se basta** e o local único por `place_id`; a conferência entre módulos do verificador LW-093a (um caso negativo para `need_id`, `occupation_id`, `settlement_id`, `place_id` e `work_place_id`); carregar duas vezes dá o mesmo resultado; `tools/validate_data` aceita a pasta `data/economy/` e roda dentro do `check_all`.
