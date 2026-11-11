@@ -1,4 +1,77 @@
-10/11/2026 21:09 (Brasília) — CONCLUÍDA: RODADA 2 da LW-087c (world.md e npc.md alinhados com a B e com as suas decisões de manutenção dos locais e postos de serviço): commit f2913f9 enviado, check_all VERDE (1.194 de 1.194), 14 achados da B conferidos. Nada no main, sem Fase B, sem tag. Parei (regra 13), aguardando suas decisões (seção 9). Nada rodando.
+10/11/2026 21:32 (Brasília) — CONCLUÍDA: RODADA 3 da LW-087c (workplace_id e peek_site ou peek_post; números da B conferidos): commit b2d028d enviado, check_all VERDE (1.194 de 1.194), tabela de conferência contra a B e a A na seção 7 (divergências só listadas). Nada no main, sem Fase B, sem tag. Parei (regra 13), aguardando suas decisões (seção 9). Nada rodando.
+
+# RODADA 3 — RELATÓRIO — LW-087c: `workplace_id` no lugar de `site_id` e números da B conferidos (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Li: AGENTS (versão 0.4); o texto da tarefa; `economy.md` da B inteiro (`3eed5f8`); `dados.md` e `events.md` (`4d49835`); do ramo da A (`86584d6`): `DECISIONS.md` (DEC-148, 149, 151, 152 e DEC-160 a 173), o roadmap (linhas LW-088a, 093, 093a, 093b, 095, 096a, 097 e 104), o registro 0012; o meu `npc.md` e `world.md` no ramo (`f2913f9`). Decisões: DEC-022, 126, 127 e 100 (APROVADAS); DEC-163 e 164 (APROVADAS por você, registradas no ramo da A, ainda não no `main`); DEC-165 a 173 (PROPOSTA); DEC-047, 049 e 054 (PROPOSTA no `main`); DEC-040 (PENDENTE, não bloqueia). Arquivos: só `world.md` e `npc.md`. Sem dúvida que me fizesse parar.
+
+## 1. RESUMO
+No `npc.md`, `WagesPaid(site_id, amount_each)` virou `WagesPaid(workplace_id, amount_each)` e `peek_site` virou "`peek_site` ou `peek_post`" em todo lugar que fala de salário (linha da LW-095, 14.4, 14.6, Q18); o `workplace_id` é o `site_id` do local de produção ou o `post_id` do posto. Os números da B (14 locais de produção, 6 postos, 20 locais `work`, 10 novos, `workers_wanted`) agora aparecem em 14.10 e no `world.md` e **batem** com o `economy.md`, o `dados.md` e os dados do `main`. A tabela da seção 7 confere o resto contra a B e a A.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (só documentos; ramo `lw-087c-extensoes-world-npc`, commit `b2d028d`)
+- `docs/modules/npc.md` — 14.4 (postos como `ServicePost`, `WagesPaid`, vaga de posto, como o `npc` fica sabendo da vaga), 14.6, 14.8 (três marcos de hash numerados e LW-093b), 14.9 (Q15, Q18, Q20, Q22), **14.10 reescrita na parte de população e locais de trabalho** (os números da B e o efeito nas linhas), linhas LW-093 e LW-095 da seção 12. Neste commit +20 e −20 linhas.
+- `docs/modules/world.md` — números da B (20 locais `work`, 10 novos) e "três marcos" na Q-W6. Neste commit 2 linhas.
+- Contra o `main` (`8dcc81d`, intocado) o ramo difere só nesses dois arquivos (+89/−2 e +27).
+
+## 4. DECISÕES TÉCNICAS
+- **Nomes canônicos (os da B), como mandou:** `WagesPaid(workplace_id, amount_each)`; a consulta dos trabalhadores é `peek_site` (local de produção) ou `peek_post` (posto). Sobrou `site_id` em **2 lugares do `npc.md`, de propósito**: a frase que diz que o `workplace_id` é o `site_id` ou o `post_id`.
+- **O `npc` não precisa de `workers_wanted`** (a pergunta do item 2 da tarefa): quem o compara com a lista de atribuídos é a economia, para postar a vaga. O `npc` fica sabendo da vaga por `ContractOffered` (`contract_id`, `kind` = `vacancy`) e lê o detalhe por `peek_contracts`. Está escrito em 14.4. **Lacuna:** para a LW-096a pontuar a vaga precisa do **local** e do **salário**, e o `economy.md` não os lista em `peek_site`, `peek_post` nem `peek_contracts`; escrevi como **[PENDENTE, pedido à B]**.
+- **Três marcos de hash, como mandou:** marco 1 = LW-088a; marco 2 = LW-093 a LW-095; marco 3 = LW-097, uma aprovação sua dos valores novos em cada um (`npc.md` 14.8, `world.md` Q-W6). O `run_sim` não muda.
+- **Postos:** troquei "uma receita sem insumo nem produto" por "**local de trabalho sem receita**, o `ServicePost`, sem conta nem inventário", que é o que a B escreveu na rodada 2; acrescentei o risco que ela anotou (mercado sem fundos para a folha do posto: ninguém recebe naquela hora) e que o posto também tem vaga.
+- **Acrescentei, por conferência com a B e a A:** (i) NPC cujo local não tem local de produção nem posto **não é atribuído e não recebe salário**; (ii) `labor` é **recusado** a quem já está atribuído àquele local ("um trabalho, um pagamento"); (iii) a **LW-093b** (só teste: ofício novo só por JSON) é pré-requisito da LW-093 junto da LW-093a, como no roadmap da A; faltava nos meus arquivos.
+- **Efeito nas linhas de `population.json` (conta minha, a partir da Q23 e da tabela da B):** com `work_place_id`, uma linha ocupa um local, então as linhas de A e B passam de **10 para 15** (A 7, B 8), mais as do C. Marcado como derivado.
+- **Estoque inicial de 30 dias dos importados e teto de compra do mercado:** são da economia; citei só que o povoado C vive do estoque inicial de comida até o comerciante.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD final `b2d028d`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 179,4 s (3 min 31 s no total). Mesmos números do `main`, como esperado numa tarefa só de documentos.
+- Por busca: `site_id` sobra em 2 linhas do `npc.md` (as explicativas) e 0 no `world.md`; **0** citações a `STATUS-B`, `STATUS-C`, `status-b`, `status-c` ou "pré-voo" nas linhas que acrescentei.
+- Conferido por **cálculo e leitura de dados** do `main`: capacidade dos locais `work` A = 5 × 12 = 60 e B = 5 × 8 = 40 (`data/world/places.json`); população A 24+10+12+8+6 = 60 e B 16+8+8+5+3 = 40 (`data/population.json`).
+- NÃO EXECUTADO: `godot --headless --path . --import` (o `godot` não está no PATH do meu terminal; o `check_all` roda sozinho). Nada além de documentos mudou, então oráculo, soak e `run_sim` não foram rodados.
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido **por leitura do diff**: itens 1 a 4 da tarefa feitos.
+
+## 7. PROBLEMAS ENCONTRADOS — tabela da conferência (item 4 da tarefa)
+Legenda: **✓** bate; **DIV** divergência (só listada, como mandou; não editei o ramo da A nem os da B).
+
+| # | O que conferi | Meus arquivos (`b2d028d`) | B (`economy.md`, `dados.md`, `events.md`) | A (`86584d6`) |
+|---|---|---|---|---|
+| 1 | Nome do evento de salário | ✓ `WagesPaid(workplace_id, amount_each)` | ✓ `workplace_id` = `site_id` ou `post_id` (seções 6 e 11; `events.md` linha 22) | **DIV:** DEC-152 e o registro 0012 ainda escrevem `WagesPaid(site_id, amount_each)` e `peek_site` |
+| 2 | Consulta dos trabalhadores | ✓ `peek_site` ou `peek_post` | ✓ seção 10 (`peek_post` na LW-095) | **DIV:** só `peek_site` (DEC-152) |
+| 3 | 14 locais de produção, 6 postos | ✓ (5+6+3 = 14; 2 por povoado = 6) | ✓ seção 6 e `dados.md` | não traz os números (só o princípio, DEC-163 e 164) |
+| 4 | 20 locais `work`, 10 novos | ✓ (A 7, B 8, C 5; A +2, B +3, C +5) | ✓ contas conferidas contra o `main` | não traz |
+| 5 | `workers_wanted` | ✓ dado da economia; o `npc` não o lê (14.4 e 14.10) | ✓ colunas de `production_sites.json` e `service_posts.json`; população inicial = `workers_wanted` em cada local (A 60, B 40 + 4 pastores) | não traz |
+| 6 | Posto sem receita, sem conta, folha do mercado, `NO_FUNDS` | ✓ | ✓ seção 6 | ✓ DEC-164 (a B é mais detalhada) |
+| 7 | NPC sem local de produção nem posto: sem salário | ✓ (acrescentei) | ✓ seção 6 | não trata |
+| 8 | Vaga também em posto | ✓ | ✓ seção 8 | **DIV:** DEC-165 diz só "local de produção" |
+| 9 | Marcos de hash (sua decisão: 3 marcos) | ✓ 3 marcos numerados | **DIV parcial:** decide 2 (marco 1 = LW-088a **e LW-089**; marco 2 = LW-097) e deixa o 3º (LW-093 a 095) em aberto, recomendando-o | **DIV:** DEC-172 tem 2 marcos (088a e 089; 097) |
+| 10 | `run_sim` não muda | ✓ | ✓ | **DIV interna:** DEC-172 diz que não muda; DEC-162 diz que a LW-097 o atualiza |
+| 11 | LW-096a | ✓ nova, depois da LW-096, histerese, só termina por morte ou por outra vaga, sem demissão | ✓ seções 6, 8 e 14 | ✓ DEC-169 e linha do roadmap (depende da LW-096 e da LW-093) |
+| 12 | LW-093b como pré-requisito da LW-093 | ✓ (acrescentei) | **DIV pequena:** seção 7 só cita a LW-093a | ✓ roadmap: LW-093 depende da 093a e da 093b |
+| 13 | `mint` `game_start` na LW-093; `request_trade(actor_id, market_id, good_id, quantity, side)` | ✓ | ✓ | ✓ DEC-170 e DEC-173 |
+| 14 | `market_reserved` vira `market` na LW-093; terreno não ampliado; hash da LW-097 com aprovação | ✓ | ✓ (seção 4, "o nome pode mudar") | ✓ DEC-160, 161 e 162 |
+| 15 | Postos "provisórios": marca `TEMP`? | ✓ não uso marca | **aberto:** a Q18 dela pergunta e recomenda não marcar | ✓ DEC-164: é regra de jogo até a Fase 4, **não** marca `TEMP-LW-` |
+
+## 8. RISCOS
+- **Marco 1 e a LW-089 a LW-092:** B e A põem a LW-089 no marco 1; a sua decisão e os meus arquivos põem só a LW-088a. **Hipótese, não verificada:** se o bloco `economy` do `state_hash` também muda quando as LW-089 a LW-092 acrescentam estado (mercados, locais), esses valores novos precisam de um marco. Pergunta para a LW-087a.
+- **Salário e local da vaga** não estão nas consultas da B: sem eles a LW-096a não consegue pontuar a vaga.
+- **A mantém `site_id`, dois marcos e a vaga só em local de produção:** a LW-087a precisa alinhar com a B e com a sua decisão de hoje antes de registrar.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **A LW-087a** alinhar DEC-152, DEC-165 e DEC-172 com `workplace_id`, a vaga de posto e os três marcos (**recomendo**); resolver a DEC-162 contra a DEC-172 (`run_sim`).
+2. **A B** listar o salário e o local da vaga nas consultas (`peek_site`, `peek_post` ou `peek_contracts`) e citar a LW-093b na seção 7.
+3. **Você:** aprovar ou trocar as propostas do revisor (três marcos, Q23, Q-W1 a Q-W6; **recomendo aprovar**) e decidir se o marco 1 cobre a LW-089 a LW-092 (**recomendo** perguntar à LW-087a e provar na LW-088a).
+4. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3 não iniciada**; os rascunhos 087b, 087c e 087d seguem **fora do `main`** até você escrever que podem entrar; o da A (087a) está no ramo dela.
+- Próxima tarefa recomendada: **LW-087a (A)**, para alinhar as divergências da tabela. **Não iniciada.** Parei aqui (regra 13).
+- Git: ramo `lw-087c-extensoes-world-npc` enviado (`b2d028d`); `status-c` enviado; `main` = `8dcc81d`, intocado; nenhuma tag nova; sem merge no `main`, sem Fase B, sem `--force`.
+
+---
 
 # RODADA 2 — RELATÓRIO — LW-087c: alinhar `world.md` e `npc.md` com a B e com as suas novas decisões (DOC)        Status: PRONTA PARA REVISÃO
 
