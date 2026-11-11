@@ -1,4 +1,4 @@
-11/11/2026 13:17 (Brasília) · BLOCO 2 DA A, em andamento · LW-090 PRONTA em 3 partes (ramos `lw-090-precos`, `lw-090b-estado-do-mercado`, `lw-090c-mercados-no-modulo`); `check_all` VERDE na última: 136 scripts, 1.259 testes; hashes e `run_sim` iguais; o jogo real ainda não cria os mercados (criar gastaria IDs antes dos NPCs e quebraria um teste existente, que não posso editar): a ligação fica para a LW-093; seguindo para a LW-091
+11/11/2026 13:29 (Brasília) · BLOCO 2 DA A, em andamento · LW-091 PRONTA em 2 partes (ramos `lw-091-comercio` e `lw-091b-porta-do-comercio`); `check_all` VERDE na última: 138 scripts, 1.269 testes, 291.958 asserts; hashes e `run_sim` iguais; seguindo para a LW-092 (produção)
 
 # RELATÓRIO — SEQUÊNCIA DA A: LW-093b (Fase B), LW-087 (fechamento) e LW-088a     Status: PRONTA PARA REVISÃO (Partes 1 e 2 já no `main`; Parte 3 só no ramo)
 
