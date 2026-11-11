@@ -8,5 +8,7 @@
 	{"id": "wait", "duration_min": 10, "place_kind": "", "risk": 0, "interruptible": true},
 	{"id": "flee", "duration_min": 20, "place_kind": "home", "risk": 0, "interruptible": true},
 	{"id": "help", "duration_min": 20, "place_kind": "", "risk": 10, "interruptible": true},
-	{"id": "talk_player", "duration_min": 6, "place_kind": "", "risk": 0, "interruptible": true}
+	{"id": "talk_player", "duration_min": 6, "place_kind": "", "risk": 0, "interruptible": true},
+	{"id": "buy", "duration_min": 10, "place_kind": "market", "risk": 0, "interruptible": true},
+	{"id": "sell", "duration_min": 10, "place_kind": "market", "risk": 0, "interruptible": true}
 ]

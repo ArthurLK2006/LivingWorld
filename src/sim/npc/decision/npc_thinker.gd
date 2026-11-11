@@ -424,18 +424,43 @@ class ConditionProvider:
 	var _occupancy: PlaceOccupancy
 	var _food: ActionConditionProvider
 	var _income: IncomeStub
+	var _trade: NpcTrade
+	## A conclusão que acabou de tirar comida do inventário do NPC: o `FoodStub` não consome a refeição de novo (LW-093).
+	var _food_from_inventory: bool = false
 
-	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, income: IncomeStub = null) -> void:
+	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, income: IncomeStub = null, trade: NpcTrade = null) -> void:
 		_places = places
 		_occupancy = occupancy
 		_food = food
 		_income = income
+		_trade = trade
 
 	func has_food(settlement_id: String) -> bool:
 		return _food != null and _food.has_food(settlement_id)
 
-	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só o FoodStub, TEMP-LW-065).
+	## Comida PARA O NPC (LW-093): a do inventário dele, na economia, ou, na falta, a do assentamento (o `FoodStub` de reserva).
+	func npc_has_food(npc_id: int, settlement_id: String) -> bool:
+		return (_trade != null and _trade.has_food(npc_id)) or has_food(settlement_id)
+
+	func can_buy_food(npc_id: int) -> bool:
+		return _trade != null and not _trade.plan_food(npc_id).is_empty()
+
+	func has_goods(npc_id: int) -> bool:
+		return _trade != null and _trade.has_goods(npc_id)
+
+	## A ação completa do NPC na economia (comprar, comer do inventário, vender); sem economia nada.
+	func complete_action(npc_id: int, action_id: String) -> ActionConditionProvider.Completion:
+		if _trade == null:
+			return ActionConditionProvider.Completion.new()
+		var completion: ActionConditionProvider.Completion = _trade.complete(npc_id, action_id)
+		_food_from_inventory = completion.consumed_from_inventory
+		return completion
+
+	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só o FoodStub, TEMP-LW-065), menos quando a comida saiu do inventário do NPC.
 	func on_action_completed(action_id: String, settlement_id: String, occupation_id: String) -> void:
+		if _food_from_inventory:
+			_food_from_inventory = false
+			return
 		if _food != null:
 			_food.on_action_completed(action_id, settlement_id, occupation_id)
 

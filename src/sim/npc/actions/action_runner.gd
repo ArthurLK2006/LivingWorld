@@ -251,6 +251,12 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 	var extras: Array[ActionDef.ActionEffect] = []
 	if _provider != null:
 		extras = _provider.extra_effects(action_id, state.occupation_id)
+		if progress_permille == FULL_PROGRESS:
+			var completion: ActionConditionProvider.Completion = _provider.complete_action(npc_id, action_id)
+			if not completion.problem.is_empty():
+				return Result.failure(CODE_ACTION_FAILED, "ActionRunner.apply_effects: NPC %d, ação '%s' falhou ao terminar: %s; nenhum efeito foi aplicado." % [npc_id, action_id, completion.problem])
+			if not completion.relieved_need_id.is_empty():
+				extras.append(ActionDef.ActionEffect.new(completion.relieved_need_id, -completion.relief - _table_delta(action, completion.relieved_need_id)))
 	for extra: ActionDef.ActionEffect in extras:
 		if not _need_position.has(extra.need_id):
 			return Result.failure(CODE_UNKNOWN_NEED, "ActionRunner.apply_effects: NPC %d, ação '%s': o provedor pediu efeito sobre a necessidade '%s', que não existe nas definições; nenhum efeito foi aplicado." % [npc_id, action_id, extra.need_id])
@@ -303,8 +309,8 @@ func _unmet_condition(state: NpcState, action: ActionDef, place_id: String, now:
 				if _provider == null or not _provider.place_has_room(place_id):
 					return "o local '%s' não tem vaga, ou não há quem responda (condição place_has_room)" % place_id
 			ActionDef.CONDITION_HAS_FOOD:
-				if _provider == null or not _provider.has_food(state.settlement_id):
-					return "não há comida no assentamento '%s', ou não há quem responda (condição has_food)" % state.settlement_id
+				if _provider == null or not _provider.npc_has_food(state.npc_id, state.settlement_id):
+					return "não há comida para o NPC %d (nem no inventário dele nem no assentamento '%s'), ou não há quem responda (condição has_food)" % [state.npc_id, state.settlement_id]
 			_:
 				return "tipo de condição desconhecido '%s'" % condition.kind
 	return ""
@@ -315,9 +321,18 @@ func _completion_problem(state: NpcState, action: ActionDef) -> String:
 	for condition: ActionDef.ActionCondition in action.conditions:
 		if not RECHECKED_AT_COMPLETION.has(condition.kind):
 			continue
-		if condition.kind == ActionDef.CONDITION_HAS_FOOD and (_provider == null or not _provider.has_food(state.settlement_id)):
-			return "não há mais comida no assentamento '%s' (condição has_food)" % state.settlement_id
+		if condition.kind == ActionDef.CONDITION_HAS_FOOD and (_provider == null or not _provider.npc_has_food(state.npc_id, state.settlement_id)):
+			return "não há mais comida para o NPC %d (condição has_food)" % state.npc_id
 	return ""
+
+
+## A soma dos efeitos da tabela da ação sobre a necessidade (0 se não há): o consumo de comida corrige o que a tabela já alivia (LW-093).
+func _table_delta(action: ActionDef, need_id: String) -> int:
+	var total: int = 0
+	for effect: ActionDef.ActionEffect in action.effects:
+		if effect.need_id == need_id:
+			total += effect.delta
+	return total
 
 
 ## Valor da necessidade no minuto `now`, projetado sem gravar (a conta é a mesma de NeedMath.settle).

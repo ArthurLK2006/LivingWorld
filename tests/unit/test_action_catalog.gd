@@ -6,7 +6,7 @@ extends GutTest
 
 const DATA_DIR: String = "res://data"
 const ISSUE_CODE: String = "ACTION_DATA_INVALID"
-const ACTION_IDS: Array[String] = ["sleep", "eat", "work", "rest", "talk", "go_to_place", "wait", "flee", "help", "talk_player"]
+const ACTION_IDS: Array[String] = ["sleep", "eat", "work", "rest", "talk", "go_to_place", "wait", "flee", "help", "talk_player", "buy", "sell"]
 const EFFECTS_FILE: String = "action_effects.json"
 const CONDITIONS_FILE: String = "action_conditions.json"
 const WEIGHTS_FILE: String = "action_trait_weights.json"
@@ -100,7 +100,8 @@ func test_eating_requires_food_and_nothing_else_has_conditions_yet() -> void:
 
 func test_no_initial_action_uses_the_reserved_market_place_and_every_kind_is_known() -> void:
 	for action: ActionDef in ActionCatalogLoader.load_dir().actions:
-		assert_ne(action.place_kind, "market_reserved", "%s: nenhuma ação da Fase 2 usa o mercado-reservado." % action.id)
+		if not ["buy", "sell"].has(action.id):
+			assert_ne(action.place_kind, "market", "%s: só `buy` e `sell` (LW-093) usam o local de mercado." % action.id)
 		assert_true(action.place_kind.is_empty() or ActionDef.PLACE_KINDS.has(action.place_kind))
 		assert_true(action.risk >= 0 and action.risk <= 100)
 
@@ -145,7 +146,7 @@ func test_a_new_action_added_only_by_data_passes_validation() -> void:
 	tables["action_trait_weights"].append({"id": "gather_wood_caution", "action_id": "gather_wood", "trait_id": "caution", "weight": -5})
 	var loaded: ActionCatalogLoader.LoadResult = _load(tables)
 	assert_true(loaded.result.ok, loaded.result.message)
-	assert_eq(loaded.actions.size(), 11)
+	assert_eq(loaded.actions.size(), 13)
 	var added: ActionDef = _action(loaded.actions, "gather_wood")
 	assert_eq(added.duration_min, 120)
 	assert_eq(added.place_kind, "work")
