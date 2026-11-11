@@ -1,4 +1,4 @@
-11/11/2026 16:53 (Brasília) · FASE B FEITA: o `main` está em `d1d3d8b` (avanço direto, sem tag): economia do marco 1 (LW-088a a LW-093a) mais as correções da LW-088d e o status da Fase 3 (6 de 30; projeto 93 de 192); `check_all` VERDE na junção `0760c5c` e no commit final `d1d3d8b` (142 scripts, 1.293 testes); seguindo para a T1 (`lw-092d-correcoes-da-revisao`)
+11/11/2026 17:00 (Brasília) · T1 PRONTA: ramo `lw-092d-correcoes-da-revisao` (sai do `main` `d1d3d8b`); `check_all` VERDE (143 scripts, 1.296 testes), hashes e `run_sim` iguais; N9 (regra F só em `economy_replies.gd`) NÃO feita: conflita com um teste existente; seguindo para a T1b (`lw-092e-ajustes-de-contrato`)
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
