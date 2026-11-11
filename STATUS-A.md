@@ -1,4 +1,4 @@
-11/11/2026 20:09 (Brasília) · LW-093 COMPLETA (ponta e16072b). Você escolheu a opção A; medi que só produção não basta (sem salário os 100 NPCs ficam sem dinheiro no dia 5 e morrem até o dia 11): A exige salário e postos (LW-095) e a distribuição de A e B antes da LW-094. Plano revisado no item 7b; aguardo seu OK na ordem e na tabela de distribuição
+11/11/2026 20:50 (Brasília) · BLOCO A v8 em curso: LW-095 só código. Parte a (salário dos locais, df01eb1) e parte b (postos de serviço, ramo lw-095b-postos-de-servico) prontas, `check_all` VERDE (153 scripts, 1.336 testes), `run_sim` e hashes iguais. Próximas: consulta peek_post, o npc ouvindo WagesPaid, depois LW-096 e LW-096a
 
 # RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
 
