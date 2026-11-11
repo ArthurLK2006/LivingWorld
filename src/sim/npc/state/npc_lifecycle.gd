@@ -15,9 +15,11 @@ var _definitions: NpcModule.Definitions
 ## "NPC inexistente" do módulo (a mesma falha tratada em toda a API): recebe o nome do chamador e o ID.
 var _unknown: Callable
 var _ctx: SimContext
+## A porta da economia (`economy/api`, DEC-132; LW-093): o NPC abre a conta dele nela ao nascer. Nulo = módulo sem economia (os testes que só precisam do estado do NPC).
+var _economy: EconomyModule
 
 
-func _init(npcs: Dictionary[int, NpcState], notables: NpcNotables, tracer: DecisionTracer, need_defs: Array[NeedDef], defs_problem: String, routine: RoutineTable, definitions: NpcModule.Definitions, unknown_npc: Callable) -> void:
+func _init(npcs: Dictionary[int, NpcState], notables: NpcNotables, tracer: DecisionTracer, need_defs: Array[NeedDef], defs_problem: String, routine: RoutineTable, definitions: NpcModule.Definitions, unknown_npc: Callable, economy: EconomyModule = null) -> void:
 	_npcs = npcs
 	_notables = notables
 	_tracer = tracer
@@ -26,6 +28,7 @@ func _init(npcs: Dictionary[int, NpcState], notables: NpcNotables, tracer: Decis
 	_routine = routine
 	_definitions = definitions
 	_unknown = unknown_npc
+	_economy = economy
 
 
 func setup(ctx: SimContext) -> void:
@@ -51,7 +54,17 @@ func create(spec: NpcSpec) -> NpcModule.CreateResult:
 	var created: NpcState = NpcState.from_spec(npc_id, spec, _ctx.clock.total_minutes(), _start_needs())
 	created.next_think_time = _first_think_time(npc_id, _ctx.clock.total_minutes())
 	_npcs[npc_id] = created
+	_open_account(npc_id, spec.work_place_id)
 	return NpcModule.CreateResult.new(Result.success(), npc_id)
+
+
+## A conta do NPC na economia (LW-093; DEC-145): `request_open_owner(npc_id, "npc", work_place_id)`, que também atribui o NPC ao local de produção do `work_place_id`, se houver. Sem economia não há conta. Falha visível (`push_error`), sem desfazer a criação.
+func _open_account(npc_id: int, work_place_id: String) -> void:
+	if _economy == null:
+		return
+	var opened: Result = _economy.request_open_owner(npc_id, EconomyModule.KIND_NPC, work_place_id)
+	if not opened.ok:
+		push_error("NpcLifecycle.create: a conta do NPC %d não abriu na economia: %s" % [npc_id, opened.message])
 
 
 ## Remove o NPC da tabela. O ID não volta: o contador do core só sobe.
