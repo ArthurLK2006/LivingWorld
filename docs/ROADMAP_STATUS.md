@@ -225,3 +225,5 @@ Registrado na **LW-146a** (11/11/2026), pelas decisões de Arthur (`docs/DECISIO
 **Decisões que seguem PENDENTES:** DEC-066 (sistema definitivo de combate; parte do SP6), DEC-053 e DEC-029 (esperam o teste de tropas) e DEC-030 (magia, fora do protótipo).
 
 **Entrada no `main` (11/11/2026):** as partes LW-146a a LW-146e (DEC-179 a DEC-201, roadmap e escopo do protótipo, contratos novos de `combat`, `ecology` e eventos dinâmicos e extensões de `character`, `bridge`, `presentation` e `persistence`) entraram no `main` pela Fase B, sem tag. **Não alteram contagens nem porcentagens.**
+
+**Entrada no `main` (11/11/2026), LW-146f parcial:** as extensões de `world`, `npc` e `app` e o catálogo `docs/events.md` (11 eventos planejados novos) entraram no `main` pela Fase B, sem tag. **A parte de `economy` e dos comandos da Fase 4 (LW-146g) segue pendente.** Não altera contagens nem porcentagens.
