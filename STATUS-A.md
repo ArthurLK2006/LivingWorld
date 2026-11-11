@@ -1,4 +1,4 @@
-11/11/2026 09:26 (Brasília) · SEQUÊNCIA DA A, Parte 1 CONCLUÍDA · LW-093b (Fase B): no `main` (`4ada136`) pelo seu "APROVADO LW-093b" (avanço simples; `main` andou duas vezes durante a parte e refiz a junção e o `check_all` a cada vez; `check_all` verde: 125 scripts, 1.203 testes, 262.120 asserts, mesmos hashes); agora a Parte 2 (LW-087, começa pelo GATE)
+11/11/2026 09:31 (Brasília) · SEQUÊNCIA DA A, Parte 2 CONCLUÍDA · LW-087 (as quatro partes) fechada no `main` (`9b4f6f0`, avanço simples): GATE passou (economy.md e dados.md sem "RASCUNHO", 16 eventos, frases da LW-087c); placar recontado por `grep`: Fase 3 = 1 de 30 e projeto = 88 de 192; `check_all` verde (125 scripts, 1.203 testes, 262.120 asserts, mesmos hashes); Parte 1 (LW-093b) já está no `main` (`4ada136`); agora a Parte 3 (LW-088a), lendo antes de mexer
 
 # RELATÓRIO — LW-093b: ofício novo só por JSON     Status: PRONTA PARA REVISÃO
 
