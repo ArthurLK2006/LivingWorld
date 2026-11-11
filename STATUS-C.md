@@ -1,4 +1,65 @@
-11/11/2026 13:30 (Brasília) — CONCLUÍDA: LW-117a rodada 2 + LW-117b: DEC-224 a DEC-226 (aprovações de 17.11) no DECISIONS.md e seção 17 marcada; 117a 4a46ae7 e 117b 9d541a3 ENVIADOS (fora do main); check_all VERDE nas duas pontas (1.203 de 1.203). main = ffb1e03 (Fase 5, não é meu). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 14:08 (Brasília) — CONCLUÍDA: LW-117c (contratos de factions e politics, Fase 4): dois arquivos novos em docs/modules/; commit e1ca88d ENVIADO ao ramo lw-117c-factions-politics (empilhado na 117b, fora do main); check_all VERDE (1.203 de 1.203). main = ffb1e03 (Fase 5, não é meu). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117c — RELATÓRIO — Contratos de `factions` e `politics` para a Fase 4 (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: a parte "c" da LW-117, só documento: os contratos novos de `factions` e `politics` (`docs/modules/factions.md` e `docs/modules/politics.md`). Li: AGENTS 0.4; o `0013`; a seção 17 do `economy.md`; arquitetura 12, 13 e 17.5; GDD 10 e 11; roadmap LW-119 a LW-134 (já corrigido pela 117a); `MODELO.md`; DEC-183, 194, 195 e 199 da Fase 5, lidas no `main`. DEC: APROVADAS 050, 051, 054, 100, 202 a 212 e 224 a 226; PROPOSTA 038 e 213 a 223; nenhuma PENDENTE trava. Arquivos: só os dois contratos novos; não toquei no `economy.md`, no `README` dos módulos, em `docs/events.md` nem em `dados.md`. Git, como entendi o seu "Sim, 117c": ramo `lw-117c-factions-politics` empilhado na 117b (`9d541a3`), um commit, envio só dele e do `status-c`, nada para o `main`.
+
+## 1. RESUMO
+Escrevi os dois contratos, no modelo do `MODELO.md`: `factions.md` (160 linhas) e `politics.md` (169 linhas). Cada um tem responsabilidade, dependências, modelo de dados, comandos, consultas, eventos, dado → dono, arquivos de dados, rastreio por tarefa e uma lista de pontos para você aprovar. Os dois fecham o que a seção 17 do `economy.md` deixou para a 117c: o tesouro de facção colapsada, a folha do guarda sem pagamento duplo e quem recebe a tarifa.
+
+## 2. ARQUIVOS CRIADOS
+- `docs/modules/factions.md` — contrato do módulo `factions`: `Faction`, `Membership`, hierarquia, deliberação, ordens, finanças, influência por província, afinidade, líderes T3 e a cópia de leitura da reputação.
+- `docs/modules/politics.md` — contrato do módulo `politics`: países, as cinco leis, licenças, crime e multa, o provedor de `TradeRules`, estabilidade, governante, diplomacia, tratados e o controle das províncias.
+
+## 3. ARQUIVOS MODIFICADOS
+- Nenhum.
+
+## 4. DECISÕES TÉCNICAS
+Tudo é **PROPOSTA** do revisor, salvo o que cita DEC APROVADA. Resumo do que decidi sozinho:
+- **Camadas sem ciclo:** `politics` importa `factions/api`; `military` importa as duas; `factions` **nunca** importa `politics` nem `military` (eventos só). A `economy` nunca importa nenhum dos dois.
+- **IDs:** o `owner_id` do tesouro é o `faction_id` (ou o `polity_id`). A polity tem **ID próprio**; a facção de governo só aponta para ela, porque o vizinho não tem facção. Isso diverge da arquitetura 13.2 (arquivo protegido, não alterado).
+- **Governante do país principal = o líder da facção de autoridade** (um só T3 por cargo); o do vizinho vem de `ruler_candidates.json` e é promovido pela `factions`.
+- **Só a `factions` promove a T3** (`request_appoint_t3`), inclusive o governante do vizinho.
+- **Folha sem pagamento duplo:** antes do soldo semanal, a `factions` lê os trabalhadores dos postos e pula quem já recebe pelo posto.
+- **Contribuição dos membros** como receita (uma fatia do saldo, com teto), por `request_pay`; a facção colapsada deixa o saldo parado na soma.
+- **Imposto de entrada = sobretaxa só para estrangeiros**; **licença**: o jogador compra, o NPC nasce com ela.
+- **Crime:** a `politics` é a dona (opção A da DEC-195); na Fase 4 só um comando de desenvolvimento publica o fato; multa até o saldo do ator, sem dívida.
+- **Estabilidade por povoado, média no país**, com histerese; guerra acaba por derrota ou por prazo.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova.
+
+## 5. TESTES EXECUTADOS
+- Conferência por script: as tabelas dos dois arquivos têm colunas consistentes; toda DEC citada existe nesta árvore, **menos a DEC-183 e a DEC-195**, que são da Fase 5 e só existem no `main` (o texto diz isso); zero citações a arquivos de status ou a "da A/B/C"; `git diff --staged --check` sem erro.
+- Teste de junção só de leitura (`git merge-tree`) contra o `main` atual (`ffb1e03`): os dois arquivos novos não conflitam; o `DECISIONS.md` segue com os mesmos 28 conflitos de texto da pilha 117a.
+- `tools/check_all` **no HEAD final `e1ca88d`**: **VERDE**, 125 scripts, 1.203 testes (todos passando), 262.120 asserts, 185,8 s.
+- NÃO EXECUTADO: nada além do que é próprio de uma tarefa só de documentos.
+
+## 6. RESULTADOS
+Critério da parte 117c cumprido por leitura: os dois contratos existem em `docs/modules/`, com **dono único** para controle (`politics`), influência (`factions`), leis (`politics`) e tesouro (`economy`, movimentado só pela `factions` e pela `politics`), e as tabelas "dado → dono" de cada um.
+
+## 7. PROBLEMAS ENCONTRADOS
+1. **Acoplamento:** a `politics` importa 4 módulos (`world`, `economy`, `npc`, `factions`), mais que o limite de 3 do AGENTS 5.2. A arquitetura 13.6 já lista essas dependências; deixei o alerta escrito no contrato e a REV da LW-144 reavalia.
+2. **Pedidos a outras partes** (escritos nos contratos, porque um arquivo tem um só escritor): à **117b**, um motivo `contribution` (ou aceitar `tax`) e `needs_license` verdadeiro recusar a ordem; à **117d**, a carga de `ReputationChanged` (com a faixa), `BattleResolved` e `CaravanAttacked` com o país do atacante; à **117e**, `peek_satisfaction`, a lista de NPC por ofício e povoado e o povoado de moradia do NPC.
+3. **O `README` dos módulos** diz que `economy`, `factions` e `politics` "não têm contrato"; está desatualizado desde a 087b. Não toquei (fora do escopo); recomendo corrigir junto da Fase B.
+4. **A 117c não fecha o ponto 6 de 17.11 do `economy.md`** (quem recebe a tarifa por país): fica resolvido assim: governo no principal e o próprio país no vizinho (`politics.md`, seção 5).
+5. O povoado C (do vizinho, sem facção) **segue com a folha dos postos pelo mercado** (alternativa descrita; exigiria ajustar 17.5 do `economy.md`).
+
+## 8. RISCOS
+- Muitas escolhas de jogo ficaram como PROPOSTA (listas de pontos em aberto: 9 em `factions.md` e 10 em `politics.md`): se você trocar alguma, a linha correspondente do roadmap e a do `economy.md` também mudam.
+- O tesouro da autoridade só tem as receitas que a tarifa, a multa e a contribuição lhe derem; sem elas a folha dos postos para (risco R3.3). Calibração na LW-112 e soak da LW-142.
+- A criminosa depende de assalto **e** contribuição; se o assalto for raro, quebra no soak de 1 ano.
+- Os contratos supõem pedidos às partes 117d, 117e e 117b que ainda não existem.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar ou trocar os dois contratos**, em especial: contribuição dos membros como receita; reputação só do jogador (NPC usa lealdade); imposto de entrada como sobretaxa para estrangeiros; licença; a `politics` como dona do crime; governante do principal = líder da facção de autoridade. Recomendo aprovar com as recomendações escritas em cada lista.
+2. **Próxima parte:** recomendo a **117d** (contratos de `military` e do módulo `events`: crônica e reputação), que fecha os pedidos acima. Não iniciada.
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 4: 3 das 6 partes da LW-117 feitas (117a, 117b e 117c)**; as LW-118 a LW-145 não começaram e dependem da Fase 3.
+- Próxima tarefa recomendada: **LW-117d**. **Não iniciada.** Parei (regra 13).
+- Git: ramo `lw-117c-factions-politics` em `e1ca88d`, **enviado** por avanço simples, empilhado na 117b (`9d541a3`) e na 117a (`4a46ae7`); `status-c` enviado com este relatório; `main` = `ffb1e03` (da Fase 5), intocado por mim; sem tag, sem `--force`. A pilha 117a + 117b + 117c segue fora do `main`; a Fase B só por ordem escrita sua.
+
+---
 
 # LW-117a (RODADA 2) E LW-117b — RELATÓRIO — Registro das 3 aprovações de 17.11 como DEC-224 a DEC-226 (DOC)        Status: PRONTA PARA REVISÃO
 
