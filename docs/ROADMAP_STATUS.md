@@ -223,3 +223,5 @@ Registrado na **LW-146a** (11/11/2026), pelas decisões de Arthur (`docs/DECISIO
 | **Critérios de sucesso:** quatro hipóteses, três cascatas e diversão (DEC-185) | **Congelar o save** (DEC-186): no protótipo, save antigo é sempre rejeitado com mensagem clara |
 
 **Decisões que seguem PENDENTES:** DEC-066 (sistema definitivo de combate; parte do SP6), DEC-053 e DEC-029 (esperam o teste de tropas) e DEC-030 (magia, fora do protótipo).
+
+**Entrada no `main` (11/11/2026):** as partes LW-146a a LW-146e (DEC-179 a DEC-201, roadmap e escopo do protótipo, contratos novos de `combat`, `ecology` e eventos dinâmicos e extensões de `character`, `bridge`, `presentation` e `persistence`) entraram no `main` pela Fase B, sem tag. **Não alteram contagens nem porcentagens.**
