@@ -1,4 +1,4 @@
-11/11/2026 17:22 (Brasília) · T2 PRONTA: ramo `lw-092f-divide-economy-module` (sai do `main` `d1d3d8b`); `EconomyModule` dividido em 4 classes de apoio, sem mudar comportamento; `check_all` VERDE (142 scripts, 1.293 testes, mesmos asserts e hashes; nenhum teste alterado); seguindo para a T3 (LW-093, até o primeiro hash do marco 2)
+11/11/2026 18:40 (Brasília) · T3 PARADA NO MARCO 2: a primeira parte da LW-093 (o NPC abre a conta na economia ao nascer; ramo `lw-093-npcs-no-mercado`, sem commit) muda os 9 valores do oráculo e os hashes dos soaks; a causa é só o conteúdo do bloco `economy` (contas dos NPCs): sem o bloco, os 9 valores ORIGINAIS voltam; `check_all` VERMELHO só nesses 2 testes do oráculo (1.293 passam), `run_sim` igual; aguardando o seu "aprovo os hashes do marco 2"
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
