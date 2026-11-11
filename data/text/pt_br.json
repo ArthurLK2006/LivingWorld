@@ -53,5 +53,15 @@
 	"tools.npc_inspector.memory_line": "Minuto {time}: {kind} em {place} com {actors} (valência {valence}, saliência {salience})",
 	"tools.npc_inspector.trait_line": "Traço permanente: pessoa {actor}, valência {valence}, desde o minuto {since}",
 	"tools.npc_inspector.relation_none": "Sem relações.",
-	"tools.npc_inspector.relation_line": "Com {other}: {label} (afeição {affection}, confiança {trust}, respeito {respect}, medo {fear}, dívida {debt}; conheceram-se no minuto {met})"
+	"tools.npc_inspector.relation_line": "Com {other}: {label} (afeição {affection}, confiança {trust}, respeito {respect}, medo {fear}, dívida {debt}; conheceram-se no minuto {met})",
+	"good.grain.name": "Grão",
+	"good.flour.name": "Farinha",
+	"good.bread.name": "Pão",
+	"good.wood.name": "Madeira",
+	"good.plank.name": "Tábua",
+	"good.ore.name": "Minério",
+	"good.metal.name": "Metal",
+	"good.tool.name": "Ferramenta",
+	"good.wool.name": "Lã",
+	"good.fabric.name": "Tecido"
 }

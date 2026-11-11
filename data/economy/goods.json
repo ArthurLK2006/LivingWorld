@@ -1,0 +1,12 @@
+[
+	{"id": "grain", "name_key": "good.grain.name", "category": "food", "base_value": 4, "weight": 2, "perishability_days": 0, "need_id": "hunger", "need_relief": 30},
+	{"id": "flour", "name_key": "good.flour.name", "category": "processed", "base_value": 6, "weight": 2, "perishability_days": 0},
+	{"id": "bread", "name_key": "good.bread.name", "category": "food", "base_value": 10, "weight": 1, "perishability_days": 4, "need_id": "hunger", "need_relief": 60},
+	{"id": "wood", "name_key": "good.wood.name", "category": "raw_material", "base_value": 4, "weight": 5, "perishability_days": 0},
+	{"id": "plank", "name_key": "good.plank.name", "category": "processed", "base_value": 8, "weight": 4, "perishability_days": 0},
+	{"id": "ore", "name_key": "good.ore.name", "category": "raw_material", "base_value": 6, "weight": 6, "perishability_days": 0},
+	{"id": "metal", "name_key": "good.metal.name", "category": "processed", "base_value": 16, "weight": 5, "perishability_days": 0},
+	{"id": "tool", "name_key": "good.tool.name", "category": "tool", "base_value": 26, "weight": 2, "perishability_days": 0},
+	{"id": "wool", "name_key": "good.wool.name", "category": "raw_material", "base_value": 5, "weight": 1, "perishability_days": 0},
+	{"id": "fabric", "name_key": "good.fabric.name", "category": "processed", "base_value": 10, "weight": 1, "perishability_days": 0}
+]

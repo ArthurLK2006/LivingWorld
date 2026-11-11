@@ -1,0 +1,7 @@
+[
+	{"id": "npc", "weight_capacity": 40, "initial_balance": 60},
+	{"id": "player", "weight_capacity": 60, "initial_balance": 100},
+	{"id": "site", "weight_capacity": 400, "initial_balance": 200},
+	{"id": "market", "weight_capacity": 5000, "initial_balance": 3000},
+	{"id": "contract", "weight_capacity": 0, "initial_balance": 0}
+]
