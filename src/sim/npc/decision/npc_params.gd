@@ -61,6 +61,8 @@ var talk_limit: int = 0
 # Compras (LW-093).
 ## Unidades de comida que UMA compra leva, no máximo (a economia limita pelo saldo e pelo estoque); 0 = o NPC não compra.
 var buy_units: int = 0
+## Quanto do preço da compra desconta do valor de `buy`, em percentagem do total pago (100 = cada moeda tira um ponto de alívio); 0 = o preço não pesa.
+var buy_price_percent: int = 0
 
 
 ## Peso do nível de urgência (0 a 3); nível fora disso usa o do crítico.

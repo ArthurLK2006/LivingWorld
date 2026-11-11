@@ -24,6 +24,8 @@ const MAX_TRAIT_SLOTS: int = 16
 const MAX_RELATIONS_CAPACITY: int = 1000
 ## Teto de `buy_units` (uma compra de comida leva poucas unidades; mais que isso é dado errado).
 const MAX_BUY_UNITS: int = 20
+## Teto de `buy_price_percent`.
+const MAX_PERCENT: int = 1000
 const URGENCY_WEIGHT_FIELDS: Array[String] = ["urgency_weight_comfortable", "urgency_weight_attention", "urgency_weight_urgent", "urgency_weight_critical"]
 
 
@@ -61,6 +63,7 @@ static func build_schema(file_name: String = DEFAULT_FILE) -> DataSchema:
 	schema.add_field("talk_limit", DataSchema.FieldType.INT, false).set_range(0, NpcRelation.MAX_VALUE)
 	# Compras (LW-093): opcional; ausente vale 0 (o NPC não compra).
 	schema.add_field("buy_units", DataSchema.FieldType.INT, false).set_range(0, MAX_BUY_UNITS)
+	schema.add_field("buy_price_percent", DataSchema.FieldType.INT, false).set_range(0, MAX_PERCENT)
 	return schema
 
 
@@ -127,6 +130,7 @@ static func _build(bundle: DataBundle) -> NpcParams:
 	params.talk_gain = record.get("talk_gain", 0)
 	params.talk_limit = record.get("talk_limit", 0)
 	params.buy_units = record.get("buy_units", 0)
+	params.buy_price_percent = record.get("buy_price_percent", 0)
 	return params
 
 

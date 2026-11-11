@@ -206,9 +206,27 @@ func _relieving_actions(state: NpcState) -> Array[ActionDef]:
 	if urgent_ids.is_empty():
 		return relieving
 	for action: ActionDef in _actions:
-		if _relieves(action, urgent_ids):
+		if _relieves(action, urgent_ids) or _buy_relieves(state, action, urgent_ids):
 			relieving.append(action)
 	return relieving
+
+
+## `buy` não tem efeito na tabela: o valor dela é DERIVADO do alívio da comida que o NPC pode comprar (LW-093, Q19). Alivia a fome se ela está urgente e a compra vale a pena.
+func _buy_relieves(state: NpcState, action: ActionDef, urgent_ids: Array[String]) -> bool:
+	return action.id == NpcTrade.BUY_ACTION_ID and urgent_ids.has(NpcTrade.FOOD_NEED_ID) and _provider.buy_value(state.npc_id) > 0
+
+
+## A ação como o pontuador a vê: `buy` ganha um efeito derivado (o valor da compra sobre a fome), sem tocar na do catálogo; as outras, como são. `null` se `buy` não vale nada agora.
+func _for_scoring(state: NpcState, action: ActionDef) -> ActionDef:
+	if action.id != NpcTrade.BUY_ACTION_ID:
+		return action
+	var value: int = _provider.buy_value(state.npc_id)
+	if value <= 0:
+		return null
+	var derived: ActionDef = ActionDef.new(action.id, action.duration_min, action.place_kind, action.risk, action.interruptible)
+	derived.trait_weights = action.trait_weights
+	derived.effects.append(ActionDef.ActionEffect.new(NpcTrade.FOOD_NEED_ID, -value))
+	return derived
 
 
 ## O NPC já está andando para o local da ação escolhida? Então segue andando: recomeçar a caminhada a cada pensamento nunca a terminaria
@@ -236,7 +254,10 @@ func _candidate_for(state: NpcState, action: ActionDef, now: int, running: bool,
 			return null
 		if needs_place:
 			distance_cm = _distance_cm(state, place_id)
-	var scored: UtilityScorer.ScoreBreakdown = _scorer.score(state, action, distance_cm, is_current, action.id == routine_action)
+	var scoring_action: ActionDef = _for_scoring(state, action)
+	if scoring_action == null:
+		return null
+	var scored: UtilityScorer.ScoreBreakdown = _scorer.score(state, scoring_action, distance_cm, is_current, action.id == routine_action)
 	if not scored.result.ok:
 		return null
 	return Candidate.new(action, place_id, scored.total, is_current, scored, needs_place)
@@ -447,6 +468,10 @@ class ConditionProvider:
 
 	func has_goods(npc_id: int) -> bool:
 		return _trade != null and _trade.has_goods(npc_id)
+
+	## O valor derivado de `buy` para o NPC (0 = não há compra que valha).
+	func buy_value(npc_id: int) -> int:
+		return 0 if _trade == null else _trade.buy_value(npc_id)
 
 	## A ação completa do NPC na economia (comprar, comer do inventário, vender); sem economia nada.
 	func complete_action(npc_id: int, action_id: String) -> ActionConditionProvider.Completion:

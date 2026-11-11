@@ -17,13 +17,15 @@ const EAT_ACTION_ID: String = "eat"
 var _economy: EconomyModule
 var _states: Dictionary[int, NpcState]
 var _buy_units: int
+var _price_percent: int
 
 
-## `buy_units`: o teto de unidades de uma compra (`npc_params.json`); 0 = o NPC não compra.
-func _init(economy: EconomyModule, states: Dictionary[int, NpcState], buy_units: int) -> void:
+## `buy_units`: o teto de unidades de uma compra (`npc_params.json`); 0 = o NPC não compra. `price_percent`: quanto do preço pago desconta do valor de `buy` (100 = um ponto de alívio por moeda).
+func _init(economy: EconomyModule, states: Dictionary[int, NpcState], buy_units: int, price_percent: int = 0) -> void:
 	_economy = economy
 	_states = states
 	_buy_units = buy_units
+	_price_percent = price_percent
 
 
 ## A melhor compra de comida do NPC agora (`FoodPlan.is_empty()` se não há): a comida do mercado do povoado dele que mais alivia por moeda, na quantidade que o saldo e o estoque deixam.
@@ -45,6 +47,15 @@ func plan_food(npc_id: int) -> FoodPlan:
 				break
 			units -= 1
 	return plan
+
+
+## O valor DERIVADO de `buy` (Q19, decidida por Arthur): o alívio da melhor compra de comida, em pontos de necessidade, menos o preço (o total pago vezes `price_percent` / 100); 0 se não há compra ou se o preço come o alívio todo.
+## É o que o pensador usa para pontuar `buy`: a utilidade dela herda o alívio da comida, sem rotina fixa e sem planejador.
+func buy_value(npc_id: int) -> int:
+	var plan: FoodPlan = plan_food(npc_id)
+	if plan.is_empty():
+		return 0
+	return maxi(0, plan.relief - IntMath.floor_div(plan.total * _price_percent, 100))
 
 
 ## O NPC tem comida no inventário (algum bem que alivia a fome)?

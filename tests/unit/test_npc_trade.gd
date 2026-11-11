@@ -75,6 +75,20 @@ func test_the_plan_buys_the_food_that_relieves_the_most_per_coin_as_much_as_the_
 	(pair[1] as World).teardown()
 
 
+func test_the_buy_value_is_the_relief_of_the_best_plan_minus_the_price_weighted_by_the_param() -> void:
+	var pair: Array = _world_with_economy()
+	var module: EconomyModule = pair[0]
+	var total: int = NpcTrade.new(module, _states, 2).plan_food(NPC).total
+	assert_true(total > 0 and total < 60)
+	assert_eq(NpcTrade.new(module, _states, 2, 0).buy_value(NPC), 60, "Preço sem peso: o alívio inteiro (2 grãos, 30 cada).")
+	assert_eq(NpcTrade.new(module, _states, 2, 100).buy_value(NPC), 60 - total, "Peso 100%: cada moeda tira um ponto.")
+	assert_eq(NpcTrade.new(module, _states, 2, 50).buy_value(NPC), 60 - IntMath.floor_div(total * 50, 100), "Peso 50%: metade do preço.")
+	assert_eq(NpcTrade.new(module, _states, 2, 1000).buy_value(NPC), 0, "Preço que come o alívio todo: a compra não vale nada (nunca negativo).")
+	assert_eq(NpcTrade.new(module, _states, 2, 100).buy_value(BROKE), 0, "Sem dinheiro não há compra.")
+	assert_eq(NpcTrade.new(module, _states, 0, 100).buy_value(NPC), 0, "`buy_units` 0: o NPC não compra.")
+	(pair[1] as World).teardown()
+
+
 func test_completing_buy_pays_through_the_economy_and_a_broke_npc_fails_by_rule() -> void:
 	var pair: Array = _world_with_economy()
 	var module: EconomyModule = pair[0]
