@@ -200,3 +200,33 @@ class ConsumeResult:
 		need_id = relieved_need_id
 		relief = total_relief
 
+
+## `peek_good`: a ficha de um bem (`need_id` e `need_relief` só valem para comida: texto vazio e 0 nos outros); `result` falha com `ECON_UNKNOWN_GOOD`.
+class GoodQuery:
+	extends RefCounted
+
+	var result: Result
+	var good_id: String
+	var need_id: String
+	var need_relief: int
+	var base_value: int
+	var weight: int
+
+	func _init(query_result: Result, queried_good_id: String = "", relieved_need_id: String = "", relief: int = 0, value: int = 0, unit_weight: int = 0) -> void:
+		result = query_result
+		good_id = queried_good_id
+		need_id = relieved_need_id
+		need_relief = relief
+		base_value = value
+		weight = unit_weight
+
+
+## `peek_goods_for_need`: os bens que aliviam a necessidade, por `good_id` crescente (lista vazia se nenhum).
+class GoodsQuery:
+	extends RefCounted
+
+	var goods: Array[GoodQuery]
+
+	func _init(found_goods: Array[GoodQuery]) -> void:
+		goods = found_goods
+

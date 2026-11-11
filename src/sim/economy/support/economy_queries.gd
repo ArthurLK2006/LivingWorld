@@ -100,6 +100,28 @@ static func peek_stock(state: EconomyState, market_id: int, good_id: String) -> 
 	return EconomyReplies.ValueQuery.new(checked, state.goods.quantity_of(market_id, good_id) if checked.ok else 0)
 
 
+## A ficha do bem (`ECON_UNKNOWN_GOOD` se não existe): o que o `npc` precisa para valorizar comida (LW-093; contrato, seção 10). Cópia: o `GoodDef` não sai da economia.
+static func peek_good(state: EconomyState, good_id: String) -> EconomyReplies.GoodQuery:
+	for good: GoodDef in state.definitions.goods:
+		if good.id == good_id:
+			return _good_query(good)
+	return EconomyReplies.GoodQuery.new(Result.failure(EconomyCodes.UNKNOWN_GOOD, "EconomyModule.peek_good: o bem '%s' não existe." % good_id))
+
+
+## Os bens que aliviam a necessidade `need_id` (os de comida, `hunger`, na Fase 3), por `good_id` crescente.
+static func peek_goods_for_need(state: EconomyState, need_id: String) -> EconomyReplies.GoodsQuery:
+	var found: Array[EconomyReplies.GoodQuery] = []
+	for good: GoodDef in state.definitions.goods:
+		if not need_id.is_empty() and good.need_id == need_id:
+			found.append(_good_query(good))
+	found.sort_custom(func(first: EconomyReplies.GoodQuery, second: EconomyReplies.GoodQuery) -> bool: return first.good_id < second.good_id)
+	return EconomyReplies.GoodsQuery.new(found)
+
+
+static func _good_query(good: GoodDef) -> EconomyReplies.GoodQuery:
+	return EconomyReplies.GoodQuery.new(Result.success(), good.id, good.need_id, good.need_relief, good.base_value, good.weight)
+
+
 static func _check_traded(state: EconomyState, market_id: int, good_id: String, operation: String) -> Result:
 	if state.markets == null or not state.markets.has_market(market_id):
 		return Result.failure(EconomyCodes.UNKNOWN_MARKET, "EconomyModule.%s: o mercado %d não existe." % [operation, market_id])

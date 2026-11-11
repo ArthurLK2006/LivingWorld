@@ -218,6 +218,16 @@ func peek_price(market_id: int, good_id: String) -> EconomyReplies.ValueQuery:
 	return EconomyQueries.peek_price(_state, market_id, good_id)
 
 
+## A ficha do bem (`ECON_UNKNOWN_GOOD` se não existe): `need_id` e `need_relief` (só a comida os tem), `base_value` e `weight` (LW-093; o `npc` valoriza comida com isto).
+func peek_good(good_id: String) -> EconomyReplies.GoodQuery:
+	return EconomyQueries.peek_good(_state, good_id)
+
+
+## Os bens que aliviam a necessidade (por `good_id` crescente; lista vazia se nenhum).
+func peek_goods_for_need(need_id: String) -> EconomyReplies.GoodsQuery:
+	return EconomyQueries.peek_goods_for_need(_state, need_id)
+
+
 ## O estoque do bem no mercado (a quantidade do dono mercado), com as mesmas falhas de `peek_price`.
 func peek_stock(market_id: int, good_id: String) -> EconomyReplies.ValueQuery:
 	return EconomyQueries.peek_stock(_state, market_id, good_id)

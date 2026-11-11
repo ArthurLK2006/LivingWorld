@@ -174,6 +174,7 @@ Padrão `peek_*` (consulta, devolve **cópia**), `request_*` (comando, devolve `
 | `request_trade(actor_id, market_id, good_id, quantity, side)` | 091 | seção 5; atômico |
 | `request_transfer_goods(from_id, to_id, good_id, quantity)` | 089 | move bens entre donos (entrega, carga); sem criar nem destruir |
 | `request_consume(owner_id, good_id, quantity)` | 093 | seção 7 (só comida do NPC) |
+| `peek_good(good_id)` / `peek_goods_for_need(need_id)` | 093 | a ficha do bem (`need_id`, `need_relief`, `base_value`, `weight`) e os bens que aliviam uma necessidade, por id; o `npc` valoriza comida com isto sem importar `GoodDef`. **Acréscimo de contrato da LW-093, autorizado por Arthur em 11/11/2026** |
 | `request_work_shift(place_id, worker_id, minutes)` | 096 | **só para contrato `labor`**; `ECON_WORKER_ALREADY_ASSIGNED` se o trabalhador já é atribuído àquele local |
 | `request_post_contract(...)` / `request_accept_contract(contract_id, actor_id)` / `request_deliver_contract(contract_id)` | 096 | seção 8 (a vaga é aceita aqui) |
 | `request_set_stock(market_id, good_id, quantity)` | 090 | **só em build de desenvolvimento**, para testar escassez |
