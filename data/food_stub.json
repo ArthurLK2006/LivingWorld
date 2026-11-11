@@ -1,4 +1,5 @@
 [
 	{"id": "food_test_settlement_a", "temp_mark": "TEMP-LW-065", "settlement_id": "test_settlement_a", "start_stock": 100, "max_stock": 400, "eat_cost": 1, "yield_occupation_id": "farmer", "work_yield": 5},
-	{"id": "food_test_settlement_b", "temp_mark": "TEMP-LW-065", "settlement_id": "test_settlement_b", "start_stock": 100, "max_stock": 400, "eat_cost": 1, "yield_occupation_id": "farmer", "work_yield": 5}
+	{"id": "food_test_settlement_b", "temp_mark": "TEMP-LW-065", "settlement_id": "test_settlement_b", "start_stock": 100, "max_stock": 400, "eat_cost": 1, "yield_occupation_id": "farmer", "work_yield": 5},
+	{"id": "food_test_settlement_c", "temp_mark": "TEMP-LW-065", "settlement_id": "test_settlement_c", "start_stock": 100, "max_stock": 400, "eat_cost": 1, "yield_occupation_id": "farmer", "work_yield": 5}
 ]
