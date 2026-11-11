@@ -39,7 +39,7 @@
 ## 3. ARQUIVOS MODIFICADOS
 - **Parte 1 (no `main`):** `docs/ROADMAP_STATUS.md` +1 linha (a LW-093b em "Tarefas extras"; as contagens não mudam). Mais as duas junções com o `main` (`f54c657` e `4ada136`), que só trouxeram documentos.
 - **Parte 2 (no `main`):** `docs/ROADMAP_STATUS.md` (+9 −3: cabeçalho, nova seção "Tarefas da Fase 3" com a LW-087, e uma frase da linha da LW-087a) e `docs/decisions/0012-pre-voo-da-fase-3.md` (1 palavra: "rascunho" virou "registrada no main em 11/11/2026").
-- **Parte 3 (não commitado):** `src/app/game_modules.gd` (+11 −3: constante `ECONOMY_NAME`, campo `economy` e o registro entre `character` e `npc`).
+- **Parte 3 (não commitado):** `src/app/game_modules.gd` (+13 −3: constante `ECONOMY_NAME`, campo `economy` e o registro entre `character` e `npc`).
 
 ## 4. DECISÕES TÉCNICAS
 - **Interpretações minhas na Parte 3 (AGENTS 16.1, dentro do escopo):** (1) "onde quer que o `npc` seja registrado" = o `GameModules.register`, único ponto do jogo, do runner e dos testes de jogo inteiro; os cerca de 30 testes que montam um `World` só com o `npc` não foram tocados (mexer neles passaria muito de 8 arquivos); (2) ordem `character`, `economy`, `npc`; (3) o `on_load` da casca recusa qualquer bloco não vazio (AGENTS 12.6); (4) a regra nova do `check_architecture` entra no bloco de camadas como "regra E", e a mensagem "nove verificações" não muda (como na regra D). Ainda **não implementadas**: a regra E, os testes dela, o teste do módulo e a documentação.
