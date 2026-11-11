@@ -1,4 +1,76 @@
-11/11/2026 08:46 (Brasília) — CONCLUÍDA: junção do main no ramo lw-087c (1891452) e correção de npc.md:252 (bc48767), ENVIADAS (push autorizado): check_all VERDE (1.194 de 1.194); ramo em dia com o main (0 atrás), sem conflito; main = 63caee7, não alterado por mim. Sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+11/11/2026 09:12 (Brasília) — CONCLUÍDA: FASE B da LW-087c. O `main` foi de 63caee7 para e3f715e por AVANÇO SIMPLES (14 commits, só npc.md e world.md); ramo e main estão no mesmo commit; check_all VERDE (1.194 de 1.194). Sem tag, sem --force, sem outro arquivo. Parei (regra 13). Nada rodando.
+
+# FASE B — RELATÓRIO — LW-087c: entrada no `main` (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3).** Tarefa: trocar só os rótulos de **estado** de `npc.md` e `world.md` de "rascunho" para "incorporado ao `main` em 11/11/2026 (LW-087c)", sem mudar decisão, número, contrato nem conteúdo, e levar o ramo ao `main` só por avanço simples. Autorização escrita de Arthur: um commit de estado ("LW-087c: estado do contrato incorporado ao main"), `fetch` e `merge origin/main` só se o `main` andasse, push do ramo e do mesmo HEAD ao `main` (só avanço simples, nunca `--force`, sem tag) e push do `status-c`. DEC: as 35 do pré-voo (APROVADAS no `main`), DEC-047, 049, 054 e 126 (APROVADAS). Sem dúvida que me fizesse parar.
+
+## 1. RESUMO
+Os dois arquivos agora dizem "incorporado ao `main` em 11/11/2026 (LW-087c)" e deixam escrito que a seção 14 do `npc.md` e a "Extensão da Fase 3" do `world.md` **continuam PLANEJADAS: nada disso existe no código**. O `main` passou de `63caee7` para `e3f715e` por avanço simples e está no mesmo commit que o ramo.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (commit `e3f715e`, "LW-087c: estado do contrato incorporado ao main")
+- `docs/modules/npc.md` (10 linhas) e `docs/modules/world.md` (6 linhas): 16 linhas trocadas por 16, 18 trocas de texto (tabela na seção 7). Nenhum outro arquivo. **As linhas 206 e 208 do `npc.md` não foram tocadas** (conferido: o diff não tem hunk nelas).
+- O que entrou no `main` (`63caee7..e3f715e`): 14 commits do ramo; o resultado contra o `main` anterior é só `npc.md` (+92/−2) e `world.md` (+27) e **nenhum outro arquivo** (conferido por `git diff --name-only`).
+
+## 4. DECISÕES TÉCNICAS
+- Troquei "o registro em `DECISIONS.md` é da LW-087a" por "registradas na LW-087a"; "rascunho da LW-087b" e "rascunhos da LW-087b e da LW-087d" por "LW-087b" e "LW-087b e LW-087d"; "do ramo dela" e "do ramo da LW-087a" por "no `DECISIONS.md`" (a LW-087a já está no `main`).
+- Em `world.md:63`, "desenho deste rascunho" virou "desenho desta extensão"; em `world.md:72`, "ao rascunho do catálogo da LW-087d" virou "ao catálogo da LW-087d", "antes este rascunho" virou "antes este arquivo" e "já está no rascunho da LW-087d" virou "já consta no catálogo da LW-087d". Mantive os fatos; só saiu a palavra de estado.
+- Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 5. TESTES EXECUTADOS
+- **B0:** `git fetch origin`: o `main` continuava em `63caee7`, então **não houve junção**; o ramo já continha o `main` (0 commits atrás).
+- **B1, por busca:** "rascunho", "RASCUNHO", "fora do `main`" e "não está no `main`": **0** ocorrências nos dois arquivos. "ramo": **3** sobras, todas **outra coisa** e todas na Fase 2 (já no `main`): `npc.md:56` ("o ramo \"objetivo ou plano\" do fluxo", um ramo do fluxo de decisão), `npc.md:206` ("com o ramo S0", um ramo do código) e `npc.md:208` ("no ramo", histórico de uma junção da Fase 2; **você mandou não tocar**).
+- **B2:** `tools/check_all` **no HEAD final `e3f715e`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 173,0 s (3 min 25 s no total).
+- **B3:** antes do push o `main` ainda era `63caee7` e era ancestral do HEAD. `git push origin lw-087c-extensoes-world-npc`: `bc48767..e3f715e`. `git push origin lw-087c-extensoes-world-npc:main`: `63caee7..e3f715e` (**avanço simples, aceito na 1ª tentativa**). `git ls-remote`: `refs/heads/main` = `refs/heads/lw-087c-extensoes-world-npc` = `e3f715e` = HEAD local. Tags no remoto: as três de antes (`fase-0`, `fase-1`, `fase-2-concluida`); **nenhuma nova**.
+- NÃO EXECUTADO: `godot --headless --path . --import` (o `godot` não está no PATH do meu terminal; o `check_all` roda sozinho).
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido por busca, por `ls-remote` e pelo diff (só rótulos de estado, só dois arquivos).
+
+## 7. PROBLEMAS ENCONTRADOS
+**Tabela "rótulo antigo → rótulo novo"** (nas linhas longas mostro só o trecho que mudou; linhas do arquivo no `e3f715e`):
+
+| # | Arquivo e linha | Antes | Depois |
+|---|---|---|---|
+| 1 | `npc.md:3` | RASCUNHO da LW-087c (10/11/2026): a seção 14, "Extensão da Fase 3", e as linhas planejadas da seção 12 (LW-09… | Incorporado ao `main` em 11/11/2026 (LW-087c): a seção 14, "Extensão da Fase 3", e as linhas planejadas da se… |
+| 2 | `npc.md:103` | RASCUNHO da LW-087c | incorporado ao `main` em 11/11/2026 (LW-087c); PLANEJADA |
+| 3 | `npc.md:232` | rascunho da LW-087c | incorporado ao `main` em 11/11/2026 (LW-087c) |
+| 4 | `npc.md:248` | RASCUNHO da LW-087c, rodada 2; PLANEJADA, nada existe | incorporado ao `main` em 11/11/2026 (LW-087c); PLANEJADA, nada existe no código |
+| 5 | `npc.md:250` | e rascunho não está no `main`** e só entra quando Arthur escrever que pode entrar | a seção foi incorporada ao `main` em 11/11/2026 (LW-087c)** e continua PLANEJADA |
+| 6 | `npc.md:250` | rascunhos da LW-087b e da | LW-087b e |
+| 7 | `npc.md:252` | ; o registro em `DECISIONS.md` é d |  e registradas n |
+| 8 | `npc.md:254` | já registrou essas decisões como APROVADAS por Arthur em 11/11/2026 no `DECISIONS.md` do ramo dela | registrou essas decisões como APROVADAS por Arthur em 11/11/2026 no `DECISIONS.md` |
+| 9 | `npc.md:308` |  do ramo da LW-087a |  |
+| 10 | `npc.md:320` | rascunho da  |  |
+| 11 | `npc.md:324` | rascunho da  |  |
+| 12 | `world.md:5` | RASCUNHO da LW-087c (10/11/2026): a seção "Extensão da Fase 3" no fim deste arquivo é PLANEJADA e não existe … | Incorporado ao `main` em 11/11/2026 (LW-087c): a seção "Extensão da Fase 3" no fim deste arquivo continua PLA… |
+| 13 | `world.md:61` | RASCUNHO da LW-087c; PLANEJADA, nada existe | incorporado ao `main` em 11/11/2026 (LW-087c); PLANEJADA, nada existe no código |
+| 14 | `world.md:63` | e rascunh | a extensã |
+| 15 | `world.md:72` | rascunho do catálogo da LW-087d (`docs/events.md`); antes este rascunh | catálogo da LW-087d (`docs/events.md`); antes este arquiv |
+| 16 | `world.md:72` | está no rascunh | consta no catálog |
+| 17 | `world.md:73` | rascunho da  |  |
+| 18 | `world.md:78` | do ramo dela  |  |
+
+- **Referências a arquivos que ainda não estão no `main`:** os dois arquivos citam `docs/modules/economy.md`, `docs/economy/dados.md` e o catálogo de eventos da LW-087d (`WagesPaid` etc. em `docs/events.md`) como os documentos que mandam nos nomes, assinaturas e números da economia. **No `main` agora não existem `economy.md` nem `dados.md`, e o `docs/events.md` dele não tem os eventos novos da Fase 3** (a LW-087b e a LW-087d seguem fora do `main`). O texto já fazia essas citações; só deixei de chamá-los "rascunho". Até a 087b e a 087d entrarem, essas referências apontam para arquivos ausentes.
+- Nada falhou; nenhum aviso novo.
+
+## 8. RISCOS
+- As referências acima: quem ler o `npc.md` ou o `world.md` no `main` não encontra o `economy.md` até a LW-087b entrar.
+- **Não reverifiquei** nesta tarefa as linhas das LW-088a, LW-093, LW-094, LW-095, LW-096a e LW-097 do `npc.md` contra o roadmap que entrou no `main` (pendência do relatório anterior).
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Entrada da LW-087b e da LW-087d no `main`** (`economy.md`, `dados.md` e o catálogo de eventos): resolve as referências ausentes (**recomendo** logo em seguida, no mesmo marco).
+2. **Conferir as linhas de tarefa do `npc.md` contra o roadmap do `main`** (**recomendo**).
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%) (`ROADMAP_STATUS.md` não foi tocado, como você mandou). **Fase 3 não iniciada.** No `main`: a LW-087a e agora a LW-087c; faltam a LW-087b e a LW-087d.
+- Próxima tarefa recomendada: entrada da LW-087b e da LW-087d no `main`. **Não iniciada.** Parei aqui (regra 13).
+- Git: `main` = `lw-087c-extensoes-world-npc` = `e3f715e` (avanço simples); `status-c` enviado com este relatório; nenhuma tag; sem `--force`; nada além de `npc.md` e `world.md` no commit.
+
+---
 
 # JUNÇÃO DO MAIN E CORREÇÃO DE npc.md:252 — RELATÓRIO — LW-087c (DOC)        Status: PRONTA PARA REVISÃO
 
