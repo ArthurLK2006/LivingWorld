@@ -2269,9 +2269,9 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|
 | **Status** | APROVADA por Arthur em 11/11/2026 (em bloco, pré-voo da Fase 3). O texto da decisão é o do revisor, de 10/11/2026. Esta aprovação **não autoriza editar fixture protegida (DEC-172)** e **não transforma valor [HIP] em requisito**. |
 | **Contexto** | Nenhum documento diz quais bens saciam o quê (perguntas Q9 do contrato da `economy` e Q20 do contrato do `npc`, a mesma decisão). As cinco necessidades (fome, descanso, segurança, renda e social) não são atendidas por ferramenta, tábua, metal nem tecido. |
-| **Decisão** | `need_id` e `need_relief` em `goods.json`: `bread` sacia `hunger` com o alívio cheio e `grain` com alívio menor [HIP] (o GDD 12.3 põe grão em alimento). **O NPC só consome comida** na Fase 3. Ferramenta e tábua são gastas pelos **locais de produção** (manutenção, DEC-163); o metal é insumo de produção; o tecido é só mercadoria de comércio. |
+| **Decisão** | `need_id` e `need_relief` em `goods.json`: `bread` sacia `hunger` com o alívio cheio e `grain` com alívio menor [HIP] (o GDD 12.3 põe grão em alimento). **O NPC só consome comida** na Fase 3. Ferramenta, tábua e tecido são gastos pelos **locais de produção** (manutenção, DEC-163 e DEC-178); o metal é insumo de produção. |
 | **Justificativa** | Com o grão comestível, a vida sem jogador sobrevive enquanto a cadeia se estabiliza (risco R3.3 do roadmap). Recomendações dos contratos da `economy` e do `npc`. |
-| **Consequências** | A LW-089 grava os dois campos; a LW-093 os usa para o valor derivado de `buy` (DEC-143); a LW-092 trata o gasto dos locais (DEC-163). (a DEC-178 inclui o tecido na manutenção dos locais) |
+| **Consequências** | A LW-089 grava os dois campos; a LW-093 os usa para o valor derivado de `buy` (DEC-143); a LW-092 trata o gasto dos locais (DEC-163). Ampliada pela DEC-178 (10/11/2026): o tecido também é gasto na manutenção dos locais. |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seções 5.2 e 5.4 · recomendações dos contratos da `economy` (Q9) e do `npc` (Q20) · revista pelo revisor na rodada 2 (10/11/2026) · registrada em 10/11/2026 (LW-087a) · aprovada por Arthur em 11/11/2026 (em bloco; LW-087a, rodada 5) |
 | **Relações** | DEC-129, DEC-143, DEC-163 |
 
@@ -2411,7 +2411,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Com o NPC consumindo só comida (DEC-153), tábua, ferramenta e tecido ficariam sem comprador entre os NPCs, com risco de estoque acumulado e de o mercado ficar sem dinheiro. O GDD 12.3 prevê roupa e ferramenta pessoal como consumo. |
 | **Decisão** | Os **locais de produção gastam ferramenta (`tool`) e tábua (`plank`) aos poucos para funcionar** (manutenção). O NPC continua consumindo **só comida**. O **tecido** (`fabric`) fica só como mercadoria de comércio; a calibração (LW-112) pode revisar. O consumo de roupa e de ferramenta pessoal pelo NPC (GDD 12.3) fica **fora da Fase 3** (backlog). Os números são [HIP], em dados; o desenho fica em `docs/modules/economy.md`. |
 | **Justificativa** | Escolha de Arthur na rodada 2 da LW-087a (decisão 2). |
-| **Consequências** | A LW-092 implementa a manutenção dos locais. Uma linha do `docs/backlog.md` guarda o consumo pessoal. A DEC-153 foi revista para dizer isso. (ampliada pela DEC-178) |
+| **Consequências** | A LW-092 implementa a manutenção dos locais. Uma linha do `docs/backlog.md` guarda o consumo pessoal. A DEC-153 foi revista para dizer isso. Ampliada pela DEC-178 (10/11/2026): o tecido também é gasto na manutenção dos locais. |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 7.1 · decidida por Arthur em 10/11/2026 (mensagem da rodada 2 da LW-087a) · registrada em 10/11/2026 (LW-087a) |
 | **Relações** | DEC-129, DEC-153 |
 
