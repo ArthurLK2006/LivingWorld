@@ -40,3 +40,33 @@ class LedgerTotals:
 
 	func _init(totals_rows: Array[Dictionary]) -> void:
 		rows = totals_rows
+
+
+## `peek_inventory`: os bens de um dono (`good_id` e `quantity`, por `good_id` crescente), o peso carregado e a capacidade do tipo; `result` falha com `ECON_UNKNOWN_OWNER` se o dono não existe.
+class InventoryQuery:
+	extends RefCounted
+
+	var result: Result
+	var rows: Array[Dictionary]
+	var weight: int
+	var capacity: int
+
+	func _init(query_result: Result, owner_rows: Array[Dictionary], carried_weight: int, weight_capacity: int) -> void:
+		result = query_result
+		rows = owner_rows
+		weight = carried_weight
+		capacity = weight_capacity
+
+
+## `peek_goods_conservation`: uma linha por bem que já teve movimento (`good_id`, `in_stock`, `created`, `destroyed`, `ok`); `ok` quando TODAS fecham (em estoque = criado − destruído, inclusive o destruído por `maintenance`).
+class GoodsConservationQuery:
+	extends RefCounted
+
+	var rows: Array[Dictionary]
+	var ok: bool
+
+	func _init(conservation_rows: Array[Dictionary]) -> void:
+		rows = conservation_rows
+		ok = true
+		for row: Dictionary in conservation_rows:
+			ok = ok and bool(row["ok"])

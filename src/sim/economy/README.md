@@ -8,8 +8,10 @@ Implementado (LW-088c, 11/11/2026): o save do cadastro e do livro (`serialize`/`
 
 Implementado (LW-089, 11/11/2026): os dados dos bens e dos tipos de dono (`data/economy/goods.json` e `owner_kinds.json`; os valores [HIP] ficam em dados) e, em `goods/`, `GoodDef`, `OwnerKindDef` e o `GoodsLoader` (valida e monta; falha com `ECON_DATA_INVALID`, arquivo, item e campo). Ainda NÃO estão ligados ao módulo.
 
-Implementado (LW-089b, 11/11/2026): o `GoodsStore` (`goods/`): a quantidade de cada bem por dono do `OwnerBook`, peso total até a capacidade do tipo, criar e destruir bens só com motivo de um conjunto fechado (`produced`, `game_start`; `consumed`, `maintenance`, `spoiled`), mover sem criar nem destruir, conservação por bem e save. Também é classe solta: a porta e a ligação ao módulo são a LW-089c.
+Implementado (LW-089b, 11/11/2026): o `GoodsStore` (`goods/`): a quantidade de cada bem por dono do `OwnerBook`, peso total até a capacidade do tipo, criar e destruir bens só com motivo de um conjunto fechado (`produced`, `game_start`; `consumed`, `maintenance`, `spoiled`), mover sem criar nem destruir, conservação por bem e save. 
+
+Implementado (LW-089c, 11/11/2026): o `EconomyModule` recebe as definições (`EconomyDefinitions`, bens e tipos de dono) pelo construtor e liga o `GoodsStore`: `request_open_owner` confere o tipo contra as definições, e a porta ganha `request_transfer_goods`, `peek_inventory` e `peek_goods_conservation` (cópias em `EconomyReplies`). O módulo ouve `NpcDied` pelo NOME do evento (a economia não cita o `npc`) e fecha o dono do NPC morto; o saldo e os bens dele continuam na soma. O bloco `goods` só entra no save quando há bens. Criar e destruir bens e dinheiro continua só das partes internas. O jogo ainda cria o módulo SEM definições (os mercados da LW-090 as ligam).
 
 Regras de arquitetura (`tools/check_architecture`): regra E (DEC-171 e DEC-132), o `npc` cita só classes de `economy/api/` e a `economy` não cita nada do `npc`; regra F (LW-088c), só `ledger/` escreve saldo.
 
-Planejado, ainda não existe: a porta dos bens (LW-089c), mercados e preço (LW-090) e o resto do contrato.
+Planejado, ainda não existe: mercados e preço (LW-090) e o resto do contrato.

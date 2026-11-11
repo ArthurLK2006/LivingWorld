@@ -205,6 +205,15 @@ lw088_violations=$((new_violations - lw029a_violations))
 lw088_clean=$((new_clean - lw029a_clean))
 new_violations=$lw029a_violations
 new_clean=$lw029a_clean
+# LW-089c: a regra E olha o IDENTIFICADOR, não o texto entre aspas (a economy ouve o evento do npc pelo NOME). ProbeDoor (npc/api) e ProbeLedgerInner (economy interna) são as classes de prova.
+expect_clean src/sim/economy/listener.gd 'const EVENT: String = "ProbeDoor"' 'texto com o nome de uma classe do npc não é citação da economy'
+expect_clean src/sim/npc/names.gd 'var kind: String = "ProbeLedgerInner" + "ProbeLedgerApi"' 'texto com o nome de uma classe interna da economy não é citação do npc'
+expect_violation src/sim/economy/violation.gd 'var door: ProbeDoor = null # "texto"' 'violation.gd:1: "ProbeDoor"' 'a classe do npc fora das aspas continua sendo citação'
+expect_violation src/sim/npc/violation.gd 'var inner = ProbeLedgerInner.new("ProbeLedgerApi")' 'violation.gd:1: "ProbeLedgerInner"' 'a classe interna da economy fora das aspas continua sendo citação'
+lw089c_violations=$((new_violations - lw029a_violations))
+lw089c_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
 rm "$fixture/src/sim/economy/api/probe_ledger_api.gd" "$fixture/src/sim/economy/ledger/probe_ledger_inner.gd"
 rm "$fixture/src/sim/npc/api/probe_door.gd" "$fixture/src/sim/npc/lod/probe_inner.gd" "$fixture/src/sim/npc/README.md"
 rm "$fixture/src/core/probe_core.gd" "$fixture/src/sim/world/probe_terrain.gd" "$fixture/src/bridge/probe_bridge.gd" "$fixture/src/presentation/probe_view.gd" "$fixture/src/sim/world/internal/probe_secret.gd"
@@ -218,3 +227,4 @@ echo "LW-036: $lw036_violations violações detectadas e $lw036_clean casos acei
 echo "LW-085a: $lw085a_violations violações detectadas e $lw085a_clean casos aceitos (regra D: a ponte e tools só citam a api/ de um módulo que tem api/; módulo sem api/, src/app e comentário ficam de fora)."
 echo "LW-088a: $lw088a_violations violações detectadas e $lw088a_clean casos aceitos (regra E: o npc cita só a api/ da economy e a economy não cita o npc; comentário fica de fora)."
 echo "LW-088: $lw088_violations violações detectadas e $lw088_clean casos aceitos (regra F: só o Ledger escreve saldo; comparação, nome parecido, declaração e comentário ficam de fora)."
+echo "LW-089c: $lw089c_violations violações detectadas e $lw089c_clean casos aceitos (regra E: texto entre aspas não é citação; o identificador continua sendo)."
