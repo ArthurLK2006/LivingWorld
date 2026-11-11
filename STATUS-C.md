@@ -1,4 +1,62 @@
-11/11/2026 12:25 (Brasília) — CONCLUÍDA: LW-117a (registro das decisões da Fase 4): DEC-202 a DEC-223 no DECISIONS.md (11 APROVADAS, 11 PROPOSTA), roadmap corrigido, 0013 no ramo; commit b3987ca ENVIADO ao ramo lw-117a-registro-fase-4 (fora do main); check_all VERDE (1.203 de 1.203). main = 9b4f6f0, intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 13:12 (Brasília) — CONCLUÍDA: LW-117b (seção 17 do contrato da economia, Fase 4): tesouros, tarifa com destinatário, folha dos postos, escort e assalto; commit 27d3ad6 ENVIADO ao ramo lw-117b-economia-fase-4 (empilhado na 117a, fora do main); check_all VERDE (1.203 de 1.203). main andou para ffb1e03 (Fase B da Fase 5, não é meu); sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117b — RELATÓRIO — Seção 17 do contrato da economia para a Fase 4 (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: parte "b" da LW-117, só documento: a seção nova do contrato da `economy` para a Fase 4 (tipo de dono `treasury` e motivos do `Ledger`, interruptor da `TradeRules` e destinatário da tarifa, contrato `escort`, assalto a caravana, folha dos postos pelo tesouro e a multa em aberto na DEC-204). Li: AGENTS 0.4; o `0013` (seções 2, 3, 4 e 6); o `economy.md` inteiro, menos as seções 14 e 16 (lidas por amostra); o modelo de `owner_kinds.json` em `docs/economy/dados.md`; o cabeçalho de `docs/events.md`; as DEC-202 a DEC-223 que escrevi. DEC: APROVADAS 047, 049, 141, 145, 147, 155, 156, 157, 164, 165, 174, 204 e 212; PROPOSTA 213, 214, 215, 216, 219, 221, 222 e 223; nenhuma PENDENTE trava. Arquivo: só `docs/modules/economy.md`, seção 17 nova no fim. Git, pela sua escolha: ramo `lw-117b-economia-fase-4` **empilhado** no ramo da 117a (`b3987ca`), um commit, envio só desse ramo e do `status-c`, nada para o `main`.
+
+## 1. RESUMO
+O `economy.md` ganhou a **seção 17** (116 linhas, só acréscimo): um resumo do que muda, o tipo de dono `treasury`, a tabela de motivos com os dois comandos de pagamento, o interruptor da `TradeRules` com a tarifa que tem destinatário, a folha dos postos pelo tesouro da autoridade, o contrato `escort`, o assalto a caravana, conservação e save, dado → dono, rastreio por tarefa e nove pontos para você aprovar. As seções existentes **não foram editadas**.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (commit `27d3ad6`, ramo `lw-117b-economia-fase-4`)
+- `docs/modules/economy.md` — +116 linhas (a seção 17, de 333 para 449 linhas do arquivo). Nenhuma linha antiga mudou.
+
+## 4. DECISÕES TÉCNICAS
+Tudo abaixo é **[PROPOSTA]** do revisor (nome e desenho), salvo o que cita DEC APROVADA (204 e 212). Você aprova ou troca na revisão.
+- **Interruptor da `TradeRules` (`TradeRulesSlot`, em `economy/api/`):** o `app` o cria e o entrega ao construtor da economia e, depois, ao da `politics`, que o preenche **uma vez** na `post_setup`. A economia trava no primeiro `tick`. Sem comando `request_set_trade_rules` (a opção B que a DEC-214 recusou). A interface `TradeRules` também passa a ser exposta em `economy/api/`, porque a `politics` só pode importar a `api`.
+- **Tarifa:** `ceil_div(total × tariff_bp, 10000)`, paga pelo **ator** da ordem nos dois lados, na mesma transação atômica; `peek_terms` devolve também `tariff_recipient_id`.
+- **Dois comandos de pagamento:** `request_pay` (`tax`, `fine`, `faction_salary`, com os tipos de dono permitidos por motivo) e `request_spend` (`upkeep`, que **destrói** o dinheiro). Motivos novos além dos da DEC-215: `fine` e `plunder`.
+- **Multa sem saldo:** a economia é tudo ou nada; quem chama lê o saldo e decide cobrar "o que tem" (regra de lei, parte 117c).
+- **Folha dos postos:** `request_set_payroll_source(settlement_id, owner_id)`; sem ele a economia paga pelo mercado, como na Fase 3.
+- **`escort`:** postar e aceitar pelos comandos existentes; **quem encerra é o `military`**, por `request_resolve_escort`; consulta `peek_escort_of` para ele saber se a caravana está escoltada.
+- **Assalto:** `request_apply_raid(trader_id, raider_treasury_id, cash_share_bp, cargo_share_bp)`, atômico; as frações vêm do `military`, em dados; motivo novo de bens `lost` na conservação.
+- **Tesouro não fecha;** a facção que colapsa deixa o saldo parado na soma.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova (as DEC-213 a DEC-223 já cobrem; as demais escolhas ficam como PROPOSTA na própria seção).
+
+## 5. TESTES EXECUTADOS
+- Conferência por script: as 21 DEC citadas na seção nova existem no `DECISIONS.md`; as tabelas da seção têm o mesmo número de colunas em todas as linhas; zero citações a arquivos de status ou a "da A/B/C"; `git diff --staged --check` sem erro.
+- `tools/check_all` **no HEAD final `27d3ad6`**: **VERDE.** Arquitetura (nove verificações), GDScript sem avisos, dados válidos, **125 scripts, 1.203 testes (todos passando), 262.120 asserts**, 185,2 s de testes. Mesmos números do `main` anterior, como esperado numa tarefa só de documentos.
+- NÃO EXECUTADO: nada além do que é próprio de uma tarefa só de documentos.
+
+## 6. RESULTADOS
+Critério cumprido por leitura: a seção cobre cada ponto da parte 117b da seção 3 do `0013` (contas de facção, motivos, troca da `TradeRules` e destino da tarifa, `escort`, perda de carga, folha dos postos) e a multa deixada em aberto pela DEC-204. Nada de código, dado ou evento foi criado.
+
+## 7. PROBLEMAS ENCONTRADOS
+1. **Regras de jogo que a DEC não fecha** e que escrevi como PROPOSTA (17.11): quanto dinheiro o assalto leva, se o `upkeep` destrói dinheiro, quem paga a tarifa, como o jogador escolta. Estão na seção, com alternativa e recomendação.
+2. **Pagar o mesmo guarda duas vezes:** a seção avisa e manda o contrato de `factions` (117c) separar posto de soldo.
+3. **A seção 5 diz que `TradeRules` fica em `economy/rules/`;** para a `politics` importá-la ela tem de ser exposta na `api`. Dito na 17.4, sem editar a seção 5.
+4. **A `post_setup` da `politics` precisa vir depois da criação do interruptor pelo `app`:** a ordem de registro dos módulos é da LW-117c.
+5. O ramo de acompanhamento da `lw-117b-economia-fase-4` é o da 117a; o envio foi com o nome do ramo escrito por inteiro, para não ir a outro ramo.
+
+## 8. RISCOS
+- O **tesouro da autoridade** só tem as receitas que a `politics` e a `factions` lhe derem; se não cobrirem a folha dos postos, guardas e estalajadeiros passam fome (o R3.3 do roadmap). Calibração na LW-112 e soak da LW-142.
+- Se o assalto levar **todo** o saldo do comerciante, ele passa fome: por isso recomendo uma fração (ponto 3 de 17.11).
+- A parte 117b depende do ramo da 117a, que ainda não está no `main`: a entrada segue a ordem que você der (Fase 5 primeiro, depois a 117a, depois a 117b).
+- Outras partes (117c a 117f) podem mudar o que 17.5 a 17.7 supõem do `military` e da `factions`.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar ou trocar a seção 17**, em especial os pontos 1 a 3 de 17.11 (`upkeep` destrói dinheiro; tarifa paga pelo ator nos dois lados; fração do assalto menor que o saldo). Recomendo aprovar com essas três recomendações.
+2. **Próxima parte:** recomendo a **117c** (contratos de `factions` e `politics`), que fecha os pontos 4, 5 e 7. Não iniciada.
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 4: 2 das 6 partes da LW-117 feitas (117a e 117b)**; as tarefas LW-118 a LW-145 não começaram e dependem da Fase 3.
+- Próxima tarefa recomendada: **LW-117c**. **Não iniciada.** Parei (regra 13).
+- Git: `ramo `lw-117b-economia-fase-4` (empilhado em `lw-117a-registro-fase-4`, `b3987ca`) com **um** commit (`27d3ad6`, "LW-117b: seção 17 do contrato da economia (tesouros, tarifa, escolta e assalto)") e **enviado** com o nome do ramo por inteiro; `status-c` enviado com este relatório; **o `main` andou sozinho para `ffb1e03` (a Fase B do registro da Fase 5, feita pela outra conversa; eu não o toquei)**; teste de junção só de leitura da pilha 117a + 117b contra esse `main`: o roadmap e o `economy.md` juntam sozinhos, o `DECISIONS.md` dá os mesmos 28 conflitos de texto; ramos da 117a e da Fase 5 não mexidos; sem tag, sem `--force`.`
+
+---
 
 # LW-117a — RELATÓRIO — Registro das decisões da Fase 4 no `DECISIONS.md` e no roadmap (DOC)        Status: PRONTA PARA REVISÃO
 
