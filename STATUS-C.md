@@ -1,4 +1,67 @@
-11/11/2026 10:55 (Brasília) — CONCLUÍDA: ajuste do 0013 (Q3 com pena de crime como multa; Q11 a Q21 como PROPOSTA do revisor), commit debea7e ENVIADO ao ramo lw-117-prevoo-fase-4 (rascunho, fora do main); check_all VERDE (1.203 de 1.203). main = 9b4f6f0, intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 12:25 (Brasília) — CONCLUÍDA: LW-117a (registro das decisões da Fase 4): DEC-202 a DEC-223 no DECISIONS.md (11 APROVADAS, 11 PROPOSTA), roadmap corrigido, 0013 no ramo; commit b3987ca ENVIADO ao ramo lw-117a-registro-fase-4 (fora do main); check_all VERDE (1.203 de 1.203). main = 9b4f6f0, intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117a — RELATÓRIO — Registro das decisões da Fase 4 no `DECISIONS.md` e no roadmap (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: registrar no `DECISIONS.md` as respostas de Arthur de 11/11/2026 (Q1 a Q22 do `0013`) e corrigir no roadmap as tarefas que elas mudam; só documentos; ramo `lw-117a-registro-fase-4` a partir do `main` (`9b4f6f0`); nada para o `main`. Li: AGENTS 0.4; o `0013` inteiro; `DECISIONS.md` do `main` (regras, índice, DEC-040, 041, 053 a 057 e DEC-163 a 165 e 178 como modelo); roadmap do `main` (0.13-B e C, Fase 4 inteira, nota e divergências da Fase 3 como modelo); `backlog.md`; de leitura apenas, os números de DEC que a Fase 5 já usa. Decisões de que dependo: APROVADAS 045, 046, 047, 049, 050, 051, 054, 062, 100, 127, 134, 141, 155, 157, 164, 165, 169, 174; PROPOSTA 038, 043, 052, 056, 077, 099; PENDENTES 040, 053 e 055 (não decido nenhuma: nota datada e seguem PENDENTES). Arquivos: `DECISIONS.md` e `DEVELOPMENT_ROADMAP.md` (protegidos; a tarefa manda), `0013` e, se coubesse, `backlog.md`. Dúvidas resolvidas por mim e relatadas abaixo: numeração a partir da DEC-202 e versão 0.12.
+
+## 1. RESUMO
+As 22 respostas viraram entradas do `DECISIONS.md`: **DEC-202 a DEC-212 APROVADAS** (Q1 a Q10 e Q22, suas) e **DEC-213 a DEC-223 PROPOSTA** (Q11 a Q21, do revisor, por pedido seu). As DEC-053 e DEC-055 ganharam só uma nota datada e **seguem PENDENTES**. O roadmap dividiu a LW-117 em 117a a 117f e corrigiu as tarefas LW-118 a LW-142 que as respostas mudam. Só documentos; nada foi para o `main`.
+
+## 2. ARQUIVOS CRIADOS
+- `docs/decisions/0013-pre-voo-da-fase-4.md` — **novo neste ramo** (veio do rascunho do ramo `lw-117-prevoo-fase-4`, que continua como estava): 345 linhas, com o estado atualizado, a tabela da seção 6.1 (pergunta → DEC) e quatro acertos de redação.
+
+## 3. ARQUIVOS MODIFICADOS (commit `b3987ca`, ramo `lw-117a-registro-fase-4`)
+- `docs/DECISIONS.md` — +342 e −11 linhas: 22 entradas novas; 22 linhas no índice por área; versão 0.12; totais; linha da seção 8; notas curtas nas DEC-050, 051, 053, 055, 155 e 164; notas nas duas linhas da seção 3.1 (DEC-053 e DEC-055); C1 da seção 4 passa a resolvida.
+- `docs/DEVELOPMENT_ROADMAP.md` — +41 e −32 linhas: 4.B (escala e contradição resolvida), a LW-117 vira 117a a 117f, linhas das LW-118 a LW-142, nota e divergências de 4.D, mermaid, 4.F, 4.G, R4.9, 0.13-C e Anexo F.
+- `docs/backlog.md` — +7 linhas (extorsão, reputação multidimensional, T3 completo, crime e justiça completos, satisfação agregada com T0, revenda de carga roubada, rota "perigosa" e terceira polity).
+
+## 4. DECISÕES TÉCNICAS
+- **Numeração: DEC-202 a DEC-223 e versão 0.12.** Os números DEC-179 a DEC-201 e a versão 0.11 já estão com o registro da Fase 5, que anda em paralelo (li o arquivo dele, sem tocar). Usei a partir da DEC-202 para as duas não colidirem. Alternativa: pegar a DEC-179 e fazer o outro renumerar. Se você preferir, renumero.
+- **Status:** Q1 a Q10 e Q22 entraram como APROVADAS por você; Q11 a Q21, como "PROPOSTA (do revisor…; vale como padrão de trabalho e não é APROVADA)", como você pediu.
+- **DEC-053 e DEC-055:** a resposta Q5 (abstrato; você não comanda na Fase 4) e Q6 (4 províncias) são parciais; por isso viraram DEC próprias (206 e 207) e as duas antigas receberam **nota datada, sem mudar o status**. O limite de combatentes com corpo e o tamanho final do mundo continuam sem decisão.
+- **Notas em DEC antigas** (050, 051, 155, 164): só uma frase apontando para a entrada nova, no padrão das notas que a LW-087a pôs nas DEC-005, 045 e 053. Nenhuma foi reescrita.
+- **A divisão 117a a 117f entrou no roadmap como proposta**, dita assim no texto. Você autorizou só a 117a.
+- **Alocações que eu propus (marcadas "alocação proposta"):** os seis eventos novos nas tarefas LW-122, 123, 128, 134 e 135; a troca do pagador da folha dos postos na LW-123; o contrato `escort` publicado pela LW-125. As partes 117b a 117f confirmam ou mudam.
+- **Não virou DEC:** o ID próprio da polity (achado 3 do `0013`) e a divisão da LW-117, porque não foram perguntas suas nem respostas técnicas numeradas.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma além das 22 já registradas.
+
+## 5. TESTES EXECUTADOS
+- Contagem por script das linhas do índice: **no `main`, 178** (APROVADA 120, com 20 ressalvas; PROPOSTA 29; PENDENTE 18; DESCARTADA 10; SUBSTITUÍDA 1), igual à frase de totais; **depois, 200** (131, com as mesmas 20 ressalvas; 40; 18; 10; 1). 200 entradas `### DEC-`, todas no índice e nenhuma duplicada.
+- Conferência por script: cada uma das 22 entradas tem os 7 campos; nenhuma linha de campo com `|` a mais; **toda DEC citada nas linhas novas existe**; só o cabeçalho, a frase de totais e a linha 0.12 citam DEC-179 e DEC-201 (de propósito); **zero** citações a `STATUS-`, `status-*`, "da A/B/C" ou ao pré-voo da Fase 5 nas linhas novas dos quatro arquivos (a única menção ao `0014` é a frase que explica por que ele não foi criado, e ela foi reescrita sem o número).
+- As 36 trocas de texto nas linhas do roadmap foram por texto exato, cada uma com uma só ocorrência; nenhuma falhou.
+- `git diff --staged --check`: sem erro de espaço em branco.
+- Teste de junção, só leitura (`git merge-tree --write-tree`), contra o ramo `lw-146a-registro-fase-5` (`11e179f`): o **roadmap junta sozinho** e o **`DECISIONS.md` dá 28 conflitos de texto** (início do arquivo, índice, totais, seção 8 e o fim das entradas).
+- `tools/check_all` **no HEAD final `b3987ca`**: **VERDE.** Arquitetura (nove verificações), GDScript sem avisos, dados válidos, **125 scripts, 1.203 testes (todos passando), 262.120 asserts**, 204,3 s de testes. Mesmos números do `main`, como esperado numa tarefa só de documentos.
+- NÃO EXECUTADO: nada além do que é próprio de uma tarefa só de documentos (sem oráculo, soak ou `run_sim`).
+
+## 6. RESULTADOS
+Critério cumprido por leitura do diff e pelos scripts acima: cada resposta Q1 a Q22 tem uma DEC com o status certo (tabela 6.1 do `0013`); as divergências do roadmap listadas na seção 6 do `0013` estão nas linhas das tarefas e na nota de 4.D.
+
+## 7. PROBLEMAS ENCONTRADOS
+1. **Junção com o registro da Fase 5:** os dois mexem no fim do `DECISIONS.md`, nos totais, no índice e na seção 8. Quem entrar depois resolve 28 trechos à mão e recontar os totais. O roadmap não conflita.
+2. **Tempo verbal:** no rascunho eu escrevi "a Fase 3 já criou" os três povoados; ela só **cria** na LW-097 (a DEC-142 diz isso). Corrigi no `0013` e nas entradas novas.
+3. **A DEC-213 diverge da arquitetura 5.2** ("dono político" na `Province`, no `world`). A arquitetura é arquivo protegido e não foi mexida; a divergência está dita na entrada.
+4. **O nome `0014`** já é do pré-voo da Fase 5; não criei arquivo novo em `docs/decisions/`, ao contrário do que a seção 3 do `0013` previa para a 117a. Ajustei essa linha.
+5. O `git worktree add` deixou o ramo `lw-117a-registro-fase-4` com o `origin/main` como ramo de acompanhamento; por isso o envio foi com o nome do ramo escrito por inteiro, para não ir ao `main`.
+
+## 8. RISCOS
+- A numeração e a versão 0.12 supõem que o registro da Fase 5 entra antes; se entrar depois, só a versão e a ordem da seção 8 mudam (os números DEC não colidem).
+- As DEC-213 a DEC-223 são PROPOSTA: valem como padrão de trabalho, não obrigam. Se você trocar alguma, a linha do roadmap correspondente também muda.
+- DEC-222: risco de pagar o mesmo guarda duas vezes (posto e soldo); o contrato de `factions` (117c) tem de separar os dois.
+- Pontos que seguem sem decisão: cultura de cada país e os 4 parâmetros; dono da província de fronteira; "imposto de entrada" × tarifa; cobrança da multa e evento de teste do crime; valores das multas; nomes das 5 faixas de reputação; nomes e doutrina das 3 facções.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar ou trocar a 117a** (DEC-202 a DEC-223 e as correções do roadmap). Recomendo aprovar.
+2. **Ordem de entrada no `main`:** este registro e o da Fase 5. Recomendo o da Fase 5 primeiro (já tem a versão 0.11) e este depois, com os 28 conflitos resolvidos por quem fizer a Fase B.
+3. **Próxima parte da LW-117:** recomendo a **117b** (contrato da economia, a que mais destrava as outras). Não iniciada.
+4. Teste manual: nenhum (só documentos).
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 4: 1 das 6 partes da LW-117 feita (117a)**; as tarefas LW-118 a LW-145 não começaram e dependem da Fase 3. Projeto sem mudança de contagem (nenhuma tarefa nova concluída).
+- Próxima tarefa recomendada: **LW-117b**. **Não iniciada.** Parei (regra 13).
+- Git: `ramo `lw-117a-registro-fase-4` com **um** commit (`b3987ca`, mensagem "LW-117a: registro das decisões da Fase 4 (DEC-202 a DEC-223), roadmap e pré-voo 0013") e **enviado**, com o nome do ramo escrito por inteiro; `status-c` enviado com este relatório; `main` = `9b4f6f0`, intocado (conferido no remoto depois do envio); ramo `lw-117-prevoo-fase-4` não mexido; ramo e worktree do registro da Fase 5 só lidos; sem tag, sem `--force`.`
+
+---
 
 # LW-117 (PRÉ-ETAPA), AJUSTE DA Q3 — RELATÓRIO — Segunda atualização do 0013 (DOC, rascunho fora do `main`)        Status: PRONTA PARA REVISÃO
 
