@@ -1,4 +1,100 @@
-10/11/2026 21:48 (Brasília) — CONCLUÍDA: RODADA 4 da LW-087c (marcos de hash por bloco e tecido na manutenção): commit b7eb2ee enviado, check_all VERDE (1.194 de 1.194); HEADs da A (1ad022a) e da B (6b59a96, bfceb90) iguais no início e no fim; divergências só listadas na seção 7. Nada no main, sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+11/11/2026 07:26 (Brasília) — CONCLUÍDA: RODADA 5 da LW-087c (rótulos das 35 decisões trocados para "aprovada por Arthur em 11/11/2026"): commit 0c37741 enviado, check_all VERDE (1.194 de 1.194); números de DEC conferidos no início e no fim contra o ramo da A (HEAD 28a0227 nos dois), nenhum divergiu. Nada no main, sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+
+# RODADA 5 — RELATÓRIO — LW-087c: marca como aprovadas as decisões do pré-voo (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: trocar, nos dois arquivos, "PROPOSTA do revisor" e "[PROPOSTA]" por "aprovada por Arthur em 11/11/2026 (DEC-NNN)", só para as 35 decisões da sua aprovação em bloco (DEC-138 a 141, 145 a 162 e 165 a 177). Li: AGENTS (versão 0.4), o texto da tarefa, o `DECISIONS.md` do ramo da A (HEAD `28a0227`, 07:19 de 11/11) e o inventário de todos os rótulos dos dois arquivos (`b7eb2ee`). As 35 são PROPOSTA no `DECISIONS.md` da A hoje; vale a sua aprovação escrita. Arquivos: só `npc.md` e `world.md`. Sem dúvida que me fizesse parar.
+
+## 1. RESUMO
+Troquei 41 rótulos nos dois arquivos (28 no `npc.md`, 13 no `world.md`), só onde a decisão está nas 35, e citei a DEC em cada um. O que não está nas 35 ficou "[PROPOSTA]", os valores [HIP] continuam [HIP] e não entrou conteúdo novo, salvo seis frases de "origem" que diziam "nenhuma é decisão aprovada" e ficariam falsas (seção 4).
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (só documentos; ramo `lw-087c-extensoes-world-npc`, commit `0c37741`, mensagem "LW-087c: marca como aprovadas as decisões do pré-voo")
+- `docs/modules/npc.md` e `docs/modules/world.md`: 34 linhas trocadas por 34 (44 e 24 no diff por arquivo). Contra o `main` (`8dcc81d`, intocado) o ramo difere só neles (+90/−2 e +27).
+
+## 4. DECISÕES TÉCNICAS
+- **Mapa rótulo → DEC (conferido contra o texto das DEC no ramo da A):** Q18 A = DEC-152 (e DEC-151, a hora do local); local dono e `sell` = DEC-148 e DEC-168; vaga = DEC-165; LW-096a = DEC-169; Q23 (`work_place_id`) = DEC-167; `mint` na LW-093 = DEC-170; `request_trade` = DEC-173; Q21 A = DEC-145; `bread` e `grain` comestíveis = DEC-153; regra do `check_architecture` = DEC-171; LW-088a e hashes = DEC-172; postos sem marca `TEMP` = DEC-174; marcos de hash por bloco = DEC-175; Q-W1 = DEC-158; Q-W2 e Q-W3 = DEC-159; Q-W4 = DEC-160; Q-W5 = DEC-161; Q-W6 = DEC-162; comando e evento de rota na LW-097 = DEC-140.
+- **Já APROVADAS antes, citadas como estavam:** DEC-163, 164 e 178 (e DEC-142, 143, 144, onde aparecem).
+- **Fica "[PROPOSTA]" porque não está nas 35 (desenho do rascunho):** LW-094 em duas partes e "Ordem 094a/094b"; "Dependências permitidas depois da Fase 3"; "Quando" (falha por regra do comércio); "Montagem" da `api`; "um agente só em série" e "pasta própria" (14.8); os números da distribuição da B (`[PROPOSTA/HIP]`); no `world.md`, "Dados", "Tipos", "Consultas", "Validação" e "O 3º povoado" (e a parte de "Estado de rota" e "Comando" que vai além das DEC-159 e DEC-140).
+- **Seis frases além do rótulo puro** (diziam que nada estava aprovado, o que ficaria falso): a introdução de 14.9 e a linha "Decididas pelo revisor" da seção 14 (`npc.md`); a introdução das Q-W e a linha "Decididas pelo revisor" do `world.md`; a Q23 ("só vale com a aprovação de Arthur, que ele dará na LW-097" virou "aprovada por Arthur em 11/11/2026 (DEC-167)"); e o item "Em aberto" de 14.9, que listava essas aprovações como pendentes. Marquei nas frases que o `DECISIONS.md` do ramo da A ainda mostra PROPOSTA até ela registrar a aprovação.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma; registrar o status das 35 é da LW-087a.
+
+## 5. TESTES EXECUTADOS
+- **Números de DEC contra `origin/lw-087a-registro-fase-3:docs/DECISIONS.md`:** no **início (07:19)** e no **fim (07:25)** o HEAD da A era o mesmo (`28a0227`) e o arquivo, idêntico. As 25 DEC com número 138 ou mais que os dois arquivos citam (138, 140, 145, 148, 151, 152, 153, 158 a 165, 167 a 175 e 178) existem, com o mesmo título no início e no fim e com o tema que eu cito; **nenhum número deixou de bater, então não parei**.
+- `tools/check_all` **no HEAD final `0c37741`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 171,0 s (3 min 24 s no total). Mesmos números do `main`, como esperado.
+- NÃO EXECUTADO: `godot --headless --path . --import` (o `godot` não está no PATH do meu terminal; o `check_all` roda sozinho). Oráculo, soak e `run_sim` não foram rodados (só documentos).
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido **por leitura do diff e da tabela abaixo** (itens 1 a 7 da tarefa).
+
+## 7. PROBLEMAS ENCONTRADOS
+**Tabela "rótulo antigo → rótulo novo"** (a coluna "DEC" diz qual decisão sustenta a troca; nas linhas longas mostro só o trecho que mudou):
+
+| # | Arquivo e linha | Rótulo antigo | Rótulo novo | DEC |
+|---|---|---|---|---|
+| 1 | `npc.md:231` | PROPOSTA | aprovadas por Arthur em 11/11/2026 | DEC-171, 172 |
+| 2 | `npc.md:232` | PROPOSTA do revisor | aprovada por Arthur em 11/11/2026 (DEC-170) | DEC-170 |
+| 3 | `npc.md:235` | PROPOSTA do revisor, DEC-169 (PROPOSTA | aprovada por Arthur em 11/11/2026 (DEC-169 | DEC-169, 165 |
+| 4 | `npc.md:236` | PROPOSTA, Q23; Arthur aprova aqui | Q23, aprovada por Arthur em 11/11/2026 (DEC-167) | DEC-167 |
+| 5 | `npc.md:252` | PROPOSTA | aprovada por Arthur em 11/11/2026 | DEC-174 |
+| 6 | `npc.md:254` | como padrão de trabalho (PROPOSTA: Arthur pode aprovar ou trocar):** (a) **Q18 A**, o salário como o `economy.md` o esc… | e aprovadas por Arthur em 11/11/2026, pelo painel de decisões, em bloco (DEC-138 a 141, 145 a 162 e 165 a 177):** (a) *… | bloco (a) a (e) |
+| 7 | `npc.md:258` | PROPOSTA | aprovada por Arthur em 11/11/2026 (DEC-171) | DEC-171 |
+| 8 | `npc.md:267` | (b), revisor | aprovada por Arthur em 11/11/2026 (DEC-148 e DEC-168) | DEC-148, 168 |
+| 9 | `npc.md:267` | [PROPOSTA] | (DEC-168) | DEC-168 |
+| 10 | `npc.md:278` | PROPOSTA | aprovada por Arthur em 11/11/2026 | DEC-174 |
+| 11 | `npc.md:279` | (e) e Q21 A, revisor | aprovada por Arthur em 11/11/2026 (DEC-170 e DEC-145) | DEC-170, 145 |
+| 12 | `npc.md:280` | revisor | aprovada por Arthur em 11/11/2026 (DEC-152 e DEC-151) | DEC-152, 151 |
+| 13 | `npc.md:281` | (c), revisor | o desdobramento, aprovada por Arthur em 11/11/2026 (DEC-165 e DEC-169) | DEC-165, 169 |
+| 14 | `npc.md:281` | , PROPOSTA |  | DEC-165 |
+| 15 | `npc.md:281` | , PROPOSTA |  | DEC-169 |
+| 16 | `npc.md:304` | PROPOSTA do revisor; DEC-172 e DEC-175 na LW-087a, PROPOSTA | aprovada por Arthur em 11/11/2026 (DEC-172 e DEC-175) | DEC-172, 175 |
+| 17 | `npc.md:305` | PROPOSTA, Q23 | Q23, aprovada por Arthur em 11/11/2026 (DEC-167) | DEC-167 |
+| 18 | `npc.md:308` |  (padrão de trabalho, PROPOSTA: vale para escrever o contrato, e Arthur pode aprovar ou trocar). A LW-087a as registrou… | , cujas decisões Arthur **aprovou em bloco em 11/11/2026**, pelo painel de decisões (DEC-138 a 141, 145 a 162 e 165 a 1… | intro 14.9 |
+| 19 | `npc.md:311` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-152 e DEC-151 | DEC-152, 151 |
+| 20 | `npc.md:312` | (b), revisor | aprovada por Arthur em 11/11/2026 (DEC-168) | DEC-168 |
+| 21 | `npc.md:313` | , proposta do revisor | ; que `bread` sacia por inteiro e `grain` menos: aprovada por Arthur em 11/11/2026, DEC-153 | DEC-153 |
+| 22 | `npc.md:314` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-145 | DEC-145 |
+| 23 | `npc.md:315` | do revisor | aprovado por Arthur em 11/11/2026 (DEC-165 e DEC-169) | DEC-165, 169 |
+| 24 | `npc.md:315` | Revisor (PROPOSTA):** (i) a vaga, de local de produção ou de posto, é um contrato do tipo `vacancy` (`economy.md`, seçã… | Desdobramento:** (i) a vaga, de local de produção ou de posto, é um contrato do tipo `vacancy` (`economy.md`, seção 8; … | DEC-165, 169 |
+| 25 | `npc.md:316` | decidida (revisor) como PROPOSTA; Arthur aprova na LW-097 | aprovada por Arthur em 11/11/2026 (DEC-167) | DEC-167 |
+| 26 | `npc.md:316` | proposta | decisão | DEC-167 (palavra) |
+| 27 | `npc.md:316` | : **só vale com a aprovação de Arthur**, que ele dará na LW-097 | , **aprovada por Arthur em 11/11/2026 (DEC-167)** | DEC-167 |
+| 28 | `npc.md:317` | (1) a **aprovação das propostas do revisor** (a a e, Q21, Q23, e as Q-W1 a Q-W6 de `world.md`); (2) os **marcos de hash… | as propostas do revisor desta lista (a a e, Q21, Q23, a LW-096a, os marcos de hash por bloco e as Q-W1 a Q-W6 de `world… | Em aberto |
+| 29 | `world.md:63` | como padrão de trabalho (PROPOSTA; Arthur pode aprovar ou trocar | e aprovadas por Arthur em 11/11/2026 (DEC-158 a DEC-162 | Q-W1 a Q-W6 |
+| 30 | `world.md:70` |  | ; os estados `open` e `closed`: aprovada por Arthur em 11/11/2026 (DEC-159) | DEC-159 |
+| 31 | `world.md:71` |  | ; que a LW-097 o cria: aprovada por Arthur em 11/11/2026 (DEC-140) | DEC-140 |
+| 32 | `world.md:72` | .** | ** (aprovada por Arthur em 11/11/2026, DEC-140). | DEC-140 |
+| 33 | `world.md:74` | decidida pelo revisor | aprovada por Arthur em 11/11/2026 (DEC-160) | DEC-160 |
+| 34 | `world.md:78` | .** **Origem:** as seis são **padrão de trabalho do revisor (PROPOSTA)**: valem para escrever o contrato, **nenhuma é d… |  e aprovadas por Arthur em 11/11/2026, pelo painel de decisões (DEC-158 a DEC-162).** **Origem:** as seis eram padrão d… | intro das Q-W |
+| 35 | `world.md:79` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-158 | DEC-158 |
+| 36 | `world.md:80` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-159 | DEC-159 |
+| 37 | `world.md:81` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-159 | DEC-159 |
+| 38 | `world.md:82` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-160 | DEC-160 |
+| 39 | `world.md:83` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-161 | DEC-161 |
+| 40 | `world.md:84` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-162 | DEC-162 |
+| 41 | `world.md:84` | PROPOSTA; DEC-172 e DEC-175 na LW-087a, PROPOSTA | aprovada por Arthur em 11/11/2026 (DEC-172 e DEC-175) | DEC-172, 175 |
+
+**Divergências da A, só listadas (não editei o ramo dela):**
+- **DEC-153** ainda diz "o tecido é só mercadoria de comércio"; a DEC-178 (APROVADA) o pôs na manutenção dos locais. Cito a DEC-153 só para `bread` e `grain`.
+- **DEC-162** ainda diz que a LW-097 atualiza o hash que o `run_sim` imprime, e os meus arquivos (e a DEC-172 e a DEC-175) dizem que o `run_sim` não muda.
+- O **status das 35** no `DECISIONS.md` do ramo da A ainda é PROPOSTA; vira APROVADA quando a LW-087a o registrar.
+
+## 8. RISCOS
+- Os meus arquivos dizem "aprovada por Arthur em 11/11/2026" enquanto o `DECISIONS.md` da A ainda mostra PROPOSTA: até a A registrar, as duas fontes se contradizem. Escrevi isso nas frases de origem.
+- A B ainda precisa trocar os marcos por tarefa e o "tecido só mercadoria" no `economy.md`, e listar salário e local da vaga nas consultas (pendências das rodadas anteriores; não reverifiquei nesta rodada).
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **A LW-087a** registrar o status APROVADA das 35 e corrigir a DEC-153 (tecido) e a DEC-162 (`run_sim`) (**recomendo**).
+2. **A B** alinhar o `economy.md` (marcos, tecido, consultas da vaga).
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3 não iniciada**; os rascunhos 087b, 087c e 087d seguem **fora do `main`**.
+- Próxima tarefa recomendada: **LW-087a (A)**, registro do status das 35. **Não iniciada.** Parei aqui (regra 13).
+- Git: ramo `lw-087c-extensoes-world-npc` enviado (`0c37741`); `status-c` enviado; `main` = `8dcc81d`, intocado; nenhuma tag nova; sem merge no `main`, sem Fase B, sem `--force`.
+
+---
 
 # RODADA 4 — RELATÓRIO — LW-087c: marcos de hash por bloco e tecido na manutenção (DOC)        Status: PRONTA PARA REVISÃO
 
