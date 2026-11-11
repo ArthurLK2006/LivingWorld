@@ -1,131 +1,106 @@
-10/11/2026 21:31 (Brasília) · PRONTA PARA REVISÃO — RASCUNHO · LW-087a, rodada 3: commit `1ad022a` no ramo `lw-087a-registro-fase-3` empurrado; `check_all` verde; `main` sem mudança (`8dcc81d`); NÃO está no `main`, sem Fase B e sem tag; o Godot da A está parado
+10/11/2026 21:48 (Brasília) · PRONTA PARA REVISÃO — RASCUNHO · LW-087a, rodada 4: commit `28a0227` no ramo `lw-087a-registro-fase-3` empurrado; `check_all` verde; `main` sem mudança (`8dcc81d`); NÃO está no `main`, sem Fase B e sem tag; o Godot da A está parado
 
-# RELATÓRIO — LW-087a, rodada 3: Q18 a Q21, nomes canônicos e três pontos pequenos     Status: PRONTA PARA REVISÃO — RASCUNHO (não está no `main`)
+# RELATÓRIO — LW-087a, rodada 4: DEC-178 (tecido), marcos de hash por bloco e quatro frases     Status: PRONTA PARA REVISÃO — RASCUNHO (não está no `main`)
 
-> **Em uma frase:** só texto, em **um** commit (`1ad022a`) no ramo `lw-087a-registro-fase-3`. Entraram as 4 decisões do revisor (DEC-174 a DEC-177, PROPOSTA); revi a DEC-152 (nomes canônicos) e a DEC-172 (três marcos de hash); acrescentei a nota curta da DEC-054 nas DEC-005, 045 e 053; o roadmap ganhou os ajustes das LW-088a, 090, 092, 095 e 097, do critério 3.F item 4 e do Anexo D. O `main` não andou (`8dcc81d`). **Sem Fase B, sem tag.** Parei (regra 13).
+> **Em uma frase:** só texto, em **um** commit (`28a0227`) no ramo `lw-087a-registro-fase-3`. Entrou a sua decisão Q22 (DEC-178, APROVADA: o tecido na manutenção dos locais); os marcos de hash passaram a **por bloco** (DEC-175 e DEC-172 revistas); a vaga é em **local de trabalho** (DEC-165); a DEC-162 e a DEC-177 ganharam as frases do `run_sim` e de `ECON_MARKET_FULL`; o roadmap acompanhou. O `main` não andou (`8dcc81d`). **Sem Fase B, sem tag.** Parei (regra 13).
 
 ## Declaração de leitura (início da tarefa)
-- **Li:** do contrato da `economy` (ramo `lw-087b`, `3eed5f8`): as seções 4, 6, 15 e 16 inteiras e o resto por busca; de `dados.md` e `events.md` (`4d49835`) e de `npc.md` e `world.md` (`f2913f9`): por busca de nomes e das linhas do salário; o resumo e os problemas dos dois STATUS, só para entender (**nenhum dos três STATUS é citado nos documentos do projeto**, conferido por busca). Reli o meu registro (DEC-129 a DEC-173, roadmap da Fase 3, 0012).
-- **Decisões de que dependo e status:** DEC-164 e DEC-054 APROVADAS; DEC-152, 171, 172, 148 e 166 PROPOSTA (você disse que a DEC-148 vale; segue como padrão de trabalho).
+- **Li, no HEAD de início** (B: contrato da `economy` `6b59a96`, dados e eventos `bfceb90`; C: `world.md` e `npc.md` `b2d028d`): as linhas do teto de compra e de `ECON_MARKET_FULL`, da manutenção (`site_upkeep`), dos marcos de hash, do `RouteStateChanged` e do comando de fechar rota (`world.md`), e a distribuição 14/6/20/10. Reli os HEADs **no fim**: **B não mudou**; **a C avançou** de `b2d028d` para **`b7eb2ee`** ("rodada 4, marcos de hash por bloco e tecido na manutenção dos locais") enquanto eu trabalhava; li o commit novo e refiz a conferência abaixo com ele. **Nenhum STATUS é citado nos documentos do projeto** (conferido por busca).
+- **Decisões de que dependo e status:** DEC-163 e DEC-164 APROVADAS; DEC-161, 162, 165, 172, 175 e 177 PROPOSTA (minhas); DEC-153 PROPOSTA (ganhou uma nota; ver abaixo).
 
 ## ANTES e DEPOIS dos totais (recontados por script; índice = cabeçalhos, sem número repetido)
 
 | | APROVADA | (com ressalva) | PROPOSTA | PENDENTE | DESCARTADA | SUBSTITUÍDA | Total |
 |---|---|---|---|---|---|---|---|
-| **ANTES** (HEAD `86584d6`) | 84 | 20 | 60 | 18 | 10 | 1 | **173** |
-| **DEPOIS** (HEAD `1ad022a`) | 84 | 20 | **64** | 18 | 10 | 1 | **177** |
+| **ANTES** (HEAD `1ad022a`) | 84 | 20 | 64 | 18 | 10 | 1 | **177** |
+| **DEPOIS** (HEAD `28a0227`) | **85** | 20 | 64 | 18 | 10 | 1 | **178** |
 
-Conta: PROPOSTA +4 (DEC-174 a DEC-177); nada mais muda. Saída do script: `índice=177 cabeçalhos=177 repetidos=nenhum só_no_índice=nenhum só_no_corpo=nenhum · CONFERE`; o status de cada entrada bate com a linha do índice (as 177). **Versão do documento: 0.8**; há linha 0.8 no histórico; o próximo número livre é **DEC-178**.
+**Bate com o esperado** (178: APROVADA 85, PROPOSTA 64, PENDENTE 18, DESCARTADA 10, SUBSTITUÍDA 1). Conta: APROVADA +1 (DEC-178); nada mais muda. Saída do script: `índice=178 cabeçalhos=178 repetidos=nenhum só_no_índice=nenhum só_no_corpo=nenhum · CONFERE`; o status de cada entrada bate com o índice (as 178). **Versão do documento: 0.9**; há linha 0.9 no histórico; o próximo número livre é **DEC-179**.
 
 ## Decisão → entrada / linha
 
 | Decisão (sua ordem) | Entrada em `DECISIONS.md` | Roadmap e outros |
 |---|---|---|
-| **Q18** postos de serviço provisórios **sem marca** `TEMP-LW` | **DEC-174** | **Anexo D** (parágrafo novo "Provisório sem marca"); **critério 3.F item 4**; LW-095 |
-| **Q19** três marcos de hash | **DEC-175**; **DEC-172 revista** | LW-088a (marco 1), LW-095 (marco 2), LW-097 (marco 3); 0012, seção 7.2 |
-| **Q20** estoque inicial de 30 dias dos importados | **DEC-176**; DEC-166 aponta para ela | LW-097 |
-| **Q21** teto de compra por bem | **DEC-177** | LW-090 |
-| Nomes canônicos (`WagesPaid(workplace_id, amount_each)`, `peek_site`/`peek_post`) | **DEC-152 revista** | LW-095 |
-| Distribuição proposta (14 locais de produção, 6 postos, 20 `work`, 10 novos: A +2, B +3, C +5; `workers_wanted`) | **sem entrada própria** (você pediu 4 entradas) | LW-092 (14 locais), LW-095 (6 postos), LW-097 (10 novos, 20 `work`, `test_economy_distribution.gd`); 0012, seção 8 |
-| LW-092: conta **própria do local** (resolve a DEC-148) | DEC-148 (inalterada) | LW-092 |
-| Notas "(DEC-054 aprovada em 10/11/2026)" | **DEC-005, DEC-045, DEC-053** (só a nota; a da DEC-034 já estava) | — |
-| Divergências conferidas com a seção 16 da economia | — | nota sob a tabela 3.D (lista completa) |
+| **Q22** tecido na manutenção dos locais | **DEC-178** (APROVADA); nota "ampliada pela DEC-178" na **DEC-163**; nota na **DEC-153** | **LW-092** (`tool`, `plank` e `fabric`); **LW-097** (tecido nos importados, "onde o povoado não tece") |
+| Marcos de hash por bloco | **DEC-175 revista** (título, contexto, decisão); **DEC-172 revista** | **LW-088a** (marco 1 e a regra de parar); LW-092, **LW-093**, **LW-094**, **LW-095**, **LW-096a** (marco 2); **LW-097** (marco 3); nota sob a tabela 3.D |
+| Vaga em **local de trabalho** | **DEC-165 revista** (título e decisão) | **LW-096** |
+| O código do `run_sim` não muda; o hash impresso muda | **DEC-162 revista**; DEC-172 e DEC-175 | 0012, seções 5.3 e 9.2 |
+| Erro `ECON_MARKET_FULL` | **DEC-177 revista** | LW-090 (já tinha o teto) |
+| LW-097: terreno **não** ampliado; `RouteStateChanged` e fechar rota | DEC-161 e DEC-140 (inalteradas) | **LW-097** (tirei "se preciso, ampliar"; citei o evento e `request_close_route` / `request_open_route`, como o `world.md` da C os põe) |
+| Distribuição 14/6/20/10 | **sem entrada própria**, como você mandou | LW-092, LW-095 e LW-097; 0012, seção 8 |
+| Critério 3.F | nada a mudar | — |
 
-## Nome ou número → onde aparece na A, na B e na C
+## Conferência de nomes e números no HEAD de B e C
 
-A = meus arquivos (`DECISIONS.md`, roadmap, 0012); B = contrato da `economy`, `dados.md`, `events.md`; C = `npc.md` e `world.md`. "—" = não aparece.
-
-| Nome ou número | A (nesta rodada) | B | C |
+| Nome ou número | A (esta rodada) | B (contrato, dados, eventos) | C (`npc.md`, `world.md`) |
 |---|---|---|---|
-| `workplace_id` | DEC-152; LW-095 | `economy.md` §6; `events.md` (linha do `WagesPaid`) | **— (usa `site_id`: ver divergência 1)** |
-| `peek_site` / `peek_post` | DEC-152; LW-095 | `economy.md` §6; `events.md` | `peek_site` sim; **`peek_post` —** |
-| `WagesPaid` | DEC-152; LW-095; nota 3.D | `economy.md` §6; `events.md` | `npc.md` (LW-095, 14.4, Q18), como `(site_id, amount_each)` |
-| `vacancy` | DEC-165; LW-096 | `economy.md` §8; `events.md` (`ContractOffered`) | `npc.md` (LW-096a, 14.7) |
-| LW-088a | linha própria; DEC-171, 172, 175 | `economy.md` §2 e §14 | `npc.md` (4 menções), `world.md` (1) |
-| LW-096a | linha própria; DEC-169 | `economy.md` §8 e §14 | `npc.md` (várias; é a tarefa do `npc`) |
-| `ECON_WORKER_ALREADY_ASSIGNED` | **DEC-151 (acrescentei agora)** | `economy.md` §6 (6 menções) | — (o `npc.md` não o cita) |
-| 14 locais de produção / 6 postos / 20 `work` (10 novos) | LW-092 (14), LW-095 (6), LW-097 (10 novos e 20 `work`); 0012 §8 | `economy.md` §6 (tabela: 14 + 6 = 20; 10 a criar: A +2, B +3, C +5); `dados.md` | **— (`world.md` e `npc.md` não trazem a contagem)** |
+| `workplace_id` | DEC-152; LW-095 | `economy.md` (5), `events.md` (1) | `npc.md` (2) ✅ |
+| `peek_site` / `peek_post` | DEC-152; LW-095 | `economy.md` e `events.md` | `npc.md` (5 e 5) ✅ |
+| `ECON_*` | cito 3: `ECON_MARKET_NO_FUNDS`, `ECON_WORKER_ALREADY_ASSIGNED`, `ECON_MARKET_FULL` | **os 3 existem** no `economy.md` (§4, §5, §6) ✅ | não cita |
+| 14 locais de produção / 6 postos / 20 `work` / 10 novos | LW-092, 095 e 097; 0012 §8 | `economy.md` §6 e `dados.md` (linha **Total: 14, 6, 20, 10**) ✅ | `npc.md` (linha 323: 14, 6, 20, 10; A +2, B +3, C +5) ✅ |
+| `vacancy` em local de trabalho (produção ou posto) | DEC-165; LW-096 | `economy.md` §8: "local de produção ou posto" ✅ | `npc.md` ✅ |
+| `RouteStateChanged` e fechar rota na LW-097 | DEC-140; LW-097 | `economy.md` §9 (reserva; "LW-097") ✅ | `world.md`: `RouteStateChanged(route_id, new_state)` e `request_close_route` / `request_open_route` **na LW-097** ✅ |
+| **Marcos de hash** | **por bloco** (88a a 92; 93 a 96a; 97) | **por tarefa** (88a; 93 a 95; 97) | **por bloco** ✅ (HEAD novo `b7eb2ee`: mesma regra, inclusive "primeiro valor de um teste novo não é mudança") |
+| `fabric` (tecido) na manutenção | tool, plank, **fabric** (DEC-178) | só `tool` ou `plank` | **ferramenta, tábua e tecido** ✅ (`npc.md`, linhas 274 e 313; cita a DEC-178) |
 
 ## Divergências encontradas na B e na C (só listo; você as envia)
-1. **C (`npc.md`, linhas 233 e 310):** o evento aparece como `WagesPaid (site_id, amount_each)` e a leitura dos trabalhadores só como `peek_site`. O nome canônico é `workplace_id` (`site_id` do local de produção **ou** `post_id` do posto) e `peek_post` para o posto.
-2. **B (`economy.md` §15):** Q18 a Q21 ainda aparecem como "em aberto para Arthur decidir"; agora estão registradas como PROPOSTA (DEC-174 a DEC-177).
-3. **B (`economy.md` §16):** a tabela **não tem a linha da LW-090** (teto de compra por bem) e a linha da LW-097 **não cita o estoque inicial dos importados** (Q20).
-4. **B (`economy.md` §16, linha da LW-114 e do 3.F item 4):** diz que "os postos de serviço pedem decisão [Q18]"; a Q18 foi registrada como "sem marca" (DEC-174).
-5. **C (`world.md` e `npc.md`):** não trazem a contagem da distribuição (14 locais de produção, 6 postos, 20 `work`, 10 novos); só o contrato da `economy` e o roadmap (LW-097) a trazem.
-
-## Conferência linha a linha: seção 16 da `economy` × a nota de divergências do roadmap
-
-| Linha da seção 16 (B) | Na nota do roadmap (A) |
-|---|---|
-| LW-087: partes 087a a 087d | ✅ igual |
-| LW-088: antes dela a LW-088a | ✅ igual (com DEC-171, 172 e 175) |
-| LW-089: inventário na `economy`, de acordo | ✅ igual (DEC-130) |
-| LW-091: `request_trade` com `actor_id` e `side` | ✅ igual (DEC-173) |
-| LW-092: conta do próprio local; manutenção; 14 locais | ✅ igual (DEC-148, DEC-163) |
-| LW-093: só comida; `mint` `game_start` na LW-093; LW-093a | ✅ igual (DEC-147, 168 e 170) |
-| LW-095: salário por hora e postos de serviço | ✅ igual, **com mais**: `workplace_id` e o provisório sem marca (DEC-152, 164 e 174) |
-| LW-096: `vacancy` e LW-096a | ✅ igual (DEC-165 e 169) |
-| LW-097: `RouteStateChanged`, 10 `work` novos, `work_place_id`, teste | ✅ igual, **com mais**: estoque inicial dos importados (DEC-176) |
-| LW-111: rejeita save antigo | ✅ igual (DEC-134) |
-| LW-114 e 3.F item 4: diretórios; postos pedem decisão | ✅ diretórios; **postos agora sem marca (DEC-174)** |
-| *(não existe na B)* LW-090: teto de compra | **só na A** (DEC-177): divergência 3 acima |
+1. **B (`economy.md` linha 40, §14 e §16):** os três marcos de hash são **por tarefa** (LW-088a; LW-093 a LW-095; LW-097). Pela sua regra são **por bloco** (LW-088a a LW-092; LW-093 a LW-096a; LW-097). A **linha da LW-097 do §14** diz "marco 2" e "marco 3" na mesma linha (inconsistente por si só). **A C já corrigiu isto no commit `b7eb2ee`.**
+2. **B (`economy.md` §6 e `dados.md`, `site_upkeep`):** o vocabulário é "só `tool` ou `plank`"; falta `fabric` (DEC-178). A "limitação conhecida do `fabric`" e a pergunta [Q22] ficam respondidas pela sua decisão. **A C já inclui o tecido** (`npc.md`, linhas 274 e 313).
+3. **B (estoque inicial dos importados):** não inclui o **tecido onde o povoado não tece** (A e C); a lista do contrato da `economy` precisa dele (o roadmap já remete a ela).
+4. **B (`economy.md` linha 40) e C (`npc.md` linha 304 e `world.md` Q-W6):** dizem que o `run_sim` "não muda, nem o código dele" porque "não registra módulo nenhum". A DEC-175 diz que o **código** não muda mas o **hash que ele imprime** muda (ver "O que quero que você veja", item 1).
 
 ## O que quero que você veja
-1. **A DEC-171 não dizia "uma vez por marco"; só a DEC-172 dizia.** Ajustei a DEC-172 (três marcos) e a linha da LW-088a; também corrigi a mesma frase na seção 7.2 do 0012.
-2. **A distribuição 14/6/20/10 não tem entrada própria**, porque você pediu quatro entradas. Ela consta na LW-092, LW-095 e LW-097 e no 0012 (seção 8), como proposta que você aprova ao preparar a LW-097. Se quiser uma entrada para ela, é a DEC-178.
-3. **A linha da LW-097 ficou pesada:** carrega o 3º povoado, rotas, 10 locais `work` novos, `work_place_id`, estoque inicial dos importados, o teste de distribuição e o marco 3 de hash. É a tarefa com mais decisões suas; vale pensar em dividi-la ao preparar o prompt (não decidi isso).
-4. **Acrescentei `ECON_WORKER_ALREADY_ASSIGNED` à DEC-151** (a A não tinha o nome; a B o usa) — alinhamento de nome, não decisão nova.
-5. **A LW-092 diz "14 locais de produção", mas os dados dos povoados vêm com a LW-097** (escrevi isso na própria linha).
-6. **O marco 2 de hash está na linha da LW-095** (a última das três tarefas do marco), e não repetido nas LW-093 e LW-094.
-7. **Os postos "sem marca" não têm verificação automática:** nada impede de esquecê-los na Fase 4. Recomendo que a primeira tarefa da Fase 4 que mexa na folha cite a DEC-174.
+1. **O `run_sim`: a sua frase e a de B e C discordam.** Registrei como você mandou ("o código do `run_sim` não muda; muda o hash que ele imprime", DEC-162, DEC-172 e DEC-175). A C diz (`npc.md` linha 304 e `world.md` Q-W6) que o `run_sim` não registra módulo nenhum e por isso o hash dele **não** muda; a B diz o mesmo (linha 40). **Não consigo decidir quem está certo só lendo:** a primeira tarefa do marco 1 (LW-088a) mostra, ao rodar. Se a C estiver certa, a frase vira "o `run_sim` não muda".
+2. **Pus uma nota na DEC-153**, que não estava na sua lista: ela dizia "o tecido é só mercadoria de comércio". A nota diz "(a DEC-178 inclui o tecido na manutenção dos locais)". Só a nota, nada reescrito. O texto antigo da DEC-163 e a seção 7.1 do 0012 (rodada 2) também dizem "tecido só mercadoria"; ficam como histórico, e a DEC-163 ganhou a nota "ampliada pela DEC-178", como você mandou.
+3. **Os marcos por bloco só aparecem em linhas de tarefa de alguns blocos:** LW-088a, 092, 093, 094, 095, 096a e 097. As LW-089 a LW-091 (também do marco 1) não têm menção própria; a regra está na LW-088a, na LW-092 e na nota sob 3.D.
+4. **A LW-097 ficou ainda mais pesada:** terreno, rotas e fechar rota, 10 locais `work`, `work_place_id`, estoque dos importados com tecido, teste de distribuição e o marco 3. Continuo achando que vale dividi-la ao preparar o prompt.
+5. **A regra "o primeiro valor de um teste novo não é mudança"** está só na DEC-175 e na nota 3.D; não repeti nas linhas das tarefas.
 
 ## 1. Resumo
-Registrei as quatro decisões novas do revisor (postos sem marca, três marcos de hash, estoque inicial dos importados, teto de compra), alinhei os nomes canônicos da B (`WagesPaid(workplace_id, amount_each)`, `peek_site` e `peek_post`), pus a nota da DEC-054 nas três entradas que faltavam e atualizei o roadmap nas linhas que você citou, incluindo o Anexo D e o critério 3.F item 4. Nenhum código, dado, teste, backlog, `ROADMAP_STATUS.md` ou `README.md` foi tocado.
+Registrei a sua decisão Q22 (DEC-178) e refiz os marcos de hash por bloco, com a regra de parar no primeiro valor que mudar e de só registrar os demais. Ajustei quatro frases (vaga em local de trabalho; `run_sim`; `ECON_MARKET_FULL`; nota da DEC-163) e o roadmap nas LW-088a, 092, 093, 094, 095, 096, 096a e 097. Conferi nomes e números nos HEADs da B e da C (a C mudou durante a tarefa; reli): o que está igual e as 4 divergências estão acima. Nenhum código, dado, teste, backlog, `ROADMAP_STATUS.md` ou `README.md` foi tocado.
 
 ## 2. Arquivos criados
 - Nenhum.
 
-## 3. Arquivos modificados (contra o commit anterior `86584d6`)
-- `docs/DECISIONS.md` — +76 −15: DEC-174 a 177, DEC-152, 151, 166 e 172 revistas, notas nas DEC-005, 045 e 053, 4 linhas de índice, totais, versão 0.8, histórico, "próximo número".
-- `docs/DEVELOPMENT_ROADMAP.md` — +9 −7: LW-088a, 090, 092, 095, 097, critério 3.F item 4, parágrafo novo no Anexo D e a nota de divergências (lista completa).
-- `docs/decisions/0012-pre-voo-da-fase-3.md` — +15 −2: seção 8 "Rodada 3" e uma frase corrigida na seção 7.2.
+## 3. Arquivos modificados (contra o commit anterior `1ad022a`)
+- `docs/DECISIONS.md` — +35 −19: DEC-178 nova; DEC-175, 172, 165, 162 e 177 revistas; notas nas DEC-153 e 163; 1 linha de índice nova e 2 de título trocado; totais, versão 0.9, histórico, "próximo número".
+- `docs/DEVELOPMENT_ROADMAP.md` — +10 −10: LW-088a, 092, 093, 094, 095, 096, 096a e 097, a nota sob 3.D e a lista de divergências.
+- `docs/decisions/0012-pre-voo-da-fase-3.md` — +13 −3: cabeçalho (DEC-178 APROVADA), seção 9 "Rodada 4" e duas frases ajustadas (5.3 e 7.2).
 - Não toquei em `docs/backlog.md`, `AGENTS.md`, GDD, arquitetura, `project.godot`, `data/`, `tests/`, `ROADMAP_STATUS.md` nem `README.md`.
 
 ## 4. Decisões técnicas
-- **Uma entrada por decisão:** Q18, Q19, Q20 e Q21 viraram DEC-174, 175, 176 e 177, todas PROPOSTA com a frase "decidida pelo revisor … não é APROVADA". As revisões (DEC-152, 151 e 172) foram feitas **na própria entrada**, como na rodada 2.
-- **Notas da DEC-054:** só a frase "(DEC-054 aprovada em 10/11/2026)" no fim da célula "Consequências" de cada uma das três; nada reescrito.
-- **Anexo D:** o provisório sem marca entrou como **parágrafo**, e não como linha da tabela (a tabela é de provisórios com marca).
+- **DEC-178 é APROVADA** (sua decisão escrita), com a frase "Escolha de Arthur na rodada 4 (Q22)". Ampliou a DEC-163 só por uma **nota curta**, como você pediu.
+- **DEC-175 e DEC-172 foram reescritas na própria entrada** (são PROPOSTA minha e ainda não entraram no `main`). A regra de parar e mostrar "valor antigo, novo e causa" e a frase de aprovação ("aprovo os hashes do marco N") estão na DEC-175.
+- **A DEC-178 não ganhou entrada nova para o estoque do tecido nos importados**: a consequência está na própria DEC-178 e na linha da LW-097.
 - **Proposta de entrada para `DECISIONS.md` / pedido de desvio:** nenhum.
 
 ## 5. Testes executados
-- `git fetch origin '+refs/heads/main:refs/remotes/origin/main'`: `main` em `8dcc81d`; já dentro do ramo, **nada a juntar** (sem commit de junção).
-- Script de recontagem: antes `173 · CONFERE`, depois `177 · CONFERE`. Conferência de coerência: status do índice = status de cada entrada (177); toda `DEC-NNN` citada no roadmap e no 0012 existe; toda seção do 0012 citada pelas entradas existe (inclusive a 8). Busca de `STATUS-A`, `STATUS-B`, `STATUS-C`, `status-a/b/c` e dos rótulos "da B" e "da C" nos três arquivos: **nenhuma ocorrência**.
-- **`tools/check_all` no HEAD final `1ad022a` (21:27:01 a 21:30:33, 10/11/2026): VERDE** (`EXIT_CODE_CHECK_ALL=0`).
+- `git fetch origin '+refs/heads/main:refs/remotes/origin/main'` (e dos três ramos da B e da C): `main` em `8dcc81d`, já dentro do ramo, **nada a juntar**; o ramo da B **não mudou** entre o início e o fim; **o da C avançou** para `b7eb2ee` e foi relido.
+- Script de recontagem: antes `177 · CONFERE`, depois `178 · CONFERE`, com os totais acima. Coerência: status do índice = status de cada entrada (178); toda `DEC-NNN` citada no roadmap e no 0012 existe; toda seção do 0012 citada pelas entradas existe (inclusive a 9). Busca de `STATUS-A`, `STATUS-B`, `STATUS-C`, `status-a/b/c` e dos rótulos "da B" e "da C": **nenhuma ocorrência**.
+- **`tools/check_all` no HEAD final `28a0227` (21:44:20 a 21:47:44, 10/11/2026): VERDE** (`EXIT_CODE_CHECK_ALL=0`).
 - **NÃO EXECUTADO:** oráculo, vida de 30 dias, `run_sim` (só documentos).
 
 ## 6. Resultados
-- **`check_all`:** 124 scripts, **1.194 testes, 1.194 passando, 0 falhando**, 261.693 asserts, 179,8 s; 313 scripts sem aviso de compilação; nenhum "SCRIPT ERROR" nem "Parse Error".
-- **Critério de aceite:** 1 (DEC-174 a 177; DEC-152 com `workplace_id` e `peek_post`; DEC-172 com os três marcos; notas nas DEC-005, 045 e 053; totais por script; versão 0.8) · 2 (LW-090, 092, 095, 097, Anexo D, 3.F item 4, marcos de hash e a conferência da seção 16) · 3 (0012, seção 8) · 4 (tabela de nomes e divergências, acima) · 5 (merge: nada a juntar).
+- **`check_all`:** 124 scripts, **1.194 testes, 1.194 passando, 0 falhando**, 261.693 asserts, 172,1 s; 313 scripts sem aviso de compilação; nenhum "SCRIPT ERROR" nem "Parse Error".
+- **Critério de aceite:** 1 (DEC-178; DEC-163 com nota; DEC-175 e DEC-172 por bloco; DEC-165, 162 e 177 revistas; versão 0.9, histórico, índice e totais por script, 178 como esperado) · 2 (roadmap: LW-088a, 093 a 095 e 097 com os marcos; LW-092 com `fabric`; LW-096 com "local de trabalho"; LW-097 sem ampliar o terreno, com o tecido nos importados e com o fechar rota) · 3 (0012: cabeçalho e seção 9) · 4 (conferência acima, B e C lidos no início e no fim) · 5 (merge: nada a juntar).
 
 ## 7. Problemas encontrados
-- As **divergências da B e da C** estão listadas acima (5), para você enviar.
-- A DEC-171 não tinha a frase dos marcos (item 1 de "O que quero que você veja").
-- **O contrato da `economy` ainda trata Q18 a Q21 como "em aberto"** (divergência 2): enquanto a B não atualizar, os dois textos discordam do registro.
+- As **4 divergências** acima (a B tem as 4; a C só a do `run_sim`, porque o commit `b7eb2ee` corrigiu os marcos e o tecido), para você enviar.
+- **A frase do `run_sim`** (item 1 acima): a sua ordem e as duas fichas discordam.
+- A DEC-153 tinha a frase "o tecido é só mercadoria", agora anotada.
 
 ## 8. Riscos
-- **35 entradas minhas ainda são PROPOSTA** (31 das rodadas 1 e 2 e 4 desta): guiam o trabalho, mas você não as aprovou.
-- **Três aprovações de hash** (LW-088a, LW-093 a LW-095, LW-097) significam três pontos em que o trabalho espera por você.
-- **LW-097 pesada** (item 3) e **frente do `npc` com um agente só** (as LW-093 a LW-097 mexem nos mesmos arquivos).
-- **Postos sem verificação automática** (item 7).
-- **Valores [HIP]:** o teto de compra, os estoques iniciais e os salários dos postos são hipóteses; só o soak da LW-110 e a calibração (LW-112) os provam.
+- **Os marcos por bloco** dependem de o agente que roda cada tarefa seguir a regra de parar no primeiro valor que mudar; se ele registrar em silêncio, o hash muda sem a sua aprovação. A regra está na DEC-175, na LW-088a e na nota 3.D.
+- **O `fabric` na manutenção** muda o equilíbrio dos povoados que não tecem (A e C): eles passam a importar tecido, o que depende do estoque inicial e, depois, do comerciante (LW-098). Números [HIP]; a LW-112 calibra.
+- **35 entradas minhas ainda são PROPOSTA**; a LW-097 concentra decisões suas (hashes, formato de dado, povoado C).
 
 ## 9. Pendências
-- **Para você decidir (cada uma com a minha recomendação):** (1) aprovar ou trocar as 35 PROPOSTA — recomendo aprovar as DEC-174 a 177 (resolvem pontos que travariam o `check_temp`, os hashes e o soak); (2) uma entrada própria para a distribuição 14/6/20/10 — recomendo sim, ao preparar a LW-097; (3) dividir a LW-097 — recomendo decidir ao preparar o prompt.
+- **Para você decidir (cada uma com a minha recomendação):** (1) conferir o `run_sim` na LW-088a e acertar a frase — recomendo manter como está até a primeira rodada mostrar; (2) mandar as divergências para a B (as 4) e para a C (a do `run_sim`) — recomendo mandar antes da Fase B da LW-087a; (3) aprovar ou trocar as PROPOSTA — recomendo aprovar as DEC-174 a 177 e a DEC-175 revista junto.
 - **Fase B:** não autorizada. A linha de status e o `README` entram só quando você mandar o rascunho para o `main`.
 - **Teste manual:** nenhum (só texto).
 
 ## ACOMPANHAMENTO
 - **Avanço:** a LW-087a segue como primeira parte da LW-087; a Fase 3 não começou (contagens do status inalteradas).
-- **Próxima tarefa recomendada:** a sua revisão da rodada 3 e, se aprovada, a Fase B da LW-087a; depois a B e a C atualizam os rascunhos (087b, 087c e 087d) com as 5 divergências acima. **Não iniciada.**
+- **Próxima tarefa recomendada:** a sua revisão da rodada 4 e, se aprovada, a Fase B da LW-087a; antes, a B atualiza o rascunho com as divergências 1 a 4 e a C confere a do `run_sim`. **Não iniciada.**
 - **Decisões que dependem de você:** as três acima.
-- **Git:** **um** commit novo (`1ad022a`) no ramo `lw-087a-registro-fase-3`; empurrados **só** esse ramo e o `status-a`; nada no `main`, nenhuma tag, sem `--force`.
+- **Git:** **um** commit novo (`28a0227`) no ramo `lw-087a-registro-fase-3`; empurrados **só** esse ramo e o `status-a`; nada no `main`, nenhuma tag, sem `--force`.
