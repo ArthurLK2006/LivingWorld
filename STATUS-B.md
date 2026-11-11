@@ -1,4 +1,4 @@
-11/11/2026 12:52 (Brasília) — APROVADO por Arthur: LW-146a a LW-146e (frase recebida); Fase B (merge no `main`) NÃO iniciada: aguardo o passo a passo dele (regra 13); os 5 ramos seguem fora do `main`, `check_all` verde em cada um (1203 de 1203)
+11/11/2026 13:07 (Brasília) — CONCLUÍDA a FASE B da LW-146a a LW-146e: o `main` avançou por fast-forward de `9b4f6f0` até `ffb1e03` (sem merge commit, sem rebase, sem tag); `check_all` verde no commit final (1203 de 1203); a revisão independente da A vem a seguir (somente leitura)
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -95,3 +95,18 @@ Critério de aceite (documentos): as respostas do painel estão registradas, os 
 - **Avanço:** o pré-voo e os contratos da Fase 5 estão escritos; falta a Fase B (levar ao `main`) e a 146f (extensões dos outros módulos, depois da LW-117). Código da Fase 5: **0%**.
 - **Próxima tarefa recomendada:** a **Fase B**, só com a sua frase **"APROVADO LW-146a a LW-146e"**; depois a 146f, quando a LW-117 estiver pronta. **Não iniciada.**
 - **Git:** 5 commits, um por parte, todos com `Co-Authored-By`, em 5 ramos empilhados, **enviados** por `ramo:ramo` (`11e179f`, `63e41d8`, `3528d09`, `c53a079`, `38e4c7e`). **Nada no `main`, nenhuma tag, sem force, rebase ou reset.** Mensagens: "LW-146a: registro das decisões de jogo da Fase 5 (DEC-179 a DEC-201), roadmap e escopo"; "LW-146b: contrato do combat ..."; "LW-146c: extensão do contrato do character ..."; "LW-146d: contratos novos da ecologia e dos eventos dinâmicos"; "LW-146e: extensões da ponte, da câmera e interface e do save (Fase 5)".
+
+
+## FASE B — LW-146a a LW-146e no `main` (11/11/2026, autorizada por escrito por Arthur)
+
+**Efeito:** o `main` agora tem as 23 decisões da Fase 5 (DEC-179 a DEC-201), o roadmap e o escopo alinhados, o `0014` e os contratos novos e ampliados (`combat`, `ecology`, `dynamic_events`, `character`, `bridge`, `presentation`, `persistence`). Só documentos; nenhum código mudou.
+
+**Passos, com o que vi:**
+- **B0:** `git fetch`; `origin/main` seguia em `9b4f6f0` (como você previa). Nada a relatar.
+- **B1:** conferi que `origin/lw-146e-ponte-camera` (`38e4c7e`) **contém os cinco ramos** (`lw-146-prevoo-fase-5`, 146a, 146b, 146c e 146d são todos ancestrais dele) e **descende de `origin/main`**. Fiz **um** commit, `ffb1e03` ("LW-146: Fase B, correção do Status do 0014 e linha de entrada no ROADMAP_STATUS"), só com: (a) a frase do Status do `0014` que se contradizia ("as respostas estão em `DECISIONS.md`" contra "as respostas ainda **não** estão em `DECISIONS.md`") agora diz que **estão** registradas (DEC-179 a DEC-201, LW-146a); (b) **uma linha** nova no fim de "Itens dentro e fora do protótipo" do `docs/ROADMAP_STATUS.md`, dizendo que a LW-146a a LW-146e entraram no `main` e que **não alteram contagens nem porcentagens** (não toquei em 88/192 nem no percentual de fase). O `git diff --staged` foi mostrado antes do commit: 2 arquivos, +3 −1; `git diff --check` limpo. Nenhum outro arquivo.
+- **B2:** `tools/check_all` **uma vez**, no commit final `ffb1e03`: **VERDE**. `Tests 1203`, `Passing Tests 1203`, `Asserts 262120`, `Time 186,209 s` (início 13:03:38, fim 13:07:22). As linhas `Warnings 1` e `Deprecated 1` são as mesmas de todas as execuções anteriores.
+- **B3:** `git fetch` de novo: `origin/main` ainda em `9b4f6f0` e fast-forward possível. Push: `lw-146e-ponte-camera:lw-146e-ponte-camera` (`38e4c7e..ffb1e03`) e `lw-146e-ponte-camera:main` (`9b4f6f0..ffb1e03`), **na primeira tentativa**, sem corrida. Conferi depois: `origin/main` = `ffb1e03`. **Tags:** nenhuma nova (as remotas continuam `fase-0-concluida`, `fase-1-concluida` e `fase-2-concluida`).
+
+**Não fiz (proibido ou fora do escopo):** `--force`, rebase, reset, stash, tag, apagar ramo; DECISIONS, GDD, arquitetura, AGENTS, roadmap (`DEVELOPMENT_ROADMAP.md`), `project.godot`, `.gitignore`, `data/`, `addons/`, fixtures e os módulos `economy`, `npc`, `world`, `events`, `factions`, `politics`, `military`, `chronicle`. **A 146f não foi feita.**
+
+**Git:** commit `ffb1e03` (um commit, com `Co-Authored-By`). Os cinco ramos antigos ficaram no GitHub como estavam (não apaguei nenhum; agora estão todos dentro do `main`).
