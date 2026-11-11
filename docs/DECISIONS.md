@@ -1,6 +1,6 @@
 # LIVING WORLD — REGISTRO OFICIAL DE DECISÕES (DECISIONS.md)
 
-**Versão do documento:** 0.8 (10/11/2026; rodada 3 da LW-087a: entradas DEC-174 a DEC-177 acrescentadas, DEC-152 e DEC-172 revistas, notas da DEC-054 nas DEC-005, 045 e 053 e totais recontados; a 0.7 é do mesmo dia (LW-087a); ver seção 8)
+**Versão do documento:** 0.9 (10/11/2026; rodada 4 da LW-087a: entrada DEC-178 acrescentada, DEC-165, 162, 172, 175 e 177 revistas, notas nas DEC-153 e 163 e totais recontados; a 0.8 é do mesmo dia (LW-087a); ver seção 8)
 **Data de criação:** 01/11/2026 (horário de Brasília)
 **Responsável pela decisão:** Arthur (dono do produto). **Somente ele aprova.**
 **Função deste documento:** ser a **fonte oficial** do que está decidido, proposto, pendente, descartado ou substituído nos projetos de design e de tecnologia do Living World, para evitar contradições futuras entre o Briefing, o GDD, a arquitetura, o roadmap e o trabalho dos agentes de IA.
@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais atualizados em 10/11/2026 (LW-087a, rodada 3, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 177**. Desde a rodada 2: 4 entradas PROPOSTA decididas pelo revisor (DEC-174 a DEC-177); nenhuma APROVADA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 2, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 60 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 173**. Desde a rodada 1: 2 entradas APROVADAS por Arthur (DEC-163 e DEC-164) e 9 PROPOSTA decididas pelo revisor (DEC-165 a DEC-173); nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 82 (20 com ressalva) · PROPOSTA: 51 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 162**. Desde a LW-085e: a DEC-047, a DEC-049 e a DEC-054 passaram de PROPOSTA a APROVADA; entraram 12 entradas APROVADAS por Arthur (DEC-129 a DEC-137 e DEC-142 a DEC-144) e 22 entradas PROPOSTA decididas pelo revisor (DEC-138 a DEC-141 e DEC-145 a DEC-162); a ressalva nova é a DEC-129 (valores seguem [HIP]). **Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
+**Totais atualizados em 10/11/2026 (LW-087a, rodada 4, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 85 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 3: 1 entrada APROVADA por Arthur (DEC-178); nenhuma PROPOSTA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 3, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 177**. Desde a rodada 2: 4 entradas PROPOSTA decididas pelo revisor (DEC-174 a DEC-177); nenhuma APROVADA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 2, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 60 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 173**. Desde a rodada 1: 2 entradas APROVADAS por Arthur (DEC-163 e DEC-164) e 9 PROPOSTA decididas pelo revisor (DEC-165 a DEC-173); nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 82 (20 com ressalva) · PROPOSTA: 51 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 162**. Desde a LW-085e: a DEC-047, a DEC-049 e a DEC-054 passaram de PROPOSTA a APROVADA; entraram 12 entradas APROVADAS por Arthur (DEC-129 a DEC-137 e DEC-142 a DEC-144) e 22 entradas PROPOSTA decididas pelo revisor (DEC-138 a DEC-141 e DEC-145 a DEC-162); a ressalva nova é a DEC-129 (valores seguem [HIP]). **Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -185,12 +185,13 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-157 | Contratos: `labor` (minutos de trabalho num local) e `delivery` (bem no destino) | PROPOSTA |
 | DEC-163 | Consumo na Fase 3: os locais de produção gastam ferramenta e tábua; o NPC só come; roupa e ferramenta pessoal ficam fora | APROVADA |
 | DEC-164 | Quem paga guardas e estalajadeiros: postos de serviço por povoado, com a folha paga pela conta do mercado | APROVADA |
-| DEC-165 | A vaga em local de produção é um tipo de contrato: `vacancy` | PROPOSTA |
+| DEC-165 | A vaga em local de trabalho (local de produção ou posto de serviço) é um tipo de contrato: `vacancy` | PROPOSTA |
 | DEC-166 | O povoado C não produz comida: estoque inicial no mercado dele e soaks de 1 ano só depois da LW-098 | PROPOSTA |
 | DEC-170 | O `mint` inicial (`game_start`) entra na LW-093, antes da LW-094 | PROPOSTA |
 | DEC-173 | `request_trade(actor_id, market_id, good_id, quantity, side)` | PROPOSTA |
 | DEC-176 | Estoque inicial de 30 dias dos bens importados até o comerciante (LW-098) | PROPOSTA |
 | DEC-177 | O mercado tem um teto de compra por bem | PROPOSTA |
+| DEC-178 | O tecido entra na manutenção dos locais, além de ferramenta e tábua | APROVADA |
 
 **ÁREA 7 — MUNDO FÍSICO E ESPACIAL**
 
@@ -279,7 +280,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-137 | Duas subtarefas pequenas antes da LW-093: LW-093a (ids de conteúdo) e LW-093b (ofício só por JSON) | APROVADA |
 | DEC-172 | LW-088a: o registro da `economy` muda o `state_hash`; a tarefa pede autorização antes de mexer em `tests/fixtures` | PROPOSTA |
 | DEC-174 | Os postos de serviço são provisórios sem a marca `TEMP-LW`: regra de jogo até a Fase 4 | PROPOSTA |
-| DEC-175 | Três marcos de hash: LW-088a, LW-093 a LW-095 e LW-097; Arthur aprova os valores novos em cada um | PROPOSTA |
+| DEC-175 | Três marcos de hash por bloco: LW-088a a LW-092, LW-093 a LW-096a e LW-097; Arthur aprova os valores novos em cada um | PROPOSTA |
 
 **ÁREA 11 — ALTERNATIVAS DESCARTADAS**
 
@@ -2270,7 +2271,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Nenhum documento diz quais bens saciam o quê (perguntas Q9 do contrato da `economy` e Q20 do contrato do `npc`, a mesma decisão). As cinco necessidades (fome, descanso, segurança, renda e social) não são atendidas por ferramenta, tábua, metal nem tecido. |
 | **Decisão** | `need_id` e `need_relief` em `goods.json`: `bread` sacia `hunger` com o alívio cheio e `grain` com alívio menor [HIP] (o GDD 12.3 põe grão em alimento). **O NPC só consome comida** na Fase 3. Ferramenta e tábua são gastas pelos **locais de produção** (manutenção, DEC-163); o metal é insumo de produção; o tecido é só mercadoria de comércio. |
 | **Justificativa** | Com o grão comestível, a vida sem jogador sobrevive enquanto a cadeia se estabiliza (risco R3.3 do roadmap). Recomendações dos contratos da `economy` e do `npc`. |
-| **Consequências** | A LW-089 grava os dois campos; a LW-093 os usa para o valor derivado de `buy` (DEC-143); a LW-092 trata o gasto dos locais (DEC-163). |
+| **Consequências** | A LW-089 grava os dois campos; a LW-093 os usa para o valor derivado de `buy` (DEC-143); a LW-092 trata o gasto dos locais (DEC-163). (a DEC-178 inclui o tecido na manutenção dos locais) |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seções 5.2 e 5.4 · recomendações dos contratos da `economy` (Q9) e do `npc` (Q20) · revista pelo revisor na rodada 2 (10/11/2026) · registrada em 10/11/2026 (LW-087a) |
 | **Relações** | DEC-129, DEC-143, DEC-163 |
 
@@ -2394,7 +2395,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|
 | **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
 | **Contexto** | Registrar o módulo `world` muda todo `state_hash` (pergunta Q-W6 do contrato do `world`). A alternativa, guardar o estado de rota dentro de outro módulo, fere "um dono por dado". |
-| **Decisão** | **Aceitar** a mudança. A própria LW-097 atualiza o oráculo, o hash de 30 dias e o `run_sim`, **com a aprovação de Arthur dos valores novos** (a mesma aprovação vale para os hashes novos do `npc` da DEC-142). |
+| **Decisão** | **Aceitar** a mudança. A própria LW-097 atualiza o oráculo, o hash de 30 dias e o hash que o `run_sim` imprime (o código do `run_sim` não muda), **com a aprovação de Arthur dos valores novos** (a mesma aprovação vale para os hashes novos do `npc` da DEC-142). |
 | **Justificativa** | Recomendação do contrato do `world`: a mudança é consequência do estado de rota. |
 | **Consequências** | Nenhum hash do `npc` ou do mundo muda antes da LW-097. |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.3 · recomendação do contrato do `world` (Q-W6) · registrada em 10/11/2026 (LW-087a) |
@@ -2410,7 +2411,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Com o NPC consumindo só comida (DEC-153), tábua, ferramenta e tecido ficariam sem comprador entre os NPCs, com risco de estoque acumulado e de o mercado ficar sem dinheiro. O GDD 12.3 prevê roupa e ferramenta pessoal como consumo. |
 | **Decisão** | Os **locais de produção gastam ferramenta (`tool`) e tábua (`plank`) aos poucos para funcionar** (manutenção). O NPC continua consumindo **só comida**. O **tecido** (`fabric`) fica só como mercadoria de comércio; a calibração (LW-112) pode revisar. O consumo de roupa e de ferramenta pessoal pelo NPC (GDD 12.3) fica **fora da Fase 3** (backlog). Os números são [HIP], em dados; o desenho fica em `docs/modules/economy.md`. |
 | **Justificativa** | Escolha de Arthur na rodada 2 da LW-087a (decisão 2). |
-| **Consequências** | A LW-092 implementa a manutenção dos locais. Uma linha do `docs/backlog.md` guarda o consumo pessoal. A DEC-153 foi revista para dizer isso. |
+| **Consequências** | A LW-092 implementa a manutenção dos locais. Uma linha do `docs/backlog.md` guarda o consumo pessoal. A DEC-153 foi revista para dizer isso. (ampliada pela DEC-178) |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 7.1 · decidida por Arthur em 10/11/2026 (mensagem da rodada 2 da LW-087a) · registrada em 10/11/2026 (LW-087a) |
 | **Relações** | DEC-129, DEC-153 |
 
@@ -2430,13 +2431,13 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
-### DEC-165 — A vaga em local de produção é um tipo de contrato: `vacancy`
+### DEC-165 — A vaga em local de trabalho (local de produção ou posto de serviço) é um tipo de contrato: `vacancy`
 
 | Campo | Conteúdo |
 |---|---|
 | **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
 | **Contexto** | Arthur decidiu que a vaga nova é oferecida por `ContractOffered` (DEC-144), mas o roadmap só lista contrato de trabalho avulso e de entrega (LW-096) (pergunta Q16 do contrato da `economy`). |
-| **Decisão** | Tipo de contrato **`vacancy`**: vaga em local de produção, **sem custódia e sem prazo**; aceitar atribui o NPC ao local e tira a atribuição anterior. |
+| **Decisão** | Tipo de contrato **`vacancy`**: vaga em local de trabalho (local de produção ou posto de serviço), **sem custódia e sem prazo**; aceitar atribui o NPC ao local e tira a atribuição anterior. |
 | **Justificativa** | Recomendação do contrato da `economy`. A alternativa, tratar a vaga como `labor` de prazo aberto, mistura emprego fixo com trabalho avulso. |
 | **Consequências** | A LW-096 acrescenta o tipo. |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 7.2 · recomendação do contrato da `economy` (Q16) · registrada em 10/11/2026 (LW-087a) |
@@ -2534,10 +2535,10 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|
 | **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
 | **Contexto** | Registrar a `economy` no `World` muda o `state_hash` e pode atingir `tests/unit/test_save_codec.gd`, que usa a fixture `save_v1` (pasta protegida, AGENTS 12.5). |
-| **Decisão** | Se a fixture for atingida, a **LW-088a PARA** e pede a **autorização escrita de Arthur** antes de mexer em `tests/fixtures`. Arthur aprova os **valores novos dos hashes uma vez em cada um de três marcos** (DEC-175): (1) o registro da `economy` (LW-088a); (2) a LW-093 a LW-095 (o NPC passa a usar mercado, comida e salário); (3) a população nova (LW-097). O `run_sim` não muda (ele não registra módulos). |
+| **Decisão** | Se a fixture for atingida, a **LW-088a PARA** e pede a **autorização escrita de Arthur** antes de mexer em `tests/fixtures`. Arthur aprova os **valores novos dos hashes uma vez em cada um de três marcos por bloco** (DEC-175): (1) LW-088a a LW-092 (a economia ganha estrutura; o NPC ainda não a usa); (2) LW-093 a LW-096a (o NPC usa mercado, comida, salário e vaga); (3) LW-097 (população nova). O **código** do `run_sim` não muda; muda o hash que ele imprime. |
 | **Justificativa** | Evita aprovar hashes a cada tarefa e mantém a pasta protegida sob a regra do AGENTS. |
 | **Consequências** | LW-088a e LW-097 dizem isso. |
-| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 7.2 · decidida pelo revisor em 10/11/2026 (marcos de hash revistos na rodada 3) · registrada em 10/11/2026 (LW-087a) |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 7.2 · decidida pelo revisor em 10/11/2026 (marcos de hash revistos nas rodadas 3 e 4) · registrada em 10/11/2026 (LW-087a) |
 | **Relações** | DEC-127, DEC-142, DEC-162, DEC-175 |
 
 ---
@@ -2570,16 +2571,16 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
-### DEC-175 — Três marcos de hash: LW-088a, LW-093 a LW-095 e LW-097; Arthur aprova os valores novos em cada um
+### DEC-175 — Três marcos de hash por bloco: LW-088a a LW-092, LW-093 a LW-096a e LW-097; Arthur aprova os valores novos em cada um
 
 | Campo | Conteúdo |
 |---|---|
 | **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
-| **Contexto** | A DEC-172 citava dois marcos (o registro da `economy` e a população nova). As LW-093 a LW-095 também mudam o comportamento do `npc` (comida do mercado, salário) e, portanto, o oráculo e o hash do soak de 30 dias (pergunta Q19 do contrato da `economy`). |
-| **Decisão** | **Três marcos** de hash: (1) **LW-088a** (registro da `economy`); (2) **LW-093 a LW-095** (o NPC passa a usar mercado, comida e salário); (3) **LW-097** (população nova). Arthur aprova os **valores novos uma vez em cada marco**. O `run_sim` não muda. |
-| **Justificativa** | Evita um marco sem aprovação: sem o segundo, o hash mudaria por uma tarefa de comportamento sem passar por você. |
-| **Consequências** | A DEC-172 e as linhas da LW-088a, LW-095 e LW-097 no roadmap listam os três marcos. |
-| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 8 · decidida pelo revisor em 10/11/2026 (rodada 3) · registrada em 10/11/2026 (LW-087a) |
+| **Contexto** | A DEC-172 citava dois marcos (o registro da `economy` e a população nova), e a rodada 3 os fez três por tarefa (LW-088a; LW-093 a LW-095; LW-097). Mas a economia ganha estrutura em várias tarefas antes de o `npc` usá-la, e o `npc` só passa a usar mercado, comida, salário e vaga a partir da LW-093: os valores de referência (o oráculo e o hash do soak de 30 dias) mudam por bloco, não por tarefa (pergunta Q19 do contrato da `economy`). |
+| **Decisão** | **Três marcos por bloco:** (1) **LW-088a a LW-092** (a economia ganha estrutura; o NPC ainda não a usa); (2) **LW-093 a LW-096a** (o NPC usa mercado, comida, salário e vaga); (3) **LW-097** (população nova). **Em cada bloco, o primeiro valor de referência que mudar faz a tarefa PARAR** e mostrar a Arthur o valor antigo, o novo e a causa. Se ele aprovar ("aprovo os hashes do marco N"), as demais tarefas do bloco **só registram os valores novos no relatório**, desde que a causa seja a do bloco. **A partir da LW-098**, se um valor já aprovado mudar, a tarefa PARA e pergunta (AGENTS 9.5); o primeiro valor de um teste novo não é mudança. A fixture `save_v1` só se mexe com autorização escrita específica (DEC-172). O **código** do `run_sim` não muda; muda o hash que ele imprime. |
+| **Justificativa** | Cada marco tem um dono (você) e uma causa clara; evita aprovar o mesmo hash tarefa a tarefa e evita que um valor mude sem passar por você. |
+| **Consequências** | A DEC-172 e as linhas da LW-088a, LW-093 a LW-095, LW-096a e LW-097 no roadmap passam a dizer isso. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seções 8 e 9 · decidida pelo revisor em 10/11/2026 (rodadas 3 e 4) · registrada em 10/11/2026 (LW-087a) |
 | **Relações** | DEC-162, DEC-172 |
 
 ---
@@ -2604,11 +2605,25 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 |---|---|
 | **Status** | PROPOSTA (decidida pelo revisor em 10/11/2026, na delegação de menores; vale como padrão de trabalho e **não é APROVADA**). |
 | **Contexto** | O mercado compra o produto do local de produção e paga a folha dos postos de serviço com a mesma conta (DEC-149, DEC-164). Um bem sem consumidor, como o `fabric`, pode esvaziá-la (risco R3.3 do roadmap) (pergunta Q21 do contrato da `economy`). |
-| **Decisão** | Cada mercado tem um **teto de compra por bem**, em dados: acima de certa fração do estoque-alvo ele **deixa de comprar**, e o local de produção **para por `OUTPUT_FULL`, sem perder eficiência**. Entra na LW-090. |
+| **Decisão** | Cada mercado tem um **teto de compra por bem**, em dados: acima de certa fração do estoque-alvo ele **deixa de comprar** (a ordem de venda é recusada inteira com o erro `ECON_MARKET_FULL`), e o local de produção **para por `OUTPUT_FULL`, sem perder eficiência**. Entra na LW-090. |
 | **Justificativa** | Protege a conta do mercado sem criar demanda nova (DEC-163). A alternativa, aceitar o risco e provar no soak da LW-110 com plano B escrito, deixa a conta exposta. |
 | **Consequências** | A LW-090 implementa; o nome da coluna e a fração ficam em `data/` [HIP]. |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 8 · decidida pelo revisor em 10/11/2026 (rodada 3) · registrada em 10/11/2026 (LW-087a) |
 | **Relações** | DEC-149, DEC-163, DEC-164 |
+
+---
+
+### DEC-178 — O tecido entra na manutenção dos locais, além de ferramenta e tábua
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 10/11/2026. |
+| **Contexto** | Pela DEC-163 os locais gastavam só ferramenta e tábua, e o tecido era só mercadoria de comércio. Com o teto de compra (DEC-177), o local de tecelagem acumula tecido e para por `OUTPUT_FULL`; e "hora parada = ninguém recebe" deixa o tecelão e o pastor sem salário e, sem salário, sem comida (risco R3.3 do roadmap) (pergunta Q22 do contrato da `economy`). |
+| **Decisão** | O tecido (`fabric`) entra na **manutenção dos locais**, além de ferramenta (`tool`) e tábua (`plank`) (lonas, sacos), **em dados**. O vocabulário de `site_upkeep` passa a `tool`, `plank` e `fabric`; os números são [HIP], pequenos (LW-092 e LW-112). O NPC continua só comendo; roupa continua fora da Fase 3; o teto de compra (DEC-177) e "hora parada = ninguém recebe" ficam. |
+| **Justificativa** | Escolha de Arthur na rodada 4 da LW-087a (Q22): sem isso o tecelão e o pastor ficam sem salário e passam fome. |
+| **Consequências** | Amplia a DEC-163. A LW-092 grava `fabric` entre os bens de manutenção; a calibração (LW-112) revisa os números. O povoado que não tece (A e C) importa tecido, então a LW-097 inclui o tecido no estoque inicial dos importados. |
+| **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 9 · decidida por Arthur em 10/11/2026 (mensagem da rodada 4 da LW-087a) · registrada em 10/11/2026 (LW-087a) |
+| **Relações** | DEC-163, DEC-177 |
 
 ---
 
@@ -2795,7 +2810,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-178` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-179` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto
@@ -2827,6 +2842,7 @@ Copiar, preencher e usar o próximo número livre (`DEC-178` em diante). **Nunca
 
 | Versão | Data (Brasília) | Alteração |
 |---|---|---|
+| 0.9 | 10/11/2026 | Rodada 4 da LW-087a. **APROVADA por Arthur:** DEC-178 (o tecido entra na manutenção dos locais, além de ferramenta e tábua; amplia a DEC-163). **Revistas (PROPOSTA):** DEC-175 e DEC-172 (marcos de hash por bloco: LW-088a a LW-092, LW-093 a LW-096a e LW-097; o código do `run_sim` não muda, muda o hash que ele imprime), DEC-165 (vaga em local de trabalho, produção ou posto), DEC-162 (hash que o `run_sim` imprime) e DEC-177 (erro `ECON_MARKET_FULL`). Notas curtas nas DEC-163 ("ampliada pela DEC-178") e DEC-153. Totais recontados por script (APROVADA: 85 (20 com ressalva), PROPOSTA: 64, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 178). |
 | 0.8 | 10/11/2026 | Rodada 3 da LW-087a, depois da segunda rodada das revisões cruzadas. **PROPOSTA, decididas pelo revisor:** DEC-174 (postos de serviço provisórios sem a marca `TEMP-LW`), DEC-175 (três marcos de hash), DEC-176 (estoque inicial de 30 dias dos bens importados) e DEC-177 (teto de compra do mercado). **Revistas:** DEC-152 (nomes `WagesPaid(workplace_id, amount_each)`, `peek_site` e `peek_post`) e DEC-172 (os três marcos); DEC-166 aponta para a DEC-176. Nota curta "(DEC-054 aprovada em 10/11/2026)" nas DEC-005, 045 e 053. Totais recontados por script (APROVADA: 84 (20 com ressalva), PROPOSTA: 64, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 177). |
 | 0.7 | 10/11/2026 | Rodada 2 da LW-087a, depois das revisões cruzadas e das decisões novas de Arthur. **APROVADAS por Arthur:** DEC-163 (consumo na Fase 3: os locais de produção gastam ferramenta e tábua; o NPC só come) e DEC-164 (postos de serviço para guardas e estalajadeiros, folha pela conta do mercado); a DEC-054 foi confirmada inteira (sem mudança no texto dela). **PROPOSTA, decididas pelo revisor:** DEC-165 a DEC-173 (vaga `vacancy`; povoado C com estoque inicial de comida; coluna `work_place_id`; `sell` do NPC; LW-096a; `mint` inicial na LW-093; regra do `check_architecture` e hashes da LW-088a; assinatura de `request_trade`). **Revistas (PROPOSTA):** DEC-150 (invariante do `bid` e do `ask`), DEC-151 e DEC-152 (a hora do local e o salário como passo 3; `WagesPaid`; um trabalho, um pagamento), DEC-153 (os locais consomem ferramenta e tábua) e DEC-159 (payload do `RouteStateChanged`); DEC-133 e DEC-137 ganharam uma frase. Nota curta na DEC-034: "(DEC-054 aprovada em 10/11/2026)". Totais recontados por script (APROVADA: 84 (20 com ressalva), PROPOSTA: 60, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 173). |
 | 0.6 | 10/11/2026 | DEC-047, DEC-049 e DEC-054 passaram de PROPOSTA a APROVADA por Arthur (LW-087a) e foram acrescentadas as entradas DEC-129 a DEC-162, a partir de `docs/decisions/0012-pre-voo-da-fase-3.md`. **APROVADAS por Arthur (12):** escala da economia (3 povoados, 10 bens, 4 cadeias); as seis correções do pré-voo (dono das quantidades, `TradeFlow` sem S2, `npc` e `economy` só por `economy/api` e evento, `mint` inicial antes da LW-094, save não congelado, escopo do `check_temp`); não dividir os três arquivos do `npc` e as subtarefas LW-093a e LW-093b; e as perguntas Q10 (ofícios e cadeias), Q19 (comprar por utilidade) e Q22 (emprego). **PROPOSTA, decididas pelo revisor (22), padrão de trabalho e não APROVADAS:** os menores 7 a 11 do pré-voo e as respostas às perguntas Q1 a Q9, Q11 a Q14, Q18, Q20 e Q21 (contratos da `economy` e do `npc`) e Q-W1 a Q-W6 (rotas e 3º povoado). Totais recontados por script (APROVADA: 82 (20 com ressalva), PROPOSTA: 51, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 162). Das entradas antigas só mudaram o status, a consequência e a data das três citadas; nenhuma outra foi alterada. |
