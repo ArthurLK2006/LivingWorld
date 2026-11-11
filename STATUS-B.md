@@ -1,4 +1,4 @@
-11/11/2026 19:45 (Brasília) — FASE B DA LW-146g CONCLUÍDA: `main` agora em `a07492c` (avanço rápido, sem tag); `check_all` verde (1293 de 1293); relatório da 146g já no `status-b`; pendências de design da seção 18.9 seguem com você; PARADO (regra 13).
+11/11/2026 20:36 (Brasília) — FASE B DA LW-146h CONCLUÍDA: `main` agora em `7efbb84` (avanço rápido, sem tag); `check_all` verde (1293 de 1293); os 15 pontos da seção 9 de `docs/fase-5/dados.md` seguem com você; PARADO (regra 13).
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -592,3 +592,27 @@ Tudo é **PROPOSTA**: nomes e números ([HIP]) trocam sem custo. Os quatro tipos
 **Pendências que seguem abertas (da seção 18.9 e do relatório da 146g), todas suas:** os bens em quantidade que caem ao morrer; o saque de bem de NPC morto (DEC-146); o NPC ferreiro; a **tarefa nova da recompra** no roadmap; a DEC do I4 (conversa A); o conserto da linha da DEC-053 (`DECISIONS.md:1023`). **A conversa C ainda não sabe** que editei `politics.md`, `factions.md` e `dados.md` (blocos "LW-146g") nem do pedido do `cause_id` opcional em `request_apply_casualty` (`npc.md` 15.9): **não repassei nada**.
 
 **Git:** `main` em `a07492c` (dois commits novos: `a9fd5c1` e `a07492c`); o ramo `lw-146g-extensoes` ficou igual ao `main`.
+
+
+## LW-146h e FASE B — dados da Fase 5 no `main` (11/11/2026, autorizada por escrito por Arthur: "Aprovo, Fase B" e, no painel, "Sim, itens 1 a 5, sem tag")
+
+**Efeito:** o `main` agora tem `docs/fase-5/dados.md` (264 linhas, só documento): colunas, tipos, faixas, regras de validação e linhas de partida de **27 tabelas novas** da Fase 5 (6 de `combat`, 9 de `character`, 4 de `ecology`, 1 de `world`, 3 de eventos dinâmicos e 4 de `economy`), mais colunas e linhas novas em tabelas que já existem. Nenhum código nem dado mudou. **A tarefa:** a LW-146h não existia nos documentos; Arthur a definiu no painel como "Dados da Fase 5". O documento termina com **15 pontos para ele decidir** (seção 9), cada um com recomendação; os de maior peso são o **5** (o que o nível de cada habilidade faz no jogo; decisão de jogo), o **9** e o **10** (o que ficou sem linha por falta de decisão: arco e munição, efeito de "ferido", minério escondido, onde começa quem vem da estrada, visibilidade de `outpost`, `camp` e `respawn`) e o **13** (as ações `fight`, `surrender` e `take_item` pedem uma extensão de contrato do `npc` antes da LW-155).
+
+**Passos, com o que vi:**
+- **Antes (autorizado: "Ramo, commit e push"):** ramo `lw-146h-dados-fase-5` a partir de `origin/main`, sem upstream; commit `aad7be9` só com `docs/fase-5/dados.md`; push do ramo por refspec explícito.
+- **B0:** `git fetch --all --tags --prune`; `origin/main` seguia em `a07492c`; o ramo descende dele: avanço rápido possível, **sem merge e sem conflito**.
+- **B1:** um commit, `7efbb84` ("LW-146h: Fase B, linha de entrada no ROADMAP_STATUS"), só com `docs/ROADMAP_STATUS.md` (+2 linhas: o parágrafo e a linha em branco antes dele). Diz que a 146h entrou no `main`, aprovada por Arthur, sem tag; que os nomes de campos e de arquivos seguem PROPOSTA, todo número segue [HIP] e os 15 pontos seguem como recomendações; e que **não altera contagens nem porcentagens**. `git diff --check` limpo. Commit com `Co-Authored-By`.
+- **B2:** `tools/check_all` **uma vez**, no commit final `7efbb84` (a primeira linha da saída o confirma): **VERDE**, código 0 (20:31:05 a 20:35:36), `Scripts 142`, `Tests 1293`, `Passing Tests 1293`, `Asserts 292694`, `Time 205,9 s`; `Warnings 1` e `Deprecated 1` iguais aos de sempre; "IDS DE CONTEÚDO: tudo existe (51 conferências)"; **0** `SCRIPT ERROR` e **0** `Parse Error`. A saída tem 68 linhas `ERROR` e 9 com "falhou/failed": comparei com a rodada da 146g e são **idênticas, tipo por tipo e em contagem** (mensagens que os testes provocam de propósito, como "recusado de propósito", e nomes de teste); o número de verificações é o mesmo, como esperado para uma mudança só de documentos.
+- **B3:** `git fetch` de novo: `origin/main` ainda em `a07492c`. Push do ramo `lw-146h-dados-fase-5:lw-146h-dados-fase-5` (`aad7be9..7efbb84`) e depois `lw-146h-dados-fase-5:main` (`a07492c..7efbb84`), **na primeira tentativa**, só avanço rápido, sem `--force`. Conferi depois: `origin/main` = `origin/lw-146h-dados-fase-5` = `7efbb84`. **Tags:** nenhuma criada (as remotas continuam `fase-0-concluida`, `fase-1-concluida` e `fase-2-concluida`).
+
+**Problemas que tive (todos meus, sem efeito no resultado):**
+1. **Lancei o `check_all` duas vezes por engano.** O primeiro lançador, que eu achava morto, sobreviveu; o segundo, que lancei depois, ficou na fila (o script espera o Mac ficar sem Godot). Encerrei a **segunda** cadeia (processos 53944 e 53950) antes de ela começar a rodar; **só uma** execução do `check_all` aconteceu, e é a da cadeia original, no commit `7efbb84`. Encerrei também um vigia meu que ficaria esperando para sempre.
+2. **Havia um `check_all` de outra conversa** rodando ao mesmo tempo, em outra árvore de processos (não é meu; não mexi nele). Como na 146g, o resultado não foi afetado: é o mesmo número de testes e de verificações.
+3. **O cabeçalho do `docs/fase-5/dados.md` está desatualizado no `main`:** ele ainda diz "PROPOSTA da LW-146h, aguardando a aprovação de Arthur", enquanto o `ROADMAP_STATUS.md` diz que a 146h entrou aprovada. Eu **não** o alterei: seu item 3 autorizava **uma** linha só no `ROADMAP_STATUS.md`. **Proposta (precisa da sua autorização):** trocar só a palavra de estado do cabeçalho, em um commit de uma linha, na próxima parte da série.
+
+**Não fiz:** `--force`, rebase, reset, stash, tag, apagar ramo; nada em `DECISIONS.md`, GDD, arquitetura, AGENTS, roadmap (`DEVELOPMENT_ROADMAP.md`), `project.godot`, `data/`, código, módulos nem fichas de contrato. O `main` do seu clone principal (`/Users/arthurlk/LivingWorld`) **não foi atualizado por mim**: só o `origin/main` mudou.
+
+**Pendências, todas suas:** os 15 pontos da seção 9 de `docs/fase-5/dados.md`; o conserto de uma linha da DEC-053 (`DECISIONS.md:1023`); a **tarefa nova da recompra** no roadmap; a DEC do I4 (conversa A); os bens em quantidade que caem ao morrer, o saque de bem de NPC morto (DEC-146) e o NPC ferreiro (da 146g). A conversa C ainda não sabe das mudanças que a 146g fez nas fichas dela; **não repassei nada**.
+
+**Git:** `main` em `7efbb84` (dois commits novos: `aad7be9` e `7efbb84`); o ramo `lw-146h-dados-fase-5` ficou igual ao `main`.
+**Próxima tarefa recomendada:** a extensão do contrato do `npc` para as condições de combate (ponto 13), antes da LW-155, **só quando você mandar**. Não iniciada.
