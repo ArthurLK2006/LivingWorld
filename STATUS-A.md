@@ -1,4 +1,4 @@
-11/11/2026 19:20 (Brasília) · LW-093 PARTE 4 PRONTA: ramo `lw-093g-consulta-de-bens` (consultas `peek_good` e `peek_goods_for_need`, contrato autorizado); `check_all` VERDE (148 scripts, 1.307 testes), hashes e `run_sim` iguais; seguindo para a parte 5 (renomear `market_reserved` para `market`)
+11/11/2026 19:26 (Brasília) · LW-093 PARTE 5 PRONTA: ramo `lw-093h-tipo-de-local-market`: `market_reserved` virou `market` (DEC-160), com os testes autorizados trocados; `check_all` VERDE (148 scripts, 1.307 testes), hashes e `run_sim` iguais; seguindo para a parte 6 (ações buy/sell, condições, utilidade e compra ao completar)
 
 # RELATÓRIO — Fase B, correções (T1, T1b, T2), junção e LW-093 (partes 1 a 3)     Status: PARCIAL (PARADA: as ações `buy` e `sell` esbarram em testes existentes)
 
