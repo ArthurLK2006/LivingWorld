@@ -1,4 +1,51 @@
-11/11/2026 09:45 (Brasília) — CONCLUÍDA: LW-117 (pré-etapa), levantamento de pré-voo da Fase 4. Documento docs/decisions/0013-pre-voo-da-fase-4.md (275 linhas, 18 achados, 21 perguntas) no ramo lw-117-prevoo-fase-4 (a634f9e, 1 commit, só esse arquivo), RASCUNHO fora do main, ENVIADO só o ramo; check_all VERDE (1.203 de 1.203). main = 9b4f6f0, intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 10:42 (Brasília) — CONCLUÍDA: respostas de Arthur (Q1 a Q22) registradas no 0013 (seção 6), commit 1a56128 ENVIADO ao ramo lw-117-prevoo-fase-4 (rascunho, fora do main); check_all VERDE (1.203 de 1.203). main = 9b4f6f0, intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117 (PRÉ-ETAPA), ATUALIZAÇÃO — RELATÓRIO — Respostas de Arthur registradas no 0013 (DOC, rascunho fora do `main`)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3).** Depois do levantamento (`a634f9e`), Arthur respondeu **por painel de decisões, em 6 lotes**, as 21 perguntas do 0013 e autorizou, por escrito, **1 commit** no ramo `lw-117-prevoo-fase-4`, só em `docs/decisions/0013-pre-voo-da-fase-4.md`, com o push só desse ramo e do `status-c`; nada no `main`, sem tag, sem `--force`. Li as respostas e o próprio 0013. **Dúvida declarada:** ao cruzar as respostas, a **Q9** (criminosa vive de assaltos) e a **Q21** (carga roubada destruída) **se contradiziam**; perguntei a Arthur (Q22) antes de gravar.
+
+## 1. RESUMO
+O 0013 ganhou a **seção 6 "Respostas de Arthur"** (tabela Q1 a Q22), a lista do que as respostas mudam no roadmap e quatro pontos pequenos que continuam em aberto. As seções 1 a 5 ficaram como foram escritas. O ramo está enviado; **o rascunho continua fora do `main`**.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (commit `1a56128`, "LW-117: registra as respostas de Arthur no levantamento de pré-voo da Fase 4")
+- `docs/decisions/0013-pre-voo-da-fase-4.md`: +41 e −2 linhas (agora 314 linhas): status do cabeçalho, aviso no resumo, seção 6 nova e o "próximo passo". Nenhum outro arquivo; contra o `main` o ramo difere só nele.
+
+## 4. DECISÕES TÉCNICAS
+- **As respostas (resumo; a tabela completa está na seção 6 do 0013):** Q1 jogador entra na autoridade e na mercantil; Q2 duas culturas contrastantes; Q3 "pena de crime" vira "proibição de bem"; **Q4 o povoado C é do país vizinho**; Q5 guerra em escala pequena, resolução abstrata e o jogador não comanda (responde a DEC-053); Q6 4 províncias; Q7 reputação de um número em 5 faixas; Q8 save sem congelar (a LW-142 rejeita); Q9 assaltos e contribuição; Q10 um governante por país; **Q11 a Q21 todas na recomendação do revisor, escolhidas uma a uma por Arthur;** **Q22 o assalto leva o dinheiro do comerciante e a carga é destruída.**
+- **Rótulos:** Q1 a Q10 e Q22 são "decisão de Arthur"; Q11 a Q21 são "recomendação do revisor, escolhida por Arthur". O registro no `DECISIONS.md` e as correções do roadmap ficam para a parte 117a. Proposta de entrada para `DECISIONS.md`: nenhuma nova.
+- **Em aberto (seção 6, "o revisor propõe"):** qual cultura é de qual país; de quem é a província de fronteira; como o "imposto de entrada" difere da tarifa; nomes e doutrina das 3 facções.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD `1a56128`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (314 scripts), dados válidos, **125 scripts, 1.203 testes (todos passando), 262.120 asserts**, 171,4 s (3 min 25 s no total).
+- Por busca: o documento não cita arquivos de status nem letras de conversa. `git push origin lw-117-prevoo-fase-4`: `a634f9e..1a56128` (avanço simples); o remoto confere (`1a56128`); `main` e tags não mudaram.
+- NÃO EXECUTADO: nada fora do previsto.
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.203 de 1.203); falhos e pulados: 0. Critério cumprido por leitura do diff.
+
+## 7. PROBLEMAS ENCONTRADOS
+- **A contradição Q9 × Q21** (resolvida pela Q22) foi minha: as duas recomendações, lidas juntas, deixavam a criminosa sem renda. A seção 6 registra a resolução.
+- O ramo continua **1 commit atrás do `main`** (`9b4f6f0`); não juntei (não autorizado; o arquivo é novo, sem conflito possível).
+- O 0013 tem 314 linhas (pedido original: cerca de 250).
+
+## 8. RISCOS
+- As respostas ainda **não estão no `DECISIONS.md` nem no roadmap**: valem como registradas neste rascunho até a parte 117a.
+- Q4 (C é do vizinho) e Q6 (4 províncias) mudam dados do `world` e a distribuição econômica da Fase 3: a tarifa alta ou a fronteira fechada pode derrubar A e B (o C produz minério, metal e ferramenta). Mitigação já escrita: faixas das leis em dados e calibração no soak de 1 ano.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Autorizar a parte 117a** (registro das respostas no `DECISIONS.md` e no roadmap, por quem faz o registro) (**recomendo**).
+2. **Responder os 4 pontos pequenos em aberto** ou deixar o revisor propor (**recomendo** deixar o revisor propor, como PROPOSTA).
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3** com a A e a B; **Fase 4 não iniciada** (só a pré-etapa da LW-117, agora respondida).
+- Próxima tarefa recomendada: **LW-117a** (registro). **Não iniciada.** Parei aqui (regra 13).
+- Git: `lw-117-prevoo-fase-4` enviado (`1a56128`); `status-c` enviado com este relatório; `main` = `9b4f6f0` (não alterado por mim); sem tag, sem `--force`.
+
+---
 
 # LW-117 (PRÉ-ETAPA) — RELATÓRIO — Levantamento de pré-voo da Fase 4 (DOC, rascunho fora do `main`)        Status: PRONTA PARA REVISÃO
 
