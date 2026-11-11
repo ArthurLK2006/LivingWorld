@@ -9,7 +9,7 @@
 
 A Fase 4 pode começar a ser preparada, **mas a LW-117 não deve ser escrita antes de você responder** as perguntas da seção 4. Achei **18 contradições ou buracos** (seção 2). Os seis que mais pesam: (1) **não está dito onde fica a polity vizinha** (nem quem mora nela); (2) **três documentos dão a três donos diferentes o "controle" de uma província**; (3) a economia **não sabe receber uma política real** (como `TradeRules` troca de neutra para real, para onde vai a tarifa, quem tem conta no `Ledger`); (4) **"pena de crime" é uma das 5 leis, mas nenhuma tarefa cria crime**; (5) **as facções, os rumores, a satisfação e as baixas de guerra exigem mudanças no `npc`** que a LW-117 não lista; (6) a LW-142 manda **migrar** o save, e você já decidiu que o save **não é congelado** (DEC-134). Há **3 decisões PENDENTES que travam tarefas** (DEC-053, DEC-055, DEC-040) e **6 PROPOSTAS** que valem como padrão de trabalho (DEC-038, 043, 052, 056, 077, 099). São **10 perguntas de jogo** (só você decide) e **11 técnicas** (o revisor decide, se você concordar).
 
-**Atualização de 11/11/2026:** Arthur respondeu as 22 perguntas (as 10 de jogo, as 11 técnicas, uma a uma, e uma 22ª que nasceu ao cruzar as respostas). **As respostas estão na seção 6**; as seções 1 a 5 ficam como foram escritas antes delas, para guardar o raciocínio.
+**Atualização de 11/11/2026:** Arthur respondeu as perguntas pelo painel (e uma 22ª nasceu ao cruzar as respostas) e depois ajustou por mensagem: **a Q3 mudou** e **as técnicas Q11 a Q21 ficam com o revisor, como PROPOSTA**. **As respostas finais estão na seção 6**; as seções 1 a 5 ficam como foram escritas antes delas (inclusive a recomendação da Q3, que foi trocada), para guardar o raciocínio.
 
 ## 1. Decisões de que a Fase 4 depende (status no `DECISIONS.md` de 11/11/2026)
 
@@ -272,13 +272,13 @@ Regras: um arquivo, um escritor; 117a primeiro (registra as respostas), 117f por
 
 ## 6. Respostas de Arthur (11/11/2026)
 
-Dadas pelo painel de decisões, em lotes, na mesma conversa. **Q1 a Q10 e Q22 são decisões dele.** **Q11 a Q21 eram recomendações do revisor; ele quis vê-las uma a uma e escolheu cada uma**, então valem como escolhidas por ele. O registro no `DECISIONS.md` e as correções do roadmap são da parte 117a (seção 3); este documento só guarda as respostas.
+Dadas pelo painel de decisões, em lotes, na mesma conversa, e **ajustadas por uma mensagem de Arthur no mesmo dia**: **Q1, Q2 e Q5 a Q10 confirmadas** (ele aceita as recomendações); **Q3 mudou** (substitui a resposta do painel); **Q4 mantida**; **Q11 a Q21: o revisor decide como PROPOSTA, seguindo as recomendações** (o que Arthur escolheu uma a uma no painel coincide com elas); **Q22** (dele, do painel) segue como está. O registro no `DECISIONS.md` e as correções do roadmap são da parte 117a (seção 3); este documento só guarda as respostas.
 
-| Q | Assunto | Resposta de Arthur |
+| Q | Assunto | Resposta (Q11 a Q21: PROPOSTA do revisor, seguindo a recomendação) |
 |---|---|---|
 | 1 | Facções em que o jogador entra | **Autoridade e mercantil.** A criminosa fica em forma mínima, sem o jogador dentro. Nomes e doutrina das três: o revisor propõe, genéricos (DEC-100) |
 | 2 | 2 culturas genéricas | **Duas contrastantes** (por exemplo uma mais mercantil e outra mais tradicional), só com 4 parâmetros na Fase 4 |
-| 3 | As 5 leis | **"Pena de crime" sai e entra "proibição de bem".** As 5: tarifa, imposto de entrada, conscrição, proibição de bem e licença |
+| 3 | As 5 leis e o crime | **Mantém a "pena de crime", como multa, com a lista de atos em dados.** As 5 leis ficam as do roadmap: tarifa, imposto de entrada, conscrição, pena de crime e licença. **A fonte do crime vem da Fase 5** (agressão, roubo, morte e contrabando); **na Fase 4 testa-se com um evento de teste.** (Substitui a resposta anterior do painel, "proibição de bem".) |
 | 4 | Onde fica o país vizinho | **O povoado C é dele** |
 | 5 | Guerra e DEC-053 | **Guerra em escala pequena** entre as forças dos dois países, sem cerco nem exército grande. Resposta à DEC-053: **resolução abstrata e o jogador não comanda na Fase 4**; o limite de combatentes com corpo é da Fase 5 |
 | 6 | Províncias (DEC-055) | **4**: uma por povoado (A, B e C) mais uma de fronteira. Vale como decisão do protótipo; a DEC-055 segue pendente para o mundo final |
@@ -297,14 +297,16 @@ Dadas pelo painel de decisões, em lotes, na mesma conversa. **Q1 a Q10 e Q22 s�
 | 19 | Eventos e crônica | **Adotar os 6 eventos** que a arquitetura lista e o roadmap omite; **limiar de importância da crônica em dados** |
 | 20 | Guardas | **Os postos continuam;** só o pagador muda (do mercado para o tesouro da autoridade), com o mesmo evento de pagamento |
 | 21 | Escolta e carga | **Contrato novo `escort`** na economia; a carga perdida é **destruída** (motivo `lost`) |
-| 22 | Assalto a caravana (nova) | **O assalto leva o dinheiro do comerciante** (transferência para a facção criminosa) **e a carga é destruída;** isso resolve a contradição entre Q9 e Q21 |
+| 22 | Assalto a caravana (nova) | **O assalto leva o dinheiro do comerciante** (transferência para a facção criminosa) **e a carga é destruída;** isso resolve a contradição entre Q9 e Q21 (a Q21 é agora PROPOSTA do revisor) |
 
-**O que as respostas mudam no roadmap (para a parte 117a registrar como divergência):** a lista de 5 leis da LW-117 (sai "pena de crime", entra "proibição de bem"); a LW-142 **rejeita** o save em vez de migrar; a LW-118 passa a ter 4 províncias e o C ligado à província do vizinho; a LW-130 usa o interruptor da economia e a tarifa tem destinatário; a LW-119 usa o tipo `treasury`; a LW-121 promove a T3 como "T2 com vínculo"; a LW-127 usa o quadro de rumores; a LW-131 e a LW-135 pedem as extensões do `npc` (consulta diária, "protestar", "baixa", "em missão"); a LW-139 usa o contrato `escort` e o assalto que transfere dinheiro (motivo novo no `Ledger`). **A divisão da seção 3 continua valendo:** as extensões de `economy`, `npc` e `world` seguem fora da lista da LW-117 e entram nas partes 117b e 117e.
+**O que as respostas mudam no roadmap (para a parte 117a registrar como divergência):** as 5 leis da LW-117 **ficam como no roadmap**, mas a "pena de crime" passa a ser uma **multa com a lista de atos em dados** e **sem fonte de crime na Fase 4** (só um evento de teste; a fonte vem da Fase 5); a LW-142 **rejeita** o save em vez de migrar; a LW-118 passa a ter 4 províncias e o C ligado à província do vizinho; a LW-130 usa o interruptor da economia e a tarifa tem destinatário; a LW-119 usa o tipo `treasury`; a LW-121 promove a T3 como "T2 com vínculo"; a LW-127 usa o quadro de rumores; a LW-131 e a LW-135 pedem as extensões do `npc` (consulta diária, "protestar", "baixa", "em missão"); a LW-139 usa o contrato `escort` e o assalto que transfere dinheiro (motivo novo no `Ledger`). **A divisão da seção 3 continua valendo:** as extensões de `economy`, `npc` e `world` seguem fora da lista da LW-117 e entram nas partes 117b e 117e.
 
 **O que as respostas deixam em aberto (pequeno; o revisor propõe, nada foi decidido aqui):**
 - **Cultura de cada país:** a Q2 não diz qual das duas culturas é do país principal e qual é do vizinho.
 - **Província de fronteira (Q6):** de quem ela é e se tem povoado.
 - **"Imposto de entrada" (Q3):** como ele difere da tarifa (a economia só tem uma consulta de regra por bem, mercado e comprador).
+- **Como a multa é cobrada (Q3):** o comando da economia e o motivo novo do `Ledger` (por exemplo `fine`), o que acontece se quem cometeu o ato não tem saldo e quem publica o evento de teste do crime na Fase 4 (comando só de desenvolvimento ou de teste). A `proibição de bem` continua existindo como capacidade da `TradeRules` (`economy.md 5`), mas **não** é uma das 5 leis.
+- **Lista de atos em dados (Q3):** os quatro atos citados (agressão, roubo, morte e contrabando) e o valor de cada multa são dados [HIP].
 - **Nomes e doutrina das 3 facções (Q1):** propostas genéricas do revisor (DEC-100).
 
 ## Validação e referências
