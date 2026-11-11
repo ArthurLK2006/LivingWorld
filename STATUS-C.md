@@ -1,4 +1,54 @@
-11/11/2026 19:40 (Brasília) — CONCLUÍDA: LW-097a (3º povoado `test_settlement_c` e 10 locais work novos no world, só dados e testes), aprovada por Arthur: commit 5c5fcb7 ENVIADO só ao ramo lw-097a-terceiro-povoado (saído do main 0e20369); check_all VERDE (142 scripts, 1.296 testes, 294.333 asserts); marco 3 de hash: os 9 valores do oráculo mudaram (regra de comida do C no FoodStub), aprovados por Arthur ao escolher a opção. LW-118 depende da LW-097 (097b a 097e não iniciadas). main intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 20:00 (Brasília) — CONCLUÍDA: LW-097b (grafo de rotas do world sem estado: Route, RouteLoader, RouteService e data/world/routes.json com o triângulo A-B, A-C, B-C), aprovada por Arthur: commit eb6a23a ENVIADO só ao ramo lw-097b-rotas (empilhado na 097a, 5c5fcb7); check_all VERDE (144 scripts, 1.316 testes, 294.496 asserts); nenhum hash mudou. Próxima: 097c (o world vira módulo, comandos só em dev, RouteStateChanged). LW-118 só depois da 097e. main intocado (a07492c, LW-146g da B, só docs). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-097b — RELATÓRIO — Grafo de rotas do `world`, sem estado (`Route`, `RouteLoader`, `RouteService`)        Status: PRONTA PARA REVISÃO
+
+**Contexto.** Segunda de cinco partes da LW-097 (divisão aprovada por Arthur em 11/11/2026), empilhada na 097a. Arthur autorizou a 097b com ramo `lw-097b-rotas` empilhado em `lw-097a-terceiro-povoado`, um commit e push só do ramo.
+
+**Declaração do início (AGENTS 2.3).** Li: AGENTS 0.4; a extensão da Fase 3 do `world.md` (rotas, validação, consultas, DEC-158 a DEC-162); a linha da LW-097 no roadmap; o `SettlementLoader`, o `SettlementService` e os testes do `world` da 097a. Decisões: DEC-158 (triângulo), DEC-159 (estados só `open` e `closed`, tratados na 097c) e DEC-161 (terreno), todas APROVADAS; nenhuma PENDENTE.
+
+## 1. RESUMO
+Criei o grafo de rotas entre os três povoados, sem estado: o carregador com validação (`RouteLoader`), as consultas (`RouteService`: `peek_route`, `peek_routes_of` e `peek_path`, caminho mais curto) e `data/world/routes.json` com o triângulo A–B, A–C e B–C. Não registrei módulo, não criei comando nem evento, e nenhum hash mudou. Commit `eb6a23a` enviado só para o ramo.
+
+## 2. ARQUIVOS CRIADOS (13, com os `.uid`)
+- `src/sim/world/route.gd`, `route_loader.gd` e `route_service.gd`.
+- `data/world/routes.json` — `route_a_b` 520 m, `route_a_c` 430 m e `route_b_c` 340 m [HIP].
+- `tests/unit/test_routes.gd` (17 testes) e `tests/unit/test_routes_data.gd` (3 testes).
+
+## 3. ARQUIVOS MODIFICADOS
+- `docs/modules/world.md` — a 097b consta como feita; o caminho de um povoado para ele mesmo é vazio e mede 0 [PROPOSTA].
+- `data/world/README.md` — o `routes.json`.
+
+## 4. DECISÕES TÉCNICAS
+- Validação: referência quebrada, rota para si mesma, par repetido nos dois sentidos, comprimento menor que a linha reta, povoado sem rota e grafo não conectado.
+- Caminho mais curto = menor soma de `length_m`; empate pela menor sequência de ids de rota na ordem da viagem, nunca pela ordem de um `Dictionary`.
+- Sem estado: todas as rotas contam como abertas; o estado de rota, o `world` como módulo, os comandos de desenvolvimento e o `RouteStateChanged` são da 097c.
+- Valores [HIP]: comprimentos, dificuldade e risco; cada rota é pelo menos tão longa quanto a linha reta e o direto é sempre mais curto que o desvio.
+- Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 5. TESTES EXECUTADOS
+- `tools/run_tests` nos dois arquivos novos: 17 de 17 e 3 de 3.
+- `tools/check_all`: exit 0, **VERDE**; arquitetura aprovada, GDScript sem avisos (369 scripts), "IDS DE CONTEÚDO: tudo existe (51 conferências)", 144 scripts, **1.316 testes, 1.316 aprovados, 294.496 asserts**, 179,4 s. O oráculo passou sem mudança.
+
+## 6. RESULTADOS
+Aprovados 1.316, falhos 0, pulados 0. Critério de aceite da 097b cumprido (caminho mais curto correto; rota para povoado inexistente rejeitada apontando arquivo, item e campo; consultas com cópias em ordem crescente). "Rota fechada muda o caminho" é da 097c.
+
+## 7. PROBLEMAS ENCONTRADOS
+O Godot só enxerga as classes novas depois de `--import` (as primeiras execuções deram erro de análise por isso, não por defeito do código). O `main` andou para `a07492c` (LW-146g da frente B, só documentos); a simulação de junção com a 097b (só leitura) deu limpa.
+
+## 8. RISCOS
+Tamanho: 406 linhas de código e teste em 5 arquivos, dentro da tolerância de 450. A 097c vai embrulhar o `RouteService` num módulo com estado, mantendo as consultas como estão.
+
+## 9. PENDÊNCIAS
+Aprovação da 097b (dada); autorização da 097c, que sai empilhada na 097b. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 com a 097a e a 097b prontas e aprovadas; 097c a 097e e a LW-118 não iniciadas.
+- Próxima tarefa recomendada: **097c** (o `world` vira módulo, `request_close_route` e `request_open_route` só em desenvolvimento, `RouteStateChanged`, save e hash; os hashes do marco 3 já foram aprovados). Não iniciada. Parei (regra 13).
+- Git: ramo `lw-097b-rotas` em `eb6a23a`, empilhado na `lw-097a-terceiro-povoado` (`5c5fcb7`), **enviado só o ramo**; `status-c` enviado com este relatório; `main` intocado (`a07492c`); sem tag, sem `--force`.
+
+---
+
+---
 
 # LW-097a — RELATÓRIO — Terceiro povoado e locais `work` novos no `world` (dados e testes)        Status: PRONTA PARA REVISÃO
 
