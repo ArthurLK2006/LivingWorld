@@ -1,4 +1,54 @@
-11/11/2026 09:12 (Brasília) — CONCLUÍDA: FASE B da LW-087c. O `main` foi de 63caee7 para e3f715e por AVANÇO SIMPLES (14 commits, só npc.md e world.md); ramo e main estão no mesmo commit; check_all VERDE (1.194 de 1.194). Sem tag, sem --force, sem outro arquivo. Parei (regra 13). Nada rodando.
+11/11/2026 09:45 (Brasília) — CONCLUÍDA: LW-117 (pré-etapa), levantamento de pré-voo da Fase 4. Documento docs/decisions/0013-pre-voo-da-fase-4.md (275 linhas, 18 achados, 21 perguntas) no ramo lw-117-prevoo-fase-4 (a634f9e, 1 commit, só esse arquivo), RASCUNHO fora do main, ENVIADO só o ramo; check_all VERDE (1.203 de 1.203). main = 9b4f6f0, intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117 (PRÉ-ETAPA) — RELATÓRIO — Levantamento de pré-voo da Fase 4 (DOC, rascunho fora do `main`)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3).** Tarefa: um único documento novo, `docs/decisions/0013-pre-voo-da-fase-4.md`, com (1) decisões de que a Fase 4 depende e seus status, (2) contradições e buracos entre GDD, arquitetura, roadmap, `DECISIONS.md` e contratos no `main`, (3) divisão sugerida da LW-117, (4) perguntas numeradas, (5) riscos e backlog. **Não é o contrato da LW-117**, não decide nada, não escreve contrato, código, dados nem eventos e não altera `docs/events.md`. Autorização escrita de Arthur: ramo `lw-117-prevoo-fase-4` a partir de `origin/main`; 1 commit; push só desse ramo e do `status-c`; nada para o `main`; sem tag nem `--force`. Li: roadmap 4.A a 4.J; `DECISIONS.md` (índice e DEC-038, 043, 045, 050 a 055, 077, 083, 099, 127, 134); GDD 5.1, 8.6, 10, 11, 14, 15, 19.4, 20, 24; arquitetura 5.2, 11.8, 12, 13, 14, 17.5, 17.7; `npc.md`, `world.md`, `economy.md`, `events.md`. Sem dúvida que me fizesse parar.
+
+## 1. RESUMO
+O documento diz que a LW-117 **não deve ser escrita antes das suas respostas**. Achou **18 contradições ou buracos**, **3 decisões PENDENTES que travam tarefas** (DEC-053, 055 e 040) e **6 PROPOSTAS** que valem como padrão de trabalho (DEC-038, 043, 052, 056, 077, 099), e traz **21 perguntas**: Q1 a Q10 de jogo (só você decide) e Q11 a Q21 técnicas (o revisor decide, como PROPOSTA).
+
+## 2. ARQUIVOS CRIADOS
+- `docs/decisions/0013-pre-voo-da-fase-4.md` (275 linhas; seções 0 a 5 e validação).
+
+## 3. ARQUIVOS MODIFICADOS
+- Nenhum. O ramo difere do `main` **só** nesse arquivo (conferido por `git diff --name-only origin/main...HEAD`); `docs/events.md` ficou igual.
+
+## 4. DECISÕES TÉCNICAS
+- **Os seis achados que mais pesam:** (1) não se diz **onde fica a polity vizinha** (DEC-051 não proíbe população, o roadmap diz "nenhum NPC T1"); (2) **três fontes dão o "controle" da província a três donos** (arquitetura 5.2, DEC-050 e o roadmap/GDD 10.3); (3) a economia **não sabe receber uma política real** (troca da `TradeRules`, destino da tarifa, tipos de dono e motivos do `Ledger` fechados); (4) **"pena de crime" é uma das 5 leis e nenhuma tarefa cria crime**; (5) o `npc` precisa de mudanças que a LW-117 não lista (T3, satisfação, rumores em T1, baixas e "em missão"); (6) a LW-142 manda **migrar** o save e a DEC-134 manda **rejeitar**.
+- **As 3 perguntas que o roadmap deixa para você:** Q1 (tipos das 3 facções: a DEC-050 **já fixa os tipos**; faltam nomes, doutrina e em quais o jogador entra), Q2 (2 culturas genéricas) e Q3 (as 5 leis, com o problema do crime).
+- **Divisão sugerida (seção 3):** 117a registro; 117b extensão da economia; 117c `factions` e `politics`; 117d `military` e a crônica; 117e extensões de `world` e `npc`; 117f eventos e dados. Donos **por papel** no documento (para não citar letras de conversa); no meu mapa: registro = A; economia e dados = B; mundo e NPC = C. **Tarefas que provavelmente passam do limite:** LW-119, 121, 124, 125, 130, 131, 134, 135, 137, 138, 139, 141 e 142.
+- **Escolhas minhas:** as recomendações são **só recomendações** (nada vira decisão); onde o GDD não diz, virou pergunta. Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD `a634f9e`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (314 scripts), dados válidos, **125 scripts, 1.203 testes (todos passando), 262.120 asserts**, 181,3 s (3 min 37 s no total). Os números são maiores que os de antes porque o `main` já trazia a LW-093b.
+- **Incidente:** a primeira execução, em worktree novo (sem o cache `.godot`) e com outras execuções rodando ao mesmo tempo em outros ramos, passou de 10 minutos e o Godot ficou parado (CPU ~0). **Parei essa execução** (só a minha), fiz o passo documentado para clone novo (`Godot --headless --path . --import`, 3,7 s; o `godot` não está no PATH, usei o caminho do aplicativo) e rodei de novo: verde. Nada foi instalado.
+- Por busca: o documento não cita arquivos de status nem letras de conversa; `git status` limpo; `main` e as tags não mudaram.
+- Verificado antes de escrever: o `main` andou de `ce0cbed` para `4ada136` e depois `9b4f6f0` durante o trabalho; a base do ramo é `4ada136` e o que entrou depois (`ROADMAP_STATUS.md` e uma linha do `0012`) **não afeta** nenhuma afirmação (`DECISIONS.md`, roadmap e contratos não mudaram).
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.203 de 1.203); falhos e pulados: 0. Critério cumprido por leitura: as 5 seções pedidas, nesta ordem, com Q1 a Q10 de jogo e Q11 a Q21 técnicas, e as três perguntas do roadmap incluídas.
+
+## 7. PROBLEMAS ENCONTRADOS
+- O documento tem **275 linhas** (pedido: cerca de 250).
+- Os trechos de GDD, arquitetura e contratos foram lidos **por seção, não inteiros**; não li o `ROADMAP_STATUS.md` da Fase 4 nem os capítulos 16 a 19 da arquitetura além do 17.5 e 17.7.
+- **Não verifiquei** os números de linha do `npc.md` e do `economy.md` (citei seções).
+- O ramo está **1 commit atrás do `main`** (`9b4f6f0`); não juntei, porque não foi autorizado e o arquivo é novo (sem conflito possível).
+
+## 8. RISCOS
+- As respostas às Q1 a Q10 mudam o tamanho da Fase 4 (por exemplo Q3, Q4 e Q5); a divisão da seção 3 pode mudar depois delas.
+- O documento está **fora do `main`**: se ninguém o ler antes da LW-117, os 18 achados se perdem.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Responder Q1 a Q10** (**recomendo** ler primeiro Q4, Q3 e Q5, as que mais mexem no escopo) e dizer se o revisor pode decidir Q11 a Q21 como PROPOSTA.
+2. **Decidir** se o rascunho 0013 entra no `main` junto com a LW-117 ou antes (recomendo junto, como o 0012).
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3** com a A e a B; **Fase 4 não iniciada** (esta é só a pré-etapa da LW-117).
+- Próxima tarefa recomendada: **LW-117a** (registro das suas respostas), depois das respostas. **Não iniciada.** Parei aqui (regra 13).
+- Git: ramo `lw-117-prevoo-fase-4` enviado (`a634f9e`, 1 commit, só o 0013); `status-c` enviado com este relatório; `main` = `9b4f6f0` (não alterado por mim); sem tag, sem `--force`.
+
+---
 
 # FASE B — RELATÓRIO — LW-087c: entrada no `main` (DOC)        Status: PRONTA PARA REVISÃO
 
