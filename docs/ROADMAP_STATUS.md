@@ -206,6 +206,20 @@ Fase 0: **CONCLUÍDA — 31 de 31 tarefas concluídas ou dispensadas (100%)**: 2
 | VAL Fase 1 — LW-054 | assinado por Arthur em 07/11/2026 |
 | Tag fase-1-concluida | criada e no remoto, em `ac4c61f`, 07/11/2026, com autorização de Arthur (tag leve, não anotada) |
 
-## Escopo do protótipo
+## Itens dentro e fora do protótipo
 
-Itens dentro e fora serão registrados na LW-146.
+Registrado na **LW-146a** (11/11/2026), pelas decisões de Arthur (`docs/DECISIONS.md`, DEC-179 a DEC-187; detalhes em `docs/decisions/0014-pre-voo-da-fase-5.md`, seção 6). **Não altera contagens nem porcentagens:** as tarefas novas propostas (14) só entram no total depois que Arthur as aprovar.
+
+| Dentro do protótipo (Fase 5) | Fora, "depois" (visão registrada) |
+|---|---|
+| Combate do SP6 (alvo, habilidades, estamina e posição) com **inimigo que se posiciona e reage** e ferimento simples (DEC-182) | Sistema de **magia**, itens de poder ou maldição; sequência de magias (DEC-179) |
+| Três trajetórias: **mercador, soldado/guarda e aventureiro** (DEC-180) | **Chefe** e criaturas especiais (DEC-179) |
+| 3 criaturas, 3 origens por lugar de nascimento e 8 eventos dinâmicos (DEC-180) | **Comando de tropas** como sistema (Bannerlord, Total War Warhammer 3; DEC-179 e DEC-187) |
+| **Dois modos de morte** à escolha: renasce perto, com itens no chão por um tempo, ou volta ao último autosave (DEC-181) | **Bloqueio e esquiva**, ferimento por golpe (sangramento, atordoamento), mais armas e habilidades (DEC-121 e DEC-182) |
+| **Crime:** agressão, roubo, morte e contrabando (lista de bens proibidos por lei e marca de origem em itens únicos; DEC-183) | **Rastreio da origem de cada unidade** de mercadoria (DEC-183) |
+| **Mapa:** estrutura sempre visível e segredos só depois de descobertos, por tipo, em dados (DEC-184) | **Prisão, exílio e dívida**, morte permanente com sucessor (DEC-054 e DEC-181) |
+| **A casa do jogador**, sem compra, venda nem expansão (DEC-179) | **Facção criminosa completa** (fica a mínima, DEC-050) |
+| **Teste descartável de comando de tropas** (SP9, spike novo; DEC-187), no fim do bloco de combate | Propriedades além da casa; domesticação; clima e estações (DEC-054 e DEC-060) |
+| **Critérios de sucesso:** quatro hipóteses, três cascatas e diversão (DEC-185) | **Congelar o save** (DEC-186): no protótipo, save antigo é sempre rejeitado com mensagem clara |
+
+**Decisões que seguem PENDENTES:** DEC-066 (sistema definitivo de combate; parte do SP6), DEC-053 e DEC-029 (esperam o teste de tropas) e DEC-030 (magia, fora do protótipo).

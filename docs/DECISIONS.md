@@ -1,6 +1,6 @@
 # LIVING WORLD — REGISTRO OFICIAL DE DECISÕES (DECISIONS.md)
 
-**Versão do documento:** 0.10 (11/11/2026; rodada 5 da LW-087a: 35 decisões do pré-voo da Fase 3 aprovadas por Arthur em bloco, frase do `run_sim` corrigida e totais recontados; a 0.9 é de 10/11/2026 (LW-087a); ver seção 8)
+**Versão do documento:** 0.11 (11/11/2026; LW-146a: registro das decisões de jogo de Arthur sobre a Fase 5, DEC-179 a DEC-201, DEC-065 aprovada, notas nas DEC-053, 029, 030 e 066 e totais recontados; a 0.10 é do mesmo dia (LW-087a, rodada 5: 35 decisões do pré-voo da Fase 3 aprovadas por Arthur em bloco, frase do `run_sim` corrigida e totais recontados; a 0.9 é de 10/11/2026 (LW-087a)); ver seção 8)
 **Data de criação:** 01/11/2026 (horário de Brasília)
 **Responsável pela decisão:** Arthur (dono do produto). **Somente ele aprova.**
 **Função deste documento:** ser a **fonte oficial** do que está decidido, proposto, pendente, descartado ou substituído nos projetos de design e de tecnologia do Living World, para evitar contradições futuras entre o Briefing, o GDD, a arquitetura, o roadmap e o trabalho dos agentes de IA.
@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais atualizados em 11/11/2026 (LW-087a, rodada 5, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 120 (20 com ressalva) · PROPOSTA: 29 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 4: as 35 entradas DEC-138 a DEC-141, DEC-145 a DEC-162 e DEC-165 a DEC-177 passaram de PROPOSTA a APROVADA por Arthur (em bloco, em 11/11/2026); nenhuma entrada nova e nenhuma ressalva nova. Esta aprovação não autoriza editar fixture protegida (DEC-172) e não transforma valor [HIP] em requisito. **Totais atualizados em 10/11/2026 (LW-087a, rodada 4, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 85 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 3: 1 entrada APROVADA por Arthur (DEC-178); nenhuma PROPOSTA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 3, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 177**. Desde a rodada 2: 4 entradas PROPOSTA decididas pelo revisor (DEC-174 a DEC-177); nenhuma APROVADA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 2, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 60 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 173**. Desde a rodada 1: 2 entradas APROVADAS por Arthur (DEC-163 e DEC-164) e 9 PROPOSTA decididas pelo revisor (DEC-165 a DEC-173); nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 82 (20 com ressalva) · PROPOSTA: 51 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 162**. Desde a LW-085e: a DEC-047, a DEC-049 e a DEC-054 passaram de PROPOSTA a APROVADA; entraram 12 entradas APROVADAS por Arthur (DEC-129 a DEC-137 e DEC-142 a DEC-144) e 22 entradas PROPOSTA decididas pelo revisor (DEC-138 a DEC-141 e DEC-145 a DEC-162); a ressalva nova é a DEC-129 (valores seguem [HIP]). **Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
+**Totais atualizados em 11/11/2026 (LW-146a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 130 (20 com ressalva) · PROPOSTA: 43 · PENDENTE: 17 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 201**. Desde a LW-087a (rodada 5): **9 entradas novas APROVADAS por Arthur** (DEC-179 a DEC-187, as respostas Q1 a Q10 do pré-voo da Fase 5), **14 entradas novas PROPOSTA** (DEC-188 a DEC-201: as quatro respostas em aberto e as técnicas Q11 a Q20) e a **DEC-065 passou de PENDENTE a APROVADA** (dois modos de morte, DEC-181); nenhuma ressalva nova. As DEC-053, DEC-029, DEC-030 e DEC-066 ganharam nota datada e **seguem PENDENTES**; a DEC-099 não mudou. **Totais atualizados em 11/11/2026 (LW-087a, rodada 5, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 120 (20 com ressalva) · PROPOSTA: 29 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 4: as 35 entradas DEC-138 a DEC-141, DEC-145 a DEC-162 e DEC-165 a DEC-177 passaram de PROPOSTA a APROVADA por Arthur (em bloco, em 11/11/2026); nenhuma entrada nova e nenhuma ressalva nova. Esta aprovação não autoriza editar fixture protegida (DEC-172) e não transforma valor [HIP] em requisito. **Totais atualizados em 10/11/2026 (LW-087a, rodada 4, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 85 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 3: 1 entrada APROVADA por Arthur (DEC-178); nenhuma PROPOSTA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 3, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 177**. Desde a rodada 2: 4 entradas PROPOSTA decididas pelo revisor (DEC-174 a DEC-177); nenhuma APROVADA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 2, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 60 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 173**. Desde a rodada 1: 2 entradas APROVADAS por Arthur (DEC-163 e DEC-164) e 9 PROPOSTA decididas pelo revisor (DEC-165 a DEC-173); nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 82 (20 com ressalva) · PROPOSTA: 51 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 162**. Desde a LW-085e: a DEC-047, a DEC-049 e a DEC-054 passaram de PROPOSTA a APROVADA; entraram 12 entradas APROVADAS por Arthur (DEC-129 a DEC-137 e DEC-142 a DEC-144) e 22 entradas PROPOSTA decididas pelo revisor (DEC-138 a DEC-141 e DEC-145 a DEC-162); a ressalva nova é a DEC-129 (valores seguem [HIP]). **Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -111,6 +111,9 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-029 | Profundidade do comando nas visões tática e estratégica | PENDENTE |
 | DEC-115 | Câmera padrão: terceira pessoa elevada, de altura média | APROVADA |
 | DEC-116 | Controle do personagem: movimento por WASD | APROVADA |
+| DEC-184 | Mapa estratégico: estrutura sempre visível, segredos só depois de descobertos | APROVADA |
+| DEC-191 | Ponto de reconhecimento revela os segredos num raio | PROPOSTA |
+| DEC-200 | HUD de combate e tela de inventário e equipamento | PROPOSTA |
 
 **ÁREA 4 — CONTEÚDO DO UNIVERSO (QUESTÕES ABERTAS)**
 
@@ -218,7 +221,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-062 | Trajetórias jogáveis no protótipo | APROVADA (somente a meta de três) |
 | DEC-063 | Origens do personagem (3 a 4 no protótipo) | PROPOSTA |
 | DEC-064 | Progressão por quatro eixos, sem nível global | PROPOSTA |
-| DEC-065 | Morte, ferimentos e derrota do jogador | PENDENTE |
+| DEC-065 | Morte, ferimentos e derrota do jogador | APROVADA |
 | DEC-066 | Sistema definitivo de combate | PENDENTE |
 | DEC-067 | Combate do protótipo: corpo a corpo, arco, furtividade básica, ferimentos e durabilidade | PROPOSTA |
 | DEC-068 | Criaturas: 3 a 4 tipos e 1 chefe no protótipo | PROPOSTA |
@@ -226,6 +229,16 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-070 | Eventos dinâmicos: 8 a 12 tipos, na Fase 5 | PROPOSTA |
 | DEC-117 | Direção do combate: por alvo e habilidades | APROVADA (somente a direção; o sistema definitivo segue PENDENTE na DEC-066) |
 | DEC-121 | Combate por alvo e habilidades: resultado do SP6 (ponto de partida) | APROVADA (somente como ponto de partida) |
+| DEC-180 | Trajetórias e conteúdo inicial da Fase 5 | APROVADA |
+| DEC-181 | Derrota e morte do jogador: dois modos à escolha ao começar o jogo | APROVADA |
+| DEC-182 | Combate da Fase 5: o do SP6, com inimigo que reage e ferimento simples | APROVADA |
+| DEC-183 | Crime no protótipo: agressão, roubo, morte e contrabando | APROVADA |
+| DEC-188 | Item solto no chão dura 24 horas de jogo | PROPOSTA |
+| DEC-189 | Como o jogador descobre quem pegou o item | PROPOSTA |
+| DEC-190 | "Item ligado" é um campo `bound` nos dados do item | PROPOSTA |
+| DEC-195 | Dono do crime e lista de atos em `laws.json` | PROPOSTA |
+| DEC-197 | Eventos dinâmicos: cada tipo declara em dados os comandos que usa | PROPOSTA |
+| DEC-199 | T2/T3, T1 e combate: o `npc` decide, o `combat` resolve | PROPOSTA |
 
 **ÁREA 9 — ARQUITETURA TÉCNICA**
 
@@ -255,6 +268,13 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-119 | Meta de quadros do protótipo | APROVADA |
 | DEC-134 | O save não é congelado na Fase 3: a LW-111 rejeita o save antigo com mensagem clara | APROVADA |
 | DEC-171 | LW-088a: regra nova no `check_architecture` (o `npc` cita só `economy/api`; a `economy` não cita o `npc`) | APROVADA |
+| DEC-186 | Save: não congelar no protótipo | APROVADA |
+| DEC-187 | Teste descartável de comando de tropas (spike novo) | APROVADA |
+| DEC-192 | Ponte de combate: intenção de ataque no lugar de `HitReport` por contato | PROPOSTA |
+| DEC-193 | Fronteira entre equipamento e economia | PROPOSTA |
+| DEC-194 | `combat` e `military`: um sentido só e orçamento em dados | PROPOSTA |
+| DEC-196 | Ponte: consultas em lote e foco do LOD continua o jogador | PROPOSTA |
+| DEC-198 | Desempenho da Fase 5: três réguas, uma regra | PROPOSTA |
 
 **ÁREA 10 — PROCESSO, ESCOPO E MÉTODO DE TRABALHO**
 
@@ -281,6 +301,9 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-172 | LW-088a: o registro da `economy` muda o `state_hash`; a tarefa pede autorização antes de mexer em `tests/fixtures` | APROVADA |
 | DEC-174 | Os postos de serviço são provisórios sem a marca `TEMP-LW`: regra de jogo até a Fase 4 | APROVADA |
 | DEC-175 | Três marcos de hash por bloco: LW-088a a LW-092, LW-093 a LW-096a e LW-097; Arthur aprova os valores novos em cada um | APROVADA |
+| DEC-179 | Corte do protótipo (Fase 5) e a regra "protótipo × depois" | APROVADA |
+| DEC-185 | Critérios de sucesso do protótipo: quatro hipóteses, três cascatas e diversão | APROVADA |
+| DEC-201 | Nome provisório do executável | PROPOSTA |
 
 **ÁREA 11 — ALTERNATIVAS DESCARTADAS**
 
@@ -663,7 +686,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | O BM prevê trajetórias de comandante e líder de facção, mas o protótipo precisa decidir se o jogador só **consulta e planeja** ou também **dá ordens** nas visões tática e estratégica. |
 | **Decisão** | **Nada decidido.** |
 | **Justificativa** | Recomendação (GDD 24.5 e RM, não aprovada): no protótipo, mapa estratégico **de consulta**, sem comando tático (item 4 da lista de corte). |
-| **Consequências** | Define o tamanho do trabalho de interface e de ordens. Ligada a DEC-053 (escala das batalhas) e a DEC-062 (trajetórias). |
+| **Consequências** | Define o tamanho do trabalho de interface e de ordens. Ligada a DEC-053 (escala das batalhas) e a DEC-062 (trajetórias). **Nota de 11/11/2026 (LW-146a):** Sem comando tático no protótipo, só consulta (DEC-179): a profundidade do comando **espera o teste de tropas** (DEC-187). O status não muda. |
 | **Data / versão** | GDD 0.1 cap. 21 e 24.5 · RM 0.1 LW-146 · registrada em 01/11/2026 |
 | **Relações** | DEC-027, DEC-053, DEC-062, DEC-099 |
 
@@ -681,7 +704,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | O BM cita magia como parte da Exploração (§3) e como possibilidade de combate (§8: "poderá incluir"). Não define regras, custo nem se entra no protótipo. |
 | **Decisão** | **Nada decidido.** Magia é parte da visão de longo prazo (DEC-008), mas sua forma e o seu lugar no protótipo estão em aberto. (GDD Anexo D, D3) |
 | **Justificativa** | Recomendação (GDD, não aprovada): 0 a 2 efeitos simples no protótipo, sendo o primeiro item a ser cortado se o escopo apertar (GDD 24.5, item 1). |
-| **Consequências** | Afeta combate (DEC-066), dados e interface. Enquanto pendente, nenhuma tarefa do roadmap implementa magia; a LW-146 pede a decisão formal. |
+| **Consequências** | Afeta combate (DEC-066), dados e interface. Enquanto pendente, nenhuma tarefa do roadmap implementa magia; a LW-146 pede a decisão formal. **Nota de 11/11/2026 (LW-146a):** A magia fica **fora do protótipo** (DEC-179); a questão fica para o próximo ciclo. O status não muda. |
 | **Data / versão** | BM §3 e §8 · GDD 0.1 cap. 16.6 e Anexo D (D3) · RM 0.1 LW-146 · registrada em 01/11/2026 |
 | **Relações** | DEC-008, DEC-066, DEC-099 |
 
@@ -965,7 +988,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Arthur pediu o registro desta dúvida. O BM prevê "batalhas de diferentes escalas", "invasões" e "cercos" como possibilidades (§8). Nenhum documento fixa o tamanho das batalhas nem quantos combatentes corpóreos existem ao mesmo tempo. |
 | **Decisão** | **Nada decidido.** Não estão aprovados: (a) o número máximo de combatentes com corpo simultâneos; (b) se a batalha é tático em tempo real limitado ou resolução abstrata; (c) se o jogador pode comandar. |
 | **Justificativa** | Hipóteses não aprovadas: GDD 15.5 e TA 14.3 propõem uma abordagem em duas escalas (recorte físico com "poucas dezenas" de combatentes em volta do jogador, mais resolução agregada para o resto), com orçamento a medir por perfilagem **[HIP]**. Batalhas grandes em tempo real são tratadas como **risco [LIM]**. A recomendação é decidir após o spike SP6 e o SP2, com hardware-alvo definido. |
-| **Consequências** | Afeta o módulo `military`, o `combat`, a câmera tática (DEC-029) e o orçamento de desempenho (DEC-071). Cercos e exércitos grandes ficam fora do protótipo apenas por proposta (DEC-054). (DEC-054 aprovada em 10/11/2026) |
+| **Consequências** | Afeta o módulo `military`, o `combat`, a câmera tática (DEC-029) e o orçamento de desempenho (DEC-071). Cercos e exércitos grandes ficam fora do protótipo apenas por proposta (DEC-054). (DEC-054 aprovada em 10/11/2026) **Nota de 11/11/2026 (LW-146a):** Sem comando de tropas no protótipo (DEC-179 e DEC-187): a escala das batalhas e o comando do jogador **esperam o teste de tropas** (SP9). Proposta de trabalho: cerca de 20 combatentes com corpo [HIP] e o resto abstrato (DEC-194). O status não muda. |
 | **Data / versão** | BM §8 · GDD 0.1 cap. 15.2 e 15.5 · TA 0.1 cap. 14.3 · RM 0.1 LW-146 · registrada em 01/11/2026 |
 | **Relações** | DEC-029, DEC-052, DEC-054, DEC-066, DEC-071 |
 
@@ -1113,13 +1136,13 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 | Campo | Conteúdo |
 |---|---|
-| **Status** | PENDENTE |
+| **Status** | APROVADA por Arthur em 11/11/2026 (dois modos de morte; o texto completo está na DEC-181). |
 | **Contexto** | O BM não define o que acontece quando o jogador falha. O GDD descreve três modelos (A, B e C). |
-| **Decisão** | **Nada decidido.** (GDD 6.6; Anexo D, D2) |
-| **Justificativa** | Recomendação (GDD, não aprovada): modelo B no protótipo, e avaliar C depois. Decisão formal planejada na LW-146. |
-| **Consequências** | Afeta combate, salvamento (permadeath?), consequências e narrativa. |
-| **Data / versão** | GDD 0.1 cap. 6.6 e Anexo D (D2) · RM 0.1 LW-146 · registrada em 01/11/2026 |
-| **Relações** | DEC-005, DEC-066 |
+| **Decisão** | **Dois modos à escolha ao começar o jogo:** **(a) renasce perto**, sem recarregar o save, com os itens soltos no chão por um tempo (NPCs podem pegá-los; o jogador descobre quem pegou ou corre até o local) e os itens ligados ao personagem mantidos; **(b) voltar ao último autosave**, com aviso. Prisão, dívida, morte permanente e sucessor ficam fora do protótipo. Detalhes na DEC-181 (APROVADA) e nas DEC-188 a DEC-191 (PROPOSTA). (GDD 6.6; Anexo D, D2) |
+| **Justificativa** | Recomendação original (GDD, não aprovada): modelo B no protótipo, e avaliar C depois. **Arthur escolheu outra regra em 11/11/2026** (painel de escolhas do chat), registrada na LW-146a. |
+| **Consequências** | Afeta combate, salvamento, consequências e narrativa. **Aprovada em 11/11/2026 (LW-146a):** o modo (b) exige autosave frequente; o GDD 6.6 e o Anexo D, D2, são atualizados na LW-189; o item "modo sem recarregar após a morte" da DEC-083 fica respondido. |
+| **Data / versão** | GDD 0.1 cap. 6.6 e Anexo D (D2) · RM 0.1 LW-146 · registrada em 01/11/2026 · aprovada por Arthur em 11/11/2026 (LW-146a; `docs/decisions/0014-pre-voo-da-fase-5.md`, seção 6) |
+| **Relações** | DEC-005, DEC-066, DEC-181 |
 
 ### DEC-066 — Sistema definitivo de combate
 
@@ -1129,7 +1152,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Arthur pediu o registro desta dúvida. O BM fixa só os princípios: combate físico, armas variadas, furtividade, criaturas, chefes, batalhas de diferentes escalas, magia (como possibilidades) e que o combate deve ser "interessante e integrado ao mundo, não uma atividade isolada" (§8). **Não há sistema definitivo.** |
 | **Decisão** | **Nada decidido** sobre o sistema em si. O que é APROVADO é apenas o princípio da integração com o mundo (DEC-008). Ficam em aberto: ritmo (tempo real puro, com pausa, por turnos), mira, estamina, golpes, defesa, dano, ferimentos, durabilidade, furtividade e combate à distância. |
 | **Justificativa** | O GDD (cap. 16) propõe tempo real em terceira pessoa com estamina e ferimentos, e a TA (cap. 15) define uma fronteira entre simulação e apresentação do combate. Ambos são **PROPOSTA** com ritmo exato em **[HIP]**. A recomendação é decidir após o spike SP6 (combate), na Fase 5. |
-| **Consequências** | Afeta DEC-053, DEC-067, DEC-068 e o balanceamento. Enquanto pendente, o combate do protótipo (DEC-067) é só uma proposta de trabalho. |
+| **Consequências** | Afeta DEC-053, DEC-067, DEC-068 e o balanceamento. Enquanto pendente, o combate do protótipo (DEC-067) é só uma proposta de trabalho. **Nota de 11/11/2026 (LW-146a):** O sistema definitivo **parte do SP6** (DEC-121) e do combate da Fase 5 (DEC-182); segue PENDENTE. O status não muda. |
 | **Data / versão** | BM §8 · GDD 0.1 cap. 16 · TA 0.1 cap. 15 · RM 0.1 LW-146 e SP6 · registrada em 01/11/2026 |
 | **Relações** | DEC-008, DEC-030, DEC-053, DEC-065, DEC-067 |
 
@@ -2627,6 +2650,328 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
+### DEC-179 — Corte do protótipo (Fase 5) e a regra "protótipo × depois"
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O GDD 24.5 e a DEC-099 (PROPOSTA) trazem a ordem de corte; o roadmap (LW-146, [REC]) pede decisão de Arthur. O pré-voo da Fase 5 perguntou o que fica de fora (Q1). |
+| **Decisão** | Ficam **fora da Fase 5**: o **sistema de magia** (inclusive itens de poder ou maldição), o **chefe** e as criaturas especiais, o **comando de tropas** e a **facção criminosa completa** (fica a mínima da DEC-050). **Fica a casa do jogador** (um local `home` do mundo, sem compra, venda nem expansão). Magia e batalhas grandes viram **visão registrada**, com as referências de Arthur: Mount & Blade Bannerlord, Total War Warhammer 3 e magias em sequência ("um sistema único novo"). Toda decisão da LW-146 é marcada **protótipo** ou **depois**; o que está em "depois" **não é implementado** na Fase 5 e fica registrado como visão. |
+| **Justificativa** | Escolha de Arthur: mantém o protótipo executável por uma pessoa com agentes (DEC-006) e preserva a visão de longo prazo (DEC-101). |
+| **Consequências** | A DEC-099 segue PROPOSTA (esta entrada vale só para a Fase 5). A DEC-030 (magia) segue PENDENTE e fora do protótipo. A DEC-068 ("1 chefe") não se aplica. A lista dentro e fora está no `docs/ROADMAP_STATUS.md`. |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-006, DEC-030, DEC-050, DEC-054, DEC-068, DEC-099, DEC-101 |
+
+---
+
+### DEC-180 — Trajetórias e conteúdo inicial da Fase 5
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-062 aprovou só a meta de três trajetórias; as DEC-063, DEC-068 e DEC-070 (PROPOSTA) dão faixas de origens, criaturas e eventos (Q2 e Q3 do pré-voo). |
+| **Decisão** | **Três trajetórias:** mercador, soldado/guarda e aventureiro; crime é só consequência (DEC-062). **Conteúdo inicial:** **3 criaturas, 3 origens e 8 eventos dinâmicos.** As origens são **por lugar de nascimento** (campo, cidade, estrada), **não por trajetória**, para não virarem classes. Os tipos concretos entram nos contratos como PROPOSTA, com nomes genéricos (DEC-100). |
+| **Justificativa** | Escolha de Arthur, igual à recomendação do pré-voo. Cada trajetória já tem sistemas na fase: mercador (LW-105, LW-139), soldado (LW-120, LW-139, LW-153) e aventureiro (LW-157, LW-160, LW-161). |
+| **Consequências** | As DEC-063, DEC-068 e DEC-070 seguem PROPOSTA (faixas do GDD). LW-149, LW-157 e LW-162 usam 3, 3 e 8. A LW-184 testa as três trajetórias. |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-003, DEC-062, DEC-063, DEC-068, DEC-070, DEC-098, DEC-100 |
+
+---
+
+### DEC-181 — Derrota e morte do jogador: dois modos à escolha ao começar o jogo
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-065 estava PENDENTE; o GDD 6.6 recomendava o modelo B e o roadmap (LW-146 d) recomendava recarregar o último autosave. Arthur propôs outra regra (Q4 do pré-voo). |
+| **Decisão** | Ao começar o jogo, o jogador escolhe **um de dois modos**. **(a) Renasce perto:** sem recarregar o save, o jogador renasce num ponto próximo; os itens **soltos** ficam no chão por um tempo, NPCs podem pegá-los, o jogador pode **descobrir quem pegou** ou correr até o local antes de sumirem; os itens **ligados ao personagem** ficam com ele. **(b) Voltar ao último autosave,** com aviso. Prisão, dívida, morte permanente e sucessor ficam fora do protótipo. Os detalhes (tempo no chão, como se descobre quem pegou, o que é item ligado, ponto de renascimento) estão nas DEC-188 a DEC-191 (PROPOSTA). |
+| **Justificativa** | Escolha de Arthur: combina a recarga simples com a perda de itens do modelo B do GDD, sem prisão nem dívida (a economia não tem crédito) e sem famílias (DEC-054). |
+| **Consequências** | A **DEC-065 passa a APROVADA** (esta entrada é o texto dela). LW-156 e as tarefas novas LW-156a a LW-156e, LW-175 e LW-176 mudam. O GDD 6.6 e o Anexo D, D2, são atualizados na LW-189. O modo (b) exige autosave frequente. |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-054, DEC-065, DEC-083, DEC-188, DEC-189, DEC-190, DEC-191 |
+
+---
+
+### DEC-182 — Combate da Fase 5: o do SP6, com inimigo que reage e ferimento simples
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-121 aprovou o laço do SP6 só como ponto de partida e deixou bloqueio, esquiva e ferimento por golpe para depois (Q5 do pré-voo). |
+| **Decisão** | O combate do protótipo é o testado no SP6 (alvo por clique, ataque automático, habilidades com preparo e recuperação, estamina e posição; DEC-117 e DEC-121), mais um **inimigo que se posiciona e reage** (DEC-121, item 3) e **ferimento simples**: um estado "ferido" que se recupera com o tempo. **Ficam para depois:** bloqueio e esquiva, ferimento por golpe (sangramento, atordoamento), magias, mais armas e habilidades. Os valores seguem [HIP], em dados. |
+| **Justificativa** | Escolha de Arthur, igual à recomendação do pré-voo: fica o que ele jogou e aprovou. |
+| **Consequências** | A DEC-066 (sistema definitivo) segue PENDENTE e a DEC-067 segue PROPOSTA. LW-150, LW-151, LW-153, LW-155 e LW-156 são corrigidas no roadmap. Um novo playtest de Arthur é necessário depois da LW-155 antes de pensar em bloqueio ou esquiva. |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-066, DEC-067, DEC-117, DEC-121 |
+
+---
+
+### DEC-183 — Crime no protótipo: agressão, roubo, morte e contrabando
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-062 diz que crime é consequência; nenhuma DEC definia quais atos contam como crime (Q7 do pré-voo). |
+| **Decisão** | Quatro atos criminosos: **agressão**, **roubo** (o saque de mortos é roubo), **morte** (matar um NPC) e **contrabando**. **Contrabando = lista de bens proibidos por lei** (a política de cada região; usa a proibição que o `TradeRules` já prevê) **mais marca de origem nos itens únicos roubados ou saqueados**; vender um item marcado numa loja legal é crime. **Rastrear a origem de cada unidade de mercadoria** fica para "depois". Crime continua sendo consequência, não trajetória. |
+| **Justificativa** | Escolha de Arthur, mais ampla que a recomendação do pré-voo (só agressão). A marca de origem em itens únicos evita quebrar o modelo da economia (quantidades iguais, sem dono por unidade, DEC-130). |
+| **Consequências** | A LW-117 (Fase 4) passa a precisar da lista de atos criminosos nos dados de lei (DEC-195). Roubo, saque e contrabando viram tarefas novas (roadmap, subseção das tarefas novas). A regra de descobrir crime sem testemunha segue por contrato. |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-049, DEC-062, DEC-130, DEC-195 |
+
+---
+
+### DEC-184 — Mapa estratégico: estrutura sempre visível, segredos só depois de descobertos
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O GDD 17.5 e 21.1 pedem "neblina de conhecimento"; nenhuma tarefa filtrava as camadas por conhecimento (Q8 do pré-voo). |
+| **Decisão** | No mapa estratégico aparecem **sempre**: assentamentos, rotas e pontos de reconhecimento. Só **depois de descobertos**: ruínas, tesouros, minérios e covis escondidos. A regra é **por tipo de coisa, em dados**. |
+| **Justificativa** | Escolha de Arthur: mostrar tudo enfraquece a exploração; a regra por tipo evita neblina por pixel. |
+| **Consequências** | O `character/knowledge` registra o que foi descoberto; as camadas das LW-169 a LW-171 filtram pela regra do tipo. O ponto de reconhecimento está na DEC-191. O GDD 17.5 e 21.1 passam a valer nesta forma. |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-028, DEC-191 |
+
+---
+
+### DEC-185 — Critérios de sucesso do protótipo: quatro hipóteses, três cascatas e diversão
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O GDD 25.1 tem seis critérios; o roadmap (5.F e LW-191) cobre as quatro hipóteses (Q9 do pré-voo). |
+| **Decisão** | O protótipo é bem-sucedido se confirma as **quatro hipóteses** (DEC-098; RM 5.F) **e** mostra **três cascatas distintas**, observáveis e explicáveis no "Por quê?", **e** gera **diversão e histórias contáveis** no playtest de Arthur (GDD 25.1, itens 2 e 6; perguntas do 25.3). |
+| **Justificativa** | Escolha de Arthur, igual à recomendação: é barato (o soak mostra mais cascatas e a diversão vira pergunta do playtest). |
+| **Consequências** | 5.F e LW-191 ganham os dois critérios novos; a LW-143 (Fase 4) segue com a cascata "ponte bloqueada" e o soak final (LW-183) busca as outras. A DEC-098 segue PROPOSTA. |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-098 |
+
+---
+
+### DEC-186 — Save: não congelar no protótipo
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-083 propõe congelar o save depois da Fase 4; as DEC-127 e DEC-134 dizem que não se migra até o "save congelado"; o roadmap pede migração (LW-142 e LW-187). Q10 do pré-voo. |
+| **Decisão** | O **save congelado não acontece no protótipo.** Save de versão antiga é **sempre rejeitado com mensagem clara**, sem migração; o `save_version` segue como a DEC-127 diz. A LW-187 passa a testar a **rejeição** e a cadeia de migração que já existe (1 para 2). Não há fixtures novas de migração. |
+| **Justificativa** | Escolha de Arthur, igual à recomendação: cada mudança de estado da Fase 5 exigiria migração e fixture (fixtures são protegidas) e o protótipo não tem saves antigos de outras pessoas. |
+| **Consequências** | Critério 6 de 5.F, LW-174 (módulo ausente é recusado) e LW-187 mudam no roadmap. O texto da LW-142 (Fase 4), que fala em migrar o save da Fase 3, contraria esta decisão e a DEC-134: o alinhamento é da tarefa da Fase 4 (esta entrada não altera a Fase 4). A DEC-083 segue com os outros itens PENDENTES (slots, autosave, backups, tamanho e poda). |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-083, DEC-084, DEC-127, DEC-134 |
+
+---
+
+### DEC-187 — Teste descartável de comando de tropas (spike novo)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A visão de Arthur de batalhas (Bannerlord, Total War Warhammer 3, magias em sequência) esbarra na DEC-054 (exércitos grandes fora) e nas DEC-053 e DEC-029 (PENDENTES). Q6 do pré-voo. |
+| **Decisão** | **Sem comando de tropas no protótipo.** Haverá **um teste descartável** (como o SP6) de comandar um grupo pequeno, **no fim do bloco de combate**, para Arthur jogar e decidir se vira sistema. O teste não usa os módulos definitivos, é descartável e tem constantes [HIP]. Nome proposto: **SP9** (o SP8 é o de IA de texto, [FUT]). |
+| **Justificativa** | Respeita o método do projeto (spike antes do sistema, DEC-080) e a visão de Arthur sem inflar a fase. |
+| **Consequências** | A DEC-080 aprova só a antecipação dos testes de combate e de câmera, então este spike é **novo** e fica registrado aqui. As DEC-053 e DEC-029 seguem PENDENTES **até o teste**. Posição proposta: depois da LW-158 e antes da LW-159 (tarefa nova LW-155a, [EXTENSÃO]). |
+| **Data / versão** | mensagens de Arthur de 11/11/2026 (painel de escolhas do chat) · `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6) · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-029, DEC-053, DEC-054, DEC-080, DEC-121 |
+
+---
+
+### DEC-188 — Item solto no chão dura 24 horas de jogo
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | No modo "renasce perto" (DEC-181) os itens soltos ficam no chão; faltava dizer por quanto tempo. |
+| **Decisão** | O item solto no chão **dura 24 horas de jogo [HIP]**, valor **em dados**; depois **some**, com o motivo de destruição `spoiled` (já reservado na economia, DEC-156). |
+| **Justificativa** | Dá um dia inteiro para o jogador correr e recuperar; o `spoiled` já existe e mantém a conservação de bens. |
+| **Consequências** | A LW-156a e a extensão da `economy` (a pedir na 146f) usam este tempo. Calibração por playtest. |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6.5) · proposta do revisor na LW-146a, a partir de uma pergunta em aberto de Arthur · registrada em 11/11/2026 |
+| **Relações** | DEC-156, DEC-181 |
+
+---
+
+### DEC-189 — Como o jogador descobre quem pegou o item
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Arthur quer poder identificar o NPC que pegou o item (DEC-181). |
+| **Decisão** | O jogador **pergunta a NPCs por perto**; o NPC que tem **memória de ter visto** (T2) **responde com o nome**; **sem testemunha, só encontrando o NPC** que pegou. |
+| **Justificativa** | Reusa a memória dos T2 (DEC-043) e o diálogo que já existe; não cria rastreamento mágico. |
+| **Consequências** | A LW-156e (tarefa nova) usa as memórias do `npc`; precisa de um tipo de memória novo em dados e de um comando de leitura (extensão de `npc`, a pedir na 146f). |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6.5) · proposta do revisor na LW-146a, a partir de uma pergunta em aberto de Arthur · registrada em 11/11/2026 |
+| **Relações** | DEC-043, DEC-181 |
+
+---
+
+### DEC-190 — "Item ligado" é um campo `bound` nos dados do item
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Com a magia fora do protótipo (DEC-179), era preciso dizer o que é um item ligado ao personagem (DEC-181). |
+| **Decisão** | "Item ligado" = **campo `bound` nos dados do item** (instância no `character`). **Equipamento de origem e itens de missão ficam com o jogador ao morrer.** "Poder ou maldição" (itens mágicos) fica para "depois". |
+| **Justificativa** | Um campo simples cobre o que Arthur pediu sem sistema de magia. |
+| **Consequências** | LW-148a (campo `bound`) e LW-156c (o que fica ao renascer). "Itens de missão" precisa de definição no contrato do `character` (contrato ou entrega em andamento). |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6.5) · proposta do revisor na LW-146a, a partir de uma pergunta em aberto de Arthur · registrada em 11/11/2026 |
+| **Relações** | DEC-179, DEC-181 |
+
+---
+
+### DEC-191 — Ponto de reconhecimento revela os segredos num raio
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A DEC-184 manda mostrar os pontos de reconhecimento sempre; faltava dizer o que eles revelam. |
+| **Decisão** | Um **ponto de reconhecimento revela os segredos** (ruínas, covis, minérios) **dentro de um raio [HIP]** e os **marca como descobertos**. |
+| **Justificativa** | Dá ao jogador uma forma de descobrir sem andar por tudo; o raio fica em dados. |
+| **Consequências** | LW-160a (tarefa nova) e `character/knowledge`. |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 6.5) · proposta do revisor na LW-146a, a partir de uma pergunta em aberto de Arthur · registrada em 11/11/2026 |
+| **Relações** | DEC-184 |
+
+---
+
+### DEC-192 — Ponte de combate: intenção de ataque no lugar de `HitReport` por contato
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap e a arquitetura (TA 15.3) descrevem o combate com `HitReport` por contato; a DEC-117 escolheu alvo e habilidades. |
+| **Decisão** | A ponte leva uma **intenção de ataque** (atacante, alvo, habilidade); a simulação valida alcance, estamina e recarga e calcula o dano. `HitReport` por contato e "áreas de contato" só se Arthur pedir. |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | A LW-151 e a LW-153 mudam. A primeira intenção concreta da ponte define o teto e o consumo da fila de intenções (`docs/modules/bridge.md`). |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q11) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-074, DEC-117, DEC-121, DEC-182 |
+
+---
+
+### DEC-193 — Fronteira entre equipamento e economia
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A economia guarda quantidades; o `character` guarda instâncias; faltava a regra da conversão e da conservação. |
+| **Decisão** | A economia **destrói o metal** com um **motivo fechado novo** e publica um evento; o `character` **cria a instância** ao ouvir. Peso total do jogador = soma de duas consultas (bens na economia e instâncias no `character`). Reparo vai para "depois". |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | A `economy` ganha 1 motivo de destruição e 1 evento; tarefa LW-148. As armas vêm do kit de origem, de saque ou do ferreiro NPC (a definir no contrato). Extensão a pedir na 146f. |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q12) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-130, DEC-156, DEC-181, DEC-183 |
+
+---
+
+### DEC-194 — `combat` e `military`: um sentido só e orçamento em dados
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A arquitetura (TA 14.4 e 15.6) faz cada um depender do outro (camada 4), o que forma um ciclo. |
+| **Decisão** | Um sentido: o `military` **pede o encontro** e o `combat` **devolve as baixas por evento**. O **orçamento de combatentes com corpo** vai para **dados** (cerca de **20 [HIP]**); o excedente é resolvido de forma abstrata. |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | A LW-158 e as fichas de `combat` e `military` mudam. O valor definitivo sai depois do teste de tropas (DEC-187). |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q13) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-053, DEC-187 |
+
+---
+
+### DEC-195 — Dono do crime e lista de atos em `laws.json`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A arquitetura (TA 15.3) põe o `CrimeCommitted` no `combat`; nenhuma lei lista os atos. |
+| **Decisão** | O `combat` **só informa o fato**; **`events` ou `politics` decide** se é crime pela **lista de atos em `laws.json`** e publica `CrimeCommitted`. A LW-117 (Fase 4) recebe o pedido da lista de atos (agressão, roubo, morte e contrabando). |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | A LW-164 e a LW-165 mudam; a Fase 4 precisa acolher a lista de atos. |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q14) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-183 |
+
+---
+
+### DEC-196 — Ponte: consultas em lote e foco do LOD continua o jogador
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A arquitetura (TA 19) fala em snapshot e `ViewModel` montados pela ponte; o contrato da ponte é "mínimo" e não tem snapshot. |
+| **Decisão** | A ponte entrega dados à interface por **consultas em lote por assunto** (como `peek_npc_bodies`), sem um objeto único de snapshot; o **foco do LOD continua sendo o jogador** (visão tática mostra marcadores). |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | LW-166 e LW-169 mudam; a regra de visibilidade por tipo (DEC-184) entra nas consultas. |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q15) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-074, DEC-184 |
+
+---
+
+### DEC-197 — Eventos dinâmicos: cada tipo declara em dados os comandos que usa
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | As portas públicas atuais não têm comandos de efeito (colheita ruim, por exemplo); "ataque a caravana" aparece na LW-139 e na LW-162. |
+| **Decisão** | Cada **tipo de evento dinâmico** declara em dados os **comandos públicos** de outros módulos que usa; os que faltam viram **extensões de contrato**. **"Ataque a caravana" fica só na LW-139** (Fase 4). |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | Contratos de `economy`, `npc` e `world` ganham extensões pequenas (pedidas na 146f); LW-162 muda. |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q16) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-070 |
+
+---
+
+### DEC-198 — Desempenho da Fase 5: três réguas, uma regra
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap, a arquitetura (TA 20.1) e a DEC-119 trazem metas diferentes. |
+| **Decisão** | **Quadros pela DEC-119.** Metas de tick do roadmap como **[HIP]** e a régua da DEC-113 como mínimo. **A DEC-071 só é aprovada depois da LW-179**, com valores medidos. **Cargas até 1.000 NPCs** (sem 3.000; DEC-041). |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | 5.F item 7 e LW-179 e LW-180 mudam no roadmap. |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q17) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-040, DEC-041, DEC-071, DEC-113, DEC-119 |
+
+---
+
+### DEC-199 — T2/T3, T1 e combate: o `npc` decide, o `combat` resolve
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O `npc` não importa `character` nem `combat`; só T2/T3 têm estado no `character`; T1 (guardas, soldados, bandidos) ficaria sem arma. |
+| **Decisão** | O **`npc` decide e publica a intenção**; o **`combat` escuta e resolve**; o **`character` cria o estado de T2/T3 na promoção**; **T1 usa equipamento padrão por ofício**, em dados. |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | LW-147, LW-155 e LW-161 mudam; contratos de `npc` e `character` ganham extensões (a do `npc` fica para a 146f). |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q18) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-117, DEC-182 |
+
+---
+
+### DEC-200 — HUD de combate e tela de inventário e equipamento
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O GDD 21.2 pede HUD e inventário; o roadmap da Fase 5 não tem tarefa para eles. |
+| **Decisão** | Duas tarefas novas na Fase 5: **HUD de combate** (vida, estamina, alvo) e **tela de inventário e equipamento**. |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | LW-153b e LW-148b (subseção das tarefas novas do roadmap). |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q19) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-182 |
+
+---
+
+### DEC-201 — Nome provisório do executável
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A DEC-010 (nome comercial) é PENDENTE. |
+| **Decisão** | Usar **"Living World"** (o título de trabalho que já está no `project.godot`) como **nome provisório** do executável da LW-188. A DEC-010 (nome comercial) **segue PENDENTE e não bloqueia** a exportação. |
+| **Justificativa** | Recomendação do revisor no pré-voo da Fase 5; Arthur aceitou as recomendações em 11/11/2026 sem reabri-las. |
+| **Consequências** | LW-188. |
+| **Data / versão** | `docs/decisions/0014-pre-voo-da-fase-5.md` (seção 4, pergunta Q20) · proposta do revisor, não reaberta por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-146a) |
+| **Relações** | DEC-010, DEC-100 |
+
+---
+
 ## 3. DÚVIDAS ABERTAS EM DESTAQUE
 
 As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o início do trabalho. Os números citados são **hipóteses [HIP]**, não decisões. Pendências só relevantes em fases futuras **não** exigem aprovação antecipada (diretriz 15).
@@ -2746,6 +3091,8 @@ Os oito desvios do RM (seção 0.13-B) são **PROPOSTAS**, exceto a ordem das fa
 
 ### 5.2 Todas as decisões APROVADAS (lista rápida)
 
+**Acréscimo da LW-146a (11/11/2026):** DEC-065 (dois modos de morte; antes PENDENTE) e DEC-179 a DEC-187 (pré-voo da Fase 5, respostas de Arthur). A lista abaixo é a de antes e segue valendo.
+
 DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicionada), 013, 014, 015, 016 (só a referência), 017, 018, 020, 022, 025, 026, 027 (princípio), 035, 036, 037, 041, 045, 046, 050 (composição inicial), 051, 057, 062 (meta de três), 072, 073, 080 (só a antecipação de SP6 e SP4a), 081, 082 (só JSON validado), 083 (princípios), 084 (formato de save do protótipo), 086 (GUT 9.7.1), 089 (só o serviço), 090, 091, 092, 093, 094 (estrutura), 095, 096, 097, 100, 101, 113 (só a régua da LW-023), 114 (reversível), 115, 116, 117 (só a direção), 118, 119, 120, 121 (só como ponto de partida), 122 (por ora), 123 (só a direção), 124, 125.
 
 ---
@@ -2810,7 +3157,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-179` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-202` em diante). **Nunca reutilizar um número.**
 
 ```markdown
 ### DEC-NNN — Título curto
@@ -2842,6 +3189,7 @@ Copiar, preencher e usar o próximo número livre (`DEC-179` em diante). **Nunca
 
 | Versão | Data (Brasília) | Alteração |
 |---|---|---|
+| 0.11 | 11/11/2026 | LW-146a (registro do pré-voo da Fase 5). **APROVADAS por Arthur (9):** DEC-179 (corte do protótipo e "protótipo × depois"), DEC-180 (trajetórias e conteúdo inicial), DEC-181 (derrota e morte: dois modos), DEC-182 (combate da Fase 5), DEC-183 (crime: agressão, roubo, morte e contrabando), DEC-184 (mapa: estrutura sempre, segredos descobertos), DEC-185 (critérios de sucesso), DEC-186 (save não congelado no protótipo) e DEC-187 (teste de tropas como spike novo). **PROPOSTA (14):** DEC-188 a DEC-191 (as quatro respostas em aberto: item 24 h no chão, quem pegou, `bound`, ponto de reconhecimento) e DEC-192 a DEC-201 (as técnicas Q11 a Q20). **Status mudado:** só a **DEC-065** (PENDENTE para APROVADA). **Notas datadas, sem mudar status:** DEC-053, DEC-029, DEC-030 e DEC-066. DEC-099 não mudou. Totais recontados: APROVADA 130 (20 com ressalva) · PROPOSTA 43 · PENDENTE 17 · DESCARTADA 10 · SUBSTITUÍDA 1 = 201. Fonte: `docs/decisions/0014-pre-voo-da-fase-5.md`. |
 | 0.10 | 11/11/2026 | Rodada 5 da LW-087a. **Arthur aprovou em bloco, em 11/11/2026, 35 decisões do pré-voo da Fase 3** (DEC-138 a DEC-141, DEC-145 a DEC-162 e DEC-165 a DEC-177), que passam de PROPOSTA a APROVADA; a aprovação **não autoriza editar fixture protegida (DEC-172)** e **não transforma valor [HIP] em requisito**. As DEC-142, 143, 144, 163, 164 e 178 (já APROVADAS), as 29 PROPOSTA antigas das Fases 0 a 2 e a DEC-040 (PENDENTE) não mudaram. **Correção do `run_sim` (erro das rodadas 3 e 4, ver 0.9):** o `tools/run_sim.gd` só cria o `SimulationRunner` e não registra módulo (o registro roda só no `SimulationHost`, por `GameModules`); portanto o `run_sim` não muda, nem o hash que ele imprime; mudam o oráculo (`test_npc_split_oracle`) e o hash do soak de 30 dias (DEC-162, 172 e 175). Totais recontados por script (APROVADA: 120 (20 com ressalva), PROPOSTA: 29, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 178). |
 | 0.9 | 10/11/2026 | Rodada 4 da LW-087a. **APROVADA por Arthur:** DEC-178 (o tecido entra na manutenção dos locais, além de ferramenta e tábua; amplia a DEC-163). **Revistas (PROPOSTA):** DEC-175 e DEC-172 (marcos de hash por bloco: LW-088a a LW-092, LW-093 a LW-096a e LW-097; o código do `run_sim` não muda, muda o hash que ele imprime), DEC-165 (vaga em local de trabalho, produção ou posto), DEC-162 (hash que o `run_sim` imprime) e DEC-177 (erro `ECON_MARKET_FULL`). Notas curtas nas DEC-163 ("ampliada pela DEC-178") e DEC-153. Totais recontados por script (APROVADA: 85 (20 com ressalva), PROPOSTA: 64, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 178). |
 | 0.8 | 10/11/2026 | Rodada 3 da LW-087a, depois da segunda rodada das revisões cruzadas. **PROPOSTA, decididas pelo revisor:** DEC-174 (postos de serviço provisórios sem a marca `TEMP-LW`), DEC-175 (três marcos de hash), DEC-176 (estoque inicial de 30 dias dos bens importados) e DEC-177 (teto de compra do mercado). **Revistas:** DEC-152 (nomes `WagesPaid(workplace_id, amount_each)`, `peek_site` e `peek_post`) e DEC-172 (os três marcos); DEC-166 aponta para a DEC-176. Nota curta "(DEC-054 aprovada em 10/11/2026)" nas DEC-005, 045 e 053. Totais recontados por script (APROVADA: 84 (20 com ressalva), PROPOSTA: 64, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 177). |
