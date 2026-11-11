@@ -1,4 +1,4 @@
-11/11/2026 13:56 (Brasília) · BLOCO 2 DA A, em andamento · LW-092 PRONTA em 2 partes até aqui (ramos `lw-092-producao`, os dados e o carregador, e `lw-092b-producao-hora-a-hora`, os locais de produção com hora a hora, manutenção e eventos; `check_all` VERDE na b: 140 scripts, 1.283 testes, 292.513 asserts; hashes do oráculo e `run_sim` iguais); seguindo para a LW-092c (ligação ao módulo e save dos locais)
+11/11/2026 14:11 (Brasília) · BLOCO 2 DA A, em andamento · LW-092 PRONTA em 3 partes (ramos `lw-092-producao`, `lw-092b-producao-hora-a-hora` e `lw-092c-ligacao-ao-modulo`); `check_all` VERDE na c: 141 scripts, 1.290 testes, 292.667 asserts; `run_sim` igual (732907967efd…); prova da causa dos hashes feita (sem o bloco `economy` os 9 valores ORIGINAIS do oráculo voltam); seguindo para a LW-093a (verificador de ids)
 
 # RELATÓRIO — SEQUÊNCIA DA A: LW-093b (Fase B), LW-087 (fechamento) e LW-088a     Status: PRONTA PARA REVISÃO (Partes 1 e 2 já no `main`; Parte 3 só no ramo)
 
