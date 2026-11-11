@@ -1,6 +1,6 @@
 # Modelos de dados da economia (Fase 3)
 
-Estado: **RASCUNHO da LW-087d (11/11/2026, rodada 5), fora do `main`.** As decisões do pré-voo da Fase 3 que ele segue estão **aprovadas por Arthur** (as de 10/11/2026 e as 35 de 11/11/2026, em bloco); o que não tem DEC segue como **[PROPOSTA]**. A Fase 2 fechou em 10/11/2026 (tag `fase-2-concluida`); este arquivo entra no `main` junto com a Fase 3. **Nenhum arquivo de `data/`, nenhum esquema em código e nenhum teste foi criado:** isto descreve os modelos que as tarefas LW-089, LW-090, LW-092, LW-095 e LW-097 vão criar. Rótulos: **decisão**, **aprovada por Arthur em 10/11/2026** ou **em 11/11/2026 (DEC-NNN)** (registradas no `DECISIONS.md` pela LW-087a; as 35 de 11/11/2026 foram aprovadas em bloco, com o texto do revisor de 10/11/2026), **decidido pelo revisor** (decisão de Claude na delegação de menores de Arthur, 10/11/2026: [PROPOSTA]; só resta nos pontos sem DEC), **[PROPOSTA]** (desenho sem DEC), **[HIP]** (número de trabalho, não é requisito) e **[LIM]**. Nomes de bens, receitas e ofícios são **genéricos e provisórios** (DEC-100, APROVADA). Os nomes de tabelas, de colunas, de ids e de códigos de erro são os do contrato `docs/modules/economy.md` (LW-087b), que este documento **não repete**: ele só acrescenta o nível de coluna.
+Estado: **PLANEJADO, incorporado ao `main` em 11/11/2026** (LW-087d, rodada 5). As decisões do pré-voo da Fase 3 que ele segue estão **aprovadas por Arthur** (as de 10/11/2026 e as 35 de 11/11/2026, em bloco); o que não tem DEC segue como **[PROPOSTA]**. A Fase 2 fechou em 10/11/2026 (tag `fase-2-concluida`); este arquivo foi incorporado ao `main` em 11/11/2026. **Nenhum arquivo de `data/`, nenhum esquema em código e nenhum teste foi criado:** isto descreve os modelos **PLANEJADOS** que as tarefas LW-089, LW-090, LW-092, LW-095 e LW-097 vão criar. Rótulos: **decisão**, **aprovada por Arthur em 10/11/2026** ou **em 11/11/2026 (DEC-NNN)** (registradas no `DECISIONS.md` pela LW-087a; as 35 de 11/11/2026 foram aprovadas em bloco, com o texto do revisor de 10/11/2026), **decidido pelo revisor** (decisão de Claude na delegação de menores de Arthur, 10/11/2026: [PROPOSTA]; só resta nos pontos sem DEC), **[PROPOSTA]** (desenho sem DEC), **[HIP]** (número de trabalho, não é requisito) e **[LIM]**. Nomes de bens, receitas e ofícios são **genéricos e provisórios** (DEC-100, APROVADA). Os nomes de tabelas, de colunas, de ids e de códigos de erro são os do contrato `docs/modules/economy.md` (LW-087b), que este documento **não repete**: ele só acrescenta o nível de coluna.
 
 ## Onde fica este documento (o que o padrão do projeto manda)
 
@@ -149,7 +149,7 @@ Regras (no carregador e num teste de dados): o par (`recipe_id`, `good_id`) é *
 | `forge_tool` | forjar ferramenta | transformação | `metal` | `tool` | `artisan` |
 | `weave_fabric` | tecer tecido | transformação | `wool` | `fabric` | `artisan` |
 
-**As quantidades** de cada linha (quanto de insumo por quanto de produto) são **[HIP] a propor na LW-092** e calibrar na LW-112; este rascunho **não as inventa**.
+**As quantidades** de cada linha (quanto de insumo por quanto de produto) são **[HIP] a propor na LW-092** e calibrar na LW-112; este documento **não as inventa**.
 
 ## `site_upkeep.json` (LW-092): manutenção dos locais de produção
 
