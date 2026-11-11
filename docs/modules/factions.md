@@ -70,6 +70,7 @@ Estado: **PLANEJADO, aprovado por Arthur em 11/11/2026, com os ajustes da LW-117
 ## 7. Relações entre facções (LW-122)
 
 - **Afinidade** simétrica por par, de −100 a 100 [HIP], inicial por cultura e doutrina (`faction_affinity_rules`). `request_adjust_affinity` **não é público**: ela muda por **eventos** que a `factions` ouve (fim de ordem, disputa resolvida) e pelo efeito de opções. Cada mudança registra a **causa** (`cause_id`), respeita os limites (satura em −100 e 100) e publica `FactionRelationChanged(a, b, new_value, cause_id)`; a deliberação **lê** a afinidade como insumo.
+- **Tensão por evento de mundo (LW-146g; DEC-197; PROPOSTA; vale quando este módulo existir).** O tipo de evento `border_dispute_escalation` (`dynamic_events.md` seção 5) precisa **subir a tensão** entre duas facções numa província, e a afinidade **não é pública**. Em vez de abrir `request_adjust_affinity`, entra **`request_raise_tension(province_id, amount, reason, cause_id = NO_CAUSE) -> Result`**, **o único jeito externo** de mexer na afinidade: `amount` de 1 a 100 [HIP]; `reason` de **vocabulário fechado** com um valor só, **`world_event`** (o `military` e as ordens **não** o usam: eles mudam a afinidade pelos eventos que a `factions` ouve). **Quem decide o par é a `factions`** (o dono do dado, não o adaptador): as **duas facções ativas com mais influência** na província (`peek_influence_in`, seção 2; **empate pelo menor `faction_id`**, e só conta influência de pelo menos `min_tension_influence` [HIP]); a afinidade do par **cai** `amount` (satura em −100), com a causa registrada e `FactionRelationChanged` **uma vez por mudança real** (par já saturado: sucesso sem evento). **Sem desfazer:** é um empurrão único, e o fim do evento de mundo não o desfaz. Falhas, sem mudar nada: `FACT_UNKNOWN_PROVINCE`, `FACT_OUT_OF_RANGE` (`amount` fora de 1 a 100), `FACT_BAD_REASON` e **`FACT_NO_RIVALS`** (menos de duas facções com influência suficiente). O `cause_id` opcional existe pelo mesmo motivo do `request_set_route_state` (DEC-229): o adaptador do `app` chama **dentro** do tratamento de `WorldEventStarted` e pode omiti-lo; quem chamasse fora dele passa o `id` do evento. Teste (LW-162): o par certo, o empate, a saturação, o motivo fora do vocabulário recusado e a causa gravada.
 - **Diplomacia entre facções** (alianças, tratados) é [PREV]; a diplomacia que existe na Fase 4 é **entre os dois países** e é da `politics`.
 
 ## 8. Reputação e o jogador (LW-120 e LW-128; DEC-208 e DEC-216)
@@ -96,6 +97,7 @@ Padrão `peek_*` (cópia), `request_*` (`Result`) e `on_*`. Os **tipos de respos
 | `peek_decision_trace(faction_id)` | 124 | as últimas decisões e as opções avaliadas (painel "Por quê?") |
 | `request_join(faction_id, actor_id)` / `request_leave(actor_id)` / `request_promote(actor_id)` | 120 | seção 3 |
 | `request_appoint_t3(npc_id, role, entity_id)` | 121 | seção 5; **só a `politics` e a própria `factions`** chamam (o `npc` só aceita a promoção a T3 vinda daqui) |
+| `request_raise_tension(province_id, amount, reason, cause_id)` | 162 | seção 7 (LW-146g): sobe a tensão pelo evento de mundo `border_dispute_escalation`; único jeito externo de mexer na afinidade |
 | `request_fund_supply(faction_id, amount)` | 135 | o `military` pede o suprimento de uma força; a `factions` o gasta do tesouro (`upkeep`, sumidouro) ou devolve `FACT_INSUFFICIENT_TREASURY` |
 | `on_npc_died(event)` | 119 | tira o membro; se era o líder, escolhe o novo (seção 5) |
 | `on_reputation_changed(event)` | 120 | atualiza a cópia de leitura |
@@ -103,7 +105,7 @@ Padrão `peek_*` (cópia), `request_*` (`Result`) e `on_*`. Os **tipos de respos
 | `on_mission_finished(event)` | 125 | `MissionCompleted` e `MissionFailed` fecham a ordem |
 | `on_territory_dispute_resolved(event)` | 138 | muda a influência (seção 2) |
 
-**Códigos de erro (`Result.code`, prefixo `FACT_`):** `FACT_UNKNOWN_FACTION`, `FACT_UNKNOWN_ACTOR`, `FACT_COLLAPSED`, `FACT_ALREADY_MEMBER`, `FACT_NOT_MEMBER`, `FACT_NOT_JOINABLE`, `FACT_NO_VACANCY`, `FACT_REQUIREMENT_NOT_MET`, `FACT_TOP_RANK`, `FACT_BAD_ROLE`, `FACT_INSUFFICIENT_TREASURY` e `FACT_DATA_INVALID` (dado inválido, apontando arquivo, item e campo). Os erros da `economy` (`ECON_*`) e do `npc` são **repassados** com a mensagem original.
+**Códigos de erro (`Result.code`, prefixo `FACT_`):** `FACT_UNKNOWN_FACTION`, `FACT_UNKNOWN_PROVINCE`, `FACT_OUT_OF_RANGE`, `FACT_BAD_REASON`, `FACT_NO_RIVALS`, `FACT_UNKNOWN_ACTOR`, `FACT_COLLAPSED`, `FACT_ALREADY_MEMBER`, `FACT_NOT_MEMBER`, `FACT_NOT_JOINABLE`, `FACT_NO_VACANCY`, `FACT_REQUIREMENT_NOT_MET`, `FACT_TOP_RANK`, `FACT_BAD_ROLE`, `FACT_INSUFFICIENT_TREASURY` e `FACT_DATA_INVALID` (dado inválido, apontando arquivo, item e campo). Os erros da `economy` (`ECON_*`) e do `npc` são **repassados** com a mensagem original.
 
 ## 10. Eventos
 

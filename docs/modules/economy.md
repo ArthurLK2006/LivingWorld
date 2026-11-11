@@ -447,3 +447,90 @@ Nova linha de dado: `owner_kinds.json` ganha `treasury`, com `weight_capacity` 0
 7. **Quem recebe a tarifa por país** (o tesouro do país ou o da facção de governo): da `politics` (parte 117c).
 8. **Nomes** dos motivos novos (`fine`, `plunder`), dos comandos (`request_open_treasury`, `request_pay`, `request_spend`, `request_set_payroll_source`, `request_resolve_escort`, `request_apply_raid`), das consultas e dos códigos `ECON_*` novos (`ECON_BAD_REASON`, `ECON_BAD_OWNER_KIND`, `ECON_BAD_SHARE`, `ECON_RULES_LOCKED`, `ECON_CONTRACT_WRONG_STATE`, `ECON_LICENSE_REQUIRED`).
 9. **Os valores [HIP]** (saldos iniciais dos tesouros, frações do assalto, tarifas) seguem [HIP] e ficam em dados.
+
+## 18. Extensão da Fase 5 (LW-146g): monte no chão, metal forjado, modificador de produção e recompra de item
+
+**Estado: PLANEJADA (11/11/2026); nada desta seção existe no código, nos dados nem nos testes.** Esta seção **estende** as seções 2, 3, 10, 11, 12 e 13 **só para a Fase 5**, como a 17 fez para a Fase 4: as seções existentes **não foram editadas** e, onde disserem "`spoiled`: reservado", "motivos fechados" ou "só bens em quantidade", **para a Fase 5 vale esta seção** (a união fica para a versão final do `economy.md`). Fontes: DEC-156 (conservação de bens, **APROVADA**), DEC-181 (derrota, **APROVADA**), DEC-183 (crime e contrabando, **APROVADA**), DEC-188, DEC-189, DEC-193, DEC-197 e DEC-199 (todas **PROPOSTA**: padrão de trabalho, não obrigam); `character.md` (E3 e E4), `dynamic_events.md` (seções 4 e 5), `app.md` (A5), `npc.md` (15.6) e a **escolha de Arthur de 11/11/2026 para a venda de item** (18.5: recompra simples; **ainda sem DEC**, a proposta de entrada vai no relatório). Rótulos: **decisão** (DEC APROVADA), **PROPOSTA**, **[HIP]**, **[LIM]**, **[EM ABERTO]**. Nomes de comandos, de motivos, de códigos `ECON_*`, de campos e de testes são **[PROPOSTA]**. **Sem dado, sem código e sem arquivo de dados novo agora**: as linhas de dados abaixo entram com a tarefa que as usa, sob a aprovação de Arthur (formato de dados). **Quem implementa:** LW-156a (18.2), LW-148 (18.3), LW-162 (18.4) e uma **tarefa nova a propor** (18.5; precisa existir antes da LW-165b, que faz o crime ao vender item marcado).
+
+### 18.1 O que a Fase 5 muda na economia (resumo)
+
+| Mudança | Decisão | Onde | O que a seção existente dizia |
+|---|---|---|---|
+| Tipo de dono `ground_pile` (monte no chão); `spoiled` passa a ter uso | DEC-188 (PROPOSTA) | 18.2 | seção 3: cinco tipos de dono (a 17 acrescenta `treasury`); `spoiled` reservado |
+| Motivo `forged` e o evento `GoodsForged` | DEC-193 (PROPOSTA) | 18.3 | seção 3: destruir só por `consumed`, `maintenance` e `spoiled` (a 17 acrescenta `lost`) |
+| Modificador de produção, com prazo e desfazer | DEC-197 (PROPOSTA) | 18.4 | seção 6: eficiência só muda por manutenção |
+| Recompra de item (venda de instância) e o motivo `item_sale` | escolha de Arthur de 11/11/2026 | 18.5 | seção 3: instância não é da economia; `character.md` E4: "não existe caminho de venda" |
+
+### 18.2 Monte no chão (LW-156a; DEC-188; PROPOSTA)
+
+- **Um tipo de dono, `ground_pile`.** Entra em `owner_kinds.json` como a sétima linha: **só inventário**, **sem saldo** (`initial_balance` 0) e `weight_capacity` **grande, em dados [HIP]** (o monte não é um lugar de guardar: é onde cai o que o jogador solta ao morrer). Quem o abre **não** é quem o usa: a **economia** o abre a pedido, com um ID de `ctx.ids` (nunca reutilizado).
+- **Estado de um monte (tabela `piles`, salva só quando há monte):** `pile_id` (o `owner_id`), `x_cm` e `z_cm` (inteiros, posição no mapa lógico, a mesma convenção do `world`), `opened_minute` e `expires_minute`.
+- **Comandos novos.** **`request_open_pile(x_cm, z_cm) -> PileResult`** (o `pile_id`; `expires_minute` = agora + `pile_lifetime_hours` × 60, **24 horas de jogo [HIP]**, valor em dados, DEC-188). Os bens entram e saem pelo comando que **já existe**, `request_transfer_goods(from_id, to_id, good_id, quantity)` (seção 10), com o monte como destino ou origem. **Alcance** (o NPC ou o jogador está perto do monte?) é conferido por **quem chama** (a ponte para o jogador; o `npc` pela posição lógica, `npc.md` 15.6): a economia não sabe onde as pessoas estão. Falhas, sem mudar nada: as dos bens (seção 3) mais `ECON_UNKNOWN_PILE`.
+- **Consultas novas (cópias).** `peek_pile(pile_id)` (posição, `expires_minute`, inventário e peso) e `peek_piles_near(x_cm, z_cm, radius_m)` (os montes abertos a até `radius_m`, **inclusive**, pela distância horizontal em centímetros inteiros, comparando quadrados, **por distância e, no empate, por `pile_id` crescente**).
+- **Sumiço (DEC-188).** A cada hora cheia (o mesmo relógio da produção, seção 6), todo monte com `expires_minute` vencido tem **todo o conteúdo destruído com o motivo `spoiled`** e é **fechado** (como o dono morto, DEC-146: sai das consultas; o cadastro o mantém, o ID não volta). Monte **vazio** é fechado na mesma hora. **Teto `max_piles` [HIP]**: ao passar dele, vence primeiro o monte mais antigo (mesmo tratamento). **Conservação de bens:** entrar e sair são `transfer`; o sumiço é `spoiled`, que entra no "destruído" (DEC-156); o monte fechado **continua na soma**.
+- **Quem abre e enche.** O que acontece com os **bens em quantidade** do jogador ao morrer no modo `respawn_near` **[EM ABERTO]** (a DEC-181 fala em "itens no chão"; o `character.md` trata das **instâncias**, E3). **Recomendação:** todos os bens do inventário **do jogador** (nada do dinheiro, que é a pergunta aberta do `character.md`) vão para **um** monte aberto no local da morte, pela **ponte**, ao ouvir `PlayerDefeated`: `request_open_pile` e um `request_transfer_goods` por bem. **Saque de bem de NPC morto [EM ABERTO]:** a DEC-146 (APROVADA) **fecha** o inventário do NPC morto e o mantém na soma; para o saque (LW-156b) a economia teria de mover os bens dele para um monte, o que **muda em parte a DEC-146**, então **só com decisão de Arthur**.
+- **[LIM]** O monte **não publica evento** (nenhum `ItemDropped` de bem em quantidade): só instância tem "quem pegou" (`npc.md` 15.5 e 15.6). Montes fechados ficam no cadastro: o crescimento é de um monte por morte (poucos); o soak da LW-109 mede.
+- **Dados (PROPOSTA; entram com a LW-156a):** a linha `ground_pile` em `owner_kinds.json` e um arquivo novo de uma linha, `pile_params.json` (`id` = `piles`; `pile_lifetime_hours` e `max_piles`, `INT` de 1 ou mais), para não mudar o esquema de `price_params.json`. Tudo [HIP].
+
+### 18.3 Metal forjado (LW-148; DEC-193; PROPOSTA)
+
+- **Fronteira (DEC-193).** A **economia destrói o metal** e avisa; o **`character` cria a instância** ao ouvir (`character.md` E3 e E4; qualidade pela receita e pela habilidade, regra da LW-148). A economia **não conhece** a instância nem a receita do item: só o texto `item_def_id`, que ela **repassa sem conferir**.
+- **Motivo novo `forged`** no conjunto **fechado** de destruição de bens: `consumed`, `maintenance`, `spoiled`, `lost` (seção 17.7) e `forged`. **Entra na conservação de bens** (DEC-156).
+- **Comando: `request_forge_goods(owner_id, good_id, quantity, item_def_id) -> Result`.** Destrói `quantity` de `good_id` do dono (`forged`) e publica **`GoodsForged(owner_id, good_id, quantity, item_def_id)`** (uma vez por pedido; **sem evento** se falhar). **Atômico.** Só vale para bem de uma **lista fechada em dados**, `forgeable_goods` (partida: `metal` [HIP]), e para dono de tipo que **pode forjar** (partida: só `player`; o **NPC ferreiro** é **[EM ABERTO]**, DEC-193: "a definir no contrato"). Falhas, sem mudar nada: as dos bens (seção 3), `ECON_NOT_FORGEABLE` (bem fora da lista ou dono de tipo que não forja) e `ECON_BAD_QUANTITY`.
+- **Ordem na ponte (para o metal não se perder).** A ponte confere **antes**, pelo `character`, que a instância **cabe** (peso e capacidade, `CHARACTER_TOO_HEAVY`) e **só então** chama `request_forge_goods`; como tudo corre no mesmo passo, nada muda entre as duas chamadas [PROPOSTA técnica].
+- **Quem ouve:** o `character`, **por nome** (a economia nunca importa o `character` nem o contrário). Ler a carga por campo é a **exceção à regra 4.17 do AGENTS** que a conversa A vai propor como DEC (faixa 234 a 239): enquanto ela não for aprovada, este canal **depende** dela.
+- **Reparo** fica para "depois" (DEC-193).
+
+### 18.4 Modificador de produção (LW-162; DEC-197; PROPOSTA)
+
+- **Para quê.** O evento `poor_harvest` faz a produção de um bem cair por alguns dias num povoado (`dynamic_events.md` seção 5).
+- **Comandos novos.** **`request_apply_production_modifier(settlement_id, good_id, factor_bp, source_id, days) -> Result`** e **`request_remove_production_modifier(settlement_id, good_id, source_id) -> Result`** (o desfazer). `factor_bp` de **0 a 10000** (10000 = sem efeito; só **reduz** na Fase 5; aumentar é [FUT]); `days` de 1 a `max_modifier_days` [HIP]; `source_id` é o `instance_id` do evento de mundo. **Idempotente por (`settlement_id`, `good_id`, `source_id`):** repetir o pedido é sucesso sem mudar nada; remover um modificador que já venceu ou não existe é **sucesso sem efeito** (o fim do evento e o vencimento podem se cruzar). Falhas, sem mudar nada: `ECON_UNKNOWN_MARKET` (povoado sem mercado), `ECON_UNKNOWN_GOOD`, `ECON_BAD_FACTOR` e `ECON_BAD_DURATION`.
+- **Efeito.** Em cada hora de produção (seção 6, passo 4), o progresso do lote de **cada local do povoado que produz `good_id`** soma `floor_div(eficiência × lotes por hora × fator, 10000)` em vez de `eficiência × lotes por hora`; vários modificadores do mesmo par **multiplicam**, em ordem de `source_id` crescente, truncando a cada passo (só inteiros). **Não é parada:** o local não publica `ProductionStopped` por causa dele (o fato é o `WorldEventStarted`); a perda de eficiência por falta de manutenção continua separada.
+- **Estado e prazo.** Tabela `(settlement_id, good_id, source_id) → factor_bp, ends_minute`, **salva só quando não vazia**, em ordem crescente de chave; vence na hora cheia em que `ends_minute` passa (o mesmo relógio). `peek_site` ganha o campo **`modifier_bp`** (o produto dos fatores vigentes; 10000 sem modificador) e `peek_production_modifiers(settlement_id)` devolve a lista em cópia.
+- **Conservação:** nenhuma; o modificador só muda **quanto** se produz.
+
+### 18.5 Recompra de item: a venda de instância (escolha de Arthur de 11/11/2026; PROPOSTA técnica)
+
+- **O problema.** A economia só negocia **bens em quantidade** (`request_trade`); espada com qualidade é **instância** do `character` e não entra na conservação de bens (`character.md` E4). Sem um caminho de venda, o **crime de vender item marcado** (DEC-183; LW-165b) não tem onde acontecer.
+- **A escolha (recompra simples).** O mercado **compra** o item e ele **some do jogo**: **sem revenda e sem estoque de instâncias**. Arthur disse que, **no futuro, a versão completa e mais complexa vem depois** (a loja que guarda e revende, preço por qualidade; vai para o `docs/backlog.md`).
+- **Três chamadas, na ponte, no mesmo passo.** (1) `character.peek_item_value(item_id)` devolve o **valor** (inteiro: o `base_value` do item em dados do `character`, ajustado pela qualidade) e a conferência de que o item **pode ser vendido** (existe, é do vendedor, **não** é `bound`; `CHARACTER_ITEM_BOUND`); (2) **`economy.request_buy_back(market_id, seller_id, item_value) -> BuyBackResult`** (o `paid`): o mercado paga `paid = floor_div(item_value × buyback_bp, 10000)`, no mínimo 1 se `item_value` for de 1 ou mais, **`buyback_bp` em dados [HIP]** (partida 5000), por **`transfer` (mercado → vendedor) com o motivo `item_sale`**, atômico; falhas, sem mudar nada: `ECON_UNKNOWN_MARKET`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_VALUE` (`item_value` menor que 1) e `ECON_MARKET_NO_FUNDS`; (3) **`character.request_transfer_item(seller_id, market_id, item_id, sale)`** (o `cause` novo `sale`, ao lado de `theft` e `loot`, `character.md` E4): o item **sai** do vendedor e **não** vai para inventário nenhum, e o `character` publica **`ItemSold(item_id, def_id, seller_id, market_id, origin_owner_id)`**. A **ordem** é (1), (2), (3), porque só o (2) pode falhar por motivo que o `character` não vê (o mercado sem fundos), e nada muda entre as chamadas.
+- **A marca de origem** (`origin_owner_id`, `character.md` E4) **viaja no `ItemSold`**; quem decide se vender aquele item foi crime é a `politics` (adaptador do crime, `politics.md` seção 4; **o `ItemSold` entra na tabela `act_sources.json` com o ato `smuggling`**, LW-165b), como a DEC-195 manda: o `character` e a economia só **informam**.
+- **Motivo novo `item_sale`** no conjunto fechado de motivos do `Ledger` (ao lado dos da seção 2 e dos da 17.3): só `market` → `player` ou `npc`; **só transfere** (não cria nem destrói dinheiro). **A tarifa e a lei de comércio da `TradeRules` não incidem** na recompra (o item não é bem); isso é uma **[LIM]** da versão simples.
+- **Dado (PROPOSTA, com a tarefa):** `buyback_bp` num arquivo novo de uma linha, `buyback_params.json` (`id` = `buyback`; `INT` de 0 a 10000).
+
+### 18.6 Conservação, save, hash e arquitetura
+
+- **Dinheiro.** `item_sale` é transferência; nada cria nem destrói dinheiro. O teste de ouro soma **todas** as contas e continua valendo. **Bens.** `forged` e `spoiled` entram em "destruído"; o monte na soma; `peek_goods_conservation()` o confere por dia.
+- **Save.** O bloco `economy` ganha `piles` e `production_modifiers`, **só quando não vazios** (então o jogo sem eles salva e entra no hash como antes). **`save_version` continua em 2** (DEC-127); save antigo é rejeitado com mensagem clara (DEC-186).
+- **Hash.** Registrar a economia já mudou o hash na Fase 3; esta seção **não** registra módulo novo. Valor de hash **já aprovado** que mude **faz a tarefa parar e pedir** (DEC-175 e AGENTS 9.5), como nos marcos da Fase 5 (`app.md`, A2).
+- **Arquitetura.** A economia **não importa** `character`, `npc`, `world` nem `combat`: o `character` ouve o `GoodsForged` (18.3), a ponte junta as chamadas (18.2 e 18.5) e o adaptador de efeitos do `app` chama os comandos da 18.4 (`app.md` A5). Um teste do `check_architecture` **[PROPOSTA]** confere que só a ponte e o adaptador citam `request_open_pile`, `request_forge_goods`, `request_buy_back` e os dois de modificador.
+
+### 18.7 Dado → dono (acréscimos à seção 12)
+
+| Dado | Dono | Observação |
+|---|---|---|
+| Os montes (posição, validade) e o conteúdo | `economy` | salvo só quando há; o `owner_id` é do monte |
+| Quem forja e o que é forjável (`forgeable_goods`) | `economy` (dados) | a instância criada é do `character` |
+| Os modificadores de produção | `economy` | salvo só quando há |
+| `buyback_bp` | `economy` (dados) | o **valor do item** é do `character` |
+| A marca de origem do item vendido | `character` | a economia só repassa o que a ponte dá |
+
+### 18.8 Rastreio: tarefa → subseção → teste previsto (nomes **PROPOSTA**)
+
+| Tarefa | Subseção | Testes previstos |
+|---|---|---|
+| LW-156a (itens no chão) | 18.2 | `test_ground_pile`: abre na posição; `peek_piles_near` por distância e `pile_id` (inclusivo no raio); bens entram e saem por `transfer`; **vence em 24 h e some com `spoiled`**; vazio fecha; `max_piles` vence o mais antigo; conservação com `spoiled`; ida e volta de save; só salva quando há |
+| LW-148 (metal → item) | 18.3 | `test_forge_goods`: destrói com `forged` e publica `GoodsForged` **uma vez**; falha não muda nada e não publica; bem fora de `forgeable_goods` e dono que não forja recusados (`ECON_NOT_FORGEABLE`); conservação fecha com `forged`; **a economia não cita o `character`** |
+| LW-162 (`poor_harvest`) | 18.4 | `test_production_modifier`: o fator reduz o progresso na proporção (conta à mão); dois modificadores multiplicam; idempotente por `source_id`; remover o vencido é sucesso sem efeito; **vence sozinho**; sem `ProductionStopped`; ida e volta; mesma semente, mesmo hash |
+| Tarefa nova (recompra) | 18.5 | `test_buy_back`: `paid` = `floor_div(valor × buyback_bp, 10000)`, no mínimo 1; mercado sem fundos recusa sem mudar nada; o motivo é `item_sale` e a conservação do dinheiro fecha; valor menor que 1 recusado; a ponte executa (1), (2), (3) na ordem e o item sai |
+| LW-165b (contrabando, parte 2) | 18.5 | o `ItemSold` de item **marcado** leva `origin_owner_id` e vira `ActReported` (`smuggling`) pelo adaptador da `politics`; item sem marca não |
+
+### 18.9 Pontos em aberto e PROPOSTA para Arthur aprovar na revisão
+
+1. **Bens em quantidade do jogador ao morrer** (18.2): recomendo **todos os bens, num monte, e nenhum dinheiro**. Alternativa: nenhum bem cai (só instâncias).
+2. **Saque de bem de NPC morto** (18.2): muda em parte a DEC-146; **só com decisão de Arthur**. Alternativa: o saque é só de instâncias (LW-156b).
+3. **NPC ferreiro** (18.3): recomendo **só o jogador** forjar na Fase 5; o NPC ferreiro é "depois".
+4. **Tarefa nova da recompra** (18.5), a registrar no roadmap por Arthur, **antes da LW-165b**.
+5. **A exceção à regra 4.17** para o `character` ouvir o `GoodsForged` por nome (18.3), que depende da DEC da conversa A (faixa 234 a 239).
+6. **Os valores [HIP]** (`pile_lifetime_hours`, `max_piles`, `max_modifier_days`, `forgeable_goods`, `buyback_bp`) seguem [HIP], em dados.
+7. **Nomes** dos comandos (`request_open_pile`, `request_forge_goods`, `request_apply_production_modifier`, `request_remove_production_modifier`, `request_buy_back`), dos motivos (`forged`, `item_sale`), dos eventos (`GoodsForged`, `ItemSold`) e dos códigos (`ECON_UNKNOWN_PILE`, `ECON_NOT_FORGEABLE`, `ECON_BAD_FACTOR`, `ECON_BAD_DURATION`, `ECON_BAD_VALUE`).
