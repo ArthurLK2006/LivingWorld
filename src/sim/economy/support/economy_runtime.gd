@@ -20,6 +20,9 @@ static func open_new_game(state: EconomyState, ids: IdGenerator) -> void:
 	if state.production != null:
 		for definition: SiteDef in state.definitions.production_sites:
 			_open_production_site(state, ids, definition)
+	if state.posts != null:
+		for definition: PostDef in state.definitions.service_posts:
+			_open_service_post(state, ids, definition)
 
 
 static func close_day(state: EconomyState, events: EventBus) -> void:
@@ -29,7 +32,11 @@ static func close_day(state: EconomyState, events: EventBus) -> void:
 		state.production.end_of_day()
 
 
+## A hora da folha: primeiro os postos de serviço, pela conta do mercado (passo 0), depois os locais de produção.
 static func run_production_hour(state: EconomyState, events: EventBus) -> void:
+	if state.posts != null:
+		for event: SimEvent in state.posts.hour_step():
+			events.publish(event)
 	if state.production == null:
 		return
 	for event: SimEvent in state.production.hour_step():
@@ -68,3 +75,10 @@ static func _open_production_site(state: EconomyState, ids: IdGenerator, definit
 		opened = state.production.register_site(site_id, definition)
 	if not opened.ok:
 		push_error("EconomyModule.on_new_game: o local de produção '%s' não abriu: %s" % [definition.id, opened.message])
+
+
+## Um posto de serviço por definição: só um ID do `core` (o posto não é dono). Falha visível (`push_error`) se algo não couber.
+static func _open_service_post(state: EconomyState, ids: IdGenerator, definition: PostDef) -> void:
+	var registered: Result = state.posts.register_post(ids.next_id(), definition)
+	if not registered.ok:
+		push_error("EconomyModule.on_new_game: o posto de serviço '%s' não abriu: %s" % [definition.id, registered.message])

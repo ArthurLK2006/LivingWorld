@@ -9,6 +9,7 @@ const KEY_LEDGER: String = "ledger"
 const KEY_GOODS: String = "goods"
 const KEY_MARKETS: String = "markets"
 const KEY_PRODUCTION: String = "production"
+const KEY_POSTS: String = ServicePostBook.KEY_POSTS
 
 
 ## Sem dono e sem movimento: bloco vazio (nada entra no hash além da presença do módulo).
@@ -22,6 +23,8 @@ static func serialize(state: EconomyState) -> Dictionary:
 		block[KEY_MARKETS] = state.markets.serialize()
 	if state.production != null and not state.production.is_pristine():
 		block[KEY_PRODUCTION] = state.production.serialize()
+	if state.posts != null and not state.posts.is_pristine():
+		block[KEY_POSTS] = state.posts.serialize()
 	return block
 
 
@@ -32,16 +35,17 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 		names.append(str(key))
 	names.sort()
 	for name: String in names:
-		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION].has(name):
-			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION])
+		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS].has(name):
+			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS])
 	# Variant: valores crus do save (JSON); o tipo é conferido na linha seguinte.
 	var raw_owners: Variant = data.get(KEY_OWNERS)
 	var raw_ledger: Variant = data.get(KEY_LEDGER)
 	var raw_goods: Variant = data.get(KEY_GOODS, {})
 	var raw_markets: Variant = data.get(KEY_MARKETS, {})
 	var raw_production: Variant = data.get(KEY_PRODUCTION, {})
-	if typeof(raw_owners) != TYPE_DICTIONARY or typeof(raw_ledger) != TYPE_DICTIONARY or typeof(raw_goods) != TYPE_DICTIONARY or typeof(raw_markets) != TYPE_DICTIONARY or typeof(raw_production) != TYPE_DICTIONARY:
-		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s' e '%s' devem ser objetos e estar os dois no bloco 'economy' (e '%s', '%s' e '%s', se houver, também objetos)." % [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION])
+	var raw_posts: Variant = data.get(KEY_POSTS, {})
+	if typeof(raw_owners) != TYPE_DICTIONARY or typeof(raw_ledger) != TYPE_DICTIONARY or typeof(raw_goods) != TYPE_DICTIONARY or typeof(raw_markets) != TYPE_DICTIONARY or typeof(raw_production) != TYPE_DICTIONARY or typeof(raw_posts) != TYPE_DICTIONARY:
+		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s' e '%s' devem ser objetos e estar os dois no bloco 'economy' (e '%s', '%s', '%s' e '%s', se houver, também objetos)." % [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS])
 	var market_data: Dictionary = raw_markets
 	var book: OwnerBook = OwnerBook.new()
 	var loaded: Result = book.load_from(raw_owners)
@@ -76,12 +80,21 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 		loaded = production.load_from(production_data)
 		if not loaded.ok:
 			return loaded
+	var posts: ServicePostBook = EconomyState.new_post_book(book, markets, ledger)
+	var posts_data: Dictionary = raw_posts
+	if not posts_data.is_empty():
+		if posts == null:
+			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o save tem postos de serviço, mas este módulo não recebeu as constantes de preço (sem mercado não há folha).")
+		loaded = posts.load_from(posts_data)
+		if not loaded.ok:
+			return loaded
 	target.book = book
 	target.ledger = ledger
 	target.goods = goods
 	target.markets = markets
 	target.engine = engine
 	target.production = production
+	target.posts = posts
 	return Result.success()
 
 
@@ -101,6 +114,9 @@ static func validation_problems(state: EconomyState) -> Array[String]:
 	if state.production != null:
 		for problem: String in state.production.validate():
 			problems.append("[production] " + problem)
+	if state.posts != null:
+		for problem: String in state.posts.validate():
+			problems.append("[posts] " + problem)
 	return problems
 
 

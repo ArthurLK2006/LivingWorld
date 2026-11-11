@@ -115,10 +115,8 @@ func request_open_owner(owner_id: int, kind: String, work_place_id: String = "")
 	var opened: Result = _state.book.open_owner(owner_id, kind)
 	if opened.ok and is_new:
 		opened = EconomyRuntime.mint_initial_balance(_state, owner_id, kind)
-	if opened.ok and is_new and kind == KIND_NPC and not work_place_id.is_empty() and _state.production != null:
-		var site_id: int = _state.production.site_at(work_place_id)
-		if site_id != IdGenerator.NO_ID:
-			return _state.production.assign_worker(site_id, owner_id)
+	if opened.ok and is_new and kind == KIND_NPC and not work_place_id.is_empty():
+		return _assign_to_workplace(owner_id, work_place_id)
 	return opened
 
 
@@ -242,8 +240,23 @@ func _on_npc_died(event: SimEvent) -> void:
 	var owner_id: int = raw_id
 	if _state.production != null:
 		_state.production.remove_worker(owner_id)
+	if _state.posts != null:
+		_state.posts.remove_worker(owner_id)
 	if _state.book.has_owner(owner_id) and _state.book.kind_of(owner_id) == KIND_NPC:
 		_state.book.close_owner(owner_id)
+
+
+## Atribui o NPC ao local de produção ou ao posto de serviço que ocupa `work_place_id`; sem nenhum dos dois ninguém é atribuído (e não é erro).
+func _assign_to_workplace(npc_id: int, work_place_id: String) -> Result:
+	if _state.production != null:
+		var site_id: int = _state.production.site_at(work_place_id)
+		if site_id != IdGenerator.NO_ID:
+			return _state.production.assign_worker(site_id, npc_id)
+	if _state.posts != null:
+		var post_id: int = _state.posts.post_at(work_place_id)
+		if post_id != IdGenerator.NO_ID:
+			return _state.posts.assign_worker(post_id, npc_id)
+	return Result.success()
 
 
 func _current_hour() -> int:

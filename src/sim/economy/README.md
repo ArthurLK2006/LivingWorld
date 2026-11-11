@@ -41,4 +41,6 @@ Implementado (LW-088d, 11/11/2026, correções da revisão independente do ramo 
 
 Implementado (LW-095, parte a, 11/11/2026): a folha dos locais de produção, em `production/`: `WagePayer` (tudo ou nada, pelo `Ledger`, motivo `salary`) e o evento `WagesPaid` (um por local e por hora); sem o dinheiro da folha o local para por `NO_FUNDS`, que também vai no save.
 
-Planejado, ainda não existe: os postos de serviço (LW-095, parte b), os contratos e as vagas (LW-096), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).
+Implementado (LW-095, parte b, 11/11/2026): os postos de serviço, em `posts/` (`ServicePostBook`, `PostDef`): a folha sai da conta do mercado antes dos locais de produção, tudo ou nada por posto, com um `WagesPaid` por posto e por hora; o NPC com o `work_place_id` de um posto é atribuído a ele. As definições só vêm montadas à mão nos testes; sem `service_posts.json` ainda.
+
+Planejado, ainda não existe: a consulta dos postos (`peek_post`), os dados dos postos (`service_posts.json`), os contratos e as vagas (LW-096), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).

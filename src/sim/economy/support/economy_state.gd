@@ -13,6 +13,7 @@ var goods: GoodsStore
 var markets: MarketBook
 var engine: TradeEngine
 var production: ProductionBook
+var posts: ServicePostBook
 
 
 func _init(economy_definitions: EconomyDefinitions, trade_rules: TradeRules, history: bool) -> void:
@@ -30,6 +31,7 @@ static func create(economy_definitions: EconomyDefinitions, trade_rules: TradeRu
 	state.markets = new_market_book(economy_definitions, state.book, state.goods)
 	state.engine = new_engine(economy_definitions, trade_rules, state.book, state.ledger, state.goods, state.markets)
 	state.production = new_production_book(economy_definitions, state.book, state.goods, state.markets, state.engine, state.ledger)
+	state.posts = new_post_book(state.book, state.markets, state.ledger)
 	return state
 
 
@@ -48,6 +50,11 @@ static func new_production_book(economy_definitions: EconomyDefinitions, owner_b
 	if trade_engine == null or economy_definitions.recipes.is_empty() or economy_definitions.site_params == null:
 		return null
 	return ProductionBook.new(owner_book, goods_store, market_book, trade_engine, economy_definitions.recipes, economy_definitions.site_params, economy_definitions.price_params.max_order_quantity, money_ledger)
+
+
+## Sem mercados não há de onde pagar a folha dos postos de serviço (a conta do mercado do povoado), então não há livro de postos.
+static func new_post_book(owner_book: OwnerBook, market_book: MarketBook, money_ledger: Ledger) -> ServicePostBook:
+	return null if market_book == null else ServicePostBook.new(market_book, WagePayer.new(owner_book, money_ledger))
 
 
 ## Os ids dos tipos de dono das definições (`owner_kinds.json`).
