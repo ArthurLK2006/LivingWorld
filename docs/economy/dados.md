@@ -1,6 +1,6 @@
 # Modelos de dados da economia (Fase 3)
 
-Estado: **RASCUNHO da LW-087d (10/11/2026, rodada 2), fora do `main`, não aprovado.** A Fase 2 fechou em 10/11/2026 (tag `fase-2-concluida`); este arquivo entra no `main` quando Arthur escrever que pode entrar. **Nenhum arquivo de `data/`, nenhum esquema em código e nenhum teste foi criado:** isto descreve os modelos que as tarefas LW-089, LW-090, LW-092, LW-095 e LW-097 vão criar. Rótulos: **decisão**, **aprovado por Arthur em 10/11/2026** (o registro em `DECISIONS.md` é da LW-087a), **decidido pelo revisor** (decisão de Claude na delegação de menores de Arthur, 10/11/2026: vale como [PROPOSTA]), **[PROPOSTA]**, **[HIP]** (número de trabalho, não é requisito) e **[LIM]**. Nomes de bens, receitas e ofícios são **genéricos e provisórios** (DEC-100, APROVADA). Os nomes de tabelas, de colunas, de ids e de códigos de erro são os do contrato `docs/modules/economy.md` (LW-087b, ramo `lw-087b-contrato-economy`), que este documento **não repete**: ele só acrescenta o nível de coluna.
+Estado: **RASCUNHO da LW-087d (10/11/2026, rodada 3), fora do `main`, não aprovado.** A Fase 2 fechou em 10/11/2026 (tag `fase-2-concluida`); este arquivo entra no `main` quando Arthur escrever que pode entrar. **Nenhum arquivo de `data/`, nenhum esquema em código e nenhum teste foi criado:** isto descreve os modelos que as tarefas LW-089, LW-090, LW-092, LW-095 e LW-097 vão criar. Rótulos: **decisão**, **aprovado por Arthur em 10/11/2026** (o registro em `DECISIONS.md` é da LW-087a), **decidido pelo revisor** (decisão de Claude na delegação de menores de Arthur, 10/11/2026: vale como [PROPOSTA]), **[PROPOSTA]**, **[HIP]** (número de trabalho, não é requisito) e **[LIM]**. Nomes de bens, receitas e ofícios são **genéricos e provisórios** (DEC-100, APROVADA). Os nomes de tabelas, de colunas, de ids e de códigos de erro são os do contrato `docs/modules/economy.md` (LW-087b, ramo `lw-087b-contrato-economy`), que este documento **não repete**: ele só acrescenta o nível de coluna.
 
 ## Onde fica este documento (o que o padrão do projeto manda)
 
@@ -71,11 +71,24 @@ Cinco linhas: `npc`, `player`, `site`, `market`, `contract`.
 | `settlement_id` | `STRING` | id de `world/settlements` (D1) |
 | `good_id` | `STRING` | referência a `goods` (`set_ref`) |
 | `target_stock` | `INT` | 0 ou mais; **0 = bem não negociado nesse mercado**; dado **fixo** na Fase 3 (decidido pelo revisor; "dias de consumo" é calibração, LW-112) |
-| `initial_stock` | `INT` | 0 ou mais |
+| `initial_stock` | `INT` | 0 ou mais; **não maior que o teto de compra** (`target_stock` × `buy_cap_bp` ÷ 10000) |
+| `buy_cap_bp` | `INT` | 10000 ou mais; **teto de compra** em pontos-base do `target_stock` (Q21, decidido pelo revisor; entra na LW-090); [HIP], **partida 20000** (2 vezes o alvo, onde o preço chega ao piso com `min_factor_bp` 5000) |
 
-Regras (no carregador): o par (`settlement_id`, `good_id`) é **único**; todo assentamento tem pelo menos um bem com `target_stock` maior que 0. Com 3 povoados e 10 bens são **30 linhas**: cada mercado negocia os **10 bens** (`target_stock` maior que 0), para a importação poder ser comprada [PROPOSTA]; **quem produz o quê** está em `production_sites` (abaixo).
+Regras (no carregador): o par (`settlement_id`, `good_id`) é **único**; todo assentamento tem pelo menos um bem com `target_stock` maior que 0. Com 3 povoados e 10 bens são **30 linhas**: cada mercado negocia os **10 bens** (`target_stock` maior que 0), para a importação poder ser comprada [PROPOSTA]; **quem produz o quê** está em `production_sites` (abaixo). **Teto de compra (contrato, seção 4):** acima de `target_stock × buy_cap_bp ÷ 10000` o mercado **não compra**: a ordem de venda é recusada inteira com `ECON_MARKET_FULL` e o local de produção vende só até o espaço que sobra, parando por `OUTPUT_FULL` (sem perder eficiência) quando o inventário dele enche; a compra **do** mercado (`buy`) não é afetada.
 
-**Estoque inicial de comida do povoado C (decisão de Arthur, Q17, aceita pelo revisor).** O povoado C **não produz comida** e o comerciante só chega na LW-098: as linhas de `bread` e de `grain` do mercado do C têm `initial_stock` [HIP] **dimensionado para cobrir o soak de 30 dias da LW-097** (consumo diário estimado da população do C × 30). Os **soaks de 1 ano** (LW-109 e LW-110) **só rodam depois da LW-098**. **[PROPOSTA, contrato Q20]** o mesmo tipo de estoque inicial para o que cada povoado importa: `tool` em A e B, `flour` e `plank` em B, `wood` e `plank` em C. A conferência de que a comida do C basta é o próprio soak de 30 dias (zero mortes); não há teste de dados para isso, porque o consumo real só existe com o `npc`.
+**Estoque inicial até o comerciante (decisão de Arthur, Q17; Q20 decidida pelo revisor; dado na LW-097).** O comerciante só chega na **LW-098**; até lá, o que um povoado importa vem do `initial_stock` do próprio mercado, **dimensionado para 30 dias** (o horizonte do soak da LW-097). Os **soaks de 1 ano** (LW-109 e LW-110) **só rodam depois da LW-098**. Linhas de `market_targets` que levam estoque de bem importado (números [HIP], pequenos):
+
+| Povoado | `good_id` | Para quê | `initial_stock` (30 dias) | `target_stock` | `buy_cap_bp` |
+|---|---|---|---|---|---|
+| A | `tool` | manutenção dos 5 locais | 29 | 29 | 20000 |
+| B | `tool` | manutenção dos 6 locais | 29 | 29 | 20000 |
+| B | `plank` | manutenção dos 6 locais | 21 | 21 | 20000 |
+| B | `flour` | insumo de `bake_bread` | 30 × o consumo do local (a propor na LW-092) | igual | 20000 |
+| C | `plank` | manutenção dos 3 locais | 15 | 15 | 20000 |
+| C | `wood` | combustível de `smelt_metal` | 30 × o consumo do local (a propor na LW-092) | igual | 20000 |
+| C | `bread` e `grain` | comida dos NPCs do C | 30 × o consumo da população do C [PENDENTE, DEC-040] | igual | 20000 |
+
+Os outros bens de cada mercado (os que o povoado produz) começam com estoque e alvo [HIP] a propor na LW-090. **Conta dos números 29, 29, 21 e 15** (a partir de `site_upkeep`, abaixo): A gasta 0,95 `tool` por dia nos 5 locais (29 em 30 dias, arredondado para cima); B gasta 0,95 `tool` e 0,7 `plank` por dia nos 6 locais; C gasta 0,5 `plank` por dia nos 3 locais. **Conferência (LW-097, `test_initial_stock_covers_30_days`) [PROPOSTA]:** para os bens que **não** são comida, `initial_stock` é **no mínimo 30 vezes o consumo por dia**, arredondado para cima, com o consumo por dia igual à soma, nos locais do povoado, de `quantity` ÷ `period_days` (`site_upkeep`) e de `quantity` das linhas de `recipe_inputs` × lotes por dia (`min(max_batches_per_hour, workers_wanted ÷ workers_per_batch)` × 24). A **comida não tem teste de dados** (o consumo depende do `npc`): quem prova é o **soak de 30 dias, sem morte**.
 
 ## `price_params.json` (LW-090): constantes de preço (uma linha só, `id` = `price_defaults`)
 
@@ -200,7 +213,7 @@ Cada linha vira um local de produção (`site_id` inteiro de `ctx.ids`) em `on_n
 | `workers_wanted` | `INT` | 1 ou mais; não maior que a capacidade do local (D1) |
 | `wage_per_hour` | `INT` | 0 ou mais; pago a cada trabalhador atribuído, por hora, pela conta do **mercado** do povoado; [HIP] |
 
-Regra de funcionamento (contrato, seção 6): folha **tudo ou nada por posto e por hora**; mercado sem fundos para a folha do posto: o posto **para com `NO_FUNDS` e ninguém recebe naquela hora**. Se a marca `TEMP` vale para este provisório é pergunta aberta (contrato, Q18); **não há coluna `temp_mark` nesta tabela** até ela ser respondida.
+Regra de funcionamento (contrato, seção 6): folha **tudo ou nada por posto e por hora**; mercado sem fundos para a folha do posto: o posto **para com `NO_FUNDS` e ninguém recebe naquela hora**. **Provisório sem marca `TEMP` (Q18, decidido pelo revisor; a DEC-164 da LW-087a diz o mesmo):** é regra de jogo até a Fase 4, não código a remover; **não há coluna `temp_mark` nesta tabela** (as linhas de `food_stub.json` e `income_stub.json` a têm porque aqueles provisórios saem do código). O `tools/check_temp` continua exigindo **zero marcas** ao fim da Fase 3 e os postos não o atingem.
 
 ## Distribuição das 4 cadeias pelos 3 povoados, com os locais `work` contados [PROPOSTA/HIP]
 
@@ -246,4 +259,4 @@ Arthur decidiu o princípio (**nenhum povoado se baste sozinho**) e a criação 
 
 ## Testes previstos para estes dados (nas tarefas que criam cada tabela)
 
-Arquivo real carrega e devolve os objetos tipados; **dado inválido falha** apontando arquivo, item e campo (campo ausente, tipo errado, campo desconhecido, id repetido, referência quebrada, faixa inválida, vocabulário fora do fechado, par repetido, `min_factor_bp` maior que `max_factor_bp`, `spread_bp` 0, `min_efficiency_bp` 0); a regra de margem e a de "um bem, uma receita"; **manutenção** (testes de dados e de propriedade, acima); **`test_economy_distribution.gd`** (LW-097); a conferência entre módulos do verificador LW-093a (um caso negativo para `need_id`, `occupation_id`, `settlement_id`, `place_id`, `work_place_id` e `workers_wanted`); carregar duas vezes dá o mesmo resultado; `tools/validate_data` aceita a pasta `data/economy/` e roda dentro do `check_all`.
+Arquivo real carrega e devolve os objetos tipados; **dado inválido falha** apontando arquivo, item e campo (campo ausente, tipo errado, campo desconhecido, id repetido, referência quebrada, faixa inválida, vocabulário fora do fechado, par repetido, `min_factor_bp` maior que `max_factor_bp`, `spread_bp` 0, `min_efficiency_bp` 0); a regra de margem e a de "um bem, uma receita"; **manutenção** (testes de dados e de propriedade, acima); **`test_economy_distribution.gd`** (LW-097, com `test_initial_stock_covers_30_days`); **teto de compra** (`buy_cap_bp` de 10000 ou mais; `initial_stock` dentro do teto); a conferência entre módulos do verificador LW-093a (um caso negativo para `need_id`, `occupation_id`, `settlement_id`, `place_id`, `work_place_id` e `workers_wanted`); carregar duas vezes dá o mesmo resultado; `tools/validate_data` aceita a pasta `data/economy/` e roda dentro do `check_all`.
