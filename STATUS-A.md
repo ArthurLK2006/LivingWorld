@@ -1,4 +1,4 @@
-11/11/2026 18:57 (Brasília) · LW-093 PARTE 1 PRONTA sobre a junção: ramo `lw-093-contas-dos-npcs` (commit `35cfae0`): o NPC abre a conta na economia ao nascer; valores do marco 2 (aprovados) gravados nos 9 do oráculo; `check_all` VERDE (145 scripts, 1.300 testes), `run_sim` igual; seguindo para a parte 2 (dinheiro inicial e `request_consume`)
+11/11/2026 19:04 (Brasília) · LW-093 PARTE 2 PRONTA: ramo `lw-093d-dinheiro-e-consumo` (sobre a parte 1): dinheiro inicial na abertura da conta (`mint` `game_start`) e `request_consume`; `check_all` VERDE (146 scripts, 1.303 testes), hashes e `run_sim` iguais; seguindo para a parte 3 (o jogo real recebe as definições da economia)
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
