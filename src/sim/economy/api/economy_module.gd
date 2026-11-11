@@ -131,6 +131,9 @@ func on_load(data: Dictionary) -> Result:
 	var loaded: Result = book.load_from(raw_owners)
 	if not loaded.ok:
 		return loaded
+	var kind_problems: Array[String] = _unknown_kind_problems(book)
+	if not kind_problems.is_empty():
+		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: %s." % kind_problems[0])
 	var ledger: Ledger = Ledger.new(book, _record_history)
 	loaded = ledger.load_from(raw_ledger)
 	if not loaded.ok:
@@ -171,6 +174,8 @@ func validate() -> Array[String]:
 	var problems: Array[String] = []
 	for problem: String in _book.validate():
 		problems.append("[owners] " + problem)
+	for problem: String in _unknown_kind_problems(_book):
+		problems.append("[owners] " + problem)
 	for problem: String in _ledger.validate():
 		problems.append("[ledger] " + problem)
 	for problem: String in _goods.validate():
@@ -184,13 +189,24 @@ func validate() -> Array[String]:
 	return problems
 
 
+## Resumo para o painel de depuração (backlog I4; revisão independente I1): só números e se a conservação do dinheiro e dos bens fecha. Não vai para o save nem para o hash.
+func debug_summary() -> Dictionary:
+	return {
+		"owners": _book.owner_ids().size(),
+		"balances_sum": _ledger.sum_of_balances(),
+		"money_created": _ledger.total_created(),
+		"money_destroyed": _ledger.total_destroyed(),
+		"money_conserved": _ledger.is_conserved(),
+		"goods_conserved": _goods.is_conserved(),
+		"production_sites": 0 if _production == null else _production.site_ids().size(),
+	}
+
+
 ## Abre o dono (conta e inventário). Idempotente: quem já existe fica como está. Falhas: `ECON_UNKNOWN_OWNER` (ID fora da faixa) e `ECON_DATA_INVALID` (tipo vazio ou, havendo definições, tipo que não existe). `work_place_id` (opcional) só vale
 ## para o tipo `npc` e só na ABERTURA da conta: o NPC é atribuído ao local de produção desse local; sem local de produção ali, ninguém é atribuído (e não é erro). Depois disso o emprego só muda por vaga aceita (LW-096) ou morte.
 func request_open_owner(owner_id: int, kind: String, work_place_id: String = "") -> Result:
 	if not _definitions.kinds.is_empty() and not kind.is_empty():
-		var known: Array[String] = []
-		for kind_def: OwnerKindDef in _definitions.kinds:
-			known.append(kind_def.id)
+		var known: Array[String] = _known_kinds()
 		if not known.has(kind):
 			return Result.failure(EconomyCodes.DATA_INVALID, "EconomyModule.request_open_owner: o tipo de dono '%s' não existe; esperado um de: %s." % [kind, ", ".join(known)])
 	var is_new: bool = not _book.has_owner(owner_id)
@@ -362,6 +378,26 @@ func _fund_market(market_id: int, settlement_id: String) -> Result:
 			if not created.ok:
 				return created
 	return Result.success()
+
+
+## Os ids dos tipos de dono das definições (`owner_kinds.json`).
+func _known_kinds() -> Array[String]:
+	var known: Array[String] = []
+	for kind_def: OwnerKindDef in _definitions.kinds:
+		known.append(kind_def.id)
+	return known
+
+
+## Os donos do cadastro cujo tipo não está em `owner_kinds.json` (AGENTS 12.6: validar referência de arquivo). Sem tipos nas definições qualquer tipo vale, como em `request_open_owner`.
+func _unknown_kind_problems(book: OwnerBook) -> Array[String]:
+	var problems: Array[String] = []
+	if _definitions.kinds.is_empty():
+		return problems
+	var known: Array[String] = _known_kinds()
+	for owner_id: int in book.owner_ids():
+		if not known.has(book.kind_of(owner_id)):
+			problems.append("dono %d: o tipo '%s' não existe em owner_kinds.json; esperado um de: %s" % [owner_id, book.kind_of(owner_id), ", ".join(known)])
+	return problems
 
 
 ## O saldo inicial do tipo (se o tipo tem), com o motivo `game_start`.

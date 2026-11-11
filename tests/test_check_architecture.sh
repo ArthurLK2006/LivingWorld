@@ -214,9 +214,31 @@ lw089c_violations=$((new_violations - lw029a_violations))
 lw089c_clean=$((new_clean - lw029a_clean))
 new_violations=$lw029a_violations
 new_clean=$lw029a_clean
+# LW-088d (revisão independente, I2 e I5): a regra E vale para QUALQUER arquivo fora da economy (não só o npc) e a regra F pega também a atribuição simples e os membros privados do Ledger.
+mkdir -p "$fixture/src/sim/ecology" "$fixture/src/sim/politics"
+printf '# ecology (sonda)\n' > "$fixture/src/sim/ecology/README.md"
+printf '# politics (sonda)\n' > "$fixture/src/sim/politics/README.md"
+expect_violation src/sim/politics/violation.gd 'var ledger: ProbeLedgerInner' 'violation.gd:1: "ProbeLedgerInner" (src/sim/economy/ledger/probe_ledger_inner.gd) é interna de src/sim/economy/' 'um módulo de camada maior cita classe interna da economy'
+expect_violation src/sim/ecology/violation.gd 'var ledger: ProbeLedgerInner' 'violation.gd:1: "ProbeLedgerInner"' 'um módulo de camada igual cita classe interna da economy'
+expect_clean src/sim/politics/clean.gd 'var ledger: ProbeLedgerApi' 'qualquer módulo cita a api/ da economy'
+expect_clean src/sim/politics/names.gd 'var kind: String = "ProbeLedgerInner"' 'texto com o nome de uma classe interna da economy não é citação de outro módulo'
+expect_clean src/app/setup.gd 'var inner: ProbeLedgerInner' 'src/app, a raiz de composição, fica de fora da regra E'
+expect_violation src/sim/world/violation.gd 'func x(): balance = 5' 'violation.gd:1:' 'atribuição simples a balance fora do ledger'
+expect_violation src/sim/npc/violation.gd 'func x(): money = 5' 'violation.gd:1:' 'atribuição simples a money fora do ledger'
+expect_violation src/sim/economy/violation.gd 'func x(): _balances = {}' 'violation.gd:1:' 'trocar _balances fora do ledger'
+expect_violation src/sim/npc/violation.gd 'func x(ledger): ledger._balances.erase(owner_id)' 'violation.gd:1:' 'apagar de _balances por fora do ledger'
+expect_violation src/bridge/violation.gd 'func x(ledger): ledger._set_balance(owner_id, 5)' 'violation.gd:1:' 'chamar _set_balance por fora do ledger'
+expect_clean src/sim/economy/ledger/inside.gd 'func x(): balance = 5; _set_balance(owner_id, 1); _balances = {}' 'o próprio ledger usa os membros privados'
+expect_clean src/sim/npc/declared.gd 'func x(): var balance: int = 3; var money := 4; return balance == money' 'declaração com tipo não é atribuição a saldo'
+expect_clean src/sim/npc/quoted.gd 'var text: String = "balance = 5 e _balances e _set_balance"' 'texto entre aspas não é atribuição a saldo'
+lw088d_violations=$((new_violations - lw029a_violations))
+lw088d_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
 rm "$fixture/src/sim/economy/api/probe_ledger_api.gd" "$fixture/src/sim/economy/ledger/probe_ledger_inner.gd"
 rm "$fixture/src/sim/npc/api/probe_door.gd" "$fixture/src/sim/npc/lod/probe_inner.gd" "$fixture/src/sim/npc/README.md"
 rm "$fixture/src/core/probe_core.gd" "$fixture/src/sim/world/probe_terrain.gd" "$fixture/src/bridge/probe_bridge.gd" "$fixture/src/presentation/probe_view.gd" "$fixture/src/sim/world/internal/probe_secret.gd"
+rm "$fixture/src/sim/ecology/README.md" "$fixture/src/sim/politics/README.md"
 rm "$fixture/src/sim/world/README.md"
 check_violation 'contrato ausente' 'world/README.md'
 echo 'LW-012: 1 caso válido e 5 violações detectadas.'
@@ -228,3 +250,4 @@ echo "LW-085a: $lw085a_violations violações detectadas e $lw085a_clean casos a
 echo "LW-088a: $lw088a_violations violações detectadas e $lw088a_clean casos aceitos (regra E: o npc cita só a api/ da economy e a economy não cita o npc; comentário fica de fora)."
 echo "LW-088: $lw088_violations violações detectadas e $lw088_clean casos aceitos (regra F: só o Ledger escreve saldo; comparação, nome parecido, declaração e comentário ficam de fora)."
 echo "LW-089c: $lw089c_violations violações detectadas e $lw089c_clean casos aceitos (regra E: texto entre aspas não é citação; o identificador continua sendo)."
+echo "LW-088d: $lw088d_violations violações detectadas e $lw088d_clean casos aceitos (regra E para qualquer arquivo fora da economy, src/app de fora; regra F com atribuição simples e membros privados do Ledger)."
