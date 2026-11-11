@@ -1,6 +1,6 @@
 # Modelos de dados da economia (Fase 3)
 
-Estado: **RASCUNHO da LW-087d (10/11/2026, rodada 3), fora do `main`, não aprovado.** A Fase 2 fechou em 10/11/2026 (tag `fase-2-concluida`); este arquivo entra no `main` quando Arthur escrever que pode entrar. **Nenhum arquivo de `data/`, nenhum esquema em código e nenhum teste foi criado:** isto descreve os modelos que as tarefas LW-089, LW-090, LW-092, LW-095 e LW-097 vão criar. Rótulos: **decisão**, **aprovado por Arthur em 10/11/2026** (o registro em `DECISIONS.md` é da LW-087a), **decidido pelo revisor** (decisão de Claude na delegação de menores de Arthur, 10/11/2026: vale como [PROPOSTA]), **[PROPOSTA]**, **[HIP]** (número de trabalho, não é requisito) e **[LIM]**. Nomes de bens, receitas e ofícios são **genéricos e provisórios** (DEC-100, APROVADA). Os nomes de tabelas, de colunas, de ids e de códigos de erro são os do contrato `docs/modules/economy.md` (LW-087b, ramo `lw-087b-contrato-economy`), que este documento **não repete**: ele só acrescenta o nível de coluna.
+Estado: **RASCUNHO da LW-087d (10/11/2026, rodada 4), fora do `main`, não aprovado.** A Fase 2 fechou em 10/11/2026 (tag `fase-2-concluida`); este arquivo entra no `main` quando Arthur escrever que pode entrar. **Nenhum arquivo de `data/`, nenhum esquema em código e nenhum teste foi criado:** isto descreve os modelos que as tarefas LW-089, LW-090, LW-092, LW-095 e LW-097 vão criar. Rótulos: **decisão**, **aprovado por Arthur em 10/11/2026** (o registro em `DECISIONS.md` é da LW-087a), **decidido pelo revisor** (decisão de Claude na delegação de menores de Arthur, 10/11/2026: vale como [PROPOSTA]), **[PROPOSTA]**, **[HIP]** (número de trabalho, não é requisito) e **[LIM]**. Nomes de bens, receitas e ofícios são **genéricos e provisórios** (DEC-100, APROVADA). Os nomes de tabelas, de colunas, de ids e de códigos de erro são os do contrato `docs/modules/economy.md` (LW-087b), que este documento **não repete**: ele só acrescenta o nível de coluna.
 
 ## Onde fica este documento (o que o padrão do projeto manda)
 
@@ -32,7 +32,7 @@ Estado: **RASCUNHO da LW-087d (10/11/2026, rodada 3), fora do `main`, não aprov
 | `metal` | metal | `processed` | `smelt_metal` | insumo de `forge_tool` |
 | `tool` | ferramenta | `tool` | `forge_tool` | **manutenção dos locais de produção** e venda |
 | `wool` | lã | `raw_material` | `shear_wool` | insumo de `weave_fabric` |
-| `fabric` | tecido | `processed` | `weave_fabric` | **só mercadoria de comércio** (nenhum NPC o consome) |
+| `fabric` | tecido | `processed` | `weave_fabric` | **manutenção dos locais de produção** (lonas e sacos; Q22) e venda; nenhum NPC o consome |
 
 **Cadeias:** (1) `grain` → `flour` → `bread`; (2) `wood` → `plank`; (3) `ore` + `wood` → `metal` → `tool`; (4) `wool` → `fabric`. A madeira também é o combustível da cadeia 3. Armas (demanda militar), roupas e ferramenta pessoal do NPC **não** entram (decidido). Cada bem tem **exatamente uma** receita que o produz, e as quatro de **extração** (`grow_grain`, `cut_wood`, `mine_ore`, `shear_wool`) não têm insumo.
 
@@ -49,7 +49,7 @@ Estado: **RASCUNHO da LW-087d (10/11/2026, rodada 3), fora do `main`, não aprov
 | `need_id` | `STRING` (opcional) | só em bem de consumo do NPC; id de `needs` (D1); vazio nos demais |
 | `need_relief` | `INT` (opcional) | só com `need_id`; 1 ou mais (quanto 1 unidade alivia, na escala de pressão 0 a 100 do `npc`); contrato, Q9 |
 
-Regras: `need_id` e `need_relief` vêm **juntos** ou nenhum; todo bem tem uma receita que o produz (conferência cruzada com `recipe_outputs`). **Quais bens saciam o quê** (contrato, Q9, e Q20 do `npc.md`, decididos pelo revisor): `bread` alivia `hunger` por inteiro e `grain` menos [HIP]; **só esses dois levam `need_id` e `need_relief`**, os outros oito não (decisão de Arthur: o NPC só consome comida; `tool` e `plank` são manutenção dos locais e `fabric` é mercadoria).
+Regras: `need_id` e `need_relief` vêm **juntos** ou nenhum; todo bem tem uma receita que o produz (conferência cruzada com `recipe_outputs`). **Quais bens saciam o quê** (contrato, Q9, e Q20 do `npc.md`, decididos pelo revisor): `bread` alivia `hunger` por inteiro e `grain` menos [HIP]; **só esses dois levam `need_id` e `need_relief`**, os outros oito não (decisão de Arthur: o NPC só consome comida; `tool`, `plank` e `fabric` são manutenção dos locais).
 
 ## `owner_kinds.json` (LW-089): tipos de dono
 
@@ -81,14 +81,16 @@ Regras (no carregador): o par (`settlement_id`, `good_id`) é **único**; todo a
 | Povoado | `good_id` | Para quê | `initial_stock` (30 dias) | `target_stock` | `buy_cap_bp` |
 |---|---|---|---|---|---|
 | A | `tool` | manutenção dos 5 locais | 29 | 29 | 20000 |
+| A | `fabric` | manutenção dos 4 locais que o gastam (A não tece) | 25 | 25 | 20000 |
 | B | `tool` | manutenção dos 6 locais | 29 | 29 | 20000 |
 | B | `plank` | manutenção dos 6 locais | 21 | 21 | 20000 |
 | B | `flour` | insumo de `bake_bread` | 30 × o consumo do local (a propor na LW-092) | igual | 20000 |
 | C | `plank` | manutenção dos 3 locais | 15 | 15 | 20000 |
 | C | `wood` | combustível de `smelt_metal` | 30 × o consumo do local (a propor na LW-092) | igual | 20000 |
+| C | `fabric` | manutenção dos 2 locais que o gastam (C não tece) | 9 | 9 | 20000 |
 | C | `bread` e `grain` | comida dos NPCs do C | 30 × o consumo da população do C [PENDENTE, DEC-040] | igual | 20000 |
 
-Os outros bens de cada mercado (os que o povoado produz) começam com estoque e alvo [HIP] a propor na LW-090. **Conta dos números 29, 29, 21 e 15** (a partir de `site_upkeep`, abaixo): A gasta 0,95 `tool` por dia nos 5 locais (29 em 30 dias, arredondado para cima); B gasta 0,95 `tool` e 0,7 `plank` por dia nos 6 locais; C gasta 0,5 `plank` por dia nos 3 locais. **Conferência (LW-097, `test_initial_stock_covers_30_days`) [PROPOSTA]:** para os bens que **não** são comida, `initial_stock` é **no mínimo 30 vezes o consumo por dia**, arredondado para cima, com o consumo por dia igual à soma, nos locais do povoado, de `quantity` ÷ `period_days` (`site_upkeep`) e de `quantity` das linhas de `recipe_inputs` × lotes por dia (`min(max_batches_per_hour, workers_wanted ÷ workers_per_batch)` × 24). A **comida não tem teste de dados** (o consumo depende do `npc`): quem prova é o **soak de 30 dias, sem morte**.
+Os outros bens de cada mercado (os que o povoado produz) começam com estoque e alvo [HIP] a propor na LW-090. **Conta dos números 29, 29, 21, 15, 25 e 9** (a partir de `site_upkeep`, abaixo): A gasta 0,95 `tool` por dia nos 5 locais (29 em 30 dias, arredondado para cima); B gasta 0,95 `tool` e 0,7 `plank` por dia nos 6 locais; C gasta 0,5 `plank` por dia nos 3 locais; **tecido (Q22):** A gasta 0,83 por dia (os 2 locais `grow_grain` a 1 a cada 5 dias, `mill_flour` a 1 a cada 3 e `cut_wood` a 1 a cada 10: 12 + 10 + 3 = **25** em 30 dias) e C gasta 0,3 por dia (`mine_ore` a 1 a cada 5 e `smelt_metal` a 1 a cada 10: 6 + 3 = **9**); **B tece o próprio tecido e não importa**. **Conferência (LW-097, `test_initial_stock_covers_30_days`) [PROPOSTA]:** para os bens que **não** são comida, `initial_stock` é **no mínimo 30 vezes o consumo por dia**, arredondado para cima, com o consumo por dia igual à soma, nos locais do povoado, de `quantity` ÷ `period_days` (`site_upkeep`) e de `quantity` das linhas de `recipe_inputs` × lotes por dia (`min(max_batches_per_hour, workers_wanted ÷ workers_per_batch)` × 24). A **comida não tem teste de dados** (o consumo depende do `npc`): quem prova é o **soak de 30 dias, sem morte**.
 
 ## `price_params.json` (LW-090): constantes de preço (uma linha só, `id` = `price_defaults`)
 
@@ -151,32 +153,66 @@ Regras (no carregador e num teste de dados): o par (`recipe_id`, `good_id`) é *
 
 ## `site_upkeep.json` (LW-092): manutenção dos locais de produção
 
-**Decisão de Arthur: consumo = manutenção dos locais.** Os locais de produção **gastam `tool` e `plank` aos poucos** para funcionar; o NPC só consome comida. Uma linha por (receita, bem de manutenção). Os postos de serviço **não** têm manutenção.
+**Decisão de Arthur: consumo = manutenção dos locais.** Os locais de produção **gastam `tool`, `plank` e `fabric` aos poucos** para funcionar (o tecido, lonas e sacos, entrou por **decisão de Arthur**, Q22; DEC-178 da LW-087a); o NPC só consome comida. Uma linha por (receita, bem de manutenção). Os postos de serviço **não** têm manutenção.
 
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `id` | `STRING` | por convenção `upkeep_<recipe_id>_<good_id>` (único) |
 | `recipe_id` | `STRING` | referência a `recipes` (`set_ref`) |
-| `good_id` | `STRING` | referência a `goods` (`set_ref`); vocabulário fechado no carregador: **só `tool` ou `plank`** na Fase 3 |
+| `good_id` | `STRING` | referência a `goods` (`set_ref`); vocabulário fechado no carregador: **`tool`, `plank` ou `fabric`** na Fase 3 |
 | `quantity` | `INT` | 1 ou mais; unidades gastas a cada período |
 | `period_days` | `INT` | 1 ou mais; "gasto por dia" = `quantity` ÷ `period_days` |
 
 Regras (no carregador): o par (`recipe_id`, `good_id`) é **único**. **Números de partida [HIP, pequenos, calibração na LW-112]:**
 
-| Receita | `tool` (1 unidade a cada N dias) | `plank` (1 unidade a cada N dias) |
-|---|---|---|
-| `grow_grain` | 5 | 10 |
-| `cut_wood` | 4 | 10 |
-| `mine_ore` | 3 | 5 |
-| `shear_wool` | 10 | 10 |
-| `mill_flour` | 10 | 5 |
-| `bake_bread` | 10 | 5 |
-| `saw_plank` | 5 | 20 |
-| `smelt_metal` | 5 | 5 |
-| `forge_tool` | 5 | 10 |
-| `weave_fabric` | 10 | 10 |
+| Receita | `tool` (1 unidade a cada N dias) | `plank` (1 unidade a cada N dias) | `fabric` (1 unidade a cada N dias) |
+|---|---|---|---|
+| `grow_grain` | 5 | 10 | 5 |
+| `cut_wood` | 4 | 10 | 10 |
+| `mine_ore` | 3 | 5 | 5 |
+| `shear_wool` | 10 | 10 | 10 |
+| `mill_flour` | 10 | 5 | 3 |
+| `bake_bread` | 10 | 5 | 10 |
+| `saw_plank` | 5 | 20 | sem linha |
+| `smelt_metal` | 5 | 5 | 10 |
+| `forge_tool` | 5 | 10 | sem linha |
+| `weave_fabric` | 10 | 10 | 10 |
 
-**Como o gasto funciona (contrato, seção 6).** O local **compra** do mercado local o bem da regra vencida, pelo mesmo `request_trade`; ao fim do dia, a regra vencida e paga **destrói** as peças com o motivo `maintenance` (conjunto fechado de motivos e conservação de bens). **Sem manutenção a produção cai por degrau, não para:** a eficiência do local cai a cada dia com regra vencida e não paga, até um piso maior que 0 (`site_params`), e volta quando a manutenção é paga. **Testes (nas tarefas que criam a tabela):** de dados (o bem existe e é `tool` ou `plank`; par único) e **de propriedade** (sem peças a eficiência cai até o piso e nunca zera; com peças volta a 10000; a conservação de bens fecha com `maintenance`; mesma semente, mesmo resultado).
+**Por que o tecido está onde está [HIP].** São lonas (para cobrir a lenha, a mina e a fornalha) e sacos (para o grão, a farinha e o pão): o moinho gasta mais (1 a cada 3 dias) e a lavoura, a mina e o forno vêm depois; a serraria e a forja **não** levam linha de `fabric`. A tabela completa tem **28 linhas** (10 de `tool`, 10 de `plank` e 8 de `fabric`). A conta do que isso rende ao tecelão e ao pastor está na seção seguinte.
+
+**Como o gasto funciona (contrato, seção 6).** O local **compra** do mercado local o bem da regra vencida, pelo mesmo `request_trade`; ao fim do dia, a regra vencida e paga **destrói** as peças com o motivo `maintenance` (conjunto fechado de motivos e conservação de bens). **Sem manutenção a produção cai por degrau, não para:** a eficiência do local cai a cada dia com regra vencida e não paga, até um piso maior que 0 (`site_params`), e volta quando a manutenção é paga. **Testes (nas tarefas que criam a tabela):** de dados (o bem existe e é `tool`, `plank` ou `fabric`; par único) e **de propriedade** (sem peças a eficiência cai até o piso e nunca zera; com peças volta a 10000; a conservação de bens fecha com `maintenance`; mesma semente, mesmo resultado).
+
+## A conta do tecido (Q22): o que sustenta o tecelão e o pastor [HIP, ilustrativa]
+
+**Decisão de Arthur (Q22; DEC-178 da LW-087a):** o tecido entra na manutenção dos locais, para ter comprador. Esta conta mostra **quanto isso sustenta** a cadeia da lã e do tecido e **onde ela é fina**. Todos os números são **[HIP] e ilustrativos**: servem para dimensionar `site_upkeep`, `wage_per_hour` e `base_value`; **a calibração é da LW-112** e a prova é o soak da LW-110. O símbolo **`f`** é o custo de **um dia de comida de uma pessoa** (vira número na LW-112, a partir do `base_value` de `bread` e de `grain`).
+
+**1. Quanto tecido os locais gastam por dia** (uma unidade a cada N dias é 1 ÷ N por dia, tabela acima):
+
+| Povoado | Locais que gastam tecido | Conta | Tecido por dia |
+|---|---|---|---|
+| A | `grow_grain` ×2 (N = 5), `mill_flour` (N = 3), `cut_wood` (N = 10); a serraria não gasta | 0,400 + 0,333 + 0,100 | **0,833** |
+| B | `grow_grain` ×2 (5), `cut_wood` (10), `bake_bread` (10), `shear_wool` (10), `weave_fabric` (10) | 0,400 + 0,100 + 0,100 + 0,100 + 0,100 | **0,800** |
+| C | `mine_ore` (5), `smelt_metal` (10); a forja não gasta | 0,200 + 0,100 | **0,300** |
+| **Total** | 12 dos 14 locais | | **1,933** |
+
+**2. Quantas horas por dia o tecelão e o pastor trabalham.** Suposição de trabalho da conta, **que não é dado** (as quantidades de verdade são da LW-092): um lote de `weave_fabric` por hora, feito por 4 trabalhadores, dá **2 `fabric`** a partir de **2 `wool`**; um lote de `shear_wool` por hora, com 4 trabalhadores, dá **2 `wool`**. O local só produz o que o mercado absorve (o teto de compra, Q21, e a manutenção são a procura), então as horas por dia são a procura ÷ o rendimento do lote:
+
+| Situação | Tecido por dia | Horas do tecelão por dia | Lã por dia (1 `wool` por `fabric`) | Horas do pastor por dia |
+|---|---|---|---|---|
+| Depois da LW-098 (o comerciante leva tecido do B a A e C) | 1,93 | **0,97** | 1,93 | **0,97** |
+| Até a LW-098 (só o B consome o próprio tecido) | 0,80 | **0,40** | 0,80 | **0,40** |
+
+**3. O que rende ao trabalhador.** Pela regra "hora parada = ninguém recebe" (Q18 A), só se ganha nas horas em que o local produz. Para a renda do dia igualar `f` com 0,97 hora de produção, o `wage_per_hour` precisa ser **f ÷ 0,97 ≈ 1,03 f**; a conta adota **1,1 f** (cerca de **um dia de comida por hora de produção**, 6% de sobra):
+
+- **Folha** por hora de produção: 4 × 1,1 f = **4,4 f**; por unidade (2 por hora): **2,2 f**. A folha por unidade é cerca de 4 f ÷ 1,93 e **não depende do rendimento do lote**, só da procura diária (com 1 unidade por hora, o tecelão trabalharia 1,93 hora por dia e o `wage_per_hour` cairia para cerca de 0,5 f; com 4 unidades, 0,48 hora e cerca de 2,1 f).
+- **Lã:** o pastor vende ao `bid`. Com `spread_bp` de 1000 [HIP] (`bid` = 0,95 e `ask` = 1,05 do preço), o preço da lã tem de ser **2,2 f ÷ 0,95 ≈ 2,3 f** ou mais: `base_value` de `wool` perto de **2,5 f**.
+- **Tecido:** o tecelão compra a lã ao `ask` (1,05 × 2,5 f ≈ 2,6 f) e paga a folha (2,2 f): **4,8 f** por unidade, vendida ao `bid`; o preço tem de ser **4,8 f ÷ 0,95 ≈ 5,1 f** ou mais: `base_value` de `fabric` perto de **5 f**.
+- **Regra de margem** (seção das receitas): tecido, 2 × 5 f = 10 f **maior que** 2 × 2,5 f + 4,4 f = 9,4 f; lã, 2 × 2,5 f = 5 f **maior que** 4,4 f. Fecha, **com folga pequena**.
+- **Rende:** 0,97 hora × 1,1 f ≈ **1,06 f por dia** para cada trabalhador das duas funções (um dia de comida e 6% de sobra). Até a LW-098 seriam 0,40 hora × 1,1 f = 0,44 f por dia: **só o dinheiro inicial** sustenta esses trabalhadores nos 30 dias da LW-097.
+
+**4. Peso no mercado.** O gasto total com tecido é cerca de 1,93 × 5 f ≈ **10 f por dia** nos três povoados, contra **100 f por dia** só de comida dos 100 NPCs de A e B (1 f por pessoa por dia): pequeno para o mercado, mas é **a única procura** pelo tecido.
+
+**5. Onde a conta é fina, e o plano B.** Duas funções vivem de cerca de uma hora de trabalho por dia, então tudo depende de `wage_per_hour` perto de 1,1 f e de valores-base altos para a lã e o tecido (e de a LW-112 acertá-los). **Se o soak da LW-110 mostrar fome** no tecelão ou no pastor, a decisão **volta a Arthur** (`economy.md`, seção 6, plano B da Q22), com duas opções: **(1)** aumentar o consumo de tecido (mais linhas ou `period_days` menores em `site_upkeep`; só dados) ou **(2)** o mercado pagar as horas paradas dessas duas receitas, como paga a folha dos postos. A calibração só em dados da LW-112 vem antes e **não** precisa dele.
 
 ## `site_params.json` (LW-092): eficiência dos locais (uma linha só, `id` = `site_defaults`)
 
@@ -243,11 +279,11 @@ Arthur decidiu o princípio (**nenhum povoado se baste sozinho**) e a criação 
 | B | `innkeeper` (3) | `post_b_inn` | 3 | 8 |
 | C | `miner` (novo), `artisan`, `guard`, `innkeeper` | os 3 locais de produção e os 2 postos | **[PENDENTE, DEC-040]** | a criar (capacidade [HIP]) |
 
-**Basta um posto por ofício e por povoado** (8 guardas e 6 estalajadeiros cabem em locais de 12; 5 e 3, em locais de 8). Só os locais `grow_grain` precisam de **dois locais cada**, porque 24 e 16 lavradores passam da capacidade de um local. Isso exige **10 locais `work` novos** e a coluna **`work_place_id` em `population.json`** (decisão de Arthur: a população inicial nasce empregada por dados; o carregador do `npc` passa a aceitar a coluna, mudança pequena de código). A população do 3º povoado e os **hashes novos** (o oráculo e o soak de 30 dias; o `run_sim` não muda, porque não registra módulos) são da LW-097, **com a aprovação de Arthur dos valores novos**.
+**Basta um posto por ofício e por povoado** (8 guardas e 6 estalajadeiros cabem em locais de 12; 5 e 3, em locais de 8). Só os locais `grow_grain` precisam de **dois locais cada**, porque 24 e 16 lavradores passam da capacidade de um local. Isso exige **10 locais `work` novos** e a coluna **`work_place_id` em `population.json`** (decisão de Arthur: a população inicial nasce empregada por dados; o carregador do `npc` passa a aceitar a coluna, mudança pequena de código). A população do 3º povoado e os **hashes novos** (o oráculo e o soak de 30 dias; o `run_sim` não muda, porque não registra módulos) são da LW-097 (**marco 3** de hash, por bloco: `economy.md`, seção 2; o código do `run_sim` não muda), **com a aprovação de Arthur dos valores novos**.
 
 **Quem depende de quem:** A não faz `bread` nem `fabric` (do B) nem `tool` (do C); B não faz `flour` nem `plank` (do A) nem `tool` (do C); C não faz `wood` (do A ou do B), comida (`grain` do A ou do B, `bread` do B), `plank` nem `fabric`.
 
-**Teste de dados `test_economy_distribution.gd` (LW-097) [PROPOSTA].** Seja `Produzido(P)` o conjunto de bens que os locais de produção do povoado `P` produzem (`production_sites` + `recipe_outputs`) e `Necessário(P)` a união dos insumos das receitas de `P` (`recipe_inputs`), dos bens de manutenção dos locais de `P` (`site_upkeep`) e de `bread`. **`test_no_settlement_is_self_sufficient`:** para todo povoado `P`, `Necessário(P)` **menos** `Produzido(P)` **não é vazio**. **`test_every_needed_good_has_a_producer`:** todo bem de algum `Necessário(P)` é produzido por algum local de algum povoado. Com a distribuição proposta: A depende de `tool` e `bread`; B, de `flour`, `tool` e `plank`; C, de `wood`, `plank` e `bread`. O teste lê só tabelas da economia e vem **com os dados do 3º povoado, na LW-097**.
+**Teste de dados `test_economy_distribution.gd` (LW-097) [PROPOSTA].** Seja `Produzido(P)` o conjunto de bens que os locais de produção do povoado `P` produzem (`production_sites` + `recipe_outputs`) e `Necessário(P)` a união dos insumos das receitas de `P` (`recipe_inputs`), dos bens de manutenção dos locais de `P` (`site_upkeep`) e de `bread`. **`test_no_settlement_is_self_sufficient`:** para todo povoado `P`, `Necessário(P)` **menos** `Produzido(P)` **não é vazio**. **`test_every_needed_good_has_a_producer`:** todo bem de algum `Necessário(P)` é produzido por algum local de algum povoado. Com a distribuição proposta: A depende de `tool`, `fabric` e `bread`; B, de `flour`, `tool` e `plank` (B tece o próprio tecido); C, de `wood`, `plank`, `fabric` e `bread`. O tecido conta como bem necessário porque `site_upkeep` o lista (Q22). O teste lê só tabelas da economia e vem **com os dados do 3º povoado, na LW-097**.
 
 ## Ofícios novos (dado do `npc`)
 
@@ -259,4 +295,4 @@ Arthur decidiu o princípio (**nenhum povoado se baste sozinho**) e a criação 
 
 ## Testes previstos para estes dados (nas tarefas que criam cada tabela)
 
-Arquivo real carrega e devolve os objetos tipados; **dado inválido falha** apontando arquivo, item e campo (campo ausente, tipo errado, campo desconhecido, id repetido, referência quebrada, faixa inválida, vocabulário fora do fechado, par repetido, `min_factor_bp` maior que `max_factor_bp`, `spread_bp` 0, `min_efficiency_bp` 0); a regra de margem e a de "um bem, uma receita"; **manutenção** (testes de dados e de propriedade, acima); **`test_economy_distribution.gd`** (LW-097, com `test_initial_stock_covers_30_days`); **teto de compra** (`buy_cap_bp` de 10000 ou mais; `initial_stock` dentro do teto); a conferência entre módulos do verificador LW-093a (um caso negativo para `need_id`, `occupation_id`, `settlement_id`, `place_id`, `work_place_id` e `workers_wanted`); carregar duas vezes dá o mesmo resultado; `tools/validate_data` aceita a pasta `data/economy/` e roda dentro do `check_all`.
+Arquivo real carrega e devolve os objetos tipados; **dado inválido falha** apontando arquivo, item e campo (campo ausente, tipo errado, campo desconhecido, id repetido, referência quebrada, faixa inválida, vocabulário fora do fechado, par repetido, `min_factor_bp` maior que `max_factor_bp`, `spread_bp` 0, `min_efficiency_bp` 0); a regra de margem e a de "um bem, uma receita"; **manutenção** (testes de dados e de propriedade, acima; o vocabulário de `site_upkeep` é `tool`, `plank` e `fabric`; o tecido entra em `test_initial_stock_covers_30_days` e em `test_every_needed_good_has_a_producer`); **`test_economy_distribution.gd`** (LW-097, com `test_initial_stock_covers_30_days`); **teto de compra** (`buy_cap_bp` de 10000 ou mais; `initial_stock` dentro do teto); a conferência entre módulos do verificador LW-093a (um caso negativo para `need_id`, `occupation_id`, `settlement_id`, `place_id`, `work_place_id` e `workers_wanted`); carregar duas vezes dá o mesmo resultado; `tools/validate_data` aceita a pasta `data/economy/` e roda dentro do `check_all`.
