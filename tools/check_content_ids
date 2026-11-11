@@ -1,0 +1,10 @@
+#!/bin/sh
+# LW-093a: confere os ids de conteúdo (constantes do código e colunas que citam ids de outro módulo). Uso: tools/check_content_ids [raiz-do-projeto]
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+exec "$godot_bin" --headless --path "$project_dir" -s res://tools/check_content_ids.gd -- "${1:-$project_dir}"
