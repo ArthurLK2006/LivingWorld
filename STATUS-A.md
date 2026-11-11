@@ -1,4 +1,4 @@
-11/11/2026 09:12 (Brasília) · PRONTA PARA REVISÃO · LW-093b: teste de que um ofício novo só por JSON funciona e é validado (ramo `lw-093b-oficio-so-por-json`, commit `1dbf3a8`, empurrado; `main` segue em `63caee7`; `check_all` VERDE; só teste, nenhum código de jogo, nenhum hash mudou); falta a sua auditoria
+11/11/2026 09:26 (Brasília) · SEQUÊNCIA DA A, Parte 1 CONCLUÍDA · LW-093b (Fase B): no `main` (`4ada136`) pelo seu "APROVADO LW-093b" (avanço simples; `main` andou duas vezes durante a parte e refiz a junção e o `check_all` a cada vez; `check_all` verde: 125 scripts, 1.203 testes, 262.120 asserts, mesmos hashes); agora a Parte 2 (LW-087, começa pelo GATE)
 
 # RELATÓRIO — LW-093b: ofício novo só por JSON     Status: PRONTA PARA REVISÃO
 
