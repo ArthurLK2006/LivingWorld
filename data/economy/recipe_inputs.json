@@ -1,0 +1,9 @@
+[
+	{"id": "mill_flour_in_grain", "recipe_id": "mill_flour", "good_id": "grain", "quantity": 6},
+	{"id": "bake_bread_in_flour", "recipe_id": "bake_bread", "good_id": "flour", "quantity": 6},
+	{"id": "saw_plank_in_wood", "recipe_id": "saw_plank", "good_id": "wood", "quantity": 6},
+	{"id": "smelt_metal_in_ore", "recipe_id": "smelt_metal", "good_id": "ore", "quantity": 4},
+	{"id": "smelt_metal_in_wood", "recipe_id": "smelt_metal", "good_id": "wood", "quantity": 2},
+	{"id": "forge_tool_in_metal", "recipe_id": "forge_tool", "good_id": "metal", "quantity": 2},
+	{"id": "weave_fabric_in_wool", "recipe_id": "weave_fabric", "good_id": "wool", "quantity": 4}
+]

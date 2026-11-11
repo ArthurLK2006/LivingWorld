@@ -1,0 +1,3 @@
+[
+	{"id": "site_defaults", "efficiency_step_bp": 1000, "efficiency_recover_bp": 1000, "min_efficiency_bp": 3000}
+]

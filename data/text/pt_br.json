@@ -63,5 +63,15 @@
 	"good.metal.name": "Metal",
 	"good.tool.name": "Ferramenta",
 	"good.wool.name": "Lã",
-	"good.fabric.name": "Tecido"
+	"good.fabric.name": "Tecido",
+	"recipe.grow_grain.name": "Cultivar grão",
+	"recipe.cut_wood.name": "Cortar madeira",
+	"recipe.mine_ore.name": "Extrair minério",
+	"recipe.shear_wool.name": "Tosquiar lã",
+	"recipe.mill_flour.name": "Moer farinha",
+	"recipe.bake_bread.name": "Assar pão",
+	"recipe.saw_plank.name": "Serrar tábuas",
+	"recipe.smelt_metal.name": "Fundir metal",
+	"recipe.forge_tool.name": "Forjar ferramenta",
+	"recipe.weave_fabric.name": "Tecer tecido"
 }

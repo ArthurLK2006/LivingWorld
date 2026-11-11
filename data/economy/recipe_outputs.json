@@ -1,0 +1,12 @@
+[
+	{"id": "grow_grain_out_grain", "recipe_id": "grow_grain", "good_id": "grain", "quantity": 8},
+	{"id": "cut_wood_out_wood", "recipe_id": "cut_wood", "good_id": "wood", "quantity": 6},
+	{"id": "mine_ore_out_ore", "recipe_id": "mine_ore", "good_id": "ore", "quantity": 4},
+	{"id": "shear_wool_out_wool", "recipe_id": "shear_wool", "good_id": "wool", "quantity": 4},
+	{"id": "mill_flour_out_flour", "recipe_id": "mill_flour", "good_id": "flour", "quantity": 6},
+	{"id": "bake_bread_out_bread", "recipe_id": "bake_bread", "good_id": "bread", "quantity": 6},
+	{"id": "saw_plank_out_plank", "recipe_id": "saw_plank", "good_id": "plank", "quantity": 4},
+	{"id": "smelt_metal_out_metal", "recipe_id": "smelt_metal", "good_id": "metal", "quantity": 3},
+	{"id": "forge_tool_out_tool", "recipe_id": "forge_tool", "good_id": "tool", "quantity": 2},
+	{"id": "weave_fabric_out_fabric", "recipe_id": "weave_fabric", "good_id": "fabric", "quantity": 4}
+]
