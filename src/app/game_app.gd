@@ -44,7 +44,7 @@ func _ready() -> void:
 ## usar um host próprio, sem reiniciar o mundo dos autoloads.
 func start_default_game(host: SimulationHostNode) -> void:
 	_places = _load_places()
-	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points(), _load_npc_setup(), NEW_GAME_START_MINUTE)
+	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points(), _load_npc_setup(), NEW_GAME_START_MINUTE, _load_economy_setup())
 
 
 func bind_host(host: SimulationHostNode) -> void:
@@ -105,6 +105,15 @@ func _load_npc_setup() -> NpcSetup:
 	var setup: NpcSetup = NpcSetup.from_dir(NPC_DATA_DIR, SettlementService.new(_settlements, _places), OS.is_debug_build())
 	if not setup.result.ok:
 		push_error("GameApp: dados do npc não carregados de '%s': %s" % [NPC_DATA_DIR, setup.result.message])
+		return null
+	return setup
+
+
+## Dados da economia de `EconomySetup.DEFAULT_DIR` (LW-093): bens, tipos de dono, mercados, preços e produção; nulo (depois de push_error) se não carregarem, e o jogo segue com a economia sem definições.
+func _load_economy_setup() -> EconomySetup:
+	var setup: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR, OS.is_debug_build())
+	if not setup.result.ok:
+		push_error("GameApp: dados da economia não carregados de '%s': %s" % [EconomySetup.DEFAULT_DIR, setup.result.message])
 		return null
 	return setup
 

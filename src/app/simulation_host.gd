@@ -16,25 +16,30 @@ var character: CharacterModule
 var interaction: InteractionService
 ## Módulo `npc` do mundo atual (LW-070a); nulo quando o jogo começou sem terreno. O `GameApp` o entrega à ponte (foco do LOD, Intents e resultados).
 var npc: NpcModule
+## Módulo `economy` do mundo atual (LW-093); nulo quando o jogo começou sem terreno.
+var economy: EconomyModule
 
 
 ## Cria um mundo novo, encerrando o anterior se houver. Com `terrain`, registra os módulos do jogo (GameModules); sem ele o mundo
 ## nasce só com o núcleo (testes e ferramentas que não precisam do terreno). `points` são os pontos de interesse já lidos (LW-049).
 ## `npc_setup` (LW-067): os dados do `npc` já lidos; sem ele o `npc` nasce sem NPCs. Falha de registro: push_error e o mundo segue sem módulos.
 ## `start_minute` (LW-042b): tempo simulado em que o mundo novo começa, repassado ao `SimulationRunner`; o padrão 0 é 00:00 do dia 1.
-func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null, start_minute: int = 0) -> void:
+## `economy_setup` (LW-093): os dados da economia já lidos; sem ele a `economy` nasce sem definições (sem bens, mercados nem dinheiro inicial), como antes.
+func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null, start_minute: int = 0, economy_setup: EconomySetup = null) -> void:
 	if runner != null:
 		runner.finish()
 	character = null
 	interaction = null
 	npc = null
+	economy = null
 	runner = SimulationRunner.new(world_seed, start_minute)
 	if terrain != null:
-		var modules: GameModules = GameModules.register(runner, terrain, points, npc_setup)
+		var modules: GameModules = GameModules.register(runner, terrain, points, npc_setup, economy_setup)
 		if modules.result.ok:
 			character = modules.character
 			interaction = modules.interaction
 			npc = modules.npc
+			economy = modules.economy
 		else:
 			push_error("SimulationHost.start_new_game: módulos do jogo não registrados (%s): %s" % [modules.result.code, modules.result.message])
 	runner.start_new_game()
