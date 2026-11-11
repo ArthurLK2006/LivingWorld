@@ -1,4 +1,4 @@
-11/11/2026 14:43 (Brasília) · BLOCO 2 DA A: PRONTA PARA REVISÃO + correções da revisão do ramo B (I1, I2, I3, I5) no ramo `lw-088d-correcoes-da-revisao-b` (commit `f3054f1`, `check_all` VERDE: 142 scripts, 1.293 testes; hashes e `run_sim` iguais); I4 (NpcDied por nome) aguarda decisão do Arthur; aguardando o "APROVADO LW-088a a LW-093a" (Fase B não feita, LW-093 não iniciada)
+11/11/2026 16:53 (Brasília) · FASE B FEITA: o `main` está em `d1d3d8b` (avanço direto, sem tag): economia do marco 1 (LW-088a a LW-093a) mais as correções da LW-088d e o status da Fase 3 (6 de 30; projeto 93 de 192); `check_all` VERDE na junção `0760c5c` e no commit final `d1d3d8b` (142 scripts, 1.293 testes); seguindo para a T1 (`lw-092d-correcoes-da-revisao`)
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
