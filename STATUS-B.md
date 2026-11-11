@@ -1,4 +1,4 @@
-11/11/2026 13:54 (Brasília) — CONCLUÍDA a LW-146f PARCIAL (world, npc, app e catálogo de eventos): ramo `lw-146f-extensoes`, commit `961d2c4`, ENVIADO e fora do `main`; `check_all` verde (1203 de 1203); FICAM para depois da LW-117: `economy.md` e os comandos de `politics`, `factions` e rumores (parte 146g); PRONTA PARA REVISÃO; parei (regra 13)
+11/11/2026 16:06 (Brasília) — FASE B da LW-146f PARCIAL CONCLUÍDA: `main` agora em `20a788f` (avanço rápido, sem tag); `check_all` verde (1203 de 1203); EM CURSO: as revisões R1 (economia da A, parte 2) e R2 (contratos da C), só leitura; a 146g só depois da LW-117 no `main` e do seu "vá".
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -210,3 +210,17 @@ Critério (documentos): as extensões da parte autorizada existem; `events.md` t
 - **Avanço:** pré-voo e contratos da Fase 5 escritos e no `main` (146a a e); a 146f está **pela metade** (a parte sem `economy` e sem Fase 4, num ramo fora do `main`). Código da Fase 5: **0%**.
 - **Próxima tarefa recomendada:** a **Fase B da 146f parcial** (levar o ramo ao `main`, só com a sua frase de aprovação e o passo a passo) e, depois da LW-117, a **146g**. **Não iniciadas.**
 - **Git:** 1 commit `961d2c4` ("LW-146f: extensões de world, npc, app e catálogo de eventos para a Fase 5 (parte sem economy nem Fase 4)") com `Co-Authored-By`, no ramo `lw-146f-extensoes`, **enviado** por `ramo:ramo` (a partir de `ffb1e03`). Nada no `main`, nenhuma tag, sem force, rebase ou reset.
+
+## FASE B — LW-146f PARCIAL no `main` (11/11/2026, autorizada por escrito por Arthur: "APROVADO LW-146f (parcial)")
+
+**Efeito:** o `main` agora tem as extensões de `world`, `npc` e `app` e o catálogo de eventos (11 eventos planejados novos, de 16 para 27). Só documentos; nenhum código mudou. **A parte `economy` e a dos comandos da Fase 4 (146g) continua pendente.**
+
+**Passos, com o que vi:**
+- **B0:** `git fetch --all --tags --prune`; `origin/main` seguia em `ffb1e03` (a conversa A não levou a economia antes). O ramo `lw-146f-extensoes` (`961d2c4`) descende dele: avanço rápido possível, **sem merge e sem conflito** (o conflito esperado em `docs/events.md` não aconteceu).
+- **B1:** um commit, `20a788f` ("LW-146f: Fase B, linha de entrada da parte parcial no ROADMAP_STATUS"), só com `docs/ROADMAP_STATUS.md` (+2 linhas: o parágrafo e a linha em branco antes dele). Ele diz que a 146f parcial entrou no `main` e que a 146g segue pendente; **não altera contagens nem porcentagens**. `git diff --check` limpo. Commit com `Co-Authored-By`.
+- **B2:** `tools/check_all` **uma vez**, no commit final `20a788f`: **VERDE**, código de saída 0 ("VERDE: arquitetura, dados e etapa de testes aprovadas."). `Scripts 125`, `Tests 1203`, `Passing Tests 1203`, `Asserts 262120`, `Time 177,037 s` (início 16:00:59, fim 16:04:34). `Warnings 1` e `Deprecated 1` são **idênticos** aos das três execuções anteriores. O `Deprecated` vem de um teste que já existia (`tests/unit/test_app_nodes.gd:78` usa `wait_frames`, que o GUT marca como substituído por `wait_physics_frames`); a origem do `Warnings 1` **não identifiquei**. Nenhum dos dois é desta mudança (só mudaram documentos).
+- **B3:** `git fetch` de novo: `origin/main` ainda em `ffb1e03`. Push do ramo `lw-146f-extensoes:lw-146f-extensoes` (`961d2c4..20a788f`) e depois `lw-146f-extensoes:main` (`ffb1e03..20a788f`), **na primeira tentativa**, só avanço rápido, sem `--force`. Conferi depois: `origin/main` = `origin/lw-146f-extensoes` = `20a788f`. **Tags:** nenhuma criada (as remotas continuam `fase-0-concluida`, `fase-1-concluida` e `fase-2-concluida`).
+
+**Não fiz:** `--force`, rebase, reset, stash, tag, apagar ramo; nada em `DECISIONS.md`, GDD, arquitetura, AGENTS, roadmap, `project.godot`, `.gitignore`, `data/`, `addons/`, fixtures nem em módulos. **A 146g não foi iniciada.**
+
+**Git:** o `main` do seu clone principal (`/Users/arthurlk/LivingWorld`) **não foi atualizado por mim** e segue em `ce430cf`: só o remoto avançou. Se quiser, é um `git pull --ff-only` seu lá.
