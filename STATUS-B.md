@@ -1,4 +1,4 @@
-11/11/2026 19:39 (Brasília) — CONCLUÍDA a LW-146g (economia da Fase 5, comandos dos eventos de mundo e correções das fichas): ramo `lw-146g-extensoes`, commit `a9fd5c1`, FORA do `main`; `check_all` verde (1293 de 1293); 13 arquivos de `docs/`, nenhum código; PRONTA PARA REVISÃO; aguarda a sua leitura e o passo a passo da Fase B; PARADO (regra 13).
+11/11/2026 19:45 (Brasília) — FASE B DA LW-146g CONCLUÍDA: `main` agora em `a07492c` (avanço rápido, sem tag); `check_all` verde (1293 de 1293); relatório da 146g já no `status-b`; pendências de design da seção 18.9 seguem com você; PARADO (regra 13).
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -575,3 +575,20 @@ Tudo é **PROPOSTA**: nomes e números ([HIP]) trocam sem custo. Os quatro tipos
 - **Avanço:** pré-voo e contratos da Fase 5 **no `main`** (146a a f) e agora **o resto em revisão** (146g, no ramo, fora do `main`). Código da Fase 5: **0%**.
 - **Próxima tarefa recomendada:** a **Fase B da 146g** (levar o ramo ao `main`), só com a sua frase de aprovação e o passo a passo. Não iniciada.
 - **Git:** **um commit**, `a9fd5c1` ("LW-146g: economia da Fase 5 (monte, metal, modificador, recompra), comandos dos eventos de mundo e correções das fichas"), com `Co-Authored-By`, no ramo `lw-146g-extensoes` (a partir de `0e20369`, **sem upstream**). Push **só** de `lw-146g-extensoes` e de `status-b`, por `ramo:ramo`. Nada no `main`, nenhuma tag, sem force, rebase ou reset.
+
+
+## FASE B — LW-146g no `main` (11/11/2026, autorizada por escrito por Arthur: "Sim nos itens 1 a 5, sem tag")
+
+**Efeito:** o `main` agora tem a seção 18 do `economy.md` (monte no chão, metal forjado, modificador de produção e recompra de item), os três comandos dos eventos de mundo da Fase 4 (`politics`, `npc` e `factions`), as correções das fichas (`combat`, `world`, `app`, `npc`, `ecology`, `character`, `dynamic_events`) e o catálogo com **60 eventos**. Só documentos; nenhum código mudou.
+
+**Passos, com o que vi:**
+- **B0:** `git fetch --all --tags --prune`; `origin/main` seguia em `0e20369`; o ramo `lw-146g-extensoes` (`a9fd5c1`) descende dele: avanço rápido possível, **sem merge e sem conflito** (o `docs/backlog.md`, que eu previa em conflito com os ramos da A, só conflitaria **com eles**, não com o `main`).
+- **B1:** um commit, `a07492c` ("LW-146g: Fase B, linha de entrada no ROADMAP_STATUS"), só com `docs/ROADMAP_STATUS.md` (+2 linhas: o parágrafo e a linha em branco antes dele). Diz que a 146g entrou no `main`, sem tag, e que **fecha a pendência da LW-146f parcial**; **não altera contagens nem porcentagens**. `git diff --check` limpo. Commit com `Co-Authored-By`.
+- **B2:** `tools/check_all` **uma vez**, no commit final `a07492c` (a primeira linha da saída o confirma): **VERDE**, código 0 (19:40:55 a 19:44:57), `Scripts 142`, `Tests 1293`, `Passing Tests 1293`, `Asserts 292694`, `Time 179,45 s`; `Warnings 1` e `Deprecated 1` iguais aos de sempre; "IDS DE CONTEÚDO: tudo existe (51 conferências)"; nenhum `SCRIPT ERROR` nem `Parse Error`. Havia **outro processo do Godot** rodando no Mac no início (de outra conversa, provavelmente); o resultado não foi afetado.
+- **B3:** `git fetch` de novo: `origin/main` ainda em `0e20369`. Push do ramo `lw-146g-extensoes:lw-146g-extensoes` (`a9fd5c1..a07492c`) e depois `lw-146g-extensoes:main` (`0e20369..a07492c`), **na primeira tentativa**, só avanço rápido, sem `--force`. Conferi depois: `origin/main` = `origin/lw-146g-extensoes` = `a07492c`. **Tags:** nenhuma criada (as remotas continuam `fase-0-concluida`, `fase-1-concluida` e `fase-2-concluida`).
+
+**Não fiz:** `--force`, rebase, reset, stash, tag, apagar ramo; nada em `DECISIONS.md`, GDD, arquitetura, AGENTS, roadmap, `project.godot`, `data/`, código nem módulos.
+
+**Pendências que seguem abertas (da seção 18.9 e do relatório da 146g), todas suas:** os bens em quantidade que caem ao morrer; o saque de bem de NPC morto (DEC-146); o NPC ferreiro; a **tarefa nova da recompra** no roadmap; a DEC do I4 (conversa A); o conserto da linha da DEC-053 (`DECISIONS.md:1023`). **A conversa C ainda não sabe** que editei `politics.md`, `factions.md` e `dados.md` (blocos "LW-146g") nem do pedido do `cause_id` opcional em `request_apply_casualty` (`npc.md` 15.9): **não repassei nada**.
+
+**Git:** `main` em `a07492c` (dois commits novos: `a9fd5c1` e `a07492c`); o ramo `lw-146g-extensoes` ficou igual ao `main`.
