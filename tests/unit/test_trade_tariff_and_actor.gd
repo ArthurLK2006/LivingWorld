@@ -1,7 +1,6 @@
 extends GutTest
 ## LW-092e (pedido de Arthur em 11/11/2026): (a) a tarifa que a regra pede é `ceil_div(total × tariff_bp, 10000)` com mínimo 1 quando `tariff_bp > 0` (antes era para baixo e uma ordem pequena pagava 0), continua só calculada e devolvida,
-## sem cobrança; (b) `peek_quote` recebe o ATOR, porque a regra de comércio pode depender de quem compra (proibição e tarifa por ator). Usa os dados REAIS (data/economy): mercado A (dono 1), NPC (dono 2, 200) e um ator (dono 3) que
-## não abriu conta. Conta à mão: uma unidade de pão (preço 10, spread de 10%) custa 11 na compra.
+## sem cobrança; (b) `peek_quote` recebe o ATOR, porque a regra de comércio pode depender de quem compra (proibição e tarifa por ator). Usa os dados REAIS (data/economy): mercado A (dono 1), NPC (dono 2, 200) e um jogador (dono 3, com conta aberta: desde a junção com a LW-092d a cotação com ator confere que o ator existe). Conta à mão: uma unidade de pão (preço 10, spread de 10%) custa 11 na compra.
 
 const SETTLEMENT_A: String = "test_settlement_a"
 const MARKET: int = 1
@@ -38,6 +37,7 @@ func _module(rules: TradeRules) -> EconomyModule:
 	var book: OwnerBook = OwnerBook.new()
 	book.open_owner(MARKET, MarketBook.KIND_MARKET)
 	book.open_owner(NPC, "npc")
+	book.open_owner(OTHER_ACTOR, "player")
 	var ledger: Ledger = Ledger.new(book)
 	ledger.mint(MARKET, 3000, Ledger.REASON_GAME_START)
 	ledger.mint(NPC, 200, Ledger.REASON_GAME_START)
