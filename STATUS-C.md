@@ -1,4 +1,82 @@
-11/11/2026 18:40 (Brasília) — CONCLUÍDA: LW-117g (ajustes das fichas da Fase 4: DEC-227 a DEC-233, rótulos aprovados, README dos módulos; só documentos): commit c84c0fe ENVIADO ao ramo lw-117g-ajustes-das-fichas (empilhado na 117f, fora do main); check_all VERDE (1.203 de 1.203). LW-117 inteira (a a g) entregue; falta a aprovação da 117g e a Fase B (por ordem escrita). main = 0760c5c, intocado por mim: a pilha conflita em DECISIONS (29), events (2), npc (1) e world (1). Sem merge, sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 19:11 (Brasília) — CONCLUÍDA: LW-117h (ajustes da revisão R3 nas fichas da Fase 4; registro 0016 dos 3 desvios) e FASE B da LW-117 (117a a 117h) no main: ramo lw-117h-ajustes-da-r3 em 0e20369 ENVIADO; main avançou d1d3d8b..0e20369 por avanço simples (só docs/: DECISIONS com DEC-001 a DEC-233 e próximo livre DEC-234, events com 58 eventos, npc 15+16, world, ROADMAP_STATUS sem mexer em contagens); check_all VERDE no HEAD final (142 scripts, 1.293 testes, 292.694 asserts). Conflitos: DECISIONS 29, events 2, npc 1, world 1, resolvidos mantendo os dois lados. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117h E FASE B DA LW-117 — RELATÓRIO — Ajustes da revisão R3 nas fichas da Fase 4 e entrada da LW-117 (117a a 117h) no `main` (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: a LW-117h (só documentos, ramo `lw-117h-ajustes-da-r3` saindo de `lw-117g-ajustes-das-fichas`) com os itens a a i da revisão R3 da frente B e o registro dos 3 desvios técnicos; e, com o `check_all` verde, a Fase B (junção com o `main` `d1d3d8b`, uma linha em `docs/ROADMAP_STATUS.md`, `check_all` de novo e envio por avanço simples). Li: o AGENTS 0.4; as autorizações de Arthur (itens 1 a 8); a seção "REVISÃO R3" do STATUS-B (como informação, não como ordem); `docs/decisions/` e o `origin/main`; as fichas, o catálogo e os modelos de dados da pilha. Decisões de que dependo: DEC-202 a DEC-212, 224 a 226 e 227 a 233 (APROVADAS) e DEC-213 a DEC-223 (PROPOSTA, mantidas). Não toquei em `DECISIONS.md` na 117h; só na junção, como autorizado.
+
+## 1. RESUMO
+A LW-117h aplicou nas fichas da Fase 4 os nove pontos da R3 (`npc.md` seção 16, `peek_npc_ids_of`, `ActReported` como entrada normalizada, baixa em combate por um caminho só, ids de dados × ids de execução, ordem única de registro no `World`, dados) e criou o registro `0016` com os 3 desvios que você aprovou. Com o `check_all` verde, juntei o ramo ao `main` (4 arquivos de texto em conflito, todos resolvidos mantendo os dois lados), acrescentei a linha de status e enviei por avanço simples: **o `main` foi de `d1d3d8b` para `0e20369`**. Só documentos: nenhum código, dado, teste ou fixture difere do `main`.
+
+## 2. ARQUIVOS CRIADOS
+- `docs/decisions/0016-desvios-tecnicos-da-fase-4.md` — os 3 desvios (país com ID próprio; `politics` com 4 importações; `military` com 5), aprovados por você em 11/11/2026, reavaliados na LW-144.
+
+## 3. ARQUIVOS MODIFICADOS
+- **Commit da 117h (`459e186`, 9 arquivos, +100/−90 e o `0016`):** `docs/modules/npc.md` (seção 15 da Fase 4 vira 16; baixa; `peek_npc_ids_of`; nota de nome), `factions.md`, `politics.md`, `military.md`, `chronicle.md`, `world.md`, `docs/events.md`, `docs/fase-4/dados.md`, `docs/decisions/0015-...`.
+- **Junção (`b1db754`):** `docs/DECISIONS.md` (+496 contra o `main`), `docs/events.md`, `docs/modules/npc.md`, `world.md` e os rótulos de Estado ("incorporado ao `main` em 11/11/2026") em `chronicle.md`, `factions.md`, `military.md`, `politics.md`, `economy.md` (seção 17), `dados.md`, `0015`.
+- **Status (`0e20369`):** `docs/ROADMAP_STATUS.md` (+2 linhas: a entrada, sem mexer em contagens).
+- Contra o `main` anterior, o ramo difere em **17 arquivos, todos em `docs/`**; entre eles `DEVELOPMENT_ROADMAP.md` (+41/−32) e `backlog.md` (+7), que são das partes 117a e seguintes que você já aprovou.
+
+## 4. DECISÕES TÉCNICAS
+**Itens da R3 (todos PROPOSTA, como você mandou):**
+- **a)** `npc.md`: a seção 15 da Fase 4 virou **16** (títulos e subseções 16.1 a 16.10), e as citações "`npc.md` 15.x" nas outras fichas, em `events.md`, `dados.md` e `0015` foram trocadas; o erro do `world.md:96` agora aponta 16.3 (povoado de moradia). A 15 do `main` (da B) ficou como estava, antes da 16.
+- **b)** `peek_npc_ids_of(occupation_id, settlement_id)` no `npc.md` e no `factions.md`; a nota diz que o `peek_npc_ids()` sem argumento já existe.
+- **c)** `ActReported` virou entrada normalizada da `politics`: um **adaptador da `politics`** ouve `CombatantWounded` (agressão), `CombatantDied` (morte) e `ItemTaken` (roubo) e traduz pela tabela **`act_sources.json`** (arquivo novo em `data/politics/`, agora 15 com ele); o comando de desenvolvimento publica direto. `events.md` e `politics.md` trocaram o publicador. **Escolha minha:** pus o adaptador **dentro da `politics`** (ela já importa o `npc`; não importa o `combat`); a alternativa seria um adaptador no `app`. **Em aberto para a LW-164:** como o adaptador sabe se o ator é o jogador (proposta: o tipo de dono `player` da `economy`).
+- **d)** Baixa com um caminho só: `request_apply_casualty(npc_id, reason)`, `reason` = `battle` (`military`) ou `combat` (o `combat`, ao publicar o `CombatantDied`); "só `military` e `combat` a chamam"; o `npc` **não** ouve o `CombatantDied` por nome. **Acréscimo meu [PROPOSTA]:** o `military` conta cada baixa uma vez (o `NpcDied` de causa `battle` que volta não conta de novo). No `military.md` também corrigi `motivo` para `reason`.
+- **e)** `peek_faction` e `peek_polity` devolvem o `content_id`; consultas novas `peek_faction_id_of(content_id)` e `peek_polity_id_of(content_id)`; a `politics` resolve a facção de governo e o `military` resolve `force_seed.owner_id` no `on_new_game`, guardando só o inteiro.
+- **f)** `dados.md`: as linhas `soldier` e `bandit` de `population.json` ficam **sem** a coluna `work_place_id`; escrevi a ordem dos dados (o ofício em `occupations.json` antes da linha de população) e a lista das colunas novas que o `check_content_ids` precisará conhecer (`occupation_id`, `settlement_id`, `culture_id`, `faction_id`, `owner_id`, `province_id`, `good_id`, `rank_id`, `node_id`, `subject_id`; as duas últimas são condicionais). O verificador **não** foi alterado.
+- **g)** Ordem única do `World` em `factions.md`, `politics.md`, `military.md` e `chronicle.md`: `character`, `economy`, `npc`, `ecology`, `factions`, `politics`, `combat`, `military`, `events`. O `military.md` agora diz que, na Fase 5, importa também a `api` do `combat` (6 importações; registrado no `0016`).
+- **h)** `NpcDied`: ficou a linha do `main` (a `economy` a ouve) com a carga da Fase 4 (`battle`, e `combat` na Fase 5); `RouteStateChanged` sem o `request_block_route`. **Testemunhas:** no `npc.md` 16.6, "testemunha" é só a contagem de presentes da reputação (GDD 20.3), e o que a 15.5 faz (T2 grava `item_taken`) ganhou o nome **"observação de item"** **dentro da minha seção**; **não editei o texto da B**.
+- **i)** `faction_doctrine.json` entrou na lista do `factions.md` seção 11; `cultures.json` passou para `data/world/cultures.json` (o roadmap, protegido, ainda diz `data/cultures.json`); `severity_rules.json` ganhou a linha `shortage_declared_severe` (lê o campo `severity`; **a classe do evento não muda**); o `dados.md` diz quem acrescenta as linhas de crônica da Fase 5: `PlayerDefeated` na LW-156d, `WorldEventStarted` e `WorldEventEnded` na LW-162, `CombatantDied` na LW-164 (a atribuição por evento é minha, a partir do roadmap; sua lista citava as três tarefas).
+- **Os 2 acréscimos da 117g** (`actor_is_player` no `ActReported` e a nota das 8 rodadas) agora estão rotulados **PROPOSTA**.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma.
+
+**Fase B:** junção por `git merge origin/main`; conflitos resolvidos mantendo os dois lados (lista no item 6). Na `DECISIONS.md` a junção por linhas não separava as entradas; então refiz **por estrutura** (as 23 entradas da Fase 5 antes das 32 da Fase 4, os índices e as notas conforme cada lado) e conferi por script.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` no ramo da 117h antes da junção (`459e186`): exit 0, **VERDE**; 125 scripts, 1.203 testes, 1.203 aprovados, 262.120 asserts, 188,9 s.
+- `tools/check_all` **no HEAD final `0e20369`** (depois de `--import`): exit 0, **VERDE**; arquitetura (nove verificações), GDScript sem avisos de compilação (364 scripts), "IDS DE CONTEÚDO: tudo existe (51 conferências)", **142 scripts, 1.293 testes, 1.293 aprovados, 292.694 asserts**, 203,3 s. **Números idênticos aos do `main` `d1d3d8b`**, como esperado numa junção só de documentos.
+- Conferências de texto (script próprio): negrito e crases balanceados; nenhuma citação de STATUS nem de "da A/B/C" fora do que você mandou; DEC citadas existem (menos as da Fase 5, que agora existem no `main`).
+- **Conferências da `DECISIONS.md` juntada:** 233 entradas "### DEC-" e 233 linhas de índice, **sem buraco nem repetição** (1 a 233, em ordem, sem inversão); totais recontados do índice pelo mesmo método da LW-033A: **APROVADA 151 (20 com ressalva) · PROPOSTA 54 · PENDENTE 17 · DESCARTADA 10 · SUBSTITUÍDA 1 = 233**; todas as linhas de cada lado que não foram trocadas de propósito estão no resultado (as trocas: versão, totais, a DEC-065 do `main`, as notas e o "próximo número livre"); 0 marcadores de conflito. Cabeçalho 0.15 com parênteses balanceados; histórico com a linha 0.15 no topo.
+- **Conferências do `events.md`:** **58 eventos, 58 nomes distintos**; todas as linhas com 6 colunas.
+- `git merge-tree` antes (só leitura): conflitos em `DECISIONS.md` (29), `events.md` (2), `npc.md` (1), `world.md` (1); foi exatamente o que apareceu.
+
+## 6. RESULTADOS
+Aprovados 1.293, falhos 0, pulados 0. Critério de aceite cumprido: os itens a a i aplicados, `0016` criado, `DECISIONS.md` com DEC-001 a DEC-233 e "próximo livre" DEC-234 com as faixas (A 234 a 239, B 240 a 259, C 260 a 279), linha de status no `ROADMAP_STATUS.md`, `check_all` verde no HEAD final e envio por avanço simples. **Prova:** `git ls-remote` mostra `refs/heads/main` e `refs/heads/lw-117h-ajustes-da-r3` em `0e20369`; `git diff --name-only origin/main HEAD` antes do envio só listou `docs/`.
+
+**Conflitos da junção e como cada um foi resolvido (mantendo os dois lados):**
+1. **`docs/modules/world.md` (1 bloco):** a extensão da Fase 4 (minha) e a da Fase 5 (da B) são seções irmãs; ficaram as duas, Fase 4 primeiro. Texto da B intocado.
+2. **`docs/modules/npc.md` (1 bloco):** a seção 15 (Fase 5, da B) e a 16 (Fase 4) ficaram juntas, **na ordem 15, 16** (a minha tinha vindo primeiro no conflito e foi trocada de lugar).
+3. **`docs/events.md` (2 blocos):** (a) cabeçalho: contagem **58** (6 + 10 + 11 da Fase 5 + 31 da Fase 4), parágrafos de cada fase e a coluna "Situação" com as três fontes; (b) tabela: partindo das linhas do `main` (as 5 da economia agora `implementado, LW-090b/092b`, mais as 11 da Fase 5), reaplicando os meus acréscimos de carga (`settlement_id`, `battle`, `issuer_kind`…) linha a linha; a linha do `NpcDied` é a do `main` com a minha carga; depois as 31 da Fase 4 e as 11 da Fase 5; os dois parágrafos "Considerados e não incluídos" ficaram.
+4. **`docs/DECISIONS.md` (29 blocos):** refeito por estrutura (ver item 4): índices e entradas das duas frentes, a nota da DEC-054 ficou com **as duas notas datadas** (LW-146a e LW-117a), a DEC-065 veio APROVADA do `main`, histórico em ordem (0.15, 0.14, 0.13, 0.12, 0.11, 0.10…), versão 0.15, totais novos, "próximo número livre" DEC-234 e a nota das faixas.
+
+## 7. PROBLEMAS ENCONTRADOS
+1. **A união da seção 17 do `economy.md` com as seções 3, 5, 6, 8, 10 e 15 não foi feita** (tarifa 0, `peek_quote` sem ator, folha pelo mercado, escolta [FUT] ainda constam nas seções antigas): não fazia parte da sua ordem; o Estado da seção 17 diz isso. Precisa de uma tarefa à parte.
+2. **O código da A ainda diz o que as DEC-228 e DEC-230 mudam** (tarifa arredondada para baixo; `peek_quote` sem ator): só muda com sua autorização escrita no prompt da A.
+3. **Restos da Fase 5 (da B) que a 146g corrige:** `combat.md` ainda lista o `npc` como ouvinte do `CombatantDied` e não tem o `ActReported` do jeito novo; o `world.md` da B ainda não tem o `cause_id` opcional e o `hostile_force` em `request_set_route_state`; o `app.md` A2 ainda tem a ordem antiga de registro. **Não toquei em nada da B.**
+4. O `main` local do checkout principal (`/Users/arthurlk/LivingWorld`) está **atrasado** (`ce430cf`); não mexi (é um `git pull` seu).
+5. O `0013` (histórico) ainda escreve `request_apply_casualty(npc_id, motivo)`: deixei, é o registro do pré-voo.
+
+## 8. RISCOS
+- Eu **refiz a `DECISIONS.md` por estrutura**, não por linhas; conferi por script que nenhuma linha de nenhum dos lados sumiu sem ser troca intencional, mas é o arquivo mais sensível: vale a sua olhada na versão 0.15 (cabeçalho, totais e histórico).
+- O `act_sources.json`, o adaptador e a tabela de colunas do `check_content_ids` são **PROPOSTA** e ainda não existem em dado ou código.
+- Os valores de dados novos (`shortage_declared_severe`, linhas de `act_sources`) são **[HIP]**.
+- O `military` passa a 6 importações na Fase 5 (com o `combat`): registrado no `0016`, para a LW-144.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar a LW-117h e a Fase B.** Recomendo aprovar.
+2. **Contagem da LW-117 no avanço (não alterei):** pela regra usada para a LW-087 (quatro partes = uma tarefa), a **LW-117 deveria contar como 1 das 29 tarefas da Fase 4** (Fase 4 = 1 de 29, 3,4%; projeto = 94 de 192, 49,0%, hoje 93 de 192, 48,4%). **Recomendo contar**, quando você mandar.
+3. **Liberar a 146g da frente B** (ela só podia depois da LW-117 no `main`): decisão e ordem suas.
+4. Autorizar o código da A (tarifa e `peek_quote`) e uma tarefa para a união da seção 17 do `economy.md`.
+5. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **LW-117 inteira (117a a 117h) entregue e no `main`**; as LW-118 a LW-145 não começaram e dependem da Fase 3.
+- Próxima tarefa recomendada: **LW-118** (ou o que você decidir da pendência 3). **Não iniciada.** Parei (regra 13).
+- Git: ramo `lw-117h-ajustes-da-r3` em `0e20369` (commits `459e186`, a junção `b1db754` e o status `0e20369`), **enviado**; **`main` = `0e20369`**, enviado por avanço simples (`d1d3d8b..0e20369`); `status-c` enviado com este relatório; sem tag, sem `--force`, sem `--amend`, sem `rebase`, sem apagar ramo.
+
+---
+
+---
 
 # LW-117g — RELATÓRIO — Ajustes das fichas da Fase 4 (DEC-227 a DEC-233) e rótulos aprovados (DOC)        Status: PRONTA PARA REVISÃO
 
