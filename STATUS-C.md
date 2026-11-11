@@ -1,4 +1,51 @@
-11/11/2026 07:45 (Brasília) — CONCLUÍDA: RODADA 5 e ADENDO da LW-087c (rótulos das 35 decisões; campos da vaga; manutenção com tecido; LW-094 como uma tarefa): commits 0c37741 e a8be77b enviados, check_all VERDE (1.194 de 1.194); números de DEC conferidos contra o ramo da LW-087a (28a0227 e acf10ed), nenhum divergiu. Nada no main, sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+11/11/2026 08:00 (Brasília) — CONCLUÍDA: correção de status da LW-087c (3 frases "ainda mostra PROPOSTA"): commit cf21a0a ENVIADO ao ramo lw-087c-extensoes-world-npc (push autorizado), check_all VERDE (1.194 de 1.194). Aviso: o main avançou para 63caee7 (LW-087a registrada, por terceiros). Sem merge no main, sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+
+# CORREÇÃO DE STATUS — RELATÓRIO — LW-087c: três frases "ainda mostra PROPOSTA" (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3).** Tarefa: trocar, em `npc.md:254`, `npc.md:308` e `world.md:78`, a frase "o `DECISIONS.md` do ramo da LW-087a ainda mostra PROPOSTA" pela situação real, e nada além. Autorização escrita de Arthur: um commit no ramo (dada) e, depois, o push de `lw-087c-extensoes-world-npc` e do `status-c` (dada). Li o `DECISIONS.md` da LW-087a antes de escrever "APROVADAS". Sem dúvida que me fizesse parar.
+
+## 1. RESUMO
+As três frases agora dizem que a LW-087a já registrou as decisões como APROVADAS por Arthur em 11/11/2026. O commit foi feito e depois enviado, como você autorizou em dois passos.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (commit `cf21a0a`, "LW-087c: corrige o status das decisões do pré-voo nas frases de origem")
+- `docs/modules/npc.md` (linhas 254 e 308) e `docs/modules/world.md` (linha 78): 3 linhas trocadas por 3. Nenhum outro arquivo.
+
+## 4. DECISÕES TÉCNICAS
+- Escrevi "a LW-087a registrou" e mantive "vale o status em `DECISIONS.md`" (AGENTS 8.4); não escrevi que algo "entrou no `main`".
+- Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD final `cf21a0a`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 182,3 s (3 min 35 s no total).
+- **Status e números de DEC:** antes de editar (HEAD `86d4310`, 07:48) as **35 estavam APROVADAS por Arthur em 11/11/2026**; no fim (07:52) o HEAD era o mesmo. Depois do push, no `main` atual (`63caee7`), as 35 continuam APROVADAS e as 25 DEC que os dois arquivos citam têm o mesmo título de antes; **nenhum número deixou de bater**.
+- Por busca: "ainda mostra PROPOSTA" **0** ocorrências nos dois arquivos. `git push origin lw-087c-extensoes-world-npc`: `a8be77b..cf21a0a`; o remoto confere (`cf21a0a`).
+- NÃO EXECUTADO: `godot --headless --path . --import` (o `godot` não está no PATH do meu terminal; o `check_all` roda sozinho).
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido por leitura do diff (3 linhas).
+
+## 7. PROBLEMAS ENCONTRADOS
+- **O `main` avançou durante a tarefa:** de `8dcc81d` para `63caee7` (a LW-087a registrada e o status dela, por terceiros; eu não toquei no `main`). O ramo `lw-087c` ficou **8 commits atrás e 11 à frente** do `main`; o `main` **não mudou** `npc.md` nem `world.md` desde o ponto de partida, então uma junção não deve dar conflito nesses dois arquivos (não testei).
+- **`npc.md:252`** (cabeçalho da seção 14) ainda diz que o `DECISIONS.md` "ainda traz PROPOSTA" para DEC-047, 049 e 054. **No `main` atual elas estão APROVADAS**: a frase ficou desatualizada. Não mexi: você autorizou só as três frases.
+- **`npc.md:206` e `npc.md:208`:** as duas frases antigas de conversas de trabalho da Fase 2 ("o da B", "conversa B") seguem como estavam.
+
+## 8. RISCOS
+- A frase de `npc.md:252` afirma algo que o `main` já superou.
+- O ramo `lw-087c` está atrás do `main`: antes de qualquer entrada no `main`, ele precisa de uma junção (precisa da sua autorização).
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Autorizar um commit curto** para corrigir a frase de `npc.md:252` (DEC-047, 049 e 054 APROVADAS) (**recomendo**).
+2. **Autorizar a junção do `main` no ramo `lw-087c`** (só para ficar em dia, sem tocar no `main`) (**recomendo**, antes de qualquer pedido de entrada no `main`).
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3 não iniciada.** A LW-087a (registro) já está no `main`; os rascunhos 087b, 087c e 087d seguem fora dele.
+- Próxima tarefa recomendada: junção do `main` no ramo `lw-087c` e a correção de `npc.md:252`. **Não iniciada.** Parei aqui (regra 13).
+- Git: `lw-087c-extensoes-world-npc` enviado (`cf21a0a`); `status-c` enviado com este relatório; `main` = `63caee7` (não foi alterado por mim); nenhuma tag nova; sem merge no `main`, sem Fase B, sem `--force`.
+
+---
 
 # RODADA 5 E ADENDO — RELATÓRIO — LW-087c: marca como aprovadas as decisões do pré-voo; campos da vaga, manutenção com tecido e LW-094 como uma tarefa (DOC)        Status: PRONTA PARA REVISÃO
 
