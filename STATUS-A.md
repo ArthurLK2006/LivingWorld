@@ -1,4 +1,4 @@
-11/11/2026 18:40 (Brasília) · T3 PARADA NO MARCO 2: a primeira parte da LW-093 (o NPC abre a conta na economia ao nascer; ramo `lw-093-npcs-no-mercado`, sem commit) muda os 9 valores do oráculo e os hashes dos soaks; a causa é só o conteúdo do bloco `economy` (contas dos NPCs): sem o bloco, os 9 valores ORIGINAIS voltam; `check_all` VERMELHO só nesses 2 testes do oráculo (1.293 passam), `run_sim` igual; aguardando o seu "aprovo os hashes do marco 2"
+11/11/2026 18:53 (Brasília) · JUNÇÃO PRONTA: ramo `lw-092g-juncao-das-correcoes` (do `main` `d1d3d8b` + 092d, 092e e 092f; commit `9df6aaa`); `check_all` VERDE (144 scripts, 1.298 testes, 292.805 asserts), hashes e `run_sim` iguais; um ajuste de teste do meu próprio teste da 092e (abre a conta do jogador); seguindo para a LW-093 sobre a junção
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
