@@ -1,4 +1,51 @@
-11/11/2026 08:00 (Brasília) — CONCLUÍDA: correção de status da LW-087c (3 frases "ainda mostra PROPOSTA"): commit cf21a0a ENVIADO ao ramo lw-087c-extensoes-world-npc (push autorizado), check_all VERDE (1.194 de 1.194). Aviso: o main avançou para 63caee7 (LW-087a registrada, por terceiros). Sem merge no main, sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+11/11/2026 08:46 (Brasília) — CONCLUÍDA: junção do main no ramo lw-087c (1891452) e correção de npc.md:252 (bc48767), ENVIADAS (push autorizado): check_all VERDE (1.194 de 1.194); ramo em dia com o main (0 atrás), sem conflito; main = 63caee7, não alterado por mim. Sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+
+# JUNÇÃO DO MAIN E CORREÇÃO DE npc.md:252 — RELATÓRIO — LW-087c (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3).** Tarefa: (1) juntar o `main` (`63caee7`) no ramo `lw-087c-extensoes-world-npc`, só para ele ficar em dia, sem tocar no `main`; (2) trocar em `npc.md:252` "o `DECISIONS.md` ainda traz PROPOSTA" (DEC-047, 049 e 054) pelo que o `main` diz agora. Autorização escrita de Arthur: os dois passos (dada), depois o push do ramo e do `status-c` com o relatório (dada). Li o que o `main` traria (só documentos; não muda `npc.md` nem `world.md`) e o `DECISIONS.md` já junto. Sem dúvida que me fizesse parar; se a junção desse conflito, eu a abortaria e avisaria.
+
+## 1. RESUMO
+O ramo `lw-087c` está em dia com o `main` (0 commits atrás), a junção não deu conflito e a frase desatualizada de `npc.md:252` foi corrigida. Os dois commits e o relatório foram enviados.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS
+- **Junção `1891452`** ("Merge remote-tracking branch 'origin/main' into lw-087c-extensoes-world-npc"): trouxe 8 commits do `main`, só documentos (5 arquivos, +992/−42): `docs/DECISIONS.md`, `docs/DEVELOPMENT_ROADMAP.md`, `docs/ROADMAP_STATUS.md`, `docs/backlog.md` e `docs/decisions/0012-pre-voo-da-fase-3.md` (novo). **Não alterei nenhum arquivo que veio do `main`.**
+- **Correção `bc48767`** ("LW-087c: corrige o status das DEC-047, 049 e 054 no cabeçalho da seção 14"): `docs/modules/npc.md`, 1 linha (`npc.md:252`), de "o `DECISIONS.md` ainda traz PROPOSTA" para "APROVADAS por Arthur em 10/11/2026 no `DECISIONS.md`".
+- Contra o `main` (`63caee7`) o ramo difere **só** em `npc.md` e `world.md` (+117/−2).
+
+## 4. DECISÕES TÉCNICAS
+- A junção foi feita no ramo, não no `main`; o `main` não foi alterado por mim. Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD final `bc48767`** (depois da junção e da correção): **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 172,4 s (3 min 26 s no total). Mesmos números de antes, como esperado (só documentos).
+- **Números de DEC contra o `DECISIONS.md` do ramo já junto:** as 47 DEC que os dois arquivos citam têm entrada, e as 35 do pré-voo estão APROVADAS por Arthur em 11/11/2026; DEC-047, 049 e 054 estão APROVADAS (10/11/2026). **Nenhum número deixou de bater.**
+- Por busca: "ainda traz PROPOSTA" **0** ocorrências em `npc.md`.
+- Push: `lw-087c-extensoes-world-npc` `cf21a0a..bc48767` (avanço simples: o remoto era ancestral do local; o `main` também); o remoto confere (`bc48767`).
+- NÃO EXECUTADO: `godot --headless --path . --import` (o `godot` não está no PATH do meu terminal; o `check_all` roda sozinho).
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido por leitura do diff (1 linha) e pelo resultado da junção (sem conflito).
+
+## 7. PROBLEMAS ENCONTRADOS
+- **Outras frases que podem estar desatualizadas depois da junção, não alteradas** (fora do que você autorizou): o cabeçalho da seção 14 do `npc.md` ainda diz, no começo, "o registro em `DECISIONS.md` é da LW-087a" (a LW-087a já registrou; a frase continua verdadeira, mas pode ser enxugada); `npc.md:206` e `npc.md:208` ainda citam nomes de conversas de trabalho da Fase 2 ("o da B", "conversa B"); `world.md` e `npc.md` ainda dizem em alguns pontos que o `economy.md` é um "rascunho da LW-087b", o que continua verdadeiro enquanto ele não entra no `main`.
+- Nada falhou; nenhum aviso novo.
+
+## 8. RISCOS
+- A junção traz o `DEVELOPMENT_ROADMAP.md` novo para o ramo; se algum número de linha de tarefa citado nos meus arquivos (LW-088a, LW-093a, LW-093b, LW-096a) divergir do roadmap, vai aparecer na revisão: **não reverifiquei os textos das tarefas no roadmap do `main` nesta tarefa**.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Revisar** o ramo `lw-087c` (A): `npc.md` e `world.md` contra o `main` atual; **recomendo** conferir as linhas das LW-088a, LW-093, LW-094, LW-095, LW-096a e LW-097 do `npc.md` com o roadmap que entrou no `main`.
+2. **Decidir** quando os rascunhos 087b, 087c e 087d entram no `main` (a LW-087a já entrou).
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3 não iniciada.** A LW-087a está no `main`; os rascunhos 087b, 087c e 087d seguem fora dele.
+- Próxima tarefa recomendada: a revisão do ramo `lw-087c` contra o roadmap do `main`. **Não iniciada.** Parei aqui (regra 13).
+- Git: `lw-087c-extensoes-world-npc` enviado (`bc48767`); `status-c` enviado com este relatório; `main` = `63caee7` (não alterado por mim); nenhuma tag nova; sem merge no `main`, sem Fase B, sem `--force`.
+
+---
 
 # CORREÇÃO DE STATUS — RELATÓRIO — LW-087c: três frases "ainda mostra PROPOSTA" (DOC)        Status: PRONTA PARA REVISÃO
 
