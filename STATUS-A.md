@@ -1,4 +1,4 @@
-11/11/2026 14:26 (Brasília) · BLOCO 2 DA A: PRONTA PARA REVISÃO · LW-088a (fechamento) e LW-088 a LW-093a em 15 ramos empilhados (16 commits), todos enviados; `check_all` VERDE na ponta (141 scripts, 1.290 testes, 292.667 asserts); hashes do marco 1 e `run_sim` iguais; prova da causa feita; soak de 30 dias `82f81b239759`; aguardando o seu "APROVADO LW-088a a LW-093a" (Fase B não feita, LW-093 não iniciada)
+11/11/2026 14:43 (Brasília) · BLOCO 2 DA A: PRONTA PARA REVISÃO + correções da revisão do ramo B (I1, I2, I3, I5) no ramo `lw-088d-correcoes-da-revisao-b` (commit `f3054f1`, `check_all` VERDE: 142 scripts, 1.293 testes; hashes e `run_sim` iguais); I4 (NpcDied por nome) aguarda decisão do Arthur; aguardando o "APROVADO LW-088a a LW-093a" (Fase B não feita, LW-093 não iniciada)
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
