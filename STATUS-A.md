@@ -1,4 +1,4 @@
-11/11/2026 19:11 (Brasília) · PARADA NA LW-093: junção das correções pronta (`lw-092g`) e partes 1 a 3 da LW-093 enviadas (`lw-093-contas-dos-npcs`, `lw-093d-dinheiro-e-consumo`, `lw-093e-jogo-real-com-economia`), todas com `check_all` VERDE (ponta: 147 scripts, 1.305 testes); `run_sim` igual; as ações `buy` e `sell` esbarram em testes existentes: aguardo a sua autorização escrita (ver o relatório)
+11/11/2026 19:14 (Brasília) · PARADA NA LW-093 (partes 1 a 3 enviadas; ponta `lw-093e-jogo-real-com-economia`, `check_all` VERDE): com os testes autorizados as ações `buy`/`sell` ainda dependem de (A) mais testes além da lista para renomear `market_reserved` para `market`, (B) uma mudança de contrato da economia (o NPC precisa ler o alívio dos bens: `peek_good` e `peek_goods_for_need`) e (C) decisões de design do `eat`, do que comprar e da utilidade; nenhum código novo desde a parte 3; aguardo as respostas
 
 # RELATÓRIO — Fase B, correções (T1, T1b, T2), junção e LW-093 (partes 1 a 3)     Status: PARCIAL (PARADA: as ações `buy` e `sell` esbarram em testes existentes)
 
