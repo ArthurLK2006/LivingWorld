@@ -249,11 +249,11 @@ func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int
 	return EconomyReplies.TradeResult.new(outcome.result, outcome.quantity, outcome.total, outcome.tariff)
 
 
-## A mesma conta de `request_trade`, sem executar (para a interface e para o `npc` decidirem antes de pedir).
-func peek_quote(market_id: int, good_id: String, quantity: int, side: String) -> EconomyReplies.QuoteQuery:
+## A mesma conta de `request_trade`, sem executar, PARA O ATOR (as regras de comércio podem depender de quem compra: proibição, tarifa, licença); serve à interface e ao `npc` para decidirem antes de pedir.
+func peek_quote(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> EconomyReplies.QuoteQuery:
 	if _engine == null:
 		return EconomyReplies.QuoteQuery.new(Result.failure(EconomyCodes.UNKNOWN_MARKET, "EconomyModule.peek_quote: o mercado %d não existe (o módulo não tem mercados)." % market_id), 0, 0, 0)
-	var outcome: TradeEngine.Outcome = _engine.quote(market_id, good_id, quantity, side)
+	var outcome: TradeEngine.Outcome = _engine.quote(market_id, good_id, quantity, side, actor_id)
 	return EconomyReplies.QuoteQuery.new(outcome.result, outcome.total, IntMath.floor_div(outcome.total, quantity) if outcome.result.ok else 0, outcome.tariff)
 
 

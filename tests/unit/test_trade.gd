@@ -156,7 +156,7 @@ func test_a_replaced_rule_changes_the_result_without_touching_the_economy() -> v
 	var taxed: Rig = _rig(Tariff.new())
 	var done: TradeEngine.Outcome = taxed.engine.execute(NPC, MARKET, "bread", 5, TradeEngine.SIDE_BUY)
 	assert_true(done.result.ok, done.result.message)
-	assert_eq(done.tariff, IntMath.floor_div(done.total * 500, 10000), "A tarifa pedida pela regra é calculada e devolvida.")
+	assert_eq(done.tariff, PriceMath.ceil_div(done.total * 500, 10000), "A tarifa pedida pela regra é calculada e devolvida (para cima, mínimo 1).")
 	assert_eq(taxed.ledger.balance_of(NPC), 200 - done.total, "Mas não é cobrada na Fase 3: o ator paga só o total.")
 	var neutral: TradeTerms = NeutralTradeRules.new().peek_terms("bread", MARKET, NPC)
 	assert_eq([neutral.banned, neutral.tariff_bp, neutral.needs_license], [false, 0, false], "A regra neutra: nada proibido, tarifa 0, sem licença.")

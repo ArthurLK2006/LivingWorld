@@ -59,7 +59,7 @@ func _module(rules: TradeRules = null) -> EconomyModule:
 
 func test_a_trade_through_the_module_moves_money_and_goods_exactly_as_quoted() -> void:
 	var module: EconomyModule = _module()
-	var quote: EconomyReplies.QuoteQuery = module.peek_quote(MARKET, "bread", 5, TradeEngine.SIDE_BUY)
+	var quote: EconomyReplies.QuoteQuery = module.peek_quote(NPC, MARKET, "bread", 5, TradeEngine.SIDE_BUY)
 	assert_true(quote.result.ok, quote.result.message)
 	assert_eq([quote.total, quote.tariff, quote.average_price], [quote.total, 0, IntMath.floor_div(quote.total, 5)], "O preço médio é o total dividido pela quantidade (para baixo).")
 	var done: EconomyReplies.TradeResult = module.request_trade(NPC, MARKET, "bread", 5, TradeEngine.SIDE_BUY)
@@ -91,7 +91,7 @@ func test_failures_through_the_module_keep_the_codes_and_change_nothing() -> voi
 		assert_eq(reply.result.code, test_case["code"], test_case["label"])
 		assert_eq([reply.quantity, reply.total], [0, 0], "%s: nada foi negociado." % test_case["label"])
 	assert_eq(module.serialize(), before, "Nenhuma falha muda o estado.")
-	assert_eq(module.peek_quote(99, "bread", 1, "buy").result.code, EconomyCodes.UNKNOWN_MARKET)
+	assert_eq(module.peek_quote(NPC, 99, "bread", 1, "buy").result.code, EconomyCodes.UNKNOWN_MARKET)
 	var bare: EconomyModule = EconomyModule.new()
 	assert_eq(bare.request_trade(NPC, MARKET, "bread", 1, "buy").result.code, EconomyCodes.UNKNOWN_MARKET, "Sem mercados, nenhum comércio.")
 	assert_eq(bare.peek_terms("bread", MARKET, NPC).result.code, EconomyCodes.UNKNOWN_MARKET)
@@ -106,7 +106,7 @@ func test_the_trade_rule_comes_from_the_constructor_and_changes_the_result_witho
 	var banned: EconomyReplies.TermsQuery = strict.peek_terms("bread", MARKET, NPC)
 	assert_eq([banned.banned, strict.peek_terms("tool", MARKET, NPC).needs_license], [true, true])
 	assert_eq(strict.request_trade(NPC, MARKET, "bread", 1, "buy").result.code, EconomyCodes.TRADE_BANNED)
-	assert_eq(strict.peek_quote(MARKET, "bread", 1, "buy").result.code, EconomyCodes.TRADE_BANNED)
+	assert_eq(strict.peek_quote(NPC, MARKET, "bread", 1, "buy").result.code, EconomyCodes.TRADE_BANNED)
 	assert_true(strict.request_trade(NPC, MARKET, "grain", 2, "buy").result.ok, "Os outros bens seguem livres.")
 	assert_eq(strict.peek_terms("gold", MARKET, NPC).result.code, EconomyCodes.UNKNOWN_GOOD)
 
