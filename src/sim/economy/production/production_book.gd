@@ -4,11 +4,12 @@ extends RefCounted
 ## (`worker_ids`, em ordem crescente), a eficiência, o progresso do lote, o estado (produzindo ou parado, com o MOTIVO) e há quantos dias cada regra de manutenção foi paga. A cada HORA (`hour_step`), por local em ordem de ID: (1) compra do mercado
 ## do povoado o que falta (insumos dos lotes que a equipe faz e o bem de uma regra vencida), pelo mesmo `TradeEngine`; (2) confere a equipe (`NO_WORKER`), os insumos (`NO_INPUT`) e o espaço (`OUTPUT_FULL`); (4) faz os lotes (`consumed` e `produced`);
 ## (5) vende ao mercado o produto, até o espaço do teto de compra. O passo 3, a folha de pagamento, é da LW-095 (daí `NO_FUNDS` ainda não existir). Ao FIM DO DIA (`end_of_day`) cada regra de manutenção cujo prazo venceu e cujas peças o local tem é
-## paga (as peças são destruídas com o motivo `maintenance`); com regra vencida e não paga a eficiência cai um degrau (nunca abaixo do piso, que é maior que 0), senão sobe um degrau. Eventos só na MUDANÇA de estado. Nunca sorteia nem olha o relógio. O save (`serialize`, `load_from`, `validate`) chega com a ligação ao módulo (LW-092c).
+## paga (as peças são destruídas com o motivo `maintenance`); com regra vencida e não paga a eficiência cai um degrau (nunca abaixo do piso, que é maior que 0), senão sobe um degrau. Eventos só na MUDANÇA de estado. Nunca sorteia nem olha o relógio. O save (`serialize`, `load_from`, `validate`) é do módulo: o bloco `production` da economia.
 
 const NO_WORKER: String = "NO_WORKER"
 const NO_INPUT: String = "NO_INPUT"
 const OUTPUT_FULL: String = "OUTPUT_FULL"
+const REASONS: Array[String] = [NO_WORKER, NO_INPUT, OUTPUT_FULL]
 ## Id do tipo de dono do local de produção (`owner_kinds.json`).
 const KIND_SITE: String = "site"
 const FULL_EFFICIENCY_BP: int = 10000
@@ -148,6 +149,48 @@ func end_of_day() -> void:
 		state[KEY_EFFICIENCY] = maxi(_params.min_efficiency_bp, efficiency - _params.efficiency_step_bp) if unpaid_due else mini(FULL_EFFICIENCY_BP, efficiency + _params.efficiency_recover_bp)
 
 
+func is_pristine() -> bool:
+	return _sites.is_empty()
+
+
+func serialize() -> Dictionary:
+	var sites: Dictionary = {}
+	for site_id: int in site_ids():
+		sites[str(site_id)] = _sites[site_id].duplicate(true)
+	return {KEY_SITES: sites}
+
+
+## Confere tudo antes de alterar o estado: o local é um dono do tipo `site`, a receita existe, a equipe é uma lista de IDs sem repetição, a eficiência está entre o piso e 10000, o progresso é menor que um lote, o estado e o motivo
+## combinam e as regras de manutenção são exatamente as da receita. Se algo for inválido, o livro fica como estava.
+func load_from(data: Dictionary) -> Result:
+	var raw_sites: Variant = data.get(KEY_SITES)
+	if typeof(raw_sites) != TYPE_DICTIONARY:
+		return _invalid_save("campo '%s' ausente ou não é um objeto" % KEY_SITES)
+	var sites: Dictionary[int, Dictionary] = {}
+	var places: Dictionary[String, int] = {}
+	var raw_table: Dictionary = raw_sites
+	for key: Variant in raw_table.keys():
+		var site_id: int = EconomyJson.id_of_key(key)
+		var parsed: Variant = _parse_site(site_id, raw_table[key])
+		if typeof(parsed) == TYPE_STRING:
+			return _invalid_save("local '%s': %s" % [str(key), str(parsed)])
+		var state: Dictionary = parsed
+		if places.has(state[KEY_PLACE]):
+			return _invalid_save("local '%s': o local '%s' já tem um local de produção (%d)" % [str(key), state[KEY_PLACE], places[state[KEY_PLACE]]])
+		places[state[KEY_PLACE]] = site_id
+		sites[site_id] = state
+	_sites = sites
+	return Result.success()
+
+
+func validate() -> Array[String]:
+	var problems: Array[String] = []
+	for site_id: int in site_ids():
+		if not _book.has_owner(site_id) or _book.kind_of(site_id) != KIND_SITE:
+			problems.append("o local de produção %d não é um dono do tipo '%s'" % [site_id, KIND_SITE])
+	return problems
+
+
 func _market_of(state: Dictionary) -> int:
 	return _markets.market_of(state[KEY_SETTLEMENT])
 
@@ -241,3 +284,51 @@ func _sorted(table: Dictionary[String, int]) -> Array[String]:
 	keys.assign(table.keys())
 	keys.sort()
 	return keys
+
+
+## Devolve o estado montado, ou o TEXTO do problema (o chamador o prefixa com o local).
+func _parse_site(site_id: int, raw_entry: Variant) -> Variant:
+	if not _book.has_owner(site_id) or _book.kind_of(site_id) != KIND_SITE or typeof(raw_entry) != TYPE_DICTIONARY:
+		return "esperado o ID de um dono do tipo '%s' e um objeto" % KIND_SITE
+	var entry: Dictionary = raw_entry
+	var recipe_id: Variant = entry.get(KEY_RECIPE)
+	if typeof(recipe_id) != TYPE_STRING or not _recipes.has(str(recipe_id)):
+		return "'%s' deve ser o id de uma receita (%s)" % [KEY_RECIPE, ", ".join(_recipes.keys())]
+	var recipe: RecipeDef = _recipes[str(recipe_id)]
+	for field: String in [KEY_SETTLEMENT, KEY_PLACE]:
+		if typeof(entry.get(field)) != TYPE_STRING or str(entry[field]).is_empty():
+			return "'%s' deve ser texto não vazio" % field
+	for field: String in [KEY_WANTED, KEY_EFFICIENCY, KEY_PROGRESS]:
+		if not EconomyJson.is_int_like(entry.get(field)):
+			return "'%s' deve ser um inteiro" % field
+	var wanted: int = EconomyJson.to_int(entry[KEY_WANTED])
+	var efficiency: int = EconomyJson.to_int(entry[KEY_EFFICIENCY])
+	var progress: int = EconomyJson.to_int(entry[KEY_PROGRESS])
+	if wanted < 1 or efficiency < _params.min_efficiency_bp or efficiency > FULL_EFFICIENCY_BP or progress < 0 or progress >= FULL_EFFICIENCY_BP:
+		return "'%s' deve ser 1 ou mais, '%s' de %d a %d e '%s' de 0 a %d" % [KEY_WANTED, KEY_EFFICIENCY, _params.min_efficiency_bp, FULL_EFFICIENCY_BP, KEY_PROGRESS, FULL_EFFICIENCY_BP - 1]
+	var stopped: Variant = entry.get(KEY_STOPPED)
+	var reason: Variant = entry.get(KEY_REASON)
+	if typeof(stopped) != TYPE_BOOL or typeof(reason) != TYPE_STRING or bool(stopped) != REASONS.has(str(reason)) or (not bool(stopped) and not str(reason).is_empty()):
+		return "'%s' deve ser verdadeiro ou falso e '%s' um motivo de %s só quando parado" % [KEY_STOPPED, KEY_REASON, ", ".join(REASONS)]
+	var workers: Array[int] = []
+	var raw_workers: Variant = entry.get(KEY_WORKERS)
+	if typeof(raw_workers) != TYPE_ARRAY:
+		return "'%s' deve ser uma lista de IDs" % KEY_WORKERS
+	for raw_worker: Variant in raw_workers:
+		if not EconomyJson.is_int_like(raw_worker) or EconomyJson.to_int(raw_worker) < IdGenerator.FIRST_ID or (workers.size() > 0 and EconomyJson.to_int(raw_worker) <= workers[workers.size() - 1]):
+			return "'%s' deve ter IDs inteiros positivos, em ordem crescente e sem repetição" % KEY_WORKERS
+		workers.append(EconomyJson.to_int(raw_worker))
+	var raw_upkeep: Variant = entry.get(KEY_UPKEEP)
+	if typeof(raw_upkeep) != TYPE_DICTIONARY or (raw_upkeep as Dictionary).size() != recipe.upkeep.size():
+		return "'%s' deve ter exatamente as %d regras de manutenção da receita" % [KEY_UPKEEP, recipe.upkeep.size()]
+	var upkeep: Dictionary = {}
+	for rule: UpkeepRule in recipe.upkeep:
+		var days: Variant = (raw_upkeep as Dictionary).get(rule.good_id)
+		if not EconomyJson.is_int_like(days) or EconomyJson.to_int(days) < 0:
+			return "'%s' deve ter um inteiro de 0 ou mais para '%s'" % [KEY_UPKEEP, rule.good_id]
+		upkeep[rule.good_id] = EconomyJson.to_int(days)
+	return {KEY_SETTLEMENT: str(entry[KEY_SETTLEMENT]), KEY_PLACE: str(entry[KEY_PLACE]), KEY_RECIPE: str(recipe_id), KEY_WANTED: wanted, KEY_WORKERS: workers, KEY_EFFICIENCY: efficiency, KEY_PROGRESS: progress, KEY_STOPPED: bool(stopped), KEY_REASON: str(reason), KEY_UPKEEP: upkeep}
+
+
+func _invalid_save(detail: String) -> Result:
+	return Result.failure(EconomyCodes.INVALID_SAVE, "ProductionBook.load_from: %s." % detail)

@@ -1,6 +1,6 @@
 class_name EconomySetup
 extends RefCounted
-## LW-090c: monta, a partir dos arquivos de `data/economy/`, TUDO o que o `EconomyModule` recebe pelo construtor (bens, tipos de dono, alvos de mercado e constantes de preço), no mesmo padrão do `NpcSetup`: sem global e
+## LW-090c: monta, a partir dos arquivos de `data/economy/`, TUDO o que o `EconomyModule` recebe pelo construtor (bens, tipos de dono, alvos de mercado, constantes de preço e produção), no mesmo padrão do `NpcSetup`: sem global e
 ## sem autoload, e qualquer arquivo ausente ou inválido vira UMA falha tratada (`result`, `ECONOMY_SETUP_INVALID`) com o assunto e a mensagem do carregador (arquivo, item e campo). Nunca lança erro nem escreve no log.
 
 const CODE_INVALID: String = "ECONOMY_SETUP_INVALID"
@@ -20,7 +20,10 @@ static func from_dir(data_dir: String = DEFAULT_DIR, is_development_build: bool 
 	var markets: MarketLoader.LoadResult = MarketLoader.load_dir(data_dir)
 	if not markets.result.ok:
 		return setup._fail("mercados e preços", markets.result)
-	setup.definitions = EconomyDefinitions.new(goods.goods, goods.kinds, markets.targets, markets.params, is_development_build)
+	var production: ProductionLoader.LoadResult = ProductionLoader.load_dir(data_dir)
+	if not production.result.ok:
+		return setup._fail("produção", production.result)
+	setup.definitions = EconomyDefinitions.new(goods.goods, goods.kinds, markets.targets, markets.params, is_development_build, null, production.recipes, production.params, production.sites)
 	return setup
 
 

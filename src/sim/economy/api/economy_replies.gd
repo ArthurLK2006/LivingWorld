@@ -147,3 +147,39 @@ class TermsQuery:
 		banned = is_banned
 		tariff_bp = tariff_basis_points
 		needs_license = requires_license
+
+
+## `peek_site` e `peek_site_at`: um local de produção (seções 6 e 8 do contrato). `workplace_id` é o `site_id`; `worker_ids`, os trabalhadores atribuídos em ordem crescente; `running` e `reason` (`NO_WORKER`, `NO_INPUT` ou `OUTPUT_FULL` quando parado,
+## senão vazio); `upkeep`, uma linha por regra de manutenção (`good_id`, `quantity`, `period_days`, `days_since_paid`); `stock`, o inventário do local (`good_id` e `quantity`). `result` falha com `ECON_UNKNOWN_OWNER` se não há o local (então o resto não vale).
+class SiteQuery:
+	extends RefCounted
+
+	var result: Result
+	var workplace_id: int = IdGenerator.NO_ID
+	var place_id: String = ""
+	var settlement_id: String = ""
+	var recipe_id: String = ""
+	var occupation_id: String = ""
+	var wage_per_hour: int = 0
+	var workers_wanted: int = 0
+	var workers_assigned: int = 0
+	var worker_ids: Array[int] = []
+	var efficiency_bp: int = 0
+	var batch_progress_bp: int = 0
+	var running: bool = false
+	var reason: String = ""
+	var upkeep: Array[Dictionary] = []
+	var stock: Array[Dictionary] = []
+
+	func _init(query_result: Result) -> void:
+		result = query_result
+
+
+## `peek_sites_of`: os locais de produção do assentamento, por ID crescente.
+class SitesQuery:
+	extends RefCounted
+
+	var sites: Array[SiteQuery]
+
+	func _init(site_rows: Array[SiteQuery]) -> void:
+		sites = site_rows

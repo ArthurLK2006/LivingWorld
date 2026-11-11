@@ -3,17 +3,19 @@ extends SimModule
 ## Módulo `economy` (contrato em docs/modules/economy.md). LW-088a: a casca, registrada no `World` ANTES do `npc` (o `npc` vai abrir as contas ao criar NPCs) e dona do bloco `economy` do save (DEC-172).
 ## LW-088: o cadastro de donos (`OwnerBook`) e o livro-razão (`Ledger`). LW-089c: o inventário por dono (`GoodsStore`) e as definições (`EconomyDefinitions`, pelo construtor). LW-090c: os mercados (`MarketBook`):
 ## um por assentamento dos dados, criado no jogo novo (dono do tipo `market`, com o saldo inicial do tipo e o estoque inicial de cada bem), com o preço andando ao FIM DE CADA DIA do relógio e os eventos
-## `PriceChanged`, `ShortageDeclared` e `ShortageEnded` publicados. Esta é a PORTA: `request_open_owner`, `request_transfer_goods`, `request_set_stock` (só em build de desenvolvimento), `request_trade`, `peek_quote`, `peek_terms`, `peek_balance`,
+## `PriceChanged`, `ShortageDeclared` e `ShortageEnded` publicados. LW-092c: os locais de produção (`ProductionBook`): um por linha de `production_sites.json`, criado no jogo novo (dono do tipo `site`, com o saldo inicial do tipo), com a
+## HORA de produção a cada hora cheia do relógio e o fim do dia depois dos mercados; os trabalhadores entram quando o `npc` abre a conta com o `work_place_id` e saem no `NpcDied`; `peek_site`, `peek_site_at` e `peek_sites_of`. Esta é a PORTA: `request_open_owner` (com o `work_place_id` opcional), `request_transfer_goods`, `request_set_stock` (só em build de desenvolvimento), `request_trade`, `peek_quote`, `peek_terms`, `peek_balance`,
 ## `peek_conservation`, `peek_ledger_totals`, `peek_inventory`, `peek_goods_conservation`, `peek_market_of`, `peek_market`, `peek_price` e `peek_stock`. As operações de saldo e de criar e destruir bens NÃO são da
 ## porta: quem as usa são as partes internas da economia (comércio, produção, salário), cada uma na sua tarefa. O `npc` só pode citar classes desta pasta (regra E do `tools/check_architecture`, DEC-171) e a porta
 ## devolve só cópia (tipos de `EconomyReplies`). A economia ouve `NpcDied` pelo NOME do evento (não importa o `npc`, DEC-132) e fecha a conta e o inventário do NPC morto (DEC-146). O bloco do save só ganha
-## conteúdo quando há estado (sem dono e sem movimento continua `{}`); `goods` e `markets` só entram quando há bens ou mercados.
+## conteúdo quando há estado (sem dono e sem movimento continua `{}`); `goods`, `markets` e `production` só entram quando há bens, mercados ou locais de produção.
 
 const CODE_INVALID_SAVE: String = EconomyCodes.INVALID_SAVE
 const KEY_OWNERS: String = "owners"
 const KEY_LEDGER: String = "ledger"
 const KEY_GOODS: String = "goods"
 const KEY_MARKETS: String = "markets"
+const KEY_PRODUCTION: String = "production"
 const NPC_DIED: String = "NpcDied"
 ## Tipo do dono que o `npc` abre (id em `owner_kinds.json`); só para o aviso de morte, que fecha o dono desse tipo.
 const KIND_NPC: String = "npc"
@@ -30,14 +32,16 @@ var _goods: GoodsStore
 var _markets: MarketBook
 var _rules: TradeRules
 var _engine: TradeEngine
-## O último dia do relógio cujo fim já foi processado. Não vai no save: o relógio é restaurado pelo `core` antes dos módulos, e a cada passo o dia já processado é o do relógio.
-var _last_day: int = 0
+var _production: ProductionBook
+## A última hora cheia do relógio já processada (a produção anda por hora; o fim do dia é a hora que vira múltiplo de 24). Não vai no save: o relógio é restaurado pelo `core` antes dos módulos, e a cada passo a hora já processada é a do relógio.
+var _last_hour: int = 0
 
 
 ## `record_history`: modo de teste do `Ledger` (guarda cada lançamento). `definitions`: o conteúdo já lido (vazio por padrão: sem bens, sem mercados, qualquer tipo de dono).
 func _init(record_history: bool = false, definitions: EconomyDefinitions = null) -> void:
 	_record_history = record_history
 	_definitions = definitions if definitions != null else EconomyDefinitions.new()
+	_rules = _definitions.trade_rules if _definitions.trade_rules != null else NeutralTradeRules.new()
 	_reset()
 
 
@@ -59,7 +63,7 @@ func teardown() -> void:
 
 ## Jogo novo: um mercado por assentamento dos dados, com o saldo inicial do tipo `market` (motivo `game_start`) e o estoque inicial de cada bem. Falha visível (`push_error`) se um dado não couber.
 func on_new_game(_world_seed: int) -> void:
-	_last_day = _current_day()
+	_last_hour = _current_hour()
 	if _markets == null:
 		return
 	for settlement_id: String in _markets.settlement_ids():
@@ -71,17 +75,21 @@ func on_new_game(_world_seed: int) -> void:
 			push_error("EconomyModule.on_new_game: o mercado de '%s' não abriu: %s" % [settlement_id, opened.message])
 			continue
 		_markets.register_market(settlement_id, market_id)
+	if _production != null:
+		for definition: SiteDef in _definitions.production_sites:
+			_open_production_site(definition)
 
 
-## Ao virar o dia do relógio, cada dia que passou fecha com `end_of_day` dos mercados e os eventos saem.
+## A cada hora cheia que passa: se ela vira um dia, o fim do dia (mercados, depois locais de produção) vem primeiro; depois a hora de produção. Os eventos saem.
 func tick(_elapsed_minutes: int) -> void:
 	if _markets == null or _clock == null:
 		return
-	var day: int = _current_day()
-	while _last_day < day:
-		_last_day += 1
-		for event: SimEvent in _markets.end_of_day():
-			_events.publish(event)
+	var hour: int = _current_hour()
+	while _last_hour < hour:
+		_last_hour += 1
+		if _last_hour % SimClock.HOURS_PER_DAY == 0:
+			_close_day()
+		_run_production_hour()
 
 
 ## Sem dono e sem movimento: bloco vazio (nada entra no hash além da presença do módulo).
@@ -93,10 +101,12 @@ func serialize() -> Dictionary:
 		block[KEY_GOODS] = _goods.serialize()
 	if _markets != null and not _markets.is_pristine():
 		block[KEY_MARKETS] = _markets.serialize()
+	if _production != null and not _production.is_pristine():
+		block[KEY_PRODUCTION] = _production.serialize()
 	return block
 
 
-## Aceita o bloco vazio ou os campos conhecidos (`owners` e `ledger` sempre; `goods` e `markets` quando há), tudo conferido antes de trocar o estado; qualquer outra chave é recusada com mensagem clara.
+## Aceita o bloco vazio ou os campos conhecidos (`owners` e `ledger` sempre; `goods`, `markets` e `production` quando há), tudo conferido antes de trocar o estado; qualquer outra chave é recusada com mensagem clara.
 func on_load(data: Dictionary) -> Result:
 	if data.is_empty():
 		_reset()
@@ -106,15 +116,16 @@ func on_load(data: Dictionary) -> Result:
 		names.append(str(key))
 	names.sort()
 	for name: String in names:
-		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS].has(name):
-			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS])
+		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION].has(name):
+			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION])
 	# Variant: valores crus do save (JSON); o tipo é conferido na linha seguinte.
 	var raw_owners: Variant = data.get(KEY_OWNERS)
 	var raw_ledger: Variant = data.get(KEY_LEDGER)
 	var raw_goods: Variant = data.get(KEY_GOODS, {})
 	var raw_markets: Variant = data.get(KEY_MARKETS, {})
-	if typeof(raw_owners) != TYPE_DICTIONARY or typeof(raw_ledger) != TYPE_DICTIONARY or typeof(raw_goods) != TYPE_DICTIONARY or typeof(raw_markets) != TYPE_DICTIONARY:
-		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s' e '%s' devem ser objetos e estar os dois no bloco 'economy' (e '%s' e '%s', se houver, também objetos)." % [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS])
+	var raw_production: Variant = data.get(KEY_PRODUCTION, {})
+	if typeof(raw_owners) != TYPE_DICTIONARY or typeof(raw_ledger) != TYPE_DICTIONARY or typeof(raw_goods) != TYPE_DICTIONARY or typeof(raw_markets) != TYPE_DICTIONARY or typeof(raw_production) != TYPE_DICTIONARY:
+		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s' e '%s' devem ser objetos e estar os dois no bloco 'economy' (e '%s', '%s' e '%s', se houver, também objetos)." % [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION])
 	var market_data: Dictionary = raw_markets
 	var book: OwnerBook = OwnerBook.new()
 	var loaded: Result = book.load_from(raw_owners)
@@ -137,12 +148,22 @@ func on_load(data: Dictionary) -> Result:
 		loaded = markets.load_from(market_data)
 		if not loaded.ok:
 			return loaded
+	var engine: TradeEngine = _new_engine(book, ledger, goods, markets)
+	var production: ProductionBook = _new_production_book(book, goods, markets, engine)
+	var production_data: Dictionary = raw_production
+	if not production_data.is_empty():
+		if production == null:
+			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o save tem locais de produção, mas este módulo não recebeu as receitas, as constantes dos locais e os mercados.")
+		loaded = production.load_from(production_data)
+		if not loaded.ok:
+			return loaded
 	_book = book
 	_ledger = ledger
 	_goods = goods
 	_markets = markets
-	_last_day = _current_day()
-	_rebuild_engine()
+	_engine = engine
+	_production = production
+	_last_hour = _current_hour()
 	return Result.success()
 
 
@@ -157,18 +178,28 @@ func validate() -> Array[String]:
 	if _markets != null:
 		for problem: String in _markets.validate():
 			problems.append("[markets] " + problem)
+	if _production != null:
+		for problem: String in _production.validate():
+			problems.append("[production] " + problem)
 	return problems
 
 
-## Abre o dono (conta e inventário). Idempotente: quem já existe fica como está. Falhas: `ECON_UNKNOWN_OWNER` (ID fora da faixa) e `ECON_DATA_INVALID` (tipo vazio ou, havendo definições, tipo que não existe).
-func request_open_owner(owner_id: int, kind: String) -> Result:
+## Abre o dono (conta e inventário). Idempotente: quem já existe fica como está. Falhas: `ECON_UNKNOWN_OWNER` (ID fora da faixa) e `ECON_DATA_INVALID` (tipo vazio ou, havendo definições, tipo que não existe). `work_place_id` (opcional) só vale
+## para o tipo `npc` e só na ABERTURA da conta: o NPC é atribuído ao local de produção desse local; sem local de produção ali, ninguém é atribuído (e não é erro). Depois disso o emprego só muda por vaga aceita (LW-096) ou morte.
+func request_open_owner(owner_id: int, kind: String, work_place_id: String = "") -> Result:
 	if not _definitions.kinds.is_empty() and not kind.is_empty():
 		var known: Array[String] = []
 		for kind_def: OwnerKindDef in _definitions.kinds:
 			known.append(kind_def.id)
 		if not known.has(kind):
 			return Result.failure(EconomyCodes.DATA_INVALID, "EconomyModule.request_open_owner: o tipo de dono '%s' não existe; esperado um de: %s." % [kind, ", ".join(known)])
-	return _book.open_owner(owner_id, kind)
+	var is_new: bool = not _book.has_owner(owner_id)
+	var opened: Result = _book.open_owner(owner_id, kind)
+	if opened.ok and is_new and kind == KIND_NPC and not work_place_id.is_empty() and _production != null:
+		var site_id: int = _production.site_at(work_place_id)
+		if site_id != IdGenerator.NO_ID:
+			return _production.assign_worker(site_id, owner_id)
+	return opened
 
 
 ## Move bens entre donos, sem criar nem destruir; tudo ou nada. Falhas: `ECON_UNKNOWN_GOOD`, `ECON_BAD_QUANTITY`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_INSUFFICIENT_GOODS` e `ECON_CAPACITY_EXCEEDED`.
@@ -217,6 +248,30 @@ func peek_terms(good_id: String, market_id: int, actor_id: int) -> EconomyReplie
 		return EconomyReplies.TermsQuery.new(checked, false, 0, false)
 	var terms: TradeTerms = _rules.peek_terms(good_id, market_id, actor_id)
 	return EconomyReplies.TermsQuery.new(Result.success(), terms.banned, terms.tariff_bp, terms.needs_license)
+
+
+## O local de produção `site_id` (`ECON_UNKNOWN_OWNER` se não existe): receita, estado e motivo de parada, equipe, eficiência, manutenção e estoque (seções 6 e 8 do contrato).
+func peek_site(site_id: int) -> EconomyReplies.SiteQuery:
+	if _production == null or not _production.has_site(site_id):
+		return EconomyReplies.SiteQuery.new(Result.failure(EconomyCodes.UNKNOWN_OWNER, "EconomyModule.peek_site: o local de produção %d não existe." % site_id))
+	return _site_query(site_id)
+
+
+## O local de produção que ocupa o local `place_id` (`ECON_UNKNOWN_OWNER` se não há).
+func peek_site_at(place_id: String) -> EconomyReplies.SiteQuery:
+	var site_id: int = IdGenerator.NO_ID if _production == null else _production.site_at(place_id)
+	if site_id == IdGenerator.NO_ID:
+		return EconomyReplies.SiteQuery.new(Result.failure(EconomyCodes.UNKNOWN_OWNER, "EconomyModule.peek_site_at: o local '%s' não tem local de produção." % place_id))
+	return _site_query(site_id)
+
+
+## Os locais de produção do assentamento, por ID crescente (lista vazia se não há).
+func peek_sites_of(settlement_id: String) -> EconomyReplies.SitesQuery:
+	var sites: Array[EconomyReplies.SiteQuery] = []
+	if _production != null:
+		for site_id: int in _production.sites_of(settlement_id):
+			sites.append(_site_query(site_id))
+	return EconomyReplies.SitesQuery.new(sites)
 
 
 func peek_balance(owner_id: int) -> EconomyReplies.BalanceQuery:
@@ -281,6 +336,8 @@ func _on_npc_died(event: SimEvent) -> void:
 	if typeof(raw_id) != TYPE_INT:
 		return
 	var owner_id: int = raw_id
+	if _production != null:
+		_production.remove_worker(owner_id)
 	if _book.has_owner(owner_id) and _book.kind_of(owner_id) == KIND_NPC:
 		_book.close_owner(owner_id)
 
@@ -295,11 +352,9 @@ func _check_traded(market_id: int, good_id: String, operation: String) -> Result
 
 ## Saldo inicial do tipo `market` (se o tipo tem) e o estoque inicial de cada bem negociado no assentamento.
 func _fund_market(market_id: int, settlement_id: String) -> Result:
-	for kind: OwnerKindDef in _definitions.kinds:
-		if kind.id == MarketBook.KIND_MARKET and kind.initial_balance > 0:
-			var minted: Result = _ledger.mint(market_id, kind.initial_balance, Ledger.REASON_GAME_START)
-			if not minted.ok:
-				return minted
+	var funded: Result = _mint_initial_balance(market_id, MarketBook.KIND_MARKET)
+	if not funded.ok:
+		return funded
 	for good_id: String in _markets.traded_goods(settlement_id):
 		var initial_stock: int = _markets.initial_stock_of(settlement_id, good_id)
 		if initial_stock > 0:
@@ -309,8 +364,67 @@ func _fund_market(market_id: int, settlement_id: String) -> Result:
 	return Result.success()
 
 
-func _current_day() -> int:
-	return IntMath.floor_div(_clock.total_minutes(), SimClock.MINUTES_PER_DAY) if _clock != null else 0
+## O saldo inicial do tipo (se o tipo tem), com o motivo `game_start`.
+func _mint_initial_balance(owner_id: int, kind_id: String) -> Result:
+	for kind: OwnerKindDef in _definitions.kinds:
+		if kind.id == kind_id and kind.initial_balance > 0:
+			return _ledger.mint(owner_id, kind.initial_balance, Ledger.REASON_GAME_START)
+	return Result.success()
+
+
+## Um local de produção por linha dos dados: dono do tipo `site` com o saldo inicial do tipo. Falha visível (`push_error`) se algo não couber.
+func _open_production_site(definition: SiteDef) -> void:
+	var site_id: int = _ids.next_id()
+	var opened: Result = _book.open_owner(site_id, ProductionBook.KIND_SITE)
+	if opened.ok:
+		opened = _mint_initial_balance(site_id, ProductionBook.KIND_SITE)
+	if opened.ok:
+		opened = _production.register_site(site_id, definition)
+	if not opened.ok:
+		push_error("EconomyModule.on_new_game: o local de produção '%s' não abriu: %s" % [definition.id, opened.message])
+
+
+func _close_day() -> void:
+	for event: SimEvent in _markets.end_of_day():
+		_events.publish(event)
+	if _production != null:
+		_production.end_of_day()
+
+
+func _run_production_hour() -> void:
+	if _production == null:
+		return
+	for event: SimEvent in _production.hour_step():
+		_events.publish(event)
+
+
+## A cópia do local para a porta: o estado do livro mais a receita (ofício esperado e salário), as regras de manutenção e o estoque.
+func _site_query(site_id: int) -> EconomyReplies.SiteQuery:
+	var state: Dictionary = _production.state_of(site_id)
+	var recipe: RecipeDef = _definitions.recipes[state[ProductionBook.KEY_RECIPE]]
+	var query: EconomyReplies.SiteQuery = EconomyReplies.SiteQuery.new(Result.success())
+	query.workplace_id = site_id
+	query.place_id = state[ProductionBook.KEY_PLACE]
+	query.settlement_id = state[ProductionBook.KEY_SETTLEMENT]
+	query.recipe_id = recipe.id
+	query.occupation_id = recipe.occupation_id
+	query.wage_per_hour = recipe.wage_per_hour
+	query.workers_wanted = state[ProductionBook.KEY_WANTED]
+	query.worker_ids.assign(state[ProductionBook.KEY_WORKERS])
+	query.workers_assigned = query.worker_ids.size()
+	query.efficiency_bp = state[ProductionBook.KEY_EFFICIENCY]
+	query.batch_progress_bp = state[ProductionBook.KEY_PROGRESS]
+	query.running = state["running"]
+	query.reason = state[ProductionBook.KEY_REASON]
+	var days: Dictionary = state[ProductionBook.KEY_UPKEEP]
+	for rule: UpkeepRule in recipe.upkeep:
+		query.upkeep.append({"good_id": rule.good_id, "quantity": rule.quantity, "period_days": rule.period_days, "days_since_paid": days[rule.good_id]})
+	query.stock = _goods.inventory_rows(site_id)
+	return query
+
+
+func _current_hour() -> int:
+	return IntMath.floor_div(_clock.total_minutes(), SimClock.MINUTES_PER_HOUR) if _clock != null else 0
 
 
 func _new_market_book(book: OwnerBook, goods: GoodsStore) -> MarketBook:
@@ -319,9 +433,15 @@ func _new_market_book(book: OwnerBook, goods: GoodsStore) -> MarketBook:
 	return MarketBook.new(book, goods, _definitions.goods, _definitions.market_targets, _definitions.price_params)
 
 
-func _rebuild_engine() -> void:
-	_rules = _definitions.trade_rules if _definitions.trade_rules != null else NeutralTradeRules.new()
-	_engine = null if _markets == null else TradeEngine.new(_book, _ledger, _goods, _markets, _rules, _definitions.price_params)
+func _new_engine(book: OwnerBook, ledger: Ledger, goods: GoodsStore, markets: MarketBook) -> TradeEngine:
+	return null if markets == null else TradeEngine.new(book, ledger, goods, markets, _rules, _definitions.price_params)
+
+
+## Sem as receitas, as constantes dos locais ou o motor de comércio (que vem dos mercados), não há locais de produção.
+func _new_production_book(book: OwnerBook, goods: GoodsStore, markets: MarketBook, engine: TradeEngine) -> ProductionBook:
+	if engine == null or _definitions.recipes.is_empty() or _definitions.site_params == null:
+		return null
+	return ProductionBook.new(book, goods, markets, engine, _definitions.recipes, _definitions.site_params, _definitions.price_params.max_order_quantity)
 
 
 func _reset() -> void:
@@ -329,4 +449,5 @@ func _reset() -> void:
 	_ledger = Ledger.new(_book, _record_history)
 	_goods = GoodsStore.new(_book, _definitions.goods, _definitions.kinds)
 	_markets = _new_market_book(_book, _goods)
-	_rebuild_engine()
+	_engine = _new_engine(_book, _ledger, _goods, _markets)
+	_production = _new_production_book(_book, _goods, _markets, _engine)
