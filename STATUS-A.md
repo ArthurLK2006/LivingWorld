@@ -1,4 +1,4 @@
-11/11/2026 17:07 (Brasília) · T1b PRONTA: ramo `lw-092e-ajustes-de-contrato` (sai do `main` `d1d3d8b`); tarifa `ceil_div` e `peek_quote` com o ator; `check_all` VERDE (143 scripts, 1.295 testes), hashes e `run_sim` iguais; seguindo para a T2 (`lw-092f-divide-economy-module`)
+11/11/2026 17:22 (Brasília) · T2 PRONTA: ramo `lw-092f-divide-economy-module` (sai do `main` `d1d3d8b`); `EconomyModule` dividido em 4 classes de apoio, sem mudar comportamento; `check_all` VERDE (142 scripts, 1.293 testes, mesmos asserts e hashes; nenhum teste alterado); seguindo para a T3 (LW-093, até o primeiro hash do marco 2)
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
