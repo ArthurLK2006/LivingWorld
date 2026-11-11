@@ -22,7 +22,8 @@ var npc: NpcModule
 ## nasce só com o núcleo (testes e ferramentas que não precisam do terreno). `points` são os pontos de interesse já lidos (LW-049).
 ## `npc_setup` (LW-067): os dados do `npc` já lidos; sem ele o `npc` nasce sem NPCs. Falha de registro: push_error e o mundo segue sem módulos.
 ## `start_minute` (LW-042b): tempo simulado em que o mundo novo começa, repassado ao `SimulationRunner`; o padrão 0 é 00:00 do dia 1.
-func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null, start_minute: int = 0) -> void:
+## `world_setup` (LW-097c): as rotas já lidas e o sinal de build de desenvolvimento; sem ele o módulo `world` nasce sem rotas.
+func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null, start_minute: int = 0, world_setup: WorldSetup = null) -> void:
 	if runner != null:
 		runner.finish()
 	character = null
@@ -30,7 +31,7 @@ func start_new_game(world_seed: int, terrain: TerrainData = null, points: Array[
 	npc = null
 	runner = SimulationRunner.new(world_seed, start_minute)
 	if terrain != null:
-		var modules: GameModules = GameModules.register(runner, terrain, points, npc_setup)
+		var modules: GameModules = GameModules.register(runner, terrain, points, npc_setup, null, world_setup)
 		if modules.result.ok:
 			character = modules.character
 			interaction = modules.interaction

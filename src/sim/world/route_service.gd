@@ -5,7 +5,7 @@ extends RefCounted
 ## no state_hash. Toda consulta devolve CÓPIAS e, quando falha, uma falha tratada com código e mensagem que diz o que falhou, onde e o
 ## esperado. As listas saem sempre em ordem crescente de `id`, nunca pela ordem de um Dictionary (regra do MODELO.md).
 ## Caminho mais curto = menor soma de `length_m`; empate desfeito pela menor sequência de ids de rota, na ordem da viagem. `difficulty` e
-## `risk` não pesam na escolha (quem viaja os pesa, economia).
+## `risk` não pesam na escolha (quem viaja os pesa, economia). O serviço continua SEM estado: as rotas fechadas (estado do `WorldModule`, LW-097c) entram em `peek_path` por parâmetro.
 
 const CODE_ROUTE_UNKNOWN: String = "ROUTE_UNKNOWN"
 const CODE_NO_PATH: String = "ROUTE_NO_PATH"
@@ -61,8 +61,9 @@ func peek_routes_of(settlement_id: String) -> RoutesQuery:
 
 
 ## O caminho mais curto entre dois assentamentos: os ids das rotas na ordem da viagem e o comprimento total. Do assentamento para ele mesmo
-## o caminho é vazio, de comprimento 0. Assentamento desconhecido: `SETTLEMENT_UNKNOWN`; sem caminho: `ROUTE_NO_PATH`.
-func peek_path(from_settlement_id: String, to_settlement_id: String) -> PathQuery:
+## o caminho é vazio, de comprimento 0. Assentamento desconhecido: `SETTLEMENT_UNKNOWN`; sem caminho: `ROUTE_NO_PATH`. As rotas de `closed_route_ids`
+## (ids como chave) não contam: o caminho só passa pelas abertas.
+func peek_path(from_settlement_id: String, to_settlement_id: String, closed_route_ids: Dictionary[String, bool] = {}) -> PathQuery:
 	for settlement_id: String in [from_settlement_id, to_settlement_id]:
 		if not _route_ids_by_settlement.has(settlement_id):
 			return PathQuery.new(_unknown_settlement("peek_path", settlement_id), [], 0)
@@ -75,6 +76,8 @@ func peek_path(from_settlement_id: String, to_settlement_id: String) -> PathQuer
 			break
 		done[current] = true
 		for route_id: String in _route_ids_by_settlement[current]:
+			if closed_route_ids.has(route_id):
+				continue
 			var route: Route = _routes[route_id]
 			var next_id: String = route.other_end(current)
 			var next_distance: int = distance[current] + route.length_m

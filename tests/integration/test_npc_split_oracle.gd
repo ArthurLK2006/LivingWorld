@@ -10,6 +10,8 @@ extends GutTest
 ## tempo limite do Intent, passou a ser recuperado pelo detector de impasse (`result_timeout`), e isso muda o mundo dali em diante. Se um mudar de propósito, o valor
 ## novo é decisão de Arthur, nunca um ajuste para o teste passar. Na LW-097a (marco 3, DEC-175) os nove valores foram trocados por decisão de Arthur em 11/11/2026: o
 ## terceiro povoado ganhou a regra do FoodStub (`food_test_settlement_c`, TEMP-LW-065), e o estoque de comida de cada povoado entra no save do `npc`, então todo hash mudou.
+## Na LW-097c (marco 3) os nove valores mudaram de novo: o `world` virou módulo registrado e ganhou o bloco dele no save (`world`, vazio com todas as rotas abertas); o valor novo
+## é só o registro do marco 3, que Arthur já aprovou na LW-097a (DEC-175).
 
 const WORLD_SEED: int = 11
 const ACTOR_ID: int = 77
@@ -47,15 +49,15 @@ const T_STARVED: int = 4 * DAY + 9 * HOUR
 ## acrescentou ao save do mundo o bloco vazio `economy`, e só isso mudou os nove valores (sem o bloco, voltam todos aos anteriores, que eram os de 5a7d453 para `intents`,
 ## `alarm`, `resumed` e `switches`, e os da LW-073b e da LW-085 para os demais; ver o cabeçalho).
 const EXPECTED: Dictionary[String, String] = {
-	"intents": "1a6dace2ab56968f5bcf896aba33974d49e4dbae402c521234c8ff0ad61790e5",
-	"alarm": "2d1748a57a3925f6cee7b87da5371b84538b1c145c95a68ad993b9c3974714ae",
-	"resumed": "f0649c6a48b7d246994625e0622af8c37f6ad3231c7778daf8e88c121e49ac19",
-	"switches": "39076a14215d3fceb2275262db2cd784fbf8acce07ed3d951309b119fb644aa1",
-	"talk": "8c9ae95d267583a7469b294264dcf364751665d64323d2d19556c5c1ad598741",
-	"save": "d4cbe4c7eab611096fb311bbaceaa99a6f9a0e9ea4523ca151505c2a0cfce0c9",
-	"demote": "c5d0bada6aff6bee918a63ba8b00b3b186bb9247ce3aef0c87c565336fd01f9d",
-	"starved": "4d8632cc49cff1eaf8da5ccfff11c6f70160cd69e76f92f8f1645037b319de7c",
-	"real_game": "6219f7e281a8e917def1111966e385505bf710431b3d2f885800e98455547de1",
+	"intents": "741f663a0acab2d965338e813a00504876e800de4fb240edcd17a846a353cf02",
+	"alarm": "619241a479331a96319898ddfba83e190c00a5fd3d45e479b24e37ce30ab27c2",
+	"resumed": "83d4d6f1bad3fa7912f0047631fb66b124c9388012c919525c31eff50e39fc1e",
+	"switches": "b2f79365b4c0309e66135d9c7c5bab954b70fbad1d1b9db92f3b440f1d099100",
+	"talk": "388c4752b18b17497a034329196534fea115fef342ad6cc91c117334f6ff78ab",
+	"save": "cd8cfe84a7647afcc7a8489a8d7150ad15e62ec8190875a72be2cb5951c54f9f",
+	"demote": "225b4a4fbdaaaac17f412a7bfb9029972809966ca545cef8ac6988e409338cb9",
+	"starved": "b23c4e65cad99410febbf564584f3b4a740f07e8f299cd59f145f207e2842bed",
+	"real_game": "9f37878f3add92467a403d05aa4a3e2c66d851818d36ae2fe7bdae7412defb0d",
 }
 
 var _data: NpcLifeCheck.GameData

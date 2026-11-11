@@ -147,7 +147,7 @@ func test_a_game_started_without_terrain_has_no_character_module() -> void:
 
 func test_the_game_world_registers_the_character_module_under_its_name() -> void:
 	assert_not_null(_host.character)
-	var expected_names: Array[String] = [EXPECTED_MODULE_NAME, EXPECTED_ECONOMY_MODULE_NAME, EXPECTED_NPC_MODULE_NAME]
+	var expected_names: Array[String] = [EXPECTED_MODULE_NAME, GameModules.WORLD_NAME, EXPECTED_ECONOMY_MODULE_NAME, EXPECTED_NPC_MODULE_NAME]
 	assert_eq(_host.runner.world.module_names(), expected_names)
 	assert_eq(GameModules.CHARACTER_NAME, EXPECTED_MODULE_NAME)
 

@@ -44,7 +44,7 @@ func _ready() -> void:
 ## usar um host próprio, sem reiniciar o mundo dos autoloads.
 func start_default_game(host: SimulationHostNode) -> void:
 	_places = _load_places()
-	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points(), _load_npc_setup(), NEW_GAME_START_MINUTE)
+	host.start_new_game(DEFAULT_WORLD_SEED, _terrain_or_load(), _load_points(), _load_npc_setup(), NEW_GAME_START_MINUTE, _load_world_setup())
 
 
 func bind_host(host: SimulationHostNode) -> void:
@@ -105,6 +105,18 @@ func _load_npc_setup() -> NpcSetup:
 	var setup: NpcSetup = NpcSetup.from_dir(NPC_DATA_DIR, SettlementService.new(_settlements, _places), OS.is_debug_build())
 	if not setup.result.ok:
 		push_error("GameApp: dados do npc não carregados de '%s': %s" % [NPC_DATA_DIR, setup.result.message])
+		return null
+	return setup
+
+
+## Rotas de terrain_dir (LW-097c) para o módulo `world`, conferidas contra os assentamentos já lidos; nulo (depois de push_error) se não carregarem,
+## e o jogo segue com o módulo sem rotas. Sem assentamentos (o motivo já foi registrado) não há entre o que ligar: nulo, sem erro novo.
+func _load_world_setup() -> WorldSetup:
+	if _settlements.is_empty():
+		return null
+	var setup: WorldSetup = WorldSetup.from_dir(terrain_dir, _settlements, OS.is_debug_build())
+	if not setup.result.ok:
+		push_error("GameApp: rotas não carregadas de '%s': %s" % [terrain_dir, setup.result.message])
 		return null
 	return setup
 
