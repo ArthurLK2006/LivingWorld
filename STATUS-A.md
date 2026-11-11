@@ -1,4 +1,4 @@
-11/11/2026 19:04 (Brasília) · LW-093 PARTE 2 PRONTA: ramo `lw-093d-dinheiro-e-consumo` (sobre a parte 1): dinheiro inicial na abertura da conta (`mint` `game_start`) e `request_consume`; `check_all` VERDE (146 scripts, 1.303 testes), hashes e `run_sim` iguais; seguindo para a parte 3 (o jogo real recebe as definições da economia)
+11/11/2026 19:10 (Brasília) · LW-093 PARTE 3 PRONTA: ramo `lw-093e-jogo-real-com-economia`: o jogo real recebe as definições da economia (mercados 1 e 2, NPCs a partir do 3 com 60 de saldo); `check_all` VERDE (147 scripts, 1.305 testes), hashes e `run_sim` iguais; próximo: as ações `buy`/`sell` esbarram em testes existentes (vou parar e relatar)
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
