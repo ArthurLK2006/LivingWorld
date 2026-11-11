@@ -1,4 +1,67 @@
-10/11/2026 21:32 (Brasília) — CONCLUÍDA: RODADA 3 da LW-087c (workplace_id e peek_site ou peek_post; números da B conferidos): commit b2d028d enviado, check_all VERDE (1.194 de 1.194), tabela de conferência contra a B e a A na seção 7 (divergências só listadas). Nada no main, sem Fase B, sem tag. Parei (regra 13), aguardando suas decisões (seção 9). Nada rodando.
+10/11/2026 21:48 (Brasília) — CONCLUÍDA: RODADA 4 da LW-087c (marcos de hash por bloco e tecido na manutenção): commit b7eb2ee enviado, check_all VERDE (1.194 de 1.194); HEADs da A (1ad022a) e da B (6b59a96, bfceb90) iguais no início e no fim; divergências só listadas na seção 7. Nada no main, sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+
+# RODADA 4 — RELATÓRIO — LW-087c: marcos de hash por bloco e tecido na manutenção (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Li: AGENTS (versão 0.4); o texto da tarefa; os HEADs do início (21:42): A `1ad022a`, B `6b59a96` (economia) e `bfceb90` (dados e eventos); de A, DEC-174 a DEC-177 e o roadmap; do `economy.md` da B, marcos, tecido, postos e consultas; o meu `npc.md` e `world.md` (`b2d028d`). Decisões: DEC-022, 126, 127 e 100 e DEC-163 e 164 (APROVADAS); DEC-165, 169, 172, 174 e 175 (PROPOSTA no ramo da A); **DEC-178, tecido (APROVADA por você, ainda não registrada pela A)**; DEC-040 (PENDENTE, não bloqueia). Arquivos: só `world.md` e `npc.md`. **HEADs de novo no fim (21:47): os mesmos três, sem mudança.**
+
+## 1. RESUMO
+Os marcos de hash agora são por **bloco** (marco 1 = LW-088a a LW-092; marco 2 = LW-093 a LW-096a; marco 3 = LW-097), com a regra de parar no primeiro valor de referência que mudar, mostrar antes, depois e causa, e só registrar o resto do bloco depois do "aprovo os hashes do marco N". O tecido passou a insumo de manutenção dos locais (o NPC não o consome) e as DEC da A foram citadas onde a frase já existia.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (só documentos; ramo `lw-087c-extensoes-world-npc`, commit `b7eb2ee`)
+- `docs/modules/npc.md` — 14.8 (marcos por bloco), **linha nova da LW-088a** e linhas LW-093 a LW-097 da seção 12 (marcos), cabeçalho da 14, 14.3, 14.4, 14.5, 14.9 (Q15, Q20, Q22, "em aberto"). Neste commit +18 e −17 linhas.
+- `docs/modules/world.md` — Q-W6 (marcos por bloco). 1 linha.
+- Contra o `main` (`8dcc81d`, intocado) o ramo difere só nesses dois arquivos (+90/−2 e +27).
+
+## 4. DECISÕES TÉCNICAS
+- **Marcos por bloco [PROPOSTA do revisor]:** escritos como você mandou, com as quatro regras (parar no primeiro valor que mudar; "aprovo os hashes do marco N"; a partir da LW-098 valor já aprovado que mudar faz parar e perguntar; o primeiro valor de um teste novo não é mudança). O `run_sim` não muda, nem o código dele. A LW-088a ganhou **uma linha na tabela do `npc.md`** (não é tarefa do `npc`, mas abre o marco 1 e o `npc` herda o hash).
+- **Tecido:** onde os arquivos diziam "só mercadoria" ou [LIM], agora dizem que o NPC não o consome e que ele é insumo de manutenção dos locais (DEC-178, em dados). Tirei o [LIM] do tecido, porque agora ele tem consumidor (os locais).
+- **DEC citadas, só onde a frase já existia:** LW-096a = DEC-169; vaga = DEC-165; postos = DEC-164 (APROVADA) e DEC-174 (PROPOSTA, sem marca `TEMP-LW-`); marcos = DEC-172 e DEC-175; tecido = DEC-178; consumo = DEC-163. A frase "nenhuma está em `DECISIONS.md`" (14.9) foi corrigida para "a LW-087a as registrou; vale o status em `DECISIONS.md`".
+- **LW-096a, salário e local da vaga:** continua **pendência da economia**. O `economy.md` da B (`6b59a96`) ainda não lista o salário nem o local em `peek_site`, `peek_post` nem `peek_contracts`; deixei como estava (14.4: [PENDENTE, pedido à B]) e **não** inventei nome de campo.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD final `b7eb2ee`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 172,1 s (3 min 25 s no total). Mesmos números do `main`, como esperado numa tarefa só de documentos.
+- Por busca: **0** citações a `STATUS-B`, `STATUS-C`, `status-b`, `status-c` ou "pré-voo" nas linhas que acrescentei; `site_id` só nas 2 linhas explicativas; **0** frases restantes de "tecido só mercadoria" ou de [LIM] do tecido nos dois arquivos.
+- NÃO EXECUTADO: `godot --headless --path . --import` (o `godot` não está no PATH do meu terminal; o `check_all` roda sozinho). Oráculo, soak e `run_sim` não foram rodados (só documentos).
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido **por leitura do diff**: itens 1 a 5 da tarefa.
+
+## 7. PROBLEMAS ENCONTRADOS — o que conferi contra a A e a B
+Legenda: **✓** bate; **DIV** divergência (só listada; não editei os ramos da A nem os da B).
+
+| # | O que conferi | Meus arquivos (`b7eb2ee`) | A (`1ad022a`, igual no início e no fim) | B (`6b59a96` e `bfceb90`, iguais no início e no fim) |
+|---|---|---|---|---|
+| 1 | Marcos de hash por bloco (088a–092; 093–096a; 097) | ✓ | **DIV:** DEC-172 e DEC-175 têm três marcos por tarefa (088a; 093 a 095; 097) | **DIV:** seção 2 e Q19 com três marcos por tarefa; **e a linha da LW-097 na seção 14 diz "marco 2"**, enquanto a seção 2 diz marco 3 |
+| 2 | Regra de parar no primeiro valor, depois só registrar; a partir da LW-098 pergunta | ✓ | não traz | não traz |
+| 3 | Tecido na manutenção, NPC não consome (DEC-178) | ✓ | **DIV:** DEC-178 **ainda não registrada** (o texto dela diz "próximo número livre: DEC-178") | **DIV:** seção 3 (tabela) e seção 6 ainda dizem "só mercadoria de comércio" e a [LIM] do tecido |
+| 4 | LW-096a = DEC-169 | ✓ | ✓ DEC-169 e linha do roadmap (depende da LW-096 e da LW-093) | ✓ seções 8 e 14 |
+| 5 | Vaga = DEC-165, também de posto | ✓ | **DIV:** DEC-165 ainda diz só "local de produção" | ✓ vaga de local ou posto (seção 8) |
+| 6 | Postos = DEC-164 e DEC-174 (sem marca `TEMP`) | ✓ | ✓ DEC-164 (APROVADA) e DEC-174 (PROPOSTA) | ✓ Q18 decidida (rodada 3): sem marca |
+| 7 | `WagesPaid(workplace_id, ...)` e `peek_site` ou `peek_post` | ✓ | ✓ **resolvido:** DEC-152 revista agora usa `workplace_id`, `peek_site` e `peek_post` (era DIV na rodada 3) | ✓ |
+| 8 | Salário e local da vaga em `peek_contracts`, `peek_site` ou `peek_post` (LW-096a) | pendência escrita, sem nome de campo | não trata | **ainda pendente:** as linhas de `peek_site`, `peek_post` e `peek_contracts` do `economy.md` não mudaram |
+| 9 | `run_sim` não muda | ✓ | ✓ DEC-172 e DEC-175; **DIV interna:** a DEC-162 ainda diz que a LW-097 atualiza o `run_sim` (conferido em `1ad022a`) | ✓ |
+
+## 8. RISCOS
+- **A e a B ainda têm os marcos por tarefa e o tecido "só mercadoria"** (e a DEC-178 não existe): até elas atualizarem, os três documentos se contradizem em cima desses dois pontos. A A e a B estão trabalhando em paralelo; reli os HEADs no fim e nada tinha mudado.
+- **DEC-178 citada sem registro:** os meus arquivos citam um número que a A ainda não registrou (como você mandou). Se a A usar outro número, tenho de corrigir.
+- **LW-096a sem salário e local da vaga nas consultas:** a tarefa não consegue pontuar a vaga até a B listar os campos.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **A LW-087a** registrar a DEC-178 (APROVADA), revisar DEC-172 e DEC-175 para marcos por bloco e a DEC-165 para vaga de posto (**recomendo**).
+2. **A B** trocar "tecido só mercadoria" e a [LIM] pela manutenção, os marcos por bloco (e o "marco 2" da LW-097) e listar salário e local da vaga nas consultas.
+3. **Você:** aprovar ou trocar as propostas do revisor (marcos por bloco, Q23, Q-W1 a Q-W6; **recomendo aprovar**).
+4. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3 não iniciada**; os rascunhos 087b, 087c e 087d seguem **fora do `main`**; o da A (087a) está no ramo dela.
+- Próxima tarefa recomendada: **LW-087a (A)**, para alinhar os pontos da tabela. **Não iniciada.** Parei aqui (regra 13).
+- Git: ramo `lw-087c-extensoes-world-npc` enviado (`b7eb2ee`); `status-c` enviado; `main` = `8dcc81d`, intocado; nenhuma tag nova; sem merge no `main`, sem Fase B, sem `--force`.
+
+---
 
 # RODADA 3 — RELATÓRIO — LW-087c: `workplace_id` no lugar de `site_id` e números da B conferidos (DOC)        Status: PRONTA PARA REVISÃO
 
