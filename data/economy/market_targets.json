@@ -1,0 +1,22 @@
+[
+	{"id": "mt_test_settlement_a_grain", "settlement_id": "test_settlement_a", "good_id": "grain", "target_stock": 120, "initial_stock": 120, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_flour", "settlement_id": "test_settlement_a", "good_id": "flour", "target_stock": 40, "initial_stock": 40, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_bread", "settlement_id": "test_settlement_a", "good_id": "bread", "target_stock": 60, "initial_stock": 60, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_wood", "settlement_id": "test_settlement_a", "good_id": "wood", "target_stock": 60, "initial_stock": 60, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_plank", "settlement_id": "test_settlement_a", "good_id": "plank", "target_stock": 30, "initial_stock": 30, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_ore", "settlement_id": "test_settlement_a", "good_id": "ore", "target_stock": 10, "initial_stock": 10, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_metal", "settlement_id": "test_settlement_a", "good_id": "metal", "target_stock": 10, "initial_stock": 10, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_tool", "settlement_id": "test_settlement_a", "good_id": "tool", "target_stock": 29, "initial_stock": 29, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_wool", "settlement_id": "test_settlement_a", "good_id": "wool", "target_stock": 10, "initial_stock": 10, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_a_fabric", "settlement_id": "test_settlement_a", "good_id": "fabric", "target_stock": 25, "initial_stock": 25, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_grain", "settlement_id": "test_settlement_b", "good_id": "grain", "target_stock": 80, "initial_stock": 80, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_flour", "settlement_id": "test_settlement_b", "good_id": "flour", "target_stock": 30, "initial_stock": 30, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_bread", "settlement_id": "test_settlement_b", "good_id": "bread", "target_stock": 40, "initial_stock": 40, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_wood", "settlement_id": "test_settlement_b", "good_id": "wood", "target_stock": 40, "initial_stock": 40, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_plank", "settlement_id": "test_settlement_b", "good_id": "plank", "target_stock": 21, "initial_stock": 21, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_ore", "settlement_id": "test_settlement_b", "good_id": "ore", "target_stock": 10, "initial_stock": 10, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_metal", "settlement_id": "test_settlement_b", "good_id": "metal", "target_stock": 10, "initial_stock": 10, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_tool", "settlement_id": "test_settlement_b", "good_id": "tool", "target_stock": 29, "initial_stock": 29, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_wool", "settlement_id": "test_settlement_b", "good_id": "wool", "target_stock": 30, "initial_stock": 30, "buy_cap_bp": 20000},
+	{"id": "mt_test_settlement_b_fabric", "settlement_id": "test_settlement_b", "good_id": "fabric", "target_stock": 30, "initial_stock": 30, "buy_cap_bp": 20000}
+]

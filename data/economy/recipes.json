@@ -1,0 +1,12 @@
+[
+	{"id": "grow_grain", "name_key": "recipe.grow_grain.name", "occupation_id": "farmer", "workers_per_batch": 4, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "cut_wood", "name_key": "recipe.cut_wood.name", "occupation_id": "lumberjack", "workers_per_batch": 4, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "mine_ore", "name_key": "recipe.mine_ore.name", "occupation_id": "lumberjack", "workers_per_batch": 4, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "shear_wool", "name_key": "recipe.shear_wool.name", "occupation_id": "farmer", "workers_per_batch": 4, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "mill_flour", "name_key": "recipe.mill_flour.name", "occupation_id": "artisan", "workers_per_batch": 3, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "bake_bread", "name_key": "recipe.bake_bread.name", "occupation_id": "artisan", "workers_per_batch": 3, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "saw_plank", "name_key": "recipe.saw_plank.name", "occupation_id": "artisan", "workers_per_batch": 3, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "smelt_metal", "name_key": "recipe.smelt_metal.name", "occupation_id": "artisan", "workers_per_batch": 3, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "forge_tool", "name_key": "recipe.forge_tool.name", "occupation_id": "artisan", "workers_per_batch": 3, "max_batches_per_hour": 1, "wage_per_hour": 2},
+	{"id": "weave_fabric", "name_key": "recipe.weave_fabric.name", "occupation_id": "artisan", "workers_per_batch": 3, "max_batches_per_hour": 1, "wage_per_hour": 2}
+]

@@ -168,8 +168,77 @@ lw085a_violations=$((new_violations - lw029a_violations))
 lw085a_clean=$((new_clean - lw029a_clean))
 new_violations=$lw029a_violations
 new_clean=$lw029a_clean
+# LW-088a (DEC-171 e DEC-132): regra E. ProbeLedgerApi mora na api/ de sim/economy; ProbeLedgerInner mora em sim/economy/ledger, fora da api/. ProbeDoor e ProbeInner (acima) são do npc.
+# O npc só cita a api/ da economy; a economy não cita nada do npc, nem a api/ dele. As duas são da camada 3: a regra A não pega entre pares.
+mkdir -p "$fixture/src/sim/economy/api" "$fixture/src/sim/economy/ledger"
+printf 'class_name ProbeLedgerApi\nextends RefCounted\n' > "$fixture/src/sim/economy/api/probe_ledger_api.gd"
+printf 'class_name ProbeLedgerInner\nextends RefCounted\n' > "$fixture/src/sim/economy/ledger/probe_ledger_inner.gd"
+check_passes 'classes de prova da economy, sem citação, passam'
+expect_clean src/sim/npc/clean.gd 'var ledger: ProbeLedgerApi' 'o npc cita a api/ da economy'
+expect_clean src/sim/economy/ledger/inside.gd 'var ledger: ProbeLedgerApi = ProbeLedgerInner.new()' 'a economy cita as próprias classes'
+expect_clean src/bridge/clean.gd 'var ledger: ProbeLedgerApi' 'a ponte cita a api/ da economy'
+expect_clean src/sim/npc/commented.gd '## usa ProbeLedgerInner só em comentário' 'comentário de linha inteira não conta na regra E'
+expect_violation src/sim/npc/violation.gd 'var ledger: ProbeLedgerInner' 'violation.gd:1: "ProbeLedgerInner" (src/sim/economy/ledger/probe_ledger_inner.gd) é interna de src/sim/economy/' 'o npc cita classe interna da economy'
+expect_violation src/sim/npc/violation.gd 'var ledger: ProbeLedgerInner # comentário no fim da linha' 'violation.gd:1: "ProbeLedgerInner"' 'comentário no fim da linha não isenta o npc na regra E'
+expect_violation src/sim/economy/violation.gd 'var door: ProbeDoor' 'violation.gd:1: "ProbeDoor" (src/sim/npc/api/probe_door.gd) é do npc' 'a economy cita a api/ do npc'
+expect_violation src/sim/economy/violation.gd 'var inner: ProbeInner' 'violation.gd:1: "ProbeInner" (src/sim/npc/lod/probe_inner.gd) é do npc' 'a economy cita classe interna do npc'
+lw088a_violations=$((new_violations - lw029a_violations))
+lw088a_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
+# LW-088 (arquitetura 11.4): regra F. Só src/sim/economy/ledger/ escreve saldo. `balance`, `balances` e `money` recebendo valor (atribuição, += ou -=, campo de outro objeto,
+# `balances[id] = ...`) fora dessa pasta são violação; comparação, nome parecido, declaração e comentário não são.
+expect_violation src/sim/npc/violation.gd 'func x(state): state.money = 5' 'violation.gd:1:' 'campo money de outro objeto recebe valor'
+expect_violation src/sim/economy/violation.gd 'func x(): _balances[owner_id] -= amount' 'violation.gd:1:' 'subtrair de _balances fora do ledger'
+expect_violation src/sim/economy/violation.gd 'func x(): balances[owner_id] = 10' 'violation.gd:1:' 'balances[id] recebe valor fora do ledger'
+expect_violation src/sim/world/violation.gd 'func x(): balance += 3' 'violation.gd:1:' 'somar a balance fora do ledger'
+expect_violation src/bridge/violation.gd 'func x(owner): owner.balance = 7' 'violation.gd:1:' 'campo balance de outro objeto recebe valor'
+expect_violation src/sim/economy/violation.gd 'func x(): money *= 2 # comentário no fim' 'violation.gd:1:' 'comentário no fim da linha não isenta a regra F'
+expect_clean src/sim/economy/ledger/inside.gd 'func x(): _balances[owner_id] -= amount; balance += 1; owner.money = 3' 'o próprio ledger escreve saldo'
+expect_clean src/sim/economy/api/reply.gd 'var balance: int = 0
+func _init(owner_balance: int) -> void:
+    balance = owner_balance' 'declarar e inicializar um campo balance não é alterar saldo'
+expect_clean src/sim/npc/comparison.gd 'func x(state): return state.money == 5 and balance != 3 and balance >= 2' 'comparação não é atribuição'
+expect_clean src/sim/npc/lookalike.gd 'func x(): my_balance += 1; balance_sum -= 2; state.money_total = 4; peek_balance = 3' 'nome parecido não é saldo (palavra inteira)'
+expect_clean src/sim/npc/commented.gd '# money = 5 só em comentário' 'comentário de linha inteira não conta na regra F'
+lw088_violations=$((new_violations - lw029a_violations))
+lw088_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
+# LW-089c: a regra E olha o IDENTIFICADOR, não o texto entre aspas (a economy ouve o evento do npc pelo NOME). ProbeDoor (npc/api) e ProbeLedgerInner (economy interna) são as classes de prova.
+expect_clean src/sim/economy/listener.gd 'const EVENT: String = "ProbeDoor"' 'texto com o nome de uma classe do npc não é citação da economy'
+expect_clean src/sim/npc/names.gd 'var kind: String = "ProbeLedgerInner" + "ProbeLedgerApi"' 'texto com o nome de uma classe interna da economy não é citação do npc'
+expect_violation src/sim/economy/violation.gd 'var door: ProbeDoor = null # "texto"' 'violation.gd:1: "ProbeDoor"' 'a classe do npc fora das aspas continua sendo citação'
+expect_violation src/sim/npc/violation.gd 'var inner = ProbeLedgerInner.new("ProbeLedgerApi")' 'violation.gd:1: "ProbeLedgerInner"' 'a classe interna da economy fora das aspas continua sendo citação'
+lw089c_violations=$((new_violations - lw029a_violations))
+lw089c_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
+# LW-088d (revisão independente, I2 e I5): a regra E vale para QUALQUER arquivo fora da economy (não só o npc) e a regra F pega também a atribuição simples e os membros privados do Ledger.
+mkdir -p "$fixture/src/sim/ecology" "$fixture/src/sim/politics"
+printf '# ecology (sonda)\n' > "$fixture/src/sim/ecology/README.md"
+printf '# politics (sonda)\n' > "$fixture/src/sim/politics/README.md"
+expect_violation src/sim/politics/violation.gd 'var ledger: ProbeLedgerInner' 'violation.gd:1: "ProbeLedgerInner" (src/sim/economy/ledger/probe_ledger_inner.gd) é interna de src/sim/economy/' 'um módulo de camada maior cita classe interna da economy'
+expect_violation src/sim/ecology/violation.gd 'var ledger: ProbeLedgerInner' 'violation.gd:1: "ProbeLedgerInner"' 'um módulo de camada igual cita classe interna da economy'
+expect_clean src/sim/politics/clean.gd 'var ledger: ProbeLedgerApi' 'qualquer módulo cita a api/ da economy'
+expect_clean src/sim/politics/names.gd 'var kind: String = "ProbeLedgerInner"' 'texto com o nome de uma classe interna da economy não é citação de outro módulo'
+expect_clean src/app/setup.gd 'var inner: ProbeLedgerInner' 'src/app, a raiz de composição, fica de fora da regra E'
+expect_violation src/sim/world/violation.gd 'func x(): balance = 5' 'violation.gd:1:' 'atribuição simples a balance fora do ledger'
+expect_violation src/sim/npc/violation.gd 'func x(): money = 5' 'violation.gd:1:' 'atribuição simples a money fora do ledger'
+expect_violation src/sim/economy/violation.gd 'func x(): _balances = {}' 'violation.gd:1:' 'trocar _balances fora do ledger'
+expect_violation src/sim/npc/violation.gd 'func x(ledger): ledger._balances.erase(owner_id)' 'violation.gd:1:' 'apagar de _balances por fora do ledger'
+expect_violation src/bridge/violation.gd 'func x(ledger): ledger._set_balance(owner_id, 5)' 'violation.gd:1:' 'chamar _set_balance por fora do ledger'
+expect_clean src/sim/economy/ledger/inside.gd 'func x(): balance = 5; _set_balance(owner_id, 1); _balances = {}' 'o próprio ledger usa os membros privados'
+expect_clean src/sim/npc/declared.gd 'func x(): var balance: int = 3; var money := 4; return balance == money' 'declaração com tipo não é atribuição a saldo'
+expect_clean src/sim/npc/quoted.gd 'var text: String = "balance = 5 e _balances e _set_balance"' 'texto entre aspas não é atribuição a saldo'
+lw088d_violations=$((new_violations - lw029a_violations))
+lw088d_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
+rm "$fixture/src/sim/economy/api/probe_ledger_api.gd" "$fixture/src/sim/economy/ledger/probe_ledger_inner.gd"
 rm "$fixture/src/sim/npc/api/probe_door.gd" "$fixture/src/sim/npc/lod/probe_inner.gd" "$fixture/src/sim/npc/README.md"
 rm "$fixture/src/core/probe_core.gd" "$fixture/src/sim/world/probe_terrain.gd" "$fixture/src/bridge/probe_bridge.gd" "$fixture/src/presentation/probe_view.gd" "$fixture/src/sim/world/internal/probe_secret.gd"
+rm "$fixture/src/sim/ecology/README.md" "$fixture/src/sim/politics/README.md"
 rm "$fixture/src/sim/world/README.md"
 check_violation 'contrato ausente' 'world/README.md'
 echo 'LW-012: 1 caso válido e 5 violações detectadas.'
@@ -178,3 +247,7 @@ echo 'LW-021: autoloads permitidos aprovados e 1 autoload extra detectado.'
 echo "LW-029A: $new_violations violações detectadas e $new_clean casos aceitos (sorteio, tempo, estático, Node em persistence, relógio e barramento)."
 echo "LW-036: $lw036_violations violações detectadas e $lw036_clean casos aceitos (camada superior, apresentação, classe privada de internal/, comentário) e a árvore real aprovada."
 echo "LW-085a: $lw085a_violations violações detectadas e $lw085a_clean casos aceitos (regra D: a ponte e tools só citam a api/ de um módulo que tem api/; módulo sem api/, src/app e comentário ficam de fora)."
+echo "LW-088a: $lw088a_violations violações detectadas e $lw088a_clean casos aceitos (regra E: o npc cita só a api/ da economy e a economy não cita o npc; comentário fica de fora)."
+echo "LW-088: $lw088_violations violações detectadas e $lw088_clean casos aceitos (regra F: só o Ledger escreve saldo; comparação, nome parecido, declaração e comentário ficam de fora)."
+echo "LW-089c: $lw089c_violations violações detectadas e $lw089c_clean casos aceitos (regra E: texto entre aspas não é citação; o identificador continua sendo)."
+echo "LW-088d: $lw088d_violations violações detectadas e $lw088d_clean casos aceitos (regra E para qualquer arquivo fora da economy, src/app de fora; regra F com atribuição simples e membros privados do Ledger)."
