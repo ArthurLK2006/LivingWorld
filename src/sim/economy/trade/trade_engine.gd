@@ -25,14 +25,23 @@ func _init(book: OwnerBook, ledger: Ledger, goods: GoodsStore, markets: MarketBo
 	_params = params
 
 
-## O total e a tarifa da ordem, sem executar. Mesmas falhas de `execute` que não dependem do ator.
+## O total e a tarifa da ordem, sem executar. Mesmas falhas de `execute`, menos as de fundos e de capacidade; o ator só é conferido quando é dado (`NO_ID` = cotação sem ator).
 func quote(market_id: int, good_id: String, quantity: int, side: String, actor_id: int = IdGenerator.NO_ID) -> Outcome:
+	return _quote(market_id, good_id, quantity, side, actor_id, actor_id != IdGenerator.NO_ID)
+
+
+## As conferências na ordem do cabeçalho: ordem (mercado, bem, lado, quantidade), regras, ator (se `check_actor`), teto de compra ou estoque.
+func _quote(market_id: int, good_id: String, quantity: int, side: String, actor_id: int, check_actor: bool) -> Outcome:
 	var checked: Result = _check_order(market_id, good_id, quantity, side)
 	if not checked.ok:
 		return Outcome.new(checked, 0, 0, 0)
 	var terms: TradeTerms = _rules.peek_terms(good_id, market_id, actor_id)
 	if terms.banned:
 		return Outcome.new(Result.failure(EconomyCodes.TRADE_BANNED, "TradeEngine.quote: as regras de comércio proíbem '%s' no mercado %d." % [good_id, market_id]), 0, 0, 0)
+	if check_actor:
+		var opened: Result = _book.check_open(actor_id)
+		if not opened.ok:
+			return Outcome.new(Result.failure(opened.code, "TradeEngine: %s" % opened.message), 0, 0, 0)
 	var stock: int = _goods.quantity_of(market_id, good_id)
 	if side == SIDE_BUY and quantity > stock:
 		return Outcome.new(Result.failure(EconomyCodes.INSUFFICIENT_STOCK, "TradeEngine.quote: o mercado %d tem %d de '%s' e a compra pede %d." % [market_id, stock, good_id, quantity]), 0, 0, 0)
@@ -45,12 +54,9 @@ func quote(market_id: int, good_id: String, quantity: int, side: String, actor_i
 ## Executa a ordem: tudo ou nada. Falhas: as de `quote` mais `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_INSUFFICIENT_FUNDS` (o ator compra sem dinheiro), `ECON_MARKET_NO_FUNDS` (o mercado não paga a venda),
 ## `ECON_INSUFFICIENT_GOODS` (o ator vende o que não tem) e `ECON_CAPACITY_EXCEEDED` (quem recebe não carrega o peso).
 func execute(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> Outcome:
-	var quoted: Outcome = quote(market_id, good_id, quantity, side, actor_id)
+	var quoted: Outcome = _quote(market_id, good_id, quantity, side, actor_id, true)
 	if not quoted.result.ok:
 		return quoted
-	var opened: Result = _book.check_open(actor_id)
-	if not opened.ok:
-		return Outcome.new(Result.failure(opened.code, "TradeEngine.execute: %s" % opened.message), 0, 0, 0)
 	var buying: bool = side == SIDE_BUY
 	var payer: int = actor_id if buying else market_id
 	var seller: int = market_id if buying else actor_id
@@ -65,8 +71,15 @@ func execute(actor_id: int, market_id: int, good_id: String, quantity: int, side
 	var money_ok: Result = _ledger.check_transfer(payer, payee, quoted.total, Ledger.REASON_TRADE)
 	if not money_ok.ok:
 		return Outcome.new(money_ok, 0, 0, 0)
-	_ledger.transfer(payer, payee, quoted.total, Ledger.REASON_TRADE)
-	_goods.transfer(seller, buyer, good_id, quantity)
+	var paid: Result = _ledger.transfer(payer, payee, quoted.total, Ledger.REASON_TRADE)
+	if not paid.ok:
+		return Outcome.new(paid, 0, 0, 0)
+	var delivered: Result = _goods.transfer(seller, buyer, good_id, quantity)
+	if not delivered.ok:
+		# Não deveria acontecer (o `check_transfer` dos bens passou): se acontecer, o dinheiro volta e a ordem falha inteira; se nem a volta der certo, a mensagem diz.
+		var undone: Result = _ledger.transfer(payee, payer, quoted.total, Ledger.REASON_TRADE)
+		var suffix: String = "" if undone.ok else " O dinheiro NÃO voltou: %s" % undone.message
+		return Outcome.new(Result.failure(delivered.code, "TradeEngine.execute: a entrega dos bens falhou depois do pagamento: %s%s" % [delivered.message, suffix]), 0, 0, 0)
 	return quoted
 
 
