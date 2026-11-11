@@ -81,6 +81,7 @@ Os três são **dados** (`creature_types`): quem muda o tipo muda uma linha, nã
 |---|---|---|
 | `request_set_focus(actor_id, x_cm, z_cm)` / `request_clear_focus(actor_id)` | 157 | foco do LOD (a ponte passa a posição do jogador; mesmo padrão do `npc`) |
 | `request_report_creature_positions(positions)` | 157 | posições dos corpos em S0, em lote |
+| `request_set_bodies_available(available)` | 157 | interruptor de corpos, como o do `npc`: o jogo nasce **sem** corpos e quem liga é a apresentação |
 | `request_spawn_creature(type_id, lair_id, cause_id)` | 162 | nasce **uma** criatura; respeita o limite; devolve `Result`; usado pelos eventos dinâmicos |
 | `peek_creature(creature_id)` | 157 | tipo, covil, província, posição, alvo (cópia) |
 | `peek_creature_bodies()` | 157 | quem tem corpo agora, em ordem crescente de ID |

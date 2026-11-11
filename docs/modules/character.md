@@ -73,8 +73,8 @@ Estado: **PLANEJADA (11/11/2026).** Nada desta seção existe no código; o que 
 ### E5. Conhecimento e o mapa (DEC-184, DEC-191)
 
 - **`Knowledge`:** conjunto de `(type_id, entity_id)` descobertos. **Regra por tipo, em dados** [PROPOSTA]: `visibility` = `always` (assentamentos, rotas, pontos de reconhecimento) ou `discovered` (ruínas, tesouros, minérios, covis escondidos).
-- **Comandos:** `request_discover(actor_id, type_id, entity_id, source)` — **idempotente** (descobrir de novo não muda nada e não repete o evento); `request_reveal(actor_id, entities)` — quem visita um **ponto de reconhecimento** (a `ecology` ou o `world`) passa a lista dos segredos **dentro do raio [HIP]** (DEC-191); o `character` só **registra**. `peek_known(actor_id, type_id)` devolve cópia, em ordem crescente de ID.
-- **Quem filtra o mapa:** a **ponte** cruza o que o `world` e a `ecology` conhecem com o `peek_known` e a regra do tipo (`bridge.md`, LW-146e); o `character` não conhece o mapa.
+- **Comandos:** `request_discover(actor_id, type_id, entity_id, source)` — **idempotente** (descobrir de novo não muda nada e não repete o evento); `request_reveal(actor_id, entities)` — quem visita um **ponto de reconhecimento** (a `ecology` ou o `world`) passa a lista dos segredos **dentro do raio [HIP]** (DEC-191); o `character` só **registra**. `peek_known(actor_id, type_id)` devolve cópia, em ordem crescente de ID. **`peek_visible(actor_id, type_id, entity_id) -> bool`** diz se a coisa deve aparecer no mapa (o tipo é `always`, ou o par foi descoberto): a ponte **só pergunta** e aplica a resposta, para não haver regra de jogo nela.
+- **Quem filtra o mapa:** a **ponte** pergunta `peek_visible` para cada ponto que o `world` e a `ecology` conhecem e **só aplica a resposta** (`bridge.md`, LW-146e); o `character` não conhece o mapa.
 
 ### E6. Habilidades, origem e mentor (LW-147, LW-149, LW-161)
 
@@ -86,7 +86,7 @@ Estado: **PLANEJADA (11/11/2026).** Nada desta seção existe no código; o que 
 
 | Nome | Tarefa | O que faz |
 |---|---|---|
-| `peek_character(actor_id)` (ampliada) / `peek_body` / `peek_inventory` / `peek_skill` / `peek_known` | 147, 148, 156, 160 | consultas (cópias) |
+| `peek_character(actor_id)` (ampliada) / `peek_body` / `peek_inventory` / `peek_skill` / `peek_known` / `peek_visible` | 147, 148, 156, 160 | consultas (cópias) |
 | `request_equip` / `request_unequip` / `request_transfer_item` / `request_wear_item` | 148 | seção E2 |
 | `request_apply_damage(actor_id, amount, cause_id)` | 156 | do `combat`; vida e "ferido" de quem tem `character` |
 | `request_set_death_mode(actor_id, mode)` | 156d | escolha ao começar |

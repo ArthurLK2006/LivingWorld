@@ -42,7 +42,7 @@ Os números abaixo são os do SP6 e seguem **[HIP]**: vão para `data/` e o mód
 - **`request_attack(attacker_id, target_id, skill_id) -> AttackResult`:** valida, na ordem da seção 2, e aplica. Atacante e alvo precisam estar **vivos** e **no mesmo encontro**; o pedido do jogador vem pela ponte, que repassa **sem regra** e entrega o `actor_id` (nunca "o jogador" no singular; AGENTS 6).
 - **`AttackResult`** (cópia): `result` (`Result` da `core`), `skill_id`, `damage`, `target_hp` (vida depois do golpe), `target_died`, `position_zone` (frente, lado ou costas), `phase_ends_ms` (quando o atacante fica livre). A apresentação toca animação e efeito pelo que volta.
 - **Atômico:** pedido recusado **não muda nada** (estamina, recarga, alvo).
-- **Fila de intenções da ponte:** a **primeira intenção concreta** da ponte é esta; ela define o **teto** da fila e **quem a consome** (aplicar os comandos no início do passo, arquitetura 6.5). Detalhe no `bridge.md` (LW-146e). **[PROPOSTA]**
+- **Fila de intenções da ponte [EM ABERTO]:** repasse direto ou fila. O `bridge.md` (extensão da Fase 5, seção B1) **recomenda o repasse direto**: a tela precisa do resultado na hora, e o passo da simulação (1 minuto de jogo) é lento demais para um golpe rápido. A alternativa é uma fila com teto **[HIP]**, consumida a cada passo do combate. A escolha é de Arthur, antes da LW-151.
 
 ## 5. Estado, vida e ferimento simples
 
