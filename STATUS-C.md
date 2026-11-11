@@ -1,4 +1,62 @@
-11/11/2026 14:08 (Brasília) — CONCLUÍDA: LW-117c (contratos de factions e politics, Fase 4): dois arquivos novos em docs/modules/; commit e1ca88d ENVIADO ao ramo lw-117c-factions-politics (empilhado na 117b, fora do main); check_all VERDE (1.203 de 1.203). main = ffb1e03 (Fase 5, não é meu). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 14:50 (Brasília) — CONCLUÍDA: LW-117d (contratos de military e do módulo events: crônica e reputação, Fase 4): dois arquivos novos em docs/modules/; commit c752dcc ENVIADO ao ramo lw-117d-military-chronicle (empilhado na 117c, fora do main); check_all VERDE (1.203 de 1.203). main = ffb1e03 (Fase 5, não é meu). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117d — RELATÓRIO — Contratos de `military` e do módulo `events` (crônica e reputação) para a Fase 4 (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: a parte "d" da LW-117, só documento: os contratos novos de `military` (`docs/modules/military.md`) e do módulo `events` nas partes crônica e reputação (`docs/modules/chronicle.md`, nome já fixado pelo `dynamic_events.md` da Fase 5). Li: AGENTS 0.4; o `0013`; as seções 17 do `economy.md`, `factions.md` e `politics.md`; arquitetura 14, 17 e 13.5; GDD 14, 15 e 20; roadmap LW-126, 128, 135 a 140; o código do barramento (`SimEvent` e `EventBus`); no `main`, o `combat.md` e o `dynamic_events.md`. DEC: APROVADAS 050, 051, 054, 204, 206, 208, 210, 212 e 224 a 226; PROPOSTA 052, 077, 194, 199 e 213 a 223; **DEC-053 PENDENTE, não decidi** (só a parte da Fase 4 foi respondida, DEC-206). Git, como entendi o seu "Sim, 117d": ramo `lw-117d-military-chronicle` empilhado na 117c (`e1ca88d`), um commit, envio só dele e do `status-c`, nada para o `main`.
+
+## 1. RESUMO
+Escrevi os dois contratos: `military.md` (156 linhas) e `chronicle.md` (122 linhas). O `military` cobre forças, missões, suprimento e moral, a resolução abstrata, as disputas territoriais, o assalto a caravana e o fim da escolta; o `chronicle.md` cobre a crônica por severidade, os elos e a cadeia causal, e a reputação em 5 faixas. Os dois fecham os pedidos que a 117c deixou (faixa na carga de `ReputationChanged`, `BattleResolved` e `CaravanAttacked` com o país do atacante) e o ponto 5 de 17.11 do `economy.md` (como o jogador escolta).
+
+## 2. ARQUIVOS CRIADOS
+- `docs/modules/military.md` — contrato do módulo `military`.
+- `docs/modules/chronicle.md` — contrato das partes `chronicle` e `reputation` do módulo `events`.
+
+## 3. ARQUIVOS MODIFICADOS
+- Nenhum.
+
+## 4. DECISÕES TÉCNICAS
+Tudo é **PROPOSTA** do revisor, salvo o que cita DEC APROVADA. O que decidi sozinho:
+- **Fatos do código que mudam o desenho:** o `EventBus` **assina por nome de evento (sem assinatura geral) e não guarda histórico**; por isso a crônica só vê os eventos listados em dados e o módulo guarda um **elo** de todo evento assinado para a cadeia causal não ter buracos. Os módulos que agem no `tick` por causa de um evento **gravam o `cause_id` à mão**.
+- **Forças:** os soldados são membros que **não** trabalham em posto nem em local de produção; a força do país vizinho é **abstrata** (sem membros e sem dinheiro); o jogador **não** entra em força.
+- **Assalto:** o `military` decide o resultado e a economia só executa (`request_apply_raid`, frações em dados, de partida 5000 pontos-base, DEC-226); o risco de fundo só gera assalto se há **facção criminosa ativa** (o dinheiro precisa de destino).
+- **Escolta:** `completed` na chegada sem assalto bem-sucedido, `failed` se um assalto tem sucesso apesar da escolta ou se o comerciante morre; a do jogador é abstrata (não exige presença).
+- **Disputa:** quem vence muda a influência (a `factions` ouve o evento) e o controle (`politics`, por comando); força hostil na rota a fecha.
+- **Reputação:** só o jogador tem; só publica quando a faixa muda; rumor aplica a mesma regra com intensidade menor, uma vez por (rumor, povoado); nomes das 5 faixas propostos (`hostile`, `wary`, `neutral`, `friendly`, `trusted`).
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova.
+
+## 5. TESTES EXECUTADOS
+- Conferência por script: as tabelas dos dois arquivos têm colunas consistentes e nenhuma linha com negrito ímpar; toda DEC citada existe nesta árvore, **menos a DEC-187 e a DEC-194**, que são da Fase 5 e só existem no `main` (o texto diz isso); zero citações a arquivos de status ou a "da A/B/C"; `git diff --staged --check` sem erro.
+- Teste de junção só de leitura (`git merge-tree`) contra o `main` atual (`ffb1e03`): os dois arquivos novos não conflitam; o `DECISIONS.md` segue com os mesmos 28 conflitos de texto da pilha 117a.
+- `tools/check_all` **no HEAD final `c752dcc`**: **VERDE**, 125 scripts, 1.203 testes (todos passando), 262.120 asserts, 193,9 s.
+- NÃO EXECUTADO: nada além do que é próprio de uma tarefa só de documentos.
+
+## 6. RESULTADOS
+Critério da parte 117d cumprido por leitura: os dois contratos existem em `docs/modules/` com **dono único** para forças, missões, disputas, crônica, elos e reputação (tabelas "dado → dono") e com os testes por tarefa.
+
+## 7. PROBLEMAS ENCONTRADOS
+1. **Acoplamento:** o `military` importa 5 módulos (`world`, `economy`, `npc`, `factions`, `politics`), mais que o limite de 3 do AGENTS 5.2 (a arquitetura 14.4 lista 4 e não traz a `politics`). Alerta escrito no contrato; a REV da LW-144 reavalia.
+2. **A `politics.md` (117c) precisa de um ajuste pequeno:** o `CrimeCommitted` tem de levar também `settlement_id`, `governing_faction_id` e `witness_count`, senão a reputação do crime não tem a quem atribuir. Não editei (arquivo da 117c, já aprovado por você); fica para uma rodada dela.
+3. **Pedidos a outras partes** (um arquivo, um escritor): à **117e**, `request_set_on_mission`, a fome do NPC em missão atendida pelo suprimento, `request_close_route` e `request_open_route` em produção para o `military` (hoje só de desenvolvimento, `world.md`), `source_event_id` no `RumorSpread` e `witness_count`; à **117f**, os dados de soldados e de forças iniciais, o catálogo (inclusive a coluna "Entra na crônica?" derivada dos dados) e `ContractCompleted` com `issuer_id`, `acceptor_id` e `issuer_kind`; ao **contrato da LW-098 (economia)**, `peek_caravans_on` e `CaravanArrived`.
+4. **Soldados:** os guardas dos povoados A e B (8 e 5) ocupam os postos de serviço; para haver soldados em força os dados iniciais precisam de membros a mais (ponto 1 de 15 do `military.md`).
+5. **O custo da cadeia causal** (elo de todo evento assinado) é [HIP] e entra no save; o soak da LW-142 confere que não cresce sem limite.
+
+## 8. RISCOS
+- Muitas escolhas de jogo ficaram como PROPOSTA (8 pontos em aberto no `chronicle.md` e 10 no `military.md`): se você trocar alguma, a linha do roadmap e as dos outros contratos também mudam.
+- A cascata do cap. 13.5 só fecha se **todos** os módulos gravarem o `cause_id` onde o barramento não o preenche; vira critério de teste de cada módulo e da LW-143.
+- Os contratos supõem pedidos às partes 117e e 117f e ao contrato da LW-098 que ainda não existem.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar ou trocar os dois contratos**, em especial: soldados fora dos postos; força do vizinho abstrata; regra de falha da escolta; jogador escolta sem estar presente; elo de todo evento assinado; nomes das 5 faixas. Recomendo aprovar com as recomendações escritas em cada lista.
+2. **O ajuste de uma linha no `politics.md`** (item 2 acima), junto de uma rodada da 117c ou da Fase B.
+3. **Próxima parte:** recomendo a **117e** (extensões de `world` e `npc`), que atende a maior parte dos pedidos acima. Não iniciada.
+4. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 4: 4 das 6 partes da LW-117 feitas (117a, 117b, 117c e 117d)**; as LW-118 a LW-145 não começaram e dependem da Fase 3.
+- Próxima tarefa recomendada: **LW-117e**. **Não iniciada.** Parei (regra 13).
+- Git: ramo `lw-117d-military-chronicle` em `c752dcc`, **enviado** por avanço simples, empilhado na 117c (`e1ca88d`), na 117b (`9d541a3`) e na 117a (`4a46ae7`); `status-c` enviado com este relatório; `main` = `ffb1e03` (da Fase 5), intocado por mim; sem tag, sem `--force`. A pilha 117a a 117d segue fora do `main`; a Fase B só por ordem escrita sua.
+
+---
 
 # LW-117c — RELATÓRIO — Contratos de `factions` e `politics` para a Fase 4 (DOC)        Status: PRONTA PARA REVISÃO
 
