@@ -29,7 +29,7 @@ static func create(economy_definitions: EconomyDefinitions, trade_rules: TradeRu
 	state.goods = GoodsStore.new(state.book, economy_definitions.goods, economy_definitions.kinds)
 	state.markets = new_market_book(economy_definitions, state.book, state.goods)
 	state.engine = new_engine(economy_definitions, trade_rules, state.book, state.ledger, state.goods, state.markets)
-	state.production = new_production_book(economy_definitions, state.book, state.goods, state.markets, state.engine)
+	state.production = new_production_book(economy_definitions, state.book, state.goods, state.markets, state.engine, state.ledger)
 	return state
 
 
@@ -44,10 +44,10 @@ static func new_engine(economy_definitions: EconomyDefinitions, trade_rules: Tra
 
 
 ## Sem as receitas, as constantes dos locais ou o motor de comércio (que vem dos mercados), não há locais de produção.
-static func new_production_book(economy_definitions: EconomyDefinitions, owner_book: OwnerBook, goods_store: GoodsStore, market_book: MarketBook, trade_engine: TradeEngine) -> ProductionBook:
+static func new_production_book(economy_definitions: EconomyDefinitions, owner_book: OwnerBook, goods_store: GoodsStore, market_book: MarketBook, trade_engine: TradeEngine, money_ledger: Ledger) -> ProductionBook:
 	if trade_engine == null or economy_definitions.recipes.is_empty() or economy_definitions.site_params == null:
 		return null
-	return ProductionBook.new(owner_book, goods_store, market_book, trade_engine, economy_definitions.recipes, economy_definitions.site_params, economy_definitions.price_params.max_order_quantity)
+	return ProductionBook.new(owner_book, goods_store, market_book, trade_engine, economy_definitions.recipes, economy_definitions.site_params, economy_definitions.price_params.max_order_quantity, money_ledger)
 
 
 ## Os ids dos tipos de dono das definições (`owner_kinds.json`).

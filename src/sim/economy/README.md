@@ -39,4 +39,6 @@ Regras de arquitetura (`tools/check_architecture`): regra E (DEC-171 e DEC-132; 
 
 Implementado (LW-088d, 11/11/2026, correções da revisão independente do ramo B): `EconomyModule.debug_summary()` (donos, soma dos saldos, dinheiro criado e destruído, conservação do dinheiro e dos bens, locais de produção); o save e o `validate()` conferem o tipo de cada dono contra `owner_kinds.json`; as regras E e F acima.
 
-Planejado, ainda não existe: a folha de pagamento e os postos de serviço (LW-095), os contratos e as vagas (LW-096), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).
+Implementado (LW-095, parte a, 11/11/2026): a folha dos locais de produção, em `production/`: `WagePayer` (tudo ou nada, pelo `Ledger`, motivo `salary`) e o evento `WagesPaid` (um por local e por hora); sem o dinheiro da folha o local para por `NO_FUNDS`, que também vai no save.
+
+Planejado, ainda não existe: os postos de serviço (LW-095, parte b), os contratos e as vagas (LW-096), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).

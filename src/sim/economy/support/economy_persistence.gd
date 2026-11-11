@@ -68,7 +68,7 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 		if not loaded.ok:
 			return loaded
 	var engine: TradeEngine = EconomyState.new_engine(target.definitions, target.rules, book, ledger, goods, markets)
-	var production: ProductionBook = EconomyState.new_production_book(target.definitions, book, goods, markets, engine)
+	var production: ProductionBook = EconomyState.new_production_book(target.definitions, book, goods, markets, engine, ledger)
 	var production_data: Dictionary = raw_production
 	if not production_data.is_empty():
 		if production == null:
