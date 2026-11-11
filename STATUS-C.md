@@ -1,32 +1,43 @@
-11/11/2026 07:26 (Brasília) — CONCLUÍDA: RODADA 5 da LW-087c (rótulos das 35 decisões trocados para "aprovada por Arthur em 11/11/2026"): commit 0c37741 enviado, check_all VERDE (1.194 de 1.194); números de DEC conferidos no início e no fim contra o ramo da A (HEAD 28a0227 nos dois), nenhum divergiu. Nada no main, sem Fase B, sem tag. Parei (regra 13). Nada rodando.
+11/11/2026 07:45 (Brasília) — CONCLUÍDA: RODADA 5 e ADENDO da LW-087c (rótulos das 35 decisões; campos da vaga; manutenção com tecido; LW-094 como uma tarefa): commits 0c37741 e a8be77b enviados, check_all VERDE (1.194 de 1.194); números de DEC conferidos contra o ramo da LW-087a (28a0227 e acf10ed), nenhum divergiu. Nada no main, sem Fase B, sem tag. Parei (regra 13). Nada rodando.
 
-# RODADA 5 — RELATÓRIO — LW-087c: marca como aprovadas as decisões do pré-voo (DOC)        Status: PRONTA PARA REVISÃO
+# RODADA 5 E ADENDO — RELATÓRIO — LW-087c: marca como aprovadas as decisões do pré-voo; campos da vaga, manutenção com tecido e LW-094 como uma tarefa (DOC)        Status: PRONTA PARA REVISÃO
 
 **Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: trocar, nos dois arquivos, "PROPOSTA do revisor" e "[PROPOSTA]" por "aprovada por Arthur em 11/11/2026 (DEC-NNN)", só para as 35 decisões da sua aprovação em bloco (DEC-138 a 141, 145 a 162 e 165 a 177). Li: AGENTS (versão 0.4), o texto da tarefa, o `DECISIONS.md` do ramo da A (HEAD `28a0227`, 07:19 de 11/11) e o inventário de todos os rótulos dos dois arquivos (`b7eb2ee`). As 35 são PROPOSTA no `DECISIONS.md` da A hoje; vale a sua aprovação escrita. Arquivos: só `npc.md` e `world.md`. Sem dúvida que me fizesse parar.
 
+**Declaração do início do adendo (AGENTS 2.3).** A rodada 5 já estava entregue (`0c37741`), então fiz **um segundo commit curto** (`a8be77b`) no mesmo ramo. Tarefa: (1) trocar o "[PENDENTE, pedido à B]" do salário e do local da vaga pela lista de campos que a economia definiu; (2) a manutenção gasta `tool`, `plank` ou `fabric`; (3) a LW-094 é **uma tarefa**, como no roadmap; (4) sem "da A", "da B", "da C" nem arquivos de status nos documentos. Li: o `economy.md` da LW-087b no HEAD `16ddf1b` (seção 6, "O que a vaga mostra", e a tabela da API), o roadmap no ramo da LW-087a (`acf10ed`, linha da LW-094) e a busca de 094a, 094b e "da A/B/C" nos meus arquivos. DEC: as 35 aprovadas em 11/11, DEC-163 e 178 (APROVADAS), DEC-175. Só `npc.md` e `world.md`.
+
 ## 1. RESUMO
-Troquei 41 rótulos nos dois arquivos (28 no `npc.md`, 13 no `world.md`), só onde a decisão está nas 35, e citei a DEC em cada um. O que não está nas 35 ficou "[PROPOSTA]", os valores [HIP] continuam [HIP] e não entrou conteúdo novo, salvo seis frases de "origem" que diziam "nenhuma é decisão aprovada" e ficariam falsas (seção 4).
+Troquei 41 rótulos nos dois arquivos (28 no `npc.md`, 13 no `world.md`), só onde a decisão está nas 35, e citei a DEC em cada um. O que não está nas 35 ficou "[PROPOSTA]", os valores [HIP] continuam [HIP] e não entrou conteúdo novo, salvo seis frases de "origem" que diziam "nenhuma é decisão aprovada" e ficariam falsas (seção 4). **No adendo** (segundo commit): a lista de campos da vaga (`workplace_id`, `place_id`, `settlement_id`, `occupation_id`, `wage_per_hour`, `workers_wanted` e `workers_assigned`) e o aviso de que `wage_per_hour` vale por hora em que o local produz, não por dia; `fabric` na manutenção; a LW-094 como uma tarefa (com a divisão em 094a e 094b só como plano do revisor se passar do limite de tamanho); e `da B` virou `da LW-087b` onde era referência.
 
 ## 2. ARQUIVOS CRIADOS
 - Nenhum.
 
-## 3. ARQUIVOS MODIFICADOS (só documentos; ramo `lw-087c-extensoes-world-npc`, commit `0c37741`, mensagem "LW-087c: marca como aprovadas as decisões do pré-voo")
-- `docs/modules/npc.md` e `docs/modules/world.md`: 34 linhas trocadas por 34 (44 e 24 no diff por arquivo). Contra o `main` (`8dcc81d`, intocado) o ramo difere só neles (+90/−2 e +27).
+## 3. ARQUIVOS MODIFICADOS (só documentos; ramo `lw-087c-extensoes-world-npc`, dois commits)
+- **`0c37741`** "LW-087c: marca como aprovadas as decisões do pré-voo": `npc.md` e `world.md`, 34 linhas trocadas por 34.
+- **`a8be77b`** "LW-087c: adendo, campos da vaga, manutenção com tecido e LW-094 como uma tarefa": `npc.md` (12 linhas) e `world.md` (1 linha); 13 trocadas por 13.
+- Contra o `main` (`8dcc81d`, intocado) o ramo difere só nesses dois arquivos (+90/−2 e +27).
 
 ## 4. DECISÕES TÉCNICAS
 - **Mapa rótulo → DEC (conferido contra o texto das DEC no ramo da A):** Q18 A = DEC-152 (e DEC-151, a hora do local); local dono e `sell` = DEC-148 e DEC-168; vaga = DEC-165; LW-096a = DEC-169; Q23 (`work_place_id`) = DEC-167; `mint` na LW-093 = DEC-170; `request_trade` = DEC-173; Q21 A = DEC-145; `bread` e `grain` comestíveis = DEC-153; regra do `check_architecture` = DEC-171; LW-088a e hashes = DEC-172; postos sem marca `TEMP` = DEC-174; marcos de hash por bloco = DEC-175; Q-W1 = DEC-158; Q-W2 e Q-W3 = DEC-159; Q-W4 = DEC-160; Q-W5 = DEC-161; Q-W6 = DEC-162; comando e evento de rota na LW-097 = DEC-140.
 - **Já APROVADAS antes, citadas como estavam:** DEC-163, 164 e 178 (e DEC-142, 143, 144, onde aparecem).
 - **Fica "[PROPOSTA]" porque não está nas 35 (desenho do rascunho):** LW-094 em duas partes e "Ordem 094a/094b"; "Dependências permitidas depois da Fase 3"; "Quando" (falha por regra do comércio); "Montagem" da `api`; "um agente só em série" e "pasta própria" (14.8); os números da distribuição da B (`[PROPOSTA/HIP]`); no `world.md`, "Dados", "Tipos", "Consultas", "Validação" e "O 3º povoado" (e a parte de "Estado de rota" e "Comando" que vai além das DEC-159 e DEC-140).
 - **Seis frases além do rótulo puro** (diziam que nada estava aprovado, o que ficaria falso): a introdução de 14.9 e a linha "Decididas pelo revisor" da seção 14 (`npc.md`); a introdução das Q-W e a linha "Decididas pelo revisor" do `world.md`; a Q23 ("só vale com a aprovação de Arthur, que ele dará na LW-097" virou "aprovada por Arthur em 11/11/2026 (DEC-167)"); e o item "Em aberto" de 14.9, que listava essas aprovações como pendentes. Marquei nas frases que o `DECISIONS.md` do ramo da A ainda mostra PROPOSTA até ela registrar a aprovação.
+- **Adendo, item 1 (vaga):** o `[PENDENTE, pedido à B]` virou a lista **com os mesmos nomes** do `economy.md` (seção 6, "O que a vaga mostra", e a tabela da API): em `peek_contracts` (na `vacancy`), `peek_site` e `peek_post`, a LW-096a lê `workplace_id`, `place_id`, `settlement_id`, `occupation_id`, `wage_per_hour`, `workers_wanted` e `workers_assigned`; `wage_per_hour` vale **por hora em que o local produz, não por dia**, e a utilidade da LW-096a decide quanto isso pesa. Como a lista agora traz `workers_wanted`, a frase "o `npc` não lê `workers_wanted`" (14.4 e 14.10) virou "o `npc` não o compara com a lista de atribuídos; só o lê junto da vaga".
+- **Adendo, item 2 (manutenção):** Q20 agora diz `tool`, `plank` ou `fabric` (DEC-163 e DEC-178).
+- **Adendo, item 3 (LW-094):** a linha da tabela e o bullet "Ordem" de 14.5 dizem **uma tarefa, como no roadmap**; **094a** e **094b** aparecem só nesses dois lugares, como a divisão que o revisor faz ao preparar o prompt se a tarefa passar do limite (AGENTS 5.2). Os demais lugares ("o que a 094b apaga", testes, oráculo, save, a linha de remoção de 9) passaram a dizer "LW-094".
+- **Adendo, item 4:** "rascunho da B" virou "rascunho da LW-087b" (3 lugares), "na distribuição da B" virou "na distribuição proposta no `economy.md`" e "ramo dela" virou "ramo da LW-087a". As menções "A e B" que sobram são os **povoados** A e B.
 - **Proposta de entrada para `DECISIONS.md`:** nenhuma; registrar o status das 35 é da LW-087a.
 
 ## 5. TESTES EXECUTADOS
 - **Números de DEC contra `origin/lw-087a-registro-fase-3:docs/DECISIONS.md`:** no **início (07:19)** e no **fim (07:25)** o HEAD da A era o mesmo (`28a0227`) e o arquivo, idêntico. As 25 DEC com número 138 ou mais que os dois arquivos citam (138, 140, 145, 148, 151, 152, 153, 158 a 165, 167 a 175 e 178) existem, com o mesmo título no início e no fim e com o tema que eu cito; **nenhum número deixou de bater, então não parei**.
-- `tools/check_all` **no HEAD final `0c37741`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 171,0 s (3 min 24 s no total). Mesmos números do `main`, como esperado.
+- `tools/check_all` **no HEAD final `a8be77b`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 172,3 s (3 min 25 s no total). Mesmos números do `main`, como esperado. (No commit anterior, `0c37741`, o `check_all` também ficou verde, com os mesmos números.)
+- **Adendo, releitura do `economy.md`:** HEAD `16ddf1b` no início (07:39) e no fim (07:44), sem mudança; o ramo da LW-087a estava em `acf10ed` nos dois momentos.
+- **Números de DEC de novo, agora contra `acf10ed`:** as 25 DEC com número 138 ou mais que os dois arquivos citam existem, com o mesmo título de `28a0227`; **nenhum número deixou de bater**. **O status delas mudou: no `acf10ed` todas as que eu cito entre as 35 estão APROVADAS por Arthur em 11/11/2026** (a LW-087a registrou).
+- Por busca (adendo): `094a` e `094b` só na linha da LW-094 e no bullet "Ordem"; **0** "pedido à B", "rascunho da B" e "ramo dela" no que acrescentei; **0** citações a arquivos de status.
 - NÃO EXECUTADO: `godot --headless --path . --import` (o `godot` não está no PATH do meu terminal; o `check_all` roda sozinho). Oráculo, soak e `run_sim` não foram rodados (só documentos).
 
 ## 6. RESULTADOS
-Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido **por leitura do diff e da tabela abaixo** (itens 1 a 7 da tarefa).
+Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido **por leitura do diff e das tabelas abaixo** (itens 1 a 7 da rodada 5 e 1 a 5 do adendo).
 
 ## 7. PROBLEMAS ENCONTRADOS
 **Tabela "rótulo antigo → rótulo novo"** (a coluna "DEC" diz qual decisão sustenta a troca; nas linhas longas mostro só o trecho que mudou):
@@ -75,24 +86,47 @@ Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério 
 | 40 | `world.md:84` | decidida (revisor | aprovada por Arthur em 11/11/2026 (DEC-162 | DEC-162 |
 | 41 | `world.md:84` | PROPOSTA; DEC-172 e DEC-175 na LW-087a, PROPOSTA | aprovada por Arthur em 11/11/2026 (DEC-172 e DEC-175) | DEC-172, 175 |
 
-**Divergências da A, só listadas (não editei o ramo dela):**
-- **DEC-153** ainda diz "o tecido é só mercadoria de comércio"; a DEC-178 (APROVADA) o pôs na manutenção dos locais. Cito a DEC-153 só para `bread` e `grain`.
+**Tabela do adendo (segundo commit `a8be77b`; item = número no adendo):**
+
+| # | Arquivo e linha | Item | Antes (trecho que mudou) | Depois |
+|---|---|---|---|---|
+| 1 | `npc.md:103` | 3 | (parte 094b)  |  |
+| 2 | `npc.md:233` | 3 | em duas partes [PROPOSTA]: **094a** a comida do mercado convive com o `FoodStub`; **094b** remove o `FoodStub`, o estoque do save… | **uma tarefa**, como no roadmap; se passar do limite de tamanho (AGENTS 5.2), o revisor a divide ao preparar o prompt em **094a**… |
+| 3 | `npc.md:281` | 1 | precisa de `workers_wanted`:** quem o compara com a lista de atribuídos é a economia, para postar a vaga. A oferta chega por `Con… | compara `workers_wanted` com a lista de atribuídos:** quem o compara é a economia, para postar a vaga. A oferta chega por `Contra… |
+| 4 | `npc.md:285` | 3 | **094a**, a comida do mercado convive com o `FoodStub` (o NPC compra quando pode; o estoque provisório segue de reserva); **094b*… | a **LW-094** é **uma tarefa**, como no roadmap: o NPC passa a comer do mercado e do próprio inventário, e a tarefa remove o `Food… |
+| 5 | `npc.md:286` | 3 | - **O que a 094b apaga** | - **O que a LW-094 apaga** |
+| 6 | `npc.md:288` | 3 | no texto da LW-094b e da LW-095** | no texto da LW-094 e da LW-095** |
+| 7 | `npc.md:289` | 3 | a LW-094b obriga a refazer o cenário | a LW-094 obriga a refazer o cenário |
+| 8 | `npc.md:290` | 3 | (módulo `economy` ausente), antes da 094b. | (módulo `economy` ausente), antes da LW-094. |
+| 9 | `npc.md:290` | 3 | Depois da 094b o `serialize()` | Depois da LW-094 o `serialize()` |
+| 10 | `npc.md:290` | 3 | o **teste da 094b usa uma fixture nova** | o **teste da LW-094 usa uma fixture nova** |
+| 11 | `npc.md:308` | 4 | ela ainda mostra PROPOSTA até el | a LW-087a ainda mostra PROPOSTA até a LW-087 |
+| 12 | `npc.md:313` | 2 |  ou `plank` a cada alguns dias | , `plank` ou `fabric` a cada alguns dias (DEC-163 e DEC-178) |
+| 13 | `npc.md:320` | 4 | **os números da distribuição são do `economy.md` (rascunho d | **os números da distribuição são do `economy.md` (rascunho d |
+| 14 | `npc.md:324` | 1 | lê** `workers_wanted` | compara** `workers_wanted` com a lista de atribuídos; só o lê junto da vaga |
+| 15 | `npc.md:324` | 4 | **Números do `economy.md` (rascunho da B, seção 6; [PROPOSTA | **Números do `economy.md` (rascunho da LW-087b, seção 6; [PR |
+| 16 | `npc.md:324` | 4 | da B | proposta no `economy.md` |
+| 17 | `world.md:73` | 4 | **Números do `economy.md` (rascunho da B, seção 6; [PROPOSTA | **Números do `economy.md` (rascunho da LW-087b, seção 6; [PR |
+
+**Divergências, só listadas (não editei os outros ramos):**
+- **Nomes de conversas na Fase 2:** o `npc.md` tem duas frases antigas, de antes da Fase 3 e já no `main` (linhas 206 e 208: "o da B" e "conversa B"), que citam nomes de conversas de trabalho da época. Ficaram como estão, por estarem fora do que esta tarefa acrescentou; corrijo se você mandar.
+- **Frases minhas que ficaram desatualizadas:** em `npc.md:254`, `npc.md:308` e `world.md:78` eu escrevi que o `DECISIONS.md` do ramo da LW-087a "ainda mostra PROPOSTA até ela registrar a aprovação". **No `acf10ed` ela já registrou** (APROVADA). Não alterei, porque o adendo não pedia e só autorizou um commit curto; **recomendo** um commit curto para trocar essas três frases por "registrada como APROVADA no `DECISIONS.md`".
+- **DEC-153** (conferida no `28a0227`) ainda dizia "o tecido é só mercadoria de comércio"; a DEC-178 (APROVADA) o pôs na manutenção dos locais. Cito a DEC-153 só para `bread` e `grain`.
 - **DEC-162** ainda diz que a LW-097 atualiza o hash que o `run_sim` imprime, e os meus arquivos (e a DEC-172 e a DEC-175) dizem que o `run_sim` não muda.
-- O **status das 35** no `DECISIONS.md` do ramo da A ainda é PROPOSTA; vira APROVADA quando a LW-087a o registrar.
 
 ## 8. RISCOS
-- Os meus arquivos dizem "aprovada por Arthur em 11/11/2026" enquanto o `DECISIONS.md` da A ainda mostra PROPOSTA: até a A registrar, as duas fontes se contradizem. Escrevi isso nas frases de origem.
-- A B ainda precisa trocar os marcos por tarefa e o "tecido só mercadoria" no `economy.md`, e listar salário e local da vaga nas consultas (pendências das rodadas anteriores; não reverifiquei nesta rodada).
+- As três frases desatualizadas acima (dizem "ainda mostra PROPOSTA"); sem elas corrigidas, os documentos afirmam algo que o ramo da LW-087a já superou.
+- Os pontos do `economy.md` que eu cobrava (salário e local da vaga nas consultas, tecido na manutenção) já estão resolvidos no HEAD `16ddf1b`; **não reverifiquei os marcos por tarefa** dele nesta rodada.
 
 ## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
-1. **A LW-087a** registrar o status APROVADA das 35 e corrigir a DEC-153 (tecido) e a DEC-162 (`run_sim`) (**recomendo**).
-2. **A B** alinhar o `economy.md` (marcos, tecido, consultas da vaga).
+1. **Você:** autorizar um commit curto para trocar as três frases "ainda mostra PROPOSTA" (**recomendo**) e dizer se corrijo as duas frases de conversa de trabalho (linhas 206 e 208) (**recomendo** deixar como estão).
+2. **A LW-087a** corrigir a DEC-153 (tecido) e a DEC-162 (`run_sim`), se ainda divergirem.
 3. Teste manual: nenhum.
 
 ## ACOMPANHAMENTO
 - Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3 não iniciada**; os rascunhos 087b, 087c e 087d seguem **fora do `main`**.
 - Próxima tarefa recomendada: **LW-087a (A)**, registro do status das 35. **Não iniciada.** Parei aqui (regra 13).
-- Git: ramo `lw-087c-extensoes-world-npc` enviado (`0c37741`); `status-c` enviado; `main` = `8dcc81d`, intocado; nenhuma tag nova; sem merge no `main`, sem Fase B, sem `--force`.
+- Git: ramo `lw-087c-extensoes-world-npc` enviado (`a8be77b`, depois de `0c37741`); `status-c` enviado; `main` = `8dcc81d`, intocado; nenhuma tag nova; sem merge no `main`, sem Fase B, sem `--force`.
 
 ---
 
