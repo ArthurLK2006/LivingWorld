@@ -1,4 +1,63 @@
-11/11/2026 14:50 (Brasília) — CONCLUÍDA: LW-117d (contratos de military e do módulo events: crônica e reputação, Fase 4): dois arquivos novos em docs/modules/; commit c752dcc ENVIADO ao ramo lw-117d-military-chronicle (empilhado na 117c, fora do main); check_all VERDE (1.203 de 1.203). main = ffb1e03 (Fase 5, não é meu). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 15:52 (Brasília) — CONCLUÍDA: LW-117e (extensões de world e npc, Fase 4): seção nova no fim de docs/modules/world.md e de npc.md (só acréscimo); commit b665ca7 ENVIADO ao ramo lw-117e-world-npc (empilhado na 117d, fora do main); check_all VERDE (1.203 de 1.203). main = ffb1e03 (Fase 5, não é meu). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117e — RELATÓRIO — Extensões de `world` e `npc` para a Fase 4 (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: a parte "e" da LW-117, só documento: uma seção da Fase 4 no fim de `docs/modules/world.md` (províncias, culturas e rotas bloqueadas pelo militar) e outra no fim de `docs/modules/npc.md` (T3, satisfação, protesto, testemunhas, rumores, baixa e "em missão"), **sem editar o texto existente**. Li: AGENTS 0.4; o `0013`; a seção 17 do `economy.md`, `factions.md`, `politics.md`, `military.md` e `chronicle.md` com os pedidos que deixaram; `npc.md` (seções 1, 3, 5, 7, 8, 10 e 14) e `world.md` inteiro; as DEC-203, 205, 207 e 213 a 220. DEC: APROVADAS 051, 054, 159, 203, 205, 206, 207, 208 e 224 a 226; PROPOSTA 213 e 216 a 220. Git, como entendi o seu "Sim, 117e": ramo `lw-117e-world-npc` empilhado na 117d (`c752dcc`), um commit, envio só dele e do `status-c`, nada para o `main`.
+
+## 1. RESUMO
+O `world.md` ganhou uma seção da Fase 4 (28 linhas): as **4 províncias**, a adjacência, a ligação povoado → província, as **2 culturas** com 4 parâmetros e um **par novo de comandos de produção** para bloquear e liberar rotas. O `npc.md` ganhou a **seção 15** (90 linhas): T3, consultas novas, satisfação diária, protesto, testemunhas, quadro de rumores, baixa e "em missão", com uma tabela que diz onde cada pedido das fichas 117b a 117d foi atendido. **Só acréscimo: nenhuma linha antiga mudou.**
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (commit `b665ca7`)
+- `docs/modules/world.md` — +28 linhas (seção "Extensão da Fase 4").
+- `docs/modules/npc.md` — +90 linhas (seção 15).
+
+## 4. DECISÕES TÉCNICAS
+Tudo é **PROPOSTA** do revisor, salvo o que cita DEC APROVADA. O que decidi sozinho:
+- **Províncias:** a de fronteira **não tem povoado**; adjacência de partida: A e B ligadas entre si, e a fronteira ligada às três; A e B não tocam C direto. A cultura de cada NPC é **derivada** do povoado de moradia (sem campo novo no `NpcState`).
+- **Culturas:** os 4 parâmetros propostos são `trade_openness`, `foreigner_tolerance`, `martial_stance` e `authority_weight`; ids `culture_trade` (A e B) e `culture_tradition` (C). Nada disso estava decidido (DEC-203).
+- **Rota bloqueada:** em vez de relaxar o `WORLD_DEV_ONLY` do par aprovado na DEC-140, um **par novo** (`request_block_route` e `request_unblock_route`, com `cause_id` obrigatório); só o `military` o cita (regra do `check_architecture`); o `world` não guarda quem segura a rota (a DEC-159 proíbe campo extra).
+- **T3:** pode vir direto de T1; não conta no `max_t2`; só a `factions` promove (regra do `check_architecture`).
+- **Testemunhas:** um módulo não acrescenta campo ao evento de outro; então o `npc` **informa por consulta** (`peek_witness_count`) e quem publica o fato a põe na carga.
+- **Rumores:** só no quadro por povoado (não entram na memória do T2); propagam por rota aberta, com perda de confiança por salto; `RumorSpread` sai um por chegada e leva o `source_event_id`.
+- **Em missão:** as necessidades ficam congeladas; recusa se o NPC tem local de trabalho; ao voltar, reaparece no povoado dado.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova.
+
+## 5. TESTES EXECUTADOS
+- Conferência por script: só acréscimo (**0 linhas removidas** no diff); as tabelas novas têm colunas consistentes; nenhuma linha com negrito ímpar; toda DEC citada existe nesta árvore; zero citações a arquivos de status ou a "da A/B/C"; `git diff --staged --check` sem erro.
+- Teste de junção só de leitura (`git merge-tree`) contra o `main` atual (`ffb1e03`): `npc.md` e `world.md` **juntam sozinhos** (a Fase 5 não os alterou); o `DECISIONS.md` segue com os mesmos 28 conflitos de texto da pilha 117a.
+- `tools/check_all` **no HEAD final `b665ca7`**: **VERDE**, 125 scripts, 1.203 testes (todos passando), 262.120 asserts, 172,1 s.
+- NÃO EXECUTADO: nada além do que é próprio de uma tarefa só de documentos.
+
+## 6. RESULTADOS
+Critério da parte 117e cumprido por leitura: as duas extensões existem; cada pedido das fichas 117b a 117d tem resposta (tabela 15.1 do `npc.md`); o `world.md` mantém o dono único (estrutura aqui, controle na `politics`, influência na `factions`).
+
+## 7. PROBLEMAS ENCONTRADOS
+1. **Ajustes pequenos pendentes nas fichas anteriores** (um arquivo, um escritor; ficam para rodadas delas): **`military.md`** cita `request_close_route` e `request_open_route` (agora o par novo `request_block_route` e `request_unblock_route`) e `request_set_on_mission(npc_id, on_mission)` (agora com o 3º argumento `settlement_id`); **`politics.md`** (já pedido pela 117d) precisa que o `CrimeCommitted` leve `settlement_id`, `governing_faction_id` e `witness_count`, e pode passar a citar `peek_home_settlement`.
+2. **O texto da DEC-216** ("o `npc` publica a contagem no evento") é ambíguo: o `npc` não pode escrever no evento de outro módulo; resolvi por consulta (ponto 3 de 15.10).
+3. **Nada decidia** os 4 parâmetros de cultura nem qual cultura é de qual país: propus (ponto 3 do `world.md`).
+4. **`npc.md` e `world.md` terão conflito de texto com a futura extensão do `npc` da Fase 5 (146f)**, se ela também acrescentar seção no fim do arquivo; o `main` ainda não a tem.
+5. Os guardas dos povoados A e B continuam ocupando os postos (ponto 1 do `military.md`): quem cria soldados a mais é o dado (117f).
+
+## 8. RISCOS
+- Muitas escolhas de jogo ficaram como PROPOSTA (6 pontos no `world.md` e 7 no `npc.md`): se você trocar alguma, as linhas dos outros contratos que as citam também mudam.
+- O custo diário da satisfação (O(NPCs)) e dos rumores é **[HIP] a medir** antes de otimizar (AGENTS 4.18).
+- As chamadas "só a `factions` promove a T3" e "só o `military` cita o par de rotas" dependem de regras novas do `check_architecture`, ainda por escrever.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar ou trocar as duas extensões**, em especial: a cultura de cada país e os 4 parâmetros; fronteira sem povoado; o par novo de comandos de rota; necessidades congeladas em missão; testemunhas por consulta. Recomendo aprovar com as recomendações escritas em cada lista.
+2. **Os ajustes pequenos** do item 7.1, junto de uma rodada da 117c e da 117d, ou da Fase B.
+3. **Próxima parte:** recomendo a **117f** (eventos da Fase 4 em `docs/events.md` e modelos de dados), a última da LW-117. Não iniciada.
+4. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 4: 5 das 6 partes da LW-117 feitas (117a a 117e)**; as LW-118 a LW-145 não começaram e dependem da Fase 3.
+- Próxima tarefa recomendada: **LW-117f**. **Não iniciada.** Parei (regra 13).
+- Git: ramo `lw-117e-world-npc` em `b665ca7`, **enviado** por avanço simples, empilhado na 117d (`c752dcc`) e nas anteriores; `status-c` enviado com este relatório; `main` = `ffb1e03` (da Fase 5), intocado por mim; sem tag, sem `--force`. A pilha 117a a 117e segue fora do `main`; a Fase B só por ordem escrita sua.
+
+---
 
 # LW-117d — RELATÓRIO — Contratos de `military` e do módulo `events` (crônica e reputação) para a Fase 4 (DOC)        Status: PRONTA PARA REVISÃO
 
