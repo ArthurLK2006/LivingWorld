@@ -1,4 +1,56 @@
-11/11/2026 13:12 (Brasília) — CONCLUÍDA: LW-117b (seção 17 do contrato da economia, Fase 4): tesouros, tarifa com destinatário, folha dos postos, escort e assalto; commit 27d3ad6 ENVIADO ao ramo lw-117b-economia-fase-4 (empilhado na 117a, fora do main); check_all VERDE (1.203 de 1.203). main andou para ffb1e03 (Fase B da Fase 5, não é meu); sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 13:30 (Brasília) — CONCLUÍDA: LW-117a rodada 2 + LW-117b: DEC-224 a DEC-226 (aprovações de 17.11) no DECISIONS.md e seção 17 marcada; 117a 4a46ae7 e 117b 9d541a3 ENVIADOS (fora do main); check_all VERDE nas duas pontas (1.203 de 1.203). main = ffb1e03 (Fase 5, não é meu). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117a (RODADA 2) E LW-117b — RELATÓRIO — Registro das 3 aprovações de 17.11 como DEC-224 a DEC-226 (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: registrar a aprovação de Arthur dos pontos 1 a 3 de 17.11 da seção 17 do `economy.md` como DEC-224 a DEC-226 (APROVADAS) no `DECISIONS.md` (ramo da 117a) e trocar os rótulos [PROPOSTA] na seção 17 (ramo da 117b). Li: AGENTS 0.4; a seção 17; DEC-212 a 215, 222 e 223; cabeçalho, totais e seção 8 do `DECISIONS.md`. Git, como entendi a resposta "Registrar agora" ao escopo que eu tinha descrito: um commit em cada ramo, junção da 117a na 117b, envio só desses dois ramos e do `status-c`, nada para o `main`, sem tag e sem `--force`.
+
+## 1. RESUMO
+As três aprovações de Arthur viraram **DEC-224** (o `upkeep` é sumidouro), **DEC-225** (a tarifa é paga pelo ator da ordem, nos dois lados; `peek_terms` segue sem o `side`) e **DEC-226** (o assalto leva uma fração do saldo, em dados do `military`, de partida 5000 pontos-base [HIP]). A seção 17 do contrato da economia passou a dizer "aprovado por Arthur" nesses pontos.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS
+- Ramo `lw-117a-registro-fase-4`, commit `4a46ae7`: `docs/DECISIONS.md` (+51 e −5 linhas): 3 entradas, 3 linhas no índice, notas nas DEC-212, 214 e 215, versão 0.13, totais (APROVADA 134, PROPOSTA 40, PENDENTE 18, DESCARTADA 10, SUBSTITUÍDA 1; total 203) e linha 0.13 da seção 8.
+- Ramo `lw-117b-economia-fase-4`, commit de junção `9d541a3` (junta a 117a e troca os rótulos): `docs/modules/economy.md` (+8 e −8 linhas: estado, 17.3, 17.4, 17.7 e 17.11) e o `DECISIONS.md` vindo da junção.
+
+## 4. DECISÕES TÉCNICAS
+- **Numeração:** DEC-224 a DEC-226 (as DEC-202 a DEC-223 são da 117a; o `main` já traz DEC-179 a DEC-201 da Fase 5).
+- **Versão 0.13** do `DECISIONS.md`.
+- **Um erro meu achado no caminho:** o cabeçalho da versão 0.12 (que enviei na 117a) tinha **um parêntese sem fechar**; corrigi no commit `4a46ae7`. Como esse commit ainda não tinha sido enviado, usei `commit --amend` só nele, antes do envio; nada publicado foi reescrito.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova.
+
+## 5. TESTES EXECUTADOS
+- Contagem por script do índice: 200 antes e **203 depois** (134, com as mesmas 20 ressalvas; 40; 18; 10; 1); 203 entradas, todas no índice, nenhuma duplicada.
+- Conferência por script: as 3 entradas têm os 7 campos e as linhas de campo com o número certo de `|`; toda DEC citada nas linhas novas existe (só o cabeçalho e a frase de totais citam DEC-179 e DEC-201, de propósito); zero citações a arquivos de status ou a "da A/B/C"; parênteses do cabeçalho balanceados (5 e 5).
+- `tools/check_all` **na ponta da 117a (`4a46ae7`): VERDE**, 125 scripts, 1.203 testes (todos passando), 262.120 asserts, 176,8 s.
+- `tools/check_all` **na ponta da 117b (`9d541a3`): VERDE**, os mesmos números, 173,0 s.
+- NÃO EXECUTADO: nada além do que é próprio de uma tarefa só de documentos.
+
+## 6. RESULTADOS
+Cada uma das três aprovações tem uma DEC APROVADA; a seção 17 e o `DECISIONS.md` dizem a mesma coisa. Critério cumprido por leitura do diff e pelos scripts acima.
+
+## 7. PROBLEMAS ENCONTRADOS
+1. O parêntese sem fechar na versão 0.12 (corrigido, item 4).
+2. **A DEC-224 a DEC-226 citam a seção 17.11, que só existe no ramo da 117b:** no ramo da 117a sozinho a referência aponta para um arquivo que ainda não tem a seção. Some quando os dois ramos entrarem no `main`.
+3. **Junção com o `main` de agora:** o `DECISIONS.md` segue dando os mesmos 28 conflitos de texto com a Fase 5 (que já está no `main`, `ffb1e03`); o roadmap e o `economy.md` juntam sozinhos.
+
+## 8. RISCOS
+- A entrada no `main` (Fase B) ainda precisa de ordem escrita de Arthur; a pilha é 117a (`4a46ae7`) e, sobre ela, 117b (`9d541a3`). Quem fizer a Fase B resolve os 28 conflitos e recontar os totais (o `main` já tem as DEC-179 a DEC-201).
+- Os valores [HIP] (5000 pontos-base e os demais) seguem [HIP].
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar a 117a (agora com a rodada 2) e a seção 17 inteira** (os pontos 4 a 9 de 17.11 ainda são PROPOSTA). Recomendo aprovar.
+2. **Fase B da pilha 117a + 117b** (junção com o `main`, resolver os 28 conflitos, totais, `check_all`, envio ao `main` só por avanço simples): só por ordem escrita sua. Recomendo fazer depois da 117c, para entrar tudo junto.
+3. **Próxima parte:** a **117c** (contratos de `factions` e `politics`), que fecha os pontos 4, 5 e 7 de 17.11. Não iniciada.
+4. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 4: 2 das 6 partes da LW-117 feitas (117a e 117b)**; as LW-118 a LW-145 não começaram e dependem da Fase 3.
+- Próxima tarefa recomendada: **LW-117c**. **Não iniciada.** Parei (regra 13).
+- Git: `lw-117a-registro-fase-4` em `4a46ae7` e `lw-117b-economia-fase-4` em `9d541a3`, os dois **enviados** por avanço simples (sem `--force`); `status-c` enviado com este relatório; `main` = `ffb1e03` (o da Fase 5, não é meu), intocado por mim; sem tag.
+
+---
 
 # LW-117b — RELATÓRIO — Seção 17 do contrato da economia para a Fase 4 (DOC)        Status: PRONTA PARA REVISÃO
 
