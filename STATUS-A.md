@@ -1,4 +1,4 @@
-11/11/2026 19:41 (Brasília) · LW-093 PARTE 6 PRONTA: ramo `lw-093i-comprar-e-vender`: ações `buy`/`sell`, `NpcTrade`, conclusão da ação na economia e `eat` pelo inventário (sem escolha pelo pensador ainda); `check_all` VERDE (149 scripts, 1.314 testes), hashes e `run_sim` iguais; seguindo para a parte 7 (utilidade derivada do `buy` no pensador)
+11/11/2026 19:58 (Brasília) · LW-093 PARTE 7 PRONTA (LW-093 completa): ramo `lw-093j-pensador-compra` (e16072b): o pensador escolhe `buy` por valor derivado (alívio da comida menos o preço); `check_all` VERDE (151 scripts, 1.322 testes), oráculo, soaks e `run_sim` iguais; a LW-094 (remover o FoodStub) esbarra em testes existentes e precisa da sua autorização
 
 # RELATÓRIO — Fase B, correções (T1, T1b, T2), junção e LW-093 (partes 1 a 3)     Status: PARCIAL (PARADA: as ações `buy` e `sell` esbarram em testes existentes)
 
