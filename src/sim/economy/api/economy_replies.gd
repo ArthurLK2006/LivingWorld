@@ -117,7 +117,7 @@ class TradeResult:
 		tariff = traded_tariff
 
 
-## `peek_quote`: a mesma conta de `request_trade`, sem executar: o `total`, o preço médio (o total dividido pela quantidade, para baixo) e a `tariff`; só valem se `result.ok`.
+## `peek_quote(actor_id, ...)`: a mesma conta de `request_trade` para o ator, sem executar: o `total`, o preço médio (o total dividido pela quantidade, para baixo) e a `tariff`; só valem se `result.ok`.
 class QuoteQuery:
 	extends RefCounted
 
