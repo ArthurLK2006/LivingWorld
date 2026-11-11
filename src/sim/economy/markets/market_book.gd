@@ -143,6 +143,15 @@ func bid_of(market_id: int, good_id: String) -> int:
 	return PriceMath.bid(PriceMath.price_at(price_of(market_id, good_id), _goods[good_id].base_value, target_of(market_id, good_id), ref_stock_of(market_id, good_id), _store.quantity_of(market_id, good_id), _params), _params.spread_bp)
 
 
+## O que o ator paga por `quantity` unidades (`quantity` ≤ estoque) e o que recebe por `quantity` vendidas, no estoque de hoje (a soma por degrau da seção 4).
+func quote_buy(market_id: int, good_id: String, quantity: int) -> int:
+	return PriceMath.quote_buy(price_of(market_id, good_id), _goods[good_id].base_value, target_of(market_id, good_id), ref_stock_of(market_id, good_id), _store.quantity_of(market_id, good_id), quantity, _params)
+
+
+func quote_sell(market_id: int, good_id: String, quantity: int) -> int:
+	return PriceMath.quote_sell(price_of(market_id, good_id), _goods[good_id].base_value, target_of(market_id, good_id), ref_stock_of(market_id, good_id), _store.quantity_of(market_id, good_id), quantity, _params)
+
+
 ## Fim do dia: para cada mercado e bem (por ID e `good_id` crescentes), o preço anda em direção ao preço-alvo do estoque de agora, o estoque vira o de referência, o histórico cresce e a escassez é conferida.
 ## Devolve os eventos desse dia, na ordem, para quem chama publicar.
 func end_of_day() -> Array[SimEvent]:

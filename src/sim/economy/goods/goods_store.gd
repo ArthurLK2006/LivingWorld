@@ -89,8 +89,8 @@ func destroy(owner_id: int, good_id: String, quantity: int, reason: String) -> R
 	return Result.success()
 
 
-## Move bens de um dono para outro, sem criar nem destruir. Tudo ou nada.
-func transfer(from_id: int, to_id: int, good_id: String, quantity: int) -> Result:
+## Confere a movimentação SEM executar (as mesmas falhas de `transfer`): quem precisa de tudo ou nada em duas partes (o comércio) confere aqui antes de mexer em qualquer uma.
+func check_transfer(from_id: int, to_id: int, good_id: String, quantity: int) -> Result:
 	var checked: Result = _check("transfer", good_id, quantity, "", [""])
 	if checked.ok:
 		checked = _check_owner("transfer", from_id)
@@ -100,6 +100,12 @@ func transfer(from_id: int, to_id: int, good_id: String, quantity: int) -> Resul
 		checked = _check_has("transfer", from_id, good_id, quantity)
 	if checked.ok and from_id != to_id:
 		checked = _check_room("transfer", to_id, good_id, quantity)
+	return checked
+
+
+## Move bens de um dono para outro, sem criar nem destruir. Tudo ou nada.
+func transfer(from_id: int, to_id: int, good_id: String, quantity: int) -> Result:
+	var checked: Result = check_transfer(from_id, to_id, good_id, quantity)
 	if not checked.ok:
 		return checked
 	if from_id != to_id:

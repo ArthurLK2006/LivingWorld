@@ -35,7 +35,8 @@ func _init(book: OwnerBook, record_history: bool = false) -> void:
 	_record_history = record_history
 
 
-func transfer(from_id: int, to_id: int, amount: int, reason: String) -> Result:
+## Confere a transferência SEM executar (as mesmas falhas de `transfer`): quem precisa de tudo ou nada em duas partes (o comércio) confere aqui antes de mexer em qualquer uma.
+func check_transfer(from_id: int, to_id: int, amount: int, reason: String) -> Result:
 	var checked: Result = _check_operation("transfer", amount, reason)
 	if checked.ok:
 		checked = _check_owner("transfer", from_id)
@@ -47,12 +48,20 @@ func transfer(from_id: int, to_id: int, amount: int, reason: String) -> Result:
 	if from_after < 0:
 		return Result.failure(EconomyCodes.INSUFFICIENT_FUNDS, "Ledger.transfer: o dono %d tem saldo %d e não cobre %d (%s) para o dono %d." % [from_id, balance_of(from_id), amount, reason, to_id])
 	var to_after: int = (from_after if to_id == from_id else balance_of(to_id)) + amount
-	var counter_after: int = int(_moved.get(reason, 0)) + amount
-	if to_after > MAX_AMOUNT or counter_after > MAX_AMOUNT:
+	if to_after > MAX_AMOUNT or int(_moved.get(reason, 0)) + amount > MAX_AMOUNT:
 		return _over_limit("transfer", amount, reason)
+	return Result.success()
+
+
+func transfer(from_id: int, to_id: int, amount: int, reason: String) -> Result:
+	var checked: Result = check_transfer(from_id, to_id, amount, reason)
+	if not checked.ok:
+		return checked
+	var from_after: int = balance_of(from_id) - amount
+	var to_after: int = (from_after if to_id == from_id else balance_of(to_id)) + amount
 	_set_balance(from_id, from_after)
 	_set_balance(to_id, to_after)
-	_moved[reason] = counter_after
+	_moved[reason] = int(_moved.get(reason, 0)) + amount
 	_record("transfer", from_id, to_id, amount, reason)
 	return Result.success()
 
