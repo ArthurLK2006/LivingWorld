@@ -1,4 +1,50 @@
-11/11/2026 10:42 (Brasília) — CONCLUÍDA: respostas de Arthur (Q1 a Q22) registradas no 0013 (seção 6), commit 1a56128 ENVIADO ao ramo lw-117-prevoo-fase-4 (rascunho, fora do main); check_all VERDE (1.203 de 1.203). main = 9b4f6f0, intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 10:55 (Brasília) — CONCLUÍDA: ajuste do 0013 (Q3 com pena de crime como multa; Q11 a Q21 como PROPOSTA do revisor), commit debea7e ENVIADO ao ramo lw-117-prevoo-fase-4 (rascunho, fora do main); check_all VERDE (1.203 de 1.203). main = 9b4f6f0, intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117 (PRÉ-ETAPA), AJUSTE DA Q3 — RELATÓRIO — Segunda atualização do 0013 (DOC, rascunho fora do `main`)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3).** Arthur mudou por mensagem: confirmou Q1, Q2 e Q5 a Q10, manteve a Q4, **mudou a Q3** (mantém a "pena de crime" como multa, com a lista de atos em dados; a fonte do crime vem da Fase 5 e, na Fase 4, testa-se com um evento de teste) e passou **Q11 a Q21** para o revisor, como PROPOSTA, seguindo as recomendações. Como a autorização anterior de commit já tinha sido usada, **editei o arquivo e parei** até ele autorizar; depois ele autorizou **1 commit** no ramo `lw-117-prevoo-fase-4` e o push desse ramo e do `status-c`. Só o 0013; nada no `main`, sem tag, sem `--force`.
+
+## 1. RESUMO
+A seção 6 do 0013 agora traz a Q3 nova (que substitui "proibição de bem"), os status finais (Q1, Q2, Q5 a Q10 confirmadas; Q4 mantida; Q11 a Q21 PROPOSTA do revisor; Q22 dele) e dois pontos novos em aberto que a Q3 cria.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (commit `debea7e`, "LW-117: ajusta a Q3 e o status das técnicas no levantamento de pré-voo da Fase 4")
+- `docs/decisions/0013-pre-voo-da-fase-4.md`: +8 e −6 linhas (agora 316 linhas). Nenhum outro arquivo; contra o `main` o ramo difere só nele.
+
+## 4. DECISÕES TÉCNICAS
+- **Q3 (decisão de Arthur):** a "pena de crime" fica como multa; as 5 leis são as do roadmap (tarifa, imposto de entrada, conscrição, pena de crime e licença); atos em dados (agressão, roubo, morte e contrabando, da Fase 5); evento de teste na Fase 4. A "proibição de bem" deixa de ser lei e continua só como capacidade da `TradeRules`.
+- **Q11 a Q21:** "PROPOSTA do revisor, seguindo a recomendação"; Q22 anotada como dependente da Q21 (agora PROPOSTA).
+- **O que as respostas mudam no roadmap:** a frase da lista de leis foi trocada por "as 5 leis ficam como no roadmap, mas a pena vira multa, com lista de atos em dados e sem fonte de crime na Fase 4".
+- **Novos pontos em aberto (o revisor propõe, nada foi decidido):** como a multa é cobrada (comando da economia, motivo `fine`, quem publica o evento de teste, falta de saldo) e a lista de atos e valores (dados [HIP]). Proposta de entrada para `DECISIONS.md`: nenhuma nova.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD `debea7e`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (314 scripts), dados válidos, **125 scripts, 1.203 testes (todos passando), 262.120 asserts**, 170,5 s (3 min 23 s no total).
+- `git push origin lw-117-prevoo-fase-4`: `1a56128..debea7e` (avanço simples); o remoto confere (`debea7e`); `main` (`9b4f6f0`) e tags não mudaram.
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.203 de 1.203); falhos e pulados: 0. Critério cumprido por leitura do diff (8 linhas).
+
+## 7. PROBLEMAS ENCONTRADOS
+- A recomendação original da Q3 e a pergunta continuam nas seções 1 a 5 do 0013 (inclusive o achado 8 sobre "pena de crime sem crime"); a seção 6 diz que foram trocadas. É de propósito (guardar o raciocínio), mas quem ler só a seção 4 vê a recomendação antiga.
+- O ramo segue **1 commit atrás do `main`** (`9b4f6f0`); não juntei (não autorizado; arquivo novo, sem conflito possível).
+
+## 8. RISCOS
+- As respostas ainda **não estão no `DECISIONS.md` nem no roadmap** (parte 117a).
+- A Q3 deixa a "pena de crime" sem fonte na Fase 4: só um evento de teste a exercita, então a multa não aparece no jogo até a Fase 5.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Autorizar a parte 117a** (registro das respostas no `DECISIONS.md` e no roadmap) (**recomendo**).
+2. Deixar o revisor propor os pontos em aberto da seção 6 (cultura de cada país, província de fronteira, "imposto de entrada", como a multa é cobrada, nomes e doutrina das facções) (**recomendo**).
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3** com a A e a B; **Fase 4 não iniciada** (só a pré-etapa da LW-117, respondida).
+- Próxima tarefa recomendada: **LW-117a** (registro). **Não iniciada.** Parei aqui (regra 13).
+- Git: `lw-117-prevoo-fase-4` enviado (`debea7e`); `status-c` enviado com este relatório; `main` = `9b4f6f0` (não alterado por mim); sem tag, sem `--force`.
+
+---
 
 # LW-117 (PRÉ-ETAPA), ATUALIZAÇÃO — RELATÓRIO — Respostas de Arthur registradas no 0013 (DOC, rascunho fora do `main`)        Status: PRONTA PARA REVISÃO
 
