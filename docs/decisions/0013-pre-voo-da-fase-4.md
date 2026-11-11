@@ -1,6 +1,6 @@
 # LW-117 (pré-etapa) — Pré-voo da Fase 4 (facções e conflitos): levantamento de 11/11/2026
 
-- **Status:** **RASCUNHO, fora do `main`.** Este documento **não é o contrato da LW-117**: é o levantamento que vem antes dele, como o pré-voo da Fase 3 (`0012`) veio antes da LW-087. Não decide nada. O que as fontes não dizem vira **pergunta**; o que é só técnico traz uma **recomendação** que o revisor registra como PROPOSTA depois das suas respostas.
+- **Status:** **RASCUNHO, fora do `main`. Respostas de Arthur de 11/11/2026 (Q1 a Q22) registradas na seção 6.** Este documento **não é o contrato da LW-117**: é o levantamento que vem antes dele, como o pré-voo da Fase 3 (`0012`) veio antes da LW-087. Não decide nada. O que as fontes não dizem vira **pergunta**; o que é só técnico traz uma **recomendação** que o revisor registra como PROPOSTA depois das suas respostas.
 - **Data e autoria:** 11/11/2026 (Brasília), feito a pedido de Arthur (LW-117, DOC, pré-etapa). `main` lido em `4ada136`.
 - **Fontes lidas:** `DEVELOPMENT_ROADMAP.md` (Fase 4, 4.A a 4.J); `DECISIONS.md` (índice e as entradas citadas); `GDD.md` (caps. 5.1, 8.6, 10, 11, 14, 15, 19.4, 20, 24); `TECHNICAL_ARCHITECTURE.md` (5.2, 11.8, 12, 13, 14, 17.5, 17.7); contratos no `main` (`npc.md`, `world.md`, `economy.md`, `events.md`).
 - **Rótulos:** **fato** (com a fonte), **recomendação** (minha, não decide), **[HIP]**, **pendente**. Fontes citadas como `arquivo seção`.
@@ -8,6 +8,8 @@
 ## 0. Resumo em palavras simples
 
 A Fase 4 pode começar a ser preparada, **mas a LW-117 não deve ser escrita antes de você responder** as perguntas da seção 4. Achei **18 contradições ou buracos** (seção 2). Os seis que mais pesam: (1) **não está dito onde fica a polity vizinha** (nem quem mora nela); (2) **três documentos dão a três donos diferentes o "controle" de uma província**; (3) a economia **não sabe receber uma política real** (como `TradeRules` troca de neutra para real, para onde vai a tarifa, quem tem conta no `Ledger`); (4) **"pena de crime" é uma das 5 leis, mas nenhuma tarefa cria crime**; (5) **as facções, os rumores, a satisfação e as baixas de guerra exigem mudanças no `npc`** que a LW-117 não lista; (6) a LW-142 manda **migrar** o save, e você já decidiu que o save **não é congelado** (DEC-134). Há **3 decisões PENDENTES que travam tarefas** (DEC-053, DEC-055, DEC-040) e **6 PROPOSTAS** que valem como padrão de trabalho (DEC-038, 043, 052, 056, 077, 099). São **10 perguntas de jogo** (só você decide) e **11 técnicas** (o revisor decide, se você concordar).
+
+**Atualização de 11/11/2026:** Arthur respondeu as 22 perguntas (as 10 de jogo, as 11 técnicas, uma a uma, e uma 22ª que nasceu ao cruzar as respostas). **As respostas estão na seção 6**; as seções 1 a 5 ficam como foram escritas antes delas, para guardar o raciocínio.
 
 ## 1. Decisões de que a Fase 4 depende (status no `DECISIONS.md` de 11/11/2026)
 
@@ -268,8 +270,45 @@ Regras: um arquivo, um escritor; 117a primeiro (registra as respostas), 117f por
 
 **Backlog prévio (uma linha cada):** T0 e satisfação agregada real; crime e justiça completos; rebelião e queda de governante; sucessão; cerco e exército grande; diplomacia entre facções e alianças; intriga e espionagem; reputação multidimensional; mercado negro e extorsão; fundação de facção pelo jogador; contato cultural dinâmico; traços de comandante e logística detalhada; estado de rota "perigosa" (arquitetura 5.2); terceira polity.
 
+## 6. Respostas de Arthur (11/11/2026)
+
+Dadas pelo painel de decisões, em lotes, na mesma conversa. **Q1 a Q10 e Q22 são decisões dele.** **Q11 a Q21 eram recomendações do revisor; ele quis vê-las uma a uma e escolheu cada uma**, então valem como escolhidas por ele. O registro no `DECISIONS.md` e as correções do roadmap são da parte 117a (seção 3); este documento só guarda as respostas.
+
+| Q | Assunto | Resposta de Arthur |
+|---|---|---|
+| 1 | Facções em que o jogador entra | **Autoridade e mercantil.** A criminosa fica em forma mínima, sem o jogador dentro. Nomes e doutrina das três: o revisor propõe, genéricos (DEC-100) |
+| 2 | 2 culturas genéricas | **Duas contrastantes** (por exemplo uma mais mercantil e outra mais tradicional), só com 4 parâmetros na Fase 4 |
+| 3 | As 5 leis | **"Pena de crime" sai e entra "proibição de bem".** As 5: tarifa, imposto de entrada, conscrição, proibição de bem e licença |
+| 4 | Onde fica o país vizinho | **O povoado C é dele** |
+| 5 | Guerra e DEC-053 | **Guerra em escala pequena** entre as forças dos dois países, sem cerco nem exército grande. Resposta à DEC-053: **resolução abstrata e o jogador não comanda na Fase 4**; o limite de combatentes com corpo é da Fase 5 |
+| 6 | Províncias (DEC-055) | **4**: uma por povoado (A, B e C) mais uma de fronteira. Vale como decisão do protótipo; a DEC-055 segue pendente para o mundo final |
+| 7 | Reputação | **Um número por entidade, em 5 faixas nomeadas** |
+| 8 | Save | **Continua sem congelar:** a LW-142 **rejeita** o save da Fase 3 com mensagem clara (DEC-127 e DEC-134) |
+| 9 | Dinheiro da facção criminosa | **Assaltos a caravana e contribuição dos membros;** extorsão fica fora |
+| 10 | Quem governa | **Um governante por país** (2 no total) |
+| 11 | Controle da província | **A `politics` guarda o controle;** as `factions` guardam a influência; o `world` guarda só a estrutura |
+| 12 | `TradeRules` e tarifa | **Interruptor na economia** (neutra de início; a política põe a real ao iniciar); a consulta passa a dizer **quem recebe** a tarifa e a economia faz a transferência (motivo `tariff`) |
+| 13 | Contas de tesouro | **Um tipo de dono `treasury`** para facção e país; motivos novos (`tariff`, `tax`, `upkeep`, `faction_salary`) e dinheiro inicial |
+| 14 | Reputação nas facções | **Aviso por evento (`ReputationChanged`) e cópia só de leitura** na `factions`; o `npc` informa a contagem de testemunhas |
+| 15 | T3 | **T2 com vínculo de liderança,** teto próprio em dados (`max_t3`), sem "planos"; só as facções promovem a T3 |
+| 16 | Satisfação e protesto | **Consulta nova do `npc`, calculada uma vez por dia;** o `npc` ouve a agitação (`UnrestRaised`) e "protestar" fica em dados |
+| 17 | Soldados | **O `npc` ganha "baixa" e "em missão";** a mesma pessoa existe uma só vez |
+| 18 | Rumores | **Quadro de rumores por povoado,** dono `npc`, com capacidade e perda de confiança por lote |
+| 19 | Eventos e crônica | **Adotar os 6 eventos** que a arquitetura lista e o roadmap omite; **limiar de importância da crônica em dados** |
+| 20 | Guardas | **Os postos continuam;** só o pagador muda (do mercado para o tesouro da autoridade), com o mesmo evento de pagamento |
+| 21 | Escolta e carga | **Contrato novo `escort`** na economia; a carga perdida é **destruída** (motivo `lost`) |
+| 22 | Assalto a caravana (nova) | **O assalto leva o dinheiro do comerciante** (transferência para a facção criminosa) **e a carga é destruída;** isso resolve a contradição entre Q9 e Q21 |
+
+**O que as respostas mudam no roadmap (para a parte 117a registrar como divergência):** a lista de 5 leis da LW-117 (sai "pena de crime", entra "proibição de bem"); a LW-142 **rejeita** o save em vez de migrar; a LW-118 passa a ter 4 províncias e o C ligado à província do vizinho; a LW-130 usa o interruptor da economia e a tarifa tem destinatário; a LW-119 usa o tipo `treasury`; a LW-121 promove a T3 como "T2 com vínculo"; a LW-127 usa o quadro de rumores; a LW-131 e a LW-135 pedem as extensões do `npc` (consulta diária, "protestar", "baixa", "em missão"); a LW-139 usa o contrato `escort` e o assalto que transfere dinheiro (motivo novo no `Ledger`). **A divisão da seção 3 continua valendo:** as extensões de `economy`, `npc` e `world` seguem fora da lista da LW-117 e entram nas partes 117b e 117e.
+
+**O que as respostas deixam em aberto (pequeno; o revisor propõe, nada foi decidido aqui):**
+- **Cultura de cada país:** a Q2 não diz qual das duas culturas é do país principal e qual é do vizinho.
+- **Província de fronteira (Q6):** de quem ela é e se tem povoado.
+- **"Imposto de entrada" (Q3):** como ele difere da tarifa (a economia só tem uma consulta de regra por bem, mercado e comprador).
+- **Nomes e doutrina das 3 facções (Q1):** propostas genéricas do revisor (DEC-100).
+
 ## Validação e referências
 
 - Todas as DEC citadas foram conferidas no `DECISIONS.md` do `main` (`4ada136`, 11/11/2026). Os trechos do GDD, da arquitetura, do roadmap e dos contratos foram lidos nas versões do `main` da mesma data.
 - Este documento não cria arquivo de dados, evento, contrato nem código, e não altera `docs/events.md`.
-- Próximo passo (depende de você): responder Q1 a Q10 e dizer se o revisor pode decidir Q11 a Q21 como PROPOSTA; depois, a LW-117 em partes (seção 3).
+- Próximo passo: a parte 117a registra as respostas da seção 6 no `DECISIONS.md` e no roadmap; depois, as partes 117b a 117f (seção 3), por ordem de Arthur. **Este rascunho continua fora do `main`.**
