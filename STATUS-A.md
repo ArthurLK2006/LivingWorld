@@ -1,82 +1,68 @@
-11/11/2026 09:44 (Brasília) · SEQUÊNCIA DA A: Partes 1 e 2 CONCLUÍDAS (`main` em `9b4f6f0`); Parte 3 (LW-088a) PARADA no seu PARE (2): o primeiro valor de referência mudou (oráculo `intents`, e os outros 8 também); nada commitado, nenhum valor esperado editado; espero o seu "aprovo os hashes do marco 1"
+11/11/2026 10:28 (Brasília) · SEQUÊNCIA DA A CONCLUÍDA: Partes 1 e 2 no `main` (`9b4f6f0`); Parte 3 (LW-088a) PRONTA PARA REVISÃO no ramo `lw-088a-registro-economy` (`d1caae0`, só o ramo empurrado; `main` não tocado); `check_all` VERDE (126 scripts, 1.208 testes, 262.153 asserts) com os valores do marco 1 que você aprovou; falta a sua auditoria
 
-# RELATÓRIO — SEQUÊNCIA DA A: LW-093b (Fase B), LW-087 (fechamento) e LW-088a     Status: LW-093b e LW-087 PRONTAS PARA REVISÃO (já no `main`) · LW-088a PARCIAL (parada no PARE 2, sem commit)
+# RELATÓRIO — SEQUÊNCIA DA A: LW-093b (Fase B), LW-087 (fechamento) e LW-088a     Status: PRONTA PARA REVISÃO (Partes 1 e 2 já no `main`; Parte 3 só no ramo)
 
 ## 1. RESUMO
-**Parte 1 (LW-093b, Fase B):** o `main` entrou com o `APROVADO LW-093b`: junção com o `main`, uma linha de status e `check_all` verde, por avanço simples (`4ada136`). **Parte 2 (LW-087):** o GATE passou e as quatro partes (087a a 087d) foram fechadas no `main` (`9b4f6f0`), com o placar recontado por `grep`: Fase 3 = 1 de 30 e projeto = 88 de 192. **Parte 3 (LW-088a):** registrei a casca da `economy` no jogo e parei, como você mandou, no primeiro valor de referência que mudou. **Não há commit da LW-088a**, nenhum valor esperado foi editado e a fixture `save_v1` está intacta. A causa é uma só: o save do mundo ganhou o bloco vazio `"economy": {}`; sem ele, os nove valores do oráculo voltam aos antigos (prova abaixo). O `run_sim` não mudou.
+**Partes 1 e 2** (já informadas, no `main`): a LW-093b entrou (`4ada136`) e a LW-087, nas quatro partes, foi fechada (`9b4f6f0`), com Fase 3 = 1 de 30 e projeto = 88 de 192. **Parte 3 (LW-088a):** depois do seu "Aprovo os dois" (os hashes do marco 1 e a lista de módulos nos 3 testes), gravei os nove valores novos do oráculo, ajustei as três listas, acrescentei a regra E ao `check_architecture` (o `npc` cita só `economy/api`; a `economy` não cita o `npc`, com 4 casos de violação e 4 aceitos), criei o teste da casca (5 testes) e a documentação. Um commit (`d1caae0`), empurrado só o ramo. O `check_all` ficou verde, a fixture `save_v1` não foi tocada e o `run_sim` não mudou.
 
-## PARTE 3 — O PARE (2), com os números
-**O primeiro valor que mudou:** oráculo `intents` (minuto 60): **antes `6e12b3067120…`, depois `223b8ec6a7ed…`**. Mudaram os nove:
+## Declaração de leitura (Parte 3, antes de mexer no código)
+- **Li:** `AGENTS.md` v0.4; a linha da LW-088a e da LW-088 no roadmap; `docs/modules/economy.md` (seções 1, 2 e 14); `docs/modules/core.md`; `TECHNICAL_ARCHITECTURE` 11.1, 18.1–18.2 e 21.5 (**não li** os capítulos 17 e 21 inteiros; só esses trechos); `src/app/game_modules.gd`, `src/core/sim_module.gd`, `src/core/world/world.gd`, `src/sim/character/character_module.gd`, `tools/check_architecture`, `tests/test_check_architecture.sh`, `tools/run_sim` e `tests/test_run_sim.sh`.
+- **Decisões (todas APROVADAS):** DEC-171, 172, 175, 132, 126, 127, 134 e 162.
 
-| Fase do oráculo | Antes | Depois |
-|---|---|---|
-| intents (min 60) | `6e12b3067120` | `223b8ec6a7ed` |
-| alarm (min 240) | `506a4a23ce89` | `dfe616868618` |
-| resumed (min 250) | `7008d3b19d38` | `db2469cec836` |
-| switches (min 310) | `84ca55684e34` | `888b1962d83b` |
-| talk (min 740) | `ce14b1e45954` | `8b04890c8c9b` |
-| save (min 870) | `142733eb318f` | `5673e2b3911b` |
-| demote (min 1810) | `00794d5a27b6` | `62c86fea8233` |
-| starved (min 6300) | `3e1d080d2eed` | `52c2d24b40fc` |
-| real_game (min 1440) | `f9469ccc5a9d` | `edf6ebb03cb9` |
+## 2. ARQUIVOS CRIADOS (Parte 3, no commit `d1caae0`)
+- `src/sim/economy/economy_module.gd` — a casca `EconomyModule`: `serialize()` devolve `{}` e `on_load` aceita só o bloco vazio (`ECON_INVALID_SAVE`); 26 linhas (13 de código). O `.uid` foi gerado pelo Godot.
+- `src/sim/economy/api/README.md` — a `api/` vazia, só com o README.
+- `tests/unit/test_economy_module.gd` — 5 testes, 33 asserts; 91 linhas (74 de código). O `.uid` também.
 
-(Os valores completos de 64 caracteres, novos e antigos, estão na saída do teste; as constantes ficam em `tests/integration/test_npc_split_oracle.gd`, linhas 47 a 55, **sem mexer**.) Os soaks, que só **imprimem** o hash (não há valor fixo guardado): vida de 7 dias `dad2d10abf75` → `af5bdb5e1f21`; soak de 300 NPCs `31322f97796b` → `52b7851aefc0`; soak de 30 dias `d13b921112ce` → `82f81b239759`.
-
-**Causa, em palavras simples:** o hash é a "impressão digital" do save do mundo inteiro. Ao registrar a `economy`, o save passou a ter um bloco a mais, `"economy": {}`, vazio. Um bloco a mais muda a impressão digital de **todo** jogo, mesmo que a economia não faça nada ainda. Nenhum NPC passou a se comportar diferente.
-
-**Prova (temporária, desfeita):** tirei de propósito o bloco vazio do hash (e fiz o carregamento aceitar a falta dele) numa cópia de `src/core/world/world.gd` e rodei o oráculo: **2/2 passaram, com os nove valores antigos de volta**. Restaurei o arquivo e conferi que ficou **idêntico ao backup** (`cmp`; `git status` sem nada em `src/core`). Uma primeira tentativa, só com a parte do hash, deixou `save`, `demote` e `starved` diferentes, e eu a descartei como prova: o meu remendo quebrava o carregamento (o `World` exige o bloco), então esses três divergiam por culpa do remendo, não da economia; a segunda, completa, é a que vale.
-
-**`run_sim` antes e depois (`--days 30 --seed 1`): IGUAIS.** `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7` nos dois, 0 problemas (como o contrato previa: o `run_sim` não registra módulo).
-
-**Fixture:** `tests/unit/test_save_codec.gd` rodou **primeiro**: 12/12 passaram; `git status tests/fixtures` vazio. Não preciso da autorização escrita para a fixture.
-
-**Outros testes que o registro quebra (3, fora o oráculo):** os três conferem a lista exata de módulos registrados, que hoje é `[character, npc]` e passa a ser `[character, economy, npc]`: `tests/unit/test_npc_state.gd` linha 441 ("O npc é registrado depois do character"), `tests/unit/test_settlements.gd` linha 323 (as chaves do save) e `tests/unit/test_sim_bridge_character.gd` linhas 149 e 150. **Não editei** (AGENTS 9.5: teste existente só com pergunta); veja o pedido (B) na seção 9.
-
-## 2. ARQUIVOS CRIADOS
-- **Partes 1 e 2:** nenhum arquivo novo no `main` (a Parte 1 só trouxe o teste da LW-093b, que já existia no ramo).
-- **Parte 3 (só no diretório de trabalho do ramo `lw-088a-registro-economy`, NÃO commitado e NÃO empurrado):** `src/sim/economy/economy_module.gd` (a casca: `serialize()` devolve `{}` e `on_load` aceita só o bloco vazio, com o código `ECON_INVALID_SAVE`) e o `.uid` dele (gerado pelo Godot).
-
-## 3. ARQUIVOS MODIFICADOS
-- **Parte 1 (no `main`):** `docs/ROADMAP_STATUS.md` +1 linha (a LW-093b em "Tarefas extras"; as contagens não mudam). Mais as duas junções com o `main` (`f54c657` e `4ada136`), que só trouxeram documentos.
-- **Parte 2 (no `main`):** `docs/ROADMAP_STATUS.md` (+9 −3: cabeçalho, nova seção "Tarefas da Fase 3" com a LW-087, e uma frase da linha da LW-087a) e `docs/decisions/0012-pre-voo-da-fase-3.md` (1 palavra: "rascunho" virou "registrada no main em 11/11/2026").
-- **Parte 3 (não commitado):** `src/app/game_modules.gd` (+13 −3: constante `ECONOMY_NAME`, campo `economy` e o registro entre `character` e `npc`).
+## 3. ARQUIVOS MODIFICADOS (Parte 3, no commit `d1caae0`)
+- `src/app/game_modules.gd` — +13 −3: `ECONOMY_NAME`, o campo `economy` e o registro entre `character` e `npc`.
+- `tools/check_architecture` — +8 −1: a regra E dentro do bloco de camadas (a mensagem "nove verificações" não mudou).
+- `tests/test_check_architecture.sh` — +20: o bloco da regra E e a linha de resumo "LW-088a".
+- `tests/integration/test_npc_split_oracle.gd` — os 9 hashes novos (os que você aprovou) e o comentário do marco 1.
+- `tests/unit/test_npc_state.gd` (1 linha), `tests/unit/test_settlements.gd` (1 linha) e `tests/unit/test_sim_bridge_character.gd` (2 linhas e uma constante): a lista de módulos passou a `[character, economy, npc]`; nada foi enfraquecido.
+- `src/sim/economy/README.md` e `docs/modules/economy.md`: a LW-088a passou a **IMPLEMENTADA em 11/11/2026** (seção 2, a conferência da fixture, o marco 1 aprovado e a linha do rastreio na seção 14).
 
 ## 4. DECISÕES TÉCNICAS
-- **Interpretações minhas na Parte 3 (AGENTS 16.1, dentro do escopo):** (1) "onde quer que o `npc` seja registrado" = o `GameModules.register`, único ponto do jogo, do runner e dos testes de jogo inteiro; os cerca de 30 testes que montam um `World` só com o `npc` não foram tocados (mexer neles passaria muito de 8 arquivos); (2) ordem `character`, `economy`, `npc`; (3) o `on_load` da casca recusa qualquer bloco não vazio (AGENTS 12.6); (4) a regra nova do `check_architecture` entra no bloco de camadas como "regra E", e a mensagem "nove verificações" não muda (como na regra D). Ainda **não implementadas**: a regra E, os testes dela, o teste do módulo e a documentação.
-- **Parte 2:** o recálculo do placar foi por contagem de linhas `| LW-NNN |` com estado concluída ou dispensada, por seção (31 + 23 + 32 + 1 antecipada + 1 da Fase 3 = 88). Acrescentei a seção "Tarefas da Fase 3" e uma frase no cabeçalho, porque o arquivo não tinha onde registrar a fase.
+- **Onde registrar:** só em `GameModules.register`, que é o único ponto do jogo, do runner e dos testes de jogo inteiro. Os cerca de 30 testes que montam um `World` só com o `npc` não foram tocados. Ordem: `character`, `economy`, `npc`.
+- **A casca só sobrescreve `serialize` e `on_load`.** O contrato dizia "com `serialize`, `on_load`, `validate` e `debug_summary`", mas sem estado `validate` e `debug_summary` ficam com o padrão do `SimModule`; escrevi isso na seção 2 do contrato e no README.
+- **`ECON_INVALID_SAVE`** é um código novo (mesmo padrão do `CHARACTER_INVALID_SAVE`), só da casca; não está na tabela da seção 10 do contrato.
+- **A regra E** fica no mesmo bloco das regras A a D, com o mesmo formato de mensagem. Segunda metade: a `economy` não cita nenhuma classe do `npc`, **nem a `api/` dele**.
+- **O teste negativo da regra usa a pasta temporária do próprio script**, então nenhum arquivo foi criado em `tests/fixtures`.
 - **Proposta de entrada para `DECISIONS.md` / pedido de desvio:** nenhum.
 
 ## 5. TESTES EXECUTADOS
-- **Parte 1:** `tools/check_all` em `5279f2c` (09:18 a 09:22) e de novo em `4ada136` (09:22 a 09:25, depois de o `main` andar): **VERDE** nas duas, 125 scripts, 1.203 testes, 262.120 asserts, hashes idênticos aos da base; `git ls-remote` conferido.
-- **Parte 2:** GATE conferido em `origin/main`; `tools/check_all` em `9b4f6f0` (09:28 a 09:31): **VERDE** (125 / 1.203 / 262.120, mesmos hashes); `git ls-remote` conferido.
-- **Parte 3 (antes de mexer):** `tools/run_sim --days 30 --seed 1`; `tests/soak/run_npc_life_30d` (`d13b921112ce`); valores do oráculo e dos soaks do último `check_all` verde.
-- **Parte 3 (depois do registro, sem nenhuma edição de teste):** `tests/unit/test_save_codec.gd` 12/12; `test_npc_split_oracle.gd` 0/2 (os 9 hashes); `tools/run_sim` igual; `tools/check_all` **VERMELHO** (125 scripts, 1.203 testes, 1.198 passando, **5 falhando**: os 2 do oráculo e os 3 das listas de módulos; 315 scripts sem aviso; arquitetura: nove verificações aprovadas); `tests/soak/run_npc_life_30d` 1/1 (`82f81b239759`).
-- **NÃO EXECUTADO** (a Parte 3 parou antes): a regra E do `check_architecture` e os testes dela, o teste do `EconomyModule` e a documentação.
+- `tools/run_tests` nos quatro arquivos editados: oráculo 2/2, `test_npc_state` 20/20, `test_settlements` 23/23, `test_sim_bridge_character` 13/13; no novo, `test_economy_module` 5/5.
+- `sh tests/test_check_architecture.sh`: passa (LW-088a: 4 violações detectadas e 4 casos aceitos); `tools/check_architecture` na árvore real: nove verificações aprovadas.
+- **Controles de mutação** (em cópia, desfeitos, arquivo idêntico ao backup): regra E sem ver o `npc` citando classe interna da economy, **pega** ("o npc cita classe interna da economy não foi detectada"); regra E sem ver a `economy` citando o `npc`, **pega**; `on_load` aceitando tudo, 4/5; `serialize` com um campo, 3/5; economy registrada **depois** do `npc`, 4/5.
+- **`tools/check_all` na árvore final** (10:20:54 a 10:24:21; a árvore não mudou entre o `check_all` e o commit `d1caae0`): **VERDE** (`EXIT_CODE_CHECK_ALL=0`).
+- `tools/run_sim --days 30 --seed 1` e `tests/soak/run_npc_life_30d` na árvore final.
 
 ## 6. RESULTADOS
-- **Partes 1 e 2:** cumpridas; `main` = `9b4f6f0`; placar **88 de 192 (45,8%)** e **Fase 3: 1 de 30 (3,3%)**.
-- **Parte 3:** o aceite **não** foi cumprido (a tarefa parou). O que está provado: a casca não mexe no comportamento (nove valores voltam sem o bloco vazio); a fixture protegida não é atingida; o `run_sim` não muda.
+- **`check_all`:** 126 scripts, **1.208 testes, 1.208 passando, 0 falhando**, 262.153 asserts, 172,0 s; 316 scripts sem aviso de compilação; 0 "SCRIPT ERROR" e 0 "Parse Error". Contra a base (125 / 1.203 / 262.120): +1 script, +5 testes, +33 asserts, que são exatamente o `test_economy_module.gd`.
+- **`run_sim` (`--days 30 --seed 1`), antes e depois: IGUAIS** — `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, 0 problemas.
+- **Os hashes do marco 1 gravados (os que você aprovou):** o oráculo `intents` `223b8ec6a7ed`, `alarm` `dfe616868618`, `resumed` `db2469cec836`, `switches` `888b1962d83b`, `talk` `8b04890c8c9b`, `save` `5673e2b3911b`, `demote` `62c86fea8233`, `starved` `52c2d24b40fc` e `real_game` `edf6ebb03cb9` (valores completos no teste). Os soaks **só imprimem**: vida de 7 dias `af5bdb5e1f21`, 300 NPCs `52b7851aefc0` e 30 dias `82f81b239759` (os mesmos da parada, repetidos na árvore final).
+- **Fixture:** `test_save_codec.gd` 12/12, rodado primeiro; `tests/fixtures`, `data/`, `project.godot` e os arquivos protegidos ficaram intactos.
+- **Tamanho (DEC-126):** 132 linhas de código e teste (teto ~300), em **9 arquivos de código e teste** (o módulo, `game_modules.gd`, o `check_architecture`, o teste dele, o teste novo, o oráculo e as três listas): **acima de ~8, mas dentro da tolerância de 1,5×** (até ~12).
+- **Aceite:** cumprido nos três pontos do roadmap: a regra reprova nos dois sentidos (positivo e negativo), o `check_all` está verde e os valores novos foram aprovados por você; o relatório mostra o `run_sim` antes e depois.
 
 ## 7. PROBLEMAS ENCONTRADOS
-- O `main` **andou durante a Parte 1**: você disse `e3f715e` (14 commits à frente); quando fiz o `fetch` estava em `7179975` (27 commits) e depois em `ce0cbed`. Só vieram documentos. O `main` andou entre a primeira junção com `check_all` e o push, então refiz uma vez (junção e `check_all`); nenhum push foi recusado, e o push passou na primeira tentativa.
-- **Frase velha do `README.md`:** a linha 9 ainda diz "avanço total do projeto: 87 de 192 tarefas (45,3%)", e agora o `ROADMAP_STATUS.md` diz 88. Você mandou o commit da Parte 2 só nos dois arquivos citados, então **não mexi no `README.md`**; fica para você decidir.
-- **`docs/modules/economy.md`:** a linha "Estado" ainda diz que "nenhum código, dado ou teste existe" e a Parte 3 tornará isso falso. Pretendo corrigir com uma frase junto da LW-088a (veja pedido C).
-- Ruído esperado no `check_all`: "Decompression failed" (já estava na base) e o aviso de `wait_frames` do GUT em `test_app_nodes.gd` (não é meu).
+- **Ficou desatualizado de propósito (fora do que você aprovou):** (C) a linha "Estado" do `docs/modules/economy.md` ainda diz "nenhum código, dado ou teste dela existe"; (D) a linha 9 do `README.md` ainda diz "87 de 192 tarefas (45,3%)"; (E) a linha sobre o `GameModules` em `docs/modules/app.md` (linha 12) ainda lista só `character` e `npc`. Não toquei, porque o escopo era a linha da LW-088a no `economy.md` e nada mais.
+- O ruído esperado do `check_all` continua: "Decompression failed" e o aviso de `wait_frames` do GUT (não são meus).
+- Uma prova de causa que descartei por erro meu: a primeira tentativa não deixava o carregamento aceitar a falta do bloco, e três fases do oráculo divergiram por culpa do remendo; a segunda, completa, fez os nove valores voltarem (2/2).
 
 ## 8. RISCOS
-- Se aprovar os hashes **e** os três ajustes, a Parte 3 mexe em **9 arquivos de código e teste** (o módulo, `game_modules.gd`, `check_architecture`, o teste dele, o teste novo do módulo, o oráculo e as três listas): acima de ~8, mas dentro da tolerância de 1,5× da DEC-126 (até ~12); as linhas ficam perto de 150, bem abaixo de ~300.
-- Os valores novos dos soaks (vida de 7 dias, 300 NPCs e 30 dias) **não** estão guardados em nenhum teste (só são impressos); mesmo assim peço que o seu "aprovo" os cubra, porque são hashes do marco 1.
-- O soak de 30 dias roda fora do `check_all` (cerca de 80 s); o `check_all` não o pega.
+- **A LW-088 em diante:** o bloco `economy` ganha conteúdo; `on_load` hoje recusa tudo que não for vazio, então a LW-088 precisa trocar essa regra (e o teste `test_economy_module.gd`, que a prova) junto com o estado novo.
+- O marco 1 vale até a LW-092: dali em diante só se **registram** os valores novos no relatório; da LW-093 começa o marco 2 e a primeira mudança volta a **parar** (DEC-175).
+- Os soaks de 7 e 30 dias e o de 300 NPCs não guardam valor fixo; só o oráculo trava os hashes.
+- A Fase B da LW-088a **só depois** da aprovação do bloco inteiro (LW-088a a LW-092), como você mandou.
 
-## 9. PENDÊNCIAS (o que eu preciso de você, com a minha recomendação)
-- **(A) "aprovo os hashes do marco 1"** (os nove do oráculo e os três dos soaks, tabela acima). **Recomendo aprovar:** a causa é só o bloco vazio e a prova mostra que o comportamento não mudou. Só depois disso grave os valores novos no oráculo e termino.
-- **(B) Os três testes de lista de módulos** (`test_npc_state.gd:441`, `test_settlements.gd:323` e `test_sim_bridge_character.gd:149`): trocar `[character, npc]` por `[character, economy, npc]`. **Recomendo autorizar:** é consequência direta do registro que você mandou, e o texto dos testes continua dizendo o que querem dizer. Escreva por exemplo "aprovo os hashes do marco 1 e a lista de módulos nos 3 testes".
-- **(C) Uma frase no `docs/modules/economy.md`** (linha "Estado": a casca da economia passa a existir; o resto segue PLANEJADO), além de marcar a LW-088a como IMPLEMENTADA; **recomendo** deixar.
-- **(D) O `README.md` linha 9** (87 → 88 e 45,3% → 45,8%): fora do que você autorizou; **recomendo** um commit curto só disso.
+## 9. PENDÊNCIAS
+- **A sua auditoria** do ramo `lw-088a-registro-economy` (`d1caae0`).
+- **Decisões minhas pedidas, cada uma com a minha recomendação:** (C) uma frase na linha "Estado" do `economy.md` — **recomendo** fazer; (D) o `README.md` linha 9 (87 → 88, 45,3% → 45,8%) — **recomendo** um commit curto; (E) a linha do `GameModules` em `app.md` — **recomendo** atualizar junto.
 - **Teste manual:** nenhum.
 
 ## ACOMPANHAMENTO
 - **Avanço:** Fase 3 = 1 de 30 (3,3%); projeto = 88 de 192 (45,8%). A LW-088a é subtarefa e não entra na conta.
-- **Próxima tarefa recomendada:** terminar a LW-088a assim que você responder (A) e (B); depois a LW-088. **Não iniciada.**
-- **Decisões que dependem de você:** (A), (B), (C) e (D) acima.
-- **Git:** `main` = `9b4f6f0` (Partes 1 e 2). Ramos empurrados: `lw-093b-oficio-so-por-json` (`4ada136`) e `lw-087-fechamento` (`9b4f6f0`). **`lw-088a-registro-economy`: só local, sem commit** (3 arquivos no diretório de trabalho, descritos na seção 2 e 3). Nenhuma tag, sem `--force`, `tests/fixtures` intacto, nenhum Godot meu em execução.
+- **Próxima tarefa recomendada:** a sua auditoria; depois a LW-088 (`Ledger`). **Não iniciada.**
+- **Decisões que dependem de você:** as de (C), (D) e (E) acima.
+- **Git:** `main` = `9b4f6f0` (não tocado na Parte 3). Ramo `lw-088a-registro-economy` = `d1caae0`, **empurrado só ele** e o `status-a`; um commit ("LW-088a: registro do módulo economy e regra de arquitetura"). Sem tag, sem `--force`; nenhum Godot meu em execução.
