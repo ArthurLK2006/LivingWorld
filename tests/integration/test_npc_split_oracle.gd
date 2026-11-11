@@ -42,17 +42,19 @@ const T_SAVE: int = 14 * HOUR
 const T_AFTER_LOAD: int = 14 * HOUR + 30
 const T_DEMOTE: int = DAY + 6 * HOUR
 const T_STARVED: int = 4 * DAY + 9 * HOUR
-## Impressões digitais esperadas, por fase (SHA-256 completo). Cinco são as de 5a7d453; `talk`, `save`, `demote` e `starved` são as da LW-073b (ver o cabeçalho).
+## Impressões digitais esperadas, por fase (SHA-256 completo). MARCO 1 de hash (LW-088a, DEC-175; valores novos aprovados por Arthur em 11/11/2026): o registro da `economy`
+## acrescentou ao save do mundo o bloco vazio `economy`, e só isso mudou os nove valores (sem o bloco, voltam todos aos anteriores, que eram os de 5a7d453 para `intents`,
+## `alarm`, `resumed` e `switches`, e os da LW-073b e da LW-085 para os demais; ver o cabeçalho).
 const EXPECTED: Dictionary[String, String] = {
-	"intents": "6e12b306712071a5b758b11a2ef2b89c0e52ef02e60f195a99c66621ccefeb8b",
-	"alarm": "506a4a23ce894ca08835fd285997b04ca86015eacc45213156f4c7975bdaadc1",
-	"resumed": "7008d3b19d38cd8912e2700a490fe85a1a2367db31999d0db1d67146a549a151",
-	"switches": "84ca55684e3466b81bca9c6ff69c6543ef2db8573a5b2a42d7e5a806da122e78",
-	"talk": "ce14b1e45954535e9a142414f6f4ecbb151bcb8bba6542c459897c13ef4014ff",
-	"save": "142733eb318fab0806f01a735294c238c2b0a0920d2dd755a7c4a9e7c70d0513",
-	"demote": "00794d5a27b61c4f1f4be7c9ba3d427dea124c5235c692c58ea70afce352e5a5",
-	"starved": "3e1d080d2eed19ce2494741d2be384e0d82a988efef0f3d3777d540476de7fbc",
-	"real_game": "f9469ccc5a9d4188c6c9e04fea80b18b095a089ad64c3315c7ae0e3515aa3a94",
+	"intents": "223b8ec6a7ed473c54f330e7bb07868c4b8deb4214da8589a7503baf5ba1a144",
+	"alarm": "dfe616868618485708e3555b96e30835fa3915182aa3ff10b6316e4fe8ae2105",
+	"resumed": "db2469cec836bb57fbb154f284f444495e2d4623f512e889fcb89936769b9947",
+	"switches": "888b1962d83b9eb59a18291d2405766656823a4e0af6178ad7a574277446035d",
+	"talk": "8b04890c8c9bdab6b00e830e43d2c1143a5d019b00505a501281f1fb7890abb1",
+	"save": "5673e2b3911bebf0ec109f0817f56d8a99b63eeb532db9d14a375b9f2e65efdd",
+	"demote": "62c86fea8233555c1ea24bbe2efa35ad012b293b3ccd5db3d7b127e80572e514",
+	"starved": "52c2d24b40fc13657de2223c19bc05f19b1c5e5ac1eaccf2a22462be602d4e93",
+	"real_game": "edf6ebb03cb97c16b85a1923ff43bd0c0cfed1a7c58533de4371b05e24649ff4",
 }
 
 var _data: NpcLifeCheck.GameData

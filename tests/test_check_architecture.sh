@@ -168,6 +168,25 @@ lw085a_violations=$((new_violations - lw029a_violations))
 lw085a_clean=$((new_clean - lw029a_clean))
 new_violations=$lw029a_violations
 new_clean=$lw029a_clean
+# LW-088a (DEC-171 e DEC-132): regra E. ProbeLedgerApi mora na api/ de sim/economy; ProbeLedgerInner mora em sim/economy/ledger, fora da api/. ProbeDoor e ProbeInner (acima) são do npc.
+# O npc só cita a api/ da economy; a economy não cita nada do npc, nem a api/ dele. As duas são da camada 3: a regra A não pega entre pares.
+mkdir -p "$fixture/src/sim/economy/api" "$fixture/src/sim/economy/ledger"
+printf 'class_name ProbeLedgerApi\nextends RefCounted\n' > "$fixture/src/sim/economy/api/probe_ledger_api.gd"
+printf 'class_name ProbeLedgerInner\nextends RefCounted\n' > "$fixture/src/sim/economy/ledger/probe_ledger_inner.gd"
+check_passes 'classes de prova da economy, sem citação, passam'
+expect_clean src/sim/npc/clean.gd 'var ledger: ProbeLedgerApi' 'o npc cita a api/ da economy'
+expect_clean src/sim/economy/ledger/inside.gd 'var ledger: ProbeLedgerApi = ProbeLedgerInner.new()' 'a economy cita as próprias classes'
+expect_clean src/bridge/clean.gd 'var ledger: ProbeLedgerApi' 'a ponte cita a api/ da economy'
+expect_clean src/sim/npc/commented.gd '## usa ProbeLedgerInner só em comentário' 'comentário de linha inteira não conta na regra E'
+expect_violation src/sim/npc/violation.gd 'var ledger: ProbeLedgerInner' 'violation.gd:1: "ProbeLedgerInner" (src/sim/economy/ledger/probe_ledger_inner.gd) é interna de src/sim/economy/' 'o npc cita classe interna da economy'
+expect_violation src/sim/npc/violation.gd 'var ledger: ProbeLedgerInner # comentário no fim da linha' 'violation.gd:1: "ProbeLedgerInner"' 'comentário no fim da linha não isenta o npc na regra E'
+expect_violation src/sim/economy/violation.gd 'var door: ProbeDoor' 'violation.gd:1: "ProbeDoor" (src/sim/npc/api/probe_door.gd) é do npc' 'a economy cita a api/ do npc'
+expect_violation src/sim/economy/violation.gd 'var inner: ProbeInner' 'violation.gd:1: "ProbeInner" (src/sim/npc/lod/probe_inner.gd) é do npc' 'a economy cita classe interna do npc'
+lw088a_violations=$((new_violations - lw029a_violations))
+lw088a_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
+rm "$fixture/src/sim/economy/api/probe_ledger_api.gd" "$fixture/src/sim/economy/ledger/probe_ledger_inner.gd"
 rm "$fixture/src/sim/npc/api/probe_door.gd" "$fixture/src/sim/npc/lod/probe_inner.gd" "$fixture/src/sim/npc/README.md"
 rm "$fixture/src/core/probe_core.gd" "$fixture/src/sim/world/probe_terrain.gd" "$fixture/src/bridge/probe_bridge.gd" "$fixture/src/presentation/probe_view.gd" "$fixture/src/sim/world/internal/probe_secret.gd"
 rm "$fixture/src/sim/world/README.md"
@@ -178,3 +197,4 @@ echo 'LW-021: autoloads permitidos aprovados e 1 autoload extra detectado.'
 echo "LW-029A: $new_violations violações detectadas e $new_clean casos aceitos (sorteio, tempo, estático, Node em persistence, relógio e barramento)."
 echo "LW-036: $lw036_violations violações detectadas e $lw036_clean casos aceitos (camada superior, apresentação, classe privada de internal/, comentário) e a árvore real aprovada."
 echo "LW-085a: $lw085a_violations violações detectadas e $lw085a_clean casos aceitos (regra D: a ponte e tools só citam a api/ de um módulo que tem api/; módulo sem api/, src/app e comentário ficam de fora)."
+echo "LW-088a: $lw088a_violations violações detectadas e $lw088a_clean casos aceitos (regra E: o npc cita só a api/ da economy e a economy não cita o npc; comentário fica de fora)."

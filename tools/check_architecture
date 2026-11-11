@@ -99,6 +99,8 @@ fi
 # dentro do módulo dono (a pasta que contém internal/); (D) (LW-085a) a ponte (src/bridge) e as ferramentas (src/tools)
 # só citam, de um módulo de src/sim que tenha pasta api/, as classes que moram nessa pasta api/ (AGENTS 5.1: "apenas a porta
 # de entrada"); módulo sem api/ fica de fora, e src/app (raiz de composição) e src/persistence também. Citação = palavra inteira.
+# (E) (LW-088a, DEC-171 e DEC-132) o npc cita, de src/sim/economy, só as classes que moram em economy/api/, e a economy não cita
+# nenhuma classe de src/sim/npc (nem a api/ dele): as duas são da camada 3 e a regra A deixa passar entre pares.
 # Só nestas regras novas, linhas inteiras de comentário (começam com #) não contam; código com comentário no fim continua varrido.
 # [LIM] Não vê classes internas (`class X:`) nem referências por caminho (`preload`); a regra D também não vê o tipo que volta de
 # uma chamada sem nome nem o de uma variável com tipo inferido (`:=`).
@@ -145,6 +147,10 @@ if [ -n "$gd_files" ]; then
                 printf "C|%s:%d: \"%s\" (src/%s) é privada de src/%s; esperado citar só dentro do módulo.\n", FILENAME, FNR, name, where[name], owner[name]
             if (rel ~ /^(bridge|tools)\// && (name in module_of) && (module_of[name] in has_api) && !(name in is_api))
                 printf "D|%s:%d: \"%s\" (src/%s) é interna de src/%s, que tem pasta api/; esperado citar só classes de src/%sapi/.\n", FILENAME, FNR, name, where[name], module_of[name], module_of[name]
+            if (rel ~ /^sim\/npc\// && (name in module_of) && module_of[name] == "sim/economy/" && !(name in is_api))
+                printf "E|%s:%d: \"%s\" (src/%s) é interna de src/sim/economy/; esperado o npc citar só classes de src/sim/economy/api/.\n", FILENAME, FNR, name, where[name]
+            if (rel ~ /^sim\/economy\// && (name in module_of) && module_of[name] == "sim/npc/")
+                printf "E|%s:%d: \"%s\" (src/%s) é do npc; esperado a economy nunca citar o npc (DEC-132).\n", FILENAME, FNR, name, where[name]
         }
     }' $gd_files pass=2 $gd_files 2>&1)
     layer_code=$?
@@ -152,12 +158,13 @@ if [ -n "$gd_files" ]; then
         printf '%s\n%s\n' 'ERRO: busca de import fora das camadas falhou' "$layer_report"
         failed=1
     else
-        for layer_rule in A B C D; do
+        for layer_rule in A B C D E; do
             case $layer_rule in
                 A) layer_label='import de camada superior' ;;
                 B) layer_label='apresentação cita classe da simulação' ;;
                 C) layer_label='classe privada (internal/) citada fora do módulo' ;;
                 D) layer_label='classe interna de módulo com api/ citada pela ponte ou por tools' ;;
+                E) layer_label='npc cita a economy fora de api/ ou a economy cita o npc' ;;
             esac
             layer_part=$(printf '%s\n' "$layer_report" | sed -n "s/^$layer_rule|//p")
             if [ -n "$layer_part" ]; then

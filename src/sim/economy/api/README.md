@@ -1,0 +1,1 @@
+Porta de entrada do módulo `economy` (arquitetura 11.1). Vazia por enquanto (LW-088a): a primeira classe daqui nasce com a primeira consulta (`peek_*`) ou comando (`request_*`) da economia; o contrato (`docs/modules/economy.md`, seção 10) lista a API planejada. O `npc` só pode citar classes desta pasta, e a `economy` nunca cita o `npc` (`tools/check_architecture`, regra E).
