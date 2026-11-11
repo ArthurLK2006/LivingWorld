@@ -94,7 +94,8 @@ var _impasse: NpcImpasse
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
 ## `routine`: ofícios e agenda por hora (RoutineLoader); nulo = sem rotina configurada (o ofício do NPC fica como texto sem conferência).
 ## `definitions`: o que falta para o módulo DECIDIR (LW-063); nulo = o módulo só guarda estado e o `tick` não faz nada.
-func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definitions: Definitions = null) -> void:
+## `economy` (LW-093): a porta da economia (`economy/api`), entregue pelo construtor; o NPC abre a conta dele nela ao nascer. Nulo = sem economia.
+func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definitions: Definitions = null, economy: EconomyModule = null) -> void:
 	_need_defs = need_defs
 	_routine = routine
 	_definitions = definitions
@@ -102,7 +103,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_bodies = NpcBodies.new(lod, intents, _npcs)
 	_notables = NpcNotables.new(_npcs, _definitions, _unknown)
 	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
-	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown)
+	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown, economy)
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine)
 	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action, NpcImpasse.DEFAULT_LIMIT_MIN, intents.has_pending, _bodies.release_body)
 	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)

@@ -46,15 +46,15 @@ const T_STARVED: int = 4 * DAY + 9 * HOUR
 ## acrescentou ao save do mundo o bloco vazio `economy`, e só isso mudou os nove valores (sem o bloco, voltam todos aos anteriores, que eram os de 5a7d453 para `intents`,
 ## `alarm`, `resumed` e `switches`, e os da LW-073b e da LW-085 para os demais; ver o cabeçalho).
 const EXPECTED: Dictionary[String, String] = {
-	"intents": "223b8ec6a7ed473c54f330e7bb07868c4b8deb4214da8589a7503baf5ba1a144",
-	"alarm": "dfe616868618485708e3555b96e30835fa3915182aa3ff10b6316e4fe8ae2105",
-	"resumed": "db2469cec836bb57fbb154f284f444495e2d4623f512e889fcb89936769b9947",
-	"switches": "888b1962d83b9eb59a18291d2405766656823a4e0af6178ad7a574277446035d",
-	"talk": "8b04890c8c9bdab6b00e830e43d2c1143a5d019b00505a501281f1fb7890abb1",
-	"save": "5673e2b3911bebf0ec109f0817f56d8a99b63eeb532db9d14a375b9f2e65efdd",
-	"demote": "62c86fea8233555c1ea24bbe2efa35ad012b293b3ccd5db3d7b127e80572e514",
-	"starved": "52c2d24b40fc13657de2223c19bc05f19b1c5e5ac1eaccf2a22462be602d4e93",
-	"real_game": "edf6ebb03cb97c16b85a1923ff43bd0c0cfed1a7c58533de4371b05e24649ff4",
+	"intents": "8670b52b8ff6c42908d2950e80e9bc39482688a5e28f2c1637587130c21639bb",
+	"alarm": "b62628f049b04c9995a45a7d9d485600329ff29f3e2234521f58a178443c619d",
+	"resumed": "1251aaf06e2d84f668d31f23341955576c44da09b58a24a3261156292bbe0add",
+	"switches": "6889619788b597514f3ede58d1466f61a7feac3ee0fefb402fbe1f4e1ba6c923",
+	"talk": "a8a97e95f464f9091d6ca4903b76c6e9971d337dea483674df260ba9b31239cd",
+	"save": "781066cec58488fc2460b3008c11b6b623b8b7af1b0d60a25299821e72e98772",
+	"demote": "ed884fc6fb2131fd56f6767ba6781c43a5a1868e91aca2bc8e9ced9d7d4c2056",
+	"starved": "f11a33ea9ab0634b151030e46d48944c267c4912310b36b3b2270ec20ea743bb",
+	"real_game": "76a65b9cfc8ac1552ebc85a196ba393a6a102986a79b7b1f68e5a6a84a49db74",
 }
 
 var _data: NpcLifeCheck.GameData
