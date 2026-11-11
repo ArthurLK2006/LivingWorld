@@ -1,4 +1,4 @@
-11/11/2026 20:03 (Brasília) · LW-093 COMPLETA (7 partes, ponta e16072b, `check_all` VERDE 151 scripts/1.322 testes, hashes e `run_sim` iguais). PAREI NA LW-094: tirar o `FoodStub` mata os 100 NPCs de fome em 6 dias (não há produção no jogo real até a LW-097), apaga/altera testes existentes e muda hashes por outra causa; preciso da sua decisão (A a E no item 7)
+11/11/2026 20:03 (Brasília) · LW-093 COMPLETA (7 partes, ponta e16072b, `check_all` VERDE 151 scripts/1.322 testes, hashes e `run_sim` iguais). PAREI NA LW-094: tirar o `FoodStub` mata os 100 NPCs de fome em 6 dias (não há produção no jogo real até a LW-097), apaga/altera testes existentes e muda hashes por outra causa; preciso da sua decisão (A a E no item 7). O `main` avançou para a07492c: junção só conflita em docs/backlog.md
 
 # RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
 
@@ -82,4 +82,4 @@ Soaks (só imprimem; o teste do soak de 30 dias não tem constante): vida de 7 d
 ## ACOMPANHAMENTO
 - **Avanço:** LW-093 completa (7 partes). Marco 2 aberto, hashes aprovados e estáveis desde a parte 1. Faltam LW-094, 095, 096 e 096a.
 - **Próxima tarefa recomendada:** a LW-094 depois da sua decisão (item 9.1). Não iniciada.
-- **Git:** `main` em `d1d3d8b`; ramos enviados `lw-092g`, `lw-093`, `lw-093d`, `lw-093e`, `lw-093g`, `lw-093h`, `lw-093i`, `lw-093j-pensador-compra` e `status-a`. Sem tag, sem `--force`, sem rebase nem reset; `stash` não usado.
+- **Git:** a pilha está sobre o `d1d3d8b`; **o `main` avançou para `a07492c`** (docs da Fase 4 e 5, LW-117h e LW-146g, entrados depois que montei a pilha). Junção a seco com `git merge-tree` (nada foi fundido): conflito só em `docs/backlog.md`; `app.md`, `economy.md`, `npc.md` e `world.md` juntam sozinhos. Ramos enviados `lw-092g`, `lw-093`, `lw-093d`, `lw-093e`, `lw-093g`, `lw-093h`, `lw-093i`, `lw-093j-pensador-compra` e `status-a`. Sem tag, sem `--force`, sem rebase nem reset; `stash` não usado.
