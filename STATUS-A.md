@@ -1,4 +1,4 @@
-11/11/2026 19:14 (Brasília) · PARADA NA LW-093 (partes 1 a 3 enviadas; ponta `lw-093e-jogo-real-com-economia`, `check_all` VERDE): com os testes autorizados as ações `buy`/`sell` ainda dependem de (A) mais testes além da lista para renomear `market_reserved` para `market`, (B) uma mudança de contrato da economia (o NPC precisa ler o alívio dos bens: `peek_good` e `peek_goods_for_need`) e (C) decisões de design do `eat`, do que comprar e da utilidade; nenhum código novo desde a parte 3; aguardo as respostas
+11/11/2026 19:20 (Brasília) · LW-093 PARTE 4 PRONTA: ramo `lw-093g-consulta-de-bens` (consultas `peek_good` e `peek_goods_for_need`, contrato autorizado); `check_all` VERDE (148 scripts, 1.307 testes), hashes e `run_sim` iguais; seguindo para a parte 5 (renomear `market_reserved` para `market`)
 
 # RELATÓRIO — Fase B, correções (T1, T1b, T2), junção e LW-093 (partes 1 a 3)     Status: PARCIAL (PARADA: as ações `buy` e `sell` esbarram em testes existentes)
 
