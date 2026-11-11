@@ -69,6 +69,12 @@ func register_market(settlement_id: String, market_id: int) -> void:
 	_states[market_id] = states
 
 
+## O estoque inicial do bem no mercado do assentamento (dado de `market_targets.json`).
+func initial_stock_of(settlement_id: String, good_id: String) -> int:
+	var target: MarketTargetDef = _targets.get(settlement_id, {}).get(good_id)
+	return target.initial_stock if target != null else 0
+
+
 func has_market(market_id: int) -> bool:
 	return _states.has(market_id)
 

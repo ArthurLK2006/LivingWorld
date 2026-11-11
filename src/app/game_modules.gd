@@ -25,8 +25,8 @@ var interaction: InteractionService
 ## Registra no `runner` (ainda não iniciado) os módulos do jogo, com o terreno e os pontos de interesse já carregados (`points` pode
 ## ser vazio: toda interação então dá "ponto desconhecido"). `npc_setup` (LW-067): os dados do `npc` já lidos (NpcSetup); sem ele, ou com
 ## `result` de falha, o `npc` nasce sem definições e sem nenhum NPC (o comportamento dos testes que não precisam de população). Terreno nulo
-## ou runner já iniciado: falha tratada em `result`, sem módulo nenhum registrado.
-static func register(runner: SimulationRunner, terrain: TerrainData, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null) -> GameModules:
+## ou runner já iniciado: falha tratada em `result`, sem módulo nenhum registrado. `economy_setup` (LW-090c): os dados da economia já lidos (EconomySetup); sem ele a `economy` nasce sem definições (sem bens e sem mercados, como a casca), porque o NPC ainda não usa a economia e criar os mercados gastaria os primeiros IDs do `core` (a ligação do jogo é da LW-093); com um EconomySetup de falha, falha tratada em `result`.
+static func register(runner: SimulationRunner, terrain: TerrainData, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null, economy_setup: EconomySetup = null) -> GameModules:
 	var modules: GameModules = GameModules.new()
 	if terrain == null:
 		modules.result = Result.failure("GAME_MODULES_NO_TERRAIN", "GameModules.register: terreno nulo; esperado um TerrainData carregado para o módulo '%s'." % CHARACTER_NAME)
@@ -38,6 +38,11 @@ static func register(runner: SimulationRunner, terrain: TerrainData, points: Arr
 		return modules
 	modules.character = character_module
 	var economy_module: EconomyModule = EconomyModule.new()
+	if economy_setup != null:
+		if not economy_setup.result.ok:
+			modules.result = economy_setup.result
+			return modules
+		economy_module = EconomyModule.new(false, economy_setup.definitions)
 	registered = runner.register_module(ECONOMY_NAME, economy_module)
 	if not registered.ok:
 		modules.result = registered

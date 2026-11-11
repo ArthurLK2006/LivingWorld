@@ -70,3 +70,32 @@ class GoodsConservationQuery:
 		ok = true
 		for row: Dictionary in conservation_rows:
 			ok = ok and bool(row["ok"])
+
+
+## `peek_market_of` e `peek_market`: o mercado (`market_id`, `settlement_id`) e uma linha por bem negociado (`good_id`, `stock`, `target_stock`, `price`, `ask`, `bid`, `in_shortage`), por `good_id` crescente;
+## `result` falha com `ECON_UNKNOWN_MARKET` se não existe (então o resto não vale).
+class MarketQuery:
+	extends RefCounted
+
+	var result: Result
+	var market_id: int
+	var settlement_id: String
+	var rows: Array[Dictionary]
+
+	func _init(query_result: Result, id_of_market: int, id_of_settlement: String, market_rows: Array[Dictionary]) -> void:
+		result = query_result
+		market_id = id_of_market
+		settlement_id = id_of_settlement
+		rows = market_rows
+
+
+## `peek_price` e `peek_stock`: um inteiro; `result` falha com `ECON_UNKNOWN_MARKET` ou `ECON_UNKNOWN_GOOD` (então `value` não vale).
+class ValueQuery:
+	extends RefCounted
+
+	var result: Result
+	var value: int
+
+	func _init(query_result: Result, queried_value: int) -> void:
+		result = query_result
+		value = queried_value

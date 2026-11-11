@@ -11,5 +11,8 @@ const UNKNOWN_GOOD: String = "ECON_UNKNOWN_GOOD"
 const BAD_QUANTITY: String = "ECON_BAD_QUANTITY"
 const INSUFFICIENT_GOODS: String = "ECON_INSUFFICIENT_GOODS"
 const CAPACITY_EXCEEDED: String = "ECON_CAPACITY_EXCEEDED"
+const UNKNOWN_MARKET: String = "ECON_UNKNOWN_MARKET"
 const DATA_INVALID: String = "ECON_DATA_INVALID"
+## Comando de depuração chamado fora do build de desenvolvimento (mesmo padrão do `NPC_DEV_ONLY`).
+const DEV_ONLY: String = "ECON_DEV_ONLY"
 const INVALID_SAVE: String = "ECON_INVALID_SAVE"
