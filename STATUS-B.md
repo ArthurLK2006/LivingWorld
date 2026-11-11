@@ -1,4 +1,4 @@
-11/11/2026 19:10 (Brasília) — REVISÃO R4 CONCLUÍDA (só leitura): `main` em `d1d3d8b`; 092d, 092e e 092f verdes cada uma (1296, 1295 e 1293 testes) e a 092f não perdeu nada; junção 092g (`9df6aaa`) preservou a mudança da 092e e deu verde (1298 de 1298), resolvendo uma armadilha com uma edição de teste da própria A; 117g da C aplica as seis decisões da R2, mas rotula tudo como "aprovado" (preciso da sua confirmação); 117h não existe; PARADO (regra 13); a 146g só depois da LW-117 no `main` e do seu "vá".
+11/11/2026 19:21 (Brasília) — REVISÃO R5 CONCLUÍDA (só leitura): a 117h aplicou as 9 recomendações da R3 e os 3 desvios (0016); entrada da LW-117 no `main` `0e20369` limpa (58 eventos, DEC 1 a 233 sem colisão, totais certos, `check_all` verde 1293 de 1293); 1 defeito de marcação na DEC-053 (`DECISIONS.md:1023`) e pendências da 146g e do I4; relatório NÃO commitado; R4 já no `status-b`; PARADO (regra 13).
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -457,3 +457,66 @@ As três pontas e a junção compilam e passam no `check_all` (a 092g está acim
 **Decisões que dependem de você:** (1) confirmar se o lote da Fase 4 já está aprovado (R4-I1); (2) autorizar a troca do caminho do caso em `tests/test_check_architecture.sh` (R4-M5); (3) estorno com motivo próprio e ator antes das regras (R4-M1 e R4-M2): recomendo as duas, nenhuma urgente.
 **Próxima tarefa recomendada:** a **Fase B da A** (levar a 092g ao `main`, depois de você confirmar o resultado do `check_all` dela) e a **117h da C**; a 146g **só** depois da LW-117 no `main` e do seu "vá". **Não iniciadas.**
 **Git:** só este commit no `status-b` (`STATUS-B.md`), avanço simples, sem tag.
+
+
+## REVISÃO R5 — a LW-117h da C e a entrada da LW-117 (117a a 117h) no `main` `0e20369` (11/11/2026, papel de revisor, AGENTS seção 11; só leitura, nada implementado)
+
+**Em uma frase:** a 117h aplicou **as nove recomendações da R3** (mais os três desvios, registrados no `0016`) e a junção da C no `main` está **limpa** (nenhum marcador de conflito, nada da A nem da Fase 5 perdido, catálogo com **58 eventos sem repetição**, DEC 1 a 233 contínuas e sem colisão, totais certos, `check_all` verde); achei **um defeito de marcação na DEC-053** e **três coisas que dependem de mim ou de você**; nada bloqueante.
+
+**Alvo e método.** `origin/main` = `0e20369` ("LW-117h: status da Fase B"), que contém `459e186` (a 117h: "ajustes da revisão R3 e registro dos 3 desvios"), `b1db754` (a junção com `d1d3d8b`) e as partes 117a a 117g (12 commits sobre `d1d3d8b`, entrada por **avanço rápido**: `d1d3d8b` é ancestral). Exportei o `main` para a pasta temporária (`git archive`; nenhum checkout nem worktree) e conferi **por script**: marcadores de conflito, linhas e células de `docs/events.md`, continuidade, duplicidade, status e totais das DEC, títulos repetidos, citações cruzadas de `npc.md`, e o que a junção **removeu** contra `d1d3d8b` (linha a linha). Rodei o `tools/check_all` na cópia. Li o `0016` inteiro e as linhas novas da 117h nas seis fichas.
+
+### A entrada no `main`
+- **Execução:** `check_all` na cópia do `main` `0e20369`: **VERDE**, código 0 (19:15:15 a 19:19:34), `Scripts 142`, `Tests 1293`, `Passing 1293`, `Asserts 292694` (**idênticos aos de `d1d3d8b`**, como devia ser, porque só entraram documentos), `Warnings 1` e `Deprecated 1` iguais; "nove verificações aprovadas"; "IDS DE CONTEÚDO: tudo existe (51)".
+- **Protegidos:** a entrada toca **`docs/DECISIONS.md`** e **`docs/DEVELOPMENT_ROADMAP.md`** (as outras 15 alterações são de contratos, catálogo, registros e status); nenhum arquivo de código, `data/`, `project.godot`, `addons` ou `tests/fixtures`. **Eu não consigo ver a sua autorização para essa Fase B** (o `ROADMAP_STATUS` diz que foi "pela Fase B, sem tag"; as **tags** continuam só `fase-0`, `fase-1` e `fase-2`).
+- **Nada da A nem da Fase 5 foi perdido:** contra `d1d3d8b`, o `npc.md` (+90) e o `world.md` (+28) e o `economy.md` (+116) **só ganharam linhas**; `events.md` perdeu 10 linhas: **8 linhas de evento** reescritas com campos novos e os 2 parágrafos do cabeçalho; e as **minhas** seções 15 do `npc.md` e "Extensão da Fase 5" do `world.md`, os 11 eventos da Fase 5, o A1 a A6 do `app.md` e as notas da 146a continuam. Linha do `NpcDied`: **a da A** (a economia o ouve, "implementado") **com a carga da C** (`battle` e `combat`). As 5 linhas de economia seguem `implementado, LW-090b` e `LW-092b`.
+- **Catálogo:** **58 linhas, 58 nomes distintos, nenhum repetido, nenhuma com número de células errado**; o cabeçalho (58 = 6 + 10 + 11 da Fase 5 + 31 da Fase 4) **bate com a conta** (a previsão da C e a minha da R3 se confirmaram).
+- **DEC:** definidas **233, contínuas de 1 a 233**, nenhuma repetida no índice, **nenhum status mudou** em DEC que já existia; totais **APROVADA 151 (20 com ressalva, que conferi) · PROPOSTA 54 · PENDENTE 17 · DESCARTADA 10 · SUBSTITUÍDA 1 = 233, exatamente a conta do cabeçalho** (conferi também as 13 entradas "APROVADA (somente…)" que um primeiro leitor simples não pega). "**Próximo número livre: `DEC-234`**" e as faixas (**A 234 a 239, B 240 a 259, C 260 a 279**) estão escritas, **como você definiu**; DEC-213 a DEC-223 **seguem PROPOSTA** e o cabeçalho registra que as DEC-227 a DEC-233 foram "confirmadas por Arthur por escrito". **Isso fecha o R4-I1** na parte das DEC (continuo sem ver a sua mensagem à C).
+
+### As nove recomendações da R3 e os três desvios
+| R3 | Aplicada? | Onde |
+|---|---|---|
+| I1 `peek_npc_ids` | **Sim** | `npc.md:370` (`peek_npc_ids_of(occupation_id, settlement_id)`); `factions.md:52` diz que o sem argumento "já existe, é outro" |
+| I2 seção 15 do `npc.md` | **Sim** | a da Fase 4 virou **16** (`npc.md:344`, subseções 16.1 a 16.10); **28 citações "`npc.md` 15 ou 16" conferidas, nenhuma aponta para seção inexistente**; as 4 que ainda dizem 15 em `events.md` são as **minhas** (Fase 5) e existem |
+| I3 `ActReported` | **Sim** | `politics.md` seção 4 (entrada normalizada, **adaptador da `politics`** na Fase 5) e `act_sources.json` em `dados.md`; linha 35 do catálogo |
+| I4 morte em combate | **Sim** | `npc.md` 16.8 (`battle` e `combat`, "um caminho só"), `military.md` |
+| I5 `request_set_on_mission` | **Sim** (117g) | 3 argumentos em `npc.md` e `military.md` |
+| I6 `content_id` | **Sim** | `peek_faction_id_of` e `peek_polity_id_of` (`factions.md:88`, `politics.md:95`; `military.md` os usa para `force_seed.owner_id`) |
+| I7 `work_place_id` | **Sim** | `dados.md`: linhas novas **sem a coluna**, ordem dos dados escrita, "o verificador não é alterado aqui" (como você mandou) |
+| I8 DEC | **Sim** | acima |
+| I9 ordem de registro | **Sim, nas fichas da C** | as quatro fichas dizem a mesma ordem única: `character, economy, npc, ecology, factions, politics, combat, military, events`; **o `app.md` A2 (meu) ainda tem a ordem antiga** |
+| M2, M3, M4, M8 | **Sim** | T3 e "testemunha" × "observação de item" (`npc.md` 16.6), `faction_doctrine.json` em `factions.md`, `cultures.json` em `data/world/`, colunas novas do `check_content_ids` em `dados.md`, linhas da Fase 5 do `chronicle.json` (marcadas como "que este arquivo ainda não tem") |
+Os **três desvios** (`0016`, no formato do AGENTS 16.3 com regra afetada, problema real, opções, recomendação e impacto): (a) o **país tem ID próprio** (`polity_id`; diverge da arquitetura 13.2, arquivo protegido **não alterado**), (b) a `politics` importa **4** módulos e (c) o `military` importa **5** (6 com o `combat` na Fase 5); o registro diz "**aprovado por Arthur em 11/11/2026**, por autorização escrita na LW-117h", e que a LW-144 os reavalia.
+
+### BLOQUEANTES
+Nenhum.
+
+### IMPORTANTES
+Nenhum **novo**. O que segue importante já estava aberto e **é meu ou seu**:
+- **R5-I1 (meu, 146g). A Fase 5 ainda diz o contrário da decisão 4 da R3.** `combat.md:92` e a minha linha do `CombatantDied` no catálogo ainda listam o **`npc` como ouvinte** do evento; pela decisão (e pelo `npc.md` 16.8) o `npc` **não** o ouve: o `combat` chama `request_apply_casualty` com o motivo `combat`. Junto com o `app.md` A2 (ordem única), o `request_set_route_state` com `cause_id` opcional e `hostile_force` (DEC-229: o `world.md` da Fase 5 ainda diz "só `world_event`" e sem causa), o T3 já confirmado (minha 15.2 diz "[A CONFIRMAR]") e a extensão da economia, **é o que a 146g tem de corrigir**; nada disso está no `main` ainda.
+- **R5-I2 (seu, a DEC do I4).** O adaptador de crime da `politics` e a economia **ouvem evento por nome e leem a carga por campo** (`politics.md` seção 4: "ouve por nome"; `economy_module.gd:351` no `main` lê `npc_id`, e a linha 222 na 092f): é a **exceção à regra 4.17 do AGENTS** que a A prometeu propor (DEC **234 a 239**). Enquanto não houver essa DEC, as duas fichas dependem de uma exceção que **não está aprovada**.
+
+### MENORES
+- **R5-M1. Marcação quebrada na DEC-053 (efeito da junção).** `DECISIONS.md:1023` (linha "Consequências" da DEC-053): onde as duas notas se encontraram, o `**` que abria a nota da LW-146a virou ` |*` e a linha acabou com **5 `|` em vez de 3** (`… (DEC-054 aprovada em 10/11/2026) |*Nota de 11/11/2026 (LW-146a):** … |*Nota de 11/11/2026 (LW-117a):** … |`). **O texto das duas notas está íntegro**; a tabela é que renderiza com colunas a mais e o negrito partido. Varri o arquivo: **é a única** (`|*Nota` aparece uma vez). Conserto de uma linha: restaurar `**Nota …**` nas duas, sem `|` no meio. Como é arquivo protegido, **você autoriza** (ou a C numa próxima rodada).
+- **R5-M2. Rótulo "aprovado por Arthur" nos cabeçalhos das fichas.** As seis fichas (e o `0016`) dizem "PLANEJADO, aprovado por Arthur em 11/11/2026, com os ajustes da 117g e da 117h"; **dentro** delas os itens da R3 estão marcados `[PROPOSTA]` (e você me disse "PROPOSTA de trabalho"). Os dois rótulos convivem e quem lê só o cabeçalho toma tudo por aprovado; o `DECISIONS.md` registra a confirmação só das **DEC-227 a DEC-233**.
+- **R5-M3. Eventos implementados com campo novo previsto.** O catálogo põe `settlement_id` em `PriceChanged`, `ShortageDeclared` e `ShortageEnded` ("Fase 4, LW-117f"), mas as três classes **já existem no código** da A sem esse campo (LW-090b): a LW-126 vai mudar evento já catalogado e implementado (AGENTS 16.2: parar e perguntar). Vale uma linha no contrato da economia da A.
+- **R5-M4. Texto velho do catálogo, da A.** A linha do `PriceChanged` ainda diz "ouvintes: nenhum hoje (**não existe no código**)" com situação "implementado, LW-090b" (contradição que já vinha da A, não da junção).
+- **R5-M5. `peek_personality`** continua no `npc.md` 16.3 embora o `peek_npc` já devolva `traits` (R3-M5, ficou como pergunta).
+- **R5-M6. Previsão para a Fase B da A:** levar a **092g** ao `main` atual dá **1 trecho em conflito só, em `docs/backlog.md`** (os dois lados acrescentam no fim); `economy.md` e o código **mesclam sem conflito** (previsão por `merge-tree`, não executei).
+
+### O que conferi e está certo
+O avanço rápido do `main`, sem merge commit no topo do `main` além do `b1db754`; **sem marcador de conflito em nenhum arquivo do repositório**; sem título repetido em `npc.md`, `world.md`, `economy.md`, `events.md` e roadmap; o parágrafo "Considerados e não incluídos" diz que o `NpcTierChanged` **entrou na Fase 5**; as linhas do `ROADMAP_STATUS` e do `backlog` da entrada falam de 233 DEC, versão 0.15 e "sem tag"; o `0016` segue o formato do AGENTS 16.3.
+
+### O QUE NÃO CONSEGUI VERIFICAR (R5)
+- **A autorização** para a Fase B da C (inclui `DECISIONS.md` e o roadmap) e para os rótulos "aprovado" e "confirmado por Arthur por escrito": **não vi essas mensagens**.
+- **O conteúdo integral** de `DECISIONS.md` (233 entradas) e do roadmap: conferi estrutura, status, totais e o que a junção **removeu**; **não reli** cada entrada nova nem comparei o roadmap linha a linha com a arquitetura.
+- **As fichas da Fase 4 contra o GDD e a arquitetura** (como nas revisões anteriores) e o `0013` e o `dados.md` por inteiro (li as partes que as correções da R3 tocam).
+- **Se o `check_architecture` já tem as regras novas** que as fichas propõem (só o `military` e o `combat` chamam `request_apply_casualty`, só a `factions` promove a T3): são propostas, **não existem**.
+- As execuções valem para o **conteúdo do commit** (cópia exportada), não para os worktrees.
+
+---
+
+## ACOMPANHAMENTO DA R5
+**Nada foi alterado em nenhum ramo** nem no `main` (só leitura; a cópia e os scripts ficaram na pasta temporária). **Não repassei nada às conversas A e C.**
+**Decisões e pedidos para você:** (1) **autorizar o conserto de uma linha da DEC-053** (R5-M1), por mim ou pela C; (2) **a ordem das próximas entradas**: a **092g** da A (conflito só no `backlog`) e depois a **146g** minha, que **só começa quando você mandar** (a condição da LW-117 no `main` **já foi cumprida**); (3) quando a A mandar a DEC do I4 (234 a 239), ela destrava o R5-I2.
+**Próxima tarefa recomendada:** a **146g** (economia da Fase 5 e a correção do que listei no R5-I1) e a **Fase B da A** com a 092g. **Não iniciadas.**
+**Git:** **nenhum commit nem push.** Este relatório está só no arquivo `STATUS-B.md` do worktree `status-b` (alteração **não commitada**). Mensagem de commit sugerida: `status b: revisão R5 (117h e a entrada da LW-117 no main)`.
