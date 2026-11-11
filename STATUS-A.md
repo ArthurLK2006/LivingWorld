@@ -1,110 +1,66 @@
-11/11/2026 19:10 (Brasília) · LW-093 PARTE 3 PRONTA: ramo `lw-093e-jogo-real-com-economia`: o jogo real recebe as definições da economia (mercados 1 e 2, NPCs a partir do 3 com 60 de saldo); `check_all` VERDE (147 scripts, 1.305 testes), hashes e `run_sim` iguais; próximo: as ações `buy`/`sell` esbarram em testes existentes (vou parar e relatar)
+11/11/2026 19:11 (Brasília) · PARADA NA LW-093: junção das correções pronta (`lw-092g`) e partes 1 a 3 da LW-093 enviadas (`lw-093-contas-dos-npcs`, `lw-093d-dinheiro-e-consumo`, `lw-093e-jogo-real-com-economia`), todas com `check_all` VERDE (ponta: 147 scripts, 1.305 testes); `run_sim` igual; as ações `buy` e `sell` esbarram em testes existentes: aguardo a sua autorização escrita (ver o relatório)
 
-# RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
+# RELATÓRIO — Fase B, correções (T1, T1b, T2), junção e LW-093 (partes 1 a 3)     Status: PARCIAL (PARADA: as ações `buy` e `sell` esbarram em testes existentes)
 
 ## 1. RESUMO
-Fechei a LW-088a (o 2º commit, com as três frases de documentação) e construí, em ramos empilhados, toda a economia do marco 1 até a LW-093a: o livro-razão do dinheiro (`Ledger`), os bens e o inventário, os mercados com preço em inteiros, o comércio (`request_trade`), os locais de produção (hora a hora, manutenção, eventos e save) e o verificador de ids de conteúdo dentro do `check_all`. **Nada disso muda o jogo de hoje:** o NPC ainda não usa a economia e a lista real de locais de produção (`production_sites.json`) está vazia até a LW-097. Cada ramo foi para o GitHub com `check_all` VERDE na sua ponta; o `main`, as tags e o `status-a` foram tratados como você mandou (só o `status-a` e os ramos desta fila foram enviados; nada no `main`). Dezesseis commits em 15 ramos, 141 scripts e 1.290 testes verdes no total; o `run_sim` ficou **igual** em toda a fila; a prova da causa dos hashes foi refeita no fim da LW-092 e deu certo (os 9 valores ORIGINAIS do oráculo voltam quando o bloco `economy` sai do hash).
+A Fase B está feita (status no `main`, `d1d3d8b`). As três correções foram juntadas no ramo `lw-092g-juncao-das-correcoes`, com `check_all` VERDE. A LW-093 avançou em três partes empilhadas sobre a junção: o NPC abre a conta na economia ao nascer (marco 2 de hash, valores que você aprovou), o dinheiro inicial nasce na abertura da conta com `request_consume`, e o jogo real passa a receber as definições da economia. **Parei antes das ações `buy` e `sell`**: acrescentá-las ao catálogo derruba 3 testes existentes que só você pode autorizar a trocar (item 7). As tarefas seguintes do marco 2 (LW-094, 095, 096 e 096a) não foram iniciadas.
 
-### Quadro da fila (ramos empilhados; cada commit sobre o último da tarefa anterior)
-| Tarefa | Ramo | Commit | Código (linhas) | Teste (linhas) | `check_all` (scripts / testes / asserts) |
-|---|---|---|---|---|---|
-| LW-088a (1) | `lw-088a-registro-economy` | `d1caae0` | 27 | 105 | 126 / 1.208 / 262.153 |
-| LW-088a (2) | `lw-088a-registro-economy` | `26384ee` | só documentos (3 frases) | — | (sem código novo) |
-| LW-088b | `lw-088b-ledger` | `c9a7e0f` | 164 | 147 | 127 / 1.215 / 268.278 |
-| LW-088c | `lw-088c-porta-e-regra-f` | `5bc5cef` | 232 | 188 | 129 / 1.222 / 268.416 |
-| LW-089 | `lw-089-bens-e-dados` | `370eda2` | 106 | 111 | 130 / 1.227 / 268.645 |
-| LW-089b | `lw-089b-inventario` | `e28de7d` | 250 | 171 | 131 / 1.233 / 276.841 |
-| LW-089c | `lw-089c-porta-dos-bens` | `d42a483` | 94 | 112 | 132 / 1.237 / 276.896 |
-| LW-090 | `lw-090-precos` | `85ac0bf` | 174 | 174 | 134 / 1.246 / 290.323 |
-| LW-090b | `lw-090b-estado-do-mercado` | `5941734` | 234 | 170 | 135 / 1.253 / 290.540 |
-| LW-090c | `lw-090c-mercados-no-modulo` | `36d67af` | 161 | 149 | 136 / 1.259 / 290.614 |
-| LW-091 | `lw-091-comercio` | `edce627` | 113 | 154 | 137 / 1.265 / 291.899 |
-| LW-091b | `lw-091b-porta-do-comercio` | `8d9c417` | 59 | 100 | 138 / 1.269 / 291.958 |
-| LW-092 | `lw-092-producao` | `3b27ba6` | 215 | 138 | 139 / 1.275 / 292.226 |
-| LW-092b | `lw-092b-producao-hora-a-hora` | `13885c5` | 212 | 191 | 140 / 1.283 / 292.513 |
-| LW-092c | `lw-092c-ligacao-ao-modulo` | `43d0b9a` | 232 | 200 | 141 / 1.290 / 292.667 |
-| LW-093a | `lw-093a-verificador-de-ids` | `f7e141a` | 122 (verificador e o `check_all`) | 72 (teste de terminal) | 141 / 1.290 / 292.667 (+ o teste de terminal dentro do `check_all`) |
+## Declaração de leitura
+- **Li:** `AGENTS.md` v0.4; a linha da LW-093 no roadmap; `docs/modules/economy.md` (consumo, comércio, produção, tabela de testes); `docs/modules/npc.md` 14.2 a 14.8; o item Q-W4 do `docs/modules/world.md`; os testes que citam `market_reserved` e as listas fechadas de ações e condições. **Decisões conferidas em `DECISIONS.md`:** DEC-145, 147, 153, 160, 163, 167, 168, 170 e 175, todas APROVADAS. **Não li** o GDD nem a arquitetura inteiros.
 
-Linhas = só código e teste, sem comentário nem linha em branco (DEC-126); a LW-088a (1) tem também a mudança dos 9 valores do oráculo e das três listas de módulos que você aprovou. Todas as partes ficaram dentro da tolerância de ~450 linhas e ~12 arquivos de código e teste; **a LW-092b passou de 518 e foi dividida** (veja o item 7). A LW-092 (a primeira) tem 5 arquivos de código, 1 de teste e 6 de dados (7 com `pt_br.json`): 12 a 13 contando os dados, que são os que o `dados.md` atribui a ela.
-
-## Declaração de leitura (a cada tarefa da fila)
-- **Li:** `AGENTS.md` v0.4; a linha de cada tarefa em `docs/DEVELOPMENT_ROADMAP.md`; `docs/modules/economy.md` (seções da tarefa, 10 e 14); `docs/economy/dados.md`; `docs/events.md`; na LW-093a também `docs/DECISIONS.md` (DEC-137) e o backlog (M5 da revisão C). **Não li** os capítulos do GDD e da arquitetura inteiros: usei os trechos que o contrato cita (11, 17 e 18).
-- **Decisões (todas APROVADAS):** DEC-126, 127, 132, 137, 138 a 178 nos pontos da economia (as 35 de 11/11/2026 em bloco), em especial DEC-145 a 152, 163, 165 a 178.
-
-## 2. ARQUIVOS CRIADOS (por tarefa; `.uid` omitidos)
-- **LW-088a:** `src/sim/economy/economy_module.gd` (a casca), `src/sim/economy/api/README.md`, `tests/unit/test_economy_module.gd`.
-- **LW-088b:** `economy/owners/owner_book.gd`, `economy/ledger/ledger.gd`, `economy/api/economy_codes.gd`, `tests/unit/test_ledger.gd`.
-- **LW-088c:** `economy/api/economy_module.gd` (a casca passou para a `api/`, o antigo foi apagado, ver 3), `economy/api/economy_replies.gd`, `economy/economy_json.gd`, `tests/unit/test_economy_api.gd`, `tests/unit/test_ledger_save.gd`.
-- **LW-089:** `data/economy/goods.json`, `data/economy/owner_kinds.json`, `economy/goods/{good_def,owner_kind_def,goods_loader}.gd`, `tests/unit/test_goods_data.gd`.
-- **LW-089b:** `economy/goods/goods_store.gd`, `tests/unit/test_goods_inventory.gd`.
-- **LW-089c:** `economy/economy_definitions.gd`, `tests/unit/test_economy_goods_api.gd`.
-- **LW-090:** `data/economy/market_targets.json`, `data/economy/price_params.json`, `economy/markets/{market_loader,market_target_def,price_params,price_math}.gd`, `tests/unit/test_market_data.gd`, `tests/unit/test_price_math.gd`.
-- **LW-090b:** `economy/markets/market_book.gd`, `economy/events/{price_changed,shortage_declared,shortage_ended}.gd`, `tests/unit/test_markets.gd`.
-- **LW-090c:** `src/app/economy_setup.gd`, `tests/unit/test_economy_markets_api.gd`.
-- **LW-091:** `economy/rules/{trade_rules,trade_terms,neutral_trade_rules}.gd`, `economy/trade/trade_engine.gd`, `tests/unit/test_trade.gd`.
-- **LW-091b:** `tests/unit/test_economy_trade_api.gd`.
-- **LW-092:** `data/economy/{recipes,recipe_inputs,recipe_outputs,site_upkeep,site_params,production_sites}.json`, `economy/production/{recipe_def,upkeep_rule,site_params,site_def,production_loader}.gd`, `tests/unit/test_production_data.gd`.
-- **LW-092b:** `economy/production/production_book.gd`, `economy/events/{production_stopped,production_resumed}.gd`, `tests/unit/test_production.gd`.
-- **LW-092c:** `tests/unit/test_economy_production_api.gd`.
-- **LW-093a:** `tools/check_content_ids` (8 linhas, o disparo), `tools/check_content_ids.gd` (o verificador), `tests/test_check_content_ids.sh`.
-
-## 3. ARQUIVOS MODIFICADOS (por tarefa)
-- **LW-088a:** `src/app/game_modules.gd` (registro da `economy` entre `character` e `npc`), `tools/check_architecture` (regra E), `tests/test_check_architecture.sh` (+20, só casos novos), `tests/integration/test_npc_split_oracle.gd` (os **9 valores** do marco 1, nada mais), `tests/unit/test_npc_state.gd`, `test_settlements.gd`, `test_sim_bridge_character.gd` (só a lista de módulos, o que você aprovou), `docs/modules/economy.md`, `src/sim/economy/README.md`. **2º commit (item 0):** `README.md`, `docs/modules/app.md`, `docs/modules/economy.md` (as três frases; "(rascunho da LW-087c)" virou "(LW-087c, já no main)" na linha 3 do `economy.md`).
-- **LW-088b a 092c:** em cada uma, `docs/modules/economy.md` (só a linha "Estado" e as linhas da tarefa marcadas IMPLEMENTADA) e `src/sim/economy/README.md`; mais: 088c `economy_codes.gd`, `ledger.gd`, `owner_book.gd`, `tools/check_architecture` (regra F: só `ledger/` escreve saldo) e `tests/test_check_architecture.sh` (+20, positivo e negativo); 089b `economy_codes.gd`; 089c `economy_module.gd`, `economy_replies.gd`, `tools/check_architecture` (regra E ignora texto entre aspas) e `tests/test_check_architecture.sh` (+10, positivo e negativo); `data/text/pt_br.json` ganhou 10 chaves (089, bens) e 10 (092, receitas), só chaves novas; 090c `game_modules.gd`, `economy_codes.gd`, `economy_module.gd`, `economy_replies.gd`, `economy_definitions.gd`, `market_book.gd`; 090b e 092b `docs/events.md` (marca "implementado" nos 5 eventos); 091 `economy_codes.gd`, `goods_store.gd`, `ledger.gd`, `market_book.gd` (só consultas e `check_*`); 091b `economy_module.gd`, `economy_replies.gd`, `economy_definitions.gd`; 092b `goods_store.gd` (+`weight_per_unit`, +`has_room_for`); 092c `economy_module.gd` (453 linhas no arquivo, 331 de código), `economy_replies.gd`, `economy_definitions.gd`, `economy_setup.gd`, `production_book.gd` (+ o save).
-- **LW-093a:** `tools/check_all` (só as duas linhas do verificador e do teste dele) e `docs/modules/economy.md`.
-- **Removido:** só o `src/sim/economy/economy_module.gd` da casca, na LW-088c, que eu mesmo criei na 088a e que passou para `api/` (um arquivo meu; o conteúdo foi movido, não perdido).
-- **Não toquei:** `tests/fixtures`, `tests/unit/test_save_codec.gd`, `src/sim/npc/`, `project.godot`, nenhum autoload, dependência ou ferramenta nova (o verificador é um script do próprio projeto, que você autorizou). Em `data/` só os arquivos que o `dados.md` atribui a cada tarefa.
+## 2. ARQUIVOS CRIADOS / 3. MODIFICADOS (por parte)
+- **Junção `lw-092g` (`9df6aaa`):** merges de `lw-092d`, `lw-092e` e `lw-092f` sobre o `main` `d1d3d8b`. Conflito só em `economy_module.gd` e no `README.md` da economia: o `peek_quote(actor_id, ...)` e a tarifa da 092e foram para a classe de apoio onde a 092f os colocou (`EconomyQueries.peek_quote`; a tarifa fica no `TradeEngine`, que a 092f não moveu). **Único ajuste de teste:** no meu próprio teste novo da 092e (`test_trade_tariff_and_actor.gd`) o jogador (dono 3) passou a ter conta aberta, porque a cotação com ator passou a conferir que o ator existe (092d). Nenhum teste existente no `main` foi alterado.
+- **Parte 1 `lw-093-contas-dos-npcs` (`35cfae0`):** `npc_lifecycle.gd`, `npc_module.gd` (porta `EconomyModule` pelo construtor, opcional), `game_modules.gd`, os 9 valores do oráculo e `test_npc_economy_account.gd` (2 testes). Mesmo conteúdo do ramo antigo `lw-093-npcs-no-mercado` (`fe97377`, do `main`), refeito sobre a junção aplicando o mesmo diff; **o ramo antigo ficou como está (não posso apagar ramos) e está obsoleto.**
+- **Parte 2 `lw-093d-dinheiro-e-consumo` (`3bbcd60`):** `request_open_owner` faz o `mint` `game_start` do saldo inicial do tipo quando o dono é novo; `request_consume(owner_id, good_id, quantity)` novo (`support/economy_commands.gd`, `ConsumeResult`, código `ECON_NOT_CONSUMABLE`); `test_economy_start_money_and_consume.gd` (3 testes).
+- **Parte 3 `lw-093e-jogo-real-com-economia` (`49a602b`):** `GameApp` lê o `EconomySetup`, `SimulationHost.start_new_game(..., economy_setup)` o entrega ao `GameModules` e guarda o módulo `economy`; `docs/modules/app.md`; `test_game_economy_wiring.gd` (2 testes). No jogo real nascem os mercados (IDs 1 e 2), os NPCs começam no ID 3 e cada um abre conta com 60.
+- Branch local `lw-093c-dinheiro-inicial-e-consumo`: vazio, sem push, descartado (também não posso apagá-lo).
 
 ## 4. DECISÕES TÉCNICAS
-- **Pilha de ramos e um commit por tarefa:** cada ramo sai do último commit da tarefa anterior; a fila tem sufixos livres (088b e c, 089b e c, 090b e c, 091b, 092b e c) onde passei do teto.
-- **O dono do dinheiro é só o `Ledger`:** nenhum outro código escreve saldo (regra F do `check_architecture`, com caso positivo e negativo). O `GoodsStore` é o dono do inventário e do peso (capacidade comparada com a quantidade **antes** de multiplicar pelo peso, para não estourar).
-- **Dados no lugar certo:** todo valor [HIP] (preços, spread, eficiência, manutenção, salário) está em `data/economy/`, nunca no código; o código recebe as definições **pelo construtor** (`EconomyDefinitions`, sem valor padrão).
-- **Mercados só quando o jogo recebe as definições** (LW-090c): `GameModules.register` só cria mercados quando recebe um `EconomySetup`. Assim os testes antigos e os hashes do oráculo não mudam (criar mercado gasta IDs).
-- **Relógio por hora (LW-092c):** a economia anda por hora cheia; se a hora vira um dia, o **fim do dia** (mercados, depois locais) vem antes da hora de produção. O teste de borda confere que o dia fecha exatamente na virada (1.439 e 1.440 minutos).
-- **LW-092b dividida (teto):** o código e o teste do livro de produção deram 518 linhas (tolerância ~450). Tirei o save (`serialize`, `load_from`, `validate`) do livro e o levei para a LW-092c, junto da ligação ao módulo (403 e 432 linhas). Por isso, entre a 092b e a 092c o livro existia sem save: ele não está ligado a nada, então nenhum estado novo existe no jogo.
-- **`register_site` só aceita dono do tipo `site` já aberto** (falha `ECON_UNKNOWN_OWNER`): reforço que não estava no contrato; só falha mais cedo.
-- **Atribuição do NPC ao local:** só na **abertura** da conta e só no tipo `npc` (`request_open_owner(owner_id, kind, work_place_id)`, parâmetro opcional); abrir de novo não muda o emprego ("um trabalho, um pagamento"). Local sem local de produção: a conta abre e ninguém é atribuído.
-- **`peek_site*` para local que não existe** devolve `ECON_UNKNOWN_OWNER` (não criei código novo).
-- **LW-093a:** `tools/check_content_ids` (Godot sem janela, no mesmo padrão do `validate_data`) confere (1) constantes do código por nome (`*_ACTION_ID` e `GO_TO_PLACE_ID` contra `actions.json`, `*NEED_ID` contra `needs.json`, `*_MEMORY_KIND` contra `memory_kinds.json`, `KIND_*` da pasta da economia contra `owner_kinds.json`; nomes com `KEY_` e `CODE_` não são ids) e (2) as colunas `need_id`, `occupation_id`, `settlement_id`, `place_id` e `work_place_id`, mais: local de produção em local `work` do mesmo povoado, único, `workers_wanted` até a capacidade. 51 conferências na árvore real, zero problemas.
-- **Proposta de entrada para `DECISIONS.md` / pedido de desvio:** nenhum.
+- Mint do dinheiro inicial dentro de `request_open_owner` (contrato 3.4), só para dono novo; mercados e locais de produção continuam recebendo o saldo na própria economia (`on_new_game`). Nenhum teste existente quebrou com isso.
+- `request_consume` devolve também o `need_id` além do alívio (o `npc` precisa saber qual necessidade aliviar; a economia não conhece necessidades). O código `ECON_NOT_CONSUMABLE` é novo (o contrato deixa os códigos como [PROPOSTA]).
+- O host recebe `economy_setup` como último parâmetro opcional; quem não passa continua com a economia sem definições (os testes que só precisam do `npc` e o oráculo não mudam).
+- **Proposta de entrada para `DECISIONS.md` (I4; numeração provisória DEC-234, faixa da A; NÃO editei o `DECISIONS.md`):** *Título:* exceção pontual à DEC-107 e ao AGENTS 4.17: a economia lê `npc_id` do `NpcDied` pelo nome do campo. *Contexto:* a DEC-132 manda a economia nunca importar o `npc` e a DEC-146 manda fechar o dono ao ouvir `NpcDied`; para cumprir as duas, o `EconomyModule` assina `"NpcDied"` por texto e lê `event.get("npc_id")`, leitura por nome que a DEC-107 (DESCARTADA) e o AGENTS 4.17 proíbem. *Decisão proposta:* uma exceção única e nomeada: a economia pode ler um único campo inteiro (`npc_id`) do evento, com o tipo conferido (`TYPE_INT`); nenhuma chamada dinâmica, carga de código nem outro uso de reflexão; qualquer outra leitura por nome exige outra DEC. *Justificativa:* cumpre a DEC-132 e a DEC-146 sem mudar o `npc`; o risco (renomear o evento ou o campo sem erro de compilação) está coberto por `test_a_dead_npc_is_closed_by_the_event_and_keeps_money_and_goods_in_the_sum`, que usa o `NpcDied` real. *Consequências:* `docs/events.md` já diz "[PROPOSTA]" na linha do evento (trocar pelo número); revisar na LW-093 em diante, quando o `npc` puder chamar `request_close_owner` (opção b, sem reflexão).
 
-## 5. TESTES EXECUTADOS
-- **`tools/check_all` na ponta de cada ramo, VERDE** (`EXIT_CODE_CHECK_ALL=0`, 0 "SCRIPT ERROR", 0 "Parse Error", nove verificações de arquitetura): 088a 126/1.208, 088b 127/1.215, 088c 129/1.222, 089 130/1.227, 089b 131/1.233, 089c 132/1.237, 090 134/1.246, 090b 135/1.253, 090c 136/1.259, 091 137/1.265, 091b 138/1.269, 092 139/1.275, 092b 140/1.283, 092c 141/1.290, 093a 141/1.290 mais o teste de terminal da 093a (4 casos válidos e 14 quebras). Cada resultado acima é de execução real (logs guardados).
-- **Testes novos (GUT):** 87 no total (088a 5; 088b 7; 088c 3 + 4; 089 5; 089b 6; 089c 4; 090 4 + 5; 090b 7; 090c 6; 091 6; 091b 4; 092 6; 092b 8; 092c 7). Cada tarefa cobre o aceite, um caso de erro e um caso-limite (a tabela da seção 18 do contrato).
-- **Regra de arquitetura contra saldo fora do `Ledger` (LW-088c):** `tests/test_check_architecture.sh` com caso positivo e negativo; `tools/check_architecture`: "nove verificações aprovadas" (a mensagem não mudou).
-- **Controles de mutação** (cópia, alteração, teste, restauração e `cmp`; nada ficou alterado): feitos em **todas** as tarefas; os que **sobreviveram** a princípio foram reforçados com asserções e repetidos até serem pegos. Números das três últimas: **092b** 27 mutações, 5 sobreviveram na 1ª rodada e todas foram pegas depois (equipe parcial, capacidade do 2º lote, ordem máxima, local repetido no save, `validate`); **092c** 31 mutações no módulo, no save e no `EconomySetup`: 1 sobreviveu (o fim do dia uma hora adiantado) e levou um teste novo de borda do dia, todas as demais foram pegas (antes da rodada eu já tinha acrescentado 6 casos de save inválido); **093a** 11 mutações do verificador, todas pegas (o caso de borda "equipe igual à capacidade" entrou antes da rodada).
-- **`tools/check_gdscript_warnings`:** zero avisos em todas as pontas (363 scripts na última).
-- **`tools/run_sim --days 30 --seed 1`:** `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, 0 problemas, **igual em todas as tarefas** (antes e depois).
-- **Soak de 30 dias (fora do `check_all`), `tests/soak/run_npc_life_30d`, na ponta da LW-093a:** 3 execuções, **hash `82f81b239759`** nas três, 43.200 min, vivos no mínimo 100, 0 minutos parados, 0 problemas, ~26 s por execução, `EXIT=0`.
+## 5. TESTES EXECUTADOS (`tools/check_all`, resultados reais)
+| Ponta | Ramo / commit | Scripts | Testes | Asserts | Resultado |
+|---|---|---|---|---|---|
+| Fase B (status) | `d1d3d8b` | 142 | 1.293 | 292.694 | VERDE (EXIT 0; 0 SCRIPT ERROR; "nove verificações aprovadas"; `run_sim` `732907967efd…`) |
+| Junção | `lw-092g` `9df6aaa` | 144 | 1.298 | 292.805 | VERDE; hashes e `run_sim` iguais |
+| Parte 1 | `lw-093-contas-dos-npcs` `35cfae0` | 145 | 1.300 | 292.817 | VERDE; hashes novos do marco 2 (abaixo); `run_sim` igual |
+| Parte 2 | `lw-093d` `3bbcd60` | 146 | 1.303 | 292.859 | VERDE; hashes iguais aos da parte 1; `run_sim` igual |
+| Parte 3 | `lw-093e` `49a602b` | 147 | 1.305 | 292.968 | VERDE; hashes iguais aos da parte 1; `run_sim` igual |
+Também VERDES nos ramos T1 `lw-092d` (143 / 1.296), T1b `lw-092e` (143 / 1.295) e T2 `lw-092f` (142 / 1.293), relatados antes. Zero avisos de compilação em todas as pontas. **Controles de mutação:** parte 2, 6 mutações, todas pegas; as da parte 1 e da junção foram feitas antes (junção: o teste ajustado acima foi achado ao juntar).
 
-## 6. RESULTADOS
-- **`check_all` final (ponta da LW-093a, 14:17 a 14:21):** 141 scripts, **1.290 testes, 1.290 passando, 0 falhando, 0 pulados**, 292.667 asserts, 173 s; a linha "IDS DE CONTEÚDO: tudo existe (51 conferências)" e "LW-093a: 4 casos válidos e 14 quebras detectadas" aparecem no log. Contra a base da fila (126 / 1.208 / 262.153): +15 scripts, +82 testes, +30.514 asserts.
-- **Hashes, antes e depois, por tarefa:** só a **LW-088a** mudou valores, e foram os que você aprovou ("Aprovo os dois"), por causa do bloco vazio `economy` no save: oráculo `intents` `6e12b3067120` → `223b8ec6a7ed`, `alarm` `506a4a23ce89` → `dfe616868618`, `resumed` `7008d3b19d38` → `db2469cec836`, `switches` `84ca55684e34` → `888b1962d83b`, `talk` `ce14b1e45954` → `8b04890c8c9b`, `save` `142733eb318f` → `5673e2b3911b`, `demote` `00794d5a27b6` → `62c86fea8233`, `starved` `3e1d080d2eed` → `52c2d24b40fc`, `real_game` `f9469ccc5a9d` → `edf6ebb03cb9`; soak de 30 dias `d13b921112ce` → `82f81b239759`. **Da LW-088b à LW-093a, todos esses valores ficaram idênticos** ao do marco 1 (o `check_all` comparou o oráculo, a vida de 7 dias e os 300 NPCs com o log da tarefa anterior em cada ponta, e o soak de 30 dias foi refeito no fim); `run_sim` igual.
-- **Prova da causa dos hashes (fim da LW-092, como você mandou):** numa cópia temporária do oráculo, tirei o bloco `economy` do hash do mundo e pus os 9 valores ORIGINAIS como esperados: **2/2 passaram, os 9 valores originais voltaram** (`6e12b3067120`, `506a4a23ce89`, `7008d3b19d38`, `84ca55684e34`, `ce14b1e45954`, `142733eb318f`, `00794d5a27b6`, `3e1d080d2eed`, `f9469ccc5a9d`). Desfiz e confirmei com `cmp` contra o backup; o arquivo não tem diferença contra o `HEAD` e o oráculo volta a passar com os valores do marco 1. Ou seja: o NPC se comporta como antes; a única causa da mudança é o estado novo da economia.
-- **Aceite:** o de cada linha do roadmap foi cumprido (conferido pelos testes acima). Na LW-093a: id removido ou trocado em `data/` faz o verificador falhar apontando o arquivo e o id (14 casos), com os ids certos passa, e ele roda dentro do `check_all` (o `check_all` fica VERMELHO se o verificador sair com código 1, pela linha `|| status=1`; mostrei o caso pelo teste de terminal, **não** rodei um `check_all` inteiro com um id quebrado de propósito).
+## 6. RESULTADOS: valores de referência do marco 2 (antigo → novo, causa)
+**Causa única (provada):** o bloco `economy` do save passa a ter as contas dos NPCs. **Prova:** numa cópia temporária do oráculo tirei o bloco `economy` do hash e os 9 valores ORIGINAIS (`6e12b3067120`, `506a4a23ce89`, `7008d3b19d38`, `84ca55684e34`, `ce14b1e45954`, `142733eb318f`, `00794d5a27b6`, `3e1d080d2eed`, `f9469ccc5a9d`) voltaram; desfeito e conferido com `cmp`. Só as 9 constantes do oráculo foram trocadas (9 linhas no diff).
+| Constante | Antigo (marco 1) | Novo |
+|---|---|---|
+| `intents` | `223b8ec6a7ed` | `8670b52b8ff6` |
+| `alarm` | `dfe616868618` | `b62628f049b0` |
+| `resumed` | `db2469cec836` | `1251aaf06e2d` |
+| `switches` | `888b1962d83b` | `6889619788b5` |
+| `talk` | `8b04890c8c9b` | `a8a97e95f464` |
+| `save` | `5673e2b3911b` | `781066cec584` |
+| `demote` | `62c86fea8233` | `ed884fc6fb21` |
+| `starved` | `52c2d24b40fc` | `f11a33ea9ab0` |
+| `real_game` | `edf6ebb03cb9` | `76a65b9cfc8a` |
+Soaks (só imprimem; o teste do soak de 30 dias não tem constante): vida de 7 dias `af5bdb5e1f21` → `d7266f48286e`; 300 NPCs `52b7851aefc0` → `f31f5186abf5`; 30 dias `82f81b239759` → `706f065740c5`. `run_sim` (`--days 30 --seed 1`): `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, **igual** em todas as partes. As partes 2 e 3 não mudaram nenhum valor (o oráculo e os soaks não passam pelo host e usam a economia sem definições).
 
-## 7. PROBLEMAS ENCONTRADOS
-- **Vermelhos que eu mesmo causei e corrigi dentro de 3 tentativas:** (a) 089c: minha regra E acusou o texto `"NpcDied"` entre aspas na economia; a regra passou a ignorar texto entre aspas, com caso positivo e negativo; (b) 090: aviso de divisão inteira num teste (usei `IntMath.floor_div`); (c) 090b: variável local com o nome de uma função (renomeada); (d) 090c: criar mercados no jogo real gastava IDs e mudou os hashes e o `test_npc_setup.gd`: refiz o desenho (mercados só quando o jogo recebe um `EconomySetup`) e o arquivo do oráculo voltou ao `HEAD`; (e) 092c e 093a: o `.uid` do arquivo novo só aparece depois de `godot --headless --path . --import` (rodei e versionei).
-- **LW-092b passou do teto** (518 linhas): dividi o save para a 092c (item 4).
-- **Tamanho de arquivo:** `economy_module.gd` tem 453 linhas no arquivo e 331 de código; `production_book.gd` 334 e 257. Passam do teto de ~300 de código no módulo (dentro de 450). **Proposta:** dividir o `EconomyModule` (a porta `peek_*` num arquivo à parte) numa tarefa própria, antes de a LW-093 mexer nele.
-- **Achados de calibração [HIP] (não é bug):** um local de pão com 200 de saldo inicial gasta o dinheiro em cerca de 5 lotes, porque compra a farinha pelo preço de venda e vende o pão pelo de compra, com inclinação; sem recomposição ele fica sem insumo (`NO_INPUT`) no 1º dia. A calibração é da LW-112; os testes de módulo usam saldo alto de propósito.
-- **Sem equipe máxima na atribuição:** o NPC é atribuído mesmo acima de `workers_wanted` (o contrato não diz que recusa). A vaga e o limite são da LW-096.
-- **Não coberto por teste isolado:** a **ordem** fim-do-dia, depois hora, dentro da hora que vira dia (não muda nada no resultado dos testes); o ramo "bem desconhecido" do `has_room_for` (a rota real já valida o bem antes); o `request_open_owner` com `work_place_id` em tipo diferente de `npc` é ignorado (documentado no comentário).
-- **Ruído esperado do `check_all`** continua ("Decompression failed" e o aviso `wait_frames` do GUT); não são meus.
-- **Documentos:** nenhuma contradição nova. Atualizei só a linha "Estado" do `economy.md` e as linhas das tarefas; o `README.md` da economia foi atualizado a cada parte (é o README da pasta, AGENTS 8.1) e o `docs/events.md` ganhou a marca "implementado" nos 5 eventos (090b e 092b), mais a contagem do cabeçalho.
+## 7. PROBLEMAS ENCONTRADOS E PARADA
+- **As ações `buy` e `sell` (e o renomear `market_reserved` para `market`, DEC-160) quebram testes existentes que eu não posso alterar sem autorização.** Evidência: acrescentei só `buy` a `data/actions.json` numa cópia temporária (desfeita, `cmp` ok) e `test_action_catalog.gd` ficou com 3 falhas: a lista exata de ids das ações, a contagem 11 contra 12 e "nenhuma ação usa o mercado-reservado". Outros testes fixam o nome antigo ou as listas fechadas e precisariam mudar junto: `test_action_catalog.gd` (a lista de tipos de local, a lista de condições, linhas 103, 109 e 174), `test_place_chooser.gd` (linhas 32 e 201: o `PlaceChooser` recusa `market_reserved`), `test_settlements_data.gd` (linha 91), `test_place_boxes.gd` (linhas 39, 54 e 74) e `test_routine.gd` só se o vocabulário mudar. **Preciso da sua autorização escrita, com a lista exata de testes e linhas.**
+- **Decisão de design que o contrato não fecha:** o `eat` consome do inventário (14.3) mas o `FoodStub` só sai na LW-094. Proponho: na LW-093 o `eat` come do inventário quando o NPC tem comida e, senão, do `FoodStub` (que segue de reserva até a LW-094). Preciso do seu "sim" ou de outra regra.
+- Rede caiu uma vez durante um push; repeti e funcionou. O ramo antigo `lw-093-npcs-no-mercado` e o local vazio `lw-093c-dinheiro-inicial-e-consumo` ficam, porque não posso apagar ramos.
 
 ## 8. RISCOS
-- **A economia ainda roda só em teste:** a lista real de locais está vazia (LW-097) e o NPC não usa mercado (LW-093 em diante); o comportamento no jogo inteiro só aparece depois. O soak de 30 dias e o oráculo provam que nada mudou até agora.
-- **O `EconomyModule` está grande** (item 7) e a LW-093 vai mexer nele; sem dividir, passa do teto.
-- **Espiral de morte (R3.3 do roadmap):** com folha de pagamento e manutenção a calibrar, um local pode ficar parado; a LW-095 e a LW-112 tratam isso.
-- **Nada foi medido em jogo (câmera, sensação):** não há mudança visível; sem testes manuais.
+- A LW-093 completa ainda tem: ações `buy` e `sell` com utilidade derivada (alívio da necessidade menos preço e distância), condições novas ("tem dinheiro para", "tem o bem"), `eat` pelo inventário e o renomear do tipo de local; depois LW-094, 095, 096 e 096a. Cada uma muda o comportamento do NPC no jogo real e mexe nos hashes do marco 2 (já aprovados com esta causa); o oráculo só será refeito se mudar pela causa aprovada.
+- Dinheiro inicial dos NPCs só vale no jogo real (partes 2 e 3); sem `buy` o NPC ainda não tem como gastar.
 
-## 9. PENDÊNCIAS
-- **Para você:** a auditoria dos 16 commits e o seu **"APROVADO LW-088a a LW-093a"**; só então começo a **Fase B** (juntar ao `main`), e você me manda os passos um a um. **Não fiz a Fase B e não comecei a LW-093.**
-- **Testes manuais que você deve fazer:** nenhum (nada muda no jogo); se quiser conferir, rode `tools/check_all` na ponta do ramo `lw-093a-verificador-de-ids` (espere "VERDE", 1.290 testes e a linha "IDS DE CONTEÚDO: tudo existe").
+## 9. PENDÊNCIAS (suas)
+1. Autorizar, por escrito, a troca dos testes existentes listados no item 7 (ou mandar outro caminho para as ações).
+2. Dizer se o `eat` deve comer do inventário e, senão, do `FoodStub` até a LW-094.
+3. Registrar a DEC do I4 (proposta no item 4, DEC-234 provisória); autorizar o ajuste do caso `reply.gd` para fechar o N9 (T1, item pendente).
+4. O `README.md` do projeto ainda diz 88 de 192.
 
 ## ACOMPANHAMENTO
-- **Avanço:** Fase 3 (economia): LW-088a a LW-093a prontas para revisão no marco 1; falta o resto do marco 1 após o seu aval (a Fase B) e a LW-093 em diante (marco 2).
-- **Próxima tarefa recomendada:** a Fase B (junção ao `main`) depois do seu "APROVADO LW-088a a LW-093a"; em seguida a LW-093 (NPCs no mercado). Não iniciadas.
-- **Decisões que dependem de você:** (1) dividir o `EconomyModule` antes da LW-093 (minha recomendação: sim, numa tarefa curta de refatoração sem mudar comportamento); (2) se a atribuição do NPC deve ser limitada a `workers_wanted` (recomendação: não agora; a vaga na LW-096 decide).
-- **Git:** 16 commits em 15 ramos empilhados (a LW-088a tem 2 commits), todos **enviados** ao GitHub por referência explícita (`ramo:ramo`), mais o `status-a`; **nada** no `main`, nenhum merge, tag, `--force`, rebase, reset ou stash. Os commits trazem a mensagem `LW-NNN: resumo` e o trailer de coautoria.
+- **Avanço:** LW-093 (parte do comércio): contas, dinheiro inicial, consumo e jogo real prontos; faltam as ações e a utilidade. Marco 2 aberto, valores aprovados.
+- **Git:** `main` em `d1d3d8b` (só o commit de status); ramos enviados: `lw-092d`, `lw-092e`, `lw-092f`, `lw-092g`, `lw-093-contas-dos-npcs`, `lw-093d-dinheiro-e-consumo`, `lw-093e-jogo-real-com-economia` e o `status-a`. Sem tag, sem `--force`, sem rebase nem reset; `stash` não foi necessário.
