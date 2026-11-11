@@ -1,4 +1,4 @@
-11/11/2026 10:39 (Brasília) · SEQUÊNCIA DA A CONCLUÍDA; as 3 frases de documentação que você autorizou (economy.md, README e app.md) estão EDITADAS no diretório do ramo da LW-088a, SEM commit, à espera da sua autorização de commit e push do ramo; `check_all` verde de novo: Partes 1 e 2 no `main` (`9b4f6f0`); Parte 3 (LW-088a) PRONTA PARA REVISÃO no ramo `lw-088a-registro-economy` (`d1caae0`, só o ramo empurrado; `main` não tocado); `check_all` VERDE (126 scripts, 1.208 testes, 262.153 asserts) com os valores do marco 1 que você aprovou; falta a sua auditoria
+11/11/2026 11:09 (Brasília) · BLOCO 2 DA A, em andamento · item 0 feito (LW-088a fechada, `26384ee`); LW-088 dividida (passou de ~450 linhas) e a parte b PRONTA no ramo `lw-088b-ledger` (`c9a7e0f`, `check_all` VERDE: 127 scripts, 1.215 testes, 268.278 asserts; hashes e `run_sim` iguais); seguindo para a LW-088c
 
 # RELATÓRIO — SEQUÊNCIA DA A: LW-093b (Fase B), LW-087 (fechamento) e LW-088a     Status: PRONTA PARA REVISÃO (Partes 1 e 2 já no `main`; Parte 3 só no ramo)
 
