@@ -181,6 +181,21 @@ func peek_sites_of(settlement_id: String) -> EconomyReplies.SitesQuery:
 	return EconomyQueries.peek_sites_of(_state, settlement_id)
 
 
+## O posto de serviço `post_id` (`ECON_UNKNOWN_OWNER` se não existe): ofício, salário por hora, equipe e se a folha está paga (`NO_FUNDS` quando não está; seção 6 do contrato).
+func peek_post(post_id: int) -> EconomyReplies.PostQuery:
+	return EconomyQueries.peek_post(_state, post_id)
+
+
+## O posto de serviço que ocupa o local `place_id` (`ECON_UNKNOWN_OWNER` se não há).
+func peek_post_at(place_id: String) -> EconomyReplies.PostQuery:
+	return EconomyQueries.peek_post_at(_state, place_id)
+
+
+## Os postos de serviço do assentamento, por ID crescente (lista vazia se não há).
+func peek_posts_of(settlement_id: String) -> EconomyReplies.PostsQuery:
+	return EconomyQueries.peek_posts_of(_state, settlement_id)
+
+
 func peek_balance(owner_id: int) -> EconomyReplies.BalanceQuery:
 	return EconomyQueries.peek_balance(_state, owner_id)
 

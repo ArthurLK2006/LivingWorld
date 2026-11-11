@@ -149,7 +149,7 @@ class TermsQuery:
 		needs_license = requires_license
 
 
-## `peek_site` e `peek_site_at`: um local de produção (seções 6 e 8 do contrato). `workplace_id` é o `site_id`; `worker_ids`, os trabalhadores atribuídos em ordem crescente; `running` e `reason` (`NO_WORKER`, `NO_INPUT` ou `OUTPUT_FULL` quando parado,
+## `peek_site` e `peek_site_at`: um local de produção (seções 6 e 8 do contrato). `workplace_id` é o `site_id`; `worker_ids`, os trabalhadores atribuídos em ordem crescente; `running` e `reason` (`NO_WORKER`, `NO_INPUT`, `OUTPUT_FULL` ou `NO_FUNDS` quando parado,
 ## senão vazio); `upkeep`, uma linha por regra de manutenção (`good_id`, `quantity`, `period_days`, `days_since_paid`); `stock`, o inventário do local (`good_id` e `quantity`). `result` falha com `ECON_UNKNOWN_OWNER` se não há o local (então o resto não vale).
 class SiteQuery:
 	extends RefCounted
@@ -183,6 +183,38 @@ class SitesQuery:
 
 	func _init(site_rows: Array[SiteQuery]) -> void:
 		sites = site_rows
+
+
+## `peek_post`, `peek_post_at`: um posto de serviço (LW-095; seção 6 do contrato), com os mesmos nomes do local de produção para a LW-096a pontuar a vaga sem distinguir os dois: `workplace_id` é o `post_id`; `place_id`; `settlement_id`;
+## `occupation_id` (o ofício esperado); `wage_per_hour`; `workers_wanted`; `workers_assigned`; `worker_ids`, em ordem crescente; `running` e `reason` (`NO_FUNDS` quando a conta do mercado não cobre a folha, senão vazio). O posto não tem
+## receita, eficiência nem estoque. `result` falha com `ECON_UNKNOWN_OWNER` se não há o posto (então o resto não vale).
+class PostQuery:
+	extends RefCounted
+
+	var result: Result
+	var workplace_id: int = IdGenerator.NO_ID
+	var place_id: String = ""
+	var settlement_id: String = ""
+	var occupation_id: String = ""
+	var wage_per_hour: int = 0
+	var workers_wanted: int = 0
+	var workers_assigned: int = 0
+	var worker_ids: Array[int] = []
+	var running: bool = false
+	var reason: String = ""
+
+	func _init(query_result: Result) -> void:
+		result = query_result
+
+
+## `peek_posts_of`: os postos de serviço do assentamento, por ID crescente.
+class PostsQuery:
+	extends RefCounted
+
+	var posts: Array[PostQuery]
+
+	func _init(post_rows: Array[PostQuery]) -> void:
+		posts = post_rows
 
 
 ## `request_consume`: o que o consumo fez: a quantidade consumida, o id da necessidade que o bem alivia (`need_id` de `goods.json`) e o alívio total (`need_relief` × quantidade) para o `npc` aplicar; só valem se `result.ok`.

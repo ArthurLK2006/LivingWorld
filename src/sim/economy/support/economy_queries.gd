@@ -45,6 +45,30 @@ static func peek_sites_of(state: EconomyState, settlement_id: String) -> Economy
 	return EconomyReplies.SitesQuery.new(sites)
 
 
+## O posto de serviço `post_id` (`ECON_UNKNOWN_OWNER` se não existe): ofício, salário, equipe e se a folha está paga (seção 6 do contrato).
+static func peek_post(state: EconomyState, post_id: int) -> EconomyReplies.PostQuery:
+	if state.posts == null or not state.posts.has_post(post_id):
+		return EconomyReplies.PostQuery.new(Result.failure(EconomyCodes.UNKNOWN_OWNER, "EconomyModule.peek_post: o posto de serviço %d não existe." % post_id))
+	return _post_query(state, post_id)
+
+
+## O posto de serviço que ocupa o local `place_id` (`ECON_UNKNOWN_OWNER` se não há).
+static func peek_post_at(state: EconomyState, place_id: String) -> EconomyReplies.PostQuery:
+	var post_id: int = IdGenerator.NO_ID if state.posts == null else state.posts.post_at(place_id)
+	if post_id == IdGenerator.NO_ID:
+		return EconomyReplies.PostQuery.new(Result.failure(EconomyCodes.UNKNOWN_OWNER, "EconomyModule.peek_post_at: o local '%s' não tem posto de serviço." % place_id))
+	return _post_query(state, post_id)
+
+
+## Os postos de serviço do assentamento, por ID crescente (lista vazia se não há).
+static func peek_posts_of(state: EconomyState, settlement_id: String) -> EconomyReplies.PostsQuery:
+	var posts: Array[EconomyReplies.PostQuery] = []
+	if state.posts != null:
+		for post_id: int in state.posts.posts_of(settlement_id):
+			posts.append(_post_query(state, post_id))
+	return EconomyReplies.PostsQuery.new(posts)
+
+
 static func peek_balance(state: EconomyState, owner_id: int) -> EconomyReplies.BalanceQuery:
 	if not state.book.has_owner(owner_id):
 		return EconomyReplies.BalanceQuery.new(Result.failure(EconomyCodes.UNKNOWN_OWNER, "EconomyModule.peek_balance: o dono %d não existe." % owner_id), 0)
@@ -152,4 +176,20 @@ static func _site_query(state: EconomyState, site_id: int) -> EconomyReplies.Sit
 	for rule: UpkeepRule in recipe.upkeep:
 		query.upkeep.append({"good_id": rule.good_id, "quantity": rule.quantity, "period_days": rule.period_days, "days_since_paid": days[rule.good_id]})
 	query.stock = state.goods.inventory_rows(site_id)
+	return query
+
+
+static func _post_query(state: EconomyState, post_id: int) -> EconomyReplies.PostQuery:
+	var post_state: Dictionary = state.posts.state_of(post_id)
+	var query: EconomyReplies.PostQuery = EconomyReplies.PostQuery.new(Result.success())
+	query.workplace_id = post_id
+	query.place_id = post_state[ServicePostBook.KEY_PLACE]
+	query.settlement_id = post_state[ServicePostBook.KEY_SETTLEMENT]
+	query.occupation_id = post_state[ServicePostBook.KEY_OCCUPATION]
+	query.wage_per_hour = post_state[ServicePostBook.KEY_WAGE]
+	query.workers_wanted = post_state[ServicePostBook.KEY_WANTED]
+	query.worker_ids.assign(post_state[ServicePostBook.KEY_WORKERS])
+	query.workers_assigned = query.worker_ids.size()
+	query.running = post_state["running"]
+	query.reason = "" if query.running else ServicePostBook.NO_FUNDS
 	return query
