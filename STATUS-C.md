@@ -1,4 +1,60 @@
-11/11/2026 15:52 (Brasília) — CONCLUÍDA: LW-117e (extensões de world e npc, Fase 4): seção nova no fim de docs/modules/world.md e de npc.md (só acréscimo); commit b665ca7 ENVIADO ao ramo lw-117e-world-npc (empilhado na 117d, fora do main); check_all VERDE (1.203 de 1.203). main = ffb1e03 (Fase 5, não é meu). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 16:20 (Brasília) — CONCLUÍDA: LW-117f (eventos da Fase 4, modelos de dados e marcos de hash): docs/events.md (47 eventos), docs/fase-4/dados.md e docs/decisions/0015; commit 5e6da5c ENVIADO ao ramo lw-117f-eventos-e-dados (empilhado na 117e, fora do main); check_all VERDE (1.203 de 1.203). LW-117 completa (a a f). main = 20a788f (LW-146f da Fase 5, não é meu): a pilha agora conflita em DECISIONS (28), events (2), npc (1) e world (1). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117f — RELATÓRIO — Eventos da Fase 4, modelos de dados e marcos de hash (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: a última parte da LW-117, só documento: o catálogo de eventos da Fase 4 em `docs/events.md`, os modelos de dados (colunas, tipos, faixas e linhas de partida) dos arquivos novos de `data/` e o plano de marcos de hash. Li: AGENTS 0.4; o `0013`; as seções 17 do `economy.md`, `factions.md`, `politics.md`, `military.md`, `chronicle.md` e as extensões de `world.md` e `npc.md`; `data.md`; `docs/economy/dados.md` (modelo de formato); `docs/events.md` inteiro. DEC: as da LW-117a (APROVADAS 202 a 212 e 224 a 226; PROPOSTA 213 a 223); nenhuma PENDENTE trava; todo valor é [HIP]. Arquivos: `docs/events.md`, `docs/fase-4/dados.md` (novo; o `0013` previa `docs/faction/dados.md`, nome enganoso porque o arquivo cobre seis módulos) e `docs/decisions/0015-marcos-de-hash-da-fase-4.md` (novo; o `0014` é da Fase 5). Git, como entendi o seu "Sim, 117f": ramo `lw-117f-eventos-e-dados` empilhado na 117e (`b665ca7`), um commit, envio só dele e do `status-c`, nada para o `main`.
+
+## 1. RESUMO
+O catálogo passou de 16 para **47 eventos** (31 novos da Fase 4, mais acréscimos da Fase 4 em 8 linhas existentes). O `docs/fase-4/dados.md` (245 linhas) traz as colunas, faixas e linhas de partida de **~40 arquivos de dados** (`world`, `npc`, `factions`, `events`, `politics` e `military`). O registro `0015` propõe os **três marcos de hash** da Fase 4. **Isto fecha as seis partes da LW-117 (117a a 117f).**
+
+## 2. ARQUIVOS CRIADOS
+- `docs/fase-4/dados.md` — modelos de dados da Fase 4.
+- `docs/decisions/0015-marcos-de-hash-da-fase-4.md` — registro técnico (proposta) do plano de marcos de hash.
+
+## 3. ARQUIVOS MODIFICADOS (commit `5e6da5c`, ramo `lw-117f-eventos-e-dados`)
+- `docs/events.md` — +40 e −7 linhas: 31 linhas novas, cabeçalho (47 eventos), nota da Fase 4, parágrafo de "considerados e não incluídos" e acréscimos em `NpcDied`, `PriceChanged`, `ShortageDeclared`, `ShortageEnded`, `ContractOffered`, `ContractCompleted`, `ContractFailed` e `RouteStateChanged`.
+
+## 4. DECISÕES TÉCNICAS
+Tudo é **PROPOSTA** do revisor. O que decidi sozinho:
+- **A coluna "Entra na crônica?" é derivada dos dados** (`chronicle.json` e `severity_rules.json`): confirmei por script que as classes (Sim, Se notável, Se grave, Não) de **todos os 40 eventos assinados** batem com a severidade-base, o limiar (40) e as regras; os outros 7 não são assinados.
+- **Mudei a classe de dois eventos da Fase 3** para não inundar a crônica: `ContractOffered` e `ContractCompleted` passam de "Sim" a "Se notável" (só a escolta entra; a vaga e o trabalho avulso não).
+- **Cargas acrescentadas** (Fase 4): `settlement_id` em `PriceChanged`, `ShortageDeclared` e `ShortageEnded`; `kind`, `issuer_id`, `issuer_kind` e `acceptor_is_player` em `ContractCompleted`; `actor_is_player` e `is_leader` nos eventos de facção; `cause` `battle` em `NpcDied`.
+- **A regra de reputação tem dois filtros** (a `chronicle.md` previa um), porque o contrato concluído pelo jogador precisa de dois (emissor é tesouro **e** aceitante é o jogador).
+- **Todo `id` de linha** segue a convenção `<chave1>__<chave2>` nas tabelas de chave composta (o `data` exige `id`).
+- **Ofícios `soldier` e `bandit`** com linhas de população (a agenda e o local ficam em aberto); fronteira controlada pelo país principal (PROPOSTA); cultura de cada país como na extensão do `world.md`.
+- **Marcos de hash (0015):** o 1 vai da LW-118 à LW-125 (a LW-121 é a primeira que muda), o 2 da LW-126 à LW-134 e o 3 da LW-135 à LW-139; a LW-142 tem hashes de teste novo.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova; o `0015` vira DEC só se você aprovar.
+
+## 5. TESTES EXECUTADOS
+- Conferência por script: o catálogo tem **47 linhas de evento, todas com 6 colunas e nomes únicos**; as tabelas dos três arquivos têm colunas consistentes; nenhuma linha com negrito ímpar; toda DEC citada existe nesta árvore, **menos a DEC-183 e a DEC-195**, da Fase 5 (só no `main`); zero citações a arquivos de status ou a "da A/B/C"; `git diff --staged --check` sem erro; a classe de crônica de cada evento no catálogo **concorda com os dados** (40 de 40).
+- `tools/check_all` **no HEAD final `5e6da5c`**: **VERDE**, 125 scripts, 1.203 testes (todos passando), 262.120 asserts, 179,1 s. A arquitetura passou com o catálogo novo (ela confere os eventos do código contra a primeira coluna).
+- NÃO EXECUTADO: nada além do que é próprio de uma tarefa só de documentos.
+
+## 6. RESULTADOS
+Critério da parte 117f cumprido por leitura e pelos scripts acima: os eventos da Fase 4 estão catalogados com publicador, ouvintes, carga e classe de crônica; cada arquivo de dados dos contratos tem colunas, tipos, faixas e linhas de partida; o plano de hash está registrado.
+
+## 7. PROBLEMAS ENCONTRADOS
+1. **O `main` andou outra vez** (de `ffb1e03` para `20a788f`, a **LW-146f da Fase 5**: extensões de `world`, `npc`, `app` e do catálogo de eventos). **Teste de junção só de leitura da pilha 117a a 117f contra o `main` novo:** **conflitos de texto em `DECISIONS.md` (28), `events.md` (2), `npc.md` (1) e `world.md` (1)**; o roadmap e o `app.md` juntam sozinhos. Os de `npc.md` e `world.md` são o aviso que eu tinha dado (as duas pontas acrescentaram seção no fim). Nenhum nome de evento se repete entre as duas fases (o catálogo juntado terá 58).
+2. **O `ActReported` está impreciso no catálogo:** a Fase 5 usa `CombatantWounded`, `CombatantDied` e `ItemTaken` como fatos; a `politics` os traduz em ato. O `ActReported` é só a entrada de teste da Fase 4. **Ajuste pequeno que fica para uma rodada** (a linha já diz que o nome é PROPOSTA e que a Fase 5 o alinha); não editei porque o commit da 117f já foi enviado.
+3. **Ajustes pequenos pendentes em fichas aprovadas** (somados): `military.md` (par novo de rotas e `request_set_on_mission` com 3º argumento), `politics.md` (`CrimeCommitted` com `settlement_id`, `governing_faction_id` e `witness_count`) e `chronicle.md` (dois filtros na regra de reputação).
+4. O `docs/modules/README.md` segue dizendo que `economy`, `factions`, `politics`, `military` e `events` não têm contrato.
+
+## 8. RISCOS
+- Os **valores** dos dados são todos [HIP] e foram inventados para ter linhas de partida coerentes; nenhum foi calibrado. O tesouro da autoridade, em especial, precisa cobrir a folha dos postos (calibração na LW-112 e no soak da LW-142).
+- A pilha tem **seis ramos** e conflitos reais com o `main` (item 7.1): a Fase B vai exigir juntar à mão `DECISIONS.md`, `events.md`, `npc.md` e `world.md`, e recontar totais e contagem de eventos.
+- Os pedidos aos contratos ainda não escritos (LW-098, economia) seguem abertos: `CaravanArrived` e `peek_caravans_on`.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar ou trocar o catálogo, os modelos de dados e o plano de hash**, em especial: os ofícios `soldier` e `bandit`; o limiar de crônica (40) e a classe de `ContractOffered` e `ContractCompleted`; os três marcos. Recomendo aprovar.
+2. **Fechar a LW-117:** com a 117f aprovada, as seis partes estão prontas. Recomendo uma **rodada de ajustes** (os itens 7.2 e 7.3 e a troca dos rótulos de "rascunho" para "aprovada") **e a Fase B** da pilha, nessa ordem; ambos só por ordem escrita sua.
+3. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 4: as 6 partes da LW-117 feitas (117a a 117f)**; as LW-118 a LW-145 não começaram e dependem da Fase 3.
+- Próxima tarefa recomendada: **rodada de ajustes das fichas e Fase B da pilha 117a a 117f**. **Não iniciada.** Parei (regra 13).
+- Git: ramo `lw-117f-eventos-e-dados` em `5e6da5c`, **enviado** por avanço simples, empilhado na 117e (`b665ca7`) e nas anteriores; `status-c` enviado com este relatório; **o `main` está em `20a788f` (a LW-146f, da Fase 5; não é meu)**, intocado por mim; sem tag, sem `--force`.
+
+---
 
 # LW-117e — RELATÓRIO — Extensões de `world` e `npc` para a Fase 4 (DOC)        Status: PRONTA PARA REVISÃO
 
