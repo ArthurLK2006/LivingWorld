@@ -1,4 +1,93 @@
-10/11/2026 20:38 (Brasília) — CONCLUÍDA: TAREFA 3 (ajuste dos meus rascunhos world.md e npc.md, ramo lw-087c) entregue: commit 187c20c enviado, check_all VERDE (1.194 de 1.194). Nada no main, sem Fase B, sem tag; main intocado (8dcc81d). Parei (regra 13), aguardando suas decisões (seção 9). Nada rodando.
+10/11/2026 21:09 (Brasília) — CONCLUÍDA: RODADA 2 da LW-087c (world.md e npc.md alinhados com a B e com as suas decisões de manutenção dos locais e postos de serviço): commit f2913f9 enviado, check_all VERDE (1.194 de 1.194), 14 achados da B conferidos. Nada no main, sem Fase B, sem tag. Parei (regra 13), aguardando suas decisões (seção 9). Nada rodando.
+
+# RODADA 2 — RELATÓRIO — LW-087c: alinhar `world.md` e `npc.md` com a B e com as suas novas decisões (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Li: AGENTS (0, 2.3, 3, 8, 10, 14, 15; versão 0.4); o texto da tarefa; `economy.md` da B inteiro (`a815f85`), `dados.md` e `events.md` (`3b2a2de`); a revisão que a B fez da minha 087c (`64dcded` do ramo `status-b`); o meu `npc.md` (seções 12 a 14) e o `world.md` (extensão); dados atuais do `main` (`8dcc81d`). Decisões: DEC-022, 126 e 127 e DEC-100 (APROVADAS); DEC-047, 049 e 054 (PROPOSTA no `DECISIONS.md`, aprovadas por você por mensagem; o registro é da A); DEC-040 (PENDENTE, a tarefa não depende dela). Arquivos: só `docs/modules/world.md` e `docs/modules/npc.md`. Dúvida declarada: o `economy.md` da B ainda não traz as suas decisões 1 e 2 de hoje.
+
+## 1. RESUMO
+Os dois arquivos agora seguem o `economy.md` da B (salário por hora com um evento `WagesPaid` por local, vaga como contrato, `work_place_id` entregue ao abrir a conta) e as suas duas decisões novas: **consumo = manutenção dos locais** (o NPC só consome comida; os locais gastam ferramenta e tábua; o tecido é só mercadoria) e **guardas e estalajadeiros = postos de serviço**, com folha paga pela conta do mercado do povoado. Nenhum texto cita mais `STATUS-B.md`, `STATUS-C.md` nem o "pré-voo". A tabela da seção 7 abaixo confere, um por um, os 14 achados da B.
+
+## 2. ARQUIVOS CRIADOS
+- Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (só documentos; ramo `lw-087c-extensoes-world-npc`, commit `f2913f9`)
+- `docs/modules/npc.md` — seção 14 reescrita (14.1 a 14.10), linhas LW-093, 094, 095, 097 e 104 da seção 12 atualizadas, **linha nova da LW-096a**, cabeçalho (`[Qn]` e Fase 2). Neste commit +60 e −49 linhas; contra o `main`, o ramo difere +89 e −2.
+- `docs/modules/world.md` — Q-W2, hashes, locais de trabalho (cada local de produção e cada posto ocupa um local `work` próprio), Fase 2 fechada. Neste commit ≈ 12 linhas mexidas; contra o `main`, +27.
+- Só esses dois arquivos mudam contra o `main` (`8dcc81d`, intocado). Nada do `economy.md`, `dados.md` ou `events.md` da B foi editado.
+
+## 4. DECISÕES TÉCNICAS
+**Origem escrita em cada ponto, nos dois arquivos:**
+
+| Ponto | Origem |
+|---|---|
+| Consumo = manutenção dos locais (NPC só consome comida; locais gastam ferramenta e tábua; tecido só mercadoria) = **Q20** | **Arthur** (APROVADA; registro da A) |
+| Guardas e estalajadeiros = postos de serviço, folha pela conta do mercado do povoado = **Q15** | **Arthur** |
+| Q10, Q19, Q22 (da rodada 1) | **Arthur** |
+| (a) salário Q18 A como a B escreveu (`WagesPaid`, um por local e por hora; o `npc` lê `peek_site` e alivia `income` só dos NPCs dele; vale para os postos) | **revisor** (PROPOSTA) |
+| (b) local de produção dono da produção e vende o excedente; NPC recebe salário e compra; `sell` do NPC pelo mesmo mecanismo de utilidade | **revisor** |
+| (c) vaga = contrato `vacancy`; **LW-096a** (aceite por utilidade, com histerese); emprego só termina por morte ou por aceitar outra vaga; local sem dinheiro não demite | **revisor** |
+| (d) Q23: coluna opcional `work_place_id` em `population.json`; `request_open_owner(owner_id, kind, work_place_id)` | **revisor** (você aprova na LW-097) |
+| (e) `mint` inicial (`game_start`) na LW-093; `request_trade(actor_id, market_id, good_id, quantity, side)` | **revisor** |
+| Q21 A, Q-W1 a Q-W6 | **revisor** |
+
+**Escolhas minhas, dentro do escopo, para você poder trocar:**
+- **Q-W2 mudou (achado M4 da B):** "perigosa" **saiu** do vocabulário da rota (só `open` e `closed`; `closed` é o "bloqueada" da arquitetura 5.2), porque vocabulário reservado sem uso é antecipação (AGENTS 5.5). Era uma proposta do revisor; troque se preferir a reserva.
+- **Política de hashes novos [PROPOSTA]** (achado M6): uma aprovação sua por marco (LW-088a, LW-093 a 095 e LW-097); o `run_sim` **não** entra, porque não registra módulo.
+- **`request_trade` com a assinatura completa**, como você mandou, em vez de "tirar a lista de parâmetros" (M2 da B); os nomes finais continuam sendo do `economy.md`.
+- **Tecido:** escrevi como **[LIM]** que ele não tem consumidor entre NPCs nem locais; o comprador é o jogador e o comércio entre povoados, e o soak da LW-110 confere se o estoque não acumula.
+- **O teste da 094b precisa de fixture nova** (o save da Fase 2 já é recusado desde a LW-088a pela ausência do bloco `economy`); `tests/fixtures/` é protegida, então a tarefa precisa da sua autorização. Está escrito na 14.5.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma nova minha; o registro das suas decisões 1 e 2, de Q10, Q19 e Q22 é da LW-087a.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` **no HEAD final `f2913f9`**: **VERDE**. Arquitetura (nove verificações), GDScript **sem avisos** (313 scripts), dados válidos, **124 scripts, 1.194 testes (todos passando), 261.693 asserts**, 172,3 s (3 min 25 s no total). Mesmos números do `main`, como esperado numa tarefa só de documentos.
+- `godot --headless --path . --import`: **NÃO EXECUTADO** (o `godot` não está no PATH do meu terminal; o `check_all` roda sozinho e ficou verde).
+- Por busca: `STATUS-B`, `STATUS-C`, `pré-voo`, `status-b` e `status-c` têm **0** ocorrências no que eu escrevi (a única ocorrência de "achado ... revisão cruzada" no `npc.md`, na seção 10, é da Fase 2 e já estava no `main`); `inicio_de_jogo` aparece **2 vezes, as duas explicativas** (tabela da LW-093 e 14.4); `git diff origin/main...HEAD` lista só `npc.md` e `world.md`.
+- Conferi por leitura, **sem executar**: `run_sim` não registra módulo (`register_module` só é chamado em `GameModules`) e `World.on_load` recusa módulo ausente (`src/core/world/world.gd`).
+
+## 6. RESULTADOS
+Aprovados: `check_all` inteiro (1.194 de 1.194); falhos e pulados: 0. Critério cumprido **por leitura do diff**: itens 1 a 7 da tarefa feitos (14.4, Q18, 14.2, 14.3, Q20, Q22, Q23, 14.10, `world.md`, citações, tabela dos achados).
+
+## 7. PROBLEMAS ENCONTRADOS — conferência dos 14 achados da revisão da B
+| Achado | Pedido da B | Situação | Onde ficou |
+|---|---|---|---|
+| **I1** salário | evento por trabalhador é laço quente; sem evento no catálogo | **Resolvido.** `WagesPaid` agregado por local e por hora (a B o criou no `economy.md` e no `events.md`); o `npc` lê `peek_site`; as "pendências" sobre o catálogo e a divergência saíram | `npc.md` 14.4, 14.7, Q18 |
+| **I2** dono da produção | o local é dono; NPC come comprando | **Resolvido.** A "reserva própria" e "a comida vem da produção do ofício" saíram | 14.2, 14.3 |
+| **I3** cita `STATUS-B.md` | citar "decisão de Arthur" | **Resolvido.** 0 citações a arquivos de status e ao pré-voo | todo o `npc.md` |
+| **I4** "economia nunca importa o `npc`" sem verificação | regra nova na LW-088a | **Resolvido.** 14.1 diz que a regra nasce na LW-088a, com teste positivo e negativo, e é critério de aceite dela (a B corrigiu o `economy.md`, seção 10) | 14.1 |
+| **I5** aceitar trabalho | separar vaga fixa (LW-095) de trabalho avulso (LW-096); a B corrigiu o `economy.md` | **Resolvido.** Vaga = contrato `vacancy` na **LW-096a**; avulso (`labor` e `delivery`) na LW-104 | 14.4, 14.9 Q22, linhas 096a e 104 |
+| **M1** nome do motivo | unificar | **Resolvido.** `game_start` em todo lugar; as 2 menções a `inicio_de_jogo` são explicativas, como você mandou | linha LW-093, 14.4 |
+| **M2** assinatura de `request_trade` | tirar a lista de parâmetros | **Resolvido de outro modo, por ordem sua:** escrevi `request_trade(actor_id, market_id, good_id, quantity, side)` e disse que o `economy.md` manda nos nomes finais | 14.2, 14.6 |
+| **M3** carga do `RouteStateChanged` | alinhar | **Já resolvido na rodada 1:** `route_id` e `new_state`, igual à arquitetura 17.3 e à D | `world.md` |
+| **M4** estados da rota | citar `closed` = "bloqueada"; sem "perigosa" | **Resolvido.** Q-W2 ajustada (ver seção 4) | `world.md`, Estado de rota e Q-W2 |
+| **M5** `run_sim` não muda | corrigir o texto | **Resolvido** em `world.md` (estado de rota e Q-W6) e `npc.md` (linha LW-097, 14.5, 14.8, 14.10); só o oráculo e o hash de 30 dias mudam | os dois |
+| **M6** lista de hashes incompleta | política única, citar a 088a | **Resolvido como PROPOSTA:** política de uma aprovação sua por marco (088a, 093 a 095, 097); `world.md` Q-W6 aponta para ela | `npc.md` 14.8; `world.md` Q-W6 |
+| **M7** cabeçalho | Q18 a Q22 estão na 14.9 | **Resolvido** | cabeçalho do `npc.md` |
+| **M8** pré-requisito da LW-093 | citar o verificador | **Resolvido.** LW-093a como pré-requisito (linha da LW-093, 14.2, 14.8), decisão sua | 12, 14.2, 14.8 |
+| **M9** falha de comércio | "falha por regra" (LW-070d); save recusado desde a 088a | **Resolvido.** Falha por regra (em S0 no pensamento seguinte); save da Fase 2 recusado desde a LW-088a e fixture nova para o teste da 094b | 14.2, 14.5 |
+
+**Outros problemas:**
+- **O `economy.md` da B ainda não incorpora as suas decisões 1 e 2:** a Q15 segue "em aberto" lá, e a seção 6 diz que NPC sem local de produção "não recebe salário" (o que a sua decisão 2 supera); a manutenção dos locais (ferramenta e tábua) não aparece, e a Q20 diz "só comida". Não editei nada dela.
+- **O `mint` inicial:** a B o lista entre as suas recomendações aprovadas (com "ou a LW-095 antes da LW-094"); na sua mensagem de hoje ele está entre as decisões do revisor. Escrevi as duas coisas (14, decisão 4 e (e)).
+- Os worktrees locais da B estão à frente do remoto só por junção com o `main`; revisei o que está no remoto.
+
+## 8. RISCOS
+- O `economy.md` e este arquivo divergem até a B incorporar as decisões 1 e 2 (manutenção dos locais e postos de serviço).
+- **LW-096a** não existe no roadmap (arquivo protegido): se a A não a registrar, a vaga fica sem tarefa dona.
+- **Tecido** sem consumidor: dependente da prova no soak da LW-110.
+- **Q23** muda o formato de `population.json`; só vale com a sua aprovação na LW-097.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar ou trocar** as minhas propostas: (a) a (e), Q21, Q23, Q-W1 a Q-W6 e a política de hashes (**recomendo aprovar**; a única que eu mudei de ideia sozinho foi a Q-W2).
+2. **A B** incorporar as suas decisões 1 e 2 no `economy.md` (manutenção dos locais, postos de serviço, Q15 e Q20 como decididas) e conferir o `dados.md`.
+3. **A LW-087a** registrar as suas decisões 1 e 2, Q10, Q19 e Q22, a **LW-096a** e a lista de divergências do roadmap.
+4. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **Fase 2 CONCLUÍDA (32 de 32, 100%)**; projeto 87 de 192 (45,3%). **Fase 3 não iniciada**; os rascunhos 087b, 087c e 087d seguem **fora do `main`** até você escrever que podem entrar.
+- Próxima tarefa recomendada: **LW-087a (A)**. **Não iniciada.** Parei aqui (regra 13).
+- Git: ramo `lw-087c-extensoes-world-npc` enviado (`f2913f9`); `status-c` enviado; `main` = `8dcc81d`, intocado; nenhuma tag nova; sem merge no `main`, sem Fase B, sem `--force`.
+
+---
 
 # TAREFA 3 — RELATÓRIO — LW-087c: ajuste dos meus rascunhos `world.md` e `npc.md` depois das suas decisões (DOC)        Status: PRONTA PARA REVISÃO
 
