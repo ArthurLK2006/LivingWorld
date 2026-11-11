@@ -5,7 +5,7 @@ Estado: **PLANEJADO (LW-146b, 11/11/2026).** Nenhuma classe, dado, evento ou com
 - **Responsabilidade:** as **regras do combate** da Fase 5: validar e resolver a **intenção de ataque** (alvo, habilidade, alcance, estamina, preparo e recuperação), calcular o dano pela fórmula do SP6, manter o **estado de encontro** de cada combatente, publicar ferimento e morte, pedir o desgaste do equipamento e dar corpos até o **orçamento de combatentes com corpo**. **Não** faz: decidir o que o NPC quer (é do `npc`, seção 6), guardar a vida e o "ferido" de quem tem `character` (é do `character`, seção 5), física, áreas de contato, animação, crime (DEC-195), política, economia, **bloqueio, esquiva, ferimento por golpe, magia, chefe e comando de tropas** (fora do protótipo, DEC-179 e DEC-182).
 - **Entradas:** a intenção de ataque do jogador (pela ponte); a intenção de ataque do NPC e da criatura (por evento, DEC-199); pedidos de encontro do `military` (DEC-194); o avanço do tempo do encontro (seção 3); definições em `data/` (habilidades, armas, armaduras, parâmetros).
 - **Saídas:** o resultado de cada intenção (`AttackResult`, uma cópia); consultas `peek_*`; os eventos `CombatantWounded`, `CombatantDied` e `CombatEnded` (catálogo na LW-146f); pedidos ao `character` (desgaste de item, vida).
-- **Dependências permitidas:** `core`, `data`, `world` (posição e local), `character/api` (vida, equipamento e durabilidade) e `npc/api` (consultas). `combat` é **camada 4**; as camadas 3 e abaixo são permitidas, só pela `api`. **Não importa** `economy`, `military`, `factions`, `politics`, `events` nem `ecology`. **Quem importa o `combat`:** a ponte, o `military` (pede encontro) e a `ecology` (criaturas). O módulo `entities` não existe (DEC-141): os IDs vêm de `ctx.ids`.
+- **Dependências permitidas:** `core`, `data`, `world` (posição e local), `character/api` (vida, equipamento e durabilidade), `npc/api` (consultas) e `ecology/api` (o tipo da criatura, para o equipamento padrão). `combat` é **camada 4**; as camadas 3 e abaixo são permitidas, só pela `api`. **Não importa** `economy`, `military`, `factions`, `politics` nem `events`. **Quem importa o `combat`:** a ponte e o `military` (pede encontro). **`npc` e `ecology` (camada 3) não o importam**: publicam a intenção de ataque **por evento** (DEC-199); uma camada 3 não importa uma camada 4. O módulo `entities` não existe (DEC-141): os IDs vêm de `ctx.ids`.
 - **Dados controlados:** o `CombatantState` e o `Encounter` (seção 5) e o relógio do encontro. Nada mais: vida de quem tem `character`, itens, dinheiro, reputação e crime são de outros donos.
 - **Interfaces de comunicação:** seção 12 (`request_*`, `peek_*`) e seção 11 (eventos).
 - **Testes necessários:** seção 14, por tarefa.
@@ -55,7 +55,7 @@ Os números abaixo são os do SP6 e seguem **[HIP]**: vão para `data/` e o mód
 
 - **Quem decide:** o **`npc` decide** (lutar, fugir, render-se, pedir ajuda) pelo **mesmo sistema de utilidade** e **publica a intenção**; o **`combat` escuta e resolve**. O `npc` não importa o `combat`; o `combat` só **consulta** o `npc` pela `api`, e a intenção chega **por evento** (AGENTS 4.13).
 - **"Reagir e se posicionar" (DEC-121):** o inimigo **não deixa o jogador bater nas costas "sem mais nem menos"**. O `combat` entrega ao `npc` a **posição relativa** (frente, lado, costas) e o bônus que ela dá; quem escolhe virar-se ou recuar é a **utilidade do `npc`**. Critério de aceite da LW-155: em cenário idêntico, o NPC valente luta e o covarde foge, e nenhum NPC fica parado levando golpe pelas costas.
-- **Criaturas** (`ecology`): mesma intenção, mesmas regras; o comportamento (patrulhar, caçar, fugir) é da `ecology` (contrato na LW-146d).
+- **Criaturas** (`ecology`): mesma intenção, **publicada por evento como a do `npc`**, mesmas regras; o comportamento (patrulhar, caçar, fugir) é da `ecology` (`docs/modules/ecology.md`).
 - **T1 sem `CharacterState`:** arma e armadura vêm de um **equipamento padrão por ofício** (ou por tipo de criatura), **em dados** (DEC-199). Só T2 e T3 têm instâncias (`character`).
 - **Evento de intenção do NPC:** o nome e a carga ficam para a LW-146f; precisa de `attacker_id`, `target_id` e `skill_id`.
 
@@ -100,7 +100,7 @@ Nenhum evento por golpe em laço quente fora desses (AGENTS 4.14): o ataque auto
 |---|---|---|
 | `request_attack(attacker_id, target_id, skill_id)` | 150, 151 | seção 4; atômico |
 | `request_select_target(actor_id, target_id)` | 151, 153 | escolhe ou solta o alvo; valida que existe e está vivo |
-| `request_start_encounter(participants)` / `request_end_encounter(encounter_id)` | 155, 158 | cria e encerra encontros; o `military` e a `ecology` usam |
+| `request_start_encounter(participants)` / `request_end_encounter(encounter_id)` | 155, 158 | cria e encerra encontros; o `military` usa; para NPC e criatura o `combat` **abre o encontro ao receber a primeira intenção** entre dois combatentes **[PROPOSTA]** |
 | `request_advance_encounters(dt_ms)` | 151 | avança o relógio do encontro em passos fixos (seção 3) |
 | `peek_combatant(id)` / `peek_encounter(id)` | 150 | estado (cópia): fase, estamina, alvo, vida, corpóreo ou não |
 | `peek_embodied(encounter_id)` | 158 | quem tem corpo agora, em ordem crescente de ID |
