@@ -99,3 +99,51 @@ class ValueQuery:
 	func _init(query_result: Result, queried_value: int) -> void:
 		result = query_result
 		value = queried_value
+
+
+## `request_trade`: o que mudou de mãos (`quantity`, `total` em dinheiro e `tariff`, sempre 0 na Fase 3); só valem se `result.ok`. Nada foi negociado se falhou.
+class TradeResult:
+	extends RefCounted
+
+	var result: Result
+	var quantity: int
+	var total: int
+	var tariff: int
+
+	func _init(trade_result: Result, traded_quantity: int, traded_total: int, traded_tariff: int) -> void:
+		result = trade_result
+		quantity = traded_quantity
+		total = traded_total
+		tariff = traded_tariff
+
+
+## `peek_quote`: a mesma conta de `request_trade`, sem executar: o `total`, o preço médio (o total dividido pela quantidade, para baixo) e a `tariff`; só valem se `result.ok`.
+class QuoteQuery:
+	extends RefCounted
+
+	var result: Result
+	var total: int
+	var average_price: int
+	var tariff: int
+
+	func _init(query_result: Result, quoted_total: int, quoted_average: int, quoted_tariff: int) -> void:
+		result = query_result
+		total = quoted_total
+		average_price = quoted_average
+		tariff = quoted_tariff
+
+
+## `peek_terms`: a pergunta da `TradeRules` (proibido, tarifa em pontos-base, exige licença); `result` falha com `ECON_UNKNOWN_MARKET` ou `ECON_UNKNOWN_GOOD`.
+class TermsQuery:
+	extends RefCounted
+
+	var result: Result
+	var banned: bool
+	var tariff_bp: int
+	var needs_license: bool
+
+	func _init(query_result: Result, is_banned: bool, tariff_basis_points: int, requires_license: bool) -> void:
+		result = query_result
+		banned = is_banned
+		tariff_bp = tariff_basis_points
+		needs_license = requires_license

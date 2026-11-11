@@ -3,7 +3,7 @@ extends SimModule
 ## Módulo `economy` (contrato em docs/modules/economy.md). LW-088a: a casca, registrada no `World` ANTES do `npc` (o `npc` vai abrir as contas ao criar NPCs) e dona do bloco `economy` do save (DEC-172).
 ## LW-088: o cadastro de donos (`OwnerBook`) e o livro-razão (`Ledger`). LW-089c: o inventário por dono (`GoodsStore`) e as definições (`EconomyDefinitions`, pelo construtor). LW-090c: os mercados (`MarketBook`):
 ## um por assentamento dos dados, criado no jogo novo (dono do tipo `market`, com o saldo inicial do tipo e o estoque inicial de cada bem), com o preço andando ao FIM DE CADA DIA do relógio e os eventos
-## `PriceChanged`, `ShortageDeclared` e `ShortageEnded` publicados. Esta é a PORTA: `request_open_owner`, `request_transfer_goods`, `request_set_stock` (só em build de desenvolvimento), `peek_balance`,
+## `PriceChanged`, `ShortageDeclared` e `ShortageEnded` publicados. Esta é a PORTA: `request_open_owner`, `request_transfer_goods`, `request_set_stock` (só em build de desenvolvimento), `request_trade`, `peek_quote`, `peek_terms`, `peek_balance`,
 ## `peek_conservation`, `peek_ledger_totals`, `peek_inventory`, `peek_goods_conservation`, `peek_market_of`, `peek_market`, `peek_price` e `peek_stock`. As operações de saldo e de criar e destruir bens NÃO são da
 ## porta: quem as usa são as partes internas da economia (comércio, produção, salário), cada uma na sua tarefa. O `npc` só pode citar classes desta pasta (regra E do `tools/check_architecture`, DEC-171) e a porta
 ## devolve só cópia (tipos de `EconomyReplies`). A economia ouve `NpcDied` pelo NOME do evento (não importa o `npc`, DEC-132) e fecha a conta e o inventário do NPC morto (DEC-146). O bloco do save só ganha
@@ -28,6 +28,8 @@ var _book: OwnerBook
 var _ledger: Ledger
 var _goods: GoodsStore
 var _markets: MarketBook
+var _rules: TradeRules
+var _engine: TradeEngine
 ## O último dia do relógio cujo fim já foi processado. Não vai no save: o relógio é restaurado pelo `core` antes dos módulos, e a cada passo o dia já processado é o do relógio.
 var _last_day: int = 0
 
@@ -140,6 +142,7 @@ func on_load(data: Dictionary) -> Result:
 	_goods = goods
 	_markets = markets
 	_last_day = _current_day()
+	_rebuild_engine()
 	return Result.success()
 
 
@@ -188,6 +191,32 @@ func request_set_stock(market_id: int, good_id: String, quantity: int) -> Result
 	if quantity < current:
 		return _goods.destroy(market_id, good_id, current - quantity, GoodsStore.REASON_CONSUMED)
 	return Result.success()
+
+
+## A ordem de compra (`buy`) ou de venda (`sell`) de um ator num mercado: ATÔMICA, pelo `TradeEngine` (docs/modules/economy.md, seção 5). Falhas: `ECON_UNKNOWN_MARKET`, `ECON_UNKNOWN_GOOD`, `ECON_BAD_QUANTITY`, `ECON_TRADE_BANNED`,
+## `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_INSUFFICIENT_STOCK`, `ECON_MARKET_FULL`, `ECON_INSUFFICIENT_FUNDS`, `ECON_MARKET_NO_FUNDS`, `ECON_INSUFFICIENT_GOODS` e `ECON_CAPACITY_EXCEEDED`; nada muda se falha.
+func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> EconomyReplies.TradeResult:
+	if _engine == null:
+		return EconomyReplies.TradeResult.new(Result.failure(EconomyCodes.UNKNOWN_MARKET, "EconomyModule.request_trade: o mercado %d não existe (o módulo não tem mercados)." % market_id), 0, 0, 0)
+	var outcome: TradeEngine.Outcome = _engine.execute(actor_id, market_id, good_id, quantity, side)
+	return EconomyReplies.TradeResult.new(outcome.result, outcome.quantity, outcome.total, outcome.tariff)
+
+
+## A mesma conta de `request_trade`, sem executar (para a interface e para o `npc` decidirem antes de pedir).
+func peek_quote(market_id: int, good_id: String, quantity: int, side: String) -> EconomyReplies.QuoteQuery:
+	if _engine == null:
+		return EconomyReplies.QuoteQuery.new(Result.failure(EconomyCodes.UNKNOWN_MARKET, "EconomyModule.peek_quote: o mercado %d não existe (o módulo não tem mercados)." % market_id), 0, 0, 0)
+	var outcome: TradeEngine.Outcome = _engine.quote(market_id, good_id, quantity, side)
+	return EconomyReplies.QuoteQuery.new(outcome.result, outcome.total, IntMath.floor_div(outcome.total, quantity) if outcome.result.ok else 0, outcome.tariff)
+
+
+## A pergunta da `TradeRules` para o bem no mercado e o ator (a neutra devolve tudo livre).
+func peek_terms(good_id: String, market_id: int, actor_id: int) -> EconomyReplies.TermsQuery:
+	var checked: Result = _check_traded(market_id, good_id, "peek_terms")
+	if not checked.ok:
+		return EconomyReplies.TermsQuery.new(checked, false, 0, false)
+	var terms: TradeTerms = _rules.peek_terms(good_id, market_id, actor_id)
+	return EconomyReplies.TermsQuery.new(Result.success(), terms.banned, terms.tariff_bp, terms.needs_license)
 
 
 func peek_balance(owner_id: int) -> EconomyReplies.BalanceQuery:
@@ -290,8 +319,14 @@ func _new_market_book(book: OwnerBook, goods: GoodsStore) -> MarketBook:
 	return MarketBook.new(book, goods, _definitions.goods, _definitions.market_targets, _definitions.price_params)
 
 
+func _rebuild_engine() -> void:
+	_rules = _definitions.trade_rules if _definitions.trade_rules != null else NeutralTradeRules.new()
+	_engine = null if _markets == null else TradeEngine.new(_book, _ledger, _goods, _markets, _rules, _definitions.price_params)
+
+
 func _reset() -> void:
 	_book = OwnerBook.new()
 	_ledger = Ledger.new(_book, _record_history)
 	_goods = GoodsStore.new(_book, _definitions.goods, _definitions.kinds)
 	_markets = _new_market_book(_book, _goods)
+	_rebuild_engine()
