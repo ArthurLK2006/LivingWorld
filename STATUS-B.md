@@ -1,4 +1,4 @@
-11/11/2026 19:21 (Brasília) — REVISÃO R5 CONCLUÍDA (só leitura): a 117h aplicou as 9 recomendações da R3 e os 3 desvios (0016); entrada da LW-117 no `main` `0e20369` limpa (58 eventos, DEC 1 a 233 sem colisão, totais certos, `check_all` verde 1293 de 1293); 1 defeito de marcação na DEC-053 (`DECISIONS.md:1023`) e pendências da 146g e do I4; relatório NÃO commitado; R4 já no `status-b`; PARADO (regra 13).
+11/11/2026 19:39 (Brasília) — CONCLUÍDA a LW-146g (economia da Fase 5, comandos dos eventos de mundo e correções das fichas): ramo `lw-146g-extensoes`, commit `a9fd5c1`, FORA do `main`; `check_all` verde (1293 de 1293); 13 arquivos de `docs/`, nenhum código; PRONTA PARA REVISÃO; aguarda a sua leitura e o passo a passo da Fase B; PARADO (regra 13).
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -520,3 +520,58 @@ O avanço rápido do `main`, sem merge commit no topo do `main` além do `b1db75
 **Decisões e pedidos para você:** (1) **autorizar o conserto de uma linha da DEC-053** (R5-M1), por mim ou pela C; (2) **a ordem das próximas entradas**: a **092g** da A (conflito só no `backlog`) e depois a **146g** minha, que **só começa quando você mandar** (a condição da LW-117 no `main` **já foi cumprida**); (3) quando a A mandar a DEC do I4 (234 a 239), ela destrava o R5-I2.
 **Próxima tarefa recomendada:** a **146g** (economia da Fase 5 e a correção do que listei no R5-I1) e a **Fase B da A** com a 092g. **Não iniciadas.**
 **Git:** **nenhum commit nem push.** Este relatório está só no arquivo `STATUS-B.md` do worktree `status-b` (alteração **não commitada**). Mensagem de commit sugerida: `status b: revisão R5 (117h e a entrada da LW-117 no main)`.
+
+
+## RELATÓRIO — LW-146g: extensões da economia da Fase 5, comandos dos eventos de mundo e correções das fichas     Status: PRONTA PARA REVISÃO
+
+**Antes de começar (AGENTS 2.3).** Declarei no chat: a tarefa; o que li; as DEC de que dependo e o status de cada (nenhuma PENDENTE: DEC-156, 181 e 183 APROVADAS; DEC-188, 189, 193, 195, 197 e 199 PROPOSTA); os arquivos; e as duas dúvidas de design. Você respondeu pelo painel: **venda de item = recompra simples (a versão completa fica para depois)**, **três comandos novos para os 4 tipos de evento da Fase 4** e **Git: "ramo, commit e push"** (ramo `lw-146g-extensoes` a partir de `origin/main` `0e20369`, **um commit**, push só desse ramo e do `status-b`, sem merge no `main`, sem tag, sem force).
+
+### 1. RESUMO
+Escrevi, **só em texto**, o que a Fase 5 ainda pedia da economia e dos outros módulos: a seção 18 do `economy.md` (monte no chão, metal forjado, modificador de produção e recompra de item), os três comandos que faltavam para os 4 tipos de evento de mundo que dependem da Fase 4 (`politics`, `npc` e `factions`), e as correções que você mandou depois da R3 e da R5 (`combat.md`, `world.md`, `app.md`, `npc.md`, `ecology.md`, catálogo). Nada de código, dados, GDD, arquitetura, AGENTS, `DECISIONS.md`, roadmap, `project.godot` nem módulos.
+
+### 2. ARQUIVOS CRIADOS
+Nenhum.
+
+### 3. ARQUIVOS MODIFICADOS (13, todos em `docs/`; +147 −42; commit `a9fd5c1`)
+- `docs/modules/economy.md` (+87): **seção 18 nova**, no fim (como a 17), com 18.1 a 18.9 (resumo, monte, metal, modificador, recompra, conservação e save, dado → dono, rastreio por tarefa e pontos em aberto). As seções existentes **não foram editadas**.
+- `docs/modules/npc.md` (15.2, 15.6, 15.7; **15.8 e 15.9 novos**): T3 confirmado; o NPC pega do monte; o **boato nascido de evento de mundo** (`request_seed_rumor`) e o pedido de `cause_id` opcional em `request_apply_casualty`.
+- `docs/modules/politics.md` e `docs/modules/factions.md`: **`request_apply_stability_modifier`**/`request_remove_stability_modifier` (seção 6) e **`request_raise_tension`** (seção 7), com os códigos de erro novos; `ItemSold` no adaptador do crime.
+- `docs/modules/character.md`: a venda de item único **fechou** (E4): `peek_item_value`, a causa `sale` e o `ItemSold`; lista de extensões e de pontos em aberto atualizada.
+- `docs/modules/combat.md`, `world.md`, `app.md`, `ecology.md`, `dynamic_events.md`: as correções da R3 e da R5 (abaixo).
+- `docs/events.md` (**58 → 60 eventos**: `GoodsForged` e `ItemSold`; ouvintes do `CombatantWounded` e do `CombatantDied`), `docs/fase-4/dados.md` (`ItemSold` e a coluna `require_field` em `act_sources.json`) e `docs/backlog.md` (5 ideias para "depois").
+
+### 4. DECISÕES TÉCNICAS (todas **PROPOSTA**; nenhuma entra em `DECISIONS.md` por mim)
+- **Correções que você já tinha decidido.** (a) `combat.md` e catálogo: o `npc` **não** ouve o `CombatantDied`; o `combat` chama `request_apply_casualty(npc_id, "combat")` (R3-I4, R5-I1); (b) `world.md`: `request_set_route_state(route_id, new_state, reason, cause_id = NO_CAUSE)`, `reason` = `world_event` ou `hostile_force` (DEC-229, APROVADA); (c) `app.md` A2: a **ordem única de registro** (`character, economy, npc, ecology, factions, politics, combat, military, events`) e A5: a tabela dos 8 tipos com o comando de cada um; (d) `npc.md` 15.2: T3 confirmado; (e) `ecology.md`: sem campo `secret`, a visibilidade é por tipo (`peek_visible` e `peek_points_within`).
+- **Monte no chão (18.2).** Tipo de dono `ground_pile` (só inventário, sem saldo); a economia o abre (`request_open_pile(x_cm, z_cm)`), os bens entram e saem por `request_transfer_goods`; **some em 24 horas [HIP]** com o motivo `spoiled` e é fechado; teto `max_piles`; consultas `peek_pile` e `peek_piles_near`. **Sem evento** (de propósito). *Alternativa:* um monte por bem ou um evento por queda (mais eventos, sem ganho).
+- **Metal forjado (18.3).** Motivo novo `forged` e `request_forge_goods(owner_id, good_id, quantity, item_def_id)`, só bens de uma lista em dados (partida: `metal`) e só o jogador; publica `GoodsForged`; o `character` ouve e cria a instância. A economia repassa o `item_def_id` sem conhecer o item. *Alternativa:* o `character` importar a economia (quebra a fronteira da DEC-193).
+- **Modificador de produção (18.4).** `request_apply_production_modifier(settlement_id, good_id, factor_bp, source_id, days)` e o `remove`; **idempotente por `source_id`**, vence sozinho; só reduz (0 a 10000); entra no progresso do lote, **não** é parada. *Alternativa:* mexer na eficiência (mistura com a manutenção).
+- **Recompra de item (18.5; sua escolha).** Três chamadas da ponte, **nesta ordem**: `character.peek_item_value` → `economy.request_buy_back` (o mercado paga `valor × buyback_bp`, motivo `item_sale`, só transfere) → `character.request_transfer_item(..., sale)` (o item **some** e sai o `ItemSold`, com a marca de origem). O crime por marca é da `politics`, pelo adaptador. **Sem revenda nem estoque de instâncias**; a versão completa foi para o backlog, como você pediu.
+- **Comandos dos 4 tipos da Fase 4.** `unrest`: modificador de estabilidade (quinta entrada da conta, antes da inércia e da histerese); `messenger_visit` e `ruin_rumor`: `request_seed_rumor(settlement_id, source_event_id, event_name, confidence_bp, subject_id)`, boato sem fato presenciado, sem efeito na reputação; `border_dispute_escalation`: `request_raise_tension(province_id, amount, reason, cause_id)`, em que **a `factions` escolhe o par** (as duas de mais influência) e o motivo é só `world_event`. Todos **só valem quando os módulos da Fase 4 existirem**.
+- **Proposta de entrada para `DECISIONS.md` (faixa B, 240 a 259; sugestão, quem registra é você ou a conversa que você mandar).** **DEC-240:** *Venda de item único por recompra simples* (contexto: a economia só negocia bens; decisão: o mercado paga e o item some; justificativa: o mais simples que dá lugar ao crime por marca; consequências: motivo `item_sale`, evento `ItemSold`, tarefa nova antes da LW-165b). **DEC-241:** *Três comandos de efeito dos eventos de mundo nos módulos da Fase 4* (`request_apply_stability_modifier`, `request_seed_rumor`, `request_raise_tension`). **DEC-242:** *Morte de NPC em combate por um comando só* (`request_apply_casualty` com o motivo `combat`, e o `cause_id` opcional nele e na rota). **DEC-243:** *Ordem única de registro dos módulos no `World`.*
+- **Pedido de desvio:** nenhum.
+
+### 5. TESTES EXECUTADOS
+- `tools/check_all` (worktree `lw-146x`, commit final `a9fd5c1`): **VERDE**, código 0 (19:33:35 a 19:37:53): `Scripts 142`, `Tests 1293`, `Passing Tests 1293`, `Asserts 292694`, 192 s; `Warnings 1` e `Deprecated 1` iguais aos de sempre; "IDS DE CONTEÚDO: tudo existe (51 conferências)". *(Só mudaram documentos; o resultado confirma que nada quebrou.)*
+- `git diff --check`: limpo. **Conferências por script:** as citações "`economy.md` 18.x" e "`npc.md` 15.x" apontam todas para subseção que existe; **nenhum dos 26 nomes novos** (comandos, consultas, eventos, motivos e códigos) existe no código, nos dados ou nos testes do `main`, nem nos ramos `lw-092g`, `lw-093d`, `lw-093e` e `lw-093g` da A; o catálogo tem **60 eventos, 60 distintos, todas as linhas com 6 células**.
+- **Previsão de merge (não executei):** com a 092g e com os três ramos `lw-093*` da A, **só `docs/backlog.md` conflita** (os dois lados acrescentam no fim); `economy.md` e o resto mesclam.
+
+### 6. RESULTADOS
+`check_all` verde, 1293 de 1293. **Critério de aceite (documentos):** as extensões existem e dizem quem implementa, os testes previstos e o que fica em aberto; as correções da R3 e da R5 estão feitas; só os 13 arquivos autorizados mudaram (conferi com `git diff --name-only`); **nenhum arquivo de código ou protegido** foi tocado.
+
+### 7. PROBLEMAS ENCONTRADOS
+1. **Editei texto das fichas da C** (`politics.md`, `factions.md`, `dados.md` e o `npc.md` 16.7 por referência): os três comandos novos **são** extensões dos módulos dela. Estão marcados como PROPOSTA e dentro de blocos "LW-146g", mas **a conversa C deve saber**.
+2. **A morte de NPC em combate pede mais um ajuste à C:** o `cause_id` opcional em `request_apply_casualty` (npc 16.8). Pedi em `npc.md` 15.9; a C ainda não o tem.
+3. **A exceção da regra 4.17** (ouvir evento por nome) sustenta o `GoodsForged` e o adaptador do crime; **segue sem DEC** (a conversa A vai propor, faixa 234 a 239).
+4. **`DECISIONS.md` linha 1023 (DEC-053)** continua com a marcação quebrada que apontei na R5: é arquivo protegido e **não toquei**.
+5. A economia agora tem **três blocos empilhados** (seções 3 a 16 da A, 17 da C e 18 minha) sem a união final: ficou como a 17 deixou, e os leitores precisam ler os três.
+
+### 8. RISCOS
+Tudo é **PROPOSTA**: nomes e números ([HIP]) trocam sem custo. Os quatro tipos de evento da Fase 4 ficam **desligados** até o código da Fase 4 existir. A recompra precisa de uma **tarefa nova** no roadmap (protegido, é sua) antes da LW-165b. O `GoodsForged` e a venda cruzam três módulos pela **ponte**: se a ordem das chamadas não for seguida, o metal ou o item se perde (a ordem está escrita).
+
+### 9. PENDÊNCIAS
+**Decisões suas, com a minha recomendação** (18.9): (1) **quais bens em quantidade caem ao morrer** (recomendo todos, num monte, nenhum dinheiro); (2) **saque de bem de NPC morto** (muda a DEC-146; recomendo só instâncias); (3) **NPC ferreiro** (recomendo só o jogador agora); (4) **registrar a tarefa nova da recompra** no roadmap; (5) a DEC do I4; (6) o conserto da linha da DEC-053. **Testes manuais:** nenhum (só texto).
+
+### ACOMPANHAMENTO
+- **Avanço:** pré-voo e contratos da Fase 5 **no `main`** (146a a f) e agora **o resto em revisão** (146g, no ramo, fora do `main`). Código da Fase 5: **0%**.
+- **Próxima tarefa recomendada:** a **Fase B da 146g** (levar o ramo ao `main`), só com a sua frase de aprovação e o passo a passo. Não iniciada.
+- **Git:** **um commit**, `a9fd5c1` ("LW-146g: economia da Fase 5 (monte, metal, modificador, recompra), comandos dos eventos de mundo e correções das fichas"), com `Co-Authored-By`, no ramo `lw-146g-extensoes` (a partir de `0e20369`, **sem upstream**). Push **só** de `lw-146g-extensoes` e de `status-b`, por `ramo:ramo`. Nada no `main`, nenhuma tag, sem force, rebase ou reset.
