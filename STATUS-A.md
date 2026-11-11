@@ -1,4 +1,4 @@
-11/11/2026 17:00 (Brasília) · T1 PRONTA: ramo `lw-092d-correcoes-da-revisao` (sai do `main` `d1d3d8b`); `check_all` VERDE (143 scripts, 1.296 testes), hashes e `run_sim` iguais; N9 (regra F só em `economy_replies.gd`) NÃO feita: conflita com um teste existente; seguindo para a T1b (`lw-092e-ajustes-de-contrato`)
+11/11/2026 17:07 (Brasília) · T1b PRONTA: ramo `lw-092e-ajustes-de-contrato` (sai do `main` `d1d3d8b`); tarifa `ceil_div` e `peek_quote` com o ator; `check_all` VERDE (143 scripts, 1.295 testes), hashes e `run_sim` iguais; seguindo para a T2 (`lw-092f-divide-economy-module`)
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
