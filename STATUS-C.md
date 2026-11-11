@@ -1,4 +1,53 @@
-11/11/2026 20:00 (Brasília) — CONCLUÍDA: LW-097b (grafo de rotas do world sem estado: Route, RouteLoader, RouteService e data/world/routes.json com o triângulo A-B, A-C, B-C), aprovada por Arthur: commit eb6a23a ENVIADO só ao ramo lw-097b-rotas (empilhado na 097a, 5c5fcb7); check_all VERDE (144 scripts, 1.316 testes, 294.496 asserts); nenhum hash mudou. Próxima: 097c (o world vira módulo, comandos só em dev, RouteStateChanged). LW-118 só depois da 097e. main intocado (a07492c, LW-146g da B, só docs). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 20:25 (Brasília) — CONCLUÍDA: LW-097c (o world vira módulo registrado: estado de rota open/closed, request_close_route e request_open_route só em dev, RouteStateChanged, peek_path só pelas rotas abertas, save com as rotas fechadas), aprovada por Arthur: commit 0c5047c ENVIADO só ao ramo lw-097c-estado-de-rota (empilhado na 097b, eb6a23a); check_all VERDE (145 scripts, 1.326 testes, 294.590 asserts); marco 3: os 9 valores do oráculo mudaram (só registrados). Próxima: 097d (população do C, work_place_id, ofícios novos). LW-118 só depois da 097e. main intocado (a07492c). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-097c — RELATÓRIO — O `world` vira módulo, com estado de rota, comandos de desenvolvimento e `RouteStateChanged`        Status: PRONTA PARA REVISÃO
+
+**Contexto.** Terceira de cinco partes da LW-097 (divisão aprovada por Arthur em 11/11/2026), empilhada na 097b. Arthur autorizou a 097c com ramo `lw-097c-estado-de-rota` empilhado em `lw-097b-rotas`, um commit e push só do ramo.
+
+**Declaração do início (AGENTS 2.3).** Li: AGENTS 0.4; a extensão da Fase 3 do `world.md` (estado de rota, comando, evento, Q-W2 e Q-W6); a linha da LW-097; as partes 097a e 097b; `GameModules`, `SimulationHost`, `GameApp`, `EconomyModule` e `EconomySetup`. Decisões: DEC-140 (comandos só em desenvolvimento), DEC-159 (estados `open` e `closed`), DEC-162 e DEC-175 (hash do marco 3, já aprovado), DEC-127 (save segue em 2); todas APROVADAS.
+
+## 1. RESUMO
+O `world` é agora um módulo registrado no `World`, com o estado de cada rota (`open` ou `closed`), `request_close_route` e `request_open_route` só em build de desenvolvimento, o evento `RouteStateChanged` (um por mudança real), `peek_path` só pelas rotas abertas e save só com a lista das rotas fechadas. Registrar o módulo mudou os 9 valores do oráculo (marco 3); só os registrei. Commit `0c5047c` enviado só para o ramo.
+
+## 2. ARQUIVOS CRIADOS (com os `.uid`)
+`src/sim/world/world_module.gd`, `src/sim/world/route_state_changed.gd`, `src/app/world_setup.gd` e `tests/unit/test_world_module.gd` (10 testes).
+
+## 3. ARQUIVOS MODIFICADOS (19 arquivos no commit, +434/−24)
+`route_service.gd` (parâmetro opcional com as rotas fechadas em `peek_path`; o serviço segue sem estado), `game_modules.gd`, `simulation_host.gd` e `game_app.gd` (ligação no jogo real), `test_npc_split_oracle.gd` (9 valores novos), quatro asserções de lista de módulos (`test_npc_state`, `test_settlements`, `test_sim_bridge_character` e o oráculo), `docs/events.md` (`RouteStateChanged` implementado), `docs/modules/world.md` e `docs/modules/app.md`.
+
+## 4. DECISÕES TÉCNICAS
+- **Posição no registro [PROPOSTA minha]:** o `world` entra depois do `character` e antes da `economy`; a ordem aprovada por Arthur (R3-g) não cita o `world`. Em primeiro lugar, o teste "save de um mundo sem o personagem" perderia o sentido (a mensagem deixaria de citar o personagem).
+- **Sem pasta `api/`:** a ponte e as ferramentas já citam as classes do `world` diretamente; criar `api/` quebraria a regra D da arquitetura.
+- Comando fora de build de desenvolvimento: `WORLD_DEV_ONLY`, nada muda, sem evento. Pedido repetido: sucesso sem efeito e sem evento.
+- Save: só `closed_routes`, em ordem crescente; `on_load` valida lista, texto, existência e repetição antes de mudar algo.
+- Hashes (marco 3): os 9 valores do oráculo mudaram porque o módulo ganha o bloco dele no save, vazio com todas as rotas abertas.
+- Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 5. TESTES EXECUTADOS
+- `tools/run_tests`: `test_world_module` 10 de 10, `test_npc_state` 20, `test_sim_bridge_character` 13, `test_settlements` 23, `test_game_world_save` 5 e o oráculo 2 de 2.
+- `tools/check_all` no commit final: exit 0, **VERDE**; GDScript sem avisos (373 scripts), "IDS DE CONTEÚDO: tudo existe (51 conferências)", 145 scripts, **1.326 testes, 1.326 aprovados, 294.590 asserts**, 174,4 s.
+- A primeira rodada deu 6 falhas (as quatro listas de módulos e o oráculo), corrigidas como descrito acima.
+
+## 6. RESULTADOS
+Aprovados 1.326, falhos 0, pulados 0. Critério de aceite da 097c cumprido: rota fechada muda o caminho; fechar a que sobra dá `ROUTE_NO_PATH`; comando só em desenvolvimento; um evento por mudança; ida e volta de save com o hash igual; save com rota desconhecida recusado.
+
+## 7. PROBLEMAS ENCONTRADOS
+`validate()` do mundo reclama de evento publicado e ainda não entregue (os testes entregam antes de validar). Nas quatro listas de módulos ajustadas só entrou o `world`; nenhuma verificação foi removida.
+
+## 8. RISCOS
+Tamanho: 12 arquivos de código e teste, no limite da tolerância (8 × 1,5); cerca de 310 linhas novas, abaixo de 450. Simulação de junção (só leitura): o ramo `lw-093e-jogo-real-com-economia` da frente A conflita em `game_app.gd`, `simulation_host.gd`, `test_npc_split_oracle.gd` e `docs/backlog.md`, e o `main` (`a07492c`) conflita só em `docs/events.md`; todos são conflitos de texto, a resolver quando a LW-097 entrar no `main`. O `app.md` da Fase 5 (B) ainda não cita o `world` na ordem de registro.
+
+## 9. PENDÊNCIAS
+Aprovação da 097c (dada); autorização da 097d, que sai empilhada na 097c. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 com 097a, 097b e 097c prontas e aprovadas; 097d, 097e e a LW-118 não iniciadas.
+- Próxima tarefa recomendada: **097d** (população do C, coluna `work_place_id`, ofícios `miner` e `shepherd`). Não iniciada. Parei (regra 13).
+- Git: ramo `lw-097c-estado-de-rota` em `0c5047c`, empilhado na `lw-097b-rotas` (`eb6a23a`), **enviado só o ramo**; `status-c` enviado com este relatório; `main` intocado; sem tag, sem `--force`.
+
+---
+
+---
 
 # LW-097b — RELATÓRIO — Grafo de rotas do `world`, sem estado (`Route`, `RouteLoader`, `RouteService`)        Status: PRONTA PARA REVISÃO
 
