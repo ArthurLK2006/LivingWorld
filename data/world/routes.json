@@ -1,0 +1,5 @@
+[
+	{"id": "route_a_b", "settlement_a_id": "test_settlement_a", "settlement_b_id": "test_settlement_b", "length_m": 520, "difficulty": 20, "risk": 10},
+	{"id": "route_a_c", "settlement_a_id": "test_settlement_a", "settlement_b_id": "test_settlement_c", "length_m": 430, "difficulty": 30, "risk": 20},
+	{"id": "route_b_c", "settlement_a_id": "test_settlement_b", "settlement_b_id": "test_settlement_c", "length_m": 340, "difficulty": 25, "risk": 15}
+]
