@@ -1,4 +1,4 @@
-11/11/2026 18:53 (Brasília) · JUNÇÃO PRONTA: ramo `lw-092g-juncao-das-correcoes` (do `main` `d1d3d8b` + 092d, 092e e 092f; commit `9df6aaa`); `check_all` VERDE (144 scripts, 1.298 testes, 292.805 asserts), hashes e `run_sim` iguais; um ajuste de teste do meu próprio teste da 092e (abre a conta do jogador); seguindo para a LW-093 sobre a junção
+11/11/2026 18:57 (Brasília) · LW-093 PARTE 1 PRONTA sobre a junção: ramo `lw-093-contas-dos-npcs` (commit `35cfae0`): o NPC abre a conta na economia ao nascer; valores do marco 2 (aprovados) gravados nos 9 do oráculo; `check_all` VERDE (145 scripts, 1.300 testes), `run_sim` igual; seguindo para a parte 2 (dinheiro inicial e `request_consume`)
 
 # RELATÓRIO — BLOCO 2 DA A: LW-088a (fechamento) e a economia do marco 1, LW-088 a LW-093a     Status: PRONTA PARA REVISÃO
 
