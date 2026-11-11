@@ -1,4 +1,59 @@
-11/11/2026 19:11 (Brasília) — CONCLUÍDA: LW-117h (ajustes da revisão R3 nas fichas da Fase 4; registro 0016 dos 3 desvios) e FASE B da LW-117 (117a a 117h) no main: ramo lw-117h-ajustes-da-r3 em 0e20369 ENVIADO; main avançou d1d3d8b..0e20369 por avanço simples (só docs/: DECISIONS com DEC-001 a DEC-233 e próximo livre DEC-234, events com 58 eventos, npc 15+16, world, ROADMAP_STATUS sem mexer em contagens); check_all VERDE no HEAD final (142 scripts, 1.293 testes, 292.694 asserts). Conflitos: DECISIONS 29, events 2, npc 1, world 1, resolvidos mantendo os dois lados. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 19:40 (Brasília) — CONCLUÍDA: LW-097a (3º povoado `test_settlement_c` e 10 locais work novos no world, só dados e testes), aprovada por Arthur: commit 5c5fcb7 ENVIADO só ao ramo lw-097a-terceiro-povoado (saído do main 0e20369); check_all VERDE (142 scripts, 1.296 testes, 294.333 asserts); marco 3 de hash: os 9 valores do oráculo mudaram (regra de comida do C no FoodStub), aprovados por Arthur ao escolher a opção. LW-118 depende da LW-097 (097b a 097e não iniciadas). main intocado. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-097a — RELATÓRIO — Terceiro povoado e locais `work` novos no `world` (dados e testes)        Status: PRONTA PARA REVISÃO
+
+**Contexto.** Arthur pediu a LW-118; ela depende da LW-097 (rotas e 3º povoado), que não existia. Ele mandou fazer a LW-097 antes e aprovou a divisão em 097a a 097e (097a: povoado C e locais `work` em dados; 097b: rotas; 097c: o `world` vira módulo, comandos de desenvolvimento e evento, marco 3 de hash; 097d: população do C e `work_place_id`; 097e: estoque inicial e teste de distribuição). Autorizou a 097a com ramo `lw-097a-terceiro-povoado` saindo do `main`, um commit e push só do ramo.
+
+**Declaração do início (AGENTS 2.3).** Li: AGENTS 0.4; a linha da LW-097 no roadmap; a extensão da Fase 3 do `world.md`; `npc.md` 14.8 e 14.10; `docs/economy/dados.md`; DEC-040 (PENDENTE, só pesa na 097d); DEC-158 a 162 (APROVADAS); o `SettlementLoader`, o `PopulationPlan` e os testes do `world`. Alterei: `data/world/*`, `data/text/pt_br.json`, `data/food_stub.json`, os dois testes e a documentação do `world`.
+
+## 1. RESUMO
+Acrescentei, só em dados e testes, o povoado C (`test_settlement_c`) e os 10 locais `work` novos (A +2, B +3, C +5), com a regra de comida do C no `FoodStub` temporário. Os nove valores do oráculo mudaram (marco 3, DEC-175); Arthur escolheu esse caminho em 11/11/2026 e eu tratei a escolha como aprovação dos valores que listei. Commit `5c5fcb7` enviado só para o ramo.
+
+## 2. ARQUIVOS CRIADOS
+Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (8 arquivos, +106/−23)
+- `data/world/settlements.json` — +`test_settlement_c` (560 m, 860 m) [HIP].
+- `data/world/places.json` — +23 locais: `a_work_06`, `a_work_07` (12), `b_work_06` a `b_work_08` (8) e os 16 do C no molde do B (5 `work` de 8, 8 casas, descanso, convívio, mercado) [HIP].
+- `data/text/pt_br.json` — a chave "Povoado C".
+- `data/food_stub.json` — +`food_test_settlement_c` (TEMP-LW-065; o stub some na LW-094).
+- `tests/integration/test_npc_split_oracle.gd` — os 9 valores novos e a explicação no cabeçalho.
+- `tests/unit/test_settlements_data.gd` — de 6 para 9 testes (3 povoados, 20 locais `work`, ids novos depois dos antigos, povoados afastados e C em chão plano).
+- `docs/modules/world.md` e `data/world/README.md` — dizem que a 097a existe só em dados.
+
+## 4. DECISÕES TÉCNICAS
+- Terreno **não** ampliado (DEC-161): o C passou nos testes de inclinação e de grama.
+- Ids dos locais novos vêm depois dos antigos na ordem de id, e o `PopulationPlan` preenche pelo primeiro local com vaga: os 100 NPCs atuais mantêm os mesmos locais.
+- **Hashes (marco 3):** a regra de comida do C entra no estoque salvo do `npc`, então os 9 valores do oráculo mudaram (antes → depois, 12 primeiros caracteres): intents 223b8ec6a7ed→1a6dace2ab56, alarm dfe616868618→2d1748a57a39, resumed db2469cec836→f0649c6a48b7, switches 888b1962d83b→39076a14215d, talk 8b04890c8c9b→8c9ae95d2675, save 5673e2b3911b→d4cbe4c7eab6, demote 62c86fea8233→c5d0bada6aff, starved 52c2d24b40fc→4d8632cc49cf, real_game edf6ebb03cb9→6219f7e281a8. As partes 097b a 097e só registram valores novos.
+- Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 5. TESTES EXECUTADOS
+- `tools/run_tests res://tests/unit/test_settlements_data.gd`: 9 de 9 (vermelho antes dos dados, como esperado).
+- Experimento revertido: só a linha do C no stub fez o oráculo mudar; sem ela, o conteúdo do `world` não mexe no hash.
+- `tools/check_all` no commit final: exit 0, **VERDE**; arquitetura aprovada, GDScript sem avisos (364 scripts), "IDS DE CONTEÚDO: tudo existe (51 conferências)", 142 scripts, 1.296 testes, 1.296 aprovados, 294.333 asserts, 192,4 s.
+- Antes da escolha de Arthur, o `check_all` ficou VERMELHO (3 testes do `npc` exigiam regra de comida para todo povoado do `world`); foi o que levou ao pedido de desvio.
+
+## 6. RESULTADOS
+Aprovados 1.296, falhos 0, pulados 0. Critério de aceite da 097a cumprido.
+
+## 7. PROBLEMAS ENCONTRADOS
+- Os testes `test_npc_setup` (2) e o soak de 7 dias supunham que todo povoado do `world` tem regra no `FoodStub`; resolvido pela opção A, sem estreitar teste.
+- No `test_settlements_data.gd` mudei as asserções que supunham 2 povoados (2 → 3) e ampliei o conjunto; nenhuma verificação anterior foi removida.
+
+## 8. RISCOS
+A frente A ainda vai renomear `market_reserved` para `market` na LW-093 (conflita com `c_market_01`); os valores do C são [HIP] e a população dele é da 097d.
+
+## 9. PENDÊNCIAS
+Aprovação da 097a (dada); autorização da 097b, que sai empilhada na 097a. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 com a 097a pronta e aprovada; 097b a 097e e a LW-118 não iniciadas.
+- Próxima tarefa recomendada: **097b** (rotas, sem estado). Não iniciada. Parei (regra 13).
+- Git: ramo `lw-097a-terceiro-povoado` em `5c5fcb7`, saído do `main` (`0e20369`), **enviado só o ramo**; `status-c` enviado com este relatório; `main` intocado; sem tag, sem `--force`.
+
+---
+
+---
 
 # LW-117h E FASE B DA LW-117 — RELATÓRIO — Ajustes da revisão R3 nas fichas da Fase 4 e entrada da LW-117 (117a a 117h) no `main` (DOC)        Status: PRONTA PARA REVISÃO
 
