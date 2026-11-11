@@ -63,6 +63,21 @@ func inventory_rows(owner_id: int) -> Array[Dictionary]:
 	return rows
 
 
+## O peso de uma unidade do bem (0 se o bem não existe).
+func weight_per_unit(good_id: String) -> int:
+	return _goods[good_id].weight if _goods.has(good_id) else 0
+
+
+## O dono comporta, além do que já carrega, estas quantidades (bem → quantidade)? Só consulta; a conta compara a quantidade com a capacidade ANTES de multiplicar pelo peso.
+func has_room_for(owner_id: int, wanted: Dictionary[String, int]) -> bool:
+	var extra: int = 0
+	for good_id: String in wanted:
+		if not _goods.has(good_id) or wanted[good_id] > capacity_of(owner_id):
+			return false
+		extra += wanted[good_id] * _goods[good_id].weight
+	return weight_of(owner_id) + extra <= capacity_of(owner_id)
+
+
 func create(owner_id: int, good_id: String, quantity: int, reason: String) -> Result:
 	var checked: Result = _check("create", good_id, quantity, reason, CREATE_REASONS)
 	if checked.ok:
