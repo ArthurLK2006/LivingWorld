@@ -1,4 +1,64 @@
-11/11/2026 16:20 (Brasília) — CONCLUÍDA: LW-117f (eventos da Fase 4, modelos de dados e marcos de hash): docs/events.md (47 eventos), docs/fase-4/dados.md e docs/decisions/0015; commit 5e6da5c ENVIADO ao ramo lw-117f-eventos-e-dados (empilhado na 117e, fora do main); check_all VERDE (1.203 de 1.203). LW-117 completa (a a f). main = 20a788f (LW-146f da Fase 5, não é meu): a pilha agora conflita em DECISIONS (28), events (2), npc (1) e world (1). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 18:40 (Brasília) — CONCLUÍDA: LW-117g (ajustes das fichas da Fase 4: DEC-227 a DEC-233, rótulos aprovados, README dos módulos; só documentos): commit c84c0fe ENVIADO ao ramo lw-117g-ajustes-das-fichas (empilhado na 117f, fora do main); check_all VERDE (1.203 de 1.203). LW-117 inteira (a a g) entregue; falta a aprovação da 117g e a Fase B (por ordem escrita). main = 0760c5c, intocado por mim: a pilha conflita em DECISIONS (29), events (2), npc (1) e world (1). Sem merge, sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-117g — RELATÓRIO — Ajustes das fichas da Fase 4 (DEC-227 a DEC-233) e rótulos aprovados (DOC)        Status: PRONTA PARA REVISÃO
+
+**Declaração do início (AGENTS 2.3), como escrita antes de editar.** Tarefa: a rodada de ajustes que o revisor propôs depois da aprovação das seis partes da LW-117, só documento. Registrar como DEC as seis decisões que Arthur tomou em 11/11/2026 sobre a revisão independente R2 e o plano de marcos de hash do `0015`; aplicá-las nas fichas; trocar os rótulos de "rascunho" por "aprovado por Arthur em 11/11/2026"; resolver os pedidos já atendidos; atualizar o `docs/modules/README.md`. Li: AGENTS 0.4; `docs/DECISIONS.md` (as entradas citadas e o índice); `economy.md` (seção 17), `factions.md`, `politics.md`, `military.md`, `chronicle.md`, as extensões da Fase 4 de `world.md` e `npc.md`; `docs/events.md`; `docs/fase-4/dados.md`; os registros `0013` e `0015`; `src/core/event_bus/event_bus.gd` (para a nota das rodadas do barramento). Decisões de que depende: as DEC-202 a DEC-212 e DEC-224 a DEC-226 (APROVADAS) e as DEC-213 a DEC-223 (PROPOSTA, seguidas como padrão de trabalho). Arquivos que pretendia alterar: `DECISIONS.md`, as sete fichas, `events.md`, `dados.md`, o `0015` e o `README.md` dos módulos. Dúvida: nenhuma de design (tudo vem de decisão sua).
+
+## 1. RESUMO
+Registrei no `DECISIONS.md` as sete decisões de 11/11/2026 (DEC-227 a DEC-233, todas APROVADAS por você) e as apliquei nas fichas. Troquei os rótulos "rascunho" por "aprovado por Arthur em 11/11/2026" e resolvi os pedidos entre fichas que já estavam atendidos. É só documento: nenhum código, dado, teste ou fixture mudou.
+
+## 2. ARQUIVOS CRIADOS
+Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (12, +179/−72 linhas)
+- `docs/DECISIONS.md` (+114) — DEC-227 a DEC-233; versão 0.14; 210 entradas; índice, histórico e notas nas DEC-214 e DEC-215.
+- `docs/modules/economy.md` — `request_open_treasury`, tarifa para cima com mínimo 1, `peek_quote` com o ator, `ECON_LICENSE_REQUIRED`, linhas de teste; o Estado diz que a união com as seções 3, 5, 6, 8, 10 e 15 fica para a Fase B.
+- `docs/modules/politics.md`, `factions.md`, `military.md` — `request_open_treasury`; `request_set_route_state` com `hostile_force`; `request_set_on_mission` com o 3º argumento; `CrimeCommitted` e `ActReported` com os campos novos; pedidos atendidos viram referências; rótulos.
+- `docs/modules/chronicle.md` — `severity` como insumo (DEC-232), dois filtros na reputação, nota das 8 rodadas do barramento, pedidos atendidos, rótulos.
+- `docs/modules/world.md` — o par `request_block_route`/`request_unblock_route` é retirado; a extensão passa a citar o comando único (DEC-229).
+- `docs/modules/npc.md` — rótulos e a linha das testemunhas da Fase 5.
+- `docs/events.md` — `RouteStateChanged` e `ActReported` ajustados, nota do `severity`, rótulo.
+- `docs/fase-4/dados.md` — `initial_treasury` por `request_open_treasury`, `severity` em `severity_rules.json`, dois filtros, rótulos.
+- `docs/decisions/0015-marcos-de-hash-da-fase-4.md` — passa a ser o registro da DEC-233.
+- `docs/modules/README.md` — índice dos contratos da Fase 3 e da Fase 4.
+
+## 4. DECISÕES TÉCNICAS
+- **DEC-227** o tesouro abre por `request_open_treasury(owner_id, initial_balance)`; `request_open_owner` fica com 3 argumentos. **DEC-228** tarifa arredondada para cima, mínimo 1. **DEC-229** um comando de rota só, `request_set_route_state(route_id, new_state, reason, cause_id)`, com o motivo `hostile_force`. **DEC-230** `peek_quote(actor_id, …)`. **DEC-231** `ECON_LICENSE_REQUIRED`. **DEC-232** o campo `severity` do evento é insumo das regras da crônica. **DEC-233** três marcos de hash (LW-118 a 125, 126 a 134, 135 a 139). Cada uma reflete a escolha do painel.
+- **As DEC-213 a DEC-223 seguem PROPOSTA**: só você muda status. Troquei só rótulos de Estado e de títulos de "pontos em aberto"; nomes de campos, comandos e arquivos seguem PROPOSTA.
+- **Dois acréscimos meus, por coerência, sem decisão sua:** (a) `actor_is_player` na carga do `ActReported` (sem ele a `politics` não teria como preencher o campo que o `CrimeCommitted` já levava; quem publica o garante); (b) a nota na `chronicle.md` sobre `MAX_ROUNDS_PER_DISPATCH` = 8 (cada elo encadeado por ouvinte gasta uma rodada; o excedente fica para a entrega seguinte), confirmada no código; o teste da cascata conferir o limite é PROPOSTA.
+- **Alinhamento:** o `military.md` pedia que o suprimento da força atendesse a fome do soldado em missão; o `npc.md` (que você aprovou) congela as necessidades em missão. Alinhei o `military.md` ao `npc.md`.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma além das sete registradas.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` (árvore de trabalho idêntica ao commit `c84c0fe`) — exit 0: "VERDE: arquitetura, dados e etapa de testes aprovadas"; arquitetura (nove verificações), GDScript sem avisos de compilação (314 scripts), dados válidos, 125 scripts, 1.203 testes, 1.203 aprovados, 262.120 asserts, 180,6 s. O resumo do GUT mostra 1 aviso e 1 "deprecated" (`wait_frames`), que vêm dos testes existentes, não de código novo (nenhum código mudou).
+- Conferências de texto nas linhas adicionadas (script próprio): negrito e crases balanceados; nenhuma citação de STATUS nem de "da A/B/C" fora do `DECISIONS.md`; as DEC citadas existem, exceto as de Fase 5 (DEC-183, 194 e 195), que já eram citadas e só existem no `main`.
+- `git merge-tree --write-tree origin/main HEAD` (só leitura): ver item 8.
+
+## 6. RESULTADOS
+Aprovados 1.203, falhos 0, pulados 0. Critério de aceite cumprido: as seis decisões e o plano de hash aplicados, rótulos trocados, README atualizado, um commit. Sei porque o `grep` não acha mais "rascunho", o par de rotas antigo nem `request_open_owner` com 4 argumentos nas fichas.
+
+## 7. PROBLEMAS ENCONTRADOS
+1. A seção 17 do `economy.md` ainda não foi unida às seções 3, 5, 6, 8, 10 e 15 (tarifa 0, `peek_quote` sem ator, folha pelo mercado, escolta [FUT]); o Estado diz isso e fica para a Fase B.
+2. Pedidos sem dono decidido: o motivo `contribution` (`factions.md` 6.2) e o `CaravanArrived` / `peek_caravans_on` (contrato da LW-098).
+3. Os totais do `DECISIONS.md` (141/40/18/10/1 = 210) foram contados por script a partir das tabelas de status; a Fase B precisa recontar depois de juntar com as DEC-179 a DEC-201 da Fase 5.
+
+## 8. RISCOS
+- Junção com o `main` (`0760c5c`, intocado por mim): conflitos reais em `DECISIONS.md` (29 blocos), `events.md` (2), `npc.md` (1) e `world.md` (1); texto, sem código.
+- O código da A (`trade_engine.gd`, `test_trade.gd:159`, `peek_quote`) só muda com autorização escrita sua no prompt da A.
+- O `world.md` do ramo B (146g) ainda precisa do `cause_id` opcional e do `hostile_force` em `request_set_route_state`; é tarefa dele, depois da LW-117 no `main` e de ordem sua.
+
+## 9. PENDÊNCIAS (decisões que dependem de Arthur, cada uma com a recomendação)
+1. **Aprovar a 117g.** Recomendo aprovar.
+2. **Ordenar a Fase B** (juntar a pilha 117a a 117g ao `main`, resolver os conflitos, recontar totais e eventos, `check_all`, só avanço simples, sem tag, rótulos "incorporado ao main em <data>"). Recomendo, só por ordem escrita sua.
+3. **Autorizar o código da A** (tarifa para cima e `peek_quote` com o ator) no prompt da tarefa dela, se quiser que o código acompanhe as DEC-228 e DEC-230.
+4. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: **LW-117 inteira entregue (117a a 117g)**; falta a Fase B para entrar no `main`; as LW-118 a LW-145 não começaram e dependem da Fase 3.
+- Próxima tarefa recomendada: **Fase B da pilha 117a a 117g**. **Não iniciada.** Parei (regra 13).
+- Git: ramo `lw-117g-ajustes-das-fichas` em `c84c0fe` (um commit, saído de `lw-117f-eventos-e-dados`), **enviado** com o nome do ramo; `status-c` enviado com este relatório; o `main` (`0760c5c`) intocado por mim; sem merge, sem tag, sem `--force`.
+
+---
 
 # LW-117f — RELATÓRIO — Eventos da Fase 4, modelos de dados e marcos de hash (DOC)        Status: PRONTA PARA REVISÃO
 
