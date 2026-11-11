@@ -101,6 +101,9 @@ fi
 # de entrada"); módulo sem api/ fica de fora, e src/app (raiz de composição) e src/persistence também. Citação = palavra inteira.
 # (E) (LW-088a, DEC-171 e DEC-132) o npc cita, de src/sim/economy, só as classes que moram em economy/api/, e a economy não cita
 # nenhuma classe de src/sim/npc (nem a api/ dele): as duas são da camada 3 e a regra A deixa passar entre pares.
+# (F) (LW-088; arquitetura 11.4) só o Ledger (src/sim/economy/ledger/) escreve saldo: fora dele é violação atribuir ou somar/subtrair
+# a `balance`, `balances` ou `money` (inclusive `x.balance = ...` e `balances[id] = ...`). Busca de texto: guardar o valor em outro nome
+# ou criar a conta de outro jeito não é visto ([LIM]); a defesa de fundo é o teste de ouro (soma das contas = criado − destruído).
 # Só nestas regras novas, linhas inteiras de comentário (começam com #) não contam; código com comentário no fim continua varrido.
 # [LIM] Não vê classes internas (`class X:`) nem referências por caminho (`preload`); a regra D também não vê o tipo que volta de
 # uma chamada sem nome nem o de uma variável com tipo inferido (`:=`).
@@ -152,19 +155,24 @@ if [ -n "$gd_files" ]; then
             if (rel ~ /^sim\/economy\// && (name in module_of) && module_of[name] == "sim/npc/")
                 printf "E|%s:%d: \"%s\" (src/%s) é do npc; esperado a economy nunca citar o npc (DEC-132).\n", FILENAME, FNR, name, where[name]
         }
+    }
+    pass == 2 && $0 !~ /^[[:space:]]*#/ && rel !~ /^sim\/economy\/ledger\// {
+        if ($0 ~ "(^|[^A-Za-z0-9_])_?balances[[][^]]*[]][[:space:]]*[-+*/]?=([^=]|$)" || $0 ~ "(^|[^A-Za-z0-9_])_?(balance|balances|money)[[:space:]]*[-+*/]=([^=]|$)" || $0 ~ "[.](balance|money)[[:space:]]*=([^=]|$)")
+            printf "F|%s:%d: alteração de saldo fora de src/sim/economy/ledger/ (balance, balances ou money recebe valor); esperado só o Ledger escrever saldo (LW-088).\n", FILENAME, FNR
     }' $gd_files pass=2 $gd_files 2>&1)
     layer_code=$?
     if [ "$layer_code" -ne 0 ]; then
         printf '%s\n%s\n' 'ERRO: busca de import fora das camadas falhou' "$layer_report"
         failed=1
     else
-        for layer_rule in A B C D E; do
+        for layer_rule in A B C D E F; do
             case $layer_rule in
                 A) layer_label='import de camada superior' ;;
                 B) layer_label='apresentação cita classe da simulação' ;;
                 C) layer_label='classe privada (internal/) citada fora do módulo' ;;
                 D) layer_label='classe interna de módulo com api/ citada pela ponte ou por tools' ;;
                 E) layer_label='npc cita a economy fora de api/ ou a economy cita o npc' ;;
+                F) layer_label='alteração de saldo fora do Ledger' ;;
             esac
             layer_part=$(printf '%s\n' "$layer_report" | sed -n "s/^$layer_rule|//p")
             if [ -n "$layer_part" ]; then

@@ -186,6 +186,25 @@ lw088a_violations=$((new_violations - lw029a_violations))
 lw088a_clean=$((new_clean - lw029a_clean))
 new_violations=$lw029a_violations
 new_clean=$lw029a_clean
+# LW-088 (arquitetura 11.4): regra F. Só src/sim/economy/ledger/ escreve saldo. `balance`, `balances` e `money` recebendo valor (atribuição, += ou -=, campo de outro objeto,
+# `balances[id] = ...`) fora dessa pasta são violação; comparação, nome parecido, declaração e comentário não são.
+expect_violation src/sim/npc/violation.gd 'func x(state): state.money = 5' 'violation.gd:1:' 'campo money de outro objeto recebe valor'
+expect_violation src/sim/economy/violation.gd 'func x(): _balances[owner_id] -= amount' 'violation.gd:1:' 'subtrair de _balances fora do ledger'
+expect_violation src/sim/economy/violation.gd 'func x(): balances[owner_id] = 10' 'violation.gd:1:' 'balances[id] recebe valor fora do ledger'
+expect_violation src/sim/world/violation.gd 'func x(): balance += 3' 'violation.gd:1:' 'somar a balance fora do ledger'
+expect_violation src/bridge/violation.gd 'func x(owner): owner.balance = 7' 'violation.gd:1:' 'campo balance de outro objeto recebe valor'
+expect_violation src/sim/economy/violation.gd 'func x(): money *= 2 # comentário no fim' 'violation.gd:1:' 'comentário no fim da linha não isenta a regra F'
+expect_clean src/sim/economy/ledger/inside.gd 'func x(): _balances[owner_id] -= amount; balance += 1; owner.money = 3' 'o próprio ledger escreve saldo'
+expect_clean src/sim/economy/api/reply.gd 'var balance: int = 0
+func _init(owner_balance: int) -> void:
+    balance = owner_balance' 'declarar e inicializar um campo balance não é alterar saldo'
+expect_clean src/sim/npc/comparison.gd 'func x(state): return state.money == 5 and balance != 3 and balance >= 2' 'comparação não é atribuição'
+expect_clean src/sim/npc/lookalike.gd 'func x(): my_balance += 1; balance_sum -= 2; state.money_total = 4; peek_balance = 3' 'nome parecido não é saldo (palavra inteira)'
+expect_clean src/sim/npc/commented.gd '# money = 5 só em comentário' 'comentário de linha inteira não conta na regra F'
+lw088_violations=$((new_violations - lw029a_violations))
+lw088_clean=$((new_clean - lw029a_clean))
+new_violations=$lw029a_violations
+new_clean=$lw029a_clean
 rm "$fixture/src/sim/economy/api/probe_ledger_api.gd" "$fixture/src/sim/economy/ledger/probe_ledger_inner.gd"
 rm "$fixture/src/sim/npc/api/probe_door.gd" "$fixture/src/sim/npc/lod/probe_inner.gd" "$fixture/src/sim/npc/README.md"
 rm "$fixture/src/core/probe_core.gd" "$fixture/src/sim/world/probe_terrain.gd" "$fixture/src/bridge/probe_bridge.gd" "$fixture/src/presentation/probe_view.gd" "$fixture/src/sim/world/internal/probe_secret.gd"
@@ -198,3 +217,4 @@ echo "LW-029A: $new_violations violações detectadas e $new_clean casos aceitos
 echo "LW-036: $lw036_violations violações detectadas e $lw036_clean casos aceitos (camada superior, apresentação, classe privada de internal/, comentário) e a árvore real aprovada."
 echo "LW-085a: $lw085a_violations violações detectadas e $lw085a_clean casos aceitos (regra D: a ponte e tools só citam a api/ de um módulo que tem api/; módulo sem api/, src/app e comentário ficam de fora)."
 echo "LW-088a: $lw088a_violations violações detectadas e $lw088a_clean casos aceitos (regra E: o npc cita só a api/ da economy e a economy não cita o npc; comentário fica de fora)."
+echo "LW-088: $lw088_violations violações detectadas e $lw088_clean casos aceitos (regra F: só o Ledger escreve saldo; comparação, nome parecido, declaração e comentário ficam de fora)."

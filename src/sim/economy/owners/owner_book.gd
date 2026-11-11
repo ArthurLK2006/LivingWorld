@@ -4,9 +4,15 @@ extends RefCounted
 ## do `core`, e a conta do `Ledger` (e, depois, o inventário) é indexada por ele. Dono FECHADO (o NPC que morreu) não aceita mais operação, mas o saldo continua na soma da conservação. O TIPO é só um
 ## texto não vazio por enquanto: a conferência contra `owner_kinds.json` chega com a LW-089. Abrir é idempotente (quem já existe fica como está, sem comparar o tipo).
 
+const KEY_KIND: String = "kind"
+const KEY_CLOSED: String = "closed"
 
 var _kinds: Dictionary[int, String] = {}
 var _closed: Dictionary[int, bool] = {}
+
+
+func is_empty() -> bool:
+	return _kinds.is_empty()
 
 
 func has_owner(owner_id: int) -> bool:
@@ -55,3 +61,47 @@ func check_open(owner_id: int) -> Result:
 	if _closed[owner_id]:
 		return Result.failure(EconomyCodes.OWNER_CLOSED, "o dono %d está fechado (morreu); nenhuma operação é aceita." % owner_id)
 	return Result.success()
+
+
+## Objeto com o ID em texto como chave (assim o JSON a guarda), por ID crescente.
+func serialize() -> Dictionary:
+	var saved: Dictionary = {}
+	for owner_id: int in owner_ids():
+		saved[str(owner_id)] = {KEY_KIND: _kinds[owner_id], KEY_CLOSED: _closed[owner_id]}
+	return saved
+
+
+## Confere tudo antes de alterar o estado: se algo for inválido, o cadastro fica como estava.
+func load_from(data: Dictionary) -> Result:
+	var kinds: Dictionary[int, String] = {}
+	var closed: Dictionary[int, bool] = {}
+	for key: Variant in data.keys():
+		var owner_id: int = EconomyJson.id_of_key(key)
+		# Variant: valor cru do save; o tipo é conferido nas linhas seguintes.
+		var raw_entry: Variant = data[key]
+		if owner_id == IdGenerator.NO_ID or typeof(raw_entry) != TYPE_DICTIONARY:
+			return _invalid_save("dono '%s': a chave deve ser um ID inteiro canônico e o valor, um objeto" % str(key))
+		var entry: Dictionary = raw_entry
+		var raw_kind: Variant = entry.get(KEY_KIND)
+		var raw_closed: Variant = entry.get(KEY_CLOSED)
+		if typeof(raw_kind) != TYPE_STRING or str(raw_kind).is_empty() or typeof(raw_closed) != TYPE_BOOL:
+			return _invalid_save("dono %d: '%s' deve ser texto não vazio e '%s', verdadeiro ou falso" % [owner_id, KEY_KIND, KEY_CLOSED])
+		kinds[owner_id] = str(raw_kind)
+		closed[owner_id] = bool(raw_closed)
+	_kinds = kinds
+	_closed = closed
+	return Result.success()
+
+
+func validate() -> Array[String]:
+	var problems: Array[String] = []
+	for owner_id: int in owner_ids():
+		if owner_id < IdGenerator.FIRST_ID or owner_id > IdGenerator.MAX_ID:
+			problems.append("dono %d fora da faixa de IDs" % owner_id)
+		if _kinds[owner_id].is_empty():
+			problems.append("dono %d com tipo vazio" % owner_id)
+	return problems
+
+
+func _invalid_save(detail: String) -> Result:
+	return Result.failure(EconomyCodes.INVALID_SAVE, "OwnerBook.load_from: %s." % detail)
