@@ -12,6 +12,8 @@ Implementado (LW-089b, 11/11/2026): o `GoodsStore` (`goods/`): a quantidade de c
 
 Implementado (LW-089c, 11/11/2026): o `EconomyModule` recebe as definições (`EconomyDefinitions`, bens e tipos de dono) pelo construtor e liga o `GoodsStore`: `request_open_owner` confere o tipo contra as definições, e a porta ganha `request_transfer_goods`, `peek_inventory` e `peek_goods_conservation` (cópias em `EconomyReplies`). O módulo ouve `NpcDied` pelo NOME do evento (a economia não cita o `npc`) e fecha o dono do NPC morto; o saldo e os bens dele continuam na soma. O bloco `goods` só entra no save quando há bens. Criar e destruir bens e dinheiro continua só das partes internas. O jogo ainda cria o módulo SEM definições (os mercados da LW-090 as ligam).
 
+Implementado (LW-090, 11/11/2026): os dados de mercado (`data/economy/market_targets.json`, 20 linhas: dois povoados com os 10 bens, e `price_params.json`, uma linha; valores [HIP] só em dados) e, em `markets/`, `MarketTargetDef`, `PriceParams`, o `MarketLoader` e o `PriceMath` (fórmulas de preço, spread e profundidade da ordem, em inteiros e funções puras). Classes soltas: o estado do mercado e os eventos são a LW-090b e a ligação ao módulo, a LW-090c.
+
 Regras de arquitetura (`tools/check_architecture`): regra E (DEC-171 e DEC-132), o `npc` cita só classes de `economy/api/` e a `economy` não cita nada do `npc`; regra F (LW-088c), só `ledger/` escreve saldo.
 
-Planejado, ainda não existe: mercados e preço (LW-090) e o resto do contrato.
+Planejado, ainda não existe: o resto dos mercados (LW-090b e LW-090c) e do contrato.
