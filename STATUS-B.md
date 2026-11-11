@@ -1,4 +1,4 @@
-11/11/2026 13:17 (Brasília) — Arthur mandou corrigir os 5 importantes da revisão da A: encaminhei os achados à sessão "ramo a" (mensagem enfileirada; eu NÃO toquei nos ramos da A); nada mais a fazer aqui; parei (regra 13). Antes: Fase B da LW-146a a e no `main` (`ffb1e03`) e revisão independente da A entregue (0 bloqueantes, 5 importantes, 15 menores)
+11/11/2026 13:54 (Brasília) — CONCLUÍDA a LW-146f PARCIAL (world, npc, app e catálogo de eventos): ramo `lw-146f-extensoes`, commit `961d2c4`, ENVIADO e fora do `main`; `check_all` verde (1203 de 1203); FICAM para depois da LW-117: `economy.md` e os comandos de `politics`, `factions` e rumores (parte 146g); PRONTA PARA REVISÃO; parei (regra 13)
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -157,3 +157,56 @@ Camadas: a economia **não** cita `npc`, `world`, `character` nem nada de camada
 - **Referências:** não reli o GDD 12 e 13 nesta revisão (usei o `economy.md`, que os cita); da arquitetura li o cap. 11 inteiro. Não li o código das LW-090b e LW-093b (fora do alvo).
 - **Merge:** não simulei o merge com o `main` (só comparei listas de arquivos).
 - **Comportamento do Godot** (por exemplo, `Object.get` devolver `null` para propriedade que não existe) vem do que sei da API, sem teste aqui.
+
+
+## LW-146f (PARCIAL) — extensões de `world`, `npc`, `app` e do catálogo de eventos     Status: PRONTA PARA REVISÃO (a parte `economy` e a da Fase 4 NÃO foram feitas, de propósito)
+
+**Antes de começar (AGENTS 2.3).** Declarei no chat a tarefa, o que ia ler, que a LW-117 **não** está no `main` (só a 117a e a 117b, fora dele) e que a 117b e a conversa A mexem no `economy.md`. Você respondeu pelo painel: **"Parcial agora"** (só o que não depende da Fase 4 nem do `economy.md`) e **"Autorizo o ramo e o commit"** (ramo `lw-146f-extensoes` a partir de `origin/main`, um commit, push só desse ramo e do `status-b`; sem merge no `main`, sem tag, sem force, sem rebase). A DEC de que dependo: DEC-199, 197, 189, 184, 181, 140 e 193 (as quatro primeiras e a 140 e 181 e 184 APROVADAS/PROPOSTAS como nas fichas; nenhuma PENDENTE bloqueia).
+
+### 1. RESUMO
+Escrevi, **só em texto**, as extensões que os contratos novos da 146b a e pediam aos outros módulos, na parte que **não depende** da Fase 4 nem da `economy`: **`world.md`** (tipos novos de ponto, `peek_nearest_point`, `peek_points_within`, ponto de renascimento e `request_set_route_state` para o evento de rota), **`npc.md`** (seção 15: evento de promoção, decisão e intenção de combate, testemunha de item no chão e `request_apply_need_pressure`), **`app.md`** (relógio do encontro, módulos novos, salvar e carregar, carga pela derrota, adaptadores de efeito e ações de entrada) e **`docs/events.md`** (11 eventos novos, de 16 para **27**). Nada de código, dados, GDD, arquitetura, AGENTS, DECISIONS, roadmap nem `project.godot`.
+
+### 2. ARQUIVOS CRIADOS
+Nenhum.
+
+### 3. ARQUIVOS MODIFICADOS (4; +71 −6; commit `961d2c4`)
+- `docs/modules/world.md` (+19): seção "Extensão da Fase 5".
+- `docs/modules/npc.md` (+18): seção 15.
+- `docs/modules/app.md` (+23): "Extensão da Fase 5" (A1 a A6).
+- `docs/events.md` (+17 −3): contagem (27), explicação da coluna "Situação", 11 linhas novas e a nota "Considerados": `NpcTierChanged` **saiu** da lista dos não incluídos (agora tem ouvinte), e entrou uma frase do que fica de fora por ora.
+
+### 4. DECISÕES TÉCNICAS (propostas minhas; nenhuma é APROVADA)
+1. **`NpcTierChanged`** (promoção e rebaixamento viram evento): o `character` precisa ouvi-lo para criar o estado de T2 e T3 (DEC-199). Antes não existia por falta de ouvinte.
+2. **O mesmo `AttackIntended`** é publicado pelo `npc` e pela `ecology`; o `combat` escuta. O `npc` **não** importa o `combat` nem o `character`.
+3. **Cadência de combate:** como o `combat` (camada 4) pode chamar o `npc` e o contrário não, o `combat` entrega uma **cópia da situação** e pede a decisão (`request_think_in_combat`); o `npc` responde publicando o evento.
+4. **`world`:** em vez de campo `secret` por ponto, a visibilidade é **por tipo**, no `character` (DEC-184). Para a rota, um comando **novo** (`request_set_route_state`, com motivo de vocabulário fechado) em vez de liberar os de desenvolvimento (DEC-140 intacta).
+5. **`app`:** o `SimulationHostNode` avança o relógio do encontro em passos fixos de 50 ms **[HIP]**; os adaptadores de efeito dos eventos moram em `src/app/` e chamam o comando **dentro do tratamento de `WorldEventStarted`**, para o `cause_id` sair certo.
+
+### 5. TESTES EXECUTADOS
+- `git diff --check` (staged e no commit): **limpo**.
+- `tools/check_all` no commit `961d2c4`: **VERDE**. `Tests 1203`, `Passing Tests 1203`, `Asserts 262120`, `Time 178,743 s` (início 13:50:36, fim 13:54:12). As linhas `Warnings 1` e `Deprecated 1` são as mesmas de todas as execuções anteriores. Contei as linhas de evento do catálogo: **27**, e o teste do catálogo (todo evento do código consta na tabela) passou.
+- Nada de jogo foi executado (não há código).
+
+### 6. RESULTADOS
+Critério (documentos): as extensões da parte autorizada existem; `events.md` tem 27 eventos; só os quatro arquivos autorizados mudaram (conferi com `git diff --stat origin/main HEAD`); `check_all` verde.
+
+### 7. PROBLEMAS ENCONTRADOS
+1. **A LW-117 não está no `main`** e a **117b já acrescenta 116 linhas ao `economy.md`**; por isso **não toquei** no `economy.md` (a A também o edita). Sem os contratos da Fase 4 (`politics`, `factions`, rumores), quatro dos oito tipos de evento seguem **[A CONFIRMAR]**.
+2. **Inconsistência minha que deixei:** o `ecology.md` (seção 8) ainda fala em campo `secret` por ponto; o certo agora é a visibilidade por tipo (`world.md`). Não corrigi porque o `ecology.md` não estava nos quatro arquivos autorizados.
+3. **A ponte e as views guardam os módulos do jogo antigo** (limitação da LW-070a): carregar um save troca o runner; documentei no `app.md` A4 e recomendei a ponte ler `host.*` a cada chamada.
+4. **Hash:** cada módulo novo registrado muda o `state_hash` de todo jogo; pela DEC-175 e pelo AGENTS 9.5 isso exige a sua aprovação. Recomendei marcos por bloco.
+
+### 8. RISCOS
+- O ramo `lw-146f-extensoes` tem **upstream no `main`**: nunca usei `git push` sem argumento.
+- Conflito de merge possível em `docs/events.md` (a conversa C também cataloga eventos da Fase 4) e em `npc.md` (a Fase 4 pode estender o `npc`); resolve-se no merge.
+- Tudo é **PROPOSTA**; nomes e números ([HIP]) trocam sem custo.
+
+### 9. PENDÊNCIAS
+**Fica para a 146g, depois da LW-117 chegar ao `main`:** (a) `economy.md`: "monte no chão" como tipo de dono (DEC-188), motivo fechado de destruição do metal e o evento dele (DEC-193), `request_apply_production_modifier` e o desfazer, e a venda de instância; (b) os comandos de `politics`, `factions` e rumores para os 4 tipos de evento que dependem deles; (c) o ajuste do `ecology.md` (`secret`).
+**Decisões suas, com a minha recomendação** (as que a 146f abriu): `skill_id` do NPC (recomendo só ataque automático na Fase 5); como o NPC pega **instância** de item (recomendo: o `npc` publica a intenção e o `character` resolve); a velocidade do relógio do encontro (recomendo sempre tempo real); marcos de hash da Fase 5; o tipo `ore_deposit` (só se você quiser minério escondido); segurança do ponto de renascimento (recomendo dentro de povoado).
+**Testes manuais:** nenhum (só texto).
+
+### ACOMPANHAMENTO
+- **Avanço:** pré-voo e contratos da Fase 5 escritos e no `main` (146a a e); a 146f está **pela metade** (a parte sem `economy` e sem Fase 4, num ramo fora do `main`). Código da Fase 5: **0%**.
+- **Próxima tarefa recomendada:** a **Fase B da 146f parcial** (levar o ramo ao `main`, só com a sua frase de aprovação e o passo a passo) e, depois da LW-117, a **146g**. **Não iniciadas.**
+- **Git:** 1 commit `961d2c4` ("LW-146f: extensões de world, npc, app e catálogo de eventos para a Fase 5 (parte sem economy nem Fase 4)") com `Co-Authored-By`, no ramo `lw-146f-extensoes`, **enviado** por `ramo:ramo` (a partir de `ffb1e03`). Nada no `main`, nenhuma tag, sem force, rebase ou reset.
