@@ -1,4 +1,4 @@
-11/11/2026 10:28 (Brasília) · SEQUÊNCIA DA A CONCLUÍDA: Partes 1 e 2 no `main` (`9b4f6f0`); Parte 3 (LW-088a) PRONTA PARA REVISÃO no ramo `lw-088a-registro-economy` (`d1caae0`, só o ramo empurrado; `main` não tocado); `check_all` VERDE (126 scripts, 1.208 testes, 262.153 asserts) com os valores do marco 1 que você aprovou; falta a sua auditoria
+11/11/2026 10:39 (Brasília) · SEQUÊNCIA DA A CONCLUÍDA; as 3 frases de documentação que você autorizou (economy.md, README e app.md) estão EDITADAS no diretório do ramo da LW-088a, SEM commit, à espera da sua autorização de commit e push do ramo; `check_all` verde de novo: Partes 1 e 2 no `main` (`9b4f6f0`); Parte 3 (LW-088a) PRONTA PARA REVISÃO no ramo `lw-088a-registro-economy` (`d1caae0`, só o ramo empurrado; `main` não tocado); `check_all` VERDE (126 scripts, 1.208 testes, 262.153 asserts) com os valores do marco 1 que você aprovou; falta a sua auditoria
 
 # RELATÓRIO — SEQUÊNCIA DA A: LW-093b (Fase B), LW-087 (fechamento) e LW-088a     Status: PRONTA PARA REVISÃO (Partes 1 e 2 já no `main`; Parte 3 só no ramo)
 
@@ -46,7 +46,7 @@
 - **Aceite:** cumprido nos três pontos do roadmap: a regra reprova nos dois sentidos (positivo e negativo), o `check_all` está verde e os valores novos foram aprovados por você; o relatório mostra o `run_sim` antes e depois.
 
 ## 7. PROBLEMAS ENCONTRADOS
-- **Ficou desatualizado de propósito (fora do que você aprovou):** (C) a linha "Estado" do `docs/modules/economy.md` ainda diz "nenhum código, dado ou teste dela existe"; (D) a linha 9 do `README.md` ainda diz "87 de 192 tarefas (45,3%)"; (E) a linha sobre o `GameModules` em `docs/modules/app.md` (linha 12) ainda lista só `character` e `npc`. Não toquei, porque o escopo era a linha da LW-088a no `economy.md` e nada mais.
+- **As três frases desatualizadas foram corrigidas depois, com o seu "Autorizo as três" (10:30 a 10:38), mas ainda SEM commit** (veja "Atualização" no fim): (C) a linha "Estado" do `docs/modules/economy.md` (a Fase 3 está em andamento e só a casca da economia, LW-088a, está IMPLEMENTADA, no ramo, fora do `main`); (D) o `README.md`: **achei a mesma contagem em dois lugares**, a linha 9 e a linha 170 (parágrafo da Fase 2), e corrigi as duas (87 de 192, 45,3% → 88 de 192, 45,8%, contando a LW-087); (E) `docs/modules/app.md`, linha 12 (`GameModules` agora lista `character`, `economy` e `npc`, na ordem, e o resultado traz os três). A linha 170 do README é a única coisa além do que eu tinha listado.
 - O ruído esperado do `check_all` continua: "Decompression failed" e o aviso de `wait_frames` do GUT (não são meus).
 - Uma prova de causa que descartei por erro meu: a primeira tentativa não deixava o carregamento aceitar a falta do bloco, e três fases do oráculo divergiram por culpa do remendo; a segunda, completa, fez os nove valores voltarem (2/2).
 
@@ -58,11 +58,17 @@
 
 ## 9. PENDÊNCIAS
 - **A sua auditoria** do ramo `lw-088a-registro-economy` (`d1caae0`).
-- **Decisões minhas pedidas, cada uma com a minha recomendação:** (C) uma frase na linha "Estado" do `economy.md` — **recomendo** fazer; (D) o `README.md` linha 9 (87 → 88, 45,3% → 45,8%) — **recomendo** um commit curto; (E) a linha do `GameModules` em `app.md` — **recomendo** atualizar junto.
+- **Preciso de você: autorizar o commit e o push do ramo `lw-088a-registro-economy` com as três frases.** A sua autorização da sequência dizia "1 commit" para a Parte 3 e eu já o usei; o "Autorizo as três" cobre as edições, e eu não quis presumir o commit. **Recomendo** um segundo commit no mesmo ramo, "LW-088a: atualiza três frases de documentação (economy.md, README e app.md)", e o push só do ramo. Ressalva: a correção do `README.md` (87 → 88) trata do estado do `main` (a LW-087), mas só chegaria ao `main` com a Fase B da LW-088a; se preferir que ela entre antes, diga e eu a faço num commit à parte no `main`, só com a sua autorização.
 - **Teste manual:** nenhum.
 
 ## ACOMPANHAMENTO
 - **Avanço:** Fase 3 = 1 de 30 (3,3%); projeto = 88 de 192 (45,8%). A LW-088a é subtarefa e não entra na conta.
 - **Próxima tarefa recomendada:** a sua auditoria; depois a LW-088 (`Ledger`). **Não iniciada.**
-- **Decisões que dependem de você:** as de (C), (D) e (E) acima.
+- **Decisões que dependem de você:** autorizar o commit e o push do ramo com as três frases (pendência acima).
 - **Git:** `main` = `9b4f6f0` (não tocado na Parte 3). Ramo `lw-088a-registro-economy` = `d1caae0`, **empurrado só ele** e o `status-a`; um commit ("LW-088a: registro do módulo economy e regra de arquitetura"). Sem tag, sem `--force`; nenhum Godot meu em execução.
+
+## ATUALIZAÇÃO (11/11/2026 10:39): as três frases de documentação (C, D e E) que você autorizou
+- **O que mudou, sem commit, no diretório do ramo `lw-088a-registro-economy`** (em cima de `d1caae0`): `docs/modules/economy.md` (linha 3, "Estado"), `README.md` (linhas 9 e 170: 87 → 88 de 192 e 45,3% → 45,8%, contando a LW-087, a primeira da Fase 3) e `docs/modules/app.md` (linha 12: a lista do `GameModules` e o resultado com `character`, `economy` e `npc`). Só texto: 3 arquivos, 4 linhas.
+- **`tools/check_all` na árvore com as quatro edições (10:34:32 a 10:38:00): VERDE** (`EXIT_CODE_CHECK_ALL=0`): 126 scripts, 1.208 testes, 262.153 asserts, 316 scripts sem aviso, 0 "SCRIPT ERROR"; as linhas com hash (oráculo, vida de 7 dias e 300 NPCs) **idênticas** às do `check_all` anterior. Uma rodada anterior (10:30 a 10:34), com só as três frases, também ficou verde.
+- **Mensagem de commit sugerida:** "LW-088a: atualiza três frases de documentação (economy.md, README e app.md)". **Arquivos:** `README.md`, `docs/modules/app.md`, `docs/modules/economy.md`.
+- **Git:** nada commitado nem empurrado por esta atualização; o ramo segue em `d1caae0`; `main` = `9b4f6f0`.
