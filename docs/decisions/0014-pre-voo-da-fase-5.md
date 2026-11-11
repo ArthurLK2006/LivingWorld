@@ -1,6 +1,6 @@
 # LW-146 (pré-etapa) — Levantamento de pré-voo da Fase 5 (integração e protótipo)
 
-- **Status:** **RASCUNHO, fora do `main`.** É um levantamento: **não decide nada**, não cria nem muda DEC e **não é o contrato da LW-146** (esse vem depois, com as respostas de Arthur). As perguntas da seção 4 são de Arthur (jogo) ou do revisor (técnica menor, como PROPOSTA).
+- **Status:** **RASCUNHO, fora do `main`.** É um levantamento: **não decide nada**, não cria nem muda DEC e **não é o contrato da LW-146** (esse vem depois, com as respostas de Arthur). As perguntas da seção 4 são de Arthur (jogo) ou do revisor (técnica menor, como PROPOSTA). **Atualizado em 11/11/2026 (segundo commit):** Arthur respondeu às Q1 a Q10 no chat, pelo painel de escolhas. **Onde a seção 6 difere das recomendações das seções 0 a 5, vale a seção 6** (a Q4, a Q6, a Q7 e a Q8 mudaram). As respostas ainda **não** estão em `DECISIONS.md`: o registro é da parte 146a.
 - **Data e tarefa:** 11/11/2026 (Brasília), LW-146 (DOC), pré-etapa. Base: `main` em `4ada136`.
 - **Fontes lidas (todas no `main`):** `DEVELOPMENT_ROADMAP.md` (RM: Fases 4 e 5, desvios 0.13-B, portões 0.13-C, anexos C e F); `DECISIONS.md` (as DEC da seção 1); `GDD.md` (3.2, 6, 7, 16, 17, 19, 20, 21, 24, 25 e anexos C e D); `TECHNICAL_ARCHITECTURE.md` (TA: 14, 15, 18, 19, 20 e 22); contratos `character`, `bridge`, `presentation`, `persistence`, `npc`, `world` e `economy`; `docs/decisions/0008-spike-sp6-combate.md`; `docs/backlog.md`. Não li código.
 - **Rótulos:** **fato** (com a fonte), **recomendação** (minha, PROPOSTA: Arthur aprova ou troca), **buraco** (nenhuma fonte responde), **[HIP]**, **pendente**, **limitação**. "GDD 16.2" é o capítulo 16, seção 2.
@@ -142,82 +142,92 @@
 - **Opções:** **A)** as [REC] do roadmap (magia, chefe, propriedades, comando tático só de consulta, facção criminosa mínima); **B)** A, mas **mantendo a casa do jogador**; **C)** B mais 1 efeito mágico simples (GDD 24.2 admite 0 a 2).
 - **Recomendação: B.** Concordo com magia, chefe, comando tático e facção mínima; discordo de "propriedades fora": o GDD 24.5 manda manter a casa e a LW-173 já prevê o painel. A "casa" é um local `home` do mundo, sem compra, venda nem expansão.
 - **O que muda:** A tira o painel "propriedades" e a casa da origem; B os mantém (pouco trabalho); C acrescenta um sistema inteiro (DEC-030): **não recomendo**.
+- **Resposta de Arthur (11/11/2026):** magia, chefe, comando de tropas e facção criminosa completa **fora**; **a casa do jogador fica**. Magia e batalhas grandes viram **visão registrada** (Bannerlord, Total War Warhammer 3, sequência de magias). Igual à recomendação (B).
 
 **Q2 — As três trajetórias (RM LW-146 b; DEC-062).**
 - **Pergunta:** confirma mercador, soldado/guarda e aventureiro, com crime só como consequência?
 - **Opções:** **A)** as [REC]; **B)** trocar soldado por produtor/artesão; **C)** quatro trajetórias.
 - **Recomendação: A.** Cada uma já tem sistemas na fase (mercador: LW-105 e LW-139; soldado: LW-120, 139 e 153; aventureiro: LW-157, 160 e 161). B exigiria atividades de produção do jogador (GDD 7.6: o primeiro protótipo não as tem) e a receita de ferreiro do jogador.
 - **O que muda:** B acrescenta produção do jogador e muda a LW-184; C é mais escopo (R5.4).
+- **Resposta de Arthur (11/11/2026):** **A**, mercador, soldado/guarda e aventureiro. Igual à recomendação.
 
 **Q3 — Conteúdo inicial: 3 criaturas, 3 origens, 8 eventos (RM LW-146 c).**
 - **Pergunta:** são esses os números?
 - **Opções:** **A)** 3/3/8 do roadmap; **B)** 3/3/6 (o GDD diz "começar com cerca de 6"); **C)** 4/4/10.
 - **Recomendação: A**, com a origem **por lugar de nascimento** (campo, cidade, estrada), **não por trajetória** (GDD 6.2; DEC-063 conflita com a DEC-003 se a origem virar classe). Com o chefe fora (Q1), 3 criaturas bastam (patrulhar, caçar, fugir, como a LW-157). Os tipos concretos e os 8 eventos vêm no contrato, como PROPOSTA, com nomes genéricos (DEC-100).
 - **O que muda:** B poupa 2 eventos em dados; C aumenta conteúdo e testes.
+- **Resposta de Arthur (11/11/2026):** **A**, 3 criaturas, 3 origens (por lugar de nascimento) e 8 eventos. Igual à recomendação.
 
 **Q4 — Derrota do jogador (RM LW-146 d; GDD 6.6; DEC-065; C2).**
 - **Pergunta:** o que acontece quando o jogador perde a luta?
 - **Opções:** **A)** recarregar o último autosave, com aviso; **B)** derrota raramente fatal (captura, nocaute, ferimentos persistentes, prisão, dívida); **C)** morte permanente com sucessor.
 - **Recomendação: A**, com **B como [PREV]**. B exige prisão e dívida (dois sistemas novos) e C exige famílias (fora do protótipo, DEC-054). **Concordo com a [REC] do roadmap e discordo do GDD 6.6**; se escolher A, o GDD 6.6 e o Anexo D, D2, são atualizados na LW-189.
 - **O que muda:** A exige autosave frequente (LW-176) e a mensagem; B abre tarefas em `politics` e `economy`.
+- **Resposta de Arthur (11/11/2026) — MUDOU:** **dois modos à escolha ao começar.** (a) **Renasce perto**, sem recarregar: itens **soltos** ficam no chão por um tempo, NPCs podem pegá-los, o jogador **descobre qual NPC pegou** ou corre até o local antes de sumirem; itens **ligados ao personagem** ficam. (b) **Voltar ao último autosave.** A recomendação era só o (b).
 
 **Q5 — Combate: o que entra além do SP6 (DEC-121; C1).**
 - **Pergunta:** a Fase 5 faz só o que você jogou no SP6 (alvo, habilidades, estamina) mais o inimigo que reage, ou também bloqueio, esquiva e ferimento por golpe? E o que é o "melhorado" da DEC-117?
 - **Opções:** **A)** só o SP6 mais o inimigo que **reage e se posiciona** (pedido da DEC-121); ferimento = vida e uma condição simples "ferido" que se recupera com o tempo; **B)** A mais bloqueio e esquiva; **C)** A mais ferimentos por golpe (sangramento, atordoamento; GDD 16.2).
 - **Recomendação: A**; B e C vão ao backlog até um **playtest seu** depois da LW-155. O "melhorado" continua em aberto: uma frase sua ajuda o contrato.
 - **O que muda:** B e C mudam a LW-151, 153 e 156 e pedem novo playtest.
+- **Resposta de Arthur (11/11/2026):** **A**, só o do SP6 mais o inimigo que reage; ferimento simples; bloqueio, esquiva e ferimento por golpe ficam para depois. Igual à recomendação.
 
 **Q6 — Escala das batalhas e comando (DEC-053 e DEC-029; C4).**
 - **Pergunta:** quantos combatentes com corpo ao mesmo tempo, e o jogador comanda tropas?
 - **Opções:** **A)** o jogador **não comanda**; no máximo cerca de **20** [HIP] com corpo perto dele e o resto abstrato; a câmera tática só consulta; **B)** o jogador comanda um grupo pequeno; **C)** batalha toda abstrata, sem corpos.
 - **Recomendação: A.** B exige interface de ordens (DEC-029) e C enfraquece a hipótese do LOD.
 - **O que muda:** destrava a LW-158 e a LW-172; B cria tarefas de ordens.
+- **Resposta de Arthur (11/11/2026) — MUDOU:** **sem comando no protótipo**, mais **um teste descartável** de comandar um grupo pequeno, no fim do bloco de combate. A recomendação era só A (sem comando e sem teste). Visão registrada: Bannerlord, Total War Warhammer 3, magias em sequência.
 
 **Q7 — Crime: quais atos (C5).**
 - **Pergunta:** o que conta como crime no protótipo?
 - **Opções:** **A)** só **agressão** (nasce do combate); **B)** agressão e **roubo** (cria a ação de roubar e usa a furtividade); **C)** B mais contrabando.
 - **Recomendação: A.** Nenhuma tarefa cria o roubo hoje e a agressão já prova a consequência (testemunha, reputação, guarda). Roubo vai ao backlog.
 - **O que muda:** B acrescenta uma ação e um sistema de itens roubados.
+- **Resposta de Arthur (11/11/2026) — MUDOU:** **agressão, roubo, morte e contrabando.** Contrabando = lista de bens proibidos por lei **mais** marca de origem nos itens únicos roubados ou saqueados; rastrear cada unidade fica para depois. Saque de mortos conta como roubo. A recomendação era só agressão.
 
 **Q8 — Neblina de conhecimento no mapa (GDD 17.5 e 21.1; C6).**
 - **Pergunta:** o mapa estratégico mostra tudo ou só o que o jogador descobriu?
 - **Opções:** **A)** mostra tudo, marcado como **limitação [LIM]**; **B)** só o descoberto (ruína, assentamentos visitados, rumores).
 - **Recomendação: A.** Nenhuma tarefa filtra as camadas por conhecimento e o custo é alto; a hipótese 4 não depende disso.
 - **O que muda:** B pede que o `character/knowledge` registre lugares e que cada camada filtre.
+- **Resposta de Arthur (11/11/2026) — MUDOU:** **estrutura sempre visível** (assentamentos, rotas, pontos de reconhecimento); **segredos só depois de descobertos** (ruínas, tesouros, minérios, covis escondidos), com a regra **por tipo, em dados**. A recomendação era mostrar tudo.
 
 **Q9 — Critérios de sucesso do protótipo (C10).**
 - **Pergunta:** valem só as quatro hipóteses do roadmap ou também critérios do GDD 25.1?
 - **Opções:** **A)** as do roadmap; **B)** A mais "três cascatas distintas" e "diversão e histórias contáveis" no playtest; **C)** os seis do GDD 25.1.
 - **Recomendação: B.** É barato: o soak mostra mais cascatas além da LW-143 e a diversão vira pergunta do playtest (GDD 25.3).
 - **O que muda:** B acrescenta itens ao 5.F e à LW-191.
+- **Resposta de Arthur (11/11/2026):** **B**, as quatro hipóteses mais três cascatas e diversão. Igual à recomendação.
 
 **Q10 — Congelar o save (C7; DEC-127 diz que é decisão sua).**
 - **Pergunta:** quando o save é "congelado" e saves antigos passam a ser migrados?
 - **Opções:** **A)** no fim da Fase 4 (LW-142), como propõe a DEC-083; **B)** no fim da Fase 5 (LW-187); **C)** **não congelar no protótipo**: save antigo é sempre rejeitado com mensagem clara.
 - **Recomendação: C.** Cada mudança de estado da Fase 5 (personagem, combate, criaturas, eventos) exigiria migração e fixture (fixture é protegida e pede autorização), e o protótipo não tem saves antigos de outras pessoas. A LW-187 vira "testes de rejeição clara e da cadeia que já existe (1 para 2)".
 - **O que muda:** A e B mantêm o roadmap, mas exigem a LW-142 e a LW-187 como estão (C7); C troca os critérios 6 de 5.F e das LW-142 e LW-187.
+- **Resposta de Arthur (11/11/2026):** **C**, não congelar o save no protótipo. Igual à recomendação.
 
 **Técnicas menores (o revisor decide como PROPOSTA; você aprova ou troca)**
 
-**Q11 — Ponte de combate (C1).** Opções: **A)** intenção de ataque (atacante, alvo, habilidade); **B)** `HitReport` por contato. **Recomendação: A** (é o que a DEC-121 testou e a simulação continua sem confiar no cliente). Muda: LW-151 e LW-153; sem "áreas de contato".
+**Q11 — Ponte de combate (C1).** Opções: **A)** intenção de ataque (atacante, alvo, habilidade); **B)** `HitReport` por contato. **Recomendação: A** (é o que a DEC-121 testou e a simulação continua sem confiar no cliente). Muda: LW-151 e LW-153; sem "áreas de contato". **Situação (11/11/2026):** recomendação mantida (PROPOSTA); a aprovar na 146a.
 
-**Q12 — Fronteira equipamento e economia (C3).** Opções: **A)** a economia destrói o metal com um **motivo fechado novo** e publica um evento; o `character` cria a instância ao ouvir; **B)** o `character` chama a `economy/api` e cria a instância; **C)** o ferreiro NPC vende itens como **bens** (sem instância) no protótipo. **Recomendação: A** (mantém a conservação e "um dono por dado"); peso = soma de duas consultas; reparo no backlog. Muda: `economy.md` ganha 1 motivo e 1 evento; LW-148.
+**Q12 — Fronteira equipamento e economia (C3).** Opções: **A)** a economia destrói o metal com um **motivo fechado novo** e publica um evento; o `character` cria a instância ao ouvir; **B)** o `character` chama a `economy/api` e cria a instância; **C)** o ferreiro NPC vende itens como **bens** (sem instância) no protótipo. **Recomendação: A** (mantém a conservação e "um dono por dado"); peso = soma de duas consultas; reparo no backlog. Muda: `economy.md` ganha 1 motivo e 1 evento; LW-148. **Situação (11/11/2026):** recomendação mantida (PROPOSTA). **Efeito novo:** o item no chão, o saque de mortos e a marca de origem entram nessa fronteira (6.3).
 
-**Q13 — `combat` e `military` (C4).** Opções: **A)** um sentido: `military` pede o encontro e `combat` devolve baixas por evento; **B)** mão dupla pela `api`. **Recomendação: A**; orçamento de corpóreos em dados (o valor sai com a Q6). Muda: LW-158 e a ficha do `military`.
+**Q13 — `combat` e `military` (C4).** Opções: **A)** um sentido: `military` pede o encontro e `combat` devolve baixas por evento; **B)** mão dupla pela `api`. **Recomendação: A**; orçamento de corpóreos em dados (o valor sai com a Q6). Muda: LW-158 e a ficha do `military`. **Situação (11/11/2026):** recomendação mantida (PROPOSTA). O orçamento de corpóreos segue [HIP]; o valor sai depois do teste de tropas.
 
-**Q14 — Dono do crime (C5).** Opções: **A)** `combat` só informa o fato; `events` ou `politics` decide se é crime pela lista de atos em `laws.json` e publica `CrimeCommitted`; **B)** `combat` publica (TA 15.3). **Recomendação: A**, pedindo à LW-117 a lista de atos. Muda: LW-117, 164 e 165.
+**Q14 — Dono do crime (C5).** Opções: **A)** `combat` só informa o fato; `events` ou `politics` decide se é crime pela lista de atos em `laws.json` e publica `CrimeCommitted`; **B)** `combat` publica (TA 15.3). **Recomendação: A**, pedindo à LW-117 a lista de atos. Muda: LW-117, 164 e 165. **Situação (11/11/2026):** recomendação mantida (PROPOSTA). **Efeito novo:** os atos são agressão, roubo, morte e contrabando, não só agressão (6.3).
 
-**Q15 — Ponte, snapshot e foco do LOD (C6).** Opções: **A)** consultas em lote por assunto e o foco do LOD continua o jogador; **B)** um `Snapshot` por quadro e o foco segue a câmera. **Recomendação: A** (menos mudança; S0 só perto do jogador; os marcadores cobrem o resto). Muda: LW-166 e LW-169.
+**Q15 — Ponte, snapshot e foco do LOD (C6).** Opções: **A)** consultas em lote por assunto e o foco do LOD continua o jogador; **B)** um `Snapshot` por quadro e o foco segue a câmera. **Recomendação: A** (menos mudança; S0 só perto do jogador; os marcadores cobrem o resto). Muda: LW-166 e LW-169. **Situação (11/11/2026):** recomendação mantida (PROPOSTA). **Efeito novo:** a regra de visibilidade por tipo (Q8) entra nas consultas em lote.
 
-**Q16 — Eventos dinâmicos (C8).** Opções: **A)** cada tipo declara em dados os comandos que usa; os que faltam viram extensões de contrato; **B)** deixar `events` escrever direto nos outros módulos (proibido pela arquitetura). **Recomendação: A**; "ataque a caravana" fica só na LW-139. Muda: contratos de `economy`, `npc` e `world`; LW-162.
+**Q16 — Eventos dinâmicos (C8).** Opções: **A)** cada tipo declara em dados os comandos que usa; os que faltam viram extensões de contrato; **B)** deixar `events` escrever direto nos outros módulos (proibido pela arquitetura). **Recomendação: A**; "ataque a caravana" fica só na LW-139. Muda: contratos de `economy`, `npc` e `world`; LW-162. **Situação (11/11/2026):** recomendação mantida (PROPOSTA); a aprovar na 146a.
 
-**Q17 — Desempenho (C9).** Opções: **A)** quadros pela DEC-119; ticks pela meta do RM como [HIP] e pela DEC-113 como mínimo; aprovar a DEC-071 só depois da LW-179; cargas até 1.000 NPCs; **B)** adotar já os números do RM como regra. **Recomendação: A.** Muda: texto de 5.F e LW-179 e 180.
+**Q17 — Desempenho (C9).** Opções: **A)** quadros pela DEC-119; ticks pela meta do RM como [HIP] e pela DEC-113 como mínimo; aprovar a DEC-071 só depois da LW-179; cargas até 1.000 NPCs; **B)** adotar já os números do RM como regra. **Recomendação: A.** Muda: texto de 5.F e LW-179 e 180. **Situação (11/11/2026):** recomendação mantida (PROPOSTA); a aprovar na 146a.
 
-**Q18 — T2/T3, T1 e combate (C11).** Opções: **A)** o `npc` decide e publica a intenção; o `combat` escuta e resolve; o `character` cria o estado de T2/T3 na promoção; T1 usa **equipamento padrão por ofício** em dados; **B)** o `npc` guarda o mínimo de combate. **Recomendação: A.** Muda: LW-147, 155 e 161.
+**Q18 — T2/T3, T1 e combate (C11).** Opções: **A)** o `npc` decide e publica a intenção; o `combat` escuta e resolve; o `character` cria o estado de T2/T3 na promoção; T1 usa **equipamento padrão por ofício** em dados; **B)** o `npc` guarda o mínimo de combate. **Recomendação: A.** Muda: LW-147, 155 e 161. **Situação (11/11/2026):** recomendação mantida (PROPOSTA); a aprovar na 146a.
 
-**Q19 — HUD de combate e inventário (C13).** Opções: **A)** acrescentar uma tarefa de HUD (vida, estamina, alvo) e uma de inventário e equipamento; **B)** usar só os painéis do roadmap. **Recomendação: A** (sem HUD o combate não é jogável). Muda: duas tarefas novas na Fase 5.
+**Q19 — HUD de combate e inventário (C13).** Opções: **A)** acrescentar uma tarefa de HUD (vida, estamina, alvo) e uma de inventário e equipamento; **B)** usar só os painéis do roadmap. **Recomendação: A** (sem HUD o combate não é jogável). Muda: duas tarefas novas na Fase 5. **Situação (11/11/2026):** recomendação mantida (PROPOSTA); a aprovar na 146a.
 
-**Q20 — Nome do executável (DEC-010 PENDENTE; LW-188).** Opções: **A)** "Living World" (o título de trabalho que já está no `project.godot`) como nome **provisório**; **B)** esperar a DEC-010. **Recomendação: A**: a DEC-010 não precisa ser fechada para exportar.
+**Q20 — Nome do executável (DEC-010 PENDENTE; LW-188).** Opções: **A)** "Living World" (o título de trabalho que já está no `project.godot`) como nome **provisório**; **B)** esperar a DEC-010. **Recomendação: A**: a DEC-010 não precisa ser fechada para exportar. **Situação (11/11/2026):** recomendação mantida (PROPOSTA); a aprovar na 146a.
 
 ## 5. Riscos para o protótipo (DEC-006: uma pessoa com IA) e o que adiar
 
@@ -233,3 +243,33 @@
 **Para o backlog (uma linha cada; fora da Fase 5 se você concordar):** magia; chefe e criaturas especiais; propriedades além da casa; comando tático; bloqueio e esquiva; ferimento por golpe (sangramento, atordoamento); roubo e contrabando; prisão, exílio e caça; dívida e derrota do tipo B; morte permanente com sucessor; neblina de conhecimento no mapa; reparo de equipamento; bestas e mais armas (GDD 16.5 pede 5 a 6, o roadmap só o arco); gamepad (DEC-024); acessibilidade (legendas, daltonismo; GDD 21.4, P2); diretor de eventos; domesticação; clima e estações; cargas de 3.000 NPCs e T0; save binário.
 
 **O que não consegui verificar:** o tamanho real das tarefas (estimativa por leitura); o código (não li); se o `ROADMAP_STATUS.md` já tem a seção "Itens dentro e fora do protótipo" (o roadmap diz que a LW-146 a preenche; não a achei); a existência do `docs/decisions/0013` (não há no `main`).
+
+## 6. Respostas de Arthur (11/11/2026) e o que elas mudam
+
+**6.1 Resumo das respostas.** Feitas no chat, pelo painel de escolhas. Iguais à recomendação: Q1, Q2, Q3, Q5, Q9 e Q10. **Mudaram:** Q4 (morte), Q6 (tropas), Q7 (crime) e Q8 (mapa). Também pediu **marcar "protótipo" e "depois"** (6.4). As técnicas Q11 a Q20 ele **não reabriu**: seguem como PROPOSTA do revisor.
+
+**6.2 O que cada resposta resolve nas contradições da seção 2.**
+- **C1 (estilo do combate):** resolvida em direção: Q5 A (alvo e habilidades; bloqueio, esquiva e ferimento por golpe depois). O contrato parte da DEC-121.
+- **C2 (derrota):** resolvida: **dois modos** (Q4). O GDD 6.6 e o Anexo D, D2, são atualizados na LW-189. Prisão e dívida ficam fora; a economia continua sem crédito.
+- **C4 (combate e tropas):** DEC-053 e DEC-029 **seguem PENDENTES até o teste de tropas**; sem comando no protótipo.
+- **C5 (crime):** a lista de atos cresce para **agressão, roubo, morte e contrabando**; a LW-117 (Fase 4) precisa dela (Q14).
+- **C6 (neblina de conhecimento):** resolvida pela Q8: regra de visibilidade por tipo, em dados.
+- **C7 (save):** Q10 C: a LW-142 e a LW-187 passam a testar rejeição clara, não migração.
+- **C10 (critérios):** Q9 B: o 5.F e a LW-191 ganham "três cascatas" e "diversão".
+- **C12 (corte):** Q1; os números de conteúdo ficam 3/3/8.
+- **Seguem como estavam:** C3, C8, C9, C11, C13 e C14.
+
+**6.3 Buracos novos que as respostas criam (para o contrato da LW-146 fechar).**
+- **(a) Itens no chão e em corpos.** Pede um **novo tipo de dono** para quantidades de bens e para instâncias; o tempo no chão e a "perda por sumiço" usam o motivo de destruição já reservado (`spoiled`) sem quebrar a conservação; NPC pegar item é ação nova do NPC; descobrir **qual NPC pegou** usa memória ou rumor e uma consulta. Um só sistema serve à morte do jogador, ao saque de mortos e ao roubo.
+- **(b) "Item ligado ao personagem" sem magia.** Com a magia fora, o que é um item ligado? Ele pediu "poder ou maldição" (magia, agora "depois"). Sem resposta.
+- **(c) Dois modos de morte.** A escolha entra no menu de novo jogo (LW-175); "voltar ao autosave" depende de autosave frequente (LW-176); "renasce perto" precisa de **ponto de renascimento** (hoje só existe o ponto de nascimento do `world`) e de regra do que se perde.
+- **(d) Crime ampliado.** Morte de NPC com testemunha; **roubo** e **saque** são ações novas (usam a furtividade da LW-163); **contrabando** = bens proibidos por polity (o `TradeRules` já tem `banned` e licença; é neutro até a LW-130) mais **marca de origem** num campo da instância do `character` (itens únicos); quem fiscaliza são os guardas (LW-165).
+- **(e) Mapa.** Regra de visibilidade por tipo; o `character/knowledge` registra o que foi descoberto; falta definir o que um **ponto de reconhecimento** revela.
+- **(f) Teste de tropas.** É um **spike novo** (descartável, como o SP6). A DEC-080 só aprova a antecipação dos testes de combate e de câmera: o spike novo precisa de **registro** (146a), de lugar no roadmap (depois da LW-155 e antes da LW-159) e de número.
+
+**6.4 Protótipo e depois.**
+- **Protótipo (entra na Fase 5):** combate do SP6 com inimigo que reage; três trajetórias; 3 criaturas, 3 origens e 8 eventos; casa do jogador; morte com dois modos, itens no chão e descoberta de quem pegou; crime (agressão, roubo, morte, contrabando simples); mapa com estrutura sempre e segredos descobertos; teste descartável de tropas; critérios da Q9; save sem congelar; mais as técnicas Q11 a Q20 (PROPOSTA).
+- **Depois (visão registrada):** sistema de magia, itens de poder ou maldição, chefe, comando de tropas (Bannerlord, Total War Warhammer 3, sequência de magias: "um sistema novo único"), bloqueio e esquiva, ferimento por golpe, prisão e dívida, rastreio de cada unidade de mercadoria, morte permanente com sucessor.
+- **Tarefas novas, estimativa do revisor [HIP], não medida:** itens no chão e corpos (2 a 3), dois modos de morte e renascimento (2), descobrir quem pegou (1), roubo e saque (2), contrabando com lista e marca (2), mapa por tipo (1 a 2) e o teste de tropas (1): **cerca de 11 a 14** a mais que as 47 (uns 25%). Entram nas partes 146b, 146c, 146d e 146e; a 146a registra.
+
+**6.5 Perguntas que ficam em aberto (curtas):** quanto tempo o item fica no chão; como se descobre o NPC que pegou; o que é "item ligado" sem magia; o que um ponto de reconhecimento revela.
