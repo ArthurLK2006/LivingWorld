@@ -1,4 +1,4 @@
-11/11/2026 11:09 (Brasília) · BLOCO 2 DA A, em andamento · item 0 feito (LW-088a fechada, `26384ee`); LW-088 dividida (passou de ~450 linhas) e a parte b PRONTA no ramo `lw-088b-ledger` (`c9a7e0f`, `check_all` VERDE: 127 scripts, 1.215 testes, 268.278 asserts; hashes e `run_sim` iguais); seguindo para a LW-088c
+11/11/2026 12:25 (Brasília) · BLOCO 2 DA A, em andamento · LW-088 (partes b e c) PRONTA: ramos `lw-088b-ledger` (`c9a7e0f`) e `lw-088c-porta-e-regra-f` (`5bc5cef`), `check_all` VERDE em cada um (c: 129 scripts, 1.222 testes, 268.416 asserts; hashes e `run_sim` iguais); seguindo para a LW-089
 
 # RELATÓRIO — SEQUÊNCIA DA A: LW-093b (Fase B), LW-087 (fechamento) e LW-088a     Status: PRONTA PARA REVISÃO (Partes 1 e 2 já no `main`; Parte 3 só no ramo)
 
