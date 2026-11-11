@@ -128,7 +128,7 @@ func test_an_invalid_capacity_is_reported_and_the_edges_of_the_range_are_valid()
 
 func test_a_kind_outside_the_vocabulary_is_reported_and_market_reserved_is_accepted() -> void:
 	for wrong: String in ["Home", "farm", ""]:
-		_assert_invalid("[%s]" % TOWN, "[%s]" % HOME.replace('"kind": "home"', '"kind": "%s"' % wrong), ["places.json", "town_home", "kind", "fora do vocabulário", "market_reserved"])
+		_assert_invalid("[%s]" % TOWN, "[%s]" % HOME.replace('"kind": "home"', '"kind": "%s"' % wrong), ["places.json", "town_home", "kind", "fora do vocabulário", "market"])
 	for valid_kind: String in Place.KINDS:
 		_assert_valid("[%s]" % TOWN, "[%s]" % HOME.replace('"kind": "home"', '"kind": "%s"' % valid_kind))
 
@@ -225,7 +225,7 @@ func test_peek_places_of_kind_is_in_ascending_order_and_empty_for_a_kind_without
 
 
 func test_market_reserved_is_returned_like_any_other_kind() -> void:
-	var query: SettlementService.PlacesQuery = _service.peek_places_of_kind(SETTLEMENT_B, Place.KIND_MARKET_RESERVED)
+	var query: SettlementService.PlacesQuery = _service.peek_places_of_kind(SETTLEMENT_B, Place.KIND_MARKET)
 	assert_true(query.result.ok, query.result.message)
 	assert_eq(query.places.size(), 1, "Cada assentamento de teste tem um local de mercado reservado.")
 
@@ -268,7 +268,7 @@ func test_an_unknown_settlement_an_unknown_place_and_an_invalid_kind_are_handled
 	assert_false(invalid_kind.result.ok)
 	assert_eq(invalid_kind.result.code, SettlementService.CODE_PLACE_KIND_INVALID)
 	assert_string_contains(invalid_kind.result.message, "farm")
-	assert_string_contains(invalid_kind.result.message, "market_reserved", "A mensagem lista o vocabulário.")
+	assert_string_contains(invalid_kind.result.message, "market", "A mensagem lista o vocabulário.")
 	assert_eq(invalid_kind.places.size(), 0)
 
 

@@ -88,7 +88,7 @@ func test_each_settlement_has_the_places_the_contract_asks_for_and_room_for_the_
 		assert_gte(_count_of_kind(settlement_id, Place.KIND_WORK), WORK_PLACES, "Locais de trabalho para os cinco ofícios.")
 		assert_between(_count_of_kind(settlement_id, Place.KIND_REST), 1, 2)
 		assert_between(_count_of_kind(settlement_id, Place.KIND_SOCIAL), 1, 2)
-		assert_eq(_count_of_kind(settlement_id, Place.KIND_MARKET_RESERVED), 1)
+		assert_eq(_count_of_kind(settlement_id, Place.KIND_MARKET), 1)
 	assert_gte(home_capacity, NPC_COUNT_OF_THE_SOAK, "As casas comportam os 100 NPCs da LW-068.")
 
 

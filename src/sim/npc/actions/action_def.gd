@@ -4,8 +4,8 @@ extends RefCounted
 ## contrato em docs/modules/npc.md, seção 3). Reúne a linha da ação e as linhas de efeitos, condições e pesos de personalidade que
 ## apontam para ela. Só DESCREVE: quem confere as condições e aplica os efeitos é o `ActionRunner` (LW-060). Nada aqui é salvo.
 
-## Vocabulário de tipos de local: o do `world` (`Place.KINDS`, LW-056), sem cópia (fonte única desde a LW-061). `market_reserved` é
-## reservado e nenhuma ação da Fase 2 o usa. Vazio em `place_kind` = a ação vale em qualquer lugar.
+## Vocabulário de tipos de local: o do `world` (`Place.KINDS`, LW-056), sem cópia (fonte única desde a LW-061). `market` (LW-093,
+## DEC-160; antes `market_reserved`) é o local do mercado. Vazio em `place_kind` = a ação vale em qualquer lugar.
 const PLACE_KINDS: Array[String] = Place.KINDS
 ## Tipos de condição aceitos (lista fechada; tipo novo é código). Aqui `has_food` é só um NOME: quem o avalia é a LW-060 (com a
 ## LW-065). A regra de comparação de cada tipo (limite inclusivo ou não, janela de horas que cruza a meia-noite) também é da LW-060.

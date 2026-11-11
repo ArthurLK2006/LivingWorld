@@ -1,7 +1,7 @@
 class_name PlaceBoxesView
 extends Node3D
 ## Construções provisórias (LW-074): uma CAIXA colorida por local (casa, trabalho, descanso e convívio), com a base na altura do terreno,
-## montada pelos dados de `peek_places`. Só visual: sem colisão, texto nem animação; `market_reserved` não é desenhado. Cada caixa fica
+## montada pelos dados de `peek_places`. Só visual: sem colisão, texto nem animação; `market` não é desenhado. Cada caixa fica
 ## escondida até o terreno do seu chunk existir (`set_chunk_visible`, ligado a `chunk_loaded` e `chunk_unloaded` pela cena), para não
 ## flutuar no vazio. A view fica na origem do mundo. Contrato: docs/modules/presentation.md.
 

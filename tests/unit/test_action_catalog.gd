@@ -106,7 +106,7 @@ func test_no_initial_action_uses_the_reserved_market_place_and_every_kind_is_kno
 
 
 func test_the_place_vocabulary_and_condition_kinds_are_the_closed_lists() -> void:
-	assert_eq(ActionDef.PLACE_KINDS, ["home", "work", "rest", "social", "market_reserved"] as Array[String])
+	assert_eq(ActionDef.PLACE_KINDS, ["home", "work", "rest", "social", "market"] as Array[String])
 	assert_eq(ActionDef.CONDITION_KINDS, ["need_at_least", "need_at_most", "hour_between", "place_has_room", "has_food"] as Array[String])
 
 
@@ -171,10 +171,10 @@ func test_a_new_action_added_only_by_data_passes_validation() -> void:
 func test_a_minimal_new_action_and_the_reserved_place_kind_pass() -> void:
 	var tables: Dictionary[String, Array] = _tables()
 	tables["actions"].append({"id": "stand_around", "duration_min": 5, "place_kind": "", "risk": 0, "interruptible": true})
-	tables["actions"].append({"id": "browse", "duration_min": 5, "place_kind": "market_reserved", "risk": 0, "interruptible": true})
+	tables["actions"].append({"id": "browse", "duration_min": 5, "place_kind": "market", "risk": 0, "interruptible": true})
 	var loaded: ActionCatalogLoader.LoadResult = _load(tables)
 	assert_true(loaded.result.ok, loaded.result.message)
-	assert_eq(_action(loaded.actions, "browse").place_kind, "market_reserved", "O vocabulário aceita o tipo reservado.")
+	assert_eq(_action(loaded.actions, "browse").place_kind, "market", "O vocabulário aceita o tipo `market`.")
 
 
 # ---------------------------------------------------------------------------------------------------- dado inválido
@@ -203,7 +203,7 @@ func test_references_to_things_that_do_not_exist_point_at_file_item_and_field() 
 func test_unknown_place_kind_and_unknown_condition_kind_fail() -> void:
 	var place: Dictionary[String, Array] = _tables()
 	_row(place, "actions", "work")["place_kind"] = "kitchen"
-	_expect_failure("tipo de local inexistente", place, [ACTIONS_FILE, "item 'work'", "campo 'place_kind'", "tipo de local 'kitchen' inexistente", "home, work, rest, social, market_reserved"])
+	_expect_failure("tipo de local inexistente", place, [ACTIONS_FILE, "item 'work'", "campo 'place_kind'", "tipo de local 'kitchen' inexistente", "home, work, rest, social, market"])
 	var kind: Dictionary[String, Array] = _tables()
 	_row(kind, "action_conditions", "eat_has_food")["kind"] = "is_raining"
 	_expect_failure("tipo de condição desconhecido", kind, [CONDITIONS_FILE, "item 'eat_has_food'", "campo 'kind'", "tipo de condição desconhecido 'is_raining'", "need_at_least"])

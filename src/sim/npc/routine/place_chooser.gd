@@ -27,9 +27,9 @@ func place_for(state: NpcState, action: ActionDef) -> ChosenPlace:
 			return _assigned(state, state.home_place_id, "casa")
 		Place.KIND_WORK:
 			return _assigned(state, state.work_place_id, "local de trabalho")
-		Place.KIND_REST, Place.KIND_SOCIAL:
+		Place.KIND_REST, Place.KIND_SOCIAL, Place.KIND_MARKET:
 			return nearest_with_room(state, action.place_kind)
-	return ChosenPlace.new(Result.failure(CODE_KIND_UNSUPPORTED, "PlaceChooser.place_for: o tipo de local '%s' da ação '%s' não tem regra de escolha (o `market_reserved` é reservado)." % [action.place_kind, action.id]), "")
+	return ChosenPlace.new(Result.failure(CODE_KIND_UNSUPPORTED, "PlaceChooser.place_for: o tipo de local '%s' da ação '%s' não tem regra de escolha." % [action.place_kind, action.id]), "")
 
 
 ## O local de tipo `kind`, do assentamento do NPC, mais próximo (distância em linha reta) entre os que têm vaga; empate: menor id.
