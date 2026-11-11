@@ -183,3 +183,20 @@ class SitesQuery:
 
 	func _init(site_rows: Array[SiteQuery]) -> void:
 		sites = site_rows
+
+
+## `request_consume`: o que o consumo fez: a quantidade consumida, o id da necessidade que o bem alivia (`need_id` de `goods.json`) e o alívio total (`need_relief` × quantidade) para o `npc` aplicar; só valem se `result.ok`.
+class ConsumeResult:
+	extends RefCounted
+
+	var result: Result
+	var quantity: int
+	var need_id: String
+	var relief: int
+
+	func _init(consume_result: Result, consumed_quantity: int, relieved_need_id: String, total_relief: int) -> void:
+		result = consume_result
+		quantity = consumed_quantity
+		need_id = relieved_need_id
+		relief = total_relief
+

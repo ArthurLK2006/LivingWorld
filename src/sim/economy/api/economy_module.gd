@@ -104,7 +104,7 @@ func debug_summary() -> Dictionary:
 	return EconomyPersistence.summary(_state)
 
 
-## Abre o dono (conta e inventário). Idempotente: quem já existe fica como está. Falhas: `ECON_UNKNOWN_OWNER` (ID fora da faixa) e `ECON_DATA_INVALID` (tipo vazio ou, havendo definições, tipo que não existe). `work_place_id` (opcional) só vale
+## Abre o dono (conta e inventário) e, se o tipo tem saldo inicial, faz o `mint` `game_start` (LW-093, DEC-170; só na abertura). Idempotente: quem já existe fica como está. Falhas: `ECON_UNKNOWN_OWNER` (ID fora da faixa) e `ECON_DATA_INVALID` (tipo vazio ou, havendo definições, tipo que não existe). `work_place_id` (opcional) só vale
 ## para o tipo `npc` e só na ABERTURA da conta: o NPC é atribuído ao local de produção desse local; sem local de produção ali, ninguém é atribuído (e não é erro). Depois disso o emprego só muda por vaga aceita (LW-096) ou morte.
 func request_open_owner(owner_id: int, kind: String, work_place_id: String = "") -> Result:
 	if not _state.definitions.kinds.is_empty() and not kind.is_empty():
@@ -113,11 +113,18 @@ func request_open_owner(owner_id: int, kind: String, work_place_id: String = "")
 			return Result.failure(EconomyCodes.DATA_INVALID, "EconomyModule.request_open_owner: o tipo de dono '%s' não existe; esperado um de: %s." % [kind, ", ".join(known)])
 	var is_new: bool = not _state.book.has_owner(owner_id)
 	var opened: Result = _state.book.open_owner(owner_id, kind)
+	if opened.ok and is_new:
+		opened = EconomyRuntime.mint_initial_balance(_state, owner_id, kind)
 	if opened.ok and is_new and kind == KIND_NPC and not work_place_id.is_empty() and _state.production != null:
 		var site_id: int = _state.production.site_at(work_place_id)
 		if site_id != IdGenerator.NO_ID:
 			return _state.production.assign_worker(site_id, owner_id)
 	return opened
+
+
+## O NPC consome comida do inventário dele (LW-093; contrato, seção 7): destrói o bem (`consumed`) e devolve o alívio para o `npc` aplicar à necessidade (`EconomyReplies.ConsumeResult`).
+func request_consume(owner_id: int, good_id: String, quantity: int) -> EconomyReplies.ConsumeResult:
+	return EconomyCommands.consume(_state, owner_id, good_id, quantity)
 
 
 ## Move bens entre donos, sem criar nem destruir; tudo ou nada. Falhas: `ECON_UNKNOWN_GOOD`, `ECON_BAD_QUANTITY`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_INSUFFICIENT_GOODS` e `ECON_CAPACITY_EXCEEDED`.

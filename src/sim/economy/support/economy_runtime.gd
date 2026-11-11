@@ -38,7 +38,7 @@ static func run_production_hour(state: EconomyState, events: EventBus) -> void:
 
 ## Saldo inicial do tipo `market` (se o tipo tem) e o estoque inicial de cada bem negociado no assentamento.
 static func _fund_market(state: EconomyState, market_id: int, settlement_id: String) -> Result:
-	var funded: Result = _mint_initial_balance(state, market_id, MarketBook.KIND_MARKET)
+	var funded: Result = mint_initial_balance(state, market_id, MarketBook.KIND_MARKET)
 	if not funded.ok:
 		return funded
 	for good_id: String in state.markets.traded_goods(settlement_id):
@@ -51,7 +51,7 @@ static func _fund_market(state: EconomyState, market_id: int, settlement_id: Str
 
 
 ## O saldo inicial do tipo (se o tipo tem), com o motivo `game_start`.
-static func _mint_initial_balance(state: EconomyState, owner_id: int, kind_id: String) -> Result:
+static func mint_initial_balance(state: EconomyState, owner_id: int, kind_id: String) -> Result:
 	for kind: OwnerKindDef in state.definitions.kinds:
 		if kind.id == kind_id and kind.initial_balance > 0:
 			return state.ledger.mint(owner_id, kind.initial_balance, Ledger.REASON_GAME_START)
@@ -63,7 +63,7 @@ static func _open_production_site(state: EconomyState, ids: IdGenerator, definit
 	var site_id: int = ids.next_id()
 	var opened: Result = state.book.open_owner(site_id, ProductionBook.KIND_SITE)
 	if opened.ok:
-		opened = _mint_initial_balance(state, site_id, ProductionBook.KIND_SITE)
+		opened = mint_initial_balance(state, site_id, ProductionBook.KIND_SITE)
 	if opened.ok:
 		opened = state.production.register_site(site_id, definition)
 	if not opened.ok:
