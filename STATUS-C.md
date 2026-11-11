@@ -40,7 +40,7 @@ Critério da parte 117c cumprido por leitura: os dois contratos existem em `docs
 1. **Acoplamento:** a `politics` importa 4 módulos (`world`, `economy`, `npc`, `factions`), mais que o limite de 3 do AGENTS 5.2. A arquitetura 13.6 já lista essas dependências; deixei o alerta escrito no contrato e a REV da LW-144 reavalia.
 2. **Pedidos a outras partes** (escritos nos contratos, porque um arquivo tem um só escritor): à **117b**, um motivo `contribution` (ou aceitar `tax`) e `needs_license` verdadeiro recusar a ordem; à **117d**, a carga de `ReputationChanged` (com a faixa), `BattleResolved` e `CaravanAttacked` com o país do atacante; à **117e**, `peek_satisfaction`, a lista de NPC por ofício e povoado e o povoado de moradia do NPC.
 3. **O `README` dos módulos** diz que `economy`, `factions` e `politics` "não têm contrato"; está desatualizado desde a 087b. Não toquei (fora do escopo); recomendo corrigir junto da Fase B.
-4. **A 117c não fecha o ponto 6 de 17.11 do `economy.md`** (quem recebe a tarifa por país): fica resolvido assim: governo no principal e o próprio país no vizinho (`politics.md`, seção 5).
+4. **Pontos de 17.11 do `economy.md` tratados aqui:** o **4** (tesouro de facção colapsada: parado na soma, `factions.md` 6.3) e o **7** (quem recebe a tarifa por país: a facção de governo no principal e o próprio país no vizinho, `politics.md` seção 5). O **5** (como o jogador escolta) **segue para a 117d** (missão de escolta do `military`). Erro de numeração corrigido neste item (eu tinha escrito "ponto 6").
 5. O povoado C (do vizinho, sem facção) **segue com a folha dos postos pelo mercado** (alternativa descrita; exigiria ajustar 17.5 do `economy.md`).
 
 ## 8. RISCOS
