@@ -1,8 +1,8 @@
 # LW-087a — Pré-voo da Fase 3 (economia): decisões de 10/11/2026
 
-- **Status:** duas origens, e a diferença importa. (1) **Decisões de Arthur, por escrito, em 10/11/2026** (mensagem que autorizou a LW-087a): entram em `docs/DECISIONS.md` como **APROVADA** (DEC-129 a DEC-137, DEC-142 a DEC-144, DEC-163, DEC-164 e DEC-178) e aprovam as DEC-047, DEC-049 e DEC-054. (2) **Respostas do revisor (Claude), na delegação de menores:** entram como **PROPOSTA**, isto é, **padrão de trabalho, não APROVADA** (DEC-138 a DEC-141, DEC-145 a DEC-162 e DEC-165 a DEC-177); Arthur pode trocá-las. Cada entrada de `DECISIONS.md` aponta para a seção correspondente deste arquivo.
+- **Status:** duas origens, e a diferença importa. (1) **Decisões de Arthur, por escrito, em 10/11/2026** (mensagem que autorizou a LW-087a): entram em `docs/DECISIONS.md` como **APROVADA** (DEC-129 a DEC-137, DEC-142 a DEC-144, DEC-163, DEC-164 e DEC-178) e aprovam as DEC-047, DEC-049 e DEC-054. (2) **Decisões do revisor (Claude), na delegação de menores, aprovadas por Arthur em bloco em 11/11/2026** (rodada 5, seção 10): entram como **APROVADA** (DEC-138 a DEC-141, DEC-145 a DEC-162 e DEC-165 a DEC-177). Essa aprovação **não autoriza editar fixture protegida (DEC-172)** e **não transforma valor [HIP] em requisito**. Cada entrada de `DECISIONS.md` aponta para a seção correspondente deste arquivo.
 - **Data e tarefa:** 10/11/2026 (Brasília), LW-087a (DOC), rascunho. Origem: o pré-voo da Fase 3 (levantamento feito antes da LW-087: decisões de que a fase depende, contradições e buracos, divisão da LW-087 e backlog prévio); as perguntas Q1 a Q17 e D1 do contrato da `economy` (`docs/modules/economy.md` e `docs/economy/dados.md`); as perguntas Q-W1 a Q-W6 e Q18 a Q23 dos contratos do `world` e do `npc` (`docs/modules/world.md` e `docs/modules/npc.md`).
-- **Rótulos:** **fato** (com origem), **decisão** (de Arthur), **proposta** (do revisor), **[HIP]**, **pendente**, **limitação**.
+- **Rótulos:** **fato** (com origem), **decisão** (de Arthur), **decisão do revisor** (aprovada por Arthur em bloco em 11/11/2026), **[HIP]**, **pendente**, **limitação**.
 
 ## 1. Escala do protótipo (DEC-129, APROVADA)
 
@@ -31,7 +31,7 @@
 ### 2.4 Dinheiro inicial tarde demais (DEC-133)
 - **Contexto (fato):** a LW-094 remove o `FoodStub` e exige 30 dias verdes, mas o `mint` inicial só nasce na LW-095. Sem dinheiro, guarda, estalajadeiro, artesão e lenhador não compram comida.
 - **Opções:** (a) o `mint` inicial entra na LW-093; (b) a LW-095 vem antes da LW-094; (c) manter a ordem.
-- **Decisão:** **(a) ou (b)**, as duas aceitas por Arthur; a escolha é feita quando a LW-093 for preparada. O motivo do dinheiro inicial é `game_start` (DEC-147, PROPOSTA).
+- **Decisão:** **(a) ou (b)**, as duas aceitas por Arthur; a escolha é feita quando a LW-093 for preparada. O motivo do dinheiro inicial é `game_start` (DEC-147, APROVADA em bloco em 11/11/2026).
 
 ### 2.5 Save: migrar ou rejeitar (DEC-134)
 - **Contexto (fato):** a LW-111 dizia "save da Fase 2 migra e carrega" e previa incremento de `save_version`; o AGENTS 4.15 e a DEC-127 mantêm o número em 2 e rejeitam o save antigo até o "save congelado" (DEC-083), que ninguém declarou.
@@ -68,9 +68,9 @@
 - **Opções:** (A) emprego estático (`work_place_id` de `population.json`); (B) a economia oferece o emprego por evento (`ContractOffered`) e o NPC aceita pela utilidade; (A para o início e B para vaga nova).
 - **Decisão:** **A para o início do jogo e B para a vaga nova.** A população inicial já nasce empregada.
 
-## 5. Decididos pelo revisor (PROPOSTA: padrão de trabalho, não APROVADA)
+## 5. Decididos pelo revisor (aprovados por Arthur em bloco em 11/11/2026)
 
-Para cada item, a opção escolhida é a **recomendação** da fonte; o revisor a adotou na delegação de menores. Arthur pode trocá-la.
+Para cada item, a opção escolhida é a **recomendação** da fonte; o revisor a adotou na delegação de menores e Arthur a aprovou em bloco em 11/11/2026 (seção 10).
 
 ### 5.1 Menores 7 a 11 do pré-voo (DEC-138 a DEC-141)
 - **Menor 7, tributos.** Fato: GDD 12.5 [P1] cita "tributos"; o roadmap 3.J manda não fazer impostos. Opções: valer o GDD ou o roadmap. **Escolha:** o roadmap; tributos na Fase 4 (DEC-138).
@@ -95,7 +95,7 @@ Para cada item, a opção escolhida é a **recomendação** da fonte; o revisor 
 - **Q14, contratos:** `labor` = minutos de trabalho num local; `delivery` = bem no destino (DEC-157).
 
 ### 5.3 Perguntas Q-W1 a Q-W6 do contrato do `world` (DEC-158 a DEC-162)
-- **Q-W1:** as rotas formam um triângulo (A–B, A–C, B–C) (DEC-158). **Q-W2 e Q-W3:** só `open` e `closed`, nenhum campo extra, e o `RouteStateChanged` leva só `route_id` e `new_state` (DEC-159). **Q-W4:** renomear `market_reserved` para `market` na LW-093 (DEC-160). **Q-W5:** não ampliar o terreno (DEC-161). **Q-W6:** aceitar a mudança de hash na LW-097, atualizando o oráculo, o hash de 30 dias e o hash que o `run_sim` imprime (o código do `run_sim` não muda), com a aprovação de Arthur dos valores novos (DEC-162).
+- **Q-W1:** as rotas formam um triângulo (A–B, A–C, B–C) (DEC-158). **Q-W2 e Q-W3:** só `open` e `closed`, nenhum campo extra, e o `RouteStateChanged` leva só `route_id` e `new_state` (DEC-159). **Q-W4:** renomear `market_reserved` para `market` na LW-093 (DEC-160). **Q-W5:** não ampliar o terreno (DEC-161). **Q-W6:** aceitar a mudança de hash na LW-097, atualizando o oráculo e o hash do soak de 30 dias (o `run_sim` não muda: não registra módulo, e o hash dele não se altera), com a aprovação de Arthur dos valores novos (DEC-162).
 
 ### 5.4 Perguntas Q18, Q20 e Q21 do contrato do `npc` (DEC-152, DEC-153, DEC-145)
 - **Q18, salário e `income`:** opção A: a economia paga por hora de produção a todos os trabalhadores atribuídos, com **um** evento `WagesPaid` por local e por hora, ouvido pelo `npc` (DEC-152). **Q20:** só comida na Fase 3 (junto da Q9, DEC-153). **Q21:** opção A, o `npc` abre a conta pela `economy/api` e a economia faz o `mint` `game_start` (junto da Q1, DEC-145).
@@ -116,21 +116,21 @@ Para cada item, a opção escolhida é a **recomendação** da fonte; o revisor 
 - **Quem paga guardas e estalajadeiros (DEC-164, Q15).** Cada povoado ganha postos de serviço e a folha sai da conta do mercado do povoado; provisório até a Fase 4 (impostos). Entra na LW-095.
 - **Ajustes de coerência do roadmap, confirmados:** a escala em 3.B, o critério 9 de 3.F, a linha de save de 3.G, o Anexo D, a LW-094, a LW-105 e a LW-111.
 
-### 7.2 Decisões do revisor (PROPOSTA: padrão de trabalho, Arthur pode aprovar ou trocar)
+### 7.2 Decisões do revisor (aprovadas por Arthur em bloco em 11/11/2026)
 - **Salário (Q18 A), como o contrato da `economy` escreveu (DEC-152, revista).** A cada hora em que o local produz, paga todos os trabalhadores atribuídos, tudo ou nada; **um** evento `WagesPaid` por local e por hora (`site_id` e `amount_each`); o `npc` o ouve e alivia `income`. **Q8 e Q18 não se contradizem:** o salário é o passo 3 da hora do local (DEC-151, revista). **Um trabalho, um pagamento:** `request_work_shift` só vale para contrato `labor` e é recusado se o trabalhador já está atribuído àquele local. A DEC-153 (Q20) foi revista: o NPC só come; os locais consomem ferramenta e tábua.
-- **Q16 (DEC-165):** tipo de contrato `vacancy` (sem custódia, sem prazo). **Q17 (DEC-166):** o povoado C começa com estoque de comida no mercado; soaks de 30 dias na LW-097 com ele; soaks de 1 ano só depois da LW-098. **Q23 (DEC-167):** coluna opcional `work_place_id` em `data/population.json` (LW-097); é mudança de formato de dado, então **fica PROPOSTA até Arthur aprovar, quando a LW-097 for preparada**.
+- **Q16 (DEC-165):** tipo de contrato `vacancy` (sem custódia, sem prazo). **Q17 (DEC-166):** o povoado C começa com estoque de comida no mercado; soaks de 30 dias na LW-097 com ele; soaks de 1 ano só depois da LW-098. **Q23 (DEC-167):** coluna opcional `work_place_id` em `data/population.json` (LW-097); é mudança de formato de dado, **aprovada por Arthur em bloco em 11/11/2026** (DEC-167).
 - **`sell` do NPC (DEC-168):** mesmo mecanismo de utilidade da `buy`, definido na LW-093; na Fase 3 quem vende o excedente da produção é o **local**; divergência do aceite da LW-093 registrada no roadmap. **LW-096a (DEC-169):** o NPC aceita vaga pela utilidade, com histerese; o emprego só termina por morte ou por outra vaga; local sem dinheiro para e não demite.
 - **Dinheiro inicial (DEC-170):** o `mint` `game_start` entra na LW-093, antes da LW-094 (a LW-095 não muda de lugar).
-- **LW-088a (DEC-171 e DEC-172):** regra nova no `check_architecture` (o `npc` cita só `economy/api`; a `economy` não cita o `npc`), com teste positivo e negativo; o registro da `economy` no `World` muda o `state_hash` e pode atingir `tests/unit/test_save_codec.gd` (fixture `save_v1`, protegida): a LW-088a **para** e pede a autorização escrita de Arthur antes de mexer em `tests/fixtures`; Arthur aprova os hashes novos **uma vez em cada marco** (três marcos por bloco, a partir da rodada 4: LW-088a a LW-092; LW-093 a LW-096a; LW-097; seção 9); o `run_sim` não muda. **Limitação:** a linha da LW-088a descreve a tarefa como o registro de uma casca do módulo (`api/` vazia), a ideia do pré-voo; Arthur citou só as três regras acima.
+- **LW-088a (DEC-171 e DEC-172):** regra nova no `check_architecture` (o `npc` cita só `economy/api`; a `economy` não cita o `npc`), com teste positivo e negativo; o registro da `economy` no `World` muda o `state_hash` e pode atingir `tests/unit/test_save_codec.gd` (fixture `save_v1`, protegida): a LW-088a **para** e pede a autorização escrita de Arthur antes de mexer em `tests/fixtures`; Arthur aprova os hashes novos **uma vez em cada marco** (três marcos por bloco, a partir da rodada 4: LW-088a a LW-092; LW-093 a LW-096a; LW-097; seção 9); o `run_sim` não muda (não registra módulo; o hash dele não se altera). **Limitação:** a linha da LW-088a descreve a tarefa como o registro de uma casca do módulo (`api/` vazia), a ideia do pré-voo; Arthur citou só as três regras acima.
 - **`request_trade(actor_id, market_id, good_id, quantity, side)` (DEC-173),** na lista de divergências do roadmap (LW-091). **`RouteStateChanged`** leva só `route_id` e `new_state`, e a rota só `open` e `closed` (DEC-159, revista; já estava assim nos contratos). **Preço:** `bid` de no mínimo 1 e `ask` maior que o `bid`, invariante (DEC-150, revista); a fórmula fica em `docs/modules/economy.md`.
 - **Correção do registro (nota curta pedida por Arthur):** a frase "DEC-054, proposta" está na **DEC-034**, e não na DEC-031 (citada por engano no relatório da rodada 1); a nota "(DEC-054 aprovada em 10/11/2026)" foi acrescentada na DEC-034. Outras entradas ainda tratam a DEC-054 como proposta (DEC-005, DEC-045 e DEC-053) e **não foram alteradas**.
 
 ## 8. Rodada 3 (10/11/2026, depois da segunda rodada das revisões cruzadas)
 
-Todas as decisões abaixo são do **revisor** e entram como **PROPOSTA** (padrão de trabalho): Arthur pode aprovar ou trocar.
+Todas as decisões abaixo são do **revisor** e foram **aprovadas por Arthur em bloco em 11/11/2026** (seção 10).
 
 - **Q18, postos de serviço sem a marca `TEMP-LW` (DEC-174).** São provisórios até a Fase 4, mas são regra de jogo e não código a remover; o Anexo D e o critério 3.F item 4 do roadmap dizem isso, e o `check_temp` continua exigindo zero marcas.
-- **Q19, três marcos de hash (DEC-175; DEC-172 revista).** (1) LW-088a (registro da `economy`); (2) LW-093 a LW-095 (o NPC passa a usar mercado, comida e salário); (3) LW-097 (população nova). Arthur aprova os valores novos uma vez em cada marco; o `run_sim` não muda.
+- **Q19, três marcos de hash (DEC-175; DEC-172 revista).** (1) LW-088a (registro da `economy`); (2) LW-093 a LW-095 (o NPC passa a usar mercado, comida e salário); (3) LW-097 (população nova). Arthur aprova os valores novos uma vez em cada marco; o `run_sim` não muda (não registra módulo; o hash dele não se altera).
 - **Q20, estoque inicial de 30 dias (DEC-176).** Dos bens importados até o comerciante (LW-098): comida no C; ferramenta em A e B; farinha e tábua em B; madeira e tábua em C. Dados [HIP], na LW-097.
 - **Q21, teto de compra do mercado (DEC-177).** Por bem, em dados; acima dele o mercado deixa de comprar e o local para por `OUTPUT_FULL` sem perder eficiência. LW-090.
 - **Nomes canônicos (valem os do contrato da `economy`).** O evento é `WagesPaid(workplace_id, amount_each)`, em que `workplace_id` é o `site_id` do local de produção ou o `post_id` do posto; a consulta dos trabalhadores é `peek_site` (local de produção) ou `peek_post` (posto); o campo da equipe desejada é `workers_wanted`. A DEC-152 foi revista.
@@ -143,10 +143,24 @@ Todas as decisões abaixo são do **revisor** e entram como **PROPOSTA** (padrã
 ### 9.1 Decisão de Arthur (APROVADA)
 - **O tecido entra na manutenção dos locais (DEC-178, Q22).** Além de ferramenta e tábua (lonas, sacos), em dados. O NPC continua só comendo; roupa continua fora; o teto de compra (DEC-177) e "hora parada = ninguém recebe" ficam. Motivo: sem isso o tecelão e o pastor ficam sem salário e passam fome. Amplia a DEC-163 (que ganhou uma nota curta) e a DEC-153 (idem); o vocabulário de `site_upkeep` passa a `tool`, `plank` e `fabric`.
 
-### 9.2 Decisões do revisor (PROPOSTA: padrão de trabalho, Arthur pode aprovar ou trocar)
-- **Marcos de hash por bloco (DEC-175 e DEC-172 revistas).** Marco 1 = LW-088a a LW-092 (a economia ganha estrutura; o NPC ainda não a usa); marco 2 = LW-093 a LW-096a (o NPC usa mercado, comida, salário e vaga); marco 3 = LW-097 (população nova). Em cada bloco, o primeiro valor de referência que mudar faz a tarefa **parar** e mostrar a Arthur o valor antigo, o novo e a causa; se ele aprovar ("aprovo os hashes do marco N"), as demais tarefas do bloco só registram os valores novos, desde que a causa seja a do bloco. A partir da LW-098, se um valor já aprovado mudar, a tarefa para e pergunta (AGENTS 9.5); o primeiro valor de um teste novo não é mudança. A fixture `save_v1` só com autorização escrita específica. **O código do `run_sim` não muda; muda o hash que ele imprime** (DEC-162 e DEC-172).
-- **Quatro frases:** a vaga é em **local de trabalho**, isto é, local de produção ou posto de serviço (DEC-165); a DEC-162 diz que o hash do `run_sim` muda e o código dele não; a DEC-177 cita o erro `ECON_MARKET_FULL`; e a DEC-163 diz "ampliada pela DEC-178".
+### 9.2 Decisões do revisor (aprovadas por Arthur em bloco em 11/11/2026)
+- **Marcos de hash por bloco (DEC-175 e DEC-172 revistas).** Marco 1 = LW-088a a LW-092 (a economia ganha estrutura; o NPC ainda não a usa); marco 2 = LW-093 a LW-096a (o NPC usa mercado, comida, salário e vaga); marco 3 = LW-097 (população nova). Em cada bloco, o primeiro valor de referência que mudar faz a tarefa **parar** e mostrar a Arthur o valor antigo, o novo e a causa; se ele aprovar ("aprovo os hashes do marco N"), as demais tarefas do bloco só registram os valores novos, desde que a causa seja a do bloco. A partir da LW-098, se um valor já aprovado mudar, a tarefa para e pergunta (AGENTS 9.5); o primeiro valor de um teste novo não é mudança. A fixture `save_v1` só com autorização escrita específica. **O `run_sim` não muda** (não registra módulo; o hash dele não se altera); **mudam o oráculo (`test_npc_split_oracle`) e o hash do soak de 30 dias** (DEC-162 e DEC-172; corrigido na rodada 5).
+- **Quatro frases:** a vaga é em **local de trabalho**, isto é, local de produção ou posto de serviço (DEC-165); a DEC-162 diz que o `run_sim` não muda (correção da rodada 5: antes dizia que o hash que ele imprime mudava); a DEC-177 cita o erro `ECON_MARKET_FULL`; e a DEC-163 diz "ampliada pela DEC-178".
 - **Roadmap:** LW-097 deixa de prever ampliar o terreno (DEC-161), cita o estoque inicial dos importados "inclusive tecido onde o povoado não tece" e o `RouteStateChanged` e o comando de fechar rota (o contrato do `world` os põe na LW-097); LW-092 gasta `tool`, `plank` e `fabric`. A distribuição 14/6/20/10 continua **sem entrada própria**.
+
+## 10. Rodada 5 (11/11/2026)
+
+### 10.1 Aprovação em bloco (Arthur, 11/11/2026, painel de decisões)
+- **35 decisões passam de PROPOSTA a APROVADA:** DEC-138 a DEC-141 (4), DEC-145 a DEC-162 (18) e DEC-165 a DEC-177 (13). Onde havia ressalva, ela fica (nenhuma das 35 tinha).
+- **Não mudam:** DEC-142, 143, 144, 163, 164 e 178 (já APROVADAS); as 29 PROPOSTA antigas das Fases 0 a 2; a DEC-040 (continua PENDENTE).
+- **Limites da aprovação (valem para as 35):** ela **não autoriza editar fixture protegida** (`tests/fixtures`, DEC-172: segue valendo a autorização escrita específica) e **não transforma valor [HIP] em requisito** (números de preço, salário, manutenção, estoque inicial e teto de compra seguem hipóteses em `data/`).
+- **A coluna `work_place_id` (DEC-167)** era a única das 35 que dependia de uma aprovação própria por ser mudança de formato de dado (AGENTS 16.2); ela está coberta pela aprovação em bloco.
+- **Não entrou na aprovação:** a distribuição 14/6/20/10 (locais de produção, postos e locais `work`), que nunca teve entrada própria; continua uma proposta a aprovar ao preparar a LW-097.
+
+### 10.2 Correção do `run_sim` (erro das rodadas 3 e 4)
+- **O que o código do `main` mostra:** `tools/run_sim.gd` só cria o `SimulationRunner`, chama `start_new_game`, `run_days` e imprime `describe_state()`; **não chama `register_module`**. Em `src/`, `register_module` só é chamado dentro do `SimulationRunner` e do `GameModules.register`, e este só é usado pelo `SimulationHost`. O `run_sim` roda com zero módulos registrados; o "Hash do estado" que ele imprime vem de `world.state_hash()` sem módulos.
+- **Conclusão:** registrar a `economy` (LW-088a) ou o `world` (LW-097) no `SimulationHost` **não muda o `run_sim` nem o hash que ele imprime**. Mudam o **oráculo** (`test_npc_split_oracle`) e o **hash do soak de 30 dias**. Nada mais foi encontrado que mude por causa disso.
+- **Onde a frase foi corrigida:** DEC-162, DEC-172 e DEC-175; a linha da LW-088a e a nota sob a tabela 3.D do roadmap (a LW-097 não dizia nada do `run_sim`); neste arquivo, as seções 5.3, 7.2, 8 e 9. A LW-088a passa a mostrar, no relatório, o hash do `run_sim` antes e depois (esperado: iguais).
 
 ## Pendentes (não decididos aqui)
 
