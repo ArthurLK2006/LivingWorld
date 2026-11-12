@@ -1,4 +1,4 @@
-11/11/2026 21:53 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R14 feitas, sem bloqueio (R13-I1/R14-I1: a recusa de `request_post_contract` gasta um ID, o contrário do que o `economy.md` diz); entradas no `main` auditadas (LW-093 `f2bcb4c`; LW-117i `4372f7f`): SÃS; AVISOS p/ Arthur: ordem de entrada A x C (recomendo a C primeiro) e a Fase B da C pode PARAR (R10-I4); próximo: R15 (096d da A); vigia armado; sem BLOQUEADA.
+11/11/2026 21:55 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R15 feitas, sem bloqueio (a LW-096 a–d, da A, só em ramos; R13-I1/R14-I1: recusa de `request_post_contract` gasta ID; R15-I1: custódia de emissor morto fica presa, pergunta p/ Arthur); entradas no `main` auditadas (LW-093 `f2bcb4c`; LW-117i `4372f7f`): SÃS; AVISOS p/ Arthur: ordem de entrada A x C (recomendo a C primeiro) e a Fase B da C pode PARAR (R10-I4); vigia armado; sem BLOQUEADA.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1025,3 +1025,45 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 **9. PENDÊNCIAS.** *Da A:* R14-I1 (e o R13-I1, que é o mesmo defeito) e os menores. *Que não consegui verificar:* o `check_all` **da A**; a junção real; e se os 6 testes novos **passam** no Godot (li os asserts, não rodei).
 
 **ACOMPANHAMENTO.** *Avanço:* LW-096 em 3 partes nos ramos da A (a, b, c); faltam o prazo (a 096d acabou de aparecer no GitHub: será a R15), as vagas, e a LW-095 final. *Próxima:* R15 (`lw-096d-prazo-dos-contratos`, `45bb31b`). *Decisões de Arthur:* as mesmas da R11 a R13 (ordem A × C; 7 linhas de teste do R6-M2). *Git:* só leitura nos ramos remotos; este relatório é o único commit (`status-b`); `main` em `4372f7f`.
+
+
+## RELATÓRIO — R15: ramo novo da conversa A (`lw-096d-prazo-dos-contratos`, `45bb31b`, LW-096 parte d)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 11/11/2026 21:55 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio.** A parte d entrega o **prazo**: a cada hora cheia, depois dos postos e dos locais de produção, a economia vence o contrato `labor` ou `delivery` (aberto ou aceito) cujo prazo passou: a custódia **volta ao emissor** (`contract_refund`), o estado vira `expired` e sai um `ContractFailed` (classe em `economy/api/`, regra E), por ID crescente; o concluído não é tocado. Com ela a LW-096 **fecha o ciclo de vida** que a R14-M1 pedia (nenhum contrato fica preso para sempre, **salvo** o caso do emissor morto, abaixo). **Nenhum teste existente alterado; nenhum protegido; nenhum hash muda** (sem contrato, `expire` não faz nada). Empilhado na 096c (`bc733af`), 1 commit.
+
+**2. ARQUIVOS CRIADOS / 3. MODIFICADOS.** Nenhum no projeto; só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Li o diff **inteiro** (10 arquivos: 5 `.gd`, 2 `.uid`, 3 documentos), o teste novo **inteiro** (146 linhas, e refiz as contas dos saldos do teste 3: trabalhador 60+25−25+25 = 85, emissor 60−25−25+25 = 35, destino 60−25 = 35: **conferem**), `OwnerBook.close_owner` e `is_closed`, o único chamador de `run_production_hour` (`economy_module.gd:76`) e o construtor do `NpcDied` (o teste usa `("test", 0)` como os outros testes). Sem proposta de DEC.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da A.** Rodei: contagem DEC-126, `git grep` dos chamadores, `merge-tree --trivial-merge` (só imprime). Todos terminaram sem erro.
+
+**6. RESULTADOS**
+| Item | Resultado |
+|---|---|
+| **Tamanho (DEC-126)** | **214 linhas** em **5 `.gd`** (+ 205, − 9): **dentro do teto** |
+| **Cumpre a seção 8 do `economy.md`?** | **Em parte:** o prazo e a devolução ao emissor **sim**; a frase "a custódia **nunca** fica retida [Q14]" **não** vale para emissor morto (R15-I1) |
+| **Limiar do prazo** | `expire` vence quando `agora >= prazo`, **o mesmo limiar** de `work_shift` e `deliver` (recusam com `agora >= prazo`): não há janela em que o contrato esteja "vencido para uns e vivo para outros", exceto até 59 min (a cadência é a hora; A documenta) |
+| **Tudo ou nada / ordem** | A devolução confere o emissor aberto e o saldo antes de transferir; se falhasse (caminho praticamente inalcançável) a A registra `push_error` e **ainda** marca `expired`, e o `validate()` **acusa** (o emissor está vivo); a ordem é por ID crescente, estável |
+| **Sem contrato, nada muda** | **Sim:** `expire` não mexe em estado sem contrato; a mudança de assinatura de `run_production_hour` tem **um** chamador (o módulo) e **nenhum teste** a chama (conferi com `git grep`) |
+| **Camadas, tempo, aleatoriedade, `float`, dinheiro** | Limpos: o `now` vem do relógio do módulo; só `Ledger`; sem `float` |
+| **Testes novos (5)** | vence aberto (antes não, na hora cheia sim, uma vez só, depois não se aceita); aceito também vence e o trabalho incompleto não paga; concluído nunca vence, ordem por ID, aberto com prazo maior fica; **emissor morto** não recebe e a recompensa fica na conta do contrato (conservação e `validate()` verdes); save do `expired` |
+| **Eventos** | `ContractFailed` publicado **uma vez** por contrato vencido; `reason` = `expired` (constante nomeada); `docs/events.md` atualizado (publicador marcado) |
+
+**7. PROBLEMAS ENCONTRADOS (por gravidade)**
+**Bloqueante: nenhum.**
+**IMPORTANTE**
+- **R15-I1. Emissor morto: a recompensa fica presa e o contrato (`economy.md`, "Conclusão") diz o contrário.** O código **não devolve** a custódia a emissor fechado e o `validate()` passou a **aceitar** "contrato não retido, emissor fechado e custódia = recompensa" (`retained_by_dead_issuer`); a A marca **[LIM]** nos documentos e no commit. Mas a **mesma seção** ainda diz "a custódia nunca fica retida [Q14]" (a linha da Conclusão não foi tocada): o documento **se contradiz**. Duas ressalvas a favor da A: (a) é **coerente com o que a economia já faz** com o dinheiro de quem morre (`close_owner` só marca `closed`; o saldo fica na conta fechada e continua contado), então não é um buraco novo; (b) é **hash-neutro hoje** (ninguém posta contrato). Contra: é uma escolha de **design** (para onde vai o dinheiro de um contrato cujo emissor morreu) tomada sem perguntar (AGENTS 16.2). **Recomendo:** manter como [LIM] **e** corrigir a frase de Q14 ("nunca fica retida, **salvo emissor morto**, [LIM]") **e** pôr a pergunta para Arthur (opções: ficar na conta do contrato como hoje; ir para a conta do mercado do povoado do emissor; ser destruída pelo `Ledger`); **recomendação minha:** a conta do mercado, que mantém o dinheiro em circulação (a LW-098 vai precisar de moeda circulando).
+**MENOR**
+- **R15-M1. Contratos terminais nunca saem do livro.** `completed` e `expired` ficam para sempre no estado, no save e na varredura horária de `expire` (laço sobre **todos** os contratos, 24 vezes por dia de jogo). Hoje não há contrato; com o `npc` postando (LW-104) o livro só cresce. **Backlog:** poda de contratos terminais antigos (precisa de decisão sobre a crônica, que lê `ContractCompleted`/`ContractFailed`).
+- **R15-M2. `accept` ainda não confere o prazo** (era o R12-M3): um contrato já vencido mas ainda não varrido (até 59 min) **pode ser aceito**, e o aceitante não consegue trabalhar nem entregar nele (ambos recusam por prazo). Efeito pequeno (ele só perde a vez); o conserto é uma linha em `accept` + um teste.
+- **R15-M3. Lacunas de teste:** o vencimento de contrato **`delivery`** não é testado (o código trata igual ao `labor`; só o `labor` aparece nos 5 testes); falta um prazo **no meio da hora** (todos os testes usam prazo em hora cheia, então "até 59 minutos de atraso" não é exercido); e o `push_error` do caminho de falha da devolução não tem teste.
+- **R15-M4. `events.md`:** o rótulo da coluna "Situação" de `ContractFailed` continua "planejado, LW-096" (como o de `ContractOffered` e `ContractCompleted`, R14-M6): a tabela fica atrás do código.
+- **R15-M5. O R13-I1 / R14-I1 (recusa que gasta ID) continua aberto** nesta ponta (`request_post_contract` não mudou).
+
+**Junção (previsão por `merge-tree`, só texto):** a ponta `45bb31b` × `main` novo (`4372f7f`): **2 trechos, os dois em documento** (`docs/backlog.md` e `docs/events.md`); × **097e da C**: **12 trechos em 10 arquivos, os mesmos da 096b e da 096c** (a 096d não mexe em nenhum arquivo novo da C; o `test_economy_production_api.gd`, `test_npc_split_oracle.gd`, `game_app.gd` e `simulation_host.gd` seguem como o ponto de atrito).
+
+**8. RISCOS.** A pilha da A tem agora **9 ramos** (095a–d, 096a–d, 093k) e **nada no `main`**; quanto mais cresce, mais a Fase B da C (R10-I4) e a da A têm de reconciliar; o R15-I1 precisa de resposta de Arthur **antes** de a LW-104 fazer NPC postar contrato (o emissor pode morrer).
+
+**9. PENDÊNCIAS.** *Da A:* R13-I1 (ID gasto), R15-I1 (frase de Q14 e a pergunta a Arthur), M1 a M5. *De Arthur:* a pergunta do R15-I1 (para onde vai a custódia de emissor morto). *Que não consegui verificar:* o `check_all` **da A**; que os 5 testes novos **passam**; a junção real.
+
+**ACOMPANHAMENTO.** *Avanço:* a LW-096 está **completa no que o `economy.md` pede para `labor` e `delivery`** (a, b, c, d); faltam as **vagas** (parte e) e, na LW-095, `service_posts.json` e a retirada do `IncomeStub`. *Próxima:* o que o vigia trouxer (096e/vagas, 096a do NPC, 095e, ramos da C: 118a…) e toda entrada no `main`. *Decisões de Arthur:* ordem A × C (recomendo a C primeiro), as 7 linhas de teste do R6-M2 e a pergunta do R15-I1. *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `4372f7f`.
