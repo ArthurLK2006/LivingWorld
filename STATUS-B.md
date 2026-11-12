@@ -1,4 +1,4 @@
-11/11/2026 21:50 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R13 feitas, sem bloqueio (R13-I1: recusa de `request_post_contract` gasta um ID); entradas no `main` auditadas (LW-093 `f2bcb4c`; LW-117i `4372f7f`): SÃS; AVISOS p/ Arthur: ordem de entrada A x C (recomendo a C primeiro) e a Fase B da C pode PARAR (R10-I4); vigia armado; sem BLOQUEADA.
+11/11/2026 21:53 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R14 feitas, sem bloqueio (R13-I1/R14-I1: a recusa de `request_post_contract` gasta um ID, o contrário do que o `economy.md` diz); entradas no `main` auditadas (LW-093 `f2bcb4c`; LW-117i `4372f7f`): SÃS; AVISOS p/ Arthur: ordem de entrada A x C (recomendo a C primeiro) e a Fase B da C pode PARAR (R10-I4); próximo: R15 (096d da A); vigia armado; sem BLOQUEADA.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -983,3 +983,45 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 - **Próxima tarefa recomendada:** as revisões da fila, se o vigia avisar; e as auditorias de entrada no `main`.
 - **Decisões que dependem de Arthur:** a **ordem de entrada A × C** (recomendo a C primeiro) e a **autorização das 7 linhas de teste** do R6-M2.
 - **Git:** só leitura nos ramos remotos; este relatório é o único commit (`status-b`); `main` em `4372f7f`.
+
+
+## RELATÓRIO — R14: ramo novo da conversa A (`lw-096c-conclusao-dos-contratos`, `bc733af`, LW-096 parte c)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 11/11/2026 21:53 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio.** A parte c entrega a **conclusão** dos contratos: `request_work_shift` (soma os minutos do turno ao `labor` aceito; ao completar, dentro do prazo, a custódia paga) e `request_deliver_contract` (confere os bens **e** o pagamento antes de mover qualquer coisa, move os bens ao destino e paga), mais o evento `ContractCompleted` (classe em `economy/api/`, regra E). A regra "um trabalho, um pagamento" (DEC-151) está no código: quem já é atribuído ao local é **recusado** com `ECON_WORKER_ALREADY_ASSIGNED`. **Nenhum teste existente alterado; nenhum arquivo protegido; nenhum hash muda** (ninguém posta contrato no jogo). O **R13-I1** (recusa que gasta ID) **continua** no `request_post_contract` desta ponta. É 1 commit, empilhado na 096b (`bfbc9a3`), que por sua vez está sobre a pilha da A (base `e16072b`).
+
+**2. ARQUIVOS CRIADOS / 3. MODIFICADOS.** Nenhum no projeto; só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Li o diff **inteiro** (12 arquivos: 7 `.gd`, 2 `.uid`, 3 documentos), o teste novo **inteiro** (180 linhas) e as funções que ele usa (`GoodsStore.check_transfer`, `Ledger.check_transfer`, `ProductionBook.site_at`, `ServicePostBook.post_at`, `OwnerBook.check_open`: **todas existem** e já eram do `main`/da pilha). Sem proposta de DEC.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da A** (não exportei este ramo; o tempo desta rodada foi para a leitura e a previsão de junção). Rodei: contagem DEC-126, `git grep` das funções usadas, `git merge-tree --trivial-merge` (só imprime) contra o `main` e contra a 097e.
+
+**6. RESULTADOS**
+| Item | Resultado |
+|---|---|
+| **Tamanho (DEC-126)** | **346 linhas** (344 acrescentadas + 2 trocadas) em **7 `.gd`**: **acima do teto de 300, dentro da tolerância de 450** (a 096a foi 352 e a 096b 245: três partes da LW-096 já passam de 900) |
+| **Cumpre `economy.md` seção 8?** | **Sim:** `labor` só por `request_work_shift` com `ECON_WORKER_ALREADY_ASSIGNED`; `delivery` por `request_deliver_contract`; `contract_payout` pela custódia; **um** `ContractCompleted` por conclusão |
+| **Tudo ou nada** | **Sim** (conferi o código): `work_shift` só muda o estado depois de conferir minutos, local, prazo, aceite e (ao completar) o pagamento; `deliver` confere **bens e pagamento antes** de mover (`check_transfer` de `goods` e do `ledger`, depois `transfer` e `_complete`); o `GoodsStore` aceita destino igual à origem sem mudar nada |
+| **Camadas, tempo, aleatoriedade, `float`, dinheiro** | Limpos: só economia; `now` vem do relógio do módulo (`_clock.total_minutes()`), não de `Time`; dinheiro só em `Ledger`; sem `float` |
+| **Save** | `worked_minutes` entra no save **só do `labor`** e há teste de ida e volta (12 min sobrevivem e o resto completa); sem contrato, o bloco e o hash **não mudam** |
+| **Testes novos (6)** | completa por turnos (meio caminho, passar dos minutos, 1 evento, custódia vazia, conservação, `validate()`); atribuído ao posto é recusado (e quem não é atribuído trabalha); sem contrato, minuto 0, dono desconhecido, outro local, outro trabalhador, depois do prazo, módulo sem `setup`; entrega (aberto ainda, sem bens, com bens, bens no destino, conservação, repetida, `labor` não se entrega, ID inexistente); save; entrega depois do prazo |
+| **Eventos** | `ContractCompleted` em `docs/events.md` (publicador marcado); classe em `economy/api/`; um evento só por conclusão (o `progress` e as falhas **não** publicam) |
+
+**7. PROBLEMAS ENCONTRADOS**
+**Bloqueante: nenhum.**
+**IMPORTANTE**
+- **R14-I1. O R13-I1 continua aberto e agora há uma prova escrita contra o código:** `economy.md` seção 8 (parte b) diz que o ID **"só se consome ao postar"**, e `request_post_contract` (`economy_module.gd`, 1ª linha depois da checagem de `setup`) chama `_ids.next_id()` **antes** de validar. Toda recusa gasta um ID e muda o `state_hash`. Nenhum teste da 096c olha o contador. **Recomendo** o mesmo conserto (validar antes de pedir o ID) e um teste que compare o contador antes e depois de uma recusa.
+**MENOR**
+- **R14-M1. Sem o prazo (parte d), a 096c deixa dinheiro preso:** depois do prazo `work_shift` e `deliver` **recusam** e o contrato fica `accepted` com a custódia retida; o mesmo acontece se o aceitante ou o destino morrer. É a divisão declarada da A; **não leve a 096 ao `main` sem a parte do prazo** (ver R15, se o vigia trouxe a 096d).
+- **R14-M2. `request_deliver_contract(contract_id)` não recebe o ator.** Qualquer chamador pode disparar a entrega **dos bens do aceitante** (o contrato do `economy.md` já é assim, então **cumpre**); lembro só que o AGENTS 6 pede o ator nos comandos de jogador: o `npc` (LW-104) vai chamar pelo aceitante.
+- **R14-M3. `validate()` e `_parse_contract` não impõem `worked_minutes` ≤ `minutes`** nem "contrato `completed` com `worked_minutes` = `minutes`": um save editado à mão com `worked_minutes` maior passa e o próximo turno completa o contrato.
+- **R14-M4. Um save feito pela 096b com `labor` é recusado pela 096c** (`worked_minutes` agora é obrigatório no `labor`). Sem efeito real (nenhum jogo posta contrato e o save antigo é rejeitado antes do "save congelado", DEC-083), mas fica o aviso.
+- **R14-M5. Lacunas de teste:** não há caso de **entrega com o destino fechado ou cheio** (`ECON_OWNER_CLOSED`, `ECON_CAPACITY_EXCEEDED`, que a documentação promete), de **dois `labor` aceitos pelo mesmo trabalhador no mesmo local** (a regra "o menor ID" não é exercida), nem de trabalhador atribuído a um **local de produção** (só o caso do posto é testado; a função trata os dois).
+- **R14-M6. `docs/events.md`:** `ContractCompleted` continua "planejado, LW-096" na coluna da situação (e `ContractOffered`, também, embora o publicador exista desde a 096b) e o cabeçalho de contagem não menciona os implementados: é só rótulo, mas a tabela fica atrás do código (o `tools/check_architecture` olha só a presença do nome).
+
+**Junção (previsão por `merge-tree`, só texto):** a ponta `bc733af` × `main` novo (`4372f7f`): **2 trechos, os dois em documento** (`docs/backlog.md` e `docs/events.md`); `economy.md` e `npc.md` juntam **limpos**. A ponta × **097e da C**: **12 trechos em 10 arquivos, exatamente os mesmos da 096b** (inclui **dois testes**: `test_npc_split_oracle.gd` e `test_economy_production_api.gd`, e `game_app.gd` e `simulation_host.gd` com 2 trechos cada); a 096c **não piora** o cruzamento.
+
+**8. RISCOS.** O mesmo da R11 a R13: a pilha da A cresce e a ordem de entrada A × C define quem resolve os 12 trechos. A 096c sozinha deixaria contratos aceitos sem saída (R14-M1).
+
+**9. PENDÊNCIAS.** *Da A:* R14-I1 (e o R13-I1, que é o mesmo defeito) e os menores. *Que não consegui verificar:* o `check_all` **da A**; a junção real; e se os 6 testes novos **passam** no Godot (li os asserts, não rodei).
+
+**ACOMPANHAMENTO.** *Avanço:* LW-096 em 3 partes nos ramos da A (a, b, c); faltam o prazo (a 096d acabou de aparecer no GitHub: será a R15), as vagas, e a LW-095 final. *Próxima:* R15 (`lw-096d-prazo-dos-contratos`, `45bb31b`). *Decisões de Arthur:* as mesmas da R11 a R13 (ordem A × C; 7 linhas de teste do R6-M2). *Git:* só leitura nos ramos remotos; este relatório é o único commit (`status-b`); `main` em `4372f7f`.
