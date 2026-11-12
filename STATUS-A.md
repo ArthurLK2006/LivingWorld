@@ -1,5 +1,49 @@
-12/11/2026 15:15 (Brasília) · LW-094 BLOQUEADA (14:25): sem o FoodStub os 132 NPCs morrem em 30 dias (locais sem dinheiro NO_FUNDS desde o dia 1, tambem no main); nada da 094 no main; opcoes A-D com recomendacao abaixo. Entrada do v12 JA FEITA (main=69bbbb4). Seguindo para a LW-105 (so em ramos)
+12/11/2026 15:47 (Brasília) · LW-105 PRONTA PARA REVISAO em ramos (a 26525cb, b 4270a61, c 2130c7d; check_all VERDE em cada parte, c: 186 scripts/1.567 testes); nada da 105 no main. LW-094 BLOQUEADA (opcoes A-D no relatorio abaixo, recomendo A). Entrada do v12 FEITA (main 69bbbb4; hoje main=1a2fc8b da conversa C). Aguardando sua decisao; nada iniciado alem disso
 
+
+# RELATÓRIO — LW-105: jogador na economia (partes a, b e a junção c) — PARTE 3 do bloco v13     Status: PRONTA PARA REVISÃO (só em ramos; **não entra no `main` neste bloco**, como você mandou; a B revisa)
+
+## 1. RESUMO
+O jogador agora tem conta de dinheiro e inventário com peso na economia e compra e vende pela ponte. O saldo vem do `Ledger`, as quantidades e o peso ficam na `economy` (DEC-130) e o dinheiro inicial nasce por `mint` com motivo `game_start` (DEC-147). Escrevi o contrato primeiro (parte a), depois a compra e a venda com chave de texto por código e a ida e volta de save (parte b). A conversa C levou a LW-108 ao `main` no meio do trabalho; fiz a junção no ramo c. Tudo `--headless`, nenhuma janela.
+
+## 2. LEITURA E DECISÕES (AGENTS 2.3)
+Li `economy.md` (seções 3, 5, 10 e 14), `bridge.md`, `character.md` (a parte do jogador), o roteiro (LW-105, LW-089, LW-091, LW-035) e os dados. **DEC-130 e DEC-147: APROVADAS**; DEC-145 e DEC-146 (a ponte abre a conta do jogador): aprovadas. **O que já existia e não refiz:** o tipo de dono `player` em `owner_kinds.json` (**saldo inicial 100 e capacidade de peso 60, ambos [HIP]**, não mexi) e o `request_trade` para qualquer dono aberto. **O que faltava era a ponte e o contrato do jogador.**
+
+## 3. RAMOS (todos enviados; nenhum no `main`; sem tag; nenhum ramo apagado)
+- `lw-105a-contrato-e-conta-do-jogador` (`26525cb`): contrato em `bridge.md` ("Jogador na economia") e `economy.md`; `BridgePlayerEconomy`; `request_open_player_account` e `peek_player_economy`; 5 testes. **check_all VERDE: 180 scripts, 1.517 testes, 298.669 asserts.**
+- `lw-105b-compra-e-venda-do-jogador` (`4270a61`): `request_trade` na ponte, `PlayerTradeReply` com a chave do texto, 10 chaves em `data/text/pt_br.json`, 9 testes. **check_all VERDE: 181 scripts, 1.526 testes, 298.769 asserts.**
+- `lw-105c-junta-com-o-main` (`2130c7d`; junção `git merge origin/main` = `1a2fc8b`, a LW-108; sem rebase): **check_all VERDE: 186 scripts, 1.567 testes, 299.355 asserts** (já com os testes da LW-108); ver seção 6.
+- Tamanho (só código, teste e dados, sem comentário nem linha em branco): **parte a 141 linhas, parte b 216 linhas**, 4 e 5 arquivos de código/teste (mais docs e `.uid`). Bem abaixo de 450 linhas e 12 arquivos. `sim_bridge.gd`: 269 linhas de código (limite ~300).
+
+## 4. O QUE FOI FEITO (ARQUIVOS)
+- **Criados:** `src/bridge/bridge_player_economy.gd` (o repasse fino: abrir conta, consultar, negociar; sem regra de jogo), `src/bridge/bridge_player_economy_replies.gd` (os tipos de resposta, em cópia: `PlayerEconomyReply` com `funds`, `weight`, `capacity`, `goods`; `PlayerTradeReply` com `quantity`, `total`, `text_key`), `tests/unit/test_bridge_player_account.gd` (5 testes), `tests/unit/test_bridge_player_trade.gd` (9 testes).
+- **Modificados:** `src/bridge/sim_bridge.gd` (`request_open_player_account`, `peek_player_economy`, `request_trade`; o código `BRIDGE_NO_ECONOMY` e os auxiliares do módulo da economia já vieram do `main` na junção), `data/text/pt_br.json` (+10 chaves `economy.trade.*`), `docs/modules/bridge.md`, `docs/modules/economy.md` (só duas frases) e `src/bridge/README.md`.
+- **O jogador é um personagem guardado no `character` e o ID do ator é o ID do dono na economia** (todo ID vem do mesmo `ctx.ids`). A ponte só atende quem o `character` conhece: um NPC, um ID solto ou o próprio mercado como ator voltam com `CHARACTER_UNKNOWN_ACTOR` antes de chegar à economia. A ponte **não expõe** `request_transfer_goods` (responde ao item do `docs/backlog.md` sobre quem pode mover bens de quem).
+
+## 5. TESTES (comandos e resultados reais)
+- `tools/run_tests res://tests/unit/test_bridge_player_account.gd`: 5 de 5 (28 asserções). `tools/run_tests res://tests/unit/test_bridge_player_trade.gd`: 9 de 9 (99 asserções).
+- Cobrem: a conta abre com o saldo e a capacidade **lidos dos dados** e o dinheiro nasce por um `mint` só; abrir de novo não muda nada; compra e venda movem saldo (do `Ledger`), estoque do mercado e inventário juntos, e o dinheiro vai e volta do mercado; **peso máximo**: a lenha que cabe exatamente no limite passa e uma unidade a mais é recusada com `ECON_CAPACITY_EXCEEDED` sem mudar nada; sem dinheiro, sem o bem e sem estoque voltam com a chave certa e nada muda; mercado, bem, quantidade e lado inválidos, e personagem sem conta, usam a chave genérica; NPC e mercado como ator são recusados; sem jogo, sem personagem ou sem economia as chamadas falham com código; toda chave existe em `pt_br.json`; os lados `buy` e `sell` da ponte são os do motor; **ida e volta de save**: a conta, o saldo, os bens, o peso e a capacidade voltam iguais, o hash do mundo bate e o mesmo jogador continua negociando.
+- **Controle de mutação** (cada mutante tem de ser morto pelos testes; arquivo restaurado e conferido depois): 7 mutantes (não conferir o personagem ao abrir; saldo +1; peso e capacidade trocados; não conferir o personagem ao negociar; sem a chave do peso; chaves de compra e venda trocadas; total +1): **os 7 morreram** (4 de 5, 3 de 5, 4 de 5, 8 de 9, 8 de 9, 7 de 9 e 6 de 9 passando).
+- `tools/check_all` das partes a e b: acima. **Da junção c: VERDE, EXIT 0, 186 scripts, 1.567 testes, 1.567 aprovados, 299.355 asserts, zero avisos.**
+
+## 6. JUNÇÃO COM O `main` (`lw-105c`) E PROBLEMAS ENCONTRADOS (nada omitido)
+1. **Colisão de nome:** a conversa C (LW-108b) e eu criamos, cada um, `src/bridge/bridge_economy_replies.gd` com `class_name BridgeEconomyReplies` (conflito "add/add"), e também `_economy()`, `_missing_economy()` e `BRIDGE_NO_ECONOMY` iguais nos dois lados. **Fiquei com o arquivo dela, sem tocar nele**, e renomeei o meu para `BridgePlayerEconomyReplies` (arquivo próprio); os auxiliares iguais ficaram os do `main`. Conflitos de texto em `bridge.md` e `sim_bridge.gd` resolvidos mantendo os dois lados.
+2. **Regra F do `tools/check_architecture`** acusou `balance = ...` no meu tipo de resposta (a regra só aceita essa atribuição em `economy/api/`). Não desliguei nada: o campo se chama `funds` (cópia do saldo do `Ledger`).
+3. **Aviso de divisão inteira** do GDScript num teste meu (`capacity / unit_weight`): troquei por um laço de inteiros (zero avisos).
+4. Cache de classes velho depois da junção: reconstruí com `godot --headless --path . --import` (AGENTS 4.3).
+
+## 7. DECISÕES TÉCNICAS E PROPOSTAS (não decidi design; nada disso é decisão sua ainda)
+- **Os lados `buy` e `sell`** ficam duplicados como constantes da ponte (`BridgePlayerEconomyReplies.SIDE_BUY` e `SIDE_SELL`) porque a ponte só pode citar a `economy/api/` e as constantes do motor não estão lá; um teste confere que são iguais.
+- **PONTOS EM ABERTO (dúvidas de design, com recomendação):** (1) **quando a conta do jogador abre**: a ponte não decide; **recomendo chamada explícita** de quem guarda o `actor_id` logo depois de `request_spawn_character`, e **não** abrir dentro do nascimento (a ponte não vira dona de "o jogador"). Hoje **ninguém chama** `request_open_player_account` no jogo real (só os testes): a tela do mercado (LW-106) ou o `GameApp` precisam chamar. (2) **Evento de comércio:** o roteiro diz "eventos e textos por chave"; só fiz os **textos** por chave. Não há evento de comércio em `docs/events.md`; um `TradeCompleted` seria contrato novo e precisa da sua aprovação (**recomendo não criar agora**). (3) **Estar perto do mercado para negociar:** a economia não confere posição e o GDD não descreve; fica para a interface (LW-106) (**recomendo conferir na interface, pela posição guardada, como a conversa faz**). (4) **Valores [HIP]:** saldo inicial 100 e peso 60 continuam em `data/economy/owner_kinds.json`; com os preços de hoje o jogador compra, por exemplo, 12 lenhas (o limite de peso) por uns 55 de dinheiro, mas não 5 ferramentas. Não decidi nada sobre eles.
+- **Proposta de entrada para `DECISIONS.md`:** nenhuma (usei o que a DEC-130, a DEC-145/146 e a DEC-147 já dizem).
+
+## 8. RISCOS
+Nada chama a conta do jogador no jogo real ainda (ponto 1 acima). A ponte confia no `character` para saber quem é jogador: se houver mais de um personagem (multijogador, fora do escopo) qualquer um negocia por si, mas só por si. A tarifa devolvida pelo motor (sempre 0 na Fase 3) não aparece na resposta (ainda não há cobrança; entra com a LW-130).
+
+## 9. PENDÊNCIAS E O QUE ARTHUR CONFERE EM CASA
+Nada visual: **não há tela** (a LW-106 faz a tela de mercado), então **não há nada para abrir no jogo agora**. A B pode revisar os três ramos. **Próxima tarefa recomendada:** LW-106 (interface de mercado), **não iniciada**; antes dela, decidir os pontos 1 a 3 acima.
+
+- **Git:** `main` = `1a2fc8b` (a conversa C; eu não mexi depois de `69bbbb4`); `lw-105a` = `26525cb`, `lw-105b` = `4270a61` (enviados); `lw-105c` = `2130c7d` (enviados). Sem tag, sem `--force`, nenhum ramo apagado.
 
 # RELATÓRIO — LW-094 (só o `FoodStub`) — PARTE 2 do bloco v13 (14:25)     Status: **BLOQUEADA — PAREI como o v12c mandou; nada da LW-094 entrou no `main`**
 
