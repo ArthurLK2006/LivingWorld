@@ -110,18 +110,21 @@ func test_a_completed_contract_is_never_expired_and_the_ones_that_expire_come_by
 	world.teardown()
 
 
-func test_a_dead_issuer_gets_nothing_back_and_the_reward_stays_in_the_contract_account() -> void:
+func test_a_dead_issuer_custody_goes_to_the_market_of_the_contract_settlement() -> void:
 	var parts: Array = _world()
 	var world: World = parts[0]
 	var economy: EconomyModule = parts[1]
 	var failed: Array[ContractFailed] = _failures(world)
+	var market_id: int = economy.peek_market_of(SETTLEMENT_A).market_id
+	var market_before: int = economy.peek_balance(market_id).balance
 	var contract_id: int = _labor(economy, 2 * MINUTES_PER_HOUR)
 	world.context.events.publish(NpcDied.new(ISSUER, "test", 0))
 	world.context.events.dispatch()
 	_run_minutes(world, 2 * MINUTES_PER_HOUR)
-	assert_eq([economy.peek_contract(contract_id).state, economy.peek_balance(contract_id).balance, failed.size()], ["expired", REWARD, 1], "O contrato vence e o evento sai, mas o emissor morto não recebe.")
+	assert_eq([economy.peek_contract(contract_id).state, economy.peek_balance(contract_id).balance, failed.size()], ["expired", 0, 1], "O contrato vence e o evento sai; o emissor morto não recebe e a custódia esvazia.")
+	assert_eq(economy.peek_balance(market_id).balance, market_before + REWARD, "A custódia foi para o mercado do povoado do contrato (o do posto de `a_work_05`).")
 	assert_true(economy.peek_conservation().ok, "O dinheiro continua contado.")
-	assert_eq(economy.validate(), [] as Array[String], "Limitação conhecida, não é inconsistência.")
+	assert_eq(economy.validate(), [] as Array[String], "Nenhuma inconsistência.")
 	world.teardown()
 
 
