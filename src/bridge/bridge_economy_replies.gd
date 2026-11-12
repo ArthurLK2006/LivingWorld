@@ -45,7 +45,7 @@ class EconomyOverviewReply:
 		result = reply_result
 
 
-## Uma linha de mercado: um bem negociado, com o estoque contra o alvo, o preço de tabela, a venda ao jogador (`ask`), a compra do jogador (`bid`) e se está em escassez.
+## Uma linha de mercado: um bem negociado, com o estoque contra o alvo, o preço de tabela, o que o mercado cobra de quem compra (`ask`), o que o mercado paga a quem vende (`bid`) e se está em escassez.
 class EconomyMarketRow:
 	extends RefCounted
 
