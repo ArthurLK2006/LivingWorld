@@ -1,4 +1,54 @@
-11/11/2026 20:25 (Brasília) — CONCLUÍDA: LW-097c (o world vira módulo registrado: estado de rota open/closed, request_close_route e request_open_route só em dev, RouteStateChanged, peek_path só pelas rotas abertas, save com as rotas fechadas), aprovada por Arthur: commit 0c5047c ENVIADO só ao ramo lw-097c-estado-de-rota (empilhado na 097b, eb6a23a); check_all VERDE (145 scripts, 1.326 testes, 294.590 asserts); marco 3: os 9 valores do oráculo mudaram (só registrados). Próxima: 097d (população do C, work_place_id, ofícios novos). LW-118 só depois da 097e. main intocado (a07492c). Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 21:06 (Brasília) — CONCLUÍDA: LW-097d (população do povoado C [HIP], coluna work_place_id por local para A, B e C, ofícios miner e shepherd, só dados e testes): commit f346ed9 ENVIADO só ao ramo lw-097d-populacao-do-c (empilhado na 097c, 0c5047c); check_all VERDE (146 scripts, 1.335 testes, 295.935 asserts); marco 3: os 9 valores do oráculo mudaram pela população real aprovada (antigo/novo/causa no relatório); 132 NPCs (A 60, B 44, C 28), DEC-040 segue PENDENTE. Próxima: 097e (production_sites.json, estoque inicial de 30 dias, test_economy_distribution e test_initial_stock_covers_30_days). LW-097 NÃO vai ao main até Arthur avisar. main intocado por mim. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+
+# LW-097d — RELATÓRIO — População do povoado C, `work_place_id` por local e ofícios `miner` e `shepherd`        Status: PRONTA PARA REVISÃO
+
+**Contexto.** Quarta parte da LW-097, empilhada na 097c. Arthur autorizou a 097d no Bloco C v9 (11/11/2026): população do C, coluna `work_place_id` para A, B e C conforme a tabela do `economy.md` seção 6, ofícios `miner` e `shepherd` só em dados, tamanho do C como número [HIP] proposto por mim (a DEC-040 segue PENDENTE). A regra do item 2 do bloco (testes existentes além do que já mudei: parar e mostrar a lista exata) foi aplicada duas vezes: a lista dos 28 testes (autorizada: "Autorizo os ajustes") e as duas linhas do script `tests/test_check_content_ids.sh` (autorizadas: "Autorizo a troca").
+
+**Declaração do início (AGENTS 2.3).** Li: AGENTS 0.4; a linha da LW-097; `npc.md` 14.8 e 14.10 (população, `work_place_id`, hashes); `docs/economy/dados.md` (distribuição por local); o `PopulationPlan`, o `PopulationLoader` e os testes de população. Decisões: DEC-144 e DEC-167 (APROVADAS), DEC-175 (marco 3); a DEC-040 PENDENTE só aparece como rótulo [HIP] nos números do C.
+
+## 1. RESUMO
+Apliquei a população real (132 NPCs: A 60, B 44 com 4 pastores, C 28 [HIP]) com uma linha por local de trabalho (coluna `work_place_id`, opcional no carregador e no plano), os ofícios `miner` e `shepherd` e a nona casa do B. Os nove valores do oráculo mudaram (marco 3) pela população aprovada. `check_all` VERDE. Commit `f346ed9` enviado só para o ramo.
+
+## 2. ARQUIVOS CRIADOS (com os `.uid`)
+`tests/unit/test_population_work_place.gd` (9 testes).
+
+## 3. ARQUIVOS MODIFICADOS (31 arquivos no commit, +312/−87)
+- Dados: `population.json` (20 linhas), `occupations.json`, `routine_blocks.json` (agendas de `miner` e `shepherd`, cópias das de lenhador e lavrador [HIP]), `world/places.json` (+`b_home_09`), `food_stub.json` (linha do C em 3.000/3.000, TEMP-LW-065).
+- Código: `population_loader.gd` e `population_plan.gd` (coluna opcional); `docs/modules/npc.md` (nota na Q23).
+- 28 testes existentes ajustados (lista autorizada: contagem 100→132, `test_population`, sete ofícios, ponto longe dos três povoados, soak de 396, oráculo, `HOMES_B`), mais os arquivos de apoio `npc_life_check.gd` e `npc_year_meter.gd`, e as linhas 38 e 61 do `tests/test_check_content_ids.sh`.
+
+## 4. DECISÕES TÉCNICAS
+- **População [HIP; DEC-040 PENDENTE]:** C = 28 (`miner` 8, `artisan` 6 e 6, `guard` 5, `innkeeper` 3), B = 44, A = 60; cada linha ocupa um local e o `count` é a equipe do local (cabe na capacidade).
+- **Plano:** local desconhecido, de outro povoado ou de outro tipo é `NPC_POPULATION_INVALID_REFERENCE`; passar da capacidade é `NPC_POPULATION_NO_ROOM`; as vagas dos locais citados são reservadas antes das linhas sem coluna (a ordem das linhas não decide quem fica sem vaga). Sem a coluna, vale o comportamento de antes.
+- **Comida do C:** o C não tem lavrador; com 100 de estoque os 28 morriam de fome no minuto 5.835 do soak de 7 dias. Subi para 3.000 (cerca de 30 dias × 28 pessoas × 3 refeições), dado do stub que some na LW-094.
+- **Ponto "longe":** o antigo (600, 900) caía a 56 m do C; o novo é (700, 10, 960), a mais de 170 m de qualquer povoado (o S0 sai com 120 m).
+- **Oráculo (marco 3), antigo → novo, causa = a população real aprovada:** `intents` 741f663a0aca → f3f7b6b6edba; `alarm` 619241a47933 → 5faee3a8bda2; `resumed` 83d4d6f1bad3 → 153d0cffb6f9; `switches` b2f79365b4c0 → 5de93474b92f; `talk` 388c4752b18b → 137a429093c6; `save` cd8cfe84a764 → a65f1bd8972e; `demote` 225b4a4fbdaa → 4499213a8de0; `starved` b23c4e65cad9 → 3a423e68c051; `real_game` 9f37878f3add → d4135eb87caf.
+- Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` no commit final: exit 0, **VERDE**; GDScript sem avisos (374 scripts), "IDS DE CONTEÚDO: tudo existe (71 conferências)", 146 scripts, **1.335 testes, 1.335 aprovados, 295.935 asserts**, 207,3 s.
+- Antes das duas autorizações: 1.305 de 1.335 (30 falhas, todas na lista), depois 1.335 de 1.335 com o `check_all` vermelho só pelo script da A, e por fim verde.
+
+## 6. RESULTADOS
+Aprovados 1.335, falhos 0, pulados 0. Critério de aceite da 097d cumprido: contagens do arquivo conferem com a tabela; todo NPC tem casa e local de trabalho válidos; uma linha por local e nenhuma passa da capacidade; erro de local (outro povoado, desconhecido, outro tipo, sem vaga) tratado; mesma semente, mesma população.
+
+## 7. PROBLEMAS ENCONTRADOS
+O script de shell da A (`test_check_content_ids.sh`) injetava um id inválido com um `sed` sobre `"count": 24}`, que deixou de existir (A: 12 e 12 lavradores); troquei só as duas linhas. A estrutura da `food_stub.json` do C é nova porque o C não produz comida; o motivo está acima.
+
+## 8. RISCOS
+24 arquivos de teste tocados, acima da tolerância do AGENTS 5.2 (12), por autorização de Arthur. O script da A pode conflitar na junção se a A mexer nele. Os valores do C, das agendas e da comida são [HIP].
+
+## 9. PENDÊNCIAS
+Aprovação da 097d. A 097e (já autorizada no bloco: `production_sites.json` com 14 linhas, estoque inicial de 30 dias dos mercados e os testes `test_economy_distribution.gd` e `test_initial_stock_covers_30_days`) só começa depois. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 com 097a, 097b e 097c prontas e aprovadas e a 097d pronta; 097e, LW-117i e LW-118 não iniciadas. A LW-097 **não** vai ao `main` até Arthur avisar por escrito.
+- Próxima tarefa recomendada: **097e**. Não iniciada. Parei (regra 13).
+- Git: ramo `lw-097d-populacao-do-c` em `f346ed9`, empilhado na `lw-097c-estado-de-rota` (`0c5047c`), **enviado só o ramo**; `status-c` enviado com este relatório; `main` intocado por mim; sem tag, sem `--force`.
+
+---
+
+---
 
 # LW-097c — RELATÓRIO — O `world` vira módulo, com estado de rota, comandos de desenvolvimento e `RouteStateChanged`        Status: PRONTA PARA REVISÃO
 
