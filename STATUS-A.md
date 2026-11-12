@@ -1,5 +1,23 @@
 12/11/2026 09:54 (Brasília) · BLOCO A v12 PARCIAL (10:05): item 1 PRONTO (lw-096m-junta-com-o-main 4116294 enviado, check_all VERDE 173 scripts/1.458 testes); item 2 (custódia, opção B) implementado no ramo lw-096n local e PARADO: 1 teste existente a troca exige sua autorização escrita (detalhe na seção do item 2)
 
+
+# RELATÓRIO — Bloco A v12 (PARCIAL, 10:05)     Status: PARCIAL — item 1 pronto; item 2 parado por uma autorização de teste
+
+## ITEM 1 — JUNÇÃO (pronto para revisão)
+- Ramo `lw-096m-junta-com-o-main` (`4116294`, enviado): ponta `lw-096l-post-loader` + `git merge origin/main` (`81ce7f4`, a LW-097 da C). Conflito só em `src/sim/economy/README.md`, resolvido mantendo os dois lados.
+- Conserto dos **meus 2 testes novos** que a LW-097 muda (só números e montagem, nenhum outro tocado): **R23-I1** `test_npc_employment_by_work_place.gd` (o ID do local de produção agora é lido do jogo por `peek_site_at`, em vez de `SITE = 3`); **R24-I1** `test_wage_payer_atomic.gd` (o teste do resumo esvazia `production_sites`, como a C fez em `test_service_posts`, e espera 3 donos = os 3 mercados, em vez de `[2, 0, true]`).
+- Antes dos consertos, a suíte inteira mostrou **só esses 2 scripts vermelhos** (4 asserções): nenhum outro teste existente quebrou.
+- `tools/check_all`: **VERDE, EXIT 0**, 173 scripts, 1.458 testes, 298.052 asserts, zero avisos. Os 9 valores do oráculo: o arquivo `tests/integration/test_npc_split_oracle.gd` é idêntico ao do `main` (0 linhas de diferença); `run_sim --days 30 --seed 1`: `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, igual ao do `main`.
+
+## ITEM 2 — CUSTÓDIA DO EMISSOR MORTO, OPÇÃO B (implementado, PARADO antes do push)
+- Ramo `lw-096n-custodia-do-emissor-morto` (commit local `23b7c8c`, **não enviado**). Novo `ContractRefundMarket` (`contracts/`, só consulta: acha o mercado do povoado do contrato; `labor`: povoado do local de trabalho; `delivery`: povoado do destino, que pode ser o mercado ou um local de produção) e `ContractBook.expire` usa o mesmo `Ledger.transfer` com `contract_refund`: **sem evento novo, sem motivo novo, sem queimar**. Povoado desconhecido (destino que é um NPC) ou mercado fechado: a custódia continua retida [LIM]. O `validate()` só tolera a custódia retida nesse caso. `economy.md`: só a frase e o [LIM] (seção 8, duas passagens).
+- 8 testes novos em `tests/unit/test_contract_dead_issuer_custody.gd` (emissor vivo não muda; morto com `labor` num local de produção; morto com `delivery` ao mercado; `delivery` a um local de produção; contrato aceito que vence; destino NPC retido; ida e volta do save; `validate` aponta custódia retida de povoado conhecido num save adulterado). 8/8 verdes. **Mutações**: 8 de 9 pegas; a que sobrou (não conferir se o mercado está aberto) é inalcançável pela API pública, porque um mercado nunca fecha (guarda defensiva). `check_architecture` e `check_gdscript_warnings` verdes.
+- **O que PAROU:** com a opção B **exatamente 1 teste existente fica vermelho**, a suíte inteira roda 1.465 testes e 1.464 passam: `tests/unit/test_contract_expiry.gd:113`, `test_a_dead_issuer_gets_nothing_back_and_the_reward_stays_in_the_contract_account`. Ele fixa o comportamento ANTIGO (custódia retida: a asserção espera `["expired", 25, 1]` e agora o jogo dá `["expired", 0, 1]`, porque o posto `a_work_05` é do povoado A e o mercado A recebe os 25). Não tenho autorização para mexer em teste existente, então **não enviei o ramo nem rodei o `check_all` final** (ficaria vermelho por esse teste).
+- **Pedido de autorização (escrita, específica):** trocar SÓ esse teste, sem remover verificação: nome novo `test_a_dead_issuer_custody_goes_to_the_market_of_the_contract_settlement`; mesmo cenário e mesmas conferências de conservação e de `validate()`; a primeira asserção passa a esperar `["expired", 0, 1]` e acrescento a do mercado do povoado A (saldo antes + 25). Recomendo autorizar: o teste novo é mais forte que o antigo.
+
+## ITENS 3 E 4 — NÃO INICIADOS
+O item 3 (entrada no `main` do conjunto 096h a 096n) e o item 4 (LW-094) dependem do item 2 estar verde e enviado. Seguem parados até a autorização acima.
+
 # RELATÓRIO — Bloco A v11 (consertos das revisões da B)     Status: PRONTA PARA REVISÃO
 
 ## 1. RESUMO
