@@ -1,4 +1,4 @@
-11/11/2026 22:35 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R21 e 3 auditorias de entrada no `main` feitas, sem bloqueio; A e C declararam que PARARAM (A concluiu o bloco v10 às 22:15 com o `main` em `885615c`; C fechou a LW-118 às 22:25); falta só o relatório final da noite; sem BLOQUEADA minha.
+11/11/2026 22:36 (Brasília) — NOITE (bloco B v6) ENCERRADA, RELATÓRIO FINAL ESCRITO (abaixo): R8 a R21 e 3 auditorias de entrada no `main` (LW-093 `f2bcb4c`, LW-117i `4372f7f`, A `885615c`: as três SÃS, `check_all` independente VERDE em `885615c`: 162 scripts/1.391 testes); parei por 'nada mais novo' (A concluiu às 22:15, C parou às 22:25; vigia desligado); sem BLOQUEADA; A DECIDIR POR ARTHUR (seção 4 do relatório final): autorizar a Fase B da C (só depois de refazer a prova do oráculo sobre `885615c`), `service_posts.json` e R18-I1 antes dela, destino da custódia de emissor morto (R15-I1), vaga única por hora (R16-M1), ofício acompanha emprego (R18-M3), tamanho da 118b (R19-I1), `pt_br.json`; CORREÇÃO MINHA: nos R9-I2/R10-I2 'os NPCs de posto são 36' é na verdade 30.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1327,3 +1327,47 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 **9. PENDÊNCIAS.** *Da C:* nada novo; R19-I1 (tamanho da 118b); R21-M1 a M3 para ciência. *De Arthur:* as da seção final. *Que não consegui verificar:* o `check_all` **da C** (aceito o relato dela); que os 7 testes novos passam; a junção real.
 
 **ACOMPANHAMENTO.** *Avanço:* **LW-118 completa em ramos (a a d)**; nada dela no `main`. *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `885615c`.
+
+
+## RELATÓRIO FINAL DA NOITE (bloco B v6) — revisões R8 a R21 e 3 auditorias de entrada no `main`        Status: PRONTA PARA REVISÃO (SÓ LEITURA; nada além do `status-b`) · 11/11/2026 22:36 (Brasília)
+
+**1. RESUMO.** **Parei por "nada mais novo" (regra 13):** a A concluiu o bloco v10 às 22:15 (`main` em `885615c`, avanço simples) e a C fechou a LW-118 às 22:25 (só em ramos) e declarou que parou; o vigia do GitHub (consulta a cada 10 min, **sem gastar rodada enquanto nada mudava**) não viu mais nada depois da 118d, e **desliguei o vigia**. **Nenhum bloqueio meu; nada fugiu do combinado** (nenhuma tag, nenhum `--force`, nenhum `main` tocado por mim, nenhum documento do repositório editado). Revi **14 relatórios** (21 ramos e partes) e audi­tei **as 3 entradas no `main`** da noite, cada uma **em menos de 20 minutos**. **Os 3 `main` novos estão SÃOS**, com `check_all` **meu**, independente, em cópia exportada (sem escrever no repositório), verde nos dois que mexem em código.
+
+**2. O QUE FOI FEITO (tudo em `STATUS-B.md`, ramo `status-b`)**
+| Parte | Alvo | Resultado |
+|---|---|---|
+| R8 | A: LW-095 a–d | sem bloqueio; 1 importante (o `IncomeStub` segue vivo: a A declara que falta a parte final) |
+| R9, R10 | C: 097d e 097e | sem bloqueio; importantes sobre ofícios x receitas, **dono do `service_posts.json`** (hoje da A, DEC-235), comida do C e o aviso da junção |
+| Entrada no `main` #1 | A: LW-093 (`f2bcb4c`) | **SÃ** (`check_all` meu: 151 scripts, 1.322 testes, verde) |
+| Entrada no `main` #2 | C: LW-117i (`4372f7f`, só documentos) | **SÃ** (conferida por inspeção; sem código) |
+| R11 a R13 | A: 093k, 096a, 096b | sem bloqueio; **R13-I1** (recusa de `request_post_contract` gasta um ID, contrário do `economy.md`) |
+| R14, R15 | A: 096c (conclusão) e 096d (prazo) | sem bloqueio; **R15-I1** (custódia de emissor morto fica presa) |
+| R16 | A: 096e (vagas) | sem bloqueio; **R16-I1** (a vaga é causa **nova** de mudança de oráculo e soak na junção com a C) |
+| R18 | A: LW-096a (NPC aceita vaga) | sem bloqueio; **R18-I1** (30 NPCs de posto da C contam como desempregados sem `service_posts.json`) |
+| Entrada no `main` #3 | A: resto do marco 2 (`885615c`) | **SÃ** (`check_all` meu: **162 scripts, 1.391 testes, 294.336 asserts, verde**; iguais aos da A; oráculo e soak sem arquivo tocado; 1 teste antigo com 2 linhas trocadas, já autorizado) |
+| R17, R19, R20, R21 | C: LW-118 a, b, c, d | sem bloqueio; **R19-I1** (a 118b passou da tolerância de tamanho: 526 > 450 linhas) |
+
+**3. ACHADOS ABERTOS (nenhum é bloqueante; o `main` novo já carrega os da A)**
+- **Da A** (já no `main`; o jogo real não tem local de trabalho nos dados da A, então hoje **nada muda**): **R13-I1/R14-I1** (validar antes de pedir o ID; um teste do contador), **R15-I1** (a frase "a custódia nunca fica retida" do `economy.md` não vale para emissor morto), **R18-I1** (desempregado = `work_place_id` vazio, não "não listado pela economia"), além dos menores (R12-M2/M3, R14-M3/M5, R15-M1/M2, R16-M2/M3, R18-M2 a M6).
+- **Da C** (só em ramos): **R19-I1** (tamanho da 118b), **R10-I1** (2 dos 14 locais de produção têm ofício diferente da receita: `mine_ore` e `shear_wool`), **R10-I3** (30 dias de comida no C não cabem: 5.893 de peso contra 5.000), **R9-I3** (24 arquivos na 097d, acima da tolerância de arquivos).
+- **Das duas, na junção (a Fase B da C):** **R10-I4 e R16-I1/R18-I1.** A C está **BLOQUEADA** (`status-c`, 21:52) porque 2 testes **da A** (`test_game_economy_wiring` e `test_economy_start_money_and_consume`) falham na junção por IDs e dinheiro; a junção prevista sobre o `main` novo tem **14 trechos em 10 arquivos**, e 1 deles é **um teste** (`test_economy_production_api.gd`, que a A alterou) **fora da lista de conflitos que o bloco da C aceita** (o bloco manda PARAR). A prova do oráculo da C foi feita sobre `4372f7f`; **precisa ser refeita sobre `885615c`** e conferir se há morte de NPC no oráculo e no soak (a vaga e o emprego mudam o resultado se houver).
+
+**4. DECISÕES QUE DEPENDEM DE ARTHUR (cada uma com a minha recomendação)**
+1. **Fase B da C:** autorizar a troca dos números dos 2 testes (patch pronto, segundo a C). **Recomendo autorizar** só **depois** de (a) refazer a prova do oráculo sobre `885615c`, (b) conferir morte de NPC no oráculo e no soak e (c) **autorizar por escrito o conflito em `test_economy_production_api.gd`** (ou mandar a A fazer a junção desse teste).
+2. **`service_posts.json` antes da Fase B da C:** recomendo que a A o crie (parte final da LW-095, DEC-235) **antes** de a C juntar, e que a A corrija o R18-I1; sem os dois, o primeiro NPC que morrer num local de produção faz um guarda ou estalajadeiro abandonar o posto.
+3. **R15-I1:** para onde vai a recompensa de um contrato cujo emissor morreu (hoje fica na conta do contrato; o dinheiro de quem morre já fica na conta fechada). **Recomendo** a conta do mercado do povoado do emissor, que mantém o dinheiro em circulação.
+4. **R16-M1:** ratificar "no máximo **uma** vaga aberta por local, conferida **por hora**" (proposta da A, sem decisão no GDD).
+5. **R18-M3:** o ofício do NPC acompanha o emprego? (hoje não: o artesão que vira guarda continua artesão).
+6. **R19-I1:** aceitar o desvio de tamanho da 118b (526 linhas, só conteúdo e classes soltas) ou mandar a C dividir. **Recomendo aceitar por escrito** (as outras três partes ficaram em 214, 370 e 221).
+7. **`data/text/pt_br.json`:** a C acrescentou 6 chaves (culturas e províncias) sem o bloco nomear o arquivo (R17-M2, R19-M1). **Recomendo** considerar coberto (são os nomes dos próprios dados).
+8. **Em aberto das noites anteriores:** as **7 linhas de teste** do R6-M2 (a A pede autorização) e a **tolerância de arquivos** da 097d (R9-I3).
+
+**5. CORREÇÃO DE UM ERRO MEU.** No **R9-I2** e no **R10-I2** escrevi "**36** NPCs de guarda e estalajadeiro" sem `service_posts.json`. **O número certo é 30** (por script, em `data/population.json` da 097d/097e: 8 + 6 + 5 + 3 + 5 + 3 = **30**; os outros 102 trabalham nos 14 locais de produção, total 132). **A conclusão não muda** (o R18-I1 já usa 30). Descoberto e corrigido nesta rodada; nada foi publicado fora do `STATUS-B`.
+
+**6. TESTES EXECUTADOS (meus).** `check_all` **independente** em cópia exportada (`git archive`, **nenhuma escrita no repositório**): `main` `f2bcb4c` **VERDE** (151 scripts, 1.322 testes); ramo da C 097e **VERDE**; `main` `885615c` **VERDE** (162 scripts, 1.391 testes, 294.336 asserts, 183,5 s; os `ERROR`/`WARNING` que o GUT imprime nos testes de caminho de erro são **os mesmos** do `main` anterior: 68 e 37). Fora esses: contagens DEC-126, `git grep`, scripts de conferência dos dados (equipe x `workers_wanted`, população x postos) e `git merge-tree --trivial-merge` (só imprime). **NÃO EXECUTADO:** o `check_all` de cada ramo das partes 095, 096, 093k, 096a e 118a a 118d (aceitei os relatos das duas conversas: 162/1.391 pela A; 153/1.390 pela C na 118d).
+
+**7. O QUE NÃO CONSEGUI VERIFICAR.** (1) **As autorizações** das duas conversas para entrar no `main` e alterar o teste antigo (li os textos que elas citam, não os blocos originais); (2) se há **morte de NPC** no oráculo e no soak (decide o R16-I1); (3) o comportamento do **corpo** do NPC ao trocar de emprego no meio de uma ação (R18-M4) e o jogo **em tela**; (4) o **soak longo** (o `check_all` roda o curto); (5) a **junção real** (o `merge-tree` só prevê **texto**); (6) se os testes novos de cada ramo passam (li os asserts, não rodei).
+
+**8. GIT.** Único alvo de escrita: o ramo `status-b` (commit e push a cada revisão, **sem outras referências**, **sem tag, sem `--force`, sem merge, sem apagar ramo**). `main` em `885615c` (não toquei). Tags remotas iguais às de antes (`fase-0/1/2-concluida`). Só leitura nos ramos `origin/...` das duas conversas; nenhum worktree alheio mexido.
+
+**ACOMPANHAMENTO.** *Avanço:* os dois marcos da A (2 em código, 3 sem posto/IncomeStub) e a LW-118 da C estão **revisados**; faltam, na A, a **LW-095 final** (`service_posts.json`, retirada do `IncomeStub`) e a **LW-094** (não iniciada); na C, a **Fase B da LW-097** (bloqueada). *Próxima tarefa recomendada:* a decisão 1 e 2 acima (junção da C sobre `885615c`). **Não iniciada.** *Git:* nada para commitar além deste arquivo; `status-b` publicado.
