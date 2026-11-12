@@ -1,4 +1,58 @@
-11/11/2026 21:06 (Brasília) — CONCLUÍDA: LW-097d (população do povoado C [HIP], coluna work_place_id por local para A, B e C, ofícios miner e shepherd, só dados e testes): commit f346ed9 ENVIADO só ao ramo lw-097d-populacao-do-c (empilhado na 097c, 0c5047c); check_all VERDE (146 scripts, 1.335 testes, 295.935 asserts); marco 3: os 9 valores do oráculo mudaram pela população real aprovada (antigo/novo/causa no relatório); 132 NPCs (A 60, B 44, C 28), DEC-040 segue PENDENTE. Próxima: 097e (production_sites.json, estoque inicial de 30 dias, test_economy_distribution e test_initial_stock_covers_30_days). LW-097 NÃO vai ao main até Arthur avisar. main intocado por mim. Sem tag, sem --force. Parei (regra 13). Nada rodando.
+11/11/2026 21:31 (Brasília) — CONCLUÍDA: LW-097e (14 locais de produção, mercado do C, estoque inicial de 30 dias e os testes de distribuição e de 30 dias): commit 4e614b5 ENVIADO só ao ramo lw-097e-producao-e-estoque (empilhado na 097d, f346ed9); check_all VERDE (148 scripts, 1.344 testes, 296.179 asserts); 14 testes existentes em 6 arquivos atualizados por autorização de Arthur (lista no relatório); oráculo do marco 3 NÃO mudou nesta pilha. Próxima da cadeia da noite: 117i (só documentos, a partir do origin/main). LW-097 NÃO vai ao main antes da Fase B (autorizada por antecipação no Bloco v10, depois da A). main intocado por mim. Sem tag, sem --force. Nada rodando.
+
+# LW-097e — RELATÓRIO — Locais de produção, mercado do C, estoque inicial de 30 dias e testes de distribuição        Status: PRONTA PARA REVISÃO
+
+**Contexto.** Quinta e última parte da LW-097, empilhada na 097d. Pedida no Bloco C v9/v10 (11/11/2026): `data/economy/production_sites.json` (14 linhas), estoque inicial de 30 dias dos mercados e os testes `test_economy_distribution` e `test_initial_stock_covers_30_days`; os postos (`service_posts.json`) são da LW-095 da A e não foram feitos. A regra do bloco (teste existente a mudar: parar e mostrar a lista exata) foi aplicada: mostrei os 14 testes e a conta dos 30 dias a Arthur, que respondeu "Autorizo os ajustes" e "Horas de trabalho (Recomendado)".
+
+**Declaração do início (AGENTS 2.3).** Li: AGENTS 0.4; a linha da LW-097; `docs/economy/dados.md` (estoque inicial até o comerciante, distribuição das cadeias, `site_upkeep`); os dados da economia (`goods`, `recipes`, `recipe_inputs`, `recipe_outputs`, `site_upkeep`, `owner_kinds`, `market_targets`); `ProductionLoader`, `MarketLoader`, `RoutineTable`, a população da 097d e os testes de mercado e produção. Decisões: DEC-142 (princípio da distribuição) e DEC-176 (regra de 30 dias), APROVADAS; DEC-040 PENDENTE (só rótulo [HIP] na comida do C).
+
+## 1. RESUMO
+Os 14 locais de produção dos povoados existem (A 5, B 6, C 3), cada um no local de trabalho que a 097d já povoou e com a equipe igual à da linha de população. O mercado do C ganhou as 10 linhas (30 no total), a farinha do B e a madeira do C têm estoque para 30 dias, e dois testes novos conferem a distribuição e a cobertura de 30 dias. A conta de 30 dias do rascunho (24 h por dia) era impossível; usei as horas de trabalho da agenda, como Arthur escolheu. `check_all` VERDE. Commit `4e614b5` enviado só para o ramo.
+
+## 2. ARQUIVOS CRIADOS (com os `.uid`)
+`tests/unit/test_economy_distribution.gd` (5 testes) e `tests/unit/test_initial_stock_covers_30_days.gd` (4 testes).
+
+## 3. ARQUIVOS MODIFICADOS (16 arquivos no commit, +402/−53)
+- Dados: `data/economy/production_sites.json` (de `[]` para 14 linhas) e `data/economy/market_targets.json` (+10 linhas do C; B `flour` 30 → inicial 1.620 e alvo 810).
+- Documentos e comentários: `docs/economy/dados.md` (3 linhas da tabela de estoque e a fórmula dos 30 dias), `src/sim/economy/README.md` (3 frases velhas e a entrada da 097e), comentários de `production_loader.gd` e `site_def.gd` (só texto).
+- 6 testes existentes (14 verificações), lista abaixo.
+
+## 4. DECISÕES TÉCNICAS
+- **Equipes (fato dos dados):** `workers_wanted` de cada local é o `count` da linha de população da 097d que ocupa o local (A 12, 12, 10, 6, 6; B 8, 8, 8, 4, 4, 4; C 8, 6, 6); um teste confere a igualdade.
+- **Conta dos 30 dias (aprovada por Arthur em 11/11/2026, "Horas de trabalho"):** o `dados.md` multiplicava os lotes por 24 h, o que pede 4.320 `flour` no B (peso 8.640) e 1.440 `wood` no C (peso 7.200) contra 5.000 de capacidade do mercado. Com as horas da ação `work` da agenda do ofício esperado (lavrador 10, lenhador 9, artesão 9) saem 1.620 e 540. Corrigi a fórmula no `dados.md`.
+- **Interpretação minha [PROPOSTA]:** a regra vale para os bens que o povoado NÃO produz (os importados da tabela do `dados.md`); aplicada aos que ele produz, a madeira do A pediria 1.620 (peso 8.100). O texto do documento dizia só "bens que não são comida".
+- **Alvo na metade nos dois bens grandes [HIP]:** B `flour` 1.620 de estoque e alvo 810; C `wood` 540 e alvo 270. O `test_market_data` exige que o peso do teto de compra (alvo × 2) também caiba em 5.000; com alvo igual ao estoque estouraria. Efeito: esses dois bens começam com preço no piso (0,5 do valor-base) até o estoque descer ao alvo. Calibração fica para a LW-112.
+- **Comida do C [HIP; DEC-040 PENDENTE]:** `bread` 200 e `grain` 10 (valor pequeno). 30 dias de pão dos 28 do C (3 refeições por dia: 2.520) não cabem junto com a madeira (2.700) no peso do mercado (5.000); o `FoodStub` alimenta o C até a LW-094.
+- **Demais linhas do C:** `plank` 15, `fabric` 9 (tabela do `dados.md`); `tool` 22, `ore` 60, `metal` 30 (o C produz; [HIP]); `flour` 10 e `wool` 10 (bens que ninguém no C usa, só para o mercado negociar os 10 bens). Pesos: inicial A 1.003, B 3.952, C 3.573; teto A 2.006, B 4.664, C 4.446 (limite 5.000).
+- **Receitas `mine_ore` e `shear_wool` ficam com os ofícios provisórios** (`lumberjack` e `farmer`): a economia não confere o ofício de quem trabalha (economy.md, `RecipeDef`).
+- **Teste dos 30 dias em inteiros:** a manutenção entra multiplicada por 2.520 (divisível por todos os períodos de hoje: 3, 4, 5, 10 e 20) e a soma é arredondada para cima uma vez; um período novo que não divida faz o teste falhar com mensagem clara.
+- **Proposta de entrada para `DECISIONS.md`:** "Conta dos 30 dias de estoque inicial: lotes × horas de trabalho da agenda (não 24 h), só para bens importados; corrige a formulação [PROPOSTA] do `dados.md`", aprovada por Arthur no chat em 11/11/2026. Não editei `DECISIONS.md`.
+
+## 5. TESTES EXECUTADOS
+- Sondagem antes dos ajustes: `tools/check_all` com os dados reais e valores provisórios do C: VERMELHO, 1.321 de 1.335, **14 falhas em 6 arquivos**, todas por esperarem 2 mercados e 0 locais.
+- `tools/run_tests` por arquivo, depois dos ajustes: `test_economy_distribution` 5 de 5, `test_initial_stock_covers_30_days` 4 de 4, `test_economy_debug_and_kinds` 3, `test_economy_markets_api` 6, `test_economy_production_api` 7, `test_market_data` 4, `test_markets` 7, `test_production_data` 6, todos aprovados.
+- `tools/check_all` no commit final: exit 0, **VERDE**; GDScript sem avisos (376 scripts), "IDS DE CONTEÚDO: tudo existe (123 conferências)", 148 scripts, **1.344 testes, 1.344 aprovados, 296.179 asserts**, 206,2 s.
+
+## 6. RESULTADOS
+Aprovados 1.344, falhos 0, pulados 0. Critério de aceite da 097e cumprido: 14 linhas com os ids de local da 097a; a cada povoado só o que faz falta (nenhum se basta; todo bem necessário tem produtor); estoque inicial do C e do B cobre 30 dias; o oráculo do marco 3 passou sem mudar (a economia não está no jogo real nesta pilha; ela entra com a A).
+
+**Os 14 testes existentes atualizados (autorizados por Arthur):** `test_economy_debug_and_kinds` (1: resumo com 3 mercados e 14 locais, e o local injetado vira o dono 4); `test_economy_markets_api` (2: terceiro mercado, saldo 11.800, pão criado 360); `test_economy_production_api` (7: IDs dos locais 4 e 5 depois dos 3 mercados, dinheiro 19.000, tábuas 66, chaves do save 4 e 5, e o teste "sem locais" passou a injetar lista vazia e ganhou a conferência dos dados reais: 5 locais no A, 18 IDs); `test_market_data` (1: 30 linhas, 3 povoados, importados do B e do C; o nome trocou "both_markets" por "the_three_markets"); `test_markets` (1: lista de povoados); `test_production_data` (2: 14 locais e o local injetado agora em `a_work_06`, que está livre). Nenhuma verificação foi removida ou enfraquecida; foram atualizados valores esperados e acrescentadas conferências.
+
+## 7. PROBLEMAS ENCONTRADOS
+A conta de 24 h do `dados.md` (descrita acima). Os testes novos foram escritos depois dos dados provisórios, porque a sondagem da suíte inteira era o que mostrava a lista dos testes afetados; cada teste novo traz casos sintéticos que provam que a conferência acusa o erro (povoado que se basta, estoque uma unidade abaixo, bem sem linha no mercado).
+
+## 8. RISCOS
+16 arquivos no commit (tolerância do AGENTS 5.2: 12), por autorização. Na Fase B, A e B podem ter mexido nos mesmos 6 testes, em `docs/economy/dados.md` e no README da economia: conflito em outro arquivo de teste ou de código para a Fase B (regra do Bloco v10). Valores do C, a comida do C e o alvo na metade são [HIP]. Farinha do B e madeira do C começam com preço no piso.
+
+## 9. PENDÊNCIAS
+Aprovação da 097e. Cadeia da noite: 117i (só documentos, do `origin/main`), espera da A no main, Fase B da 097 por antecipação, LW-118 só em ramos. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 com 097a a 097e prontas; faltam a Fase B (junção ao main, depois da A) e a aprovação.
+- Próxima tarefa: **117i** (só documentos). Não iniciada.
+- Git: ramo `lw-097e-producao-e-estoque` em `4e614b5`, empilhado na `lw-097d-populacao-do-c` (`f346ed9`), **enviado só o ramo**; `main` intocado; sem tag, sem `--force`.
+
+---
 
 # LW-097d — RELATÓRIO — População do povoado C, `work_place_id` por local e ofícios `miner` e `shepherd`        Status: PRONTA PARA REVISÃO
 
