@@ -9,6 +9,7 @@ extends RefCounted
 ## LW-070: repasses finos do protocolo de NPC em S0 (intenções pendentes, resultado e posições do corpo) ao `NpcModule`, que a ponte recebe
 ## no construtor (opcional), e a entrega do foco do LOD a cada relato de posição do ator. Nenhuma regra de jogo aqui.
 ## LW-072a: o interruptor de corpos e a consulta dos corpos a manter (os NPCs em S0), para a apresentação desenhar os NPCs.
+## LW-108b: três consultas de leitura da economia (`peek_economy_*`) para o painel econômico de depuração; a conta fica em `BridgeEconomyInspect`.
 
 const CODE_NO_GAME: String = "BRIDGE_NO_GAME"
 const CODE_NO_TERRAIN: String = "BRIDGE_NO_TERRAIN"
@@ -22,6 +23,8 @@ const CODE_NO_INTERACTION: String = "BRIDGE_NO_INTERACTION"
 const CODE_NO_NPC: String = "BRIDGE_NO_NPC"
 ## O desfecho recebido não é um dos quatro de `BridgeReplies.NpcOutcome` (só acontece com conversão forçada de inteiro).
 const CODE_INVALID_OUTCOME: String = "BRIDGE_INVALID_OUTCOME"
+## Há jogo iniciado, mas ele não tem o módulo da economia (começou sem terreno): as consultas `peek_economy_*` falham com este código (LW-108b).
+const CODE_NO_ECONOMY: String = "BRIDGE_NO_ECONOMY"
 
 var _host: SimulationHostNode
 var _terrain: TerrainData
@@ -318,6 +321,19 @@ func _missing_npc(caller: String) -> Result:
 	return Result.failure(CODE_NO_NPC, "SimBridge.%s: a ponte foi criada sem o módulo `npc`; esperado SimBridge.new(host, terreno, locais, módulo npc)." % caller)
 
 
+## Módulo da economia do jogo atual, ou nulo (sem host, sem jogo ou jogo sem terreno). Como `character` e `interaction`, vem do host a cada chamada.
+func _economy() -> EconomyModule:
+	if _host == null or _host.runner == null:
+		return null
+	return _host.economy
+
+
+func _missing_economy(caller: String) -> Result:
+	if _host == null or _host.runner == null:
+		return _missing_game(caller)
+	return Result.failure(CODE_NO_ECONOMY, "SimBridge.%s: o jogo atual não tem o módulo da economia; esperado um jogo iniciado com terreno (SimulationHost.start_new_game(seed, terreno, ...))." % caller)
+
+
 func _missing_game(caller: String) -> Result:
 	return Result.failure(CODE_NO_GAME, "SimBridge.%s: sem jogo iniciado no SimulationHost; esperado um host com start_new_game já chamado." % caller)
 
@@ -389,3 +405,33 @@ func request_set_npc_traced(npc_id: int, is_traced: bool) -> Result:
 	if _npc == null:
 		return _missing_npc("request_set_npc_traced")
 	return _npc.request_set_traced(npc_id, is_traced)
+
+
+# ---------------------------------------------------------------------------------------------------- Inspeção da economia (LW-108b)
+# Consultas só de leitura para o painel econômico de depuração (docs/modules/bridge.md, "Inspeção da economia"; docs/modules/tools.md, "Painel econômico"). A conta fica em
+# `BridgeEconomyInspect`; aqui só se confere a ponte sem jogo ou sem economia e se delega. Cada resposta traz cópias e nenhuma exige terreno nem `npc`. Nenhuma escrita.
+
+## O dinheiro (em circulação, criado e destruído), os bens que já tiveram movimento, o livro-razão por motivo, a conferência de cada um e os problemas do `validate()` da economia.
+## Sem jogo: BRIDGE_NO_GAME; sem economia: BRIDGE_NO_ECONOMY. [LIM] o custo do `validate()` da economia inteira é medido na LW-108b (relatório).
+func peek_economy_overview() -> BridgeEconomyReplies.EconomyOverviewReply:
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgeEconomyReplies.EconomyOverviewReply.new(_missing_economy("peek_economy_overview"))
+	return BridgeEconomyInspect.overview(economy)
+
+
+## Os mercados (um por assentamento que tem), em ordem crescente de `market_id`: dinheiro da conta e, de cada bem, estoque, alvo, preço, compra, venda e escassez.
+## Os assentamentos vêm dos locais que a ponte guarda. Sem jogo: BRIDGE_NO_GAME; sem economia: BRIDGE_NO_ECONOMY.
+func peek_economy_markets() -> BridgeEconomyReplies.EconomyMarketsReply:
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgeEconomyReplies.EconomyMarketsReply.new(_missing_economy("peek_economy_markets"))
+	return BridgeEconomyInspect.markets(economy, BridgeEconomyInspect.settlement_ids_of(_places))
+
+
+## Os locais de produção, em ordem crescente de `site_id`: receita, ofício, equipe, se rodam e o motivo da parada. Sem jogo: BRIDGE_NO_GAME; sem economia: BRIDGE_NO_ECONOMY.
+func peek_economy_sites() -> BridgeEconomyReplies.EconomySitesReply:
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgeEconomyReplies.EconomySitesReply.new(_missing_economy("peek_economy_sites"))
+	return BridgeEconomyInspect.sites(economy, BridgeEconomyInspect.settlement_ids_of(_places))
