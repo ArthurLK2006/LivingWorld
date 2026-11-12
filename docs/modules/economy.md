@@ -332,3 +332,206 @@ O roadmap é arquivo protegido; as diferenças abaixo vêm das decisões de Arth
 | Roadmap da LW-087a | LW-088a, LW-090, LW-092, LW-093, LW-093a, LW-093b, LW-096a e LW-097 | bate |
 
 Nenhuma divergência que mude este contrato.
+
+## 17. Extensão da Fase 4 (LW-117b): tesouros, tarifa, escolta e assalto
+
+**Estado: PLANEJADO, aprovado por Arthur em 11/11/2026, com os ajustes da LW-117g (DEC-227 a DEC-233); incorporado ao `main` em 11/11/2026.** A **união** desta seção com as seções 3, 5, 6, 8, 10 e 15 (que ainda dizem tarifa 0, `peek_quote` sem o ator, folha pelo mercado e escolta [FUT]) **não foi feita na junção com o `main`** e fica para uma tarefa à parte, na versão final do `economy.md`. A Fase 3 não foi implementada e a Fase 4 só começa depois dela: tudo abaixo é desenho, sem código, dado ou teste. Esta seção **estende** as seções 2, 3, 5, 6, 8, 10, 11 e 12 **só para a Fase 4**; as seções existentes **não foram editadas** e, onde disserem "Fase 4 [FUT]", "tarifa 0", "sem `burn`", "folha pelo mercado" ou "escolta [FUT]", **para a Fase 4 vale esta seção**. Fontes: as decisões de Arthur de 11/11/2026 **DEC-202 a DEC-212** (APROVADAS; as que esta seção usa são a DEC-204 e a DEC-212) e as técnicas do revisor **DEC-213 a DEC-223** (**PROPOSTA**: padrão de trabalho, não obrigam), registradas pela LW-117a (`docs/decisions/0013-pre-voo-da-fase-4.md`, seções 2 e 6); arquitetura 11.8 e 17.5. Rótulos como no resto da ficha: **decisão** (DEC APROVADA), **PROPOSTA** (DEC PROPOSTA ou desenho desta seção, sem DEC), **[HIP]**, **[LIM]**, **[FUT]**. Nomes de campos, de comandos, de códigos `ECON_*` e de testes são **[PROPOSTA]** (como na seção 15). **Não é da economia** (fica para as partes 117c a 117f): as leis, quem cobra imposto e quanto, a hierarquia das facções, a missão militar de escolta, o catálogo de eventos (`docs/events.md`) e as colunas dos arquivos de dados (`docs/economy/dados.md`).
+
+### 17.1 O que a Fase 4 muda na economia (resumo)
+
+| Mudança | Decisão | Onde nesta seção | O que a seção existente dizia |
+|---|---|---|---|
+| Tipo de dono `treasury` (facção e país) e motivos novos do `Ledger` | DEC-215 (PROPOSTA) | 17.2 e 17.3 | seção 3: cinco tipos de dono; seção 2: motivos fechados |
+| `TradeRules` real por um **interruptor**; a tarifa tem **destinatário** | DEC-214 (PROPOSTA), DEC-049 e DEC-141 | 17.4 | seção 5: regra neutra, tarifa 0, "para onde vai a tarifa é da Fase 4" |
+| A folha dos postos sai do **tesouro da autoridade** | DEC-222 (PROPOSTA), DEC-164 e DEC-174 | 17.5 | seção 6: folha pela conta do mercado "até a Fase 4" |
+| Contrato `escort` | DEC-223 (PROPOSTA) | 17.6 | seção 8: escolta é [FUT] |
+| Assalto a caravana: dinheiro levado, carga destruída (`lost`) | DEC-212 (APROVADA), DEC-223 e DEC-155 | 17.7 | seção 9 e DEC-155: `CaravanAttacked` e `RouteCargoLost` fora da Fase 3 |
+| Multa (a "pena de crime" da DEC-204) | DEC-204 (APROVADA) | 17.3 | seção 2: nenhum `burn` nem tributo no jogo |
+
+### 17.2 Tipo de dono `treasury` e contas (DEC-215, PROPOSTA)
+
+- **Um tipo de dono, `treasury`, para a conta da facção e para a conta do país.** Entra em `owner_kinds.json` como a sexta linha: **só conta, sem inventário** (`weight_capacity` 0, como o `contract`) e **sem saldo inicial do tipo** (`initial_balance` 0): o saldo de cada tesouro vem de quem o abre, por `request_open_treasury` (DEC-227). O tesouro **não guarda bens**: a carga perdida é destruída (17.7), não confiscada.
+- **Quem abre.** O dono abre a sua conta (DEC-145): a `factions` abre a de cada facção e a `politics` a de cada país (as duas por `request_open_treasury`, pela `economy/api`); a economia faz o `mint` inicial `game_start`. **O tesouro abre por um comando próprio (DEC-227, APROVADA):** `request_open_treasury(owner_id, initial_balance)`, com `initial_balance` **obrigatório** (0 ou mais; vira o `mint` `game_start`) e idempotente. Assim a facção criminosa e a autoridade começam com dinheiros diferentes (os valores vêm de `factions.json` e `polities.json`). **`request_open_owner` continua com 3 argumentos** (`owner_id`, `kind`, `work_place_id`) e **não abre** o tipo `treasury`.
+- **O tesouro não fecha.** O dono morto fecha (DEC-146); a facção que **colapsa** (LW-123, "colapso limpo") **deixa o saldo parado na conta**, que **continua na soma** da conservação: nenhum dinheiro some e nenhum comando de fechamento novo é preciso. Alternativa (um `request_close_owner` que passa o saldo a outro dono) fica para o contrato de `factions`, se ele a pedir.
+- **Quem lê.** `peek_balance(owner_id)` e `peek_conservation()` não mudam. O teste de ouro soma **todas** as contas, inclusive as de tesouro (LW-142 confere por dia).
+
+### 17.3 Motivos do `Ledger` e comandos de pagamento (DEC-215 e DEC-204)
+
+O conjunto de motivos continua **fechado** (DEC-147) e ganha os abaixo. Hoje a economia só movimenta dinheiro dentro dos seus próprios comandos (`request_trade`, folha, contratos); para a `factions`, a `politics` e o `military` pagarem e cobrarem sem tocar no `Ledger`, a Fase 4 acrescenta **dois comandos** à `economy/api`. Cada motivo só aceita certos tipos de dono, e fora disso o comando devolve erro **sem mudar nada**.
+
+| Motivo | Quem paga → quem recebe | Por quem é movimentado | Status |
+|---|---|---|---|
+| `tariff` | o ator da ordem → o tesouro do destinatário | pela própria `request_trade` (17.4) | DEC-214 e DEC-215 (PROPOSTA) |
+| `tax` | `npc`, `player`, `market` ou `site` → `treasury` | `request_pay` | DEC-215 (PROPOSTA); **quem cobra e quando é da `politics`**; o "imposto de entrada" ainda não tem desenho (DEC-204, em aberto) |
+| `fine` (a multa da "pena de crime") | `npc` ou `player` → `treasury` | `request_pay` | DEC-204 (APROVADA: a pena é uma multa); o nome do motivo é **PROPOSTA** |
+| `faction_salary` | `treasury` → `npc` ou `player` | `request_pay` | DEC-215 (PROPOSTA); soldo e salário dos membros (LW-123) |
+| `upkeep` | `treasury` → **destruído** (sumidouro) | `request_spend` | DEC-215 (PROPOSTA); o sumidouro foi **aprovado por Arthur** (DEC-224, APROVADA; ponto 1 de 17.11) |
+| `plunder` (o dinheiro levado no assalto) | o comerciante → `treasury` da facção criminosa | `request_apply_raid` (17.7) | DEC-212 (APROVADA); o nome do motivo é **PROPOSTA** |
+
+- **`request_pay(payer_id, payee_id, amount, reason)`** aceita só `tax`, `fine` e `faction_salary`, com os tipos da tabela; **atômico** (`transfer` do `Ledger`, motivo `reason`). **`request_spend(owner_id, amount, reason)`** aceita só `upkeep` e só de dono do tipo `treasury` (`burn`; o valor entra no "destruído" do `peek_conservation`). Os comandos **não decidem** quanto cobrar nem de quem: isso é da lei ou da facção que chama.
+- **A multa sem saldo** (a pergunta que a DEC-204 deixou em aberto): a economia é **tudo ou nada**: sem saldo, `ECON_INSUFFICIENT_FUNDS` e nada muda (não há crédito, 3.J, nem dívida). Quem chama lê `peek_balance` e decide se cobra **o que a pessoa tem** ou desiste; essa regra de jogo é da lei, em dados (parte 117c).
+- **Erros novos:** `ECON_BAD_REASON` (motivo que o comando não aceita) e `ECON_BAD_OWNER_KIND` (tipo de dono que o motivo não aceita). Os demais são os da seção 2.
+- **Os motivos já existentes** (`game_start`, `trade`, `salary`, `contract_*`) **não mudam**. O `salary` continua sendo o motivo da folha dos postos, mesmo quando o pagador passa a ser o tesouro (17.5).
+
+### 17.4 `TradeRules`: o interruptor e a tarifa com destinatário (DEC-214, PROPOSTA; DEC-049 e DEC-141)
+
+- **O interruptor (`TradeRulesSlot`, em `economy/api/`).** É um objeto que guarda a regra em uso e **começa com a `NeutralTradeRules`**. O **`app`** (onde os módulos são registrados, `GameModules`) o cria e o entrega **pelo construtor** da economia (como a seção 5 já faz com a regra) e, depois, ao construtor da `politics`. Na `post_setup` da `politics`, ela chama **`install(rules)`** uma única vez, com o seu provedor de regras. A economia **nunca importa a `politics`**: só conhece a interface `TradeRules` e o interruptor, que são dela; a `politics` (camada 4) pode importar a `economy/api` (camada 3). Por isso a interface `TradeRules` (hoje em `economy/rules/`, seção 5) e o interruptor ficam **expostos em `economy/api/`**: a `politics` só pode importar a `api` (AGENTS 5.1). **Continua a única inversão do projeto** (DEC-049): não há comando `request_set_trade_rules`, e a regra real não é salva pela economia (o estado das leis é da `politics`).
+- **Trava.** A economia **trava** o interruptor no primeiro `tick`; `install` depois disso, ou uma segunda vez, devolve `ECON_RULES_LOCKED` sem mudar nada. Como o provedor da `politics` lê o estado das leis a cada pergunta, a regra **não precisa ser trocada** quando uma lei muda.
+- **`peek_terms(good_id, market_id, actor_id)`** passa a devolver, além de `banned`, `tariff_bp` e `needs_license`, o **`tariff_recipient_id`**: o `owner_id` do tesouro que recebe a tarifa (**0 = ninguém**). Qual tesouro (o do país ou o da facção de governo, o roadmap LW-130 diz o da facção de governo) é decisão da `politics`. Faixa: `tariff_bp` de 0 a 10000; `tariff_bp` maior que 0 com destinatário 0, ou valor fora da faixa, é **dado inválido** (`ECON_DATA_INVALID`, apontando a regra), **nunca** tarifa perdida em silêncio.
+- **Como a tarifa é cobrada em `request_trade` (seção 5).** `tarifa = ceil_div(total × tariff_bp, 10000)` (o total da seção 4; com `tariff_bp` maior que 0 a tarifa é de pelo menos 1; **arredondar para cima é decisão de Arthur, DEC-228, APROVADA**: o código da Fase 3 arredonda para baixo e só muda com a autorização escrita dele). Quem paga é **o ator que pediu a ordem** (**aprovado por Arthur em 11/11/2026**, DEC-225, APROVADA): na **compra** soma-se ao que ele paga; na **venda** sai da receita dele. O mercado paga e recebe o `total` **sem** tarifa. A tarifa entra **na mesma transação atômica** (`transfer(ator → destinatário, tarifa, tariff)`), e os fundos do ator já são conferidos **com a tarifa** antes de mudar qualquer coisa. `TradeResult.tariff` passa a ser a tarifa cobrada (era sempre 0) e **`peek_quote` passa a receber o ator** (DEC-230, APROVADA): `peek_quote(actor_id, market_id, good_id, quantity, side)` devolve **o mesmo total e a mesma tarifa** que `request_trade` cobraria desse ator, porque a regra depende dele. **Com a regra neutra, nada muda** (tarifa 0, sem transferência), então os testes da Fase 3 seguem valendo.
+- **A licença (DEC-231, APROVADA):** `needs_license` verdadeiro (a regra só o devolve a quem **não** tem a licença, `politics.md` 4) **recusa a ordem** de `request_trade` com **`ECON_LICENSE_REQUIRED`**, código próprio, diferente de `ECON_TRADE_BANNED`; `peek_quote` devolve o mesmo erro. **Fica para a `politics.md`:** se a regra distingue compra de venda (hoje `peek_terms` não recebe o `side`; o mesmo `tariff_bp` vale nos dois lados; ponto 2 de 17.11).
+- **Erros:** os de `request_trade` (seção 5) mais `ECON_RULES_LOCKED` e `ECON_LICENSE_REQUIRED`.
+
+### 17.5 A folha dos postos pelo tesouro da autoridade (DEC-222, PROPOSTA; DEC-164 e DEC-174)
+
+- **Os postos continuam** (regra de jogo, sem marca `TEMP`); **só o pagador muda**, do mercado do povoado para o **tesouro da autoridade**. O motivo segue `salary`, o evento `WagesPaid(workplace_id, amount_each)` e a leitura que o `npc` faz dele **não mudam**; a regra "tudo ou nada por posto e por hora" e o passo 0 da hora (seção 6) **também não**.
+- **Comando novo: `request_set_payroll_source(settlement_id, owner_id)`.** A `factions` (LW-123) o chama ao iniciar, uma vez por povoado, com o tesouro da autoridade (dono do tipo `treasury`). **Sem esse comando a economia paga como na Fase 3** (pelo mercado): é o mesmo desenho do interruptor da 17.4 (neutro de início, real depois). O mapa povoado → pagador é **salvo** no bloco `economy` e muda só por este comando. Erros: `ECON_UNKNOWN_MARKET` (povoado sem mercado) e `ECON_BAD_OWNER_KIND` (o dono não é `treasury`).
+- **Tesouro sem saldo:** o posto **para com `NO_FUNDS`** e ninguém recebe naquela hora, como já acontece com o mercado.
+- **Risco [HIP, calibração na LW-112 e no soak da LW-142]:** o mercado se sustenta com as vendas; o **tesouro da autoridade só tem as receitas** que a `politics` e a `factions` lhe derem (tarifa, imposto, contribuição). Se elas não cobrirem a folha, guardas e estalajadeiros ficam sem `income` e passam fome (o risco R3.3 do roadmap outra vez). O contrato de `factions` (parte 117c) deve dizer **quem é pago por posto e quem por soldo**, para não pagar o mesmo guarda duas vezes (DEC-222).
+
+### 17.6 Contrato `escort` (DEC-223, PROPOSTA)
+
+- **`kind` novo, `escort`**, além de `labor`, `delivery` e `vacancy` (seção 8). **Emissor:** a facção mercantil, por um dono `treasury`. **Objetivo:** `route_id` (uma rota do `world`) e `escorted_id` (o `owner_id` do comerciante escoltado). **Recompensa:** de 1 ou mais, **retida em custódia** ao postar, como em `labor` e `delivery` (`contract_escrow` e conta do tipo `contract`). Prazo e requisitos como nos outros tipos.
+- **Postar e aceitar** pelos comandos que já existem (`request_post_contract`, `request_accept_contract`); `ContractOffered` é o canal para o NPC, que o aceita pela utilidade (seção 8). Postar é **impossível** (`ECON_CONTRACT_IMPOSSIBLE`) se a rota ou o escoltado não existem, ou se o escoltado já tem outro `escort` aberto ou aceito.
+- **Quem diz que acabou: o `military` (LW-139), por comando.** A economia **não conhece missão** (o `military` é de camada acima, que importa a `economy/api`). **`request_resolve_escort(contract_id, outcome)`**, com `outcome` igual a `completed` (paga `contract_payout` ao aceitante e publica `ContractCompleted`) ou `failed` (devolve ao emissor, `contract_refund`, e publica `ContractFailed` com motivo `escort_failed`). Só vale para `escort` **aceito**: senão `ECON_CONTRACT_WRONG_STATE`. **Prazo vencido** devolve ao emissor como nos outros tipos.
+- **Consulta para o `military`:** `peek_escort_of(escorted_id)` devolve o `contract_id` e o `acceptor_id` do escolta aceito, ou nada. É com ela que o `military` sabe que a caravana **está escoltada** e reduz a perda (LW-139: "com escolta, a perda média é menor"); **a conta da perda é do `military`**, em dados.
+- **Como o jogador escolta** (aceitar e esperar o fim, ou estar presente) **não está decidido**: é da missão de escolta do `military` e da interface (partes 117c e 117d; ponto 5 de 17.11).
+
+### 17.7 Assalto a caravana e perda de carga (DEC-212 APROVADA; DEC-223 e DEC-155)
+
+- **O que a decisão de Arthur manda (DEC-212):** no assalto, **o dinheiro do comerciante passa para a facção criminosa**, por uma transferência pelo `Ledger`, e **a carga é destruída** (motivo `lost`, DEC-223). A carga é o inventário do próprio comerciante (seção 9: sem tipo de dono novo).
+- **Comando: `request_apply_raid(trader_id, raider_treasury_id, cash_share_bp, cargo_share_bp)`**, chamado pelo `military` (LW-139) depois de **resolver** o ataque. **Atômico:** passa `cash_share_bp` do saldo do comerciante ao tesouro do assaltante (`transfer`, motivo `plunder`) e destrói `cargo_share_bp` de **cada bem** do inventário dele (motivo `lost`). As frações (0 a 10000, em pontos-base) **vêm do `military`, em dados** [HIP]: a economia só executa. **A do dinheiro é menor que o saldo inteiro, com partida de 5000 pontos-base [HIP]** (aprovado por Arthur em 11/11/2026, DEC-226, APROVADA). Devolve o dinheiro levado e as quantidades destruídas. Erros: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_OWNER_KIND` (o tesouro não é `treasury`) e `ECON_BAD_SHARE` (fração fora de 0 a 10000). O que a DEC-212 não dizia (quanto do dinheiro) está na DEC-226 (ponto 3 de 17.11).
+- **Motivo novo `lost`** no conjunto fechado de motivos de **bens** (seção 3), ao lado de `consumed` e `maintenance`: **entra na conservação de bens** (DEC-156: soma de todos os donos = criado − destruído, inclusive `lost`), e `peek_goods_conservation()` o confere por dia.
+- **Eventos [PROPOSTA; o catálogo é da LW-117f]:** o **`military`** publica `CaravanAttacked` (o fato do ataque) e a **economia** publica `RouteCargoLost` (o dinheiro levado e a carga destruída, com o `cause_id` do ataque). Um por assalto, **nunca por bem** (não é laço quente). A DEC-155 os deixou fora da Fase 3; entram na Fase 4, na LW-139.
+- **O que não existe:** a revenda de produto roubado e o saque para o inventário do atacante (a alternativa que a DEC-223 recusou; vai para o `docs/backlog.md`).
+
+### 17.8 Conservação, save, hash e arquitetura
+
+- **Conservação.** O teste de ouro do dinheiro soma **todas** as contas (inclusive as de tesouro) e confere `criado − destruído`; o `upkeep` entra em **destruído**. Os tributos (`tariff`, `tax`, `fine`) e o saque (`plunder`) são **transferências**: não criam nem destroem. A conservação de bens ganha o `lost`.
+- **Save.** Os tesouros e o mapa povoado → pagador entram no **bloco `economy`**; o interruptor e a regra real **não** (são do `app` e da `politics`). **`save_version` continua em 2 e o save da Fase 3 é rejeitado com mensagem clara, sem migração** (DEC-127, DEC-134 e DEC-209).
+- **Hash.** Registrar a `factions` e a `politics` e abrir tesouros muda o `state_hash`: vale a regra dos marcos por bloco da DEC-175 (parar no primeiro valor que mudar e pedir a aprovação de Arthur), como na Fase 3; o plano de blocos da Fase 4 é da LW-117c ou do prompt de cada tarefa.
+- **Arquitetura.** Sem regra nova obrigatória: a `economy` já não importa camada acima. Um teste do `check_architecture` (**[PROPOSTA]**, na LW-130) pode confirmar que a `economy` não cita `factions`, `politics` nem `military`, e que a `politics` usa só `economy/api`.
+
+### 17.9 Dado → dono (acréscimos à seção 12)
+
+| Dado | Dono | Observação |
+|---|---|---|
+| Contas dos tesouros (facção e país) e seus saldos | `economy` (`Ledger`) | salvo; o `owner_id` é da `factions` ou da `politics`, que só pedem e consultam |
+| Povoado → pagador da folha dos postos | `economy` | salvo; muda só por `request_set_payroll_source` |
+| Contratos `escort` e a custódia | `economy` | salvo |
+| O interruptor e a regra real de `TradeRules` | `economy` (a interface e o interruptor) e `politics` (a regra real) | **não** salvos pela economia |
+| Quem recebe a tarifa (`tariff_recipient_id`) | `politics` | a economia só lê, por `peek_terms` |
+| Frações do assalto e a conta da perda com escolta | `military` | em dados do `military`; a economia só executa |
+| Lista de atos e valor da multa | `politics` (dados de lei) | a economia só cobra, por `request_pay` |
+
+Nova linha de dado: `owner_kinds.json` ganha `treasury`, com `weight_capacity` 0 e `initial_balance` 0; o saldo de cada tesouro vem de quem o abre, por `request_open_treasury`, e os valores estão em `factions.json` e `polities.json` (`docs/fase-4/dados.md`, seções 3 e 5).
+
+### 17.10 Rastreio: tarefa → subseção → teste previsto (nomes **[PROPOSTA]**)
+
+| Tarefa | Subseção | Testes previstos |
+|---|---|---|
+| LW-119 (`factions`, a conta) | 17.2 | `test_treasury_owner`: `request_open_treasury` abre sem inventário; idempotente; o saldo passado vira o `mint` `game_start` (facção e país com saldos diferentes); `request_open_owner` **não** abre o tipo `treasury`; conservação |
+| LW-123 (`factions`, finanças) | 17.3 e 17.5 | `test_economy_pay_reasons` (cada motivo com os tipos certos e os errados; atômico); `test_economy_spend_upkeep` (o sumidouro conta como destruído); `test_payroll_source` (a folha sai do tesouro; sem saldo, `NO_FUNDS`; sem fonte, paga o mercado) |
+| LW-125 (`factions`, ordens) | 17.6 | `test_escort_contract_post_accept` (custódia; objetivo possível; aceito por NPC; escolta duplicada recusada) |
+| LW-130 (`politics`, regra real) | 17.4 | `test_trade_rules_slot` (instala uma vez; `ECON_RULES_LOCKED`); `test_trade_tariff` (altera o preço efetivo; o destinatário recebe; atômico; conservação; regra falsa, sem a `politics`; **tarifa de pelo menos 1** com `tariff_bp` maior que 0, DEC-228; **`peek_quote(actor_id, …)` devolve o mesmo total e a mesma tarifa** que a ordem, DEC-230; **`needs_license` recusa com `ECON_LICENSE_REQUIRED`**, DEC-231) |
+| LW-139 (`military`, assalto e escolta) | 17.6 e 17.7 | `test_resolve_escort` (`completed`, `failed`, prazo); `test_apply_raid` (dinheiro levado e carga destruída; conservação de dinheiro e de bens com `lost`; fração inválida) |
+| LW-142 (soak) | 17.8 | conservação por dia com tesouros; nenhum saldo negativo; tesouro de facção colapsada parado na soma |
+
+### 17.11 Pontos da revisão, **aprovados por Arthur em 11/11/2026** (os pontos 1 a 3 por DEC-224 a DEC-226; o ponto 6 foi superado pela DEC-227; os nomes de campos, comandos e códigos seguem PROPOSTA)
+
+1. **APROVADO (DEC-224): `upkeep` como sumidouro de dinheiro** (DEC-215 só nomeia o motivo). A recomendação aprovada foi o sumidouro: a seção 2 já reserva os sumidouros do GDD 12.3 para a Fase 4, e o suprimento de força é abstrato. **Alternativa:** pagar ao mercado do povoado onde a força está (o dinheiro circula, mas aparece uma compra sem bens).
+2. **APROVADO (DEC-225): a tarifa é paga pelo ator, nos dois lados, e `peek_terms` não recebe o `side`.** A recomendação aprovada foi manter assim e, **se a lei de tarifa precisar** distinguir importação de exportação, acrescentar o `side` na parte 117c. **Alternativa:** a tarifa só na compra.
+3. **APROVADO (DEC-226): quanto do dinheiro o assalto leva** (a DEC-212 diz "o dinheiro do comerciante", não quanto). A recomendação aprovada foi uma **fração em dados** do `military`, **menor que o saldo inteiro** (partida de 5000 pontos-base [HIP]): com 10000 o comerciante assaltado fica sem dinheiro para comer, e o risco R3.3 volta. **Alternativa:** todo o saldo.
+4. **O tesouro de uma facção que colapsa não fecha** (o saldo fica parado na soma). **Alternativa:** um comando de fechamento que passa o saldo a outro dono, se o contrato de `factions` pedir.
+5. **Como o jogador escolta** e **quem chama** `request_resolve_escort` (o `military`, ao fim da missão): depende do contrato de `military` (parte 117d) e do checklist 4.H do roadmap.
+6. **Superado (DEC-227, APROVADA):** o saldo inicial do tesouro vai por `request_open_treasury(owner_id, initial_balance)` (17.2); `request_open_owner` fica com 3 argumentos.
+7. **Quem recebe a tarifa por país** (o tesouro do país ou o da facção de governo): da `politics` (parte 117c).
+8. **Nomes** dos motivos novos (`fine`, `plunder`), dos comandos (`request_open_treasury`, `request_pay`, `request_spend`, `request_set_payroll_source`, `request_resolve_escort`, `request_apply_raid`), das consultas e dos códigos `ECON_*` novos (`ECON_BAD_REASON`, `ECON_BAD_OWNER_KIND`, `ECON_BAD_SHARE`, `ECON_RULES_LOCKED`, `ECON_CONTRACT_WRONG_STATE`, `ECON_LICENSE_REQUIRED`).
+9. **Os valores [HIP]** (saldos iniciais dos tesouros, frações do assalto, tarifas) seguem [HIP] e ficam em dados.
+
+## 18. Extensão da Fase 5 (LW-146g): monte no chão, metal forjado, modificador de produção e recompra de item
+
+**Estado: PLANEJADA (11/11/2026); nada desta seção existe no código, nos dados nem nos testes.** Esta seção **estende** as seções 2, 3, 10, 11, 12 e 13 **só para a Fase 5**, como a 17 fez para a Fase 4: as seções existentes **não foram editadas** e, onde disserem "`spoiled`: reservado", "motivos fechados" ou "só bens em quantidade", **para a Fase 5 vale esta seção** (a união fica para a versão final do `economy.md`). Fontes: DEC-156 (conservação de bens, **APROVADA**), DEC-181 (derrota, **APROVADA**), DEC-183 (crime e contrabando, **APROVADA**), DEC-188, DEC-189, DEC-193, DEC-197 e DEC-199 (todas **PROPOSTA**: padrão de trabalho, não obrigam); `character.md` (E3 e E4), `dynamic_events.md` (seções 4 e 5), `app.md` (A5), `npc.md` (15.6) e a **escolha de Arthur de 11/11/2026 para a venda de item** (18.5: recompra simples; **ainda sem DEC**, a proposta de entrada vai no relatório). Rótulos: **decisão** (DEC APROVADA), **PROPOSTA**, **[HIP]**, **[LIM]**, **[EM ABERTO]**. Nomes de comandos, de motivos, de códigos `ECON_*`, de campos e de testes são **[PROPOSTA]**. **Sem dado, sem código e sem arquivo de dados novo agora**: as linhas de dados abaixo entram com a tarefa que as usa, sob a aprovação de Arthur (formato de dados). **Quem implementa:** LW-156a (18.2), LW-148 (18.3), LW-162 (18.4) e uma **tarefa nova a propor** (18.5; precisa existir antes da LW-165b, que faz o crime ao vender item marcado).
+
+### 18.1 O que a Fase 5 muda na economia (resumo)
+
+| Mudança | Decisão | Onde | O que a seção existente dizia |
+|---|---|---|---|
+| Tipo de dono `ground_pile` (monte no chão); `spoiled` passa a ter uso | DEC-188 (PROPOSTA) | 18.2 | seção 3: cinco tipos de dono (a 17 acrescenta `treasury`); `spoiled` reservado |
+| Motivo `forged` e o evento `GoodsForged` | DEC-193 (PROPOSTA) | 18.3 | seção 3: destruir só por `consumed`, `maintenance` e `spoiled` (a 17 acrescenta `lost`) |
+| Modificador de produção, com prazo e desfazer | DEC-197 (PROPOSTA) | 18.4 | seção 6: eficiência só muda por manutenção |
+| Recompra de item (venda de instância) e o motivo `item_sale` | escolha de Arthur de 11/11/2026 | 18.5 | seção 3: instância não é da economia; `character.md` E4: "não existe caminho de venda" |
+
+### 18.2 Monte no chão (LW-156a; DEC-188; PROPOSTA)
+
+- **Um tipo de dono, `ground_pile`.** Entra em `owner_kinds.json` como a sétima linha: **só inventário**, **sem saldo** (`initial_balance` 0) e `weight_capacity` **grande, em dados [HIP]** (o monte não é um lugar de guardar: é onde cai o que o jogador solta ao morrer). Quem o abre **não** é quem o usa: a **economia** o abre a pedido, com um ID de `ctx.ids` (nunca reutilizado).
+- **Estado de um monte (tabela `piles`, salva só quando há monte):** `pile_id` (o `owner_id`), `x_cm` e `z_cm` (inteiros, posição no mapa lógico, a mesma convenção do `world`), `opened_minute` e `expires_minute`.
+- **Comandos novos.** **`request_open_pile(x_cm, z_cm) -> PileResult`** (o `pile_id`; `expires_minute` = agora + `pile_lifetime_hours` × 60, **24 horas de jogo [HIP]**, valor em dados, DEC-188). Os bens entram e saem pelo comando que **já existe**, `request_transfer_goods(from_id, to_id, good_id, quantity)` (seção 10), com o monte como destino ou origem. **Alcance** (o NPC ou o jogador está perto do monte?) é conferido por **quem chama** (a ponte para o jogador; o `npc` pela posição lógica, `npc.md` 15.6): a economia não sabe onde as pessoas estão. Falhas, sem mudar nada: as dos bens (seção 3) mais `ECON_UNKNOWN_PILE`.
+- **Consultas novas (cópias).** `peek_pile(pile_id)` (posição, `expires_minute`, inventário e peso) e `peek_piles_near(x_cm, z_cm, radius_m)` (os montes abertos a até `radius_m`, **inclusive**, pela distância horizontal em centímetros inteiros, comparando quadrados, **por distância e, no empate, por `pile_id` crescente**).
+- **Sumiço (DEC-188).** A cada hora cheia (o mesmo relógio da produção, seção 6), todo monte com `expires_minute` vencido tem **todo o conteúdo destruído com o motivo `spoiled`** e é **fechado** (como o dono morto, DEC-146: sai das consultas; o cadastro o mantém, o ID não volta). Monte **vazio** é fechado na mesma hora. **Teto `max_piles` [HIP]**: ao passar dele, vence primeiro o monte mais antigo (mesmo tratamento). **Conservação de bens:** entrar e sair são `transfer`; o sumiço é `spoiled`, que entra no "destruído" (DEC-156); o monte fechado **continua na soma**.
+- **Quem abre e enche.** O que acontece com os **bens em quantidade** do jogador ao morrer no modo `respawn_near` **[EM ABERTO]** (a DEC-181 fala em "itens no chão"; o `character.md` trata das **instâncias**, E3). **Recomendação:** todos os bens do inventário **do jogador** (nada do dinheiro, que é a pergunta aberta do `character.md`) vão para **um** monte aberto no local da morte, pela **ponte**, ao ouvir `PlayerDefeated`: `request_open_pile` e um `request_transfer_goods` por bem. **Saque de bem de NPC morto [EM ABERTO]:** a DEC-146 (APROVADA) **fecha** o inventário do NPC morto e o mantém na soma; para o saque (LW-156b) a economia teria de mover os bens dele para um monte, o que **muda em parte a DEC-146**, então **só com decisão de Arthur**.
+- **[LIM]** O monte **não publica evento** (nenhum `ItemDropped` de bem em quantidade): só instância tem "quem pegou" (`npc.md` 15.5 e 15.6). Montes fechados ficam no cadastro: o crescimento é de um monte por morte (poucos); o soak da LW-109 mede.
+- **Dados (PROPOSTA; entram com a LW-156a):** a linha `ground_pile` em `owner_kinds.json` e um arquivo novo de uma linha, `pile_params.json` (`id` = `piles`; `pile_lifetime_hours` e `max_piles`, `INT` de 1 ou mais), para não mudar o esquema de `price_params.json`. Tudo [HIP].
+
+### 18.3 Metal forjado (LW-148; DEC-193; PROPOSTA)
+
+- **Fronteira (DEC-193).** A **economia destrói o metal** e avisa; o **`character` cria a instância** ao ouvir (`character.md` E3 e E4; qualidade pela receita e pela habilidade, regra da LW-148). A economia **não conhece** a instância nem a receita do item: só o texto `item_def_id`, que ela **repassa sem conferir**.
+- **Motivo novo `forged`** no conjunto **fechado** de destruição de bens: `consumed`, `maintenance`, `spoiled`, `lost` (seção 17.7) e `forged`. **Entra na conservação de bens** (DEC-156).
+- **Comando: `request_forge_goods(owner_id, good_id, quantity, item_def_id) -> Result`.** Destrói `quantity` de `good_id` do dono (`forged`) e publica **`GoodsForged(owner_id, good_id, quantity, item_def_id)`** (uma vez por pedido; **sem evento** se falhar). **Atômico.** Só vale para bem de uma **lista fechada em dados**, `forgeable_goods` (partida: `metal` [HIP]), e para dono de tipo que **pode forjar** (partida: só `player`; o **NPC ferreiro** é **[EM ABERTO]**, DEC-193: "a definir no contrato"). Falhas, sem mudar nada: as dos bens (seção 3), `ECON_NOT_FORGEABLE` (bem fora da lista ou dono de tipo que não forja) e `ECON_BAD_QUANTITY`.
+- **Ordem na ponte (para o metal não se perder).** A ponte confere **antes**, pelo `character`, que a instância **cabe** (peso e capacidade, `CHARACTER_TOO_HEAVY`) e **só então** chama `request_forge_goods`; como tudo corre no mesmo passo, nada muda entre as duas chamadas [PROPOSTA técnica].
+- **Quem ouve:** o `character`, **por nome** (a economia nunca importa o `character` nem o contrário). Ler a carga por campo é a **exceção à regra 4.17 do AGENTS** que a conversa A vai propor como DEC (faixa 234 a 239): enquanto ela não for aprovada, este canal **depende** dela.
+- **Reparo** fica para "depois" (DEC-193).
+
+### 18.4 Modificador de produção (LW-162; DEC-197; PROPOSTA)
+
+- **Para quê.** O evento `poor_harvest` faz a produção de um bem cair por alguns dias num povoado (`dynamic_events.md` seção 5).
+- **Comandos novos.** **`request_apply_production_modifier(settlement_id, good_id, factor_bp, source_id, days) -> Result`** e **`request_remove_production_modifier(settlement_id, good_id, source_id) -> Result`** (o desfazer). `factor_bp` de **0 a 10000** (10000 = sem efeito; só **reduz** na Fase 5; aumentar é [FUT]); `days` de 1 a `max_modifier_days` [HIP]; `source_id` é o `instance_id` do evento de mundo. **Idempotente por (`settlement_id`, `good_id`, `source_id`):** repetir o pedido é sucesso sem mudar nada; remover um modificador que já venceu ou não existe é **sucesso sem efeito** (o fim do evento e o vencimento podem se cruzar). Falhas, sem mudar nada: `ECON_UNKNOWN_MARKET` (povoado sem mercado), `ECON_UNKNOWN_GOOD`, `ECON_BAD_FACTOR` e `ECON_BAD_DURATION`.
+- **Efeito.** Em cada hora de produção (seção 6, passo 4), o progresso do lote de **cada local do povoado que produz `good_id`** soma `floor_div(eficiência × lotes por hora × fator, 10000)` em vez de `eficiência × lotes por hora`; vários modificadores do mesmo par **multiplicam**, em ordem de `source_id` crescente, truncando a cada passo (só inteiros). **Não é parada:** o local não publica `ProductionStopped` por causa dele (o fato é o `WorldEventStarted`); a perda de eficiência por falta de manutenção continua separada.
+- **Estado e prazo.** Tabela `(settlement_id, good_id, source_id) → factor_bp, ends_minute`, **salva só quando não vazia**, em ordem crescente de chave; vence na hora cheia em que `ends_minute` passa (o mesmo relógio). `peek_site` ganha o campo **`modifier_bp`** (o produto dos fatores vigentes; 10000 sem modificador) e `peek_production_modifiers(settlement_id)` devolve a lista em cópia.
+- **Conservação:** nenhuma; o modificador só muda **quanto** se produz.
+
+### 18.5 Recompra de item: a venda de instância (escolha de Arthur de 11/11/2026; PROPOSTA técnica)
+
+- **O problema.** A economia só negocia **bens em quantidade** (`request_trade`); espada com qualidade é **instância** do `character` e não entra na conservação de bens (`character.md` E4). Sem um caminho de venda, o **crime de vender item marcado** (DEC-183; LW-165b) não tem onde acontecer.
+- **A escolha (recompra simples).** O mercado **compra** o item e ele **some do jogo**: **sem revenda e sem estoque de instâncias**. Arthur disse que, **no futuro, a versão completa e mais complexa vem depois** (a loja que guarda e revende, preço por qualidade; vai para o `docs/backlog.md`).
+- **Três chamadas, na ponte, no mesmo passo.** (1) `character.peek_item_value(item_id)` devolve o **valor** (inteiro: o `base_value` do item em dados do `character`, ajustado pela qualidade) e a conferência de que o item **pode ser vendido** (existe, é do vendedor, **não** é `bound`; `CHARACTER_ITEM_BOUND`); (2) **`economy.request_buy_back(market_id, seller_id, item_value) -> BuyBackResult`** (o `paid`): o mercado paga `paid = floor_div(item_value × buyback_bp, 10000)`, no mínimo 1 se `item_value` for de 1 ou mais, **`buyback_bp` em dados [HIP]** (partida 5000), por **`transfer` (mercado → vendedor) com o motivo `item_sale`**, atômico; falhas, sem mudar nada: `ECON_UNKNOWN_MARKET`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_VALUE` (`item_value` menor que 1) e `ECON_MARKET_NO_FUNDS`; (3) **`character.request_transfer_item(seller_id, market_id, item_id, sale)`** (o `cause` novo `sale`, ao lado de `theft` e `loot`, `character.md` E4): o item **sai** do vendedor e **não** vai para inventário nenhum, e o `character` publica **`ItemSold(item_id, def_id, seller_id, market_id, origin_owner_id)`**. A **ordem** é (1), (2), (3), porque só o (2) pode falhar por motivo que o `character` não vê (o mercado sem fundos), e nada muda entre as chamadas.
+- **A marca de origem** (`origin_owner_id`, `character.md` E4) **viaja no `ItemSold`**; quem decide se vender aquele item foi crime é a `politics` (adaptador do crime, `politics.md` seção 4; **o `ItemSold` entra na tabela `act_sources.json` com o ato `smuggling`**, LW-165b), como a DEC-195 manda: o `character` e a economia só **informam**.
+- **Motivo novo `item_sale`** no conjunto fechado de motivos do `Ledger` (ao lado dos da seção 2 e dos da 17.3): só `market` → `player` ou `npc`; **só transfere** (não cria nem destrói dinheiro). **A tarifa e a lei de comércio da `TradeRules` não incidem** na recompra (o item não é bem); isso é uma **[LIM]** da versão simples.
+- **Dado (PROPOSTA, com a tarefa):** `buyback_bp` num arquivo novo de uma linha, `buyback_params.json` (`id` = `buyback`; `INT` de 0 a 10000).
+
+### 18.6 Conservação, save, hash e arquitetura
+
+- **Dinheiro.** `item_sale` é transferência; nada cria nem destrói dinheiro. O teste de ouro soma **todas** as contas e continua valendo. **Bens.** `forged` e `spoiled` entram em "destruído"; o monte na soma; `peek_goods_conservation()` o confere por dia.
+- **Save.** O bloco `economy` ganha `piles` e `production_modifiers`, **só quando não vazios** (então o jogo sem eles salva e entra no hash como antes). **`save_version` continua em 2** (DEC-127); save antigo é rejeitado com mensagem clara (DEC-186).
+- **Hash.** Registrar a economia já mudou o hash na Fase 3; esta seção **não** registra módulo novo. Valor de hash **já aprovado** que mude **faz a tarefa parar e pedir** (DEC-175 e AGENTS 9.5), como nos marcos da Fase 5 (`app.md`, A2).
+- **Arquitetura.** A economia **não importa** `character`, `npc`, `world` nem `combat`: o `character` ouve o `GoodsForged` (18.3), a ponte junta as chamadas (18.2 e 18.5) e o adaptador de efeitos do `app` chama os comandos da 18.4 (`app.md` A5). Um teste do `check_architecture` **[PROPOSTA]** confere que só a ponte e o adaptador citam `request_open_pile`, `request_forge_goods`, `request_buy_back` e os dois de modificador.
+
+### 18.7 Dado → dono (acréscimos à seção 12)
+
+| Dado | Dono | Observação |
+|---|---|---|
+| Os montes (posição, validade) e o conteúdo | `economy` | salvo só quando há; o `owner_id` é do monte |
+| Quem forja e o que é forjável (`forgeable_goods`) | `economy` (dados) | a instância criada é do `character` |
+| Os modificadores de produção | `economy` | salvo só quando há |
+| `buyback_bp` | `economy` (dados) | o **valor do item** é do `character` |
+| A marca de origem do item vendido | `character` | a economia só repassa o que a ponte dá |
+
+### 18.8 Rastreio: tarefa → subseção → teste previsto (nomes **PROPOSTA**)
+
+| Tarefa | Subseção | Testes previstos |
+|---|---|---|
+| LW-156a (itens no chão) | 18.2 | `test_ground_pile`: abre na posição; `peek_piles_near` por distância e `pile_id` (inclusivo no raio); bens entram e saem por `transfer`; **vence em 24 h e some com `spoiled`**; vazio fecha; `max_piles` vence o mais antigo; conservação com `spoiled`; ida e volta de save; só salva quando há |
+| LW-148 (metal → item) | 18.3 | `test_forge_goods`: destrói com `forged` e publica `GoodsForged` **uma vez**; falha não muda nada e não publica; bem fora de `forgeable_goods` e dono que não forja recusados (`ECON_NOT_FORGEABLE`); conservação fecha com `forged`; **a economia não cita o `character`** |
+| LW-162 (`poor_harvest`) | 18.4 | `test_production_modifier`: o fator reduz o progresso na proporção (conta à mão); dois modificadores multiplicam; idempotente por `source_id`; remover o vencido é sucesso sem efeito; **vence sozinho**; sem `ProductionStopped`; ida e volta; mesma semente, mesmo hash |
+| Tarefa nova (recompra) | 18.5 | `test_buy_back`: `paid` = `floor_div(valor × buyback_bp, 10000)`, no mínimo 1; mercado sem fundos recusa sem mudar nada; o motivo é `item_sale` e a conservação do dinheiro fecha; valor menor que 1 recusado; a ponte executa (1), (2), (3) na ordem e o item sai |
+| LW-165b (contrabando, parte 2) | 18.5 | o `ItemSold` de item **marcado** leva `origin_owner_id` e vira `ActReported` (`smuggling`) pelo adaptador da `politics`; item sem marca não |
+
+### 18.9 Pontos em aberto e PROPOSTA para Arthur aprovar na revisão
+
+1. **Bens em quantidade do jogador ao morrer** (18.2): recomendo **todos os bens, num monte, e nenhum dinheiro**. Alternativa: nenhum bem cai (só instâncias).
+2. **Saque de bem de NPC morto** (18.2): muda em parte a DEC-146; **só com decisão de Arthur**. Alternativa: o saque é só de instâncias (LW-156b).
+3. **NPC ferreiro** (18.3): recomendo **só o jogador** forjar na Fase 5; o NPC ferreiro é "depois".
+4. **Tarefa nova da recompra** (18.5), a registrar no roadmap por Arthur, **antes da LW-165b**.
+5. **A exceção à regra 4.17** para o `character` ouvir o `GoodsForged` por nome (18.3), que depende da DEC da conversa A (faixa 234 a 239).
+6. **Os valores [HIP]** (`pile_lifetime_hours`, `max_piles`, `max_modifier_days`, `forgeable_goods`, `buyback_bp`) seguem [HIP], em dados.
+7. **Nomes** dos comandos (`request_open_pile`, `request_forge_goods`, `request_apply_production_modifier`, `request_remove_production_modifier`, `request_buy_back`), dos motivos (`forged`, `item_sale`), dos eventos (`GoodsForged`, `ItemSold`) e dos códigos (`ECON_UNKNOWN_PILE`, `ECON_NOT_FORGEABLE`, `ECON_BAD_FACTOR`, `ECON_BAD_DURATION`, `ECON_BAD_VALUE`).
