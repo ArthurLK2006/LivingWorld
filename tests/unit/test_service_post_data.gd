@@ -1,6 +1,6 @@
 extends GutTest
-## LW-095 (item 5 do bloco v11): o carregador dos postos de serviço (`PostLoader`; docs/modules/economy.md, seção 6; docs/economy/dados.md) e a ligação no `EconomySetup`, SEM nenhum dado novo em data/: o arquivo `service_posts.json` é OPCIONAL (sem ele não há posto; é o caso do
-## `data/economy` de hoje) e, se existe, é validado com arquivo, item e campo nas mensagens (campos, faixas, texto em branco, um posto por local). `EconomySetup` leva os postos às definições e recusa o local que tem posto e local de produção. Os arquivos de teste ficam numa cópia de
+## LW-095 (item 5 do bloco v11): o carregador dos postos de serviço (`PostLoader`; docs/modules/economy.md, seção 6; docs/economy/dados.md) e a ligação no `EconomySetup`, SEM nenhum dado novo em data/: o arquivo `service_posts.json` é OPCIONAL (sem ele não há posto; o teste desse caso usa uma pasta
+## temporária sem o arquivo) e, se existe, é validado com arquivo, item e campo nas mensagens (campos, faixas, texto em branco, um posto por local). `EconomySetup` leva os postos às definições e recusa o local que tem posto e local de produção. Os arquivos de teste ficam numa cópia de
 ## `data/economy` em `res://.godot/` (cache ignorado pelo Git), nunca no `data/` de verdade.
 
 const SETTLEMENT_A: String = "test_settlement_a"
@@ -40,14 +40,25 @@ func after_each() -> void:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(TEMP_DIR))
 
 
+## R26-I1 (decisão de Arthur de 12/11/2026): a pasta SEM o arquivo é montada numa pasta temporária (`DirAccess.create_temp`), com os demais arquivos de `data/economy` e sem `service_posts.json`, para o teste não depender de o `data/economy` de verdade ter ou não o arquivo.
 func test_without_the_file_there_are_no_posts_and_the_real_economy_setup_still_loads() -> void:
-	assert_false(FileAccess.file_exists(EconomySetup.DEFAULT_DIR.path_join(PostLoader.POSTS_FILE)), "O arquivo de dados dos postos ainda não existe em data/economy.")
-	var loaded: PostLoader.LoadResult = PostLoader.load_dir(EconomySetup.DEFAULT_DIR)
+	var temp: DirAccess = DirAccess.create_temp("lw095_without_posts")
+	assert_not_null(temp, "A pasta temporária foi criada.")
+	if temp == null:
+		return
+	var dir_path: String = temp.get_current_dir()
+	for file_name: String in DirAccess.get_files_at(EconomySetup.DEFAULT_DIR):
+		if file_name.ends_with(".json") and file_name != PostLoader.POSTS_FILE:
+			assert_eq(DirAccess.copy_absolute(EconomySetup.DEFAULT_DIR.path_join(file_name), dir_path.path_join(file_name)), OK, "Copiou %s." % file_name)
+	assert_false(FileAccess.file_exists(dir_path.path_join(PostLoader.POSTS_FILE)), "A pasta temporária não tem o arquivo dos postos.")
+	var loaded: PostLoader.LoadResult = PostLoader.load_dir(dir_path)
 	assert_true(loaded.result.ok, loaded.result.message)
 	assert_eq(loaded.posts.size(), 0)
-	var setup: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR)
+	var setup: EconomySetup = EconomySetup.from_dir(dir_path)
 	assert_true(setup.result.ok, setup.result.message)
 	assert_eq(setup.definitions.service_posts.size(), 0, "Sem o arquivo as definições não têm posto e o jogo é o de sempre.")
+	for file_name: String in DirAccess.get_files_at(dir_path):
+		DirAccess.remove_absolute(dir_path.path_join(file_name))
 
 
 func test_valid_rows_become_post_defs_in_file_order_and_an_empty_table_is_valid() -> void:
