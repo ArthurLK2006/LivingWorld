@@ -1,4 +1,4 @@
-11/11/2026 21:07 (Brasília) · LW-095 só código COMPLETA em 4 partes: a (salário dos locais, df01eb1), b (postos de serviço, ea5ed94), c (consulta peek_post, 9d1b0f6) e d (o npc ouve WagesPaid e alivia income, ramo lw-095d-npc-ouve-salario), todas com `check_all` VERDE (155 scripts, 1.345 testes), `run_sim` e hashes iguais. Seguindo para a LW-096 (contratos, só código)
+11/11/2026 21:26 (Brasília) · BLOCO A v10: FASE B DA LW-093 FEITA: partes 1 a 7 no `main` por avanço simples (ca86f87..f2bcb4c), `check_all` VERDE (151 scripts, 1.322 testes), 9 valores do oráculo e `run_sim` IGUAIS, sem tag. Também enviada a LW-096 parte a (livro de contratos, ebd0a06). Agora: 093k (ajustes da R6), depois o resto da LW-096 e a LW-096a
 
 # RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
 
