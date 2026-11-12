@@ -48,7 +48,7 @@ func test_from_dir_assembles_everything_the_module_needs_from_the_real_data() ->
 	assert_gt(definitions.actions.size(), 0)
 	assert_not_null(definitions.params)
 	assert_not_null(definitions.places)
-	assert_eq(definitions.population.total(), 100)
+	assert_eq(definitions.population.total(), 132)
 	var food: FoodStub = definitions.food as FoodStub
 	assert_not_null(food, "O provedor de comida do jogo é o FoodStub (TEMP-LW-065).")
 	var settlement_ids: Array[String] = []
@@ -83,8 +83,8 @@ func test_the_game_modules_create_the_population_only_when_they_receive_the_setu
 	assert_true(modules.result.ok, modules.result.message)
 	assert_eq(modules.npc.peek_counts()["total"], 0, "Antes do jogo novo ninguém existe.")
 	with_setup.start_new_game()
-	assert_eq(modules.npc.peek_counts()["total"], 100)
-	assert_eq(with_setup.world.context.ids.serialize()[IdGenerator.KEY_NEXT_ID], 101, "Os 100 NPCs gastaram os IDs de 1 a 100; o próximo é do personagem.")
+	assert_eq(modules.npc.peek_counts()["total"], 132)
+	assert_eq(with_setup.world.context.ids.serialize()[IdGenerator.KEY_NEXT_ID], 133, "Os 132 NPCs gastaram os IDs de 1 a 132; o próximo é do personagem.")
 	assert_eq(modules.npc.validate().size(), 0)
 	with_setup.finish()
 	var without: SimulationRunner = SimulationRunner.new(WORLD_SEED)
@@ -108,7 +108,7 @@ func test_the_host_starts_a_new_game_with_the_population_when_it_gets_the_setup(
 	var modules_data: Dictionary = saved["modules"]
 	var npc_data: Dictionary = modules_data["npc"]
 	var npcs: Dictionary = npc_data["npcs"]
-	assert_eq(npcs.size(), 100)
+	assert_eq(npcs.size(), 132)
 	assert_true(npc_data.has(FoodStub.SAVE_KEY), "O estoque de comida vai no save do jogo.")
 	host.runner.finish()
 	host.start_new_game(WORLD_SEED, _terrain, _points)
@@ -127,7 +127,7 @@ func test_the_world_the_game_app_started_when_the_project_opened_has_the_populat
 	var modules_data: Dictionary = host.runner.world.serialize()["modules"]
 	var npc_data: Dictionary = modules_data["npc"]
 	var npcs: Dictionary = npc_data["npcs"]
-	assert_eq(npcs.size(), 100, "O `_ready` do GameApp leu os dados reais e o jogo nasceu com os 100 NPCs.")
+	assert_eq(npcs.size(), 132, "O `_ready` do GameApp leu os dados reais e o jogo nasceu com os 132 NPCs.")
 
 
 func test_one_game_day_with_the_real_data_closes_with_nothing_wrong() -> void:
@@ -142,7 +142,7 @@ func test_one_game_day_with_the_real_data_closes_with_nothing_wrong() -> void:
 	assert_gt(summary["max_thinks_in_a_step"], 0, "Os NPCs pensaram.")
 	assert_true(summary["max_thinks_in_a_step"] <= 20, "O teto de pensamentos por passo (data/npc_params.json) foi respeitado.")
 	var counts: Dictionary = modules.npc.peek_counts()
-	assert_eq([counts["total"], counts["alive"]], [100, 100], "Ninguém morreu no primeiro dia.")
+	assert_eq([counts["total"], counts["alive"]], [132, 132], "Ninguém morreu no primeiro dia.")
 	for settlement: Settlement in _settlements:
 		var stock: FoodStub.StockQuery = modules.npc.peek_food_stock(settlement.id)
 		assert_true(stock.result.ok)

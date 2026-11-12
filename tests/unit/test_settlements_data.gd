@@ -8,9 +8,9 @@ const BLOCKOUT_DIR: String = "res://data/world"
 const SETTLEMENT_A: String = "test_settlement_a"
 const SETTLEMENT_B: String = "test_settlement_b"
 const SETTLEMENT_C: String = "test_settlement_c"
-## Contrato [HIP]: A com 12 casas de capacidade 5, B e C com 8; locais de trabalho para os cinco ofícios; 1 a 2 de descanso e de convívio; 1 de mercado.
+## Contrato [HIP]: A com 12 casas de capacidade 5, B com 9 (a nona veio com a LW-097d: 44 pessoas) e C com 8; locais de trabalho para os cinco ofícios; 1 a 2 de descanso e de convívio; 1 de mercado.
 const HOMES_A: int = 12
-const HOMES_B: int = 8
+const HOMES_B: int = 9
 const HOMES_C: int = 8
 const HOME_CAPACITY: int = 5
 const WORK_PLACES: int = 5

@@ -847,7 +847,7 @@ func test_the_real_world_relations_decay_over_three_days_and_the_world_stays_val
 	assert_eq(_values(npc, ids[1], PLAYER), [17, 7, 0, 0, 0], "Três dias de decaimento de 1 por dia.")
 	assert_eq(npc.peek_opinion(ids[0], ids[50]).label, NpcRelation.LABEL_FRIEND, "55 - 3 = 52, ainda acima do limiar de 50.")
 	assert_eq(npc.peek_opinion(ids[2], PLAYER).values[AFFECTION], -57)
-	assert_eq(npc.peek_counts()[NpcModule.COUNT_ALIVE], 100)
+	assert_eq(npc.peek_counts()[NpcModule.COUNT_ALIVE], 132)
 	assert_gte(npc.debug_summary()["relations"], 3, "As 3 criadas aqui, mais as que as conversas da noite entre notáveis criaram (LW-080).")
 	assert_eq(game.runner.world.validate().size(), 0, str(game.runner.world.validate()))
 	game.runner.finish()

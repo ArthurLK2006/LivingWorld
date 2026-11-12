@@ -53,7 +53,7 @@ const CM_PER_M: float = 100.0
 ## Jogo real completo: os 30 primeiros NPCs (lavradores e lenhadores do assentamento A, que conversam das 19h às 21h) viram notáveis; a janela vai até 22h.
 const REAL_GAME_NOTABLES: int = 30
 const REAL_GAME_END_MIN: int = 22 * HOUR
-const COUNT_ALIVE_TOTAL: int = 100
+const COUNT_ALIVE_TOTAL: int = 132
 const GAME_VERSION: String = "0.0.1-test"
 const FAR_SETTLEMENT: String = "test_settlement_b"
 const FAR_HOME: String = "b_home_01"
@@ -590,7 +590,7 @@ func test_in_the_complete_real_game_with_bodies_the_notables_get_acquainted_in_t
 	var focused: Result = rig.npc.request_set_focus(ACTOR_ID, _place_m(SOCIAL_PLACE))
 	assert_true(focused.ok, focused.message)
 	var ids: Array[int] = rig.npc.peek_npc_ids()
-	assert_eq(ids.size(), COUNT_ALIVE_TOTAL, "O jogo real nasce com os 100 NPCs.")
+	assert_eq(ids.size(), COUNT_ALIVE_TOTAL, "O jogo real nasce com os 132 NPCs.")
 	for index: int in REAL_GAME_NOTABLES:
 		var promoted: Result = rig.npc.request_promote(ids[index], NpcState.TIER_NOTABLE)
 		assert_true(promoted.ok, promoted.message)

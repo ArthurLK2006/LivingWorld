@@ -1,7 +1,8 @@
 class_name PopulationPlan
 extends RefCounted
 ## População inicial do `npc` (LW-067; docs/modules/npc.md, seção 1): quantos NPCs de cada ofício nascem em cada assentamento, lido de
-## data/population.json (PopulationLoader) e entregue ao módulo por `NpcModule.Definitions.population`. `build_specs` monta, SEM criar
+## data/population.json (PopulationLoader) e entregue ao módulo por `NpcModule.Definitions.population`. LW-097d (DEC-167): uma linha pode citar o local de
+## trabalho que ocupa (`work_place_id`); sem ele vale o primeiro local do tipo do ofício com vaga, como antes. `build_specs` monta, SEM criar
 ## nada, os pedidos de criação em ordem fixa (assentamento, ofício, sequência). Antes de gastar qualquer sorteio ele confere que os
 ## assentamentos e os ofícios existem e que há casa e local de trabalho com vaga para todos (`NPC_POPULATION_NO_ROOM`: erro de DADO, nunca
 ## NPC sem casa). Cada NPC recebe a primeira casa com vaga e o primeiro local de trabalho do tipo do ofício com vaga (ordem de id), nasce
@@ -24,7 +25,9 @@ func _init(rows: Array[PopulationRow] = []) -> void:
 	_rows.sort_custom(func(first: PopulationRow, second: PopulationRow) -> bool:
 		if first.settlement_id != second.settlement_id:
 			return first.settlement_id < second.settlement_id
-		return first.occupation_id < second.occupation_id)
+		if first.occupation_id != second.occupation_id:
+			return first.occupation_id < second.occupation_id
+		return first.work_place_id < second.work_place_id)
 
 
 ## Quantos NPCs nascem ao todo.
@@ -51,13 +54,20 @@ func build_specs(places: SettlementService, routine: RoutineTable, rng: WorldRng
 	return BuildResult.new(Result.success(), _specs(assignment, rng))
 
 
-## Primeiro problema de referência (texto vazio = tudo existe): assentamento no `world` e ofício na tabela de rotina.
+## Primeiro problema de referência (texto vazio = tudo existe): assentamento no `world`, ofício na tabela de rotina e, se a linha cita um local,
+## que ele exista, seja do mesmo assentamento e do tipo de local do ofício.
 func _reference_problem(places: SettlementService, routine: RoutineTable) -> String:
 	for row: PopulationRow in _rows:
 		if not places.peek_settlement(row.settlement_id).result.ok:
 			return "o assentamento '%s' da linha de população não existe no `world`" % row.settlement_id
 		if not routine.has_occupation(row.occupation_id):
 			return "o ofício '%s' da linha de população não existe nos dados de ofícios (esperado um de: %s)" % [row.occupation_id, ", ".join(routine.peek_occupation_ids())]
+		if not row.work_place_id.is_empty():
+			var cited: SettlementService.PlaceQuery = places.peek_place(row.work_place_id)
+			if not cited.result.ok:
+				return "o local de trabalho '%s' da linha de população não existe no `world`" % row.work_place_id
+			if cited.place.settlement_id != row.settlement_id or cited.place.kind != routine.peek_work_place_kind(row.occupation_id):
+				return "o local '%s' (assentamento '%s', tipo '%s') não serve à linha de '%s' em '%s': esperado um local do mesmo assentamento e do tipo '%s'" % [row.work_place_id, cited.place.settlement_id, cited.place.kind, row.occupation_id, row.settlement_id, routine.peek_work_place_kind(row.occupation_id)]
 	return ""
 
 
@@ -65,6 +75,9 @@ func _reference_problem(places: SettlementService, routine: RoutineTable) -> Str
 func _assign(places: SettlementService, routine: RoutineTable) -> Assignment:
 	var used: Dictionary[String, int] = {}
 	var assignment: Assignment = Assignment.new()
+	assignment.result = _reserve_cited_places(places, used)
+	if not assignment.result.ok:
+		return assignment
 	var number: int = 0
 	for row: PopulationRow in _rows:
 		var homes: Array[Place] = _places_by_id(places, row.settlement_id, Place.KIND_HOME)
@@ -77,14 +90,28 @@ func _assign(places: SettlementService, routine: RoutineTable) -> Assignment:
 				assignment.result = Result.failure(CODE_NO_ROOM, "PopulationPlan.build_specs: no assentamento '%s' o NPC nº %d (ofício '%s') ficou sem casa com vaga; as casas do assentamento somam %d vaga(s)." % [row.settlement_id, number, row.occupation_id, _capacity_of(homes)])
 				return assignment
 			used[home.id] = int(used.get(home.id, 0)) + 1
-			var workplace: Place = _first_with_room(workplaces, used)
+			var workplace: Place = places.peek_place(row.work_place_id).place if not row.work_place_id.is_empty() else _first_with_room(workplaces, used)
 			if workplace == null:
 				assignment.result = Result.failure(CODE_NO_ROOM, "PopulationPlan.build_specs: no assentamento '%s' o NPC nº %d (ofício '%s') ficou sem local de trabalho '%s' com vaga; esses locais somam %d vaga(s)." % [row.settlement_id, number, row.occupation_id, work_kind, _capacity_of(workplaces)])
 				return assignment
-			used[workplace.id] = int(used.get(workplace.id, 0)) + 1
+			if row.work_place_id.is_empty():
+				used[workplace.id] = int(used.get(workplace.id, 0)) + 1
 			assignment.homes.append(home)
 			assignment.workplaces.append(workplace)
 	return assignment
+
+
+## Reserva as vagas dos locais citados pelas linhas ANTES de distribuir as outras (assim a ordem das linhas não decide quem fica sem vaga) e falha com
+## `NPC_POPULATION_NO_ROOM` se as linhas pedem mais que a capacidade de um local.
+func _reserve_cited_places(places: SettlementService, used: Dictionary[String, int]) -> Result:
+	for row: PopulationRow in _rows:
+		if not row.work_place_id.is_empty():
+			used[row.work_place_id] = int(used.get(row.work_place_id, 0)) + row.count
+	for place_id: String in used:
+		var capacity: int = places.peek_place(place_id).place.capacity
+		if used[place_id] > capacity:
+			return Result.failure(CODE_NO_ROOM, "PopulationPlan.build_specs: o local de trabalho '%s' tem capacidade %d e as linhas de população pedem %d vaga(s)." % [place_id, capacity, used[place_id]])
+	return Result.success()
 
 
 ## Pedidos de criação com nome, traços sorteados e posição de casa. Só roda depois de `_assign` aprovar.
@@ -152,11 +179,14 @@ class PopulationRow:
 	var settlement_id: String
 	var occupation_id: String
 	var count: int
+	## O local de trabalho que a linha ocupa; vazio = o primeiro local com vaga (LW-097d, DEC-167).
+	var work_place_id: String
 
-	func _init(row_settlement_id: String, row_occupation_id: String, row_count: int) -> void:
+	func _init(row_settlement_id: String, row_occupation_id: String, row_count: int, row_work_place_id: String = "") -> void:
 		settlement_id = row_settlement_id
 		occupation_id = row_occupation_id
 		count = row_count
+		work_place_id = row_work_place_id
 
 
 ## Casa e local de trabalho de cada NPC, na ordem de criação; `result` falha com `NPC_POPULATION_NO_ROOM` se faltar vaga.

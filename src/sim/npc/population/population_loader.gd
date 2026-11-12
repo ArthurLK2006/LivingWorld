@@ -1,8 +1,9 @@
 class_name PopulationLoader
 extends RefCounted
 ## Lê e valida data/population.json pelo módulo `data` (LW-067; contrato em docs/modules/npc.md, seção 1). Uma linha por (assentamento,
-## ofício): `id`, `settlement_id`, `occupation_id` e `count` (quantos NPCs nascem). O que o esquema não vê é conferido aqui: ao menos uma
-## linha, assentamento e ofício não vazios e um par (assentamento, ofício) por linha. Que o assentamento, o ofício e as vagas EXISTEM é
+## ofício): `id`, `settlement_id`, `occupation_id` e `count` (quantos NPCs nascem) e, OPCIONAL (LW-097d, DEC-167), `work_place_id` (o local de
+## trabalho que a linha ocupa; sem a coluna vale o primeiro local com vaga). O que o esquema não vê é conferido aqui: ao menos uma
+## linha, assentamento e ofício não vazios, `work_place_id` não vazio quando existe e uma linha por (assentamento, ofício, local). Que o assentamento, o ofício e as vagas EXISTEM é
 ## conferido por quem monta a população (`PopulationPlan.build_specs`), porque o `data` só confere referência dentro da mesma leitura.
 ## Qualquer problema vira falha com arquivo, item e campo. Nunca carrega recurso nem executa nada do arquivo.
 
@@ -20,6 +21,7 @@ static func build_schema(file_name: String = DEFAULT_FILE) -> DataSchema:
 	schema.add_field("settlement_id", DataSchema.FieldType.STRING)
 	schema.add_field("occupation_id", DataSchema.FieldType.STRING)
 	schema.add_field("count", DataSchema.FieldType.INT).set_range(1, MAX_COUNT)
+	schema.add_field("work_place_id", DataSchema.FieldType.STRING, false)
 	return schema
 
 
@@ -58,9 +60,12 @@ static func check_semantics(bundle: DataBundle) -> void:
 			bundle.add_issue(file_path, item, "settlement_id", "o assentamento não pode ficar vazio")
 		if occupation_id.is_empty():
 			bundle.add_issue(file_path, item, "occupation_id", "o ofício não pode ficar vazio")
-		var pair: String = "%s/%s" % [settlement_id, occupation_id]
+		var place_id: String = str(record.get("work_place_id", ""))
+		if record.has("work_place_id") and typeof(record["work_place_id"]) == TYPE_STRING and place_id.is_empty():
+			bundle.add_issue(file_path, item, "work_place_id", "o local de trabalho não pode ficar vazio; esperado omitir a coluna ou citar um local")
+		var pair: String = "%s/%s/%s" % [settlement_id, occupation_id, place_id]
 		if seen_pairs.has(pair):
-			bundle.add_issue(file_path, item, "occupation_id", "o ofício '%s' já tem linha no assentamento '%s' (linha '%s'); esperada uma linha por par" % [occupation_id, settlement_id, seen_pairs[pair]])
+			bundle.add_issue(file_path, item, "occupation_id", "o ofício '%s' já tem linha no assentamento '%s'%s (linha '%s'); esperada uma linha por par (ou por par e local)" % [occupation_id, settlement_id, " e no local '%s'" % place_id if not place_id.is_empty() else "", seen_pairs[pair]])
 		else:
 			seen_pairs[pair] = item
 
@@ -68,7 +73,7 @@ static func check_semantics(bundle: DataBundle) -> void:
 static func _build_rows(bundle: DataBundle) -> Array[PopulationPlan.PopulationRow]:
 	var rows: Array[PopulationPlan.PopulationRow] = []
 	for record: Dictionary in bundle.tables[POPULATION_TABLE]:
-		rows.append(PopulationPlan.PopulationRow.new(record["settlement_id"], record["occupation_id"], record["count"]))
+		rows.append(PopulationPlan.PopulationRow.new(record["settlement_id"], record["occupation_id"], record["count"], str(record.get("work_place_id", ""))))
 	return rows
 
 

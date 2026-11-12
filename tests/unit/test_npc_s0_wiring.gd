@@ -132,7 +132,7 @@ func test_without_the_parameters_the_lod_and_the_intents_stay_off() -> void:
 	assert_eq(host.npc.peek_pending_intents().size(), 0)
 	assert_eq(host.npc.debug_summary()["decision_enabled"], true, "O pensador funciona sem eles (modo S1 para todos).")
 	var counts: Dictionary = host.npc.peek_counts()
-	assert_eq(counts["alive"], 100)
+	assert_eq(counts["alive"], 132)
 
 
 func test_intent_parameters_without_lod_never_put_an_npc_in_s0() -> void:
@@ -154,7 +154,7 @@ func test_the_host_exposes_the_npc_module_and_clears_it_on_a_world_without_modul
 	assert_null(host.npc, "Antes de iniciar um jogo não há módulo.")
 	host.start_new_game(WORLD_SEED, _terrain, _points, _good_setup())
 	assert_not_null(host.npc)
-	assert_eq(host.npc.peek_counts()["total"], 100, "É o módulo do jogo, com a população inicial.")
+	assert_eq(host.npc.peek_counts()["total"], 132, "É o módulo do jogo, com a população inicial.")
 	host.start_new_game(WORLD_SEED)
 	assert_null(host.npc, "Um mundo sem terreno nasce só com o núcleo: o módulo antigo não fica pendurado no host.")
 

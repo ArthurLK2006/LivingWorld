@@ -561,6 +561,6 @@ func test_the_real_world_notables_get_acquainted_in_the_evening_talks_and_the_wo
 	assert_gt(summary["memory_records"], 0)
 	assert_gt(per_pair_and_day.size(), 0, "E a mudança das relações foi publicada.")
 	assert_eq(per_pair_and_day.values().max(), 1, "Nenhum par publicou mais de uma vez no mesmo dia.")
-	assert_eq(npc.peek_counts()[NpcModule.COUNT_ALIVE], 100)
+	assert_eq(npc.peek_counts()[NpcModule.COUNT_ALIVE], 132)
 	assert_eq(world.validate().size(), 0, str(world.validate()))
 	game.runner.finish()

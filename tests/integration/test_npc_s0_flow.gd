@@ -14,7 +14,8 @@ const WORLD_SEED: int = 11
 const ACTOR_ID: int = 77
 const FOCUS_A_M: Vector3 = Vector3(320.0, 10.0, 540.0)
 const FOCUS_A_CM: Vector2i = Vector2i(32000, 54000)
-const FOCUS_FAR_M: Vector3 = Vector3(520.0, 10.0, 900.0)
+## Longe dos três povoados (o C, da LW-097d, fica em 560 m, 860 m; o raio de saída do S0 é de 120 m).
+const FOCUS_FAR_M: Vector3 = Vector3(700.0, 10.0, 960.0)
 const ENTER_RADIUS_CM: int = 8000
 const MAX_S0: int = 50
 const TIMEOUT_MIN: int = 30
@@ -398,7 +399,7 @@ func test_the_same_sequence_with_a_focus_gives_the_same_world_and_the_module_val
 		assert_gt(rig.changes.size(), 0, "Houve trocas de nível com o foco.")
 		assert_eq(rig.npc.validate().size(), 0, str(rig.npc.validate()))
 		assert_eq(rig.runner.world.validate().size(), 0, str(rig.runner.world.validate()))
-		assert_eq(rig.npc.peek_counts()["alive"], 100, "Todos vivos.")
+		assert_eq(rig.npc.peek_counts()["alive"], 132, "Todos vivos.")
 	assert_gt(answered_per_run[0], MAX_S0, "O corpo perfeito cumpriu muitos Intents ao longo do dia (mais de uma ação por NPC).")
 	assert_eq(answered_per_run[0], answered_per_run[1])
 	assert_eq(hashes[0], hashes[1], "Mesma sequência com foco, mesmo hash.")

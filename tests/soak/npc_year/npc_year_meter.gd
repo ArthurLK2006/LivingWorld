@@ -16,7 +16,7 @@ const NOTABLES: int = 40
 const PATTERN_BASE_MIN: int = 480
 const PATTERN_STRESS_MIN: int = 30
 ## Povoado A, povoado B e um ponto a mais de 120 m (o raio de saída do LOD) de qualquer um dos dois, em metros.
-const SPOTS: Array[Vector3] = [Vector3(320.0, 10.0, 540.0), Vector3(800.0, 10.0, 660.0), Vector3(600.0, 10.0, 900.0)]
+const SPOTS: Array[Vector3] = [Vector3(320.0, 10.0, 540.0), Vector3(800.0, 10.0, 660.0), Vector3(700.0, 10.0, 960.0)]
 ## [HIP] Régua desta medição (decisão de Arthur, 10/11/2026; a DEC-071 é PROPOSTA): passo médio dentro de ~3 ms e nenhum passo acima de ~10 ms.
 const STEP_BUDGET_USEC: int = 3000
 const STEP_PEAK_USEC: int = 10000

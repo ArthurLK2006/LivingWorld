@@ -3,5 +3,7 @@
 	{"id": "lumberjack", "work_place_kind": "work"},
 	{"id": "artisan", "work_place_kind": "work"},
 	{"id": "guard", "work_place_kind": "work"},
-	{"id": "innkeeper", "work_place_kind": "work"}
+	{"id": "innkeeper", "work_place_kind": "work"},
+	{"id": "miner", "work_place_kind": "work"},
+	{"id": "shepherd", "work_place_kind": "work"}
 ]

@@ -9,7 +9,8 @@ const WORLD_SEED: int = 5
 ## Assentamento A: centro em (320, 540) m, e o jogador a 30 m dele. B: centro em (800, 660) m. Um ponto longe dos dois (mais de 120 m de todo NPC).
 const NEAR_A_M: Vector3 = Vector3(350.0, 10.0, 540.0)
 const NEAR_B_M: Vector3 = Vector3(830.0, 10.0, 660.0)
-const FAR_FROM_BOTH_M: Vector3 = Vector3(600.0, 10.0, 900.0)
+## Longe dos três povoados (o C, da LW-097d, fica em 560 m, 860 m; o raio de saída do S0 é de 120 m).
+const FAR_FROM_BOTH_M: Vector3 = Vector3(700.0, 10.0, 960.0)
 const MAX_S0: int = 50
 const TOLERANCE_M: float = 0.001
 const CM_PER_METER: float = 100.0
