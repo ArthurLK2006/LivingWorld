@@ -154,11 +154,6 @@ func _build_decision_runtime() -> String:
 		return "faltam os parâmetros do `npc` (npc_params.json)"
 	if _definitions.places == null:
 		return "falta o serviço de locais do `world`"
-	var food_stub: FoodStub = _definitions.food as FoodStub
-	if food_stub != null:
-		var food_problem: String = food_stub.check_references(_definitions.places, _routine.peek_occupation_ids())
-		if not food_problem.is_empty():
-			return "FoodStub (TEMP-LW-065): %s" % food_problem
 	if _definitions.income != null:
 		var need_ids: Array[String] = []
 		for def: NeedDef in _need_defs:

@@ -34,8 +34,6 @@ const MAX_ALARM_SEVERITY: int = 10
 const CODE_INVALID_ALARM: String = "NPC_INVALID_ALARM"
 ## Comandos que só existem em build de desenvolvimento (a flag vem em `Definitions.is_development_build`).
 const CODE_DEV_ONLY: String = "NPC_DEV_ONLY"
-## TEMP-LW-065: sem FoodStub nas definições não há estoque de comida.
-const CODE_FOOD_NOT_CONFIGURED: String = "NPC_FOOD_NOT_CONFIGURED"
 ## Memória (LW-078): sem tipos ou sem capacidade configurados; NPC que não é notável; tipo inexistente; pedido de gravação inválido.
 const CODE_MEMORY_NOT_CONFIGURED: String = "NPC_MEMORY_NOT_CONFIGURED"
 const CODE_NOT_NOTABLE: String = "NPC_NOT_NOTABLE"
@@ -110,7 +108,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_defs_problem = "" if need_defs.is_empty() else NeedMath.definitions_problem(need_defs)
 	_bodies = NpcBodies.new(lod, intents, _npcs)
 	_notables = NpcNotables.new(_npcs, _definitions, _unknown)
-	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _definitions, _defs_problem)
+	_persistence = NpcPersistence.new(_npcs, _notables, _bodies, _tracer, _routine, _defs_problem)
 	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown, economy)
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine, economy)
 	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action, NpcImpasse.DEFAULT_LIMIT_MIN, intents.has_pending, _bodies.release_body)
@@ -323,24 +321,6 @@ func peek_routine_action(occupation_id: String, hour: int) -> RoutineTable.Routi
 	return _routine.peek_action(occupation_id, hour)
 
 
-## TEMP-LW-065: estoque de comida do assentamento. Sem FoodStub nas definições, ou assentamento sem regra: falha tratada.
-func peek_food_stock(settlement_id: String) -> FoodStub.StockQuery:
-	var food_stub: FoodStub = _food_stub()
-	if food_stub == null:
-		return FoodStub.StockQuery.new(_food_not_configured("peek_food_stock"), 0, 0)
-	return food_stub.peek_stock(settlement_id)
-
-
-## TEMP-LW-065: define o estoque de comida (de 0 ao teto). SÓ em build de desenvolvimento; fora dele, `NPC_DEV_ONLY` e nada muda.
-func request_set_food_stock(settlement_id: String, amount: int) -> Result:
-	if _definitions == null or not _definitions.is_development_build:
-		return Result.failure(CODE_DEV_ONLY, "NpcModule.request_set_food_stock: comando só existe em build de desenvolvimento (Definitions.is_development_build).")
-	var food_stub: FoodStub = _food_stub()
-	if food_stub == null:
-		return _food_not_configured("request_set_food_stock")
-	return food_stub.request_set_stock(settlement_id, amount)
-
-
 ## Contagens (chaves COUNT_*): total, vivos, mortos e por tier.
 func peek_counts() -> Dictionary:
 	var counts: Dictionary = {COUNT_TOTAL: _npcs.size(), COUNT_ALIVE: 0, COUNT_DEAD: 0, COUNT_TIER_NORMAL: 0, COUNT_TIER_NOTABLE: 0}
@@ -454,18 +434,6 @@ func debug_summary() -> Dictionary:
 	return summary
 
 
-## TEMP-LW-065: o FoodStub real, se o provedor de comida das definições for ele (os testes usam um provedor falso, sem estado salvo).
-func _food_stub() -> FoodStub:
-	if _definitions == null:
-		return null
-	return _definitions.food as FoodStub
-
-
-## TEMP-LW-065
-func _food_not_configured(caller: String) -> Result:
-	return Result.failure(CODE_FOOD_NOT_CONFIGURED, "NpcModule.%s: o módulo foi criado sem FoodStub; não há estoque de comida." % caller)
-
-
 ## A população inicial não nasceu (ou parou no meio): guarda o motivo e o registra no log, para o erro de dado nunca passar em silêncio.
 func _report_population_problem(detail: String) -> void:
 	_population_problem = detail
@@ -506,8 +474,8 @@ class Definitions:
 	var params: NpcParams
 	## Serviço de consultas de assentamentos e locais do `world` (conteúdo, fora do save).
 	var places: SettlementService
-	## Opcional: responde `has_food`. Sem ele nenhuma ação que exija comida começa. Em produção é o FoodStub (TEMP-LW-065), com estoque salvo
-	## junto com o módulo; os testes de decisão podem pôr um provedor falso, sem estado.
+	## Opcional: responde `has_food(settlement)`, a comida do assentamento. Sem ele nenhuma ação que exija comida do assentamento começa. No jogo
+	## não há provedor (a comida vem do inventário do NPC e do mercado, pela economia, LW-094); os testes de decisão podem pôr um provedor falso.
 	var food: ActionConditionProvider
 	## Opcional (TEMP-LW-066): a renda simbólica de quem trabalha (IncomeStub). Sem ele o trabalho não alivia a necessidade `income`.
 	var income: IncomeStub
@@ -518,7 +486,7 @@ class Definitions:
 	## Opcional (LW-070a): parâmetros dos Intents do modo S0 (data/intent_params.json). Nulo = nenhuma ação nasce com Intent.
 	var intent_params: NpcIntentParams
 	var walk_speed_cm_per_min: int = ActionRunner.DEFAULT_WALK_SPEED_CM_PER_MIN
-	## Build de desenvolvimento? Só então valem os comandos de depuração do módulo (hoje `request_set_food_stock`). A fronteira do app lê
+	## Build de desenvolvimento? Só então valem os comandos de depuração do módulo (memória, relações, alarme e rastro). A fronteira do app lê
 	## `OS.is_debug_build()` e entrega aqui; a simulação não lê `OS`. Padrão falso.
 	var is_development_build: bool = false
 	## Opcional (LW-077): ponto de extensão do rebaixamento. É chamado com o `npc_id`, uma vez por rebaixamento de verdade, ANTES de o tier mudar

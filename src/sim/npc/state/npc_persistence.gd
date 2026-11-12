@@ -1,7 +1,6 @@
 class_name NpcPersistence
 extends RefCounted
-## O estado do `npc` para fora: salvar (`serialize`), carregar (`on_load`), conferir (`validate`) e resumir (`debug_summary`), com o estoque de comida salvo junto
-## (TEMP-LW-065). LW-081a (passo 3): o código saiu do `NpcModule` sem mudar de comportamento; o módulo segue sendo a única porta e só delega aqui. A tabela de
+## O estado do `npc` para fora: salvar (`serialize`), carregar (`on_load`), conferir (`validate`) e resumir (`debug_summary`). LW-081a (passo 3): o código saiu do `NpcModule` sem mudar de comportamento; o módulo segue sendo a única porta e só delega aqui. A tabela de
 ## NPCs é a do módulo (a mesma, por referência; `on_load` a atualiza no lugar). As chaves e os códigos do save continuam sendo as constantes do `NpcModule`.
 
 var _npcs: Dictionary[int, NpcState]
@@ -9,19 +8,17 @@ var _notables: NpcNotables
 var _bodies: NpcBodies
 var _tracer: DecisionTracer
 var _routine: RoutineTable
-var _definitions: NpcModule.Definitions
 ## Motivo de as definições de necessidades não servirem (vazio = servem), conferido uma vez pelo módulo.
 var _defs_problem: String
 var _ctx: SimContext
 
 
-func _init(npcs: Dictionary[int, NpcState], notables: NpcNotables, bodies: NpcBodies, tracer: DecisionTracer, routine: RoutineTable, definitions: NpcModule.Definitions, defs_problem: String) -> void:
+func _init(npcs: Dictionary[int, NpcState], notables: NpcNotables, bodies: NpcBodies, tracer: DecisionTracer, routine: RoutineTable, defs_problem: String) -> void:
 	_npcs = npcs
 	_notables = notables
 	_bodies = bodies
 	_tracer = tracer
 	_routine = routine
-	_definitions = definitions
 	_defs_problem = defs_problem
 
 
@@ -35,9 +32,6 @@ func serialize() -> Dictionary:
 	for npc_id: int in _sorted_ids():
 		saved[str(npc_id)] = _npcs[npc_id].to_dict()
 	var data: Dictionary = {NpcModule.KEY_NPCS: saved}
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		data[FoodStub.SAVE_KEY] = food_stub.serialize()
 	var saved_memories: Dictionary = _notables.memories_to_dict()
 	if not saved_memories.is_empty():
 		data[NpcModule.KEY_MEMORIES] = saved_memories
@@ -67,9 +61,6 @@ func on_load(data: Dictionary) -> Result:
 		if parsed.state == null:
 			return _invalid_save("NPC %d: %s" % [npc_id, parsed.error])
 		loaded[npc_id] = parsed.state
-	var stock_problem: String = _food_stock_save_problem(data)
-	if not stock_problem.is_empty():
-		return _invalid_save(stock_problem)
 	var loaded_notables: NpcNotables.ParsedSave = _notables.parse_save(data.get(NpcModule.KEY_MEMORIES, {}), data.get(NpcModule.KEY_RELATIONS, []))
 	if not loaded_notables.error.is_empty():
 		return _invalid_save(loaded_notables.error)
@@ -77,7 +68,6 @@ func on_load(data: Dictionary) -> Result:
 	for loaded_id: int in loaded:
 		_npcs[loaded_id] = loaded[loaded_id]
 	_notables.replace_with(loaded_notables)
-	_load_food_stock(data)
 	_tracer.clear()
 	return Result.success()
 
@@ -115,14 +105,10 @@ func validate() -> Array[String]:
 		if _routine != null and not state.occupation_id.is_empty() and not _routine.has_occupation(state.occupation_id):
 			problems.append("NPC %d: ofício '%s' inexistente nos dados de ofícios." % [npc_id, state.occupation_id])
 	problems.append_array(_notables.problems())
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		problems.append_array(food_stub.validate())
 	return problems
 
 
-## Contagens por tier, vivos e mortos (`counts`, que vêm do `peek_counts()` do módulo), ofícios, o tamanho em bytes do serialize() (backlog I4), o estoque
-## de comida, a memória e as relações, o motivo da população inicial (`population_problem`), os corpos e o rastro. Só para depuração.
+## Contagens por tier, vivos e mortos (`counts`, que vêm do `peek_counts()` do módulo), ofícios, o tamanho em bytes do serialize() (backlog I4), a memória e as relações, o motivo da população inicial (`population_problem`), os corpos e o rastro. Só para depuração.
 func debug_summary(counts: Dictionary, population_problem: String) -> Dictionary:
 	var summary: Dictionary = counts
 	var by_occupation: Dictionary = {}
@@ -137,9 +123,6 @@ func debug_summary(counts: Dictionary, population_problem: String) -> Dictionary
 		ordered[label] = by_occupation[label]
 	summary["by_occupation"] = ordered
 	summary["serialize_bytes"] = JSON.stringify(serialize()).to_utf8_buffer().size()
-	var food_stub: FoodStub = _food_stub()
-	if food_stub != null:
-		summary["food_stock"] = food_stub.serialize()
 	_notables.add_summary(summary)
 	summary["population_problem"] = population_problem
 	summary["bodies_available"] = _bodies.is_available()
@@ -182,33 +165,3 @@ func _sorted_ids() -> Array[int]:
 	ids.assign(_npcs.keys())
 	ids.sort()
 	return ids
-
-
-## TEMP-LW-065: o FoodStub real, se o provedor de comida das definições for ele (os testes usam um provedor falso, sem estado salvo). (O módulo tem a mesma função.)
-func _food_stub() -> FoodStub:
-	if _definitions == null:
-		return null
-	return _definitions.food as FoodStub
-
-
-## TEMP-LW-065: problema do trecho de comida do save (texto vazio = pode carregar). Save sem o trecho (de antes do FoodStub) é aceito: o
-## estoque volta ao inicial. Trecho de comida num módulo sem FoodStub é recusado.
-func _food_stock_save_problem(data: Dictionary) -> String:
-	if not data.has(FoodStub.SAVE_KEY):
-		return ""
-	var food_stub: FoodStub = _food_stub()
-	if food_stub == null:
-		return "o save tem estoque de comida ('%s'), mas o módulo foi criado sem FoodStub" % FoodStub.SAVE_KEY
-	return food_stub.check_save(data[FoodStub.SAVE_KEY])
-
-
-## TEMP-LW-065: carrega o estoque já conferido (ou o devolve ao inicial se o save não tem o trecho).
-func _load_food_stock(data: Dictionary) -> void:
-	var food_stub: FoodStub = _food_stub()
-	if food_stub == null:
-		return
-	if data.has(FoodStub.SAVE_KEY):
-		var entries: Dictionary = data[FoodStub.SAVE_KEY]
-		food_stub.load_save(entries)
-	else:
-		food_stub.reset_to_start()

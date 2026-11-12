@@ -435,7 +435,7 @@ class Candidate:
 
 ## Provedor das condições `has_food` e `place_has_room` do ActionRunner. `place_has_room` = capacidade do `world` menos a ocupação derivada
 ## do estado dos NPCs (PlaceOccupancy), sem contar o NPC em questão (`subject`) se ele já está no local; `has_food` vai para o provedor de
-## comida opcional (TEMP-LW-065); sem ele não há comida.
+## comida opcional (no jogo não há, LW-094); sem ele não há comida do assentamento.
 class ConditionProvider:
 	extends ActionConditionProvider
 
@@ -457,7 +457,7 @@ class ConditionProvider:
 	func has_food(settlement_id: String) -> bool:
 		return _food != null and _food.has_food(settlement_id)
 
-	## Comida PARA O NPC (LW-093): a do inventário dele, na economia, ou, na falta, a do assentamento (o `FoodStub` de reserva).
+	## Comida PARA O NPC (LW-093): a do inventário dele, na economia, ou, na falta, a do assentamento (só um provedor de teste a dá; no jogo é sempre falso).
 	func npc_has_food(npc_id: int, settlement_id: String) -> bool:
 		return (_trade != null and _trade.has_food(npc_id)) or has_food(settlement_id)
 
@@ -481,7 +481,7 @@ class ConditionProvider:
 			return ActionConditionProvider.Completion.new()
 		return _trade.complete(npc_id, action_id)
 
-	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só o FoodStub, TEMP-LW-065). O runner nem o chama quando a comida saiu do inventário do NPC (`Completion.consumed_from_inventory`).
+	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só provedores de teste). O runner nem o chama quando a comida saiu do inventário do NPC (`Completion.consumed_from_inventory`).
 	func on_action_completed(action_id: String, settlement_id: String, occupation_id: String) -> void:
 		if _food != null:
 			_food.on_action_completed(action_id, settlement_id, occupation_id)

@@ -72,7 +72,7 @@ func has_goods(npc_id: int) -> bool:
 
 
 ## O que a economia faz quando a ação COMPLETA (ver `ActionConditionProvider.complete_action`): `buy` compra a comida planejada, `eat` consome uma unidade de comida do inventário e devolve o alívio do bem, `sell` vende ao mercado o
-## que o NPC tem. `eat` sem comida no inventário não faz nada aqui (vale o `FoodStub`, de reserva até a LW-094). Outra ação: nada.
+## que o NPC tem. `eat` sem comida no inventário não faz nada aqui (a LW-094 tirou o estoque provisório do assentamento). Outra ação: nada.
 func complete(npc_id: int, action_id: String) -> ActionConditionProvider.Completion:
 	match action_id:
 		BUY_ACTION_ID:

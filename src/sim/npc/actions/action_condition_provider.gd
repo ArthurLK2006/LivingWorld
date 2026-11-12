@@ -1,7 +1,7 @@
 class_name ActionConditionProvider
 extends RefCounted
 ## Interface mínima (LW-060) das condições de ação que dependem de dado que o `npc` ainda não tem ou que é de outro dono: comida no
-## assentamento (`has_food`, TEMP-LW-065) e vaga num local (`place_has_room`, ocupação derivada, LW-061). O ActionRunner recebe um
+## assentamento (`has_food`, sem provedor no jogo desde a LW-094) e vaga num local (`place_has_room`, ocupação derivada, LW-061). O ActionRunner recebe um
 ## provedor OPCIONAL pelo construtor (sem global, sem autoload). SEM provedor, ou com esta classe-base, a condição NÃO é atendida: falha
 ## segura (uma ação que depende de comida nunca começa por engano). Quem entrega a resposta de verdade herda desta classe e sobrescreve.
 
@@ -46,7 +46,7 @@ class Completion:
 	## Só quando o NPC comeu do inventário: a necessidade que o bem alivia e quanto (o runner corrige o efeito da tabela da ação por esse alívio).
 	var relieved_need_id: String = ""
 	var relief: int = 0
-	## O bem consumido saiu do inventário do NPC (da economia): o `ActionRunner` NÃO chama `on_action_completed` desta vez, então o estoque provisório de comida (`FoodStub`) não consome nada.
+	## O bem consumido saiu do inventário do NPC (da economia): o `ActionRunner` NÃO chama `on_action_completed` desta vez, então um provedor que guarde estoque de comida do assentamento (só nos testes) não consome nada.
 	var consumed_from_inventory: bool = false
 
 	static func failed(reason: String) -> Completion:
@@ -62,7 +62,7 @@ func place_has_room(_place_id: String) -> bool:
 
 ## Gancho (LW-065): o runner o chama DEPOIS que uma ação COMPLETA (progresso 1000) aplicou os efeitos nas necessidades, com o id da ação e
 ## o assentamento e o ofício do NPC (só texto: o provedor nunca recebe o estado do NPC e não escreve nele). Quem guarda estoque de algo que
-## a ação consome ou produz (o FoodStub, TEMP-LW-065) sobrescreve; o padrão não faz nada. Ação interrompida não chama o gancho.
+## a ação consome ou produz (hoje só provedores de teste) sobrescreve; o padrão não faz nada. Ação interrompida não chama o gancho.
 func on_action_completed(_action_id: String, _settlement_id: String, _occupation_id: String) -> void:
 	pass
 
