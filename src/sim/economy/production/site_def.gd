@@ -1,7 +1,7 @@
 class_name SiteDef
 extends RefCounted
 ## Uma linha de `data/economy/production_sites.json` (LW-092): um local de produção (assentamento, local `work` do `world`, receita e a equipe desejada). SÓ LEITURA. Cada linha vira um local de produção em `on_new_game` (dono do tipo
-## `site`). Os dados dos povoados (as 14 linhas da distribuição) chegam com a LW-097; a existência do assentamento e do local, o tipo `work` e a capacidade são conferidos pelo verificador da LW-093a (D1).
+## `site`). Os dados dos povoados (as 14 linhas da distribuição) vieram com a LW-097; a existência do assentamento e do local, o tipo `work` e a capacidade são conferidos pelo verificador da LW-093a (D1).
 
 var id: String
 var settlement_id: String

@@ -1,1 +1,16 @@
-[]
+[
+	{"id": "site_a_grow_grain_1", "settlement_id": "test_settlement_a", "place_id": "a_work_01", "recipe_id": "grow_grain", "workers_wanted": 12},
+	{"id": "site_a_grow_grain_2", "settlement_id": "test_settlement_a", "place_id": "a_work_02", "recipe_id": "grow_grain", "workers_wanted": 12},
+	{"id": "site_a_cut_wood", "settlement_id": "test_settlement_a", "place_id": "a_work_03", "recipe_id": "cut_wood", "workers_wanted": 10},
+	{"id": "site_a_mill_flour", "settlement_id": "test_settlement_a", "place_id": "a_work_04", "recipe_id": "mill_flour", "workers_wanted": 6},
+	{"id": "site_a_saw_plank", "settlement_id": "test_settlement_a", "place_id": "a_work_05", "recipe_id": "saw_plank", "workers_wanted": 6},
+	{"id": "site_b_grow_grain_1", "settlement_id": "test_settlement_b", "place_id": "b_work_01", "recipe_id": "grow_grain", "workers_wanted": 8},
+	{"id": "site_b_grow_grain_2", "settlement_id": "test_settlement_b", "place_id": "b_work_02", "recipe_id": "grow_grain", "workers_wanted": 8},
+	{"id": "site_b_cut_wood", "settlement_id": "test_settlement_b", "place_id": "b_work_03", "recipe_id": "cut_wood", "workers_wanted": 8},
+	{"id": "site_b_bake_bread", "settlement_id": "test_settlement_b", "place_id": "b_work_04", "recipe_id": "bake_bread", "workers_wanted": 4},
+	{"id": "site_b_weave_fabric", "settlement_id": "test_settlement_b", "place_id": "b_work_05", "recipe_id": "weave_fabric", "workers_wanted": 4},
+	{"id": "site_b_shear_wool", "settlement_id": "test_settlement_b", "place_id": "b_work_06", "recipe_id": "shear_wool", "workers_wanted": 4},
+	{"id": "site_c_mine_ore", "settlement_id": "test_settlement_c", "place_id": "c_work_01", "recipe_id": "mine_ore", "workers_wanted": 8},
+	{"id": "site_c_smelt_metal", "settlement_id": "test_settlement_c", "place_id": "c_work_02", "recipe_id": "smelt_metal", "workers_wanted": 6},
+	{"id": "site_c_forge_tool", "settlement_id": "test_settlement_c", "place_id": "c_work_03", "recipe_id": "forge_tool", "workers_wanted": 6}
+]

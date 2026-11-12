@@ -1,6 +1,6 @@
 extends GutTest
 ## LW-088d (revisão independente da A, I1 e I3): o `debug_summary()` do `EconomyModule` (donos, soma dos saldos, dinheiro criado e destruído, conservação do dinheiro e dos bens, locais de produção) e a conferência do TIPO do dono
-## contra `owner_kinds.json` ao carregar um save e no `validate()` (AGENTS 12.6). Usa os dados REAIS (data/economy): os mercados A e B levam os IDs 1 e 2 (3000 de saldo cada) e, com um local de produção, ele leva o ID 3 (5000).
+## contra `owner_kinds.json` ao carregar um save e no `validate()` (AGENTS 12.6). Usa os dados REAIS (data/economy): os mercados A, B e C levam os IDs 1 a 3 (3000 de saldo cada), os 14 locais de produção dos dados vêm depois (200 cada) e, com um local de produção injetado, ele leva o ID 4 (5000).
 
 const SEED: int = 59
 const SETTLEMENT_A: String = "test_settlement_a"
@@ -42,14 +42,14 @@ func test_the_debug_summary_shows_the_accounts_the_conservation_and_the_sites_wi
 	var module: EconomyModule = EconomyModule.new(false, _definitions())
 	var world: World = _world(module)
 	var before: Dictionary = module.serialize()
-	assert_eq(module.debug_summary(), {"owners": 2, "balances_sum": 6000, "money_created": 6000, "money_destroyed": 0, "money_conserved": true, "goods_conserved": true, "production_sites": 0}, "Dois mercados de 3000 e nenhum local de produção nos dados reais.")
+	assert_eq(module.debug_summary(), {"owners": 17, "balances_sum": 11800, "money_created": 11800, "money_destroyed": 0, "money_conserved": true, "goods_conserved": true, "production_sites": 14}, "Três mercados de 3000 e 14 locais de produção de 200 nos dados reais.")
 	assert_eq(module.serialize(), before, "O resumo só olha: o estado fica igual.")
 	assert_true(module.request_open_owner(100, "npc").ok)
-	assert_eq(module.debug_summary()["owners"], 3, "O resumo acompanha o cadastro.")
+	assert_eq(module.debug_summary()["owners"], 18, "O resumo acompanha o cadastro.")
 	world.teardown()
 	var with_site: EconomyModule = EconomyModule.new(false, _definitions(true))
 	var site_world: World = _world(with_site)
-	assert_eq(with_site.debug_summary(), {"owners": 3, "balances_sum": 11000, "money_created": 11000, "money_destroyed": 0, "money_conserved": true, "goods_conserved": true, "production_sites": 1}, "O local de produção entra: o dono 3, com 5000.")
+	assert_eq(with_site.debug_summary(), {"owners": 4, "balances_sum": 14000, "money_created": 14000, "money_destroyed": 0, "money_conserved": true, "goods_conserved": true, "production_sites": 1}, "O local de produção injetado entra: o dono 4, com 5000, depois dos três mercados.")
 	site_world.teardown()
 
 

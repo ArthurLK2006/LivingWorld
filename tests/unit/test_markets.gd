@@ -54,7 +54,7 @@ func test_a_registered_market_starts_with_the_price_of_the_stock_and_answers_the
 	var rig: Rig = _rig()
 	var markets: MarketBook = rig.markets
 	assert_eq([markets.market_of(SETTLEMENT_A), markets.market_of("test_settlement_b"), markets.settlement_of(MARKET)], [MARKET, IdGenerator.NO_ID, SETTLEMENT_A])
-	assert_eq(markets.settlement_ids(), ["test_settlement_a", "test_settlement_b"] as Array[String])
+	assert_eq(markets.settlement_ids(), ["test_settlement_a", "test_settlement_b", "test_settlement_c"] as Array[String], "Três povoados com mercado (o C é da LW-097).")
 	assert_eq(markets.traded_goods(SETTLEMENT_A).size(), 10)
 	assert_true(markets.has_market(MARKET) and markets.is_traded(MARKET, "bread") and not markets.is_traded(MARKET, "gold") and not markets.has_market(99))
 	assert_eq([markets.price_of(MARKET, "bread"), markets.ref_stock_of(MARKET, "bread"), markets.target_of(MARKET, "bread"), markets.buy_cap_of(MARKET, "bread")], [BREAD_BASE, BREAD_TARGET, BREAD_TARGET, 120], "Estoque igual ao alvo: fator 1, preço igual ao valor-base.")

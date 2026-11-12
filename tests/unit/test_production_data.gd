@@ -1,6 +1,6 @@
 extends GutTest
 ## LW-092: os dados da produção (data/economy: receitas, insumos, saídas, manutenção, eficiência e locais) e o `ProductionLoader` (docs/economy/dados.md). Aqui: o arquivo real (10 receitas, cada bem produzido por uma só, a regra de
-## margem, 28 regras de manutenção só de `tool`, `plank` e `fabric`, a lista de locais vazia até a LW-097), uma receita nova só por dado e o dado inválido, que falha apontando arquivo, item e campo. Os [HIP] só são conferidos quanto à faixa.
+## margem, 28 regras de manutenção só de `tool`, `plank` e `fabric`, os 14 locais de produção dos povoados, da LW-097), uma receita nova só por dado e o dado inválido, que falha apontando arquivo, item e campo. Os [HIP] só são conferidos quanto à faixa.
 
 const DATA_DIR: String = "res://data/economy"
 const TEXT_FILE: String = "res://data/text/pt_br.json"
@@ -60,7 +60,7 @@ func test_the_real_data_has_ten_recipes_one_producer_per_good_and_the_margin_rul
 		assert_eq(producers.get(good_id, 0), 1, "%s: produzido por exatamente uma receita." % good_id)
 	assert_eq(loaded.recipes["smelt_metal"].inputs, {"ore": 4, "wood": 2} as Dictionary[String, int], "O metal leva minério e madeira (combustível).")
 	assert_eq(loaded.recipes["bake_bread"].outputs, {"bread": 6} as Dictionary[String, int])
-	assert_eq([loaded.sites.size()], [0], "Os locais de produção dos povoados vêm com a LW-097.")
+	assert_eq([loaded.sites.size()], [14], "Os 14 locais de produção dos povoados (LW-097): 5 no A, 6 no B e 3 no C.")
 
 
 func test_the_real_upkeep_rules_use_only_tool_plank_and_fabric_and_the_site_params_are_in_range() -> void:
@@ -92,10 +92,10 @@ func test_a_recipe_and_a_good_added_only_by_data_pass_and_a_site_line_is_accepte
 	tables["goods"].append({"id": "salt", "name_key": "good.salt.name", "category": "raw_material", "base_value": 5, "weight": 1, "perishability_days": 0})
 	tables["recipes"].append({"id": "evaporate_salt", "name_key": "recipe.evaporate_salt.name", "occupation_id": "artisan", "workers_per_batch": 2, "max_batches_per_hour": 1, "wage_per_hour": 1})
 	tables["recipe_outputs"].append({"id": "evaporate_salt_out_salt", "recipe_id": "evaporate_salt", "good_id": "salt", "quantity": 5})
-	tables["production_sites"].append({"id": "site_x", "settlement_id": "test_settlement_a", "place_id": "a_work_01", "recipe_id": "evaporate_salt", "workers_wanted": 4})
+	tables["production_sites"].append({"id": "site_x", "settlement_id": "test_settlement_a", "place_id": "a_work_06", "recipe_id": "evaporate_salt", "workers_wanted": 4})
 	var loaded: ProductionLoader.LoadResult = ProductionLoader.from_tables(tables, DATA_DIR)
 	assert_true(loaded.result.ok, loaded.result.message)
-	assert_eq([loaded.recipes.size(), loaded.recipes["evaporate_salt"].is_extraction(), loaded.sites.size(), loaded.sites[0].workers_wanted], [11, true, 1, 4])
+	assert_eq([loaded.recipes.size(), loaded.recipes["evaporate_salt"].is_extraction(), loaded.sites.size(), loaded.sites[14].workers_wanted], [11, true, 15, 4], "A linha nova entra depois das 14 dos dados reais, num local de trabalho que ainda não tem local de produção.")
 
 
 func test_invalid_recipe_lines_are_refused_pointing_at_file_item_and_field() -> void:

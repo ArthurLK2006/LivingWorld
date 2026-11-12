@@ -1,9 +1,9 @@
 extends GutTest
-## LW-090: os dados dos mercados (data/economy/market_targets.json e price_params.json) e o `MarketLoader` (docs/economy/dados.md). Aqui: o arquivo real (dois povoados, os 10 bens em cada, o estoque inicial dentro do teto e
+## LW-090: os dados dos mercados (data/economy/market_targets.json e price_params.json) e o `MarketLoader` (docs/economy/dados.md). Aqui: o arquivo real (três povoados, os 10 bens em cada, o estoque inicial dentro do teto e
 ## do peso do mercado, as constantes de preço) e o dado inválido, que falha apontando arquivo, item e campo. Valores esperados escritos à mão; os [HIP] só são conferidos quanto à faixa.
 
 const DATA_DIR: String = "res://data/economy"
-const SETTLEMENTS: Array[String] = ["test_settlement_a", "test_settlement_b"]
+const SETTLEMENTS: Array[String] = ["test_settlement_a", "test_settlement_b", "test_settlement_c"]
 
 
 func _tables() -> Dictionary[String, Array]:
@@ -32,7 +32,7 @@ func _expect_failure(label: String, tables: Dictionary[String, Array], fragments
 		assert_string_contains(loaded.result.message, fragment, "%s: a mensagem deveria citar '%s'." % [label, fragment])
 
 
-func test_the_real_data_has_every_good_in_both_markets_inside_the_cap_and_the_capacity() -> void:
+func test_the_real_data_has_every_good_in_the_three_markets_inside_the_cap_and_the_capacity() -> void:
 	var loaded: MarketLoader.LoadResult = MarketLoader.load_dir(DATA_DIR)
 	assert_true(loaded.result.ok, loaded.result.message)
 	var goods: GoodsLoader.LoadResult = GoodsLoader.load_dir(DATA_DIR)
@@ -43,7 +43,7 @@ func test_the_real_data_has_every_good_in_both_markets_inside_the_cap_and_the_ca
 	for kind: OwnerKindDef in goods.kinds:
 		if kind.id == "market":
 			market_capacity = kind.weight_capacity
-	assert_eq(loaded.targets.size(), 20, "Dois povoados com os 10 bens cada (o 3º povoado é da LW-097).")
+	assert_eq(loaded.targets.size(), 30, "Três povoados com os 10 bens cada (o 3º, da LW-097, tem o seu mercado).")
 	for settlement_id: String in SETTLEMENTS:
 		var seen: Array[String] = []
 		var initial_weight: int = 0
@@ -62,7 +62,8 @@ func test_the_real_data_has_every_good_in_both_markets_inside_the_cap_and_the_ca
 	var imported: Dictionary[String, int] = {}
 	for target: MarketTargetDef in loaded.targets:
 		imported["%s/%s" % [target.settlement_id, target.good_id]] = target.initial_stock
-	assert_eq([imported["test_settlement_a/tool"], imported["test_settlement_a/fabric"], imported["test_settlement_b/tool"], imported["test_settlement_b/plank"]], [29, 25, 29, 21], "Os bens importados de 30 dias da tabela de dados.md.")
+	assert_eq([imported["test_settlement_a/tool"], imported["test_settlement_a/fabric"], imported["test_settlement_b/tool"], imported["test_settlement_b/plank"]], [29, 25, 29, 21], "Os bens importados de 30 dias da tabela de dados.md (A e B).")
+	assert_eq([imported["test_settlement_b/flour"], imported["test_settlement_c/plank"], imported["test_settlement_c/fabric"], imported["test_settlement_c/wood"]], [1620, 15, 9, 540], "Os de 30 dias que a LW-097 acrescentou: farinha do B e tábua, tecido e madeira do C (o teste dos 30 dias confere a conta).")
 
 
 func test_the_real_price_constants_follow_the_documented_ranges() -> void:
