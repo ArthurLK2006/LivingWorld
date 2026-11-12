@@ -217,6 +217,58 @@ class PostsQuery:
 		posts = post_rows
 
 
+## `request_post_contract`: o resultado e o ID do contrato postado (`IdGenerator.NO_ID` se falhou).
+class PostContractResult:
+	extends RefCounted
+
+	var result: Result
+	var contract_id: int
+
+	func _init(post_result: Result, posted_contract_id: int) -> void:
+		result = post_result
+		contract_id = posted_contract_id
+
+
+## `peek_contract` e `peek_contracts` (LW-096; seção 8 do contrato): um contrato, com `kind`, `issuer_id`, `reward`, `deadline` (0 = sem prazo), `state` (`open`, `accepted`, `completed`, `failed`, `expired`) e `acceptor_id` (`IdGenerator.NO_ID` se ninguém).
+## O objetivo vem pelas chaves do tipo: `labor` (`place_id`, `minutes`), `delivery` (`good_id`, `quantity`, `destination_id`) e, na vaga, `workplace_id` e os nomes de `peek_site` (`place_id`, `settlement_id`, `occupation_id`, `wage_per_hour`, `workers_wanted`, `workers_assigned`);
+## o que não é do tipo fica no valor vazio. `result` falha com `ECON_UNKNOWN_CONTRACT` se não há o contrato (então o resto não vale).
+class ContractQuery:
+	extends RefCounted
+
+	var result: Result
+	var contract_id: int = IdGenerator.NO_ID
+	var kind: String = ""
+	var issuer_id: int = IdGenerator.NO_ID
+	var reward: int = 0
+	var deadline: int = 0
+	var state: String = ""
+	var acceptor_id: int = IdGenerator.NO_ID
+	var place_id: String = ""
+	var minutes: int = 0
+	var good_id: String = ""
+	var quantity: int = 0
+	var destination_id: int = IdGenerator.NO_ID
+	var workplace_id: int = IdGenerator.NO_ID
+	var settlement_id: String = ""
+	var occupation_id: String = ""
+	var wage_per_hour: int = 0
+	var workers_wanted: int = 0
+	var workers_assigned: int = 0
+
+	func _init(query_result: Result) -> void:
+		result = query_result
+
+
+## `peek_contracts`: os contratos que passam pelo filtro, por ID crescente.
+class ContractsQuery:
+	extends RefCounted
+
+	var contracts: Array[ContractQuery]
+
+	func _init(contract_rows: Array[ContractQuery]) -> void:
+		contracts = contract_rows
+
+
 ## `request_consume`: o que o consumo fez: a quantidade consumida, o id da necessidade que o bem alivia (`need_id` de `goods.json`) e o alívio total (`need_relief` × quantidade) para o `npc` aplicar; só valem se `result.ok`.
 class ConsumeResult:
 	extends RefCounted

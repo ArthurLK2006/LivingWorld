@@ -69,6 +69,23 @@ static func peek_posts_of(state: EconomyState, settlement_id: String) -> Economy
 	return EconomyReplies.PostsQuery.new(posts)
 
 
+## O contrato `contract_id` (`ECON_UNKNOWN_CONTRACT` se não existe).
+static func peek_contract(state: EconomyState, contract_id: int) -> EconomyReplies.ContractQuery:
+	if not state.contracts.has_contract(contract_id):
+		return EconomyReplies.ContractQuery.new(Result.failure(EconomyCodes.UNKNOWN_CONTRACT, "EconomyModule.peek_contract: o contrato %d não existe." % contract_id))
+	return _contract_query(state, contract_id)
+
+
+## Os contratos que passam pelo filtro, por ID crescente: `state_filter` (vazio = qualquer estado), `issuer_id` (`IdGenerator.NO_ID` = qualquer emissor) e `place_id` (vazio = qualquer local de trabalho).
+static func peek_contracts(state: EconomyState, state_filter: String, issuer_id: int, place_id: String) -> EconomyReplies.ContractsQuery:
+	var rows: Array[EconomyReplies.ContractQuery] = []
+	for contract_id: int in state.contracts.contract_ids():
+		var row: EconomyReplies.ContractQuery = _contract_query(state, contract_id)
+		if (state_filter.is_empty() or row.state == state_filter) and (issuer_id == IdGenerator.NO_ID or row.issuer_id == issuer_id) and (place_id.is_empty() or row.place_id == place_id):
+			rows.append(row)
+	return EconomyReplies.ContractsQuery.new(rows)
+
+
 static func peek_balance(state: EconomyState, owner_id: int) -> EconomyReplies.BalanceQuery:
 	if not state.book.has_owner(owner_id):
 		return EconomyReplies.BalanceQuery.new(Result.failure(EconomyCodes.UNKNOWN_OWNER, "EconomyModule.peek_balance: o dono %d não existe." % owner_id), 0)
@@ -192,4 +209,22 @@ static func _post_query(state: EconomyState, post_id: int) -> EconomyReplies.Pos
 	query.workers_assigned = query.worker_ids.size()
 	query.running = post_state["running"]
 	query.reason = "" if query.running else ServicePostBook.NO_FUNDS
+	return query
+
+
+static func _contract_query(state: EconomyState, contract_id: int) -> EconomyReplies.ContractQuery:
+	var contract: Dictionary = state.contracts.state_of(contract_id)
+	var query: EconomyReplies.ContractQuery = EconomyReplies.ContractQuery.new(Result.success())
+	query.contract_id = contract_id
+	query.kind = contract[ContractBook.KEY_KIND]
+	query.issuer_id = contract[ContractBook.KEY_ISSUER]
+	query.reward = contract[ContractBook.KEY_REWARD]
+	query.deadline = contract[ContractBook.KEY_DEADLINE]
+	query.state = contract[ContractBook.KEY_STATE]
+	query.acceptor_id = contract[ContractBook.KEY_ACCEPTOR]
+	query.place_id = str(contract.get(ContractBook.KEY_PLACE, ""))
+	query.minutes = int(contract.get(ContractBook.KEY_MINUTES, 0))
+	query.good_id = str(contract.get(ContractBook.KEY_GOOD, ""))
+	query.quantity = int(contract.get(ContractBook.KEY_QUANTITY, 0))
+	query.destination_id = int(contract.get(ContractBook.KEY_DESTINATION, IdGenerator.NO_ID))
 	return query

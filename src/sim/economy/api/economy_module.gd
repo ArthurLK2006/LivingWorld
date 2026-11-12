@@ -120,6 +120,24 @@ func request_open_owner(owner_id: int, kind: String, work_place_id: String = "")
 	return opened
 
 
+## Posta um contrato `labor` ou `delivery` (LW-096; seção 8 do contrato): o emissor paga a recompensa para a custódia (`contract_escrow`) e o `ContractOffered` sai. `objective`: `labor` com `place_id` e `minutes`; `delivery` com `good_id`, `quantity` e `destination_id`.
+## `deadline` é um minuto de simulação depois de agora. Tudo ou nada; falhas: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_AMOUNT`, `ECON_CONTRACT_IMPOSSIBLE`, `ECON_INSUFFICIENT_FUNDS`. Sem `setup` do `World` (sem relógio nem IDs) nada é postado.
+func request_post_contract(kind: String, issuer_id: int, reward: int, deadline: int, objective: Dictionary) -> EconomyReplies.PostContractResult:
+	if _ids == null or _events == null or _clock == null:
+		return EconomyReplies.PostContractResult.new(Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "EconomyModule.request_post_contract: módulo sem setup (sem relógio, IDs nem barramento); esperado um módulo registrado no World."), IdGenerator.NO_ID)
+	var contract_id: int = _ids.next_id()
+	var posted: Result = _state.contracts.post(contract_id, kind, issuer_id, reward, deadline, _clock.total_minutes(), objective)
+	if not posted.ok:
+		return EconomyReplies.PostContractResult.new(posted, IdGenerator.NO_ID)
+	_events.publish(ContractOffered.new(contract_id, kind, issuer_id, reward, deadline))
+	return EconomyReplies.PostContractResult.new(posted, contract_id)
+
+
+## Aceita o contrato (LW-096): só `open`, um aceitante aberto que não é o emissor. Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_CONTRACT_IMPOSSIBLE`.
+func request_accept_contract(contract_id: int, actor_id: int) -> Result:
+	return _state.contracts.accept(contract_id, actor_id)
+
+
 ## O NPC consome comida do inventário dele (LW-093; contrato, seção 7): destrói o bem (`consumed`) e devolve o alívio para o `npc` aplicar à necessidade (`EconomyReplies.ConsumeResult`).
 func request_consume(owner_id: int, good_id: String, quantity: int) -> EconomyReplies.ConsumeResult:
 	return EconomyCommands.consume(_state, owner_id, good_id, quantity)
@@ -194,6 +212,16 @@ func peek_post_at(place_id: String) -> EconomyReplies.PostQuery:
 ## Os postos de serviço do assentamento, por ID crescente (lista vazia se não há).
 func peek_posts_of(settlement_id: String) -> EconomyReplies.PostsQuery:
 	return EconomyQueries.peek_posts_of(_state, settlement_id)
+
+
+## O contrato `contract_id` (`ECON_UNKNOWN_CONTRACT` se não existe): tipo, emissor, recompensa, prazo, estado, aceitante e o objetivo do tipo (seção 8 do contrato).
+func peek_contract(contract_id: int) -> EconomyReplies.ContractQuery:
+	return EconomyQueries.peek_contract(_state, contract_id)
+
+
+## Os contratos que passam pelo filtro (estado, emissor e local de trabalho; os valores vazios deixam passar), por ID crescente.
+func peek_contracts(state_filter: String = "", issuer_id: int = IdGenerator.NO_ID, place_id: String = "") -> EconomyReplies.ContractsQuery:
+	return EconomyQueries.peek_contracts(_state, state_filter, issuer_id, place_id)
 
 
 func peek_balance(owner_id: int) -> EconomyReplies.BalanceQuery:
