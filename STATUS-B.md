@@ -1,4 +1,4 @@
-11/11/2026 21:37 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 e R9 feitas; ENTRADA DA A NO `main` AUDITADA: LW-093 em `f2bcb4c`, avanço simples, nada protegido, sem tag, oráculo idêntico, `check_all` independente VERDE (1322 de 1322): SÃ; próximo: 097e da C e 096a da A; vigia armado; sem BLOQUEADA.
+11/11/2026 21:46 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8, R9 feitas; entradas no `main` AUDITADAS: LW-093 da A (`f2bcb4c`, SÃ) e LW-117i da C (`4372f7f`, só docs, SÃ); em curso: R10 (097e da C), depois 093k, 096a e 096b da A; sem BLOQUEADA.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -869,3 +869,27 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 **O que eu NÃO consegui verificar:** (1) o `check_all` **da A** (rodei o meu, independente, sobre o mesmo commit); (2) **quando** o `main` andou, só vejo os horários dos commits (21:21) e a minha detecção (21:31); (3) se a Fase B da A tinha **autorização** própria para o push no `main` (o seu bloco diz que você aprovou a LW-093; **o push eu não vi**).
 
 **Próximo:** `lw-097e-producao-e-estoque` (`4e614b5`, publicada às 21:30) e depois `lw-096a-contratos-nucleo` (`ebd0a06`). `main` agora em **`f2bcb4c`**. Vigia do GitHub **rearmado** com a nova linha de base.
+
+
+## AUDITORIA DE ENTRADA NO `main` — C: LW-117i (só documentos), `f2bcb4c` → `4372f7f` · commits às 21:35, detectado às 21:44, auditado às 11/11/2026 21:46 (Brasília; dentro dos 20 minutos)
+
+**Veredito: SÃ. Nada fugiu do combinado.** Ordem "A primeiro, C depois": respeitada (a 117i é só documento e entrou **depois** da LW-093; a junção da LW-097 ainda **não** aconteceu).
+
+| Item | Resultado |
+|---|---|
+| **Forma da entrada** | **Avanço simples** (o `main` anterior, `f2bcb4c`, é ancestral); **2 commits**, sem merge: `5a53963` (o registro) e `4372f7f` (a linha de status). |
+| **O que mudou** | **12 arquivos, todos em `docs/`** (+64 −14). **Nenhum arquivo de `src/`, `tools/`, `tests/`, `data/`, `scenes/` ou `addons/`.** |
+| **Arquivos protegidos (AGENTS 12.5)** | **Dois alterados:** `docs/DECISIONS.md` (+50 −4) e `docs/DEVELOPMENT_ROADMAP.md` (1 linha). A C diz "por ordem escrita de Arthur" (a mensagem do commit); **eu não vejo essa ordem**, mas o conteúdo bate com o plano (abaixo). Nenhum outro protegido tocado. |
+| **`DECISIONS.md`** | Versão **0.16**. **Entradas novas (3):** **DEC-234 PROPOSTA** (a exceção pontual à DEC-107 e ao AGENTS 4.17: leitura de campo de evento pelo nome em **três pontos fechados**; "nunca APROVADA sem outra ordem escrita"), **DEC-235 APROVADA** (a tabela do `economy.md` seção 6: 14 locais de produção, 6 postos, 20 locais `work`) e **DEC-236 APROVADA** (a LW-097 e o salário, LW-095 só código, vêm antes da LW-094, que vai junto do marco 3 de hash). **Status antigo: nenhum alterado** (conferi as linhas removidas: só versão, totais, a nota da DEC-053 e a nota de faixas). **Totais recontados por mim: 153 APROVADA · 55 PROPOSTA · 17 PENDENTE · 10 DESCARTADA · 1 SUBSTITUÍDA = 236, igual ao declarado.** A nota da DEC-053 foi restaurada (a correção é só trocar dois `|` por `*`: o achado R5-M1). Faixas: A passa a DEC-237 a 239. |
+| **Roadmap** | Só a linha da **LW-094**: dependências passam a incluir a LW-095 (só o código do salário) e a LW-097, e o aceite "ainda no marco 2" vira "marco 3, entregue junto dele e só pela causa fim do `FoodStub`" (DEC-236). |
+| **Correções de texto** | As dos meus achados **R4-M4** (`economy.md`: o código já arredonda a tarifa para cima), **R5-M2** (cabeçalhos das fichas da Fase 4: "aprovado por Arthur **apenas quanto às DEC-227 a DEC-233**"), **R5-M3** (nota dos eventos que já existem) e **R5-M4** (`events.md`: o `PriceChanged` existe e só os testes o ouvem), mais o registro `0016`. |
+| **`ROADMAP_STATUS.md`** | +1 parágrafo: a 117i "entrou pela Fase B curta"; **nenhuma contagem muda**. |
+| **Tags** | **Nenhuma** nova. |
+| **Testes, oráculo e soak** | **Inalterados por construção** (nenhum código, teste ou dado mudou; `git diff --stat` de `src tools tests data scenes` vazio). O **único** verificador do `check_all` que lê documento é a regra 8 do `check_architecture` (todo evento consta na primeira coluna de `docs/events.md`): conferi que a primeira coluna tem os **mesmos 60 eventos** antes e depois. **`check_all`: NÃO EXECUTADO** nesta entrada (só documentos; a última rodada, no `f2bcb4c`, foi verde e o código é idêntico). |
+| **Junção "sã" (rotas e economia; uma assinatura; `c_market_01`)** | **Não se aplica** (é da LW-097, que ainda não entrou). |
+
+**Efeitos para o que vem (meus achados anteriores):** (1) a **DEC-235 responde o R9-I2**: "os 6 postos de serviço são da **LW-095**", então `data/economy/service_posts.json` é **da A**, na parte final da LW-095; (2) a **DEC-236** fixa que a LW-094 (fim do `FoodStub`) vai **com o marco 3**, o que pesa no R9-M2 (o estoque de comida do C) e na ordem dos hashes; (3) a **DEC-234** fecha, como PROPOSTA, a exceção de leitura de evento pelo nome que eu tinha deixado pendente (R6/146g).
+
+**O que eu NÃO consegui verificar:** (1) a **ordem escrita de Arthur** que a C cita para DEC-235, DEC-236 (APROVADAS) e para as duas mudanças em arquivo protegido; (2) o `check_all` desta entrada (não rodei); (3) a hora exata do push (só vejo os horários dos commits, 21:35, e a minha detecção, 21:44).
+
+**Próximo:** fechar o relatório da **097e** (R10) e depois `lw-093k-ajustes-da-r6` (A), `lw-096a-contratos-nucleo` e `lw-096b-porta-dos-contratos` (A). `main` em **`4372f7f`**. Vigia a rearmar.
