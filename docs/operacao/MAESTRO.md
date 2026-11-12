@@ -1,6 +1,6 @@
 # Operação com o Maestro — Living World
 
-**Status:** proposta. Até Arthur aprovar este documento e a nova política de autonomia, o `AGENTS.md` vale inteiro; em conflito, vale o `AGENTS.md`. Este documento descreve o fluxo e não o substitui.
+**Status:** configuração mínima aprovada como direção por Arthur em 12/11/2026 (chat); classes de risco e autonomia seguem como proposta. Até ele aprovar a política de autonomia, o `AGENTS.md` vale inteiro; em conflito, vale o `AGENTS.md`. Este documento descreve o fluxo e não o substitui.
 
 ## 1. Modelo
 Uma única conversa com Arthur: o **Maestro** (Sonnet). Ele aciona agentes internos conforme a complexidade e nunca usa o `main` como área de trabalho.
@@ -13,7 +13,7 @@ Uma única conversa com Arthur: o **Maestro** (Sonnet). Ele aciona agentes inter
 | Explorador (`explorador.md`) | Haiku | levantamentos e leitura em massa | só leitura; relatório curto com evidência |
 | Opus | sob demanda | análise arquitetural difícil ou revisão de alto risco | o Maestro pede e justifica |
 
-Eficiência: tarefa trivial = o Maestro faz e confere de forma objetiva, sem agentes; documento extenso só é lido por trechos; as evidências técnicas ficam no PR e o chat leva o resumo.
+Eficiência: tarefa trivial = o Maestro faz e confere de forma objetiva, sem agentes; documento extenso só é lido por trechos; as evidências técnicas ficam no PR e o chat leva o resumo. Limites iniciais das tarefas delegadas (chamadas, tokens e tamanho do relatório): `CLAUDE.md`.
 
 ## 2. Rotina de uma tarefa
 1. O Maestro abre a tarefa (escopo, critério de aceite, contratos e DEC lidos, classe de risco) e confere colisão com trabalho em andamento (`git worktree list`, PRs e branches abertos).
@@ -53,3 +53,8 @@ Não vão ao Git, por desenho: `.godot/`, `export_presets.cfg`, `addons/terrain_
 - **`.worktrees/` fora do Git:** (a) já vale: adicionar sempre por caminho (AGENTS.md 10.4), nunca `git add -A`, `git add .` nem `commit -a` no checkout principal, e trabalhar só em worktrees; (b) definitiva: a linha `.worktrees/` no `.gitignore` (arquivo protegido, precisa de autorização); (c) rede de segurança: passo no CI que falha se `.worktrees/` ou entradas de submódulo (modo 160000) entrarem no Git.
 - **Proteção do `main`:** só depois de coordenar a transição dos pushes diretos das sessões A, B e C: PR obrigatório, `check_all` obrigatório, sem force-push nem exclusão do `main`.
 - **Substituir as sessões A, B e C** (não encerrar antes): uma tarefa real feita de ponta a ponta pelo fluxo (PR, CI, revisão, aprovação) sem regressão; o trabalho em andamento delas integrado, estacionado com registro ou classificado; registro de retomada testado (uma sessão nova reproduz o estado só pelo GitHub); proteção do `main` acordada; cota dentro do limite; aprovação de Arthur.
+
+## 8. Limitações conhecidas (12/11/2026)
+- **As permissões de `.claude/settings.json` NÃO estão comprovadas.** O teste dinâmico não foi executado: o Claude Code aninhado não herda o login do app (sessão expirada, não contornada) e a conversa do Maestro abriu no checkout principal, onde estas regras não carregam. Houve só validação estática: JSON válido, apenas `allow`, `ask` e `deny`, sem `defaultMode`, sem regra ampla no `allow`, e as formas `Bash(prefixo *)`, `Edit(caminho)` e `Read(caminho)` conferidas com a referência de configuração do próprio Claude Code. A precedência entre `deny`, `ask` e `allow` e o efeito do sufixo antigo `:*` não foram confirmados por essa referência.
+- **A proteção efetiva continua sendo** as regras de autorização do `AGENTS.md` (seções 0, 10 e 12) e o ritual de PR com CI. Regras por prefixo não cobrem todas as variantes (por exemplo `rm -fr`, `git push --force-with-lease`, `git diff --output=arquivo`), e não foi verificado se as regras de `Edit` valem para comandos de shell (`sed -i`, redirecionamentos).
+- **Teste manual de 1 minuto**, numa sessão aberta num worktree deste repositório: pedir a edição de `AGENTS.md` (deve pedir confirmação; negue); rodar `git push --force --dry-run origin <ramo>` (deve ser negado); rodar `git status` (deve rodar sem pedir). Anote aqui o resultado quando fizer.

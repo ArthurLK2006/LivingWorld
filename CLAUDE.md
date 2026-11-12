@@ -12,3 +12,7 @@ Como trabalhar: `AGENTS.md` (só Arthur o altera; vale inteiro). Modelo operacio
 - Custo zero além da assinatura: sem créditos extras, API paga, nuvem ou assinaturas; avisar ANTES de qualquer coisa que possa cobrar; no limite gratuito, parar ou adaptar.
 - Poupe contexto: consultas seletivas (`rg`, trechos com `git show`), sem recarregar documentos extensos; as evidências técnicas vão para o PR, não para o chat.
 - Só com autorização escrita e específica de Arthur: merge no `main`, proteção do `main`, arquivos protegidos (AGENTS.md 12.5), apagar branches, stashes, worktrees ou arquivos, e qualquer ação destrutiva.
+
+## Tarefas delegadas (limites iniciais; Arthur ajusta)
+- Todo pedido a um agente leva objetivo, critério de aceite objetivo, área e limites: exploração até ~15 chamadas e ~40 mil tokens; implementação ou análise até ~40 chamadas e ~150 mil; revisão só do diff, até ~25 chamadas e ~80 mil; relatório até ~30 linhas. Na metade do limite sem evidência suficiente, parar e relatar.
+- Testar uma hipótese específica antes de investigar em largura; parar quando a evidência bastar; não repetir análise já comprovada; sem documento extenso sem necessidade; consolidar em um único PR quando for seguro.
