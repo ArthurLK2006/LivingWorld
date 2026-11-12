@@ -178,8 +178,8 @@ func test_the_sites_survive_the_save_and_a_bad_block_changes_nothing() -> void:
 		{"label": "receita desconhecida", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["recipe_id"] = "no_such_recipe", "fragment": "o id de uma receita"},
 		{"label": "eficiência abaixo do piso", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["efficiency_bp"] = 100, "fragment": "'efficiency_bp' de 3000 a 10000"},
 		{"label": "progresso de um lote inteiro", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["batch_progress_bp"] = 10000, "fragment": "'batch_progress_bp' de 0 a 9999"},
-		{"label": "parado sem motivo", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["stopped"] = true; block["production"]["sites"]["4"]["reason"] = "", "fragment": "um motivo de NO_WORKER, NO_INPUT, OUTPUT_FULL só quando parado"},
-		{"label": "motivo fora do conjunto", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["stopped"] = true; block["production"]["sites"]["4"]["reason"] = "NO_FUNDS", "fragment": "um motivo de NO_WORKER"},
+		{"label": "parado sem motivo", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["stopped"] = true; block["production"]["sites"]["4"]["reason"] = "", "fragment": "um motivo de NO_WORKER, NO_INPUT, OUTPUT_FULL, NO_FUNDS só quando parado"},
+		{"label": "motivo fora do conjunto", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["stopped"] = true; block["production"]["sites"]["4"]["reason"] = "NO_SPACE", "fragment": "um motivo de NO_WORKER"},
 		{"label": "equipe fora de ordem", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["worker_ids"] = [102, 100], "fragment": "em ordem crescente e sem repetição"},
 		{"label": "manutenção que não é a da receita", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["upkeep_days"] = {"tool": 1}, "fragment": "exatamente as 3 regras de manutenção"},
 		{"label": "dias de manutenção negativos", "mutate": func(block: Dictionary) -> void: block["production"]["sites"]["4"]["upkeep_days"]["tool"] = -1, "fragment": "um inteiro de 0 ou mais para 'tool'"},
@@ -224,7 +224,7 @@ func test_without_sites_in_the_data_nothing_changes_and_validate_finds_a_site_th
 	var real_module: EconomyModule = EconomyModule.new(false, real_setup.definitions)
 	var real_world: World = _world(real_module)
 	_run_minutes(real_world, MINUTES_PER_DAY * 2)
-	assert_eq([real_module.peek_sites_of(SETTLEMENT_A).sites.size(), real_module.serialize().has("production"), real_world.context.ids.next_id()], [5, true, 18], "A lista real de locais (LW-097) tem 5 no A: 3 mercados e 14 locais gastam 17 IDs e o save ganha o bloco.")
+	assert_eq([real_module.peek_sites_of(SETTLEMENT_A).sites.size(), real_module.serialize().has("production"), real_world.context.ids.next_id()], [5, true, 32], "A lista real de locais (LW-097) tem 5 no A: 3 mercados, 14 locais e as 14 vagas que a economia posta (LW-096e) gastam 31 IDs e o save ganha o bloco.")
 	assert_eq(real_module.validate(), [] as Array[String])
 	real_world.teardown()
 	var loaded: ProductionLoader.LoadResult = ProductionLoader.load_dir(GoodsLoader.DEFAULT_DIR)

@@ -14,6 +14,9 @@ extends GutTest
 ## é só o registro do marco 3, que Arthur já aprovou na LW-097a (DEC-175).
 ## Na LW-097d (marco 3) os nove valores mudaram de novo, pela população real aprovada por Arthur em 11/11/2026: 132 NPCs (A 60, B 44 com os 4 pastores, C 28 [HIP]), um local
 ## de trabalho por linha (`work_place_id`, DEC-167), os ofícios `miner` e `shepherd`, a nona casa do B e o estoque de comida do C no FoodStub (3.000, TEMP-LW-065).
+## Na Fase B da LW-097 (junção com o `main`, marco 3) os nove valores mudaram de novo, por autorização antecipada de Arthur (Bloco C v10, 11/11/2026): o `main` já trazia os valores da frente A (LW-093 a LW-096a; `intents` 8670b52b8ff6, `alarm` b62628f049b0, `resumed` 1251aaf06e2d, `switches` 6889619788b5,
+## `talk` a8a97e95f464, `save` 781066cec584, `demote` ed884fc6fb21, `starved` f11a33ea9ab0 e `real_game` 76a65b9cfc8a), e a linha da LW-097 trazia os da população real (os da LW-097d, que seguem no histórico do git); os valores da junção são a soma das duas causas, com o estoque de comida do C trocado de 3.000 para 6.000 (autorizado por Arthur em 12/11/2026: com 3.000 os 28 NPCs do C morriam de fome entre os dias 19 e 21 do jogo real de 30 dias). Prova:
+## com as causas da C neutralizadas na árvore da junção (FoodStub do C, população, ofícios, agendas, locais, povoados e o módulo `world`), os nove voltam exatamente aos da A.
 
 const WORLD_SEED: int = 11
 const ACTOR_ID: int = 77
@@ -51,15 +54,15 @@ const T_STARVED: int = 4 * DAY + 9 * HOUR
 ## acrescentou ao save do mundo o bloco vazio `economy`, e só isso mudou os nove valores (sem o bloco, voltam todos aos anteriores, que eram os de 5a7d453 para `intents`,
 ## `alarm`, `resumed` e `switches`, e os da LW-073b e da LW-085 para os demais; ver o cabeçalho).
 const EXPECTED: Dictionary[String, String] = {
-	"intents": "f3f7b6b6edba0ca214495e273f6aabf14883b3a43f2f4491165127c160ad48e4",
-	"alarm": "5faee3a8bda22b17f3e0621f0764661455ecb3c03a0da38ed7f4234634e29dae",
-	"resumed": "153d0cffb6f97114b15d4cbc862c79b7979622d1e1dcd93fa7739ac9ecd9f7ca",
-	"switches": "5de93474b92f978a4fefe2fb73fcb1c842d804ad67d369bd344e43b79dc9e335",
-	"talk": "137a429093c6101f39f1ebcaade9d770378a4e92f1916e23d2457dd983a0aa0a",
-	"save": "a65f1bd8972e32cdf479bca7d4f886d85a144b0560be7ebf10756e26f8305a1a",
-	"demote": "4499213a8de02b7b36e9f91906ca84901624c7bf6be621e6c48a96a280191ce9",
-	"starved": "3a423e68c051c98cfbfe44604ddc1edffcd4d60c06f013b4cc94633dcc5cd16b",
-	"real_game": "d4135eb87cafa79314df339a3284e92761e4ced849b7d8b9a4aa7fd4e303cec3",
+	"intents": "28802dfa9d06e0320247f9c3bae14bba887a78bccfacb0803a5ca8d18dd936d6",
+	"alarm": "916683019e46cf83bad1c75127c5370d7bb1403a8107a0def7956617f3832bd7",
+	"resumed": "a2b476e37a0c5462173369c3ee89c93170b2e18d1fdc3a3815e53e14607e62ff",
+	"switches": "b4c379eaad55b668e299a969761aad1191213f95292d3b2c6a0447ed95890dcd",
+	"talk": "a96d78a9a82fde4b81225e97d0c0778ed6c1525b03af5c3909789302986e2e8f",
+	"save": "5c885dbc09eea1495b195c8d03e737d0317003015ec3d02e6ed4019b3af558c9",
+	"demote": "c5b515175b726d328fbe5b481c0474f08cfdbe8e0d6c251cc4b46c342c569895",
+	"starved": "d2533a12fd058d0eb1a41ce42b001782b8f9285f41bc7d68dac2fb6bc01502a6",
+	"real_game": "48857919c5ffce261b0bcfff4e933785adcd5085b6d63cb2f0802e0f81e5e1b4",
 }
 
 var _data: NpcLifeCheck.GameData

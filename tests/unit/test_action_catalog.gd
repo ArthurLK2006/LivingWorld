@@ -6,7 +6,7 @@ extends GutTest
 
 const DATA_DIR: String = "res://data"
 const ISSUE_CODE: String = "ACTION_DATA_INVALID"
-const ACTION_IDS: Array[String] = ["sleep", "eat", "work", "rest", "talk", "go_to_place", "wait", "flee", "help", "talk_player"]
+const ACTION_IDS: Array[String] = ["sleep", "eat", "work", "rest", "talk", "go_to_place", "wait", "flee", "help", "talk_player", "buy", "sell"]
 const EFFECTS_FILE: String = "action_effects.json"
 const CONDITIONS_FILE: String = "action_conditions.json"
 const WEIGHTS_FILE: String = "action_trait_weights.json"
@@ -100,13 +100,14 @@ func test_eating_requires_food_and_nothing_else_has_conditions_yet() -> void:
 
 func test_no_initial_action_uses_the_reserved_market_place_and_every_kind_is_known() -> void:
 	for action: ActionDef in ActionCatalogLoader.load_dir().actions:
-		assert_ne(action.place_kind, "market_reserved", "%s: nenhuma ação da Fase 2 usa o mercado-reservado." % action.id)
+		if not ["buy", "sell"].has(action.id):
+			assert_ne(action.place_kind, "market", "%s: só `buy` e `sell` (LW-093) usam o local de mercado." % action.id)
 		assert_true(action.place_kind.is_empty() or ActionDef.PLACE_KINDS.has(action.place_kind))
 		assert_true(action.risk >= 0 and action.risk <= 100)
 
 
 func test_the_place_vocabulary_and_condition_kinds_are_the_closed_lists() -> void:
-	assert_eq(ActionDef.PLACE_KINDS, ["home", "work", "rest", "social", "market_reserved"] as Array[String])
+	assert_eq(ActionDef.PLACE_KINDS, ["home", "work", "rest", "social", "market"] as Array[String])
 	assert_eq(ActionDef.CONDITION_KINDS, ["need_at_least", "need_at_most", "hour_between", "place_has_room", "has_food"] as Array[String])
 
 
@@ -145,7 +146,7 @@ func test_a_new_action_added_only_by_data_passes_validation() -> void:
 	tables["action_trait_weights"].append({"id": "gather_wood_caution", "action_id": "gather_wood", "trait_id": "caution", "weight": -5})
 	var loaded: ActionCatalogLoader.LoadResult = _load(tables)
 	assert_true(loaded.result.ok, loaded.result.message)
-	assert_eq(loaded.actions.size(), 11)
+	assert_eq(loaded.actions.size(), 13)
 	var added: ActionDef = _action(loaded.actions, "gather_wood")
 	assert_eq(added.duration_min, 120)
 	assert_eq(added.place_kind, "work")
@@ -171,10 +172,10 @@ func test_a_new_action_added_only_by_data_passes_validation() -> void:
 func test_a_minimal_new_action_and_the_reserved_place_kind_pass() -> void:
 	var tables: Dictionary[String, Array] = _tables()
 	tables["actions"].append({"id": "stand_around", "duration_min": 5, "place_kind": "", "risk": 0, "interruptible": true})
-	tables["actions"].append({"id": "browse", "duration_min": 5, "place_kind": "market_reserved", "risk": 0, "interruptible": true})
+	tables["actions"].append({"id": "browse", "duration_min": 5, "place_kind": "market", "risk": 0, "interruptible": true})
 	var loaded: ActionCatalogLoader.LoadResult = _load(tables)
 	assert_true(loaded.result.ok, loaded.result.message)
-	assert_eq(_action(loaded.actions, "browse").place_kind, "market_reserved", "O vocabulário aceita o tipo reservado.")
+	assert_eq(_action(loaded.actions, "browse").place_kind, "market", "O vocabulário aceita o tipo `market`.")
 
 
 # ---------------------------------------------------------------------------------------------------- dado inválido
@@ -203,7 +204,7 @@ func test_references_to_things_that_do_not_exist_point_at_file_item_and_field() 
 func test_unknown_place_kind_and_unknown_condition_kind_fail() -> void:
 	var place: Dictionary[String, Array] = _tables()
 	_row(place, "actions", "work")["place_kind"] = "kitchen"
-	_expect_failure("tipo de local inexistente", place, [ACTIONS_FILE, "item 'work'", "campo 'place_kind'", "tipo de local 'kitchen' inexistente", "home, work, rest, social, market_reserved"])
+	_expect_failure("tipo de local inexistente", place, [ACTIONS_FILE, "item 'work'", "campo 'place_kind'", "tipo de local 'kitchen' inexistente", "home, work, rest, social, market"])
 	var kind: Dictionary[String, Array] = _tables()
 	_row(kind, "action_conditions", "eat_has_food")["kind"] = "is_raining"
 	_expect_failure("tipo de condição desconhecido", kind, [CONDITIONS_FILE, "item 'eat_has_food'", "campo 'kind'", "tipo de condição desconhecido 'is_raining'", "need_at_least"])

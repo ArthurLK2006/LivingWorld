@@ -14,9 +14,11 @@ var trade_rules: TradeRules
 var recipes: Dictionary[String, RecipeDef] = {}
 var site_params: SiteParams
 var production_sites: Array[SiteDef] = []
+## Os postos de serviço (LW-095): locais de trabalho sem receita, com a folha paga pela conta do mercado do povoado.
+var service_posts: Array[PostDef] = []
 
 
-func _init(good_defs: Array[GoodDef] = [], kind_defs: Array[OwnerKindDef] = [], targets: Array[MarketTargetDef] = [], params: PriceParams = null, development_build: bool = false, rules: TradeRules = null, recipe_defs: Dictionary[String, RecipeDef] = {}, params_of_sites: SiteParams = null, site_defs: Array[SiteDef] = []) -> void:
+func _init(good_defs: Array[GoodDef] = [], kind_defs: Array[OwnerKindDef] = [], targets: Array[MarketTargetDef] = [], params: PriceParams = null, development_build: bool = false, rules: TradeRules = null, recipe_defs: Dictionary[String, RecipeDef] = {}, params_of_sites: SiteParams = null, site_defs: Array[SiteDef] = [], post_defs: Array[PostDef] = []) -> void:
 	goods = good_defs
 	kinds = kind_defs
 	market_targets = targets
@@ -26,3 +28,4 @@ func _init(good_defs: Array[GoodDef] = [], kind_defs: Array[OwnerKindDef] = [], 
 	recipes = recipe_defs
 	site_params = params_of_sites
 	production_sites = site_defs
+	service_posts = post_defs

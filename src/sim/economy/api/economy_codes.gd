@@ -17,6 +17,14 @@ const MARKET_NO_FUNDS: String = "ECON_MARKET_NO_FUNDS"
 const MARKET_FULL: String = "ECON_MARKET_FULL"
 const TRADE_BANNED: String = "ECON_TRADE_BANNED"
 const DATA_INVALID: String = "ECON_DATA_INVALID"
+## O bem existe, mas não é de consumo do NPC (não tem `need_id`): `request_consume` o recusa.
+const NOT_CONSUMABLE: String = "ECON_NOT_CONSUMABLE"
 ## Comando de depuração chamado fora do build de desenvolvimento (mesmo padrão do `NPC_DEV_ONLY`).
 const DEV_ONLY: String = "ECON_DEV_ONLY"
 const INVALID_SAVE: String = "ECON_INVALID_SAVE"
+## Contrato (LW-096): objetivo impossível (local ou destino que não existe, quantidade ou minutos fora da faixa, prazo que já passou, tipo que o comando não posta), contrato que não existe e contrato que não está aberto.
+const CONTRACT_IMPOSSIBLE: String = "ECON_CONTRACT_IMPOSSIBLE"
+const UNKNOWN_CONTRACT: String = "ECON_UNKNOWN_CONTRACT"
+const CONTRACT_NOT_OPEN: String = "ECON_CONTRACT_NOT_OPEN"
+## "Um trabalho, um pagamento" (DEC-151): o trabalhador já está atribuído ao local de trabalho do turno, que o paga pela folha.
+const WORKER_ALREADY_ASSIGNED: String = "ECON_WORKER_ALREADY_ASSIGNED"

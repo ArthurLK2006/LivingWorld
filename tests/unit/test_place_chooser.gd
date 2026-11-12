@@ -29,7 +29,7 @@ func _world() -> SettlementService:
 		Place.new("rest_a2", VILLAGE_A, Place.KIND_REST, Vector3(50.0, 0.0, 0.0), 2),
 		Place.new("social_a1", VILLAGE_A, Place.KIND_SOCIAL, Vector3(0.0, 0.0, 200.0), 2),
 		Place.new("social_a2", VILLAGE_A, Place.KIND_SOCIAL, Vector3(0.0, 0.0, 300.0), 1),
-		Place.new("market_a1", VILLAGE_A, Place.KIND_MARKET_RESERVED, Vector3(5.0, 0.0, 5.0), 4),
+		Place.new("market_a1", VILLAGE_A, Place.KIND_MARKET, Vector3(5.0, 0.0, 5.0), 4),
 		Place.new("rest_b1", VILLAGE_B, Place.KIND_REST, Vector3(5.0, 0.0, 0.0), 3),
 	]
 	return SettlementService.new(settlements, places)
@@ -198,8 +198,9 @@ func test_place_for_fails_without_an_assignment_or_for_the_reserved_kind() -> vo
 	assert_eq(no_home.result.code, PlaceChooser.CODE_NO_ASSIGNED_PLACE)
 	assert_string_contains(no_home.result.message, "casa")
 	assert_eq(chooser.place_for(homeless, _action("work")).result.code, PlaceChooser.CODE_NO_ASSIGNED_PLACE)
-	var market: PlaceChooser.ChosenPlace = chooser.place_for(homeless, _action("market_reserved"))
-	assert_eq(market.result.code, PlaceChooser.CODE_KIND_UNSUPPORTED)
+	var market: PlaceChooser.ChosenPlace = chooser.place_for(homeless, _action("market"))
+	assert_true(market.result.ok, market.result.message)
+	assert_eq(market.place_id, "market_a1", "O tipo `market` (LW-093) é escolhido como o descanso: o local mais próximo do assentamento com vaga.")
 	assert_eq(chooser.place_for(homeless, _action("kitchen")).result.code, PlaceChooser.CODE_KIND_UNSUPPORTED)
 
 

@@ -3,13 +3,14 @@ extends RefCounted
 ## Os locais de produção da economia (LW-092b; docs/modules/economy.md, seção 6). O `site_id` é o ID do dono do tipo `site` (a conta e o inventário dele são do `Ledger` e do `GoodsStore`). Aqui mora o que é do local: a receita, a equipe
 ## (`worker_ids`, em ordem crescente), a eficiência, o progresso do lote, o estado (produzindo ou parado, com o MOTIVO) e há quantos dias cada regra de manutenção foi paga. A cada HORA (`hour_step`), por local em ordem de ID: (1) compra do mercado
 ## do povoado o que falta (insumos dos lotes que a equipe faz e o bem de uma regra vencida), pelo mesmo `TradeEngine`; (2) confere a equipe (`NO_WORKER`), os insumos (`NO_INPUT`) e o espaço (`OUTPUT_FULL`); (4) faz os lotes (`consumed` e `produced`);
-## (5) vende ao mercado o produto, até o espaço do teto de compra. O passo 3, a folha de pagamento, é da LW-095 (daí `NO_FUNDS` ainda não existir). Ao FIM DO DIA (`end_of_day`) cada regra de manutenção cujo prazo venceu e cujas peças o local tem é
+## (3) paga a folha (`WagePayer`: o local paga `wage_per_hour` a cada trabalhador, tudo ou nada, motivo `salary`; sem o dinheiro todo o local para por `NO_FUNDS` e ninguém recebe; um `WagesPaid` por local e por hora), (5) vende ao mercado o produto, até o espaço do teto de compra. Sem `Ledger` (testes antigos) não há folha. Ao FIM DO DIA (`end_of_day`) cada regra de manutenção cujo prazo venceu e cujas peças o local tem é
 ## paga (as peças são destruídas com o motivo `maintenance`); com regra vencida e não paga a eficiência cai um degrau (nunca abaixo do piso, que é maior que 0), senão sobe um degrau. Eventos só na MUDANÇA de estado. Nunca sorteia nem olha o relógio. O save (`serialize`, `load_from`, `validate`) é do módulo: o bloco `production` da economia.
 
 const NO_WORKER: String = "NO_WORKER"
 const NO_INPUT: String = "NO_INPUT"
 const OUTPUT_FULL: String = "OUTPUT_FULL"
-const REASONS: Array[String] = [NO_WORKER, NO_INPUT, OUTPUT_FULL]
+const NO_FUNDS: String = "NO_FUNDS"
+const REASONS: Array[String] = [NO_WORKER, NO_INPUT, OUTPUT_FULL, NO_FUNDS]
 ## Id do tipo de dono do local de produção (`owner_kinds.json`).
 const KIND_SITE: String = "site"
 const FULL_EFFICIENCY_BP: int = 10000
@@ -32,10 +33,11 @@ var _book: OwnerBook
 var _goods: GoodsStore
 var _markets: MarketBook
 var _engine: TradeEngine
+var _payer: WagePayer
 var _sites: Dictionary[int, Dictionary] = {}
 
 
-func _init(book: OwnerBook, goods: GoodsStore, markets: MarketBook, engine: TradeEngine, recipes: Dictionary[String, RecipeDef], params: SiteParams, max_order_quantity: int) -> void:
+func _init(book: OwnerBook, goods: GoodsStore, markets: MarketBook, engine: TradeEngine, recipes: Dictionary[String, RecipeDef], params: SiteParams, max_order_quantity: int, ledger: Ledger = null) -> void:
 	_book = book
 	_goods = goods
 	_markets = markets
@@ -43,6 +45,7 @@ func _init(book: OwnerBook, goods: GoodsStore, markets: MarketBook, engine: Trad
 	_recipes = recipes
 	_params = params
 	_max_order = max_order_quantity
+	_payer = null if ledger == null else WagePayer.new(book, ledger)
 
 
 ## Registra o local `site_id` (dono do tipo `site` já aberto): produzindo, eficiência cheia, sem equipe, nenhuma regra paga ainda.
@@ -118,7 +121,10 @@ func hour_step() -> Array[SimEvent]:
 		var recipe: RecipeDef = _recipes[state[KEY_RECIPE]]
 		_buy_what_is_missing(site_id, state, recipe)
 		var reason: String = _stop_reason(site_id, state, recipe)
+		if reason.is_empty() and not _can_pay_wages(site_id, state, recipe):
+			reason = NO_FUNDS
 		if reason.is_empty():
+			_pay_wages(site_id, state, recipe, events)
 			_run_batches(site_id, state, recipe)
 		_sell_surplus(site_id, state, recipe)
 		var was_stopped: bool = state[KEY_STOPPED]
@@ -233,6 +239,22 @@ func _stop_reason(site_id: int, state: Dictionary, recipe: RecipeDef) -> String:
 	if not _goods.has_room_for(site_id, recipe.outputs):
 		return OUTPUT_FULL
 	return ""
+
+
+## (3) A folha da hora cabe na conta do local? Sem `Ledger` nunca há folha.
+func _can_pay_wages(site_id: int, state: Dictionary, recipe: RecipeDef) -> bool:
+	return _payer == null or _payer.can_pay(site_id, recipe.wage_per_hour, state[KEY_WORKERS])
+
+
+## (3) Paga a folha (só depois de `_can_pay_wages`) e anuncia UM `WagesPaid` do local nesta hora.
+func _pay_wages(site_id: int, state: Dictionary, recipe: RecipeDef, events: Array[SimEvent]) -> void:
+	if _payer == null or recipe.wage_per_hour <= 0:
+		return
+	var paid: Result = _payer.pay(site_id, recipe.wage_per_hour, state[KEY_WORKERS])
+	if not paid.ok:
+		push_error("ProductionBook.hour_step: a folha do local %d não foi paga por inteiro: %s" % [site_id, paid.message])
+		return
+	events.append(WagesPaid.new(site_id, recipe.wage_per_hour))
 
 
 ## (4) Soma `eficiência × lotes por hora` ao progresso e faz um lote por 10000 acumulados, até onde os insumos e o espaço deixam; o resto passa para a hora seguinte.

@@ -3,7 +3,7 @@ extends RefCounted
 ## O comércio entre um ator e um mercado (LW-091; docs/modules/economy.md, seção 5): `quote` (o total e a tarifa de uma ordem, sem executar) e `execute` (a ordem, ATÔMICA: toda conferência vem antes da primeira escrita, e só então o
 ## `Ledger` move o dinheiro e o `GoodsStore` move os bens). `side` = `buy` (o ator compra do mercado, paga o `ask`) ou `sell` (o ator vende ao mercado, recebe o `bid`); o total é a soma por degrau da seção 4 (a ordem "anda pela
 ## curva"). Ordem das conferências (a primeira que falha devolve o erro): mercado, bem, lado, quantidade, regras (`TradeRules`), ator, teto de compra ou estoque, fundos, capacidade. A tarifa que a regra pedir é CALCULADA e
-## devolvida, mas não é cobrada na Fase 3 (para onde ela vai é decisão da Fase 4): com a regra neutra é sempre 0.
+## devolvida, mas não é cobrada na Fase 3 (a cobrança é da LW-130 e para onde ela vai é decisão da Fase 4): com a regra neutra é sempre 0. A tarifa é o total vezes `tariff_bp`, arredondado PARA CIMA, o que já dá no mínimo 1 quando `tariff_bp` é maior que 0 (assim uma ordem pequena não escapa da tarifa, nem dividindo a compra em partes).
 
 const SIDE_BUY: String = "buy"
 const SIDE_SELL: String = "sell"
@@ -25,32 +25,38 @@ func _init(book: OwnerBook, ledger: Ledger, goods: GoodsStore, markets: MarketBo
 	_params = params
 
 
-## O total e a tarifa da ordem, sem executar. Mesmas falhas de `execute` que não dependem do ator.
+## O total e a tarifa da ordem, sem executar. Mesmas falhas de `execute`, menos as de fundos e de capacidade; o ator só é conferido quando é dado (`NO_ID` = cotação sem ator).
 func quote(market_id: int, good_id: String, quantity: int, side: String, actor_id: int = IdGenerator.NO_ID) -> Outcome:
+	return _quote(market_id, good_id, quantity, side, actor_id, actor_id != IdGenerator.NO_ID)
+
+
+## As conferências na ordem do cabeçalho: ordem (mercado, bem, lado, quantidade), regras, ator (se `check_actor`), teto de compra ou estoque.
+func _quote(market_id: int, good_id: String, quantity: int, side: String, actor_id: int, check_actor: bool) -> Outcome:
 	var checked: Result = _check_order(market_id, good_id, quantity, side)
 	if not checked.ok:
 		return Outcome.new(checked, 0, 0, 0)
 	var terms: TradeTerms = _rules.peek_terms(good_id, market_id, actor_id)
 	if terms.banned:
 		return Outcome.new(Result.failure(EconomyCodes.TRADE_BANNED, "TradeEngine.quote: as regras de comércio proíbem '%s' no mercado %d." % [good_id, market_id]), 0, 0, 0)
+	if check_actor:
+		var opened: Result = _book.check_open(actor_id)
+		if not opened.ok:
+			return Outcome.new(Result.failure(opened.code, "TradeEngine: %s" % opened.message), 0, 0, 0)
 	var stock: int = _goods.quantity_of(market_id, good_id)
 	if side == SIDE_BUY and quantity > stock:
 		return Outcome.new(Result.failure(EconomyCodes.INSUFFICIENT_STOCK, "TradeEngine.quote: o mercado %d tem %d de '%s' e a compra pede %d." % [market_id, stock, good_id, quantity]), 0, 0, 0)
 	if side == SIDE_SELL and stock + quantity > _markets.buy_cap_of(market_id, good_id):
 		return Outcome.new(Result.failure(EconomyCodes.MARKET_FULL, "TradeEngine.quote: o mercado %d tem %d de '%s' e o teto de compra é %d; a venda de %d não cabe." % [market_id, stock, good_id, _markets.buy_cap_of(market_id, good_id), quantity]), 0, 0, 0)
 	var total: int = _markets.quote_buy(market_id, good_id, quantity) if side == SIDE_BUY else _markets.quote_sell(market_id, good_id, quantity)
-	return Outcome.new(Result.success(), quantity, total, IntMath.floor_div(total * terms.tariff_bp, PriceMath.BASIS))
+	return Outcome.new(Result.success(), quantity, total, _tariff_of(total, terms.tariff_bp))
 
 
 ## Executa a ordem: tudo ou nada. Falhas: as de `quote` mais `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_INSUFFICIENT_FUNDS` (o ator compra sem dinheiro), `ECON_MARKET_NO_FUNDS` (o mercado não paga a venda),
 ## `ECON_INSUFFICIENT_GOODS` (o ator vende o que não tem) e `ECON_CAPACITY_EXCEEDED` (quem recebe não carrega o peso).
 func execute(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> Outcome:
-	var quoted: Outcome = quote(market_id, good_id, quantity, side, actor_id)
+	var quoted: Outcome = _quote(market_id, good_id, quantity, side, actor_id, true)
 	if not quoted.result.ok:
 		return quoted
-	var opened: Result = _book.check_open(actor_id)
-	if not opened.ok:
-		return Outcome.new(Result.failure(opened.code, "TradeEngine.execute: %s" % opened.message), 0, 0, 0)
 	var buying: bool = side == SIDE_BUY
 	var payer: int = actor_id if buying else market_id
 	var seller: int = market_id if buying else actor_id
@@ -65,8 +71,15 @@ func execute(actor_id: int, market_id: int, good_id: String, quantity: int, side
 	var money_ok: Result = _ledger.check_transfer(payer, payee, quoted.total, Ledger.REASON_TRADE)
 	if not money_ok.ok:
 		return Outcome.new(money_ok, 0, 0, 0)
-	_ledger.transfer(payer, payee, quoted.total, Ledger.REASON_TRADE)
-	_goods.transfer(seller, buyer, good_id, quantity)
+	var paid: Result = _ledger.transfer(payer, payee, quoted.total, Ledger.REASON_TRADE)
+	if not paid.ok:
+		return Outcome.new(paid, 0, 0, 0)
+	var delivered: Result = _goods.transfer(seller, buyer, good_id, quantity)
+	if not delivered.ok:
+		# Não deveria acontecer (o `check_transfer` dos bens passou): se acontecer, o dinheiro volta e a ordem falha inteira; se nem a volta der certo, a mensagem diz.
+		var undone: Result = _ledger.transfer(payee, payer, quoted.total, Ledger.REASON_TRADE)
+		var suffix: String = "" if undone.ok else " O dinheiro NÃO voltou: %s" % undone.message
+		return Outcome.new(Result.failure(delivered.code, "TradeEngine.execute: a entrega dos bens falhou depois do pagamento: %s%s" % [delivered.message, suffix]), 0, 0, 0)
 	return quoted
 
 
@@ -84,6 +97,13 @@ class Outcome:
 		quantity = traded_quantity
 		total = traded_total
 		tariff = traded_tariff
+
+
+## A tarifa de uma ordem: `ceil_div(total × tariff_bp, 10000)`; como o total é de 1 ou mais, com tarifa dá no mínimo 1; sem tarifa, 0.
+func _tariff_of(total: int, tariff_bp: int) -> int:
+	if tariff_bp <= 0:
+		return 0
+	return PriceMath.ceil_div(total * tariff_bp, PriceMath.BASIS)
 
 
 func _check_order(market_id: int, good_id: String, quantity: int, side: String) -> Result:

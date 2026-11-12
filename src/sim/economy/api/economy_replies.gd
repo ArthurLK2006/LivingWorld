@@ -117,7 +117,7 @@ class TradeResult:
 		tariff = traded_tariff
 
 
-## `peek_quote`: a mesma conta de `request_trade`, sem executar: o `total`, o preço médio (o total dividido pela quantidade, para baixo) e a `tariff`; só valem se `result.ok`.
+## `peek_quote(actor_id, ...)`: a mesma conta de `request_trade` para o ator, sem executar: o `total`, o preço médio (o total dividido pela quantidade, para baixo) e a `tariff`; só valem se `result.ok`.
 class QuoteQuery:
 	extends RefCounted
 
@@ -149,7 +149,7 @@ class TermsQuery:
 		needs_license = requires_license
 
 
-## `peek_site` e `peek_site_at`: um local de produção (seções 6 e 8 do contrato). `workplace_id` é o `site_id`; `worker_ids`, os trabalhadores atribuídos em ordem crescente; `running` e `reason` (`NO_WORKER`, `NO_INPUT` ou `OUTPUT_FULL` quando parado,
+## `peek_site` e `peek_site_at`: um local de produção (seções 6 e 8 do contrato). `workplace_id` é o `site_id`; `worker_ids`, os trabalhadores atribuídos em ordem crescente; `running` e `reason` (`NO_WORKER`, `NO_INPUT`, `OUTPUT_FULL` ou `NO_FUNDS` quando parado,
 ## senão vazio); `upkeep`, uma linha por regra de manutenção (`good_id`, `quantity`, `period_days`, `days_since_paid`); `stock`, o inventário do local (`good_id` e `quantity`). `result` falha com `ECON_UNKNOWN_OWNER` se não há o local (então o resto não vale).
 class SiteQuery:
 	extends RefCounted
@@ -183,3 +183,135 @@ class SitesQuery:
 
 	func _init(site_rows: Array[SiteQuery]) -> void:
 		sites = site_rows
+
+
+## `peek_post`, `peek_post_at`: um posto de serviço (LW-095; seção 6 do contrato), com os mesmos nomes do local de produção para a LW-096a pontuar a vaga sem distinguir os dois: `workplace_id` é o `post_id`; `place_id`; `settlement_id`;
+## `occupation_id` (o ofício esperado); `wage_per_hour`; `workers_wanted`; `workers_assigned`; `worker_ids`, em ordem crescente; `running` e `reason` (`NO_FUNDS` quando a conta do mercado não cobre a folha, senão vazio). O posto não tem
+## receita, eficiência nem estoque. `result` falha com `ECON_UNKNOWN_OWNER` se não há o posto (então o resto não vale).
+class PostQuery:
+	extends RefCounted
+
+	var result: Result
+	var workplace_id: int = IdGenerator.NO_ID
+	var place_id: String = ""
+	var settlement_id: String = ""
+	var occupation_id: String = ""
+	var wage_per_hour: int = 0
+	var workers_wanted: int = 0
+	var workers_assigned: int = 0
+	var worker_ids: Array[int] = []
+	var running: bool = false
+	var reason: String = ""
+
+	func _init(query_result: Result) -> void:
+		result = query_result
+
+
+## `peek_posts_of`: os postos de serviço do assentamento, por ID crescente.
+class PostsQuery:
+	extends RefCounted
+
+	var posts: Array[PostQuery]
+
+	func _init(post_rows: Array[PostQuery]) -> void:
+		posts = post_rows
+
+
+## `request_post_contract`: o resultado e o ID do contrato postado (`IdGenerator.NO_ID` se falhou).
+class PostContractResult:
+	extends RefCounted
+
+	var result: Result
+	var contract_id: int
+
+	func _init(post_result: Result, posted_contract_id: int) -> void:
+		result = post_result
+		contract_id = posted_contract_id
+
+
+## `peek_contract` e `peek_contracts` (LW-096; seção 8 do contrato): um contrato, com `kind`, `issuer_id`, `reward`, `deadline` (0 = sem prazo), `state` (`open`, `accepted`, `completed`, `failed`, `expired`) e `acceptor_id` (`IdGenerator.NO_ID` se ninguém).
+## O objetivo vem pelas chaves do tipo: `labor` (`place_id`, `minutes` e `worked_minutes`, os já trabalhados), `delivery` (`good_id`, `quantity`, `destination_id`) e, na vaga, `workplace_id` e os nomes de `peek_site` (`place_id`, `settlement_id`, `occupation_id`, `wage_per_hour`, `workers_wanted`, `workers_assigned`);
+## o que não é do tipo fica no valor vazio. `result` falha com `ECON_UNKNOWN_CONTRACT` se não há o contrato (então o resto não vale).
+class ContractQuery:
+	extends RefCounted
+
+	var result: Result
+	var contract_id: int = IdGenerator.NO_ID
+	var kind: String = ""
+	var issuer_id: int = IdGenerator.NO_ID
+	var reward: int = 0
+	var deadline: int = 0
+	var state: String = ""
+	var acceptor_id: int = IdGenerator.NO_ID
+	var place_id: String = ""
+	var minutes: int = 0
+	var worked_minutes: int = 0
+	var good_id: String = ""
+	var quantity: int = 0
+	var destination_id: int = IdGenerator.NO_ID
+	var workplace_id: int = IdGenerator.NO_ID
+	var settlement_id: String = ""
+	var occupation_id: String = ""
+	var wage_per_hour: int = 0
+	var workers_wanted: int = 0
+	var workers_assigned: int = 0
+
+	func _init(query_result: Result) -> void:
+		result = query_result
+
+
+## `peek_contracts`: os contratos que passam pelo filtro, por ID crescente.
+class ContractsQuery:
+	extends RefCounted
+
+	var contracts: Array[ContractQuery]
+
+	func _init(contract_rows: Array[ContractQuery]) -> void:
+		contracts = contract_rows
+
+
+## `request_consume`: o que o consumo fez: a quantidade consumida, o id da necessidade que o bem alivia (`need_id` de `goods.json`) e o alívio total (`need_relief` × quantidade) para o `npc` aplicar; só valem se `result.ok`.
+class ConsumeResult:
+	extends RefCounted
+
+	var result: Result
+	var quantity: int
+	var need_id: String
+	var relief: int
+
+	func _init(consume_result: Result, consumed_quantity: int, relieved_need_id: String, total_relief: int) -> void:
+		result = consume_result
+		quantity = consumed_quantity
+		need_id = relieved_need_id
+		relief = total_relief
+
+
+## `peek_good`: a ficha de um bem (`need_id` e `need_relief` só valem para comida: texto vazio e 0 nos outros); `result` falha com `ECON_UNKNOWN_GOOD`.
+class GoodQuery:
+	extends RefCounted
+
+	var result: Result
+	var good_id: String
+	var need_id: String
+	var need_relief: int
+	var base_value: int
+	var weight: int
+
+	func _init(query_result: Result, queried_good_id: String = "", relieved_need_id: String = "", relief: int = 0, value: int = 0, unit_weight: int = 0) -> void:
+		result = query_result
+		good_id = queried_good_id
+		need_id = relieved_need_id
+		need_relief = relief
+		base_value = value
+		weight = unit_weight
+
+
+## `peek_goods_for_need`: os bens que aliviam a necessidade, por `good_id` crescente (lista vazia se nenhum).
+class GoodsQuery:
+	extends RefCounted
+
+	var goods: Array[GoodQuery]
+
+	func _init(found_goods: Array[GoodQuery]) -> void:
+		goods = found_goods
+

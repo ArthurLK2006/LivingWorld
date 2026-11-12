@@ -206,9 +206,27 @@ func _relieving_actions(state: NpcState) -> Array[ActionDef]:
 	if urgent_ids.is_empty():
 		return relieving
 	for action: ActionDef in _actions:
-		if _relieves(action, urgent_ids):
+		if _relieves(action, urgent_ids) or _buy_relieves(state, action, urgent_ids):
 			relieving.append(action)
 	return relieving
+
+
+## `buy` não tem efeito na tabela: o valor dela é DERIVADO do alívio da comida que o NPC pode comprar (LW-093, Q19). Alivia a fome se ela está urgente e a compra vale a pena.
+func _buy_relieves(state: NpcState, action: ActionDef, urgent_ids: Array[String]) -> bool:
+	return action.id == NpcTrade.BUY_ACTION_ID and urgent_ids.has(NpcTrade.FOOD_NEED_ID) and _provider.buy_value(state.npc_id) > 0
+
+
+## A ação como o pontuador a vê: `buy` ganha um efeito derivado (o valor da compra sobre a fome), sem tocar na do catálogo; as outras, como são. `null` se `buy` não vale nada agora.
+func _for_scoring(state: NpcState, action: ActionDef) -> ActionDef:
+	if action.id != NpcTrade.BUY_ACTION_ID:
+		return action
+	var value: int = _provider.buy_value(state.npc_id)
+	if value <= 0:
+		return null
+	var derived: ActionDef = ActionDef.new(action.id, action.duration_min, action.place_kind, action.risk, action.interruptible)
+	derived.trait_weights = action.trait_weights
+	derived.effects.append(ActionDef.ActionEffect.new(NpcTrade.FOOD_NEED_ID, -value))
+	return derived
 
 
 ## O NPC já está andando para o local da ação escolhida? Então segue andando: recomeçar a caminhada a cada pensamento nunca a terminaria
@@ -236,7 +254,10 @@ func _candidate_for(state: NpcState, action: ActionDef, now: int, running: bool,
 			return null
 		if needs_place:
 			distance_cm = _distance_cm(state, place_id)
-	var scored: UtilityScorer.ScoreBreakdown = _scorer.score(state, action, distance_cm, is_current, action.id == routine_action)
+	var scoring_action: ActionDef = _for_scoring(state, action)
+	if scoring_action == null:
+		return null
+	var scored: UtilityScorer.ScoreBreakdown = _scorer.score(state, scoring_action, distance_cm, is_current, action.id == routine_action)
 	if not scored.result.ok:
 		return null
 	return Candidate.new(action, place_id, scored.total, is_current, scored, needs_place)
@@ -424,18 +445,51 @@ class ConditionProvider:
 	var _occupancy: PlaceOccupancy
 	var _food: ActionConditionProvider
 	var _income: IncomeStub
+	var _trade: NpcTrade
+	## A conclusão que acabou de tirar comida do inventário do NPC: o `FoodStub` não consome a refeição de novo (LW-093).
+	var _food_from_inventory: bool = false
 
-	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, income: IncomeStub = null) -> void:
+	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, income: IncomeStub = null, trade: NpcTrade = null) -> void:
 		_places = places
 		_occupancy = occupancy
 		_food = food
 		_income = income
+		_trade = trade
 
 	func has_food(settlement_id: String) -> bool:
 		return _food != null and _food.has_food(settlement_id)
 
-	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só o FoodStub, TEMP-LW-065).
+	## Comida PARA O NPC (LW-093): a do inventário dele, na economia, ou, na falta, a do assentamento (o `FoodStub` de reserva).
+	func npc_has_food(npc_id: int, settlement_id: String) -> bool:
+		return (_trade != null and _trade.has_food(npc_id)) or has_food(settlement_id)
+
+	func can_buy_food(npc_id: int) -> bool:
+		return _trade != null and not _trade.plan_food(npc_id).is_empty()
+
+	func has_goods(npc_id: int) -> bool:
+		return _trade != null and _trade.has_goods(npc_id)
+
+	## O valor derivado de `buy` para o NPC (0 = não há compra que valha).
+	func buy_value(npc_id: int) -> int:
+		return 0 if _trade == null else _trade.buy_value(npc_id)
+
+	## A necessidade que a conclusão da ação vai aliviar pela economia (só o `eat` do inventário); vazio se nenhuma. Não muda nada: o runner a confere antes de `complete_action`.
+	func completion_need_id(npc_id: int, action_id: String) -> String:
+		return "" if _trade == null else _trade.completion_need_id(npc_id, action_id)
+
+	## A ação completa do NPC na economia (comprar, comer do inventário, vender); sem economia nada.
+	func complete_action(npc_id: int, action_id: String) -> ActionConditionProvider.Completion:
+		if _trade == null:
+			return ActionConditionProvider.Completion.new()
+		var completion: ActionConditionProvider.Completion = _trade.complete(npc_id, action_id)
+		_food_from_inventory = completion.consumed_from_inventory
+		return completion
+
+	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só o FoodStub, TEMP-LW-065), menos quando a comida saiu do inventário do NPC.
 	func on_action_completed(action_id: String, settlement_id: String, occupation_id: String) -> void:
+		if _food_from_inventory:
+			_food_from_inventory = false
+			return
 		if _food != null:
 			_food.on_action_completed(action_id, settlement_id, occupation_id)
 
