@@ -1,4 +1,72 @@
-12/11/2026 07:02 (Brasília) · Arthur AUTORIZOU a lista da LW-094 (12/11, 07:00), mas a LW-094 só começa com a LW-097 da C no `main` (DEC-236): o `main` segue em 885615c e a Fase B da C está bloqueada por 2 testes da economia da A, à espera do seu "autorizo trocar os números desses 2 testes". Sem a produção nos dados o jogo real e o soak de 7 dias morrem de fome. Premissas e plano no topo do relatório
+12/11/2026 07:52 (Brasília) · BLOCO A v11 CONCLUÍDO · PRONTA PARA REVISÃO (07:52): os 6 itens feitos em 5 ramos lw-096h a lw-096l a partir de 885615c, todos com `check_all` VERDE (a última ponta: 166 scripts, 1.405 testes), 9 valores do oráculo e `run_sim` IGUAIS, nada no `main`. Só 1 teste existente trocado (o autorizado no item 6). PEÇO: a sua resposta à pergunta de design da custódia do emissor morto (seção 9: opções A a D, recomendo B) e o "autorizo" da C para as 2 testes. LW-094 e IncomeStub NÃO iniciadas
+
+# RELATÓRIO — Bloco A v11 (consertos das revisões da B)     Status: PRONTA PARA REVISÃO
+
+## 1. RESUMO
+Fiz os seis itens do v11 em cinco ramos empilhados a partir de `origin/main` (`885615c`), todos enviados, **nada no `main`**, sem tag, sem `--force` e sem apagar ramo. Cada parte tem `check_all` VERDE, `run_sim` e os 9 valores do oráculo IGUAIS (nenhum hash mudou). **Nenhum teste existente foi alterado, exceto o que você autorizou no item 6.** Terminei às 07:52, bem antes das 13:00. A LW-094 e a retirada do `IncomeStub` NÃO foram iniciadas (item 7).
+
+## 2. RAMOS (empilhados; arquivos e linhas contam código, teste e dados, sem docs, README e `.uid`)
+| Item | Ramo / commit | O que é | Arquivos / linhas |
+|---|---|---|---|
+| 1 (R13-I1, R14-I1) | `lw-096h-ids-sem-gasto` `0c8e73a` | `request_post_contract` valida ANTES de pedir o ID (`ContractBook.check_post`); teste NOVO do contador de IDs | 3 / +103 −13 |
+| 2 (R18-I1) | `lw-096i-empregado-pelo-work-place` `7e39b80` | empregado = quem tem `work_place_id`; local que a economia não conhece não faz o NPC contar como desempregado | 2 / +118 −4 |
+| 3 e 4 (R15-I1, R8-M1, R8-M2) | `lw-096j-resumo-dos-postos-e-folha` `00481f1` | frase da custódia no `economy.md`; `service_posts` no `debug_summary`; folha tudo ou nada | 3 / +111 −3 |
+| 6 (R6-I1 completo) | `lw-096k-sinalizador-da-comida` `542220b` | o runner decide pelo resultado da conclusão; sinalizador `_food_from_inventory` removido; teste trocado (autorizado) | 4 / +14 −16 |
+| 5 (PostLoader) | `lw-096l-post-loader` `e6bc3ec` | `PostLoader` e ligação no `EconomySetup`; sem nenhum dado novo | 3 / +210 −1 |
+
+## 3. DECISÕES E COMO CUMPRI CADA ITEM
+- **Item 1.** Separei a validação do post: `check_post` (mesmas falhas, mesma ordem) vem antes de `_ids.next_id()`. Você pediu "acrescente ao teste das recusas" e também "teste NOVO; nenhum teste existente alterado": fiz um teste NOVO (`test_contract_post_ids.gd`) com as mesmas recusas do teste da porta, comparando `ids.serialize()` antes e depois de cada uma, e mostrando que um post que dá certo gasta exatamente UM ID. O teste da porta ficou como estava.
+- **Item 2.** `NpcEmployment._current_employment`: com `work_place_id` preenchido o NPC é empregado; se a economia o lista, a utilidade é a do local, senão vale 0 (e a histerese vale). Testes novos incluem o caso do posto sem `service_posts.json` (nenhum posto nos dados): o guarda de local desconhecido NÃO pega a vaga de 16 (abaixo da histerese de 20), o desempregado de verdade pega, e o artesão do mesmo local desconhecido troca quando o bônus de ofício leva o ganho acima de 20. **Os 11 testes de `test_npc_vacancy.gd` continuaram passando sem alteração** (nenhum quebrou, então não precisei parar).
+- **Item 3.** A frase do `economy.md` (seção 8) agora diz o que o código faz (custódia volta ao emissor vivo; emissor morto: fica na conta fechada, [LIM]). O código não mudou. A pergunta de design está na seção 9.
+- **Item 4 (R8-M2).** O `debug_summary()` mostra `service_posts`. **A chave só aparece quando há postos**, porque `test_economy_debug_and_kinds.gd` compara o resumo inteiro em 3 pontos (sem postos) e nenhum teste existente pode mudar. Se você quiser a chave SEMPRE presente (mais regular para o painel), preciso da sua autorização para trocar essas 3 linhas (39, 43 e 50 do arquivo). **R8-M1:** em vez de só testar o erro, fiz o menor conserto real: `WagePayer.pay` confere o saldo da folha inteira e cada transferência antes de mover a primeira, e `can_pay` já recusa o que o `Ledger` recusaria; teste novo com um trabalhador no teto de saldo (ninguém recebe, o posto para por `NO_FUNDS`, sem erro no log).
+- **Item 6.** O runner guarda `Completion.consumed_from_inventory` e nem chama o gancho do `FoodStub` nesse caso; o `ConditionProvider` ficou sem estado. **Troquei só** `test_the_food_stub_only_consumes_when_the_food_did_not_come_from_the_inventory` (`test_npc_trade.gd`), por uma versão que passa pelo runner; nenhum outro teste mudou; hashes iguais.
+- **Item 5.** `PostLoader` valida campos, faixas, texto em branco e um posto por local, com arquivo, item e campo nas mensagens. **O arquivo é opcional** (sem ele não há posto; o jogo e o `data/` ficaram como estavam; não criei `service_posts.json`). O `EconomySetup` leva os postos às definições e recusa o local que tem posto e local de produção.
+
+## 4. TESTES (`tools/check_all`, resultados reais; todos EXIT 0, zero avisos)
+| Ponta | Commit | Scripts | Testes | Asserts |
+|---|---|---|---|---|
+| base do `main` | `885615c` | 162 | 1.391 | 294.336 |
+| item 1 | `0c8e73a` | 163 | 1.393 | 294.366 |
+| item 2 | `7e39b80` | 164 | 1.396 | 294.389 |
+| itens 3 e 4 | `00481f1` | 165 | 1.400 | 294.423 |
+| item 6 | `542220b` | 165 | 1.400 | 294.427 |
+| item 5 | `e6bc3ec` | 166 | 1.405 | 294.520 |
+**Mutações** (todas pegas): item 1 (ID antes da validação; sem checagem de saldo), item 2 (regra antiga; local vazio contado; sem histerese), itens 3 e 4 (5 mutantes na folha e no resumo; a mutação "chave sempre presente" quebra o teste existente, o que confirma a decisão da chave condicional), item 6 (gancho sempre, nunca, sinalizador não ligado) e item 5 (6 mutantes do carregador e da ligação).
+
+## 5. VALORES DE REFERÊNCIA
+Nenhum mudou. `run_sim --days 30 --seed 1`: `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, igual em todas as pontas. Os 9 valores do oráculo, conferidos no arquivo em cada ponta, são os de `885615c` (`8670b52b8ff6`, `b62628f049b0`, `1251aaf06e2d`, `6889619788b5`, `a8a97e95f464`, `781066cec584`, `ed884fc6fb21`, `f11a33ea9ab0`, `76a65b9cfc8a`).
+
+## 6. PROBLEMAS
+Nenhum `check_all` ficou vermelho nesta rodada. Dois ajustes meus no caminho (nos meus testes novos, antes do commit): o teste do item 4 mintava o saldo no teto do `Ledger` pelo motivo `game_start`, que já tinha 1.000 criados e estourava o contador, e passou a usar o motivo `trade`; o teste do item 6 usava `advance(NPC, 20)` duas vezes quando o segundo argumento é o MINUTO (corrigi para 40).
+
+## 7. RISCOS
+Todos estes ramos estão só no GitHub e empilhados em `885615c`; o `main` pode andar (a C junta a LW-097), então cada um precisará de junção quando você mandar levar ao `main`. A troca do teste do item 6 é a única mudança num teste existente.
+
+## 8. COMO TRATEI O ITEM 7 (ratificação das listas)
+Registrei: a "Preparação da manhã" (a) e (c) do `STATUS-A.md` (abaixo) está ratificada com as premissas de menor dano e as duas recomendações (comida dos mundos de teste sem economia vem da economia real e dos locais de produção da C; `has_food(settlement)` fica como interface). Os valores novos do oráculo ficam para você aprovar depois que eu os medir. **Isto não inicia a LW-094 nem o `IncomeStub`.**
+
+## 9. PERGUNTA DE DESIGN PARA VOCÊ (item 3): para onde vai a custódia de um contrato cujo emissor morreu?
+**O problema.** O contrato retém a recompensa numa conta de custódia. Se o prazo vence ou o contrato falha e o emissor já morreu, a conta dele está fechada e o `Ledger` não aceita transferência para dono fechado. Hoje o dinheiro **fica na conta do contrato para sempre** (continua contado no teste de ouro, mas parado). O Q14 prometia que a custódia "nunca fica retida".
+**Opções:**
+- **A. Continua retida (como está).** Simples e sem regra nova; o dinheiro some da circulação para sempre. Fraqueza: quebra o Q14 e, com muitos contratos de emissores mortos, drena a economia aos poucos.
+- **B. Vai para o mercado do povoado do contrato** (`labor`: o povoado do local de trabalho; `delivery`: o povoado do destino, se o destino for um mercado ou tiver povoado conhecido pela economia). O dinheiro volta à circulação, sem sumidouro. Custo: uma regra de "qual povoado" (a economia sabe pelo local de produção ou posto e pelos mercados) e um caso de reserva para quando o povoado não é conhecido (fica retida como em A); uns 40 a 60 linhas e testes.
+- **C. Vai ao aceitante**, se já há aceitante (premia quem assumiu o risco), e ao mercado como em B se não há. Fraqueza: incentivo ruim (alguém "aceitar" contrato só para herdar o dinheiro do emissor moribundo) e mexe com a regra "um trabalho, um pagamento".
+- **D. Destruir (`burn`).** Fere a decisão "nenhum `burn` na Fase 3" e a conservação passaria a depender de um sumidouro.
+**Minha recomendação: B**, com a reserva A para o povoado desconhecido, e na Fase 4 trocar o destino para o tesouro da polity (que a Fase 4 já prevê para a folha). Como contrato com emissor morto é raro (só jogador e facções postam contratos nas fases seguintes), A é aceitável por ora; se preferir não gastar código agora, deixe A e eu só mantenho a frase corrigida do `economy.md`.
+
+## 10. PENDÊNCIAS (suas)
+1. Responder a pergunta da seção 9 (A, B, C ou D).
+2. Dizer se quer a chave `service_posts` SEMPRE presente no `debug_summary` (exige autorizar a troca de 3 linhas de `test_economy_debug_and_kinds.gd`).
+3. Aprovar levar estes cinco ramos ao `main` quando quiser (a junção depende de onde a C estiver).
+4. Continua em pé a espera da LW-097 da C no `main` (a Fase B dela segue bloqueada por 2 testes da economia da A, à espera do seu "autorizo").
+
+## ACOMPANHAMENTO
+- **Avanço:** o v11 está completo; marco 2 no `main` (`885615c`) mais cinco ramos de conserto só no GitHub.
+- **Próxima tarefa recomendada:** LW-094 e o `IncomeStub`, só com novo bloco seu, depois da LW-097 no `main`. Não iniciadas.
+- **Git:** ramos novos `lw-096h` a `lw-096l` enviados; `main` intocado (`885615c`); sem tag, sem `--force`, rebase, reset nem ramo apagado; commit e push só dos ramos e do `status-a`.
+
+---
+# RELATÓRIO ANTERIOR (bloco A v10) E O QUE SEGURA A LW-094, mantidos abaixo
 
 # RELATÓRIO — LW-095 (só código), LW-096 (partes a a e), LW-096a, 093k e as duas Fases B     Status: PRONTA PARA REVISÃO
 
