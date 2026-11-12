@@ -1,4 +1,35 @@
-11/11/2026 22:25 (Brasília) — LW-118 PRONTA PARA REVISÃO, só em ramos (118a 6eb1ba0, 118b 5f352a7, 118c 4e8ce98, 118d 15b95d4, empilhados na ponta da 097e 4e614b5; nada no main); check_all VERDE em cada parte (118d: 153 scripts, 1.390 testes, 296.671 asserts); nenhum teste existente mudou; nenhum hash mudou. PENDENTE DE VOCÊ: a Fase B da LW-097 segue BLOQUEADA (2 testes da A: autorizar a troca dos números, patch pronto; o main já andou para 885615c, então refaço a junção). Parei (fim da cadeia da noite). Sem tag, sem --force, main intocado por mim além da 117i. Nada rodando.
+BLOQUEADA — 12/11/2026 07:12 (Brasília) — Fase B da LW-097, 2ª tentativa (contra o main 885615c, com as suas 2 autorizações: troca dos 2 testes e resolução do conflito de test_economy_production_api): oráculo provado e estável, conflitos resolvidos, MAS o check_all da junção dá 32 falhas em testes que o bloco não lista (31 da A, de LW-095/096, mais 1 meu): todas porque o jogo real agora tem o 3º mercado, 14 locais de produção que pagam salário e vagas (os IDs deslocam, e o salário aparece). Nada commitado nem enviado; main intocado. Preciso da sua autorização para ajustar esses 7 arquivos de teste (lista exata e patch no relatório). Sem tag, sem --force. Nada rodando.
+
+# LW-097, Fase B (2ª tentativa) — RELATÓRIO — BLOQUEADA        Status: BLOQUEADA (pronta para a sua decisão)
+
+**Contexto.** Você autorizou (1) trocar os números dos 2 testes da A e (2) resolver o conflito mecânico de `tests/unit/test_economy_production_api.gd`. Refiz a junção contra o `main` atual, `885615c` (A já com LW-093 a LW-096a): `git merge --no-ff --no-commit origin/main` no worktree `.worktrees/lw-097e`, sem commit e sem push.
+
+## 1. O QUE FICOU PRONTO
+- **9 conflitos resolvidos:** os 5 da sua lista (`game_app.gd` e `simulation_host.gd` com a assinatura única `start_new_game(…, economy_setup, world_setup)`, oráculo, `world.md` com Q-W4 "3 linhas", `data/world/README.md`), o de `test_economy_production_api.gd` (ficam as linhas da A, com a troca de IDs 3→4 e 4→5 da 097e) e 3 de documento (`docs/events.md`, `docs/modules/npc.md`, `src/sim/economy/README.md`, mantidos os dois lados).
+- `c_market_01` agora `market`; as 2 trocas de números autorizadas aplicadas (`test_game_economy_wiring` e `test_economy_start_money_and_consume`); teste novo do jogo real (`test_real_game_has_routes_and_economy.gd`).
+- **Oráculo (marco 3), as mesmas três árvores de antes, as constantes da A não mudaram no `main` atual:** só A = `8670b52b8ff6`, `b62628f049b0`, `1251aaf06e2d`, `6889619788b5`, `a8a97e95f464`, `781066cec584`, `ed884fc6fb21`, `f11a33ea9ab0`, `76a65b9cfc8a` (intents, alarm, resumed, switches, talk, save, demote, starved, real_game); só C = os da 097d; **junção = `38bafd6df46c`, `bf3123d575c1`, `4b13a9641b08`, `2b9109b362df`, `9089c5eb9181`, `b8ab78052427`, `23025197b9e1`, `756ad4098135`, `34d6dc4bfe0b`**. Duas execuções seguidas dão os mesmos nove; neutralizando as causas da C na junção (FoodStub do C, população, ofícios, agendas, locais, povoados e o módulo `world`) os nove voltam exatamente aos da A. O oráculo passa (2 de 2) na junção com os valores novos.
+
+## 2. O QUE BLOQUEOU: `check_all` VERMELHO, 32 falhas fora da lista
+`tools/check_all` na junção: GDScript sem avisos (414 scripts), 169 scripts, **1.444 testes, 1.412 aprovados, 32 falhos**. A causa é uma só família: o jogo de teste da economia usa os dados reais, e agora o 3º mercado ocupa o ID 3 e os **14 locais de produção (que pagam salário, LW-095) e as vagas (LW-096e)** passam a existir.
+
+| Arquivo (teste existente) | Falhas | Causa | Ajuste que verifiquei ou proponho |
+|---|---|---|---|
+| `tests/unit/test_site_payroll.gd` (A) | 5 | `SITE_BREAD = 3`, agora 4 | `SITE_BREAD` 3→4 (**verificado: 7 de 7 passam**) |
+| `tests/unit/test_contract_vacancies.gd` (A) | 9 | `SITE = 3` e `POST = 4` | 3→4 e 4→5 (**verificado: 9 de 9**) |
+| `tests/unit/test_npc_vacancy.gd` (A) | 9 | `SITE = 3` e `POST = 4` | 3→4 e 4→5 (**verificado: 11 de 11**) |
+| `tests/unit/test_service_posts.gd` (A) | 5 | injeta só os postos, e os 14 locais reais vêm antes deles nos IDs | acrescentar `production_sites = []` em `_definitions` (como o teste de posts já supõe "sem local de produção"); **não verificado** |
+| `tests/unit/test_service_post_queries.gd` (A) | 2 | idem | idem; **não verificado** |
+| `tests/integration/test_npc_buys_food.gd` (A) | 1 | os locais reais agora pagam salário: os motivos de dinheiro são `game_start`, `salary` e `trade` | esperar também `salary` (com comentário); **não verificado** |
+| `tests/unit/test_economy_production_api.gd` (**meu**, da 097e) | 1 | o próximo ID livre do jogo real é 32 (3 mercados, 14 locais e 14 vagas), não 18 | 18→32 com a explicação; **não verificado** |
+
+Nenhuma verificação some: são IDs e a lista de motivos de dinheiro que passam a refletir os dados reais da LW-097. O diretório de trabalho voltou a ter só as 2 trocas autorizadas (os ajustes de tentativa foram desfeitos).
+
+## 3. ESTADO E COMO CONTINUAR
+- Junção sem commit em `.worktrees/lw-097e` (conflitos resolvidos, nada em `git add`); cópia: `…/scratchpad/juncao_097_v2_sem_commit.patch`. Se o `main` andar, a junção se refaz com os mesmos passos.
+- **Preciso de uma autorização escrita:** ajustar os 7 arquivos da tabela acima (ou outro caminho que você prefira). Depois: aplico, `check_all` verde, commit da junção, B1 (linha de status, nenhuma contagem muda), B3 (push do ramo e `…:main` só por avanço simples).
+- LW-118 (4 ramos, relatório anterior) não depende disso e segue pronta.
+
+---
 
 # LW-118 — RELATÓRIO — Culturas, províncias, adjacência e ligação povoado → província no `world`        Status: PRONTA PARA REVISÃO (ramos; nada no `main`)
 
