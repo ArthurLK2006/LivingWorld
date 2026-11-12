@@ -1,6 +1,6 @@
 # LIVING WORLD — REGISTRO OFICIAL DE DECISÕES (DECISIONS.md)
 
-**Versão do documento:** 0.11 (11/11/2026; LW-146a: registro das decisões de jogo de Arthur sobre a Fase 5, DEC-179 a DEC-201, DEC-065 aprovada, notas nas DEC-053, 029, 030 e 066 e totais recontados; a 0.10 é do mesmo dia (LW-087a, rodada 5: 35 decisões do pré-voo da Fase 3 aprovadas por Arthur em bloco, frase do `run_sim` corrigida e totais recontados; a 0.9 é de 10/11/2026 (LW-087a)); ver seção 8)
+**Versão do documento:** 0.16 (11/11/2026; LW-117i: registro das ordens de Arthur de 11/11/2026 sobre a LW-097 e a ordem da Fase 3, DEC-234 (PROPOSTA) e DEC-235 e DEC-236 (APROVADAS), a nota da DEC-053 restaurada, "próximo número livre" em DEC-237 e totais recontados; a 0.15 é do mesmo dia (LW-117h, Fase B: junção das fichas da Fase 4 (DEC-202 a DEC-233) com o registro da Fase 5 (DEC-179 a DEC-201), sem entrada nova nem mudança de status, totais recontados, "próximo número livre" em DEC-234 e as faixas de números por frente; a 0.14 é do mesmo dia (LW-117g: sete decisões de Arthur sobre a revisão independente das fichas e o plano de hash, DEC-227 a DEC-233; a 0.13 é do mesmo dia (LW-117a, rodada 2: três decisões de Arthur sobre a seção 17 do contrato da economia, DEC-224 a DEC-226; a 0.12 é do mesmo dia (LW-117a: registro das respostas de Arthur sobre a Fase 4, DEC-202 a DEC-223 (os números DEC-179 a DEC-201 ficam reservados ao registro da Fase 5), notas nas DEC-050, 051, 053, 055, 155 e 164 e totais recontados); a 0.11 é do mesmo dia (LW-146a: registro das decisões de jogo de Arthur sobre a Fase 5, DEC-179 a DEC-201, DEC-065 aprovada, notas nas DEC-053, 029, 030 e 066 e totais recontados); a 0.10 é do mesmo dia (LW-087a, rodada 5: 35 decisões do pré-voo da Fase 3 aprovadas por Arthur em bloco, frase do `run_sim` corrigida e totais recontados; a 0.9 é de 10/11/2026 (LW-087a)); ver seção 8))))
 **Data de criação:** 01/11/2026 (horário de Brasília)
 **Responsável pela decisão:** Arthur (dono do produto). **Somente ele aprova.**
 **Função deste documento:** ser a **fonte oficial** do que está decidido, proposto, pendente, descartado ou substituído nos projetos de design e de tecnologia do Living World, para evitar contradições futuras entre o Briefing, o GDD, a arquitetura, o roadmap e o trabalho dos agentes de IA.
@@ -54,7 +54,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ## 1. ÍNDICE POR ÁREA E STATUS
 
-**Totais atualizados em 11/11/2026 (LW-146a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 130 (20 com ressalva) · PROPOSTA: 43 · PENDENTE: 17 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 201**. Desde a LW-087a (rodada 5): **9 entradas novas APROVADAS por Arthur** (DEC-179 a DEC-187, as respostas Q1 a Q10 do pré-voo da Fase 5), **14 entradas novas PROPOSTA** (DEC-188 a DEC-201: as quatro respostas em aberto e as técnicas Q11 a Q20) e a **DEC-065 passou de PENDENTE a APROVADA** (dois modos de morte, DEC-181); nenhuma ressalva nova. As DEC-053, DEC-029, DEC-030 e DEC-066 ganharam nota datada e **seguem PENDENTES**; a DEC-099 não mudou. **Totais atualizados em 11/11/2026 (LW-087a, rodada 5, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 120 (20 com ressalva) · PROPOSTA: 29 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 4: as 35 entradas DEC-138 a DEC-141, DEC-145 a DEC-162 e DEC-165 a DEC-177 passaram de PROPOSTA a APROVADA por Arthur (em bloco, em 11/11/2026); nenhuma entrada nova e nenhuma ressalva nova. Esta aprovação não autoriza editar fixture protegida (DEC-172) e não transforma valor [HIP] em requisito. **Totais atualizados em 10/11/2026 (LW-087a, rodada 4, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 85 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 3: 1 entrada APROVADA por Arthur (DEC-178); nenhuma PROPOSTA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 3, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 177**. Desde a rodada 2: 4 entradas PROPOSTA decididas pelo revisor (DEC-174 a DEC-177); nenhuma APROVADA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 2, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 60 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 173**. Desde a rodada 1: 2 entradas APROVADAS por Arthur (DEC-163 e DEC-164) e 9 PROPOSTA decididas pelo revisor (DEC-165 a DEC-173); nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 82 (20 com ressalva) · PROPOSTA: 51 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 162**. Desde a LW-085e: a DEC-047, a DEC-049 e a DEC-054 passaram de PROPOSTA a APROVADA; entraram 12 entradas APROVADAS por Arthur (DEC-129 a DEC-137 e DEC-142 a DEC-144) e 22 entradas PROPOSTA decididas pelo revisor (DEC-138 a DEC-141 e DEC-145 a DEC-162); a ressalva nova é a DEC-129 (valores seguem [HIP]). **Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
+**Totais atualizados em 11/11/2026 (LW-117i, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 153 (20 com ressalva) · PROPOSTA: 55 · PENDENTE: 17 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 236**. Desde a LW-117h: **3 entradas novas**, a DEC-234 (PROPOSTA, de Arthur, nunca APROVADA) e a DEC-235 e a DEC-236 (APROVADAS por Arthur em 11/11/2026); nenhuma ressalva nova e nenhuma mudança de status. **Totais atualizados em 11/11/2026 (LW-117h, junção da Fase 4 com a Fase 5, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 151 (20 com ressalva) · PROPOSTA: 54 · PENDENTE: 17 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 233**. A junção não cria nem muda entrada: soma as 23 entradas da Fase 5 (DEC-179 a DEC-201: 9 APROVADAS e 14 PROPOSTA; a DEC-065 já veio APROVADA do registro da Fase 5) às 32 da Fase 4 (DEC-202 a DEC-233: 21 APROVADAS e 11 PROPOSTA). **Totais atualizados em 11/11/2026 (LW-117g, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 141 (20 com ressalva) · PROPOSTA: 40 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 210**. Desde a rodada 2 da LW-117a: **7 entradas novas APROVADAS por Arthur** (DEC-227 a DEC-232, as respostas à revisão independente, e a DEC-233, os marcos de hash); nenhuma PROPOSTA nova e nenhuma ressalva nova. As contagens seguem sem o registro da Fase 5 (DEC-179 a DEC-201). **Totais atualizados em 11/11/2026 (LW-117a, rodada 2, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 134 (20 com ressalva) · PROPOSTA: 40 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 203**. Desde a rodada 1: **3 entradas novas APROVADAS por Arthur** (DEC-224 a DEC-226, os pontos 1 a 3 de 17.11 da seção 17 do contrato da economia); nenhuma PROPOSTA nova e nenhuma ressalva nova. As contagens seguem sem o registro da Fase 5 (DEC-179 a DEC-201). **Totais atualizados em 11/11/2026 (LW-117a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 131 (20 com ressalva) · PROPOSTA: 40 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 200**. Desde a rodada 5 da LW-087a: **11 entradas novas APROVADAS por Arthur** (DEC-202 a DEC-212, as respostas Q1 a Q10 e Q22 do pré-voo da Fase 4) e **11 entradas novas PROPOSTA** (DEC-213 a DEC-223, as técnicas Q11 a Q21, decididas pelo revisor por pedido de Arthur); nenhuma ressalva nova. As DEC-053 e DEC-055 ganharam nota datada e **seguem PENDENTES**; a DEC-040 não mudou. Esta contagem parte do `main` de 11/11/2026 e **não inclui** o registro da Fase 5 (DEC-179 a DEC-201), feito em paralelo. **Totais atualizados em 11/11/2026 (LW-146a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 130 (20 com ressalva) · PROPOSTA: 43 · PENDENTE: 17 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 201**. Desde a LW-087a (rodada 5): **9 entradas novas APROVADAS por Arthur** (DEC-179 a DEC-187, as respostas Q1 a Q10 do pré-voo da Fase 5), **14 entradas novas PROPOSTA** (DEC-188 a DEC-201: as quatro respostas em aberto e as técnicas Q11 a Q20) e a **DEC-065 passou de PENDENTE a APROVADA** (dois modos de morte, DEC-181); nenhuma ressalva nova. As DEC-053, DEC-029, DEC-030 e DEC-066 ganharam nota datada e **seguem PENDENTES**; a DEC-099 não mudou. **Totais atualizados em 11/11/2026 (LW-087a, rodada 5, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 120 (20 com ressalva) · PROPOSTA: 29 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 4: as 35 entradas DEC-138 a DEC-141, DEC-145 a DEC-162 e DEC-165 a DEC-177 passaram de PROPOSTA a APROVADA por Arthur (em bloco, em 11/11/2026); nenhuma entrada nova e nenhuma ressalva nova. Esta aprovação não autoriza editar fixture protegida (DEC-172) e não transforma valor [HIP] em requisito. **Totais atualizados em 10/11/2026 (LW-087a, rodada 4, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 85 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 178**. Desde a rodada 3: 1 entrada APROVADA por Arthur (DEC-178); nenhuma PROPOSTA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 3, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 64 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 177**. Desde a rodada 2: 4 entradas PROPOSTA decididas pelo revisor (DEC-174 a DEC-177); nenhuma APROVADA nova e nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, rodada 2, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 84 (20 com ressalva) · PROPOSTA: 60 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 173**. Desde a rodada 1: 2 entradas APROVADAS por Arthur (DEC-163 e DEC-164) e 9 PROPOSTA decididas pelo revisor (DEC-165 a DEC-173); nenhuma ressalva nova. **Totais atualizados em 10/11/2026 (LW-087a, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 82 (20 com ressalva) · PROPOSTA: 51 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 162**. Desde a LW-085e: a DEC-047, a DEC-049 e a DEC-054 passaram de PROPOSTA a APROVADA; entraram 12 entradas APROVADAS por Arthur (DEC-129 a DEC-137 e DEC-142 a DEC-144) e 22 entradas PROPOSTA decididas pelo revisor (DEC-138 a DEC-141 e DEC-145 a DEC-162); a ressalva nova é a DEC-129 (valores seguem [HIP]). **Totais atualizados em 10/11/2026 (LW-085e, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 67 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 128**. As 3 aprovadas a mais desde a LW-071f são a DEC-126, a DEC-127 e a DEC-128; nenhuma ressalva nova. **Totais atualizados em 09/11/2026 (LW-071f, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 64 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 125**. As 2 aprovadas a mais desde a LW-071b são a DEC-124 e a DEC-125; nenhuma ressalva nova. **Totais de 09/11/2026 (LW-071b, recontados a partir das linhas das tabelas abaixo, pelo mesmo método da LW-033A):** APROVADA: 62 (19 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 123**. As 5 aprovadas a mais desde a LW-033A são a DEC-119, a DEC-120, a DEC-121, a DEC-122 e a DEC-123; as 3 ressalvas a mais são a DEC-121, a DEC-122 e a DEC-123. **Totais de 05/11/2026 (LW-033A, recontados a partir das linhas das tabelas abaixo):** APROVADA: 57 (16 com ressalva) · PROPOSTA: 32 · PENDENTE: 18 · DESCARTADA: 10 · SUBSTITUÍDA: 1 · **Total: 118**. Antes da LW-033A as tabelas somavam 52 (15 com ressalva) · 32 · 19 · 10 · 1 = 114; a linha de totais anterior (48 · 34 · 19 · 10 · 1 = 112) já estava defasada em relação às tabelas. Na v0.3 inicial eram 47 · 34 · 20 · 10 · 1.
 
 | Status | Significado em uma linha |
 |---|---|
@@ -148,6 +148,10 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-167 | Coluna opcional `work_place_id` em `data/population.json` (LW-097) | APROVADA |
 | DEC-168 | A ação `sell` do NPC usa a mesma utilidade; quem vende o excedente da produção é o local | APROVADA |
 | DEC-169 | Nova tarefa LW-096a: o NPC aceita vaga pela utilidade, com histerese | APROVADA |
+| DEC-217 | T3 é um T2 com vínculo de liderança, com teto próprio em dados; só as facções promovem a T3 | PROPOSTA |
+| DEC-218 | Satisfação e protesto: consulta nova do `npc` por povoado, uma vez por dia; "protestar" em dados | PROPOSTA |
+| DEC-219 | Soldados: o `npc` ganha "baixa" e "em missão"; a mesma pessoa existe uma só vez | PROPOSTA |
+| DEC-220 | Rumores: um quadro de rumores por povoado, dono `npc`, com capacidade e perda de confiança por lote | PROPOSTA |
 
 **ÁREA 6 — SOCIEDADE, ECONOMIA, POLÍTICA E GUERRA**
 
@@ -195,6 +199,28 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-176 | Estoque inicial de 30 dias dos bens importados até o comerciante (LW-098) | APROVADA |
 | DEC-177 | O mercado tem um teto de compra por bem | APROVADA |
 | DEC-178 | O tecido entra na manutenção dos locais, além de ferramenta e tábua | APROVADA |
+| DEC-202 | Facções em que o jogador entra: autoridade e mercantil; a criminosa fica em forma mínima, sem o jogador dentro | APROVADA |
+| DEC-203 | Duas culturas genéricas e contrastantes, com 4 parâmetros na Fase 4 | APROVADA |
+| DEC-204 | As cinco leis do protótipo: a "pena de crime" é uma multa, com a lista de atos em dados; a fonte do crime vem da Fase 5 | APROVADA |
+| DEC-205 | O povoado C pertence ao país vizinho | APROVADA |
+| DEC-206 | Guerra em escala pequena entre os dois países; resolução abstrata e sem comando do jogador na Fase 4 (resposta parcial à DEC-053) | APROVADA |
+| DEC-210 | Dinheiro da facção criminosa: assaltos a caravana e contribuição dos membros; a extorsão fica fora | APROVADA |
+| DEC-211 | Quem governa: um governante por país, 2 no total | APROVADA |
+| DEC-212 | O assalto a caravana leva o dinheiro do comerciante para a facção criminosa e destrói a carga | APROVADA |
+| DEC-213 | O controle da província é da `politics`; as `factions` guardam a influência e o `world` só a estrutura | PROPOSTA |
+| DEC-214 | `TradeRules`: interruptor na economia e tarifa com destinatário (motivo `tariff`) | PROPOSTA |
+| DEC-215 | Contas de facção e de país no `Ledger`: um tipo de dono `treasury` e motivos novos | PROPOSTA |
+| DEC-216 | Reputação para quem a exige: aviso por evento, cópia só de leitura na `factions` e contagem de testemunhas pelo `npc` | PROPOSTA |
+| DEC-222 | Guardas: os postos de serviço continuam e só o pagador muda, do mercado para o tesouro da autoridade | PROPOSTA |
+| DEC-223 | Escolta e carga perdida: contrato novo `escort` e carga destruída (motivo `lost`) | PROPOSTA |
+| DEC-224 | O motivo `upkeep` é um sumidouro: o dinheiro que a facção gasta em manutenção e suprimento é destruído | APROVADA |
+| DEC-225 | A tarifa é paga pelo ator da ordem, na compra e na venda; `peek_terms` continua sem o `side` | APROVADA |
+| DEC-226 | O assalto a caravana leva uma fração do dinheiro do comerciante, em dados do `military`, menor que o saldo inteiro | APROVADA |
+| DEC-227 | O tesouro abre por `request_open_treasury(owner_id, initial_balance)`; `request_open_owner` fica com 3 argumentos | APROVADA |
+| DEC-228 | A tarifa é arredondada para cima, com mínimo de 1 quando `tariff_bp` é maior que 0 | APROVADA |
+| DEC-230 | `peek_quote` passa a receber o ator: `peek_quote(actor_id, market_id, good_id, quantity, side)` | APROVADA |
+| DEC-231 | Licença exigida recusa a ordem, com o código `ECON_LICENSE_REQUIRED` | APROVADA |
+| DEC-235 | Distribuição das cadeias pelos 3 povoados: a tabela do `economy.md` seção 6 (14 locais de produção, 6 postos, 20 locais `work`) | APROVADA |
 
 **ÁREA 7 — MUNDO FÍSICO E ESPACIAL**
 
@@ -213,6 +239,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-160 | O tipo de local `market_reserved` é renomeado para `market` na LW-093 | APROVADA |
 | DEC-161 | O terreno de blockout não é ampliado para o 3º povoado | APROVADA |
 | DEC-162 | A LW-097 aceita a mudança de hash e atualiza o oráculo, com a aprovação de Arthur dos valores novos | APROVADA |
+| DEC-207 | Quatro províncias no protótipo: uma por povoado e uma de fronteira | APROVADA |
+| DEC-229 | Rota bloqueada pelo jogo: um comando só, o `request_set_route_state`, com `cause_id` e o motivo `hostile_force` | APROVADA |
 
 **ÁREA 8 — JOGADOR, PROGRESSÃO, COMBATE E EVENTOS**
 
@@ -239,6 +267,9 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-195 | Dono do crime e lista de atos em `laws.json` | PROPOSTA |
 | DEC-197 | Eventos dinâmicos: cada tipo declara em dados os comandos que usa | PROPOSTA |
 | DEC-199 | T2/T3, T1 e combate: o `npc` decide, o `combat` resolve | PROPOSTA |
+| DEC-208 | Reputação: um número por entidade, em 5 faixas nomeadas | APROVADA |
+| DEC-221 | Eventos da Fase 4: adotar os seis que a arquitetura lista e o roadmap omite; limiar da crônica em dados | PROPOSTA |
+| DEC-232 | O campo `severity` do evento é insumo das regras de severidade da crônica | APROVADA |
 
 **ÁREA 9 — ARQUITETURA TÉCNICA**
 
@@ -275,6 +306,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-194 | `combat` e `military`: um sentido só e orçamento em dados | PROPOSTA |
 | DEC-196 | Ponte: consultas em lote e foco do LOD continua o jogador | PROPOSTA |
 | DEC-198 | Desempenho da Fase 5: três réguas, uma regra | PROPOSTA |
+| DEC-209 | Save na Fase 4: continua sem congelar; a LW-142 rejeita o save da Fase 3 | APROVADA |
+| DEC-234 | Exceção pontual à DEC-107 e ao `AGENTS.md` 4.17: leitura de campo de evento pelo nome, em três pontos fechados | PROPOSTA |
 
 **ÁREA 10 — PROCESSO, ESCOPO E MÉTODO DE TRABALHO**
 
@@ -304,6 +337,8 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | DEC-179 | Corte do protótipo (Fase 5) e a regra "protótipo × depois" | APROVADA |
 | DEC-185 | Critérios de sucesso do protótipo: quatro hipóteses, três cascatas e diversão | APROVADA |
 | DEC-201 | Nome provisório do executável | PROPOSTA |
+| DEC-233 | Marcos de hash da Fase 4: três marcos por bloco | APROVADA |
+| DEC-236 | Ordem das tarefas da Fase 3: a LW-097 e o salário (LW-095, só código) vêm antes da LW-094 | APROVADA |
 
 **ÁREA 11 — ALTERNATIVAS DESCARTADAS**
 
@@ -952,7 +987,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | O BM não fixa quantas facções existem. O GDD propõe 3 facções (autoridade local, organização mercantil, organização criminosa) e 2 a 3 polities com relações simples. |
 | **Decisão** | **Inicialmente 3 facções** (autoridade local, organização mercantil, organização criminosa) e **2 entidades políticas (polities)**, sendo uma simplificada (DEC-051). Detalhe adotado provisoriamente por recomendação: a facção de autoridade é o governo da polity principal; a soberania sobre províncias é da polity; as facções têm presença e influência. |
 | **Justificativa** | Diretriz 9 de Arthur. Mínimo para observar cascatas políticas, econômicas e criminais. |
-| **Consequências** | A contradição antiga (3 facções e só uma governo) fica resolvida pela polity vizinha simplificada. LW-117, LW-118 e LW-138 seguem esta relação entre facção e polity. Uma terceira polity vai para o backlog. |
+| **Consequências** | A contradição antiga (3 facções e só uma governo) fica resolvida pela polity vizinha simplificada. LW-117, LW-118 e LW-138 seguem esta relação entre facção e polity. Uma terceira polity vai para o backlog. **Nota de 11/11/2026 (LW-117a):** o jogador entra só na autoridade e na mercantil (DEC-202); o governante é um por país (DEC-211). |
 | **Data / versão** | GDD 0.1 cap. 24.2 e Anexo C · registrada em 01/11/2026 · mensagem de Arthur de 01/11/2026 15:32 (diretriz 9) |
 | **Relações** | DEC-045, DEC-051 |
 
@@ -964,7 +999,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Resolve a contradição registrada em DEC-050. |
 | **Decisão** | A segunda polity é **simplificada** (baixa resolução): relações, força e tarifa, sem membros nem facções internas completas. Dá contexto diplomático e comercial. |
 | **Justificativa** | Diretriz 9 de Arthur. Evita o custo de uma quarta facção completa. |
-| **Consequências** | Desvia do GDD 24.2 de forma deliberada, agora com aprovação. |
+| **Consequências** | Desvia do GDD 24.2 de forma deliberada, agora com aprovação. **Nota de 11/11/2026 (LW-117a):** o povoado C é do país vizinho (DEC-205); o status não muda. |
 | **Data / versão** | RM 0.1 seção 0.13-B (desvio 4) e LW-117 · registrada em 01/11/2026 · mensagem de Arthur de 01/11/2026 15:32 (diretriz 9) |
 | **Relações** | DEC-050 |
 
@@ -988,7 +1023,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Arthur pediu o registro desta dúvida. O BM prevê "batalhas de diferentes escalas", "invasões" e "cercos" como possibilidades (§8). Nenhum documento fixa o tamanho das batalhas nem quantos combatentes corpóreos existem ao mesmo tempo. |
 | **Decisão** | **Nada decidido.** Não estão aprovados: (a) o número máximo de combatentes com corpo simultâneos; (b) se a batalha é tático em tempo real limitado ou resolução abstrata; (c) se o jogador pode comandar. |
 | **Justificativa** | Hipóteses não aprovadas: GDD 15.5 e TA 14.3 propõem uma abordagem em duas escalas (recorte físico com "poucas dezenas" de combatentes em volta do jogador, mais resolução agregada para o resto), com orçamento a medir por perfilagem **[HIP]**. Batalhas grandes em tempo real são tratadas como **risco [LIM]**. A recomendação é decidir após o spike SP6 e o SP2, com hardware-alvo definido. |
-| **Consequências** | Afeta o módulo `military`, o `combat`, a câmera tática (DEC-029) e o orçamento de desempenho (DEC-071). Cercos e exércitos grandes ficam fora do protótipo apenas por proposta (DEC-054). (DEC-054 aprovada em 10/11/2026) **Nota de 11/11/2026 (LW-146a):** Sem comando de tropas no protótipo (DEC-179 e DEC-187): a escala das batalhas e o comando do jogador **esperam o teste de tropas** (SP9). Proposta de trabalho: cerca de 20 combatentes com corpo [HIP] e o resto abstrato (DEC-194). O status não muda. |
+| **Consequências** | Afeta o módulo `military`, o `combat`, a câmera tática (DEC-029) e o orçamento de desempenho (DEC-071). Cercos e exércitos grandes ficam fora do protótipo apenas por proposta (DEC-054). (DEC-054 aprovada em 10/11/2026) **Nota de 11/11/2026 (LW-146a):** Sem comando de tropas no protótipo (DEC-179 e DEC-187): a escala das batalhas e o comando do jogador **esperam o teste de tropas** (SP9). Proposta de trabalho: cerca de 20 combatentes com corpo [HIP] e o resto abstrato (DEC-194). O status não muda. **Nota de 11/11/2026 (LW-117a):** para a Fase 4, a resolução é abstrata e o jogador não comanda (DEC-206); o limite de combatentes com corpo é da Fase 5. O status não muda. |
 | **Data / versão** | BM §8 · GDD 0.1 cap. 15.2 e 15.5 · TA 0.1 cap. 14.3 · RM 0.1 LW-146 · registrada em 01/11/2026 |
 | **Relações** | DEC-029, DEC-052, DEC-054, DEC-066, DEC-071 |
 
@@ -1016,7 +1051,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Arthur pediu o registro desta dúvida. **Nenhum documento fixa dimensões em quilômetros nem o tamanho do mundo.** O BM fala em regiões, cidades, vilas (§3) e em protótipo pequeno e expansível (§2). |
 | **Decisão** | **Nada decidido.** Não há área, número de regiões, número de cidades nem tamanho de chunk aprovados. (Exceção: o terreno de teste do protótipo foi decidido na DEC-118; o tamanho final do mundo continua sem decisão.) |
 | **Justificativa** | Hipóteses não aprovadas, todas rotuladas [HIP]: protótipo com 1 região autoral e 12 a 30 províncias lógicas, parte delas jogável em 3D detalhado (GDD 24.2); chunks de cerca de 64 m e terreno de teste de cerca de 1 km² (RM, fase 1). A recomendação é fixar o tamanho **depois** do spike do terreno (SP4a), com hardware-alvo (DEC-016) e meta de quadros definidos. |
-| **Consequências** | Condiciona terreno (DEC-057), câmera estratégica (DEC-028), distância de viagem, desempenho (DEC-071) e quantidade de NPCs (DEC-040). Nenhum número de dimensão pode aparecer como definitivo. Portão da Fase 1 atendido pela DEC-118 (05/11/2026); o tamanho FINAL do mundo continua PENDENTE e deve ser reavaliado, com a condição (d) da DEC-057, antes da Fase 5. |
+| **Consequências** | Condiciona terreno (DEC-057), câmera estratégica (DEC-028), distância de viagem, desempenho (DEC-071) e quantidade de NPCs (DEC-040). Nenhum número de dimensão pode aparecer como definitivo. Portão da Fase 1 atendido pela DEC-118 (05/11/2026); o tamanho FINAL do mundo continua PENDENTE e deve ser reavaliado, com a condição (d) da DEC-057, antes da Fase 5. **Nota de 11/11/2026 (LW-117a):** o protótipo tem 4 províncias (DEC-207); o tamanho final do mundo continua PENDENTE. |
 | **Data / versão** | BM §2 e §3 · GDD 0.1 cap. 4 e 24.2 · RM 0.1 LW-033 · registrada em 01/11/2026 |
 | **Relações** | DEC-016, DEC-028, DEC-040, DEC-057, DEC-071, DEC-118 |
 
@@ -2322,7 +2357,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | A arquitetura (11.9) lista esses três eventos, mas nenhuma tarefa da Fase 3 os cria, e o roadmap (3.J) deixa de fora o combate de caravanas e bandidos (pergunta Q12 do contrato da `economy`). |
 | **Decisão** | **Não criar** os três eventos na Fase 3. Ficam em `docs/events.md` como "considerados e não incluídos". |
 | **Justificativa** | Recomendação do contrato da `economy`; segue o "Não fazer" de 3.J. |
-| **Consequências** | Nenhum código publica esses eventos. |
+| **Consequências** | Nenhum código publica esses eventos. **Nota de 11/11/2026 (LW-117a):** o `CaravanAttacked` e a perda de carga entram na Fase 4, na LW-139 (DEC-212 e DEC-223). |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 5.2 · recomendação do contrato da `economy` (Q12) · registrada em 10/11/2026 (LW-087a) · aprovada por Arthur em 11/11/2026 (em bloco; LW-087a, rodada 5) |
 | **Relações** | DEC-054 |
 
@@ -2448,7 +2483,7 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 | **Contexto** | Os ofícios `guard` e `innkeeper` não têm receita nem local de produção entre as 10 receitas. Sem local, não são atribuídos, não recebem salário, não compram comida e morrem no soak (risco R3.3 do roadmap) (pergunta Q15 do contrato da `economy`). |
 | **Decisão** | Cada povoado ganha **postos de serviço** (locais sem insumo nem produto, com salário por hora) para guardas e estalajadeiros, e a **folha é paga pela conta do mercado do povoado**. É **provisório até a Fase 4**, quando entram os impostos. |
 | **Justificativa** | Escolha de Arthur na rodada 2 da LW-087a (decisão 3; opção A do contrato da `economy`: o dinheiro circula entre mercado, salário e compras). |
-| **Consequências** | A LW-095 implementa; a calibração (LW-112) ajusta salários e saldos [HIP]. "Provisório" aqui é regra de jogo até a Fase 4, não uma marca `TEMP-LW-` do Anexo D. |
+| **Consequências** | A LW-095 implementa; a calibração (LW-112) ajusta salários e saldos [HIP]. "Provisório" aqui é regra de jogo até a Fase 4, não uma marca `TEMP-LW-` do Anexo D. **Nota de 11/11/2026 (LW-117a):** a Fase 4 troca o pagador da folha dos postos, do mercado para o tesouro da autoridade (DEC-222, PROPOSTA). |
 | **Data / versão** | `docs/decisions/0012-pre-voo-da-fase-3.md`, seção 7.1 · decidida por Arthur em 10/11/2026 (mensagem da rodada 2 da LW-087a) · registrada em 10/11/2026 (LW-087a) |
 | **Relações** | DEC-148, DEC-149, DEC-152 |
 
@@ -2972,6 +3007,496 @@ Cada entrada tem: **Identificador** (`DEC-NNN`, sequencial, nunca reutilizado), 
 
 ---
 
+### DEC-202 — Facções em que o jogador entra: autoridade e mercantil; a criminosa fica em forma mínima, sem o jogador dentro
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-050 fixa os três tipos de facção (autoridade, mercantil e criminosa), mas não diz em quais delas o jogador entra. O GDD 24.2 deixa "crime como trajetória" para o futuro, a DEC-062 fixa três trajetórias (mercador, soldado/guarda e aventureiro) e a DEC-099 põe a facção criminosa completa como quinto corte (pergunta Q1 do pré-voo da Fase 4). |
+| **Decisão** | O jogador entra e sobe **só na facção de autoridade e na mercantil**. A facção **criminosa** existe em **forma mínima**, **sem o jogador dentro**. Os nomes e a doutrina das três facções são genéricos (DEC-100) e saem como proposta do revisor nas partes seguintes da LW-117; **não estão decididos aqui**. |
+| **Justificativa** | Resposta de Arthur à pergunta Q1, de acordo com a recomendação do pré-voo: combina com as três trajetórias da DEC-062 e com o corte da DEC-099. |
+| **Consequências** | A LW-141 mostra ao jogador só duas facções. A criminosa não precisa de hierarquia completa nem de reputação do jogador. A LW-120 continua dando ao jogador as mesmas verificações de qualquer NPC, nas duas facções em que ele pode entrar. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q1) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e confirmada por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-050, DEC-062, DEC-099, DEC-100 |
+
+---
+
+### DEC-203 — Duas culturas genéricas e contrastantes, com 4 parâmetros na Fase 4
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O roadmap deixou as duas culturas genéricas para Arthur decidir. O GDD 5.1 lista parâmetros de cultura (valores, atitude com estrangeiros, doutrina militar, estrutura de poder, tabus e crimes) (pergunta Q2 do pré-voo da Fase 4). |
+| **Decisão** | **Duas culturas genéricas e contrastantes** (por exemplo, uma mais mercantil e outra mais tradicional), descritas só por **4 parâmetros** na Fase 4. **Não estão decididos:** quais são os quatro parâmetros e qual cultura é de qual país; o revisor propõe, com nomes genéricos (DEC-100), nas partes seguintes da LW-117. |
+| **Justificativa** | Resposta de Arthur à pergunta Q2, de acordo com a recomendação do pré-voo: o contraste é o que faz facções e países reagirem de forma diferente ao mesmo fato. |
+| **Consequências** | A LW-118 cria `data/cultures.json` com as duas; a LW-121 aplica a cultura à população; a LW-122 usa cultura e doutrina na afinidade inicial entre facções. Os demais parâmetros do GDD 5.1 ficam fora da Fase 4. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q2) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e confirmada por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-050, DEC-100 |
+
+---
+
+### DEC-204 — As cinco leis do protótipo: a "pena de crime" é uma multa, com a lista de atos em dados; a fonte do crime vem da Fase 5
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O roadmap (LW-117) lista cinco leis para o protótipo: tarifa, imposto de entrada, conscrição, pena de crime e licença. Nenhuma tarefa da Fase 4 cria crime: o GDD 20.6 e 20.9 tratam crime e justiça simples como [P1], a arquitetura 17.5 põe `CrimeCommitted` no `combat` ou no `npc`, e o `npc` não tem ação de crime (achado 8 do pré-voo) (pergunta Q3 do pré-voo da Fase 4). |
+| **Decisão** | As **cinco leis ficam as do roadmap**. A **pena de crime é uma multa**, e a **lista de atos** que a lei pune fica **em dados**. **A fonte do crime vem da Fase 5** (agressão, roubo, morte e contrabando); **na Fase 4 testa-se com um evento de teste.** A proibição de bem continua existindo como capacidade da `TradeRules` (`docs/modules/economy.md`, seção 5), mas **não é uma das cinco leis**. **Em aberto (não decidido aqui; o revisor propõe nas partes seguintes da LW-117):** como o "imposto de entrada" difere da tarifa; como a multa é cobrada (comando da economia, motivo novo do `Ledger` e o que acontece se faltar saldo); quem publica o evento de teste do crime; e os valores das multas, que são [HIP]. |
+| **Justificativa** | Resposta de Arthur à pergunta Q3, por mensagem; **substitui a resposta dada antes pelo painel** ("proibição de bem"), que não chegou a ser registrada. Mantém as cinco leis do roadmap sem criar um sistema de justiça na Fase 4. |
+| **Consequências** | A LW-129 grava a lista de atos e o valor da multa em dados. Nenhuma tarefa da Fase 4 cria crime. A Fase 5 traz a fonte do crime. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q3) e 6 · respondida por Arthur em 11/11/2026, por mensagem, no lugar da resposta anterior do painel (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-049, DEC-050, DEC-054 |
+
+---
+
+### DEC-205 — O povoado C pertence ao país vizinho
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-051 diz que a polity vizinha é de baixa resolução, sem membros nem facções internas completas, mas não diz onde ela fica; o roadmap (4.B) acrescenta "nenhum NPC T1 simulado". A Fase 3 cria três povoados (A, B e C), todos com população (DEC-142), ligados em triângulo (DEC-158; contratos já no `main`, implementação na Fase 3) (pergunta Q4 do pré-voo da Fase 4). |
+| **Decisão** | **O povoado C é do país vizinho.** Tarifa, tratado, escolta e disputa passam a agir nas rotas e nos mercados que a Fase 3 cria, sem conceito novo. O C tem a população que a Fase 3 passa a simular (LW-097); isso relaxa o "nenhum NPC T1" do roadmap, **e não** a DEC-051: a vizinha continua sem membros de facção e sem facções internas completas. |
+| **Justificativa** | Resposta de Arthur à pergunta Q4, de acordo com a recomendação do pré-voo: usa o que a Fase 3 constrói. A alternativa de uma quarta povoação abstrata criaria um mercado sem produtor nem consumidor. |
+| **Consequências** | A LW-118 liga o C à província do vizinho (DEC-207). O texto de 4.B do roadmap foi ajustado. Quem governa o vizinho: DEC-211. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q4) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e mantida por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-051, DEC-142, DEC-158, DEC-207, DEC-211 |
+
+---
+
+### DEC-206 — Guerra em escala pequena entre os dois países; resolução abstrata e sem comando do jogador na Fase 4 (resposta parcial à DEC-053)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O GDD 15.8 marca a guerra entre polities como [PREV], mas a LW-133 cria o estado "guerra". A DEC-053 (escala das batalhas) é PENDENTE e a DEC-054 deixa cercos e exércitos grandes fora do protótipo (pergunta Q5 do pré-voo da Fase 4). |
+| **Decisão** | O estado "guerra" **existe** e libera **ataques em escala pequena** entre as forças dos dois países, **sem cerco nem exército grande**. Para a Fase 4, a resolução é **abstrata** e **o jogador não comanda**; o **limite de combatentes com corpo é da Fase 5**. |
+| **Justificativa** | Resposta de Arthur à pergunta Q5, de acordo com a recomendação do pré-voo: dá à LW-138 e à LW-139 o que resolver sem contrariar a DEC-054. |
+| **Consequências** | A LW-133 mantém o estado "guerra" e o `WarDeclared`; o critério 4.F-7 (disputa territorial) continua valendo. A DEC-053 recebe nota datada e **segue PENDENTE**: só a parte da Fase 4 foi respondida. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q5) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e confirmada por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-052, DEC-053, DEC-054 |
+
+---
+
+### DEC-207 — Quatro províncias no protótipo: uma por povoado e uma de fronteira
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O roadmap (LW-118) e o GDD 24.2 falam em 12 a 30 províncias [HIP], e a DEC-055 (dimensões do mundo) é PENDENTE. Com três povoados, três rotas e terreno que não cresce (DEC-158 e DEC-161), 12 a 30 províncias ficariam quase todas vazias (pergunta Q6 do pré-voo da Fase 4). |
+| **Decisão** | O protótipo tem **4 províncias**: uma por povoado (A, B e C) mais **uma de fronteira**; o C fica na província do país vizinho (DEC-205). Vale como **decisão do protótipo**, como a DEC-118 fez com o terreno; a **DEC-055 segue PENDENTE** para o mundo final. **Em aberto (o revisor propõe):** de quem é a província de fronteira e se ela tem povoado. |
+| **Justificativa** | Resposta de Arthur à pergunta Q6, de acordo com a recomendação do pré-voo: o terreno não cresce (DEC-161). |
+| **Consequências** | A LW-118 fica pequena (quatro províncias em `data/world/provinces.json`). O intervalo de 12 a 30 sai da Fase 4. A DEC-055 recebe nota datada. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q6) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e confirmada por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-055, DEC-056, DEC-118, DEC-158, DEC-161, DEC-205 |
+
+---
+
+### DEC-208 — Reputação: um número por entidade, em 5 faixas nomeadas
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O GDD 20.3 sugere quatro dimensões de reputação [HIP], e o 20.9 só pede "reputação por facção e assentamento" no [P1] (pergunta Q7 do pré-voo da Fase 4). |
+| **Decisão** | A reputação é **um número por entidade**, em **5 faixas nomeadas**. As entidades são as do roadmap (LW-128): facção e assentamento. **Ainda não estão decididos** os nomes das cinco faixas nem os limites entre elas: o revisor propõe, em dados [HIP]. |
+| **Justificativa** | Resposta de Arthur à pergunta Q7, de acordo com a recomendação do pré-voo: é o que o painel (LW-141) consegue mostrar com clareza, com menos dados e menos testes. |
+| **Consequências** | A LW-128 e a LW-141 usam um número e cinco faixas. Reputação em várias dimensões vai para o backlog. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q7) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e confirmada por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-043, DEC-216 |
+
+---
+
+### DEC-209 — Save na Fase 4: continua sem congelar; a LW-142 rejeita o save da Fase 3
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A LW-142 manda incrementar o `save_version` e migrar o save da Fase 3. Arthur já decidiu que o `save_version` fica em 2 até o "save congelado" (DEC-127) e que a Fase 3 rejeita o save antigo (DEC-134) (pergunta Q8 do pré-voo da Fase 4). |
+| **Decisão** | O save **continua sem congelar** na Fase 4. A LW-142 **rejeita** o save da Fase 3 com mensagem clara, **sem migração e sem fixture de migração**, como a LW-111 (DEC-134); o `save_version` continua em 2 (DEC-127). |
+| **Justificativa** | Resposta de Arthur à pergunta Q8, de acordo com a recomendação do pré-voo: as DEC-127 e DEC-134 já valem, e congelar cedo trava a evolução do estado. |
+| **Consequências** | A LW-142 troca "migração" por "rejeição" e perde o incremento de `save_version`; os itens de 4.F e 4.G que falam em migração mudam. Congelar o save e migrar fica para quando Arthur decidir o "save congelado" (DEC-083). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q8) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e confirmada por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-083, DEC-084, DEC-127, DEC-134 |
+
+---
+
+### DEC-210 — Dinheiro da facção criminosa: assaltos a caravana e contribuição dos membros; a extorsão fica fora
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | Uma facção sem fonte de dinheiro quebra no soak de 1 ano; com fonte demais, gera inflação (o risco R3.2 voltando). A fonte de dinheiro da facção criminosa não está definida em nenhum documento (pergunta Q9 do pré-voo da Fase 4). |
+| **Decisão** | O dinheiro da facção criminosa vem de **assaltos a caravana** (LW-139) e da **contribuição dos membros**. A **extorsão de mercados fica fora** da Fase 4. As demais facções seguem o roadmap (LW-123 e LW-130). Como o assalto move o dinheiro: DEC-212. |
+| **Justificativa** | Resposta de Arthur à pergunta Q9, de acordo com a recomendação do pré-voo: já está no plano, e a extorsão exigiria uma ação nova do `npc` e uma regra nova da economia. |
+| **Consequências** | A LW-123 e a LW-139 dão a receita da criminosa. Sem ação nova de extorsão; ela vai para o backlog (mercado negro e extorsão). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q9) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e confirmada por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-050, DEC-099, DEC-212 |
+
+---
+
+### DEC-211 — Quem governa: um governante por país, 2 no total
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O GDD 11.3 põe um governante por assentamento; a arquitetura 13.2 e a LW-132 põem um por polity (achado 18 do pré-voo) (pergunta Q10 do pré-voo da Fase 4). |
+| **Decisão** | **Um governante por país**, 2 no total (o do país principal e o da vizinha), do tipo T3. As leis valem por país. |
+| **Justificativa** | Resposta de Arthur à pergunta Q10, de acordo com a recomendação do pré-voo: é o que o roadmap e a arquitetura já descrevem e usa menos T3 (a DEC-040 segue PENDENTE). |
+| **Consequências** | A LW-132 cria dois governantes. Os povoados não têm leis locais próprias: o C segue as leis do país vizinho (DEC-205). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q10) e 6 · respondida por Arthur em 11/11/2026 (painel de decisões) e confirmada por ele na mensagem do mesmo dia (LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-040, DEC-050, DEC-205, DEC-217 |
+
+---
+
+### DEC-212 — O assalto a caravana leva o dinheiro do comerciante para a facção criminosa e destrói a carga
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | Pergunta nova, surgida ao cruzar as respostas: a facção criminosa vive de assaltos a caravana (DEC-210), mas a carga perdida é destruída (DEC-223); se nada muda de mãos, o assalto não rende dinheiro e a criminosa quebra. |
+| **Decisão** | No assalto a caravana, **o dinheiro que o comerciante leva passa para a facção criminosa**, por uma transferência pelo `Ledger`, e **a carga é destruída**. |
+| **Justificativa** | Resposta de Arthur à pergunta Q22 (a opção recomendada no painel). |
+| **Consequências** | A economia ganha uma transferência de dinheiro motivada por assalto (motivo novo do `Ledger`; o nome é fixado no contrato da economia). A LW-139 implementa. O `CaravanAttacked` e a perda de carga, que a DEC-155 deixou fora da Fase 3, entram na LW-139. **Nota de 11/11/2026 (LW-117a, rodada 2):** quanto do dinheiro o assalto leva está na DEC-226 (APROVADA). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q22) e 6 · pergunta nova (Q9 × Q21), respondida por Arthur em 11/11/2026 (painel de decisões; LW-117) · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-155, DEC-210, DEC-223 |
+
+---
+
+### DEC-213 — O controle da província é da `politics`; as `factions` guardam a influência e o `world` só a estrutura
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Três documentos dão três donos ao "controle" de uma província: a arquitetura 5.2 põe o "dono político" na `Province` (no `world`), a DEC-050 põe a soberania na polity, e o roadmap (LW-117, LW-119 e LW-138) e o GDD 10.3 põem o território na facção (achado 2 do pré-voo) (pergunta Q11 do pré-voo da Fase 4). |
+| **Decisão** | A **`politics` guarda quem controla** cada província (a soberania, DEC-050); as **`factions` guardam a influência** (a presença) da facção na província; o **`world` guarda só a estrutura** (províncias, adjacência e povoados), sem estado político mutável. |
+| **Justificativa** | Segue a DEC-050 e dá um dono para cada dado. |
+| **Consequências** | O texto da LW-117 ("território na facção") e o da LW-119 (o campo "território" da `Faction`) passam a dizer influência; a LW-138 muda o controle pela `politics`. **Diverge da arquitetura 5.2** ("dono político" no `world`); a arquitetura é arquivo protegido e não foi alterada aqui. Os contratos de `world`, `factions` e `politics` (partes 117c e 117e) detalham. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q11) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-050, DEC-056, DEC-207 |
+
+---
+
+### DEC-214 — `TradeRules`: interruptor na economia e tarifa com destinatário (motivo `tariff`)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A `TradeRules` é entregue pronta ao construtor da economia (DEC-141 e `docs/modules/economy.md`, seção 5), com a regra neutra na Fase 3; `peek_terms` devolve só `banned`, `tariff_bp` e `needs_license`, e para onde vai a tarifa "é da Fase 4". O roadmap (LW-130) diz que a regra real é "fornecida no `post_setup`" (achado 5 do pré-voo) (pergunta Q12 do pré-voo da Fase 4). |
+| **Decisão** | A economia recebe, no construtor, um **interruptor** (a regra é neutra no início) e a `politics` coloca a regra real no `post_setup`. A consulta `peek_terms` passa a devolver também **quem recebe a tarifa**, e a **economia faz a transferência**, com o motivo `tariff` no `Ledger` (DEC-215). |
+| **Justificativa** | Mantém a `TradeRules` como única inversão de dependência (DEC-049) e a economia sem importar a `politics`; evita um comando novo na `economy/api` e evita construir a `politics` antes (o que quebraria as camadas). |
+| **Consequências** | Muda o contrato da economia: +1 campo em `peek_terms` e +1 motivo do `Ledger` (parte 117b). A LW-130 usa o interruptor. **Nota de 11/11/2026 (LW-117a, rodada 2):** quem paga a tarifa está na DEC-225 (APROVADA). **Nota de 11/11/2026 (LW-117g):** o arredondamento da tarifa é a DEC-228; `peek_quote` recebe o ator (DEC-230); a licença exigida recusa a ordem (DEC-231). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q12) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-049, DEC-141, DEC-215 |
+
+---
+
+### DEC-215 — Contas de facção e de país no `Ledger`: um tipo de dono `treasury` e motivos novos
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A LW-119 cria a conta da facção no `Ledger`, mas o contrato da economia tem tipos de dono fechados (`npc`, `player`, `site`, `market` e `contract`) e motivos fechados (DEC-147) (achado 6 do pré-voo) (pergunta Q13 do pré-voo da Fase 4). |
+| **Decisão** | **Um tipo de dono `treasury`** para a conta da facção e para a conta do país, no `Ledger`, ambos com dinheiro inicial (`game_start`). Motivos novos: `tariff`, `tax`, `upkeep` e `faction_salary` (nomes de trabalho; o contrato da economia os fixa). |
+| **Justificativa** | Menos tipos de dono que a alternativa de dois tipos (`faction` e `polity`). |
+| **Consequências** | Muda o contrato da economia (tipos de dono e motivos, ambos fechados; parte 117b). A LW-119 abre a conta; a LW-123 e a LW-130 a usam. O motivo do assalto a caravana (DEC-212) entra no mesmo contrato. **Nota de 11/11/2026 (LW-117a, rodada 2):** o `upkeep` é sumidouro, pela DEC-224 (APROVADA). **Nota de 11/11/2026 (LW-117g):** o tesouro abre por `request_open_treasury` (DEC-227). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q13) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-145, DEC-147, DEC-214 |
+
+---
+
+### DEC-216 — Reputação para quem a exige: aviso por evento, cópia só de leitura na `factions` e contagem de testemunhas pelo `npc`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A arquitetura 17.7 põe o módulo `events` (crônica e reputação) na camada 5, que só recebe eventos; pelo AGENTS 5.1 a camada 4 (`factions`) não importa a 5. Mesmo assim os postos exigem reputação (GDD 10.5; LW-120 e LW-128), e "ação presenciada" precisa saber quem viu, e o `events` não importa o `npc` (achado 11 do pré-voo) (pergunta Q14 do pré-voo da Fase 4). |
+| **Decisão** | O módulo `events` publica **`ReputationChanged`**, e a `factions` guarda uma **cópia só de leitura** dos valores de que precisa. Para saber "quem viu", o **`npc` publica a contagem de testemunhas** no evento. |
+| **Justificativa** | Evita uma segunda inversão de dependência (a DEC-049 diz que a `TradeRules` é a única) e não mexe na arquitetura 17.7. |
+| **Consequências** | A LW-120 e a LW-128 usam a cópia de leitura. O evento entra no catálogo (DEC-221). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q14) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-043, DEC-049, DEC-208, DEC-221 |
+
+---
+
+### DEC-217 — T3 é um T2 com vínculo de liderança, com teto próprio em dados; só as facções promovem a T3
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | `docs/modules/npc.md` (seção 7): `request_promote(npc_id, 2)` só vai de T1 a T2; T3 devolve `NPC_INVALID_TIER`; `max_t2` é 40 [HIP]. A LW-121 "estende" um comando que hoje recusa T3 (achado 9 do pré-voo). A DEC-038 (quatro camadas, com T3 líder) é PROPOSTA e a DEC-040 (quantidade de NPCs) é PENDENTE (pergunta Q15 do pré-voo da Fase 4). |
+| **Decisão** | **T3 = T2 com um vínculo de liderança**, com **teto próprio em dados** (`max_t3`, [HIP]) e **sem "planos"** (o planejador completo do GDD 8.2 fica [PREV]). O `npc` ganha `request_promote(npc_id, 3)`, **chamado só pela `factions`**. |
+| **Justificativa** | A alternativa (T3 completo, com planos) seria um sistema grande novo no `npc`. |
+| **Consequências** | Muda o contrato do `npc` (parte 117e); a LW-121 promove os líderes assim. Não muda o status da DEC-038 nem o da DEC-040. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q15) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-038, DEC-040, DEC-211 |
+
+---
+
+### DEC-218 — Satisfação e protesto: consulta nova do `npc` por povoado, uma vez por dia; "protestar" em dados
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A estabilidade precisa da satisfação da população por povoado, mas o roadmap (LW-131) pede uma "consulta agregada" que o `npc` não tem, e a arquitetura 13.3 supõe `PopulationGroup`, que a DEC-041 (sem T0) exclui (achado 10 do pré-voo) (pergunta Q16 do pré-voo da Fase 4). |
+| **Decisão** | O `npc` ganha uma **consulta nova de satisfação por povoado, calculada uma vez por dia** e guardada em cache. O `npc` **ouve `UnrestRaised`** para a ação "protestar": a condição nova é código; o resto da ação fica em dados. |
+| **Justificativa** | Sem a consulta, a `politics` teria de deduzir a satisfação de `PriceChanged` e `ShortageDeclared`, e o NPC não reagiria a fome nem a renda. |
+| **Consequências** | Muda o contrato do `npc` (parte 117e). O custo do tick deve ser medido antes de otimizar (AGENTS 4.18). A LW-131 usa a consulta. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q16) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-041, DEC-042 |
+
+---
+
+### DEC-219 — Soldados: o `npc` ganha "baixa" e "em missão"; a mesma pessoa existe uma só vez
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | Os soldados são NPCs que continuam existindo no `npc` (arquitetura 14.2, "uma só vez"); o roadmap (LW-135 e LW-137) aplica baixas a indivíduos, mas o `npc` só tem morte por fome e nenhum estado "em missão" (achado 14 do pré-voo) (pergunta Q17 do pré-voo da Fase 4). |
+| **Decisão** | O `npc` ganha **`request_apply_casualty(npc_id, motivo)`** (a baixa) e o estado **"em missão"** (o NPC sai da rotina do povoado enquanto a força estiver fora). **A mesma pessoa existe uma só vez**: a `Force` guarda IDs, nunca cópias. |
+| **Justificativa** | A alternativa de a `Force` guardar cópias duplicaria pessoas, o que a arquitetura proíbe. |
+| **Consequências** | Muda o contrato do `npc` (+1 comando e +1 estado; parte 117e). A LW-135 e a LW-137 usam. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q17) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-038, DEC-217 |
+
+---
+
+### DEC-220 — Rumores: um quadro de rumores por povoado, dono `npc`, com capacidade e perda de confiança por lote
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | O roadmap (LW-127) diz que o rumor "chega a mais NPCs", mas `docs/modules/npc.md` (seções 5 e 7) guarda memória só do T2 e só de fatos presenciados, deixa o rumor de fora e dá relação só a T2 e ao jogador; o T1 não tem memória (achado 13 do pré-voo) (pergunta Q18 do pré-voo da Fase 4). |
+| **Decisão** | Um **quadro de rumores por povoado**, com **dono `npc`**, **capacidade limitada** e **perda de confiança por lote**. O T1 não ganha memória. |
+| **Justificativa** | A LW-127 já fala em lote por povoado; dar memória a todo T1 custaria caro e aumentaria o save. |
+| **Consequências** | Muda o contrato do `npc` (parte 117e). O evento agregado `RumorSpread` não vai para a crônica (roadmap). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q18) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-041, DEC-043 |
+
+---
+
+### DEC-221 — Eventos da Fase 4: adotar os seis que a arquitetura lista e o roadmap omite; limiar da crônica em dados
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A arquitetura (12.5, 13.6 e 14.4) lista seis eventos que as tarefas LW-120 a LW-139 não citam: `MemberExpelled`, `FactionRelationChanged`, `FactionCollapsed`, `TreatySigned`, `ForceDeserted` e `ReputationChanged`. E o roadmap fala em eventos "acima do limiar" (LW-126), sem número (`docs/events.md`, coluna "Entra na crônica?") (achado 12 do pré-voo) (pergunta Q19 do pré-voo da Fase 4). |
+| **Decisão** | **Adotar os seis eventos**, cada um na tarefa que o publica, e pôr o **limiar de importância da crônica em dados** (`chronicle.json`, valores [HIP]). |
+| **Justificativa** | Sem `FactionCollapsed` o "colapso limpo" da LW-123 não tem registro. |
+| **Consequências** | +6 linhas no catálogo `docs/events.md` (parte 117f); a crônica fica configurável sem mexer em código. **Alocação proposta (a confirmar nas partes 117b a 117f):** `FactionRelationChanged` na LW-122; `MemberExpelled` e `FactionCollapsed` na LW-123; `ReputationChanged` na LW-128; `TreatySigned` na LW-134; `ForceDeserted` na LW-135. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q19) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-077, DEC-216 |
+
+---
+
+### DEC-222 — Guardas: os postos de serviço continuam e só o pagador muda, do mercado para o tesouro da autoridade
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | A DEC-164 e `docs/modules/economy.md` (seção 6) fazem a folha dos postos sair da conta do mercado "até a Fase 4", quando passa a sair do tesouro. O roadmap (LW-121 e LW-123) cuida de guardas e de soldos, mas nenhuma tarefa faz a troca de pagador (achado 7 do pré-voo) (pergunta Q20 do pré-voo da Fase 4). |
+| **Decisão** | Os **postos continuam**; só o **pagador** muda: da conta do mercado para o **tesouro da autoridade** (motivo `salary`). O evento `WagesPaid` e a leitura que o `npc` faz dele **não mudam**. |
+| **Justificativa** | Mudança mínima e sem pagamento duplo; a alternativa (os guardas saírem dos postos e virarem membros pagos pela facção) tiraria do `npc` o `income` por posto e faria da LW-123 uma folha geral. |
+| **Consequências** | Cumpre o que a DEC-164 e a DEC-174 previam ("regra de jogo até a Fase 4"). **Alocação proposta:** a troca entra na LW-123 (finanças da facção). O contrato de `factions` (parte 117c) precisa dizer quem é pago por posto e quem por soldo de força, para não pagar o mesmo guarda duas vezes. |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q20) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-152, DEC-164, DEC-174, DEC-215 |
+
+---
+
+### DEC-223 — Escolta e carga perdida: contrato novo `escort` e carga destruída (motivo `lost`)
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (do revisor, 11/11/2026; vale como padrão de trabalho e **não é APROVADA**). |
+| **Contexto** | `docs/modules/economy.md` (seção 8) deixa escolta e recompensa como [FUT]; a DEC-155 deixou `CaravanAttacked` e `RouteCargoLost` fora da Fase 3; a LW-139 precisa de um tipo de contrato de escolta e de uma perda de carga que a economia ainda não tem (achado 15 do pré-voo) (pergunta Q21 do pré-voo da Fase 4). |
+| **Decisão** | Contrato novo **`escort`** na economia (além de `labor`, `delivery` e `vacancy`). A **carga perdida** num assalto é **destruída**, com o motivo `lost`, de modo que a conservação de bens fecha (DEC-156). Com a DEC-212, o dinheiro do comerciante é levado e a carga é destruída. |
+| **Justificativa** | É mais simples; a alternativa (a carga ir para o inventário do atacante) criaria venda de produto roubado e conta de bens da facção criminosa. |
+| **Consequências** | Muda o contrato da economia (tipo de contrato e motivo de perda; parte 117b). A LW-139 usa o contrato; a LW-125 (ordens da facção) o publica (alocação proposta). |
+| **Data / versão** | `docs/decisions/0013-pre-voo-da-fase-4.md`, seções 4 (Q21) e 6 · recomendação do pré-voo, adotada como PROPOSTA do revisor por pedido de Arthur em 11/11/2026 ("o revisor decide como PROPOSTA, seguindo as recomendações") · registrada em 11/11/2026 (LW-117a) |
+| **Relações** | DEC-155, DEC-156, DEC-157, DEC-165, DEC-212 |
+
+---
+
+### DEC-224 — O motivo `upkeep` é um sumidouro: o dinheiro que a facção gasta em manutenção e suprimento é destruído
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-215 (PROPOSTA) nomeia o motivo `upkeep`, mas não diz para onde vai o dinheiro. A seção 2 do `docs/modules/economy.md` reserva os sumidouros do GDD 12.3 para a Fase 4, e o suprimento de força é abstrato (ponto 1 de 17.11 da seção 17 do contrato da economia). |
+| **Decisão** | O `upkeep` é um **sumidouro**: o dinheiro que a facção gasta com ele é **destruído** (`request_spend`, que usa o `burn` do `Ledger`) e entra no "destruído" da conservação. Só o tesouro (`treasury`) gasta assim. Os tributos (`tariff`, `tax` e `fine`) e o saque (`plunder`) continuam sendo **transferências**. |
+| **Justificativa** | Aprovação de Arthur da recomendação do ponto 1 de 17.11. A alternativa (pagar ao mercado do povoado onde a força está) faria o dinheiro circular, mas criaria uma compra sem bens. |
+| **Consequências** | A LW-123 usa `request_spend`; o teste de ouro do dinheiro conta o `upkeep` como destruído e o soak da LW-142 o confere. O dinheiro passa a sair do jogo na Fase 4; os valores gastos são [HIP] e a calibração é da LW-112 e do soak. |
+| **Data / versão** | `docs/modules/economy.md`, seção 17.11 (ponto 1; ramo `lw-117b-economia-fase-4`) · aprovada por Arthur em 11/11/2026 (mensagem "Aprovo as 3 recomendações") · registrada em 11/11/2026 (LW-117a, rodada 2) |
+| **Relações** | DEC-147, DEC-215 |
+
+---
+
+### DEC-225 — A tarifa é paga pelo ator da ordem, na compra e na venda; `peek_terms` continua sem o `side`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-214 (PROPOSTA) faz a tarifa ter destinatário e a economia transferi-la, mas não diz quem a paga nem se compra e venda são tratadas igual; `peek_terms(good_id, market_id, actor_id)` não recebe o lado da ordem (ponto 2 de 17.11 da seção 17 do contrato da economia). |
+| **Decisão** | **O ator que pediu a ordem paga a tarifa:** na compra ela se soma ao que ele paga; na venda ela sai da receita dele. O mercado paga e recebe o total **sem** tarifa. O mesmo `tariff_bp` vale nos dois lados e `peek_terms` **continua sem o `side`**; se a lei de tarifa precisar distinguir importação de exportação, a parte 117c do contrato propõe o `side`. |
+| **Justificativa** | Aprovação de Arthur da recomendação do ponto 2 de 17.11. É a conta mais simples: o ator paga, o destinatário recebe, tudo na mesma transação atômica. A alternativa era cobrar a tarifa só na compra. |
+| **Consequências** | Muda a LW-130 (`TradeRules` real) e o `request_trade` (seção 5 do contrato da economia); com a regra neutra nada muda (tarifa 0). O destinatário é o `tariff_recipient_id` da DEC-214. |
+| **Data / versão** | `docs/modules/economy.md`, seção 17.11 (ponto 2; ramo `lw-117b-economia-fase-4`) · aprovada por Arthur em 11/11/2026 (mensagem "Aprovo as 3 recomendações") · registrada em 11/11/2026 (LW-117a, rodada 2) |
+| **Relações** | DEC-049, DEC-214, DEC-215 |
+
+---
+
+### DEC-226 — O assalto a caravana leva uma fração do dinheiro do comerciante, em dados do `military`, menor que o saldo inteiro
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-212 (APROVADA) diz que o assalto leva o dinheiro do comerciante para a facção criminosa e destrói a carga, mas não diz **quanto** do dinheiro. Se o assalto levar o saldo inteiro, o comerciante assaltado fica sem dinheiro para comer, e o risco R3.3 do roadmap (espiral de morte) volta (ponto 3 de 17.11 da seção 17 do contrato da economia). |
+| **Decisão** | O assalto leva uma **fração** do saldo do comerciante, **menor que o saldo inteiro**, **definida em dados do `military`**: a economia só executa, pelo `cash_share_bp` de `request_apply_raid`. **Partida: 5000 pontos-base (metade) [HIP]**, para a calibração ajustar. A carga continua destruída (DEC-212 e DEC-223). |
+| **Justificativa** | Aprovação de Arthur da recomendação do ponto 3 de 17.11. A alternativa era levar todo o saldo. |
+| **Consequências** | Esclarece a DEC-212 sem contrariá-la: o dinheiro passa para a facção criminosa, só que em fração. A LW-139 e o contrato de `military` (parte 117d) trazem a fração em dados; a LW-112 e o soak da LW-142 calibram. O 5000 é [HIP], não é requisito. |
+| **Data / versão** | `docs/modules/economy.md`, seção 17.11 (ponto 3; ramo `lw-117b-economia-fase-4`) · aprovada por Arthur em 11/11/2026 (mensagem "Aprovo as 3 recomendações") · registrada em 11/11/2026 (LW-117a, rodada 2) |
+| **Relações** | DEC-210, DEC-212, DEC-223 |
+
+---
+
+### DEC-227 — O tesouro abre por `request_open_treasury(owner_id, initial_balance)`; `request_open_owner` fica com 3 argumentos
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A seção 17.2 do `economy.md` propôs um quarto argumento opcional (`initial_balance`) para `request_open_owner`, só para o tipo `treasury`. Mas o comando já escrito tem 3 argumentos (`request_open_owner(owner_id, kind, work_place_id: String = "")`), a `politics.md` o chamava com `0` no lugar do texto (erro de tipo) e "omitido vale o do tipo" exigiria um valor-sentinela, porque 0 é saldo válido (achado R2-I1). |
+| **Decisão** | O tesouro (de facção ou de país) abre por **`request_open_treasury(owner_id, initial_balance)`**, comando próprio, com `initial_balance` **obrigatório** (0 ou mais; vira o `mint` `game_start`). **`request_open_owner` continua com 3 argumentos** e **não abre** o tipo `treasury`. |
+| **Justificativa** | Recomendação da revisão independente, aceita por Arthur: não muda a assinatura que o código já tem e dispensa o valor-sentinela. |
+| **Consequências** | A seção 17.2 do `economy.md`, a seção 1 da `politics.md` e a `factions.md` passam a citar o comando novo. O `owner_kinds.json` traz a linha `treasury` com `initial_balance` 0 (o saldo vem de `factions.json` e de `polities.json`). O comando nasce com a primeira tarefa que o usa (LW-119 ou LW-129). |
+| **Data / versão** | revisão independente de 11/11/2026 (achado R2-I1) · decidida por Arthur em 11/11/2026 (painel de decisões, em resposta à revisão) · registrada em 11/11/2026 (LW-117g) |
+| **Relações** | DEC-145, DEC-215 |
+
+---
+
+### DEC-228 — A tarifa é arredondada para cima, com mínimo de 1 quando `tariff_bp` é maior que 0
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A seção 17.4 do `economy.md` manda `ceil_div(total × tariff_bp, 10000)`, com mínimo 1. O código da economia já escrito arredonda para baixo (`floor_div`, `trade_engine.gd:42`) e tem teste para isso (`test_trade.gd:159`) (achado R2-I2). |
+| **Decisão** | A tarifa é **arredondada para cima**, com **mínimo de 1** quando `tariff_bp` é maior que 0. Vale o texto da 17.4. |
+| **Justificativa** | Recomendação da revisão independente, aceita por Arthur: uma tarifa pequena não pode dar 0 e deixar de ser cobrada. |
+| **Consequências** | O código e o teste da economia da Fase 3 precisam mudar (`trade_engine.gd` e `test_trade.gd`). **Mudar um teste existente exige autorização escrita de Arthur no prompt da tarefa que cuida da economia** (AGENTS 9.5), que ainda não foi dada: até lá o código segue como está e a seção 17 é o contrato da Fase 4. |
+| **Data / versão** | revisão independente de 11/11/2026 (achado R2-I2) · decidida por Arthur em 11/11/2026 (painel de decisões, em resposta à revisão) · registrada em 11/11/2026 (LW-117g) |
+| **Relações** | DEC-214, DEC-225 |
+
+---
+
+### DEC-229 — Rota bloqueada pelo jogo: um comando só, o `request_set_route_state`, com `cause_id` e o motivo `hostile_force`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | Havia três desenhos para o mesmo efeito: o `request_set_route_state(route_id, new_state, reason)` da extensão da Fase 5 do `world.md` (já no `main`, sem `cause_id`), o par `request_block_route` e `request_unblock_route` da extensão da Fase 4 (parte 117e) e o `military.md`, que ainda citava `request_close_route` e `request_open_route` em produção. O `military` age no `tick`, fora de um ouvinte; sem `cause_id` a cadeia causal da LW-143 se quebraria (achado R2-I5). |
+| **Decisão** | **Um comando só:** `request_set_route_state(route_id, new_state, reason, cause_id)`, com o `cause_id` **opcional** e o `reason` fechado `world_event` ou **`hostile_force`**. A Fase 4 **não cria comando novo** (o par da 117e é retirado); `request_close_route` e `request_open_route` **seguem só de desenvolvimento** (DEC-140). |
+| **Justificativa** | Recomendação da revisão independente, aceita por Arthur: um comando só, sem o `world` guardar quem segura a rota (DEC-159). |
+| **Consequências** | O `military.md` e a extensão da Fase 4 do `world.md` passam a citar esse comando. **O ajuste do próprio comando** (o `cause_id` opcional e o motivo `hostile_force`) **é do contrato do `world`, na LW-146g**, que já o assumiu. |
+| **Data / versão** | revisão independente de 11/11/2026 (achado R2-I5) · decidida por Arthur em 11/11/2026 (painel de decisões, em resposta à revisão) · registrada em 11/11/2026 (LW-117g) |
+| **Relações** | DEC-140, DEC-159, DEC-206 |
+
+---
+
+### DEC-230 — `peek_quote` passa a receber o ator: `peek_quote(actor_id, market_id, good_id, quantity, side)`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O `peek_quote` da economia não recebe o ator, mas a regra real da política depende dele (sobretaxa de estrangeiro, desconto de tratado, licença). A 17.4 dizia que `peek_quote` devolve o mesmo valor da tarifa cobrada, o que é impossível sem o ator (achado R2-I3). |
+| **Decisão** | **`peek_quote(actor_id, market_id, good_id, quantity, side)`**, com o **ator primeiro**, como em `request_trade`. Devolve **o mesmo total e a mesma tarifa** que `request_trade` cobraria desse ator. |
+| **Justificativa** | Recomendação da revisão independente, aceita por Arthur. |
+| **Consequências** | A mudança no código da economia (que hoje não recebe o ator) é **antes da LW-093**, porque o `npc` decide por `peek_quote`, e **precisa de autorização escrita de Arthur** na tarefa que cuida da economia, como a DEC-228. |
+| **Data / versão** | revisão independente de 11/11/2026 (achado R2-I3) · decidida por Arthur em 11/11/2026 (painel de decisões, em resposta à revisão) · registrada em 11/11/2026 (LW-117g) |
+| **Relações** | DEC-214, DEC-228 |
+
+---
+
+### DEC-231 — Licença exigida recusa a ordem, com o código `ECON_LICENSE_REQUIRED`
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A `politics.md` pediu que `needs_license` verdadeiro recuse a ordem, mas a 17.4 não dizia isso e o motor da economia só confere `banned`: sem isso a lei de licença, uma das cinco, não faria nada (achado R2-I4). |
+| **Decisão** | `needs_license` verdadeiro (a regra só o devolve a quem **não** tem a licença) **recusa a ordem** de `request_trade` com **`ECON_LICENSE_REQUIRED`**, código próprio, diferente do `ECON_TRADE_BANNED`. `peek_quote` devolve o mesmo erro. |
+| **Justificativa** | Recomendação da revisão independente, aceita por Arthur: um código próprio deixa a interface dizer o motivo certo. |
+| **Consequências** | A seção 17.4 do `economy.md` ganha a frase e o código; o motor da economia passa a conferir `needs_license` na LW-130, ou antes. |
+| **Data / versão** | revisão independente de 11/11/2026 (achado R2-I4) · decidida por Arthur em 11/11/2026 (painel de decisões, em resposta à revisão) · registrada em 11/11/2026 (LW-117g) |
+| **Relações** | DEC-049, DEC-204, DEC-214 |
+
+---
+
+### DEC-232 — O campo `severity` do evento é insumo das regras de severidade da crônica
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O `SimEvent` já tem o campo `severity` (de 0 a 100; quem publica o preenche, como a economia faz no `ShortageDeclared`), e a `chronicle.md` o ignorava e calculava a severidade só por dados (achado R2-I6). |
+| **Decisão** | Os **dados decidem** se o evento entra na crônica (o limiar e as regras continuam em `data/chronicle/`). O **campo `severity` do evento é um insumo**: `severity_rules.json` pode testá-lo como qualquer outro campo da carga (`field` = `severity`). **Sem regra que o use, o campo é ignorado.** |
+| **Justificativa** | Recomendação da revisão independente, aceita por Arthur. |
+| **Consequências** | A seção 2 da `chronicle.md` e a seção 4 de `docs/fase-4/dados.md` dizem isso; nenhum evento muda de classe agora. |
+| **Data / versão** | revisão independente de 11/11/2026 (achado R2-I6) · decidida por Arthur em 11/11/2026 (painel de decisões, em resposta à revisão) · registrada em 11/11/2026 (LW-117g) |
+| **Relações** | DEC-077, DEC-221 |
+
+---
+
+### DEC-233 — Marcos de hash da Fase 4: três marcos por bloco
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | O registro técnico `0015` propôs o plano de marcos de hash da Fase 4 (a regra da DEC-175, repetida). Arthur aprovou a LW-117f inteira em 11/11/2026, inclusive o plano. |
+| **Decisão** | **Três marcos por bloco:** **marco 1 = LW-118 a LW-125**, **marco 2 = LW-126 a LW-134** e **marco 3 = LW-135 a LW-139**. A primeira tarefa de cada bloco cujo valor de referência mudar **PARA** e mostra a Arthur o valor **antes, o depois e a causa**; depois do "aprovo os hashes do marco N", as outras do bloco só registram os valores novos. A LW-142 tem hashes de teste novo (não é mudança); da LW-140 em diante, **valor já aprovado que mude faz a tarefa parar e perguntar**. O `run_sim` não muda. |
+| **Justificativa** | Aprovação da LW-117f por Arthur em 11/11/2026 (o `0015` tem a justificativa e as alternativas). |
+| **Consequências** | As tarefas da Fase 4 seguem esta regra; a fixture protegida `save_v1` não deve mudar (DEC-172): a tarefa que registrar módulo roda o teste do codec primeiro e PARA se ela ficar vermelha. |
+| **Data / versão** | `docs/decisions/0015-marcos-de-hash-da-fase-4.md` · aprovada por Arthur em 11/11/2026 (com a LW-117f) · registrada em 11/11/2026 (LW-117g) |
+| **Relações** | DEC-172, DEC-175 |
+
+---
+
+### DEC-234 — Exceção pontual à DEC-107 e ao `AGENTS.md` 4.17: leitura de campo de evento pelo nome, em três pontos fechados
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | PROPOSTA (texto dado por Arthur em 11/11/2026; vale como padrão de trabalho e **nunca é APROVADA** sem outra ordem escrita dele). |
+| **Contexto** | A DEC-132 manda a `economy` nunca importar o `npc`, e a DEC-146 manda fechar o dono ao ouvir `NpcDied`. Para cumprir as duas, o `EconomyModule` assina `"NpcDied"` por texto e lê `event.get("npc_id")`, leitura por nome que a DEC-107 (DESCARTADA) e o `AGENTS.md` 4.17 proíbem. Duas fichas dependem do mesmo tipo de leitura: o adaptador de `ActReported` da `politics` (`politics.md`, seção 4) e o `character` ao ouvir `GoodsForged` (`economy.md`, 18.3). |
+| **Decisão** | Lista fechada de **três leituras por nome**: (1) a `economy` lê `npc_id` do `NpcDied`; (2) o adaptador da `politics` lê os campos fixados na seção 4 da sua ficha; (3) o `character` lê os campos do `GoodsForged` fixados no `economy.md` 18.3. Cada campo é lido com o tipo conferido (por exemplo `TYPE_INT`). Nenhuma chamada dinâmica, carga de código nem outro uso de reflexão; **qualquer outra leitura por nome exige outra DEC**. |
+| **Justificativa** | Cumpre a DEC-132 e a DEC-146 sem mudar o `npc`; o risco (renomear o evento ou o campo sem erro de compilação) fica coberto por testes que usam o evento real. |
+| **Consequências** | A linha de cada evento em `docs/events.md` passa a citar o número; revisar quando o `npc` puder chamar `request_close_owner` sem reflexão. |
+| **Data / versão** | Texto de Arthur no bloco de ordens de 11/11/2026 · registrada em 11/11/2026 (LW-117i) |
+| **Relações** | DEC-107, DEC-132, DEC-146 |
+
+---
+
+### DEC-235 — Distribuição das cadeias pelos 3 povoados: a tabela do `economy.md` seção 6
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | A DEC-142 fixou o princípio (cadeias distribuídas pelos 3 povoados, nenhum se basta). O `economy.md`, seção 6, trouxe a tabela com os números. |
+| **Decisão** | Vale a tabela do `economy.md` seção 6: **14 locais de produção, 6 postos de serviço e 20 locais `work` (10 existentes e 10 novos)**, pelo princípio da DEC-142. |
+| **Justificativa** | Aprovação de Arthur em 11/11/2026. |
+| **Consequências** | A LW-097 põe a tabela nos dados do `world`, da população e da economia (3º povoado, `work_place_id`, `production_sites.json` e o estoque inicial de 30 dias); os 6 postos de serviço são da LW-095. |
+| **Data / versão** | `docs/modules/economy.md`, seção 6 · aprovada por Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-117i) |
+| **Relações** | DEC-142, DEC-144, DEC-175 |
+
+---
+
+### DEC-236 — Ordem das tarefas da Fase 3: a LW-097 e o salário (LW-095, só código) vêm antes da LW-094
+
+| Campo | Conteúdo |
+|---|---|
+| **Status** | APROVADA por Arthur em 11/11/2026. |
+| **Contexto** | Medição da conversa da frente A: sem produção e sem salário, os 100 NPCs morrem de fome em 6 a 11 dias. |
+| **Decisão** | A **LW-097** e o **salário (LW-095, só código)** vêm **antes da LW-094**. A LW-094 passa a ser entregue **junto do marco 3 de hash** (DEC-175), só pela causa "fim do `FoodStub`". |
+| **Justificativa** | Aprovação de Arthur em 11/11/2026, com a medição acima. |
+| **Consequências** | O roadmap muda só a linha da LW-094: as dependências passam a incluir a LW-095 (código) e a LW-097, e o aceite "ainda no marco 2 de hash" vira "marco 3". |
+| **Data / versão** | Ordem de Arthur em 11/11/2026 · registrada em 11/11/2026 (LW-117i) |
+| **Relações** | DEC-175, DEC-235 |
+
+---
+
 ## 3. DÚVIDAS ABERTAS EM DESTAQUE
 
 As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o início do trabalho. Os números citados são **hipóteses [HIP]**, não decisões. Pendências só relevantes em fases futuras **não** exigem aprovação antecipada (diretriz 15).
@@ -2980,9 +3505,9 @@ As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o iníci
 
 | Dúvida | ID | O que existe hoje (não aprovado) | Recomendação (não aprovada) | Quando decidir |
 |---|---|---|---|---|
-| **Dimensões do mundo** | DEC-055 | Nenhuma dimensão em km. Hipótese de 1 região autoral com 12 a 30 províncias lógicas; chunk de cerca de 64 m e terreno de teste de cerca de 1 km² | Fixar depois do spike do terreno (SP4a) e com hardware-alvo definido | Fase 1, tarefa LW-033 (a LW-033 decidiu só o terreno de teste, na DEC-118; o tamanho final do mundo continua PENDENTE) |
+| **Dimensões do mundo** | DEC-055 | Nenhuma dimensão em km. Hipótese de 1 região autoral com 12 a 30 províncias lógicas; chunk de cerca de 64 m e terreno de teste de cerca de 1 km² | Fixar depois do spike do terreno (SP4a) e com hardware-alvo definido | Fase 1, tarefa LW-033 (a LW-033 decidiu só o terreno de teste, na DEC-118; o tamanho final do mundo continua PENDENTE) **Nota de 11/11/2026 (LW-117a):** o protótipo tem 4 províncias (DEC-207); o tamanho final continua PENDENTE. |
 | **Quantidade de NPCs** | DEC-040 | Hipótese de 150 a 300 NPCs T1/T2 em detalhe; "dezenas a poucas centenas" de T2/T3; T0 fora (DEC-041, aprovada) | Medir (spike SP2 e tarefa LW-179) antes de fixar | Fases 2 e 5 |
-| **Escala das batalhas** | DEC-053 | Cinco escalas de conflito (proposta); "poucas dezenas" de combatentes corpóreos (hipótese); resto abstrato | Decidir após os spikes SP2 e SP6 | Fase 5, tarefas LW-146 e spike SP6 |
+| **Escala das batalhas** | DEC-053 | Cinco escalas de conflito (proposta); "poucas dezenas" de combatentes corpóreos (hipótese); resto abstrato | Decidir após os spikes SP2 e SP6 | Fase 5, tarefas LW-146 e spike SP6 **Nota de 11/11/2026 (LW-117a):** para a Fase 4, abstrato e sem comando do jogador (DEC-206); o limite de combatentes com corpo é da Fase 5. |
 | **Sistema definitivo de combate** | DEC-066 | Proposta de tempo real em terceira pessoa com estamina e ferimentos; ritmo exato em hipótese | Decidir após o spike SP6 (combate) | Fase 5 (a direção por alvo e habilidades foi decidida em 04/11/2026, na DEC-117; o sistema definitivo continua PENDENTE) |
 | **Modelo de persistência** | DEC-083 | Princípios aprovados (desde o início; migrações complexas adiadas). Formato: proposta DEC-084 | Validar no spike SP5 antes de fixar o formato | Fase 0 (spike SP5) |
 
@@ -3022,7 +3547,7 @@ As cinco dúvidas que Arthur pediu para registrar, mais o que bloqueava o iníci
 
 | # | Contradição ou desvio | Fontes | Entradas | Situação |
 |---|---|---|---|---|
-| C1 | **Facções × polities.** O GDD pede 3 facções e 2 a 3 polities, mas só uma das 3 facções é governo. | GDD 24.2 × RM 0.13-B (desvio 4) | DEC-050, DEC-051 | Aberta (decisão em LW-117) |
+| C1 | **Facções × polities.** O GDD pede 3 facções e 2 a 3 polities, mas só uma das 3 facções é governo. | GDD 24.2 × RM 0.13-B (desvio 4) | DEC-050, DEC-051, DEC-205, DEC-211 | **Resolvida por Arthur** em 11/11/2026 (LW-117a): 2 polities, a vizinha de baixa resolução e dona do povoado C (DEC-205); um governante por país (DEC-211) |
 | C2 | **Trajetórias do protótipo.** O GDD lista 5 (mercador, produtor/artesão, soldado/guarda, aventureiro, crime simples); o RM adota 3 (sem produtor/artesão e sem crime completo). | GDD 24.2 × RM 0.13-B (desvio 3) | DEC-062 | Aberta (decisão em LW-146) |
 | C3 | **Ordem de construção.** O GDD sugeria economia antes de sociedade e de mundo físico; Arthur definiu outra ordem. | GDD 24.4 × PA (roadmap) | DEC-094, DEC-112 | **Resolvida por Arthur** (ordem do roadmap vale) |
 | C4 | **Eventos dinâmicos.** O GDD os põe no marco M4; o RM os põe na Fase 5. | GDD 24.4 × RM 0.13-B (desvio 8) | DEC-070 | Aberta (proposta do RM) |
@@ -3157,7 +3682,7 @@ DEC-001, 002, 003, 004, 005, 006, 007, 008 (direção), 009, 011, 012 (condicion
 
 ## 7. MODELO PARA NOVA ENTRADA
 
-Copiar, preencher e usar o próximo número livre (`DEC-202` em diante). **Nunca reutilizar um número.**
+Copiar, preencher e usar o próximo número livre (`DEC-237` em diante). **Nunca reutilizar um número.** **Faixas de números por frente (nota de processo de 11/11/2026, autorizada por Arthur, para evitar colisão entre as tarefas em paralelo):** a frente A (economia da Fase 3) usa DEC-237 a DEC-239 (a DEC-234 a DEC-236 foram registradas na LW-117i), a frente B (Fase 5) usa DEC-240 a DEC-259 e a frente C (Fase 4) usa DEC-260 a DEC-279; quem passar da faixa pede outra a Arthur.
 
 ```markdown
 ### DEC-NNN — Título curto
@@ -3189,6 +3714,11 @@ Copiar, preencher e usar o próximo número livre (`DEC-202` em diante). **Nunca
 
 | Versão | Data (Brasília) | Alteração |
 |---|---|---|
+| 0.16 | 11/11/2026 | LW-117i (só documentos, a partir do `main`). **Entradas novas (3):** DEC-234 (**PROPOSTA**, de Arthur: exceção pontual à DEC-107 e ao `AGENTS.md` 4.17, leitura de campo de evento pelo nome em três pontos fechados; nunca APROVADA sem outra ordem escrita), DEC-235 e DEC-236 (**APROVADAS por Arthur em 11/11/2026**: a tabela de distribuição das cadeias pelos 3 povoados e a ordem das tarefas da Fase 3). **Correção:** a linha "Consequências" da DEC-053 voltou a ter só as três barras da tabela, com as duas notas (LW-146a e LW-117a) em negrito e o texto intacto. "Próximo número livre" passa a DEC-237; faixas A 237–239, B 240–259 e C 260–279. Totais recontados por script a partir das tabelas do índice: APROVADA 153 (20 com ressalva) · PROPOSTA 55 · PENDENTE 17 · DESCARTADA 10 · SUBSTITUÍDA 1 = 236. Nenhuma outra entrada mudou de status; as propostas DEC-240 a DEC-243 da frente B não foram registradas. |
+| 0.15 | 11/11/2026 | LW-117h (Fase B: junção da pilha da LW-117 com o `main`). **Nenhuma entrada criada nem mudada de status.** A junção reúne, em um só arquivo, as entradas da Fase 5 (DEC-179 a DEC-201, do `main`) e as da Fase 4 (DEC-202 a DEC-233), com os 29 conflitos de texto resolvidos mantendo os dois lados (a nota da DEC-054 ficou com as duas notas datadas). Totais recontados por script a partir das tabelas do índice: APROVADA 151 (20 com ressalva) · PROPOSTA 54 · PENDENTE 17 · DESCARTADA 10 · SUBSTITUÍDA 1 = 233. "Próximo número livre" passa a DEC-234, com as faixas por frente (A 234 a 239, B 240 a 259, C 260 a 279). **Confirmado por Arthur por escrito em 11/11/2026:** as DEC-227 a DEC-233 são decisões dele e foram registradas a pedido dele; as DEC-213 a DEC-223 **seguem PROPOSTA**. Os três desvios técnicos da Fase 4 (país com ID próprio; `politics` com 4 importações; `military` com 5) têm registro próprio, sem DEC (`docs/decisions/0016-desvios-tecnicos-da-fase-4.md`). |
+| 0.14 | 11/11/2026 | LW-117g (rodada de ajustes das fichas da LW-117). **APROVADAS por Arthur (7):** DEC-227 (o tesouro abre por `request_open_treasury`; `request_open_owner` fica com 3 argumentos), DEC-228 (tarifa arredondada para cima, mínimo 1), DEC-229 (rota bloqueada pelo jogo: um comando só, `request_set_route_state` com `cause_id` e `hostile_force`), DEC-230 (`peek_quote` recebe o ator), DEC-231 (licença exigida recusa a ordem com `ECON_LICENSE_REQUIRED`), DEC-232 (o campo `severity` do evento é insumo das regras da crônica) e DEC-233 (marcos de hash da Fase 4, três por bloco). Notas curtas nas DEC-214 e DEC-215. Totais recontados por script (APROVADA: 141 (20 com ressalva), PROPOSTA: 40, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 210). |
+| 0.13 | 11/11/2026 | LW-117a, rodada 2. **APROVADAS por Arthur (3):** DEC-224 (o `upkeep` é sumidouro de dinheiro), DEC-225 (a tarifa é paga pelo ator da ordem, nos dois lados, e `peek_terms` segue sem o `side`) e DEC-226 (o assalto leva uma fração do saldo do comerciante, em dados do `military`, de partida 5000 pontos-base [HIP]), os pontos 1 a 3 de 17.11 da seção 17 do contrato da economia (ramo `lw-117b-economia-fase-4`). Notas curtas nas DEC-212, 214 e 215. Totais recontados por script (APROVADA: 134 (20 com ressalva), PROPOSTA: 40, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 203). |
+| 0.12 | 11/11/2026 | LW-117a (registro do pré-voo da Fase 4, `docs/decisions/0013-pre-voo-da-fase-4.md`). **APROVADAS por Arthur (11):** DEC-202 (o jogador entra só na autoridade e na mercantil), DEC-203 (duas culturas contrastantes, 4 parâmetros), DEC-204 (as cinco leis; a pena de crime é uma multa com a lista de atos em dados; a fonte do crime vem da Fase 5), DEC-205 (o povoado C é do vizinho), DEC-206 (guerra em escala pequena; abstrata e sem comando do jogador na Fase 4), DEC-207 (quatro províncias), DEC-208 (reputação: um número, cinco faixas), DEC-209 (save sem congelar; a LW-142 rejeita o save da Fase 3), DEC-210 (dinheiro da criminosa), DEC-211 (um governante por país) e DEC-212 (o assalto leva o dinheiro do comerciante e destrói a carga). **PROPOSTA, decididas pelo revisor (11):** DEC-213 a DEC-223 (controle da província na `politics`; interruptor da `TradeRules` e destino da tarifa; tipo de dono `treasury`; reputação por evento e cópia de leitura; T3 como T2 com vínculo; satisfação diária e protesto; baixa e "em missão"; quadro de rumores; seis eventos e limiar da crônica em dados; pagador da folha dos postos; contrato `escort` e carga destruída). Notas curtas nas DEC-050, 051, 053, 055, 155 e 164; a C1 da seção 4 passou a resolvida. **As DEC-053 e DEC-055 seguem PENDENTES.** Totais recontados por script (APROVADA: 131 (20 com ressalva), PROPOSTA: 40, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 200). **Numeração:** a 0.11 e as DEC-179 a DEC-201 pertencem ao registro da Fase 5, feito em paralelo; este registro usa a partir da DEC-202 para não colidir. Quando as duas entrarem no `main`, o texto do fim do arquivo, a linha de totais e esta tabela precisam ser juntados e os totais recontados. |
 | 0.11 | 11/11/2026 | LW-146a (registro do pré-voo da Fase 5). **APROVADAS por Arthur (9):** DEC-179 (corte do protótipo e "protótipo × depois"), DEC-180 (trajetórias e conteúdo inicial), DEC-181 (derrota e morte: dois modos), DEC-182 (combate da Fase 5), DEC-183 (crime: agressão, roubo, morte e contrabando), DEC-184 (mapa: estrutura sempre, segredos descobertos), DEC-185 (critérios de sucesso), DEC-186 (save não congelado no protótipo) e DEC-187 (teste de tropas como spike novo). **PROPOSTA (14):** DEC-188 a DEC-191 (as quatro respostas em aberto: item 24 h no chão, quem pegou, `bound`, ponto de reconhecimento) e DEC-192 a DEC-201 (as técnicas Q11 a Q20). **Status mudado:** só a **DEC-065** (PENDENTE para APROVADA). **Notas datadas, sem mudar status:** DEC-053, DEC-029, DEC-030 e DEC-066. DEC-099 não mudou. Totais recontados: APROVADA 130 (20 com ressalva) · PROPOSTA 43 · PENDENTE 17 · DESCARTADA 10 · SUBSTITUÍDA 1 = 201. Fonte: `docs/decisions/0014-pre-voo-da-fase-5.md`. |
 | 0.10 | 11/11/2026 | Rodada 5 da LW-087a. **Arthur aprovou em bloco, em 11/11/2026, 35 decisões do pré-voo da Fase 3** (DEC-138 a DEC-141, DEC-145 a DEC-162 e DEC-165 a DEC-177), que passam de PROPOSTA a APROVADA; a aprovação **não autoriza editar fixture protegida (DEC-172)** e **não transforma valor [HIP] em requisito**. As DEC-142, 143, 144, 163, 164 e 178 (já APROVADAS), as 29 PROPOSTA antigas das Fases 0 a 2 e a DEC-040 (PENDENTE) não mudaram. **Correção do `run_sim` (erro das rodadas 3 e 4, ver 0.9):** o `tools/run_sim.gd` só cria o `SimulationRunner` e não registra módulo (o registro roda só no `SimulationHost`, por `GameModules`); portanto o `run_sim` não muda, nem o hash que ele imprime; mudam o oráculo (`test_npc_split_oracle`) e o hash do soak de 30 dias (DEC-162, 172 e 175). Totais recontados por script (APROVADA: 120 (20 com ressalva), PROPOSTA: 29, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 178). |
 | 0.9 | 10/11/2026 | Rodada 4 da LW-087a. **APROVADA por Arthur:** DEC-178 (o tecido entra na manutenção dos locais, além de ferramenta e tábua; amplia a DEC-163). **Revistas (PROPOSTA):** DEC-175 e DEC-172 (marcos de hash por bloco: LW-088a a LW-092, LW-093 a LW-096a e LW-097; o código do `run_sim` não muda, muda o hash que ele imprime), DEC-165 (vaga em local de trabalho, produção ou posto), DEC-162 (hash que o `run_sim` imprime) e DEC-177 (erro `ECON_MARKET_FULL`). Notas curtas nas DEC-163 ("ampliada pela DEC-178") e DEC-153. Totais recontados por script (APROVADA: 85 (20 com ressalva), PROPOSTA: 64, PENDENTE: 18, DESCARTADA: 10, SUBSTITUÍDA: 1; total 178). |

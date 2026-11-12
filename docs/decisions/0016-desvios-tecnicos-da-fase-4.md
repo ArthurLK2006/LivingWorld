@@ -1,0 +1,26 @@
+# Registro técnico — Três desvios técnicos da Fase 4 (AGENTS 16.3)
+
+- **Status:** **aprovado por Arthur em 11/11/2026**, por autorização escrita na LW-117h (os três, de uma vez). Das decisões de `DECISIONS.md` ligadas a esta rodada, **só as DEC-227 a DEC-233 foram aprovadas por Arthur**; os demais itens da revisão R3 e da LW-117h seguem **PROPOSTA**. Todos **serão reavaliados na LW-144** (revisão da Fase 4). Este registro **não** altera o status de nenhuma decisão (`DECISIONS.md`).
+- **Data e tarefa:** 11/11/2026 (Brasília), LW-117h (DOC). Número `0016`: o `0013` é o pré-voo da Fase 4, o `0014` o da Fase 5 e o `0015` os marcos de hash.
+- **Contexto e problema:** ao escrever as fichas `politics.md` e `military.md` (LW-117c e LW-117d), três pontos saíram do que a arquitetura ou o alerta do AGENTS 5.2 pedem. Cada um estava descrito dentro da ficha e no `0013`, mas sem registro aprovado em `docs/decisions/`. Aqui estão, no formato do AGENTS 16.3.
+- **Desvio (a): o país (polity) tem ID próprio.**
+  - *Regra afetada:* arquitetura 13.2 ("ligado ao ID de uma facção de governo"; arquivo protegido, **não alterado**).
+  - *Problema real:* o país vizinho **não tem facção** (DEC-051: baixa resolução), mas precisa de governante, tesouro, leis e estado diplomático. O tesouro do país é um dono da economia e precisa de um `owner_id`.
+  - *Opções:* (1) **não desviar**: criar uma facção "de fachada" para o vizinho (contraria a DEC-050, 3 facções, e a DEC-051); (2) **a polity tem `polity_id` inteiro próprio** (de `ctx.ids`) e a facção de governo só **aponta** para ela (`governing_faction_id`, 0 no vizinho).
+  - *Recomendação (aprovada):* a opção 2. O `owner_id` do tesouro do país é o `polity_id` (`economy.md` 17.2); `peek_polity` devolve o `content_id` (texto de `data/`) e `peek_polity_id_of(content_id)` o inteiro (`politics.md` 1).
+  - *Impacto e reversão:* `politics.md` (seções 1 e 2), `economy.md` 17.2, `docs/fase-4/dados.md` (`polities.json`). Reverter = dar facção ao vizinho e usar o `faction_id` como dono do tesouro (muda dado, contrato e a regra de baixa resolução).
+- **Desvio (b): a `politics` importa 4 módulos** (`world`, `economy`, `npc` e `factions`).
+  - *Regra afetada:* AGENTS 5.2, item 4 (alerta de acoplamento: mais de 3 importações). **Não é proibição**, é alerta para relatar; por isso o registro.
+  - *Problema real:* a política precisa do território (`world`), da regra de comércio (`economy`, pelo interruptor `TradeRules`), da satisfação e do povoado de moradia (`npc`) e dos líderes (`factions`). A arquitetura 13.6 já lista essas dependências.
+  - *Opções:* (1) **não desviar**: um módulo intermediário só para repassar chamadas (camada e módulo a mais, sem ganho de clareza); (2) **manter as 4**, **só pela `api`** de cada um, sem importar `military`, `events` nem `combat` e com a `economy` nunca importando a `politics`.
+  - *Recomendação (aprovada):* a opção 2.
+  - *Impacto e reversão:* nenhum arquivo novo; vale como nota em `politics.md`. Reverter = extrair o intermediário (tarefa própria).
+- **Desvio (c): o `military` importa 5 módulos** (`world`, `economy`, `npc`, `factions` e `politics`).
+  - *Regra afetada:* AGENTS 5.2, item 4 (o mesmo alerta).
+  - *Problema real:* o `military` lê o grafo (`world`), paga e resolve assalto e escolta (`economy`), baixa e marca "em missão" (`npc`), lê membros e pede suprimento (`factions`) e troca o controle de província (`politics`). A arquitetura 14.4 lista as mesmas, com a `politics` acrescentada pela ficha.
+  - *Opções:* (1) **não desviar**: juntar as chamadas de `npc` e `factions` num único ponto (`military.md`, ponto 8 da seção 15); (2) **manter as 5**, só pela `api`, sem importar `events`.
+  - *Recomendação (aprovada):* a opção 2. **Na Fase 5** o `military` passa a importar também a `api` do `combat` (pede o encontro; `combat.md` seção 8, mão única): o total vai a **6** [FUT] e a LW-144 o reavalia junto.
+  - *Impacto e reversão:* nota em `military.md`; reverter = o ponto único de chamadas, tarefa própria.
+- **Escolha:** os três, como acima. **Consequências e riscos:** (a) é o único que muda um **contrato** (o dono do tesouro do país); (b) e (c) são acoplamentos, não regras quebradas; o risco é a manutenção, e a LW-144 decide se algum vira módulo intermediário. Os três valem **só** na Fase 4.
+- **Validação e referências:** DEC-050, DEC-051, DEC-213 e DEC-214 (`DECISIONS.md`); `docs/decisions/0013-pre-voo-da-fase-4.md` (achado 3); `docs/modules/politics.md` (seções 1 e 2 e a lista de dependências), `military.md` (idem) e `economy.md` 17.2; arquitetura 13.2, 13.6 e 14.4. **Não executado:** nada (só documento).
+- **Relação com DEC-NNN:** nenhuma entrada nova em `DECISIONS.md`; as DEC-213 a DEC-223 seguem **PROPOSTA**.

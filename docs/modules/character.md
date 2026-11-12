@@ -66,8 +66,8 @@ Estado: **PLANEJADA (11/11/2026).** Nada desta seção existe no código; o que 
 
 ### E4. Marca de origem e contrabando (DEC-183)
 
-- **Marca:** `request_transfer_item(..., cause)` com `cause` = `theft` (roubo, LW-163a) ou `loot` (saque de morto, LW-156b) grava `origin_owner_id` = o dono de quem o item saiu. Vender um item **marcado** numa loja **legal** é crime (a decisão é de `events` ou `politics`, DEC-195; o `character` só **informa** a marca).
-- **[EM ABERTO] venda de item único a mercado:** hoje **não existe** caminho: a `economy` só negocia **bens em quantidade** (`request_trade`). Para a marca valer, precisa existir um caminho de venda de instância (extensão de `economy` e `character`, LW-146f). Sem ele, o contrabando por marca não tem onde acontecer.
+- **Marca:** `request_transfer_item(..., cause)` com `cause` = `theft` (roubo, LW-163a) ou `loot` (saque de morto, LW-156b) grava `origin_owner_id` = o dono de quem o item saiu; com `cause` = **`sale`** (venda a um mercado, **LW-146g**; `economy.md` 18.5) o item **sai do jogo** e **não** ganha marca nova: o `to_id` é o `owner_id` do mercado (opaco para o `character`, que não importa a economia). Vender um item **marcado** numa loja **legal** é crime (a decisão é de `events` ou `politics`, DEC-195; o `character` só **informa** a marca).
+- **Venda de item único a mercado: recompra simples (escolha de Arthur de 11/11/2026; LW-146g; PROPOSTA técnica).** A `economy` só negocia bens em quantidade, então a venda é **de recompra**: o mercado paga e o item **some** (sem revenda; a versão completa fica para "depois", `docs/backlog.md`). Três chamadas da **ponte**, no mesmo passo e **nesta ordem** (`economy.md` 18.5): (1) **`peek_item_value(item_id)`** do `character` devolve `value` (inteiro: o `base_value` do item em dados, ajustado pela qualidade) e `can_sell` (o item existe, é do vendedor e **não** é `bound`; senão `CHARACTER_ITEM_BOUND` ou `CHARACTER_ITEM_UNKNOWN`); (2) `economy.request_buy_back(market_id, seller_id, value)` paga; (3) `request_transfer_item(seller_id, market_id, item_id, sale)` tira o item e publica **`ItemSold(item_id, def_id, seller_id, market_id, origin_owner_id)`**. A `origin_owner_id` viaja no evento; **quem decide se foi crime** é a `politics`, pelo adaptador do crime (`politics.md` seção 4; o ato é `smuggling`, LW-165b); o `character` só **informa** a marca. O campo `base_value` dos itens é **dado novo** do `character` (`data/items.json`, LW-148; PROPOSTA).
 - **Lista de bens proibidos** (a outra metade do contrabando) é de `politics` (`TradeRules`); o `character` não participa. **Rastrear cada unidade de mercadoria** fica para "depois" (DEC-183).
 
 ### E5. Conhecimento e o mapa (DEC-184, DEC-191)
@@ -87,7 +87,8 @@ Estado: **PLANEJADA (11/11/2026).** Nada desta seção existe no código; o que 
 | Nome | Tarefa | O que faz |
 |---|---|---|
 | `peek_character(actor_id)` (ampliada) / `peek_body` / `peek_inventory` / `peek_skill` / `peek_known` / `peek_visible` | 147, 148, 156, 160 | consultas (cópias) |
-| `request_equip` / `request_unequip` / `request_transfer_item` / `request_wear_item` | 148 | seção E2 |
+| `request_equip` / `request_unequip` / `request_transfer_item` / `request_wear_item` | 148 | seção E2 (e a causa `sale`, E4) |
+| `peek_item_value(item_id)` | 148 (e a tarefa nova da recompra) | `value` e `can_sell` de um item, para a ponte (seção E4; `economy.md` 18.5) |
 | `request_apply_damage(actor_id, amount, cause_id)` | 156 | do `combat`; vida e "ferido" de quem tem `character` |
 | `request_set_death_mode(actor_id, mode)` | 156d | escolha ao começar |
 | `request_pickup_item(actor_id, item_id)` | 156a | pega item do chão |
@@ -102,5 +103,5 @@ Estado: **PLANEJADA (11/11/2026).** Nada desta seção existe no código; o que 
 
 ### E8. Extensões pendentes e pontos em aberto
 
-- **Extensões de outros módulos (LW-146f):** `npc` (evento de promoção; memória de testemunha de item pego; NPC pega item), `economy` (monte no chão como tipo de dono; motivo de destruição do metal e o evento; **venda de instância**), `world` (ponto de renascimento), `docs/events.md` (os eventos acima).
-- **Em aberto:** dinheiro ao morrer; vida com que se renasce; "itens de missão"; rebaixar T2; munição do arco; venda de item único; se T1 pega instância; se o modo de morte muda no meio do jogo.
+- **Extensões de outros módulos (LW-146f e LW-146g):** `npc` (evento de promoção; memória de testemunha de item pego; NPC pega item), `economy` (**escritas na LW-146g, `economy.md` seção 18**: monte no chão como tipo de dono; motivo de destruição do metal e o evento `GoodsForged`, que o `character` **ouve** para criar a instância; recompra de item), `world` (ponto de renascimento), `docs/events.md` (os eventos acima, mais `GoodsForged` e `ItemSold`).
+- **Em aberto:** dinheiro ao morrer; vida com que se renasce; "itens de missão"; rebaixar T2; munição do arco; se T1 pega instância; se o modo de morte muda no meio do jogo; **quais bens em quantidade caem** ao morrer e o **saque de bem de NPC morto** (`economy.md` 18.2 e 18.9). A venda de item único **fechou** na LW-146g (recompra simples).
