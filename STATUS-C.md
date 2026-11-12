@@ -1,4 +1,59 @@
-BLOQUEADA — 11/11/2026 21:52 (Brasília) — Fase B da LW-097 (item 4 do Bloco v10) PARADA por condição (c): na junção com o main (4372f7f) o check_all dá 2 falhas em testes EXISTENTES DA A que o bloco não lista (test_game_economy_wiring e test_economy_start_money_and_consume: só números de IDs e dinheiro, porque o jogo real agora tem 3 mercados, 14 locais de produção e 132 NPCs). Nada commitado nem enviado na junção; main intocado; LW-097 NÃO está no main. Prova do oráculo pronta (só A, só C, junção, e neutralização exata). Falta só a sua autorização para trocar os números desses 2 testes (patch pronto e verificado). 097e e 117i já relatadas (117i no main, 4372f7f). Sem tag, sem --force. Nada rodando.
+11/11/2026 22:25 (Brasília) — LW-118 PRONTA PARA REVISÃO, só em ramos (118a 6eb1ba0, 118b 5f352a7, 118c 4e8ce98, 118d 15b95d4, empilhados na ponta da 097e 4e614b5; nada no main); check_all VERDE em cada parte (118d: 153 scripts, 1.390 testes, 296.671 asserts); nenhum teste existente mudou; nenhum hash mudou. PENDENTE DE VOCÊ: a Fase B da LW-097 segue BLOQUEADA (2 testes da A: autorizar a troca dos números, patch pronto; o main já andou para 885615c, então refaço a junção). Parei (fim da cadeia da noite). Sem tag, sem --force, main intocado por mim além da 117i. Nada rodando.
+
+# LW-118 — RELATÓRIO — Culturas, províncias, adjacência e ligação povoado → província no `world`        Status: PRONTA PARA REVISÃO (ramos; nada no `main`)
+
+**Contexto.** Item 5 do Bloco C v10: LW-118 só em ramos `lw-118a-…` empilhados, partes pequenas (DEC-126), `check_all` verde e push só do ramo em cada uma, nomes genéricos marcados como proposta; se algum hash mudasse eu registraria a causa sem aprovar. A causa da parada da Fase B (2 testes da economia da A) não afeta o `world`, então segui. As quatro partes saem da ponta da 097e (`4e614b5`), porque a LW-118 depende da LW-097 (rotas, 3º povoado) e ela ainda não está no `main`.
+
+**Declaração do início (AGENTS 2.3).** Li: AGENTS 0.4; a linha da LW-118 do roadmap; a extensão da Fase 4 do `world.md`; `docs/fase-4/dados.md` seção 1 (colunas e linhas de partida); `SettlementLoader`, `RouteLoader`, `RouteService`, `WorldSetup` e `WorldModule`. Decisões: DEC-203, DEC-205 e DEC-207 (APROVADAS); DEC-213 (PROPOSTA, tratada como padrão de trabalho, não como decidida).
+
+## 1. RESUMO
+O `world` agora tem as 2 culturas (4 parâmetros 0 a 100 [HIP]), as 4 províncias da DEC-207 (A, B, C e a fronteira, sem povoado), a adjacência de partida (A–B, A–fronteira, B–fronteira, fronteira–C; A e B só chegam a C pela fronteira), a ligação de cada povoado à sua província e cultura (A e B `culture_trade`, C `culture_tradition`, PROPOSTA) e as seis consultas do contrato, tudo validado no carregamento e fora do save e do hash. Quatro ramos, 46 testes novos, nenhum teste existente alterado.
+
+## 2. AS QUATRO PARTES (ramo · commit · `check_all`)
+| Parte | Ramo | Commit | Scripts / testes / asserts |
+|---|---|---|---|
+| 118a culturas | `lw-118a-culturas` | `6eb1ba0` | 149 / 1.354 / 296.289 |
+| 118b províncias e adjacência | `lw-118b-provincias` | `5f352a7` | 151 / 1.373 / 296.482 |
+| 118c povoado → província e cultura | `lw-118c-povoado-e-provincia` | `4e8ce98` | 152 / 1.383 / 296.602 |
+| 118d ligação no módulo `world` | `lw-118d-world-ligado` | `15b95d4` | 153 / 1.390 / 296.671 |
+Todas VERDES (exit 0, GDScript sem avisos, ids de conteúdo ok); a base (097e) tinha 148 scripts e 1.344 testes.
+
+## 3. ARQUIVOS CRIADOS
+- Código (`src/sim/world/`): `culture.gd`, `culture_loader.gd`, `culture_service.gd`, `province.gd`, `province_link.gd`, `province_loader.gd`, `province_service.gd`, `settlement_province_check.gd` (todos com `.uid`).
+- Dados (`data/world/`): `cultures.json` (2), `provinces.json` (4), `province_adjacency.json` (4).
+- Testes (`tests/unit/`): `test_cultures` (10), `test_provinces` (8), `test_provinces_data` (11), `test_province_settlements` (10), `test_world_province_queries` (7).
+
+## 4. ARQUIVOS MODIFICADOS (sem tocar em teste existente)
+`settlement.gd` (dois campos opcionais), `settlement_loader.gd` (duas colunas opcionais), `world_module.gd` (6 consultas e o `validate()`), `src/app/world_setup.gd` e `game_modules.gd` (carregam e entregam a estrutura), `data/world/settlements.json` (as duas colunas), `data/text/pt_br.json` (6 chaves de nome), `docs/modules/world.md`, `data/world/README.md`, `src/sim/world/README.md`.
+
+## 5. DECISÕES TÉCNICAS
+- **Colunas `province_id` e `culture_id` OPCIONAIS no `SettlementLoader`** (a ficha as chama obrigatórias): o `test_settlements.gd` existente monta povoados sem elas e o bloco proíbe mexer em teste existente. A obrigatoriedade e as referências são conferidas no carregamento pelo `SettlementProvinceCheck`, com arquivo, item e campo; para o jogo o efeito é o mesmo do contrato. **Sem desvio de contrato.**
+- **Duas classes de consulta** em vez de uma: `ProvinceService` (províncias, adjacência, povoados) e `CultureService` (culturas e a cultura do povoado), ambas sem estado, cópias, ordem crescente, códigos `PROVINCE_UNKNOWN`, `CULTURE_UNKNOWN` e `SETTLEMENT_UNKNOWN`. O `WorldModule` expõe os seis nomes do contrato (`peek_province`, `peek_provinces`, `peek_province_of`, `peek_adjacent_provinces`, `peek_culture`, `peek_culture_of`).
+- **Adjacência estrita:** `id` `<a>__<b>` com `a` antes de `b` na ordem alfabética, par repetido (inclusive invertido) e ligação com ela mesma são erro, grafo precisa ser conexo (como o `dados.md` pede).
+- **`check_content_ids` não foi alterado** (a ligação é conferida no carregamento; o `dados.md` diz que a mudança no verificador é de quem cria cada arquivo e da frente da economia). **`debug_summary` do módulo não mudou** (evitei tocar em teste existente).
+- **Valores [HIP]/PROPOSTA:** os parâmetros das culturas (80/60/30/40 e 30/25/65/75), qual cultura é de qual povoado, os nomes ("Cultura mercantil", "Cultura tradicional", "Província A/B/C", "Fronteira", genéricos e provisórios, DEC-100).
+- Proposta de entrada para `DECISIONS.md`: nenhuma.
+
+## 6. TESTES EXECUTADOS
+`tools/check_all` em cada commit (tabela acima); na 118b a primeira rodada deu VERMELHO por um aviso de compilação (variável `pending` sombreando a função do GUT no meu teste); renomeei e repeti, VERDE. `tools/run_tests` por arquivo novo, todos aprovados.
+
+## 7. RESULTADOS
+Aprovados 1.390 de 1.390 na ponta (118d), falhos 0, pulados 0. Critérios da LW-118: grafo de adjacência coerente e conexo; todo povoado pertence a uma província; o C pertence à `province_c`; validação aponta referência quebrada com arquivo, item e campo; "ida e volta de save" (salvar, carregar num mundo novo com os mesmos arquivos e obter as mesmas consultas, com o bloco `world` do save igual e o `state_hash` igual com e sem a estrutura).
+
+## 8. PROBLEMAS E RISCOS
+- **Hashes:** nenhum mudou (conteúdo; o oráculo passou sem alteração em todas as partes).
+- Os testes novos foram escritos junto ou depois do código e passaram na primeira rodada; cada arquivo de dados inválido traz casos negativos, que provam que a conferência acusa o erro.
+- **Pilha sobre a 097e:** a LW-118 só entra no `main` depois da LW-097 (Fase B). O `main` já andou para `885615c` (LW-093 a 096a da A), então a junção da 097 será refeita contra ele e a pilha da LW-118 entra junto, em outra autorização. Possível conflito em `data/world/settlements.json` e `docs/modules/world.md` se a A ou a B mexerem neles.
+- 39 arquivos nas quatro partes juntas (cada parte ficou entre 8 e 12 arquivos, dentro da tolerância de 1,5×).
+
+## 9. PENDÊNCIAS
+Aprovação da LW-118 (só ramos). Fase B da LW-097 **BLOQUEADA** (2 testes da A; patch pronto em `…/scratchpad/proposta_2_testes_da_A.patch`; junção sem commit em `.worktrees/lw-097e`; precisa de nova junção contra o `main` atual). Próxima tarefa depois disso: LW-119 (`factions/state`), que depende da LW-118 e da LW-088; não iniciada. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 pronta em 5 ramos (Fase B pendente) e LW-118 pronta em 4 ramos; nenhuma contagem do `ROADMAP_STATUS` mudou.
+- Git: ramos enviados, `main` não tocado por mim nesta etapa; sem tag, sem `--force`, sem apagar ramo.
+
+---
 
 # LW-097, Fase B (junção com o `main`) — RELATÓRIO — BLOQUEADA        Status: BLOQUEADA (pronta para a manhã)
 
