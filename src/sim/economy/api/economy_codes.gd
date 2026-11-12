@@ -26,3 +26,5 @@ const INVALID_SAVE: String = "ECON_INVALID_SAVE"
 const CONTRACT_IMPOSSIBLE: String = "ECON_CONTRACT_IMPOSSIBLE"
 const UNKNOWN_CONTRACT: String = "ECON_UNKNOWN_CONTRACT"
 const CONTRACT_NOT_OPEN: String = "ECON_CONTRACT_NOT_OPEN"
+## "Um trabalho, um pagamento" (DEC-151): o trabalhador já está atribuído ao local de trabalho do turno, que o paga pela folha.
+const WORKER_ALREADY_ASSIGNED: String = "ECON_WORKER_ALREADY_ASSIGNED"

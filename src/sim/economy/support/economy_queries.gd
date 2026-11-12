@@ -224,6 +224,7 @@ static func _contract_query(state: EconomyState, contract_id: int) -> EconomyRep
 	query.acceptor_id = contract[ContractBook.KEY_ACCEPTOR]
 	query.place_id = str(contract.get(ContractBook.KEY_PLACE, ""))
 	query.minutes = int(contract.get(ContractBook.KEY_MINUTES, 0))
+	query.worked_minutes = int(contract.get(ContractBook.KEY_WORKED, 0))
 	query.good_id = str(contract.get(ContractBook.KEY_GOOD, ""))
 	query.quantity = int(contract.get(ContractBook.KEY_QUANTITY, 0))
 	query.destination_id = int(contract.get(ContractBook.KEY_DESTINATION, IdGenerator.NO_ID))

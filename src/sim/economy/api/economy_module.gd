@@ -133,6 +133,21 @@ func request_post_contract(kind: String, issuer_id: int, reward: int, deadline: 
 	return EconomyReplies.PostContractResult.new(posted, contract_id)
 
 
+## Registra `minutes` de trabalho no local `place_id` para o contrato `labor` que o trabalhador aceitou ali (LW-096; seção 8): ao completar os minutos do contrato, dentro do prazo, a custódia o paga e o `ContractCompleted` sai. SÓ para contrato `labor`:
+## recusado com `ECON_WORKER_ALREADY_ASSIGNED` se o trabalhador já é atribuído ao local (a folha o paga). Tudo ou nada. Outras falhas: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_CONTRACT_IMPOSSIBLE`, `ECON_UNKNOWN_CONTRACT`.
+func request_work_shift(place_id: String, worker_id: int, minutes: int) -> Result:
+	if _clock == null or _events == null:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "EconomyModule.request_work_shift: módulo sem setup (sem relógio nem barramento); esperado um módulo registrado no World.")
+	return _announce(_state.contracts.work_shift(place_id, worker_id, minutes, _clock.total_minutes()))
+
+
+## Entrega os bens do contrato `delivery` aceito ao destino e a custódia paga o aceitante (LW-096). Tudo ou nada; falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_CONTRACT_IMPOSSIBLE` e as dos bens.
+func request_deliver_contract(contract_id: int) -> Result:
+	if _clock == null or _events == null:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "EconomyModule.request_deliver_contract: módulo sem setup (sem relógio nem barramento); esperado um módulo registrado no World.")
+	return _announce(_state.contracts.deliver(contract_id, _clock.total_minutes()))
+
+
 ## Aceita o contrato (LW-096): só `open`, um aceitante aberto que não é o emissor. Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_CONTRACT_IMPOSSIBLE`.
 func request_accept_contract(contract_id: int, actor_id: int) -> Result:
 	return _state.contracts.accept(contract_id, actor_id)
@@ -287,6 +302,13 @@ func _on_npc_died(event: SimEvent) -> void:
 		_state.posts.remove_worker(owner_id)
 	if _state.book.has_owner(owner_id) and _state.book.kind_of(owner_id) == KIND_NPC:
 		_state.book.close_owner(owner_id)
+
+
+## Publica o `ContractCompleted` se o comando concluiu o contrato e devolve o resultado dele.
+func _announce(outcome: ContractBook.Outcome) -> Result:
+	if outcome.completed:
+		_events.publish(ContractCompleted.new(outcome.contract_id, outcome.acceptor_id, outcome.reward))
+	return outcome.result
 
 
 ## Atribui o NPC ao local de produção ou ao posto de serviço que ocupa `work_place_id`; sem nenhum dos dois ninguém é atribuído (e não é erro).

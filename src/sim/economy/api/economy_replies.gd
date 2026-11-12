@@ -230,7 +230,7 @@ class PostContractResult:
 
 
 ## `peek_contract` e `peek_contracts` (LW-096; seção 8 do contrato): um contrato, com `kind`, `issuer_id`, `reward`, `deadline` (0 = sem prazo), `state` (`open`, `accepted`, `completed`, `failed`, `expired`) e `acceptor_id` (`IdGenerator.NO_ID` se ninguém).
-## O objetivo vem pelas chaves do tipo: `labor` (`place_id`, `minutes`), `delivery` (`good_id`, `quantity`, `destination_id`) e, na vaga, `workplace_id` e os nomes de `peek_site` (`place_id`, `settlement_id`, `occupation_id`, `wage_per_hour`, `workers_wanted`, `workers_assigned`);
+## O objetivo vem pelas chaves do tipo: `labor` (`place_id`, `minutes` e `worked_minutes`, os já trabalhados), `delivery` (`good_id`, `quantity`, `destination_id`) e, na vaga, `workplace_id` e os nomes de `peek_site` (`place_id`, `settlement_id`, `occupation_id`, `wage_per_hour`, `workers_wanted`, `workers_assigned`);
 ## o que não é do tipo fica no valor vazio. `result` falha com `ECON_UNKNOWN_CONTRACT` se não há o contrato (então o resto não vale).
 class ContractQuery:
 	extends RefCounted
@@ -245,6 +245,7 @@ class ContractQuery:
 	var acceptor_id: int = IdGenerator.NO_ID
 	var place_id: String = ""
 	var minutes: int = 0
+	var worked_minutes: int = 0
 	var good_id: String = ""
 	var quantity: int = 0
 	var destination_id: int = IdGenerator.NO_ID

@@ -49,4 +49,6 @@ Implementado (LW-096, parte a, 11/11/2026): o livro de contratos, em `contracts/
 
 Implementado (LW-096, parte b, 11/11/2026): a porta dos contratos: `request_post_contract`, `request_accept_contract`, `peek_contract`, `peek_contracts` e o evento `ContractOffered` (em `api/`).
 
+Implementado (LW-096, parte c, 11/11/2026): a conclusão dos contratos: `request_work_shift` (só `labor`; `ECON_WORKER_ALREADY_ASSIGNED` para quem já é atribuído ao local) e `request_deliver_contract`, com o pagamento pela custódia e o `ContractCompleted` (em `api/`).
+
 Planejado, ainda não existe: os dados dos postos (`service_posts.json`), os contratos e as vagas (LW-096), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).

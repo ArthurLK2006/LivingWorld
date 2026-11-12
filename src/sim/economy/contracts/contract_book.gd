@@ -3,7 +3,8 @@ extends RefCounted
 ## Os contratos da economia (LW-096; docs/modules/economy.md, seção 8; DEC-165): `labor` (trabalho avulso: `place_id` e `minutes`), `delivery` (entrega: `good_id`, `quantity` e `destination_id`) e, na parte das vagas, `vacancy`. O `contract_id` é um ID do
 ## `core`; o contrato COM recompensa é dono de uma conta do tipo `contract`, a CUSTÓDIA: ao postar, o emissor paga a recompensa para ela (`contract_escrow`) e o dinheiro só sai dali para o aceitante (`contract_payout`) ou de volta para o emissor
 ## (`contract_refund`), nunca fica retido. Estado: `open`, `accepted`, `completed`, `failed`, `expired`. Esta parte: postar (validado, tudo ou nada) e aceitar (só `open`, um aceitante); a conclusão, o prazo e as vagas vêm nas partes seguintes.
-## `deadline` é um minuto de simulação (0 = sem prazo, só para a vaga). Nunca sorteia nem olha o relógio: quem chama passa o `now`.
+## Conclusão (parte c): `labor` pelo turno de trabalho registrado no local (`work_shift`; "um trabalho, um pagamento": recusado se o trabalhador já é atribuído àquele local) e `delivery` pela entrega dos bens ao destino (`deliver`); a custódia paga o
+## aceitante (`contract_payout`) e o estado vira `completed`. `deadline` é um minuto de simulação (0 = sem prazo, só para a vaga). Nunca sorteia nem olha o relógio: quem chama passa o `now`.
 
 const LABOR: String = "labor"
 const DELIVERY: String = "delivery"
@@ -30,6 +31,8 @@ const KEY_MINUTES: String = "minutes"
 const KEY_GOOD: String = "good_id"
 const KEY_QUANTITY: String = "quantity"
 const KEY_DESTINATION: String = "destination_id"
+## Minutos de trabalho já registrados no `labor` (0 ao postar).
+const KEY_WORKED: String = "worked_minutes"
 ## Chaves do objetivo que quem posta entrega (as mesmas do estado).
 const OBJECTIVE_LABOR: Array[String] = [KEY_PLACE, KEY_MINUTES]
 const OBJECTIVE_DELIVERY: Array[String] = [KEY_GOOD, KEY_QUANTITY, KEY_DESTINATION]
@@ -78,6 +81,8 @@ func post(contract_id: int, kind: String, issuer_id: int, reward: int, deadline:
 	var state: Dictionary = {KEY_KIND: kind, KEY_ISSUER: issuer_id, KEY_REWARD: reward, KEY_DEADLINE: deadline, KEY_STATE: STATE_OPEN, KEY_ACCEPTOR: IdGenerator.NO_ID}
 	for key: String in _objective_keys(kind):
 		state[key] = objective[key]
+	if kind == LABOR:
+		state[KEY_WORKED] = 0
 	_contracts[contract_id] = state
 	return Result.success()
 
@@ -99,6 +104,80 @@ func accept(contract_id: int, actor_id: int) -> Result:
 	state[KEY_STATE] = STATE_ACCEPTED
 	state[KEY_ACCEPTOR] = actor_id
 	return Result.success()
+
+
+## Registra `minutes` de trabalho do `worker_id` no local `place_id` para o contrato `labor` que ele aceitou ali; ao completar os minutos do contrato (dentro do prazo) a custódia paga o trabalhador e o contrato fica `completed`. Tudo ou nada.
+## Falhas: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_CONTRACT_IMPOSSIBLE` (minutos fora da faixa ou prazo vencido), `ECON_WORKER_ALREADY_ASSIGNED` (o trabalhador já é atribuído ao local de produção ou ao posto de `place_id`: o salário paga esse trabalho)
+## e `ECON_UNKNOWN_CONTRACT` (ele não aceitou nenhum `labor` ali).
+func work_shift(place_id: String, worker_id: int, minutes: int, now: int) -> Outcome:
+	var checked: Result = _book.check_open(worker_id)
+	if not checked.ok:
+		return Outcome.failed(checked)
+	if minutes < 1:
+		return Outcome.failed(Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.work_shift: os minutos são %d; esperado 1 ou mais." % minutes))
+	if _is_assigned_at(place_id, worker_id):
+		return Outcome.failed(Result.failure(EconomyCodes.WORKER_ALREADY_ASSIGNED, "ContractBook.work_shift: o trabalhador %d já é atribuído ao local '%s' e é pago pela folha dele; um trabalho, um pagamento." % [worker_id, place_id]))
+	var contract_id: int = _accepted_labor_of(worker_id, place_id)
+	if contract_id == IdGenerator.NO_ID:
+		return Outcome.failed(Result.failure(EconomyCodes.UNKNOWN_CONTRACT, "ContractBook.work_shift: o trabalhador %d não aceitou nenhum contrato de trabalho avulso em '%s'." % [worker_id, place_id]))
+	var state: Dictionary = _contracts[contract_id]
+	if now >= int(state[KEY_DEADLINE]):
+		return Outcome.failed(Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.work_shift: o prazo do contrato %d (%d) já passou (agora %d)." % [contract_id, state[KEY_DEADLINE], now]))
+	var worked: int = int(state[KEY_WORKED]) + minutes
+	if worked < int(state[KEY_MINUTES]):
+		state[KEY_WORKED] = worked
+		return Outcome.progress(contract_id)
+	var paid: Result = _ledger.check_transfer(contract_id, worker_id, int(state[KEY_REWARD]), Ledger.REASON_CONTRACT_PAYOUT)
+	if not paid.ok:
+		return Outcome.failed(paid)
+	state[KEY_WORKED] = int(state[KEY_MINUTES])
+	return _complete(contract_id)
+
+
+## Entrega os bens do contrato `delivery` aceito (do aceitante para o destino) e a custódia paga o aceitante. Tudo ou nada: confere os bens e o pagamento ANTES de mover qualquer coisa. Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_IMPOSSIBLE` (não é
+## `delivery` ou o prazo venceu), `ECON_CONTRACT_NOT_OPEN` (não está aceito) e as dos bens (`ECON_INSUFFICIENT_GOODS`, `ECON_CAPACITY_EXCEEDED`, `ECON_OWNER_CLOSED`).
+func deliver(contract_id: int, now: int) -> Outcome:
+	if not _contracts.has(contract_id):
+		return Outcome.failed(Result.failure(EconomyCodes.UNKNOWN_CONTRACT, "ContractBook.deliver: o contrato %d não existe." % contract_id))
+	var state: Dictionary = _contracts[contract_id]
+	if state[KEY_KIND] != DELIVERY:
+		return Outcome.failed(Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.deliver: o contrato %d é '%s'; esperado '%s'." % [contract_id, state[KEY_KIND], DELIVERY]))
+	if state[KEY_STATE] != STATE_ACCEPTED:
+		return Outcome.failed(Result.failure(EconomyCodes.CONTRACT_NOT_OPEN, "ContractBook.deliver: o contrato %d está '%s'; esperado '%s'." % [contract_id, state[KEY_STATE], STATE_ACCEPTED]))
+	if now >= int(state[KEY_DEADLINE]):
+		return Outcome.failed(Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.deliver: o prazo do contrato %d (%d) já passou (agora %d)." % [contract_id, state[KEY_DEADLINE], now]))
+	var acceptor: int = state[KEY_ACCEPTOR]
+	var moved: Result = _goods.check_transfer(acceptor, state[KEY_DESTINATION], state[KEY_GOOD], state[KEY_QUANTITY])
+	if not moved.ok:
+		return Outcome.failed(moved)
+	var paid: Result = _ledger.check_transfer(contract_id, acceptor, int(state[KEY_REWARD]), Ledger.REASON_CONTRACT_PAYOUT)
+	if not paid.ok:
+		return Outcome.failed(paid)
+	_goods.transfer(acceptor, state[KEY_DESTINATION], state[KEY_GOOD], state[KEY_QUANTITY])
+	return _complete(contract_id)
+
+
+## O que um comando de conclusão fez: `result`, o contrato (`IdGenerator.NO_ID` se nenhum) e, se ele foi concluído, o aceitante e a recompensa paga (para quem chama publicar o `ContractCompleted`).
+class Outcome:
+	extends RefCounted
+
+	var result: Result
+	var contract_id: int = IdGenerator.NO_ID
+	var completed: bool = false
+	var acceptor_id: int = IdGenerator.NO_ID
+	var reward: int = 0
+
+	static func failed(failure: Result) -> Outcome:
+		var outcome: Outcome = Outcome.new()
+		outcome.result = failure
+		return outcome
+
+	## Turno registrado, contrato ainda não completo.
+	static func progress(worked_contract_id: int) -> Outcome:
+		var outcome: Outcome = Outcome.new()
+		outcome.result = Result.success()
+		outcome.contract_id = worked_contract_id
+		return outcome
 
 
 func has_contract(contract_id: int) -> bool:
@@ -184,6 +263,44 @@ func _objective_problem(kind: String, objective: Dictionary) -> String:
 	return ""
 
 
+## Paga a custódia ao aceitante (`contract_payout`) e marca o contrato `completed`. Só depois de conferido que o pagamento cabe.
+func _complete(contract_id: int) -> Outcome:
+	var state: Dictionary = _contracts[contract_id]
+	var paid: Result = _ledger.transfer(contract_id, state[KEY_ACCEPTOR], int(state[KEY_REWARD]), Ledger.REASON_CONTRACT_PAYOUT)
+	var outcome: Outcome = Outcome.new()
+	outcome.result = paid
+	if not paid.ok:
+		return outcome
+	state[KEY_STATE] = STATE_COMPLETED
+	outcome.contract_id = contract_id
+	outcome.completed = true
+	outcome.acceptor_id = state[KEY_ACCEPTOR]
+	outcome.reward = state[KEY_REWARD]
+	return outcome
+
+
+## O trabalhador está atribuído ao local de produção ou ao posto de `place_id`?
+func _is_assigned_at(place_id: String, worker_id: int) -> bool:
+	if _production != null:
+		var site_id: int = _production.site_at(place_id)
+		if site_id != IdGenerator.NO_ID and (_production.state_of(site_id)[ProductionBook.KEY_WORKERS] as Array).has(worker_id):
+			return true
+	if _posts != null:
+		var post_id: int = _posts.post_at(place_id)
+		if post_id != IdGenerator.NO_ID and (_posts.state_of(post_id)[ServicePostBook.KEY_WORKERS] as Array).has(worker_id):
+			return true
+	return false
+
+
+## O menor ID de contrato `labor` aceito por `worker_id` em `place_id` (`IdGenerator.NO_ID` se nenhum).
+func _accepted_labor_of(worker_id: int, place_id: String) -> int:
+	for contract_id: int in contract_ids():
+		var state: Dictionary = _contracts[contract_id]
+		if state[KEY_KIND] == LABOR and state[KEY_STATE] == STATE_ACCEPTED and state[KEY_ACCEPTOR] == worker_id and state[KEY_PLACE] == place_id:
+			return contract_id
+	return IdGenerator.NO_ID
+
+
 ## As chaves do objetivo do tipo (a vaga não tem objetivo próprio aqui: o local de trabalho é dela).
 func _objective_keys(kind: String) -> Array[String]:
 	if kind == LABOR:
@@ -216,6 +333,10 @@ func _parse_contract(contract_id: int, raw_entry: Variant) -> Variant:
 	if issuer < IdGenerator.FIRST_ID or reward < 0 or deadline < 0 or (acceptor != IdGenerator.NO_ID and acceptor < IdGenerator.FIRST_ID):
 		return "'%s' deve ser um ID positivo, '%s' e '%s' 0 ou mais e '%s' um ID positivo ou %d" % [KEY_ISSUER, KEY_REWARD, KEY_DEADLINE, KEY_ACCEPTOR, IdGenerator.NO_ID]
 	var state: Dictionary = {KEY_KIND: str(kind), KEY_ISSUER: issuer, KEY_REWARD: reward, KEY_DEADLINE: deadline, KEY_STATE: str(state_name), KEY_ACCEPTOR: acceptor}
+	if kind == LABOR:
+		if not EconomyJson.is_int_like(entry.get(KEY_WORKED)) or EconomyJson.to_int(entry[KEY_WORKED]) < 0:
+			return "'%s' deve ser um inteiro de 0 ou mais" % KEY_WORKED
+		state[KEY_WORKED] = EconomyJson.to_int(entry[KEY_WORKED])
 	for key: String in _objective_keys(str(kind)):
 		var value: Variant = entry.get(key)
 		var wants_text: bool = key == KEY_PLACE or key == KEY_GOOD
