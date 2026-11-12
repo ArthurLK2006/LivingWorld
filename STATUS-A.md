@@ -1,4 +1,4 @@
-11/11/2026 21:52 (Brasília) · BLOCO A v10: LW-096 parte d enviada (prazo e devolução da custódia; ramo lw-096d-prazo-dos-contratos, `check_all` VERDE 160 scripts/1.371 testes). Falta a parte e (vagas) e a LW-096a
+11/11/2026 22:00 (Brasília) · BLOCO A v10: LW-096 completa em código (partes a a e: livro, porta, conclusão, prazo e vagas; ponta lw-096e-vagas, `check_all` VERDE 161 scripts/1.380 testes). Falta a LW-096a (o NPC aceita vaga) e a Fase B do resto do marco 2
 
 # RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
 
