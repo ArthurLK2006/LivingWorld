@@ -1,4 +1,4 @@
-12/11/2026 07:58 (Brasília) — BLOCO B v8 (manhã, limite 13:00) EM ANDAMENTO, sem BLOQUEADA minha: autorizações da C CONFIRMADAS por Arthur ('Autorizo os 7 ajustes', 'Autorizo 6.000', 'Autorizo a troca', 'Autorizo a resolução') e decisões dele registradas (R15-I1 = opção B: a custódia de emissor morto volta ao mercado do povoado do contrato; a A tenta levar ao `main` o conjunto 096h a 096n e depois a LW-094); `main` ainda em `81ce7f4`; revisando o 096l (PostLoader); vigia armado. (Resumo das etapas anteriores: LW-097 da C no `main`, auditoria SÃ, `check_all` meu verde 169/1.444/297.868, diagnóstico de 30 dias meu = o da C; A com 096h a 096k revisados, R22 a R25.)
+12/11/2026 09:36 (Brasília) — BLOCO B v8 (manhã, limite 13:00) EM ANDAMENTO, sem BLOQUEADA minha: autorizações da C CONFIRMADAS por Arthur ('Autorizo os 7 ajustes', 'Autorizo 6.000', 'Autorizo a troca', 'Autorizo a resolução') e decisões dele registradas (R15-I1 = opção B: a custódia de emissor morto volta ao mercado do povoado do contrato; a A tenta levar ao `main` o conjunto 096h a 096n e depois a LW-094); `main` ainda em `81ce7f4`; 096l (PostLoader) REVISADO (R26, sem bloqueio; R26-I1: o teste novo que afirma 'o arquivo não existe' quebra quando o `service_posts.json` entrar e então será alteração de teste existente); `status-a` 07:52: 096h a 096l prontos, nada no `main`, 096m e 096n ainda não existem; vigia religado às 09:36 (o anterior parou de bater às 07:48); nada novo no `main`. (Resumo das etapas anteriores: LW-097 da C no `main`, auditoria SÃ, `check_all` meu verde 169/1.444/297.868, diagnóstico de 30 dias meu = o da C; A com 096h a 096k revisados, R22 a R25.)
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1594,7 +1594,44 @@ Na **conversa da C**, em 12/11/2026, Arthur escreveu: **"Autorizo os 7 ajustes"*
 | **(a) R15-I1: custódia de emissor morto** | **Opção B:** a recompensa **volta ao mercado do povoado do contrato**; se o **povoado for desconhecido, fica retida [LIM]** (como hoje). *Nota da B, para a revisão quando houver código:* o `labor` tem `place_id` (que dá o povoado), mas o `delivery` tem `destination_id` (um dono, que pode ser NPC ou mercado): **a regra de qual é "o povoado do contrato" no `delivery` precisa estar no código e no teste** |
 | **(b) Rumo ao `main`** | A **A vai tentar levar ao `main`, por antecipação e sob condições**, **primeiro o conjunto 096h a 096n** e **depois a LW-094** (fim do `FoodStub`). Condições: `check_all` **verde**, oráculo e `run_sim` **iguais**, **30 dias com 132 vivos, 0 mortes, 0 `ContractOffered`, conservação** |
 
-### C. O que a B vai conferir (pedido dele) 
+### C. O que a B vai conferir (pedido dele)
 1. **096l (PostLoader):** revisar **agora**, só leitura (revisão R26, abaixo).
 2. **Cada entrada nova no `main`** (096h a 096n; depois LW-094), **em até 20 minutos**: o que mudou (arquivos, testes antigos alterados, protegidos, tags, avanço simples), a junção (rotas e economia no jogo real, uma assinatura), oráculo e soak só pelas causas autorizadas, e o diagnóstico independente de 30 dias.
 3. **Atenção especial:** (i) o 096l ainda sem revisão; (ii) **o jogo real depois do 096i e 096j: nenhum NPC de posto deve deixar o posto e nenhum NPC deve morrer** (o diagnóstico vai olhar também o `work_place_id` de cada NPC no começo e no fim); (iii) **na LW-094: se o 3º povoado (C) passa fome sem o estoque provisório** (mercado do C com só 200 de pão e 10 de grão e nenhum lavrador) **e se a A parou como Arthur mandou**.
+
+
+## RELATÓRIO — R26: ramo novo da conversa A (`lw-096l-post-loader`, `e6bc3ec`, LW-095: o carregador dos postos de serviço)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 12/11/2026 09:36 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio.** O `PostLoader` (`economy/posts/`) lê e valida `data/economy/service_posts.json` pelo módulo `data` (`settlement_id`, `place_id` e `occupation_id` não vazios; `workers_wanted` 1 ou mais; `wage_per_hour` 0 ou mais; **um posto por local**; falha `ECON_DATA_INVALID` com arquivo, item e campo). **O arquivo é OPCIONAL: sem ele, lista vazia**, então `data/economy` de hoje e o jogo ficam **exatamente como estão**. O `EconomySetup` leva os postos às definições e **recusa o local que tem posto e local de produção**. **Nenhum dado novo** (cumpre a decisão de Arthur: "o `service_posts.json` só entra depois da LW-097 no `main`; o `PostLoader` antes, só em código"), **nenhum teste existente alterado, nenhum protegido, nenhum hash muda.** Empilhado na 096k (`542220b`), 1 commit, **ainda sobre `885615c`**. O `status-a` (07:52) diz que os 5 ramos 096h a 096l têm `check_all` verde (a ponta: 166 scripts, 1.405 testes), oráculo e `run_sim` iguais e **nada no `main`**; confere com o que revi.
+
+**2. ARQUIVOS CRIADOS / 3. MODIFICADOS.** Nenhum no projeto; só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Li o diff **inteiro** (7 arquivos: 3 `.gd`, 2 `.uid`, 2 documentos), `post_loader.gd` **inteiro**, o diff do `economy_setup.gd` e o teste novo **inteiro** (5 testes). Conferi se o `tools/check_content_ids` e o `ServicePostBook` cobrem as referências dos postos.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da A** (aceito o relato dela). Rodei: contagem DEC-126, `git grep`, `merge-tree --trivial-merge` (só imprime).
+
+**6. RESULTADOS**
+| Item | Resultado |
+|---|---|
+| **Tamanho (DEC-126)** | **210 linhas** (+210 −1) em **3 `.gd`** (80 do carregador, 16 do `EconomySetup`, 114 de teste): **dentro do teto** |
+| **Cumpre o combinado?** | **Sim:** só código; arquivo opcional; mensagens com arquivo, item e campo; recusa de local duplicado em **dois** níveis (dois postos no mesmo local, e posto + local de produção) |
+| **Hash e save** | Não mudam (sem arquivo, as definições ficam sem posto) |
+| **Camadas e regras** | Usa só o módulo `data` e as classes da economia; sem `float`, sorteio ou relógio; nenhum autoload |
+| **Testes novos (5)** | sem o arquivo não há posto e o setup real carrega; linhas válidas viram `PostDef` na ordem do arquivo (tabela vazia vale; salário 0 vale); 6 casos inválidos apontam arquivo, item e campo + local repetido; arquivo em disco é lido e o setup leva os postos às definições (e um inválido derruba o setup com a mensagem); um local serve a um posto **ou** a um local de produção, nunca aos dois |
+
+**7. PROBLEMAS ENCONTRADOS (por gravidade)**
+**Bloqueante: nenhum.**
+**IMPORTANTE**
+- **R26-I1. O teste novo `test_without_the_file_there_are_no_posts_and_the_real_economy_setup_still_loads` vai quebrar no dia em que o `service_posts.json` entrar.** Ele afirma que o arquivo **não existe** em `data/economy` e que `definitions.service_posts.size() == 0`. A decisão de Arthur é que o arquivo entre **depois da LW-097 no `main`** (que **já está** no `main` desde 07:28) e "com o aviso dele por escrito". Quando entrar, esse teste falha e precisa ser reescrito: se o 096l já estiver no `main` nesse dia, **será a alteração de um teste existente e pedirá autorização dele de novo.** **Recomendo** (a) a A reescrever o caso agora para usar uma **pasta temporária sem o arquivo** (em vez do `data/economy` real), ou (b) Arthur incluir essa troca na mesma autorização que libera o arquivo.
+**MENOR**
+- **R26-M1. As referências do arquivo não são conferidas por nada.** `settlement_id`, `place_id` e `occupation_id` dos postos **não** estão na tabela `REFERENCES` do `tools/check_content_ids` (só as colunas da economia e de `population.json`), e o `ServicePostBook` só recusa local repetido: **um erro de digitação nas 6 linhas passaria até o jogo**. A ficha (`fase-4/dados.md`) manda que a mudança no verificador seja **da tarefa que cria o arquivo**: então **quando o arquivo entrar**, o verificador (ou um teste do arquivo real contra `places.json`, `settlements.json` e `occupations.json`) tem de entrar junto.
+- **R26-M2. Primeiro `FileAccess` direto em `src/sim`.** `PostLoader.load_dir` chama `FileAccess.file_exists` (para o arquivo opcional); os outros carregadores deixam a leitura ao módulo `data`. O `check_architecture` não reclamou (segundo a A), mas o lugar natural seria o `EconomySetup` (camada do app, que faz entrada e saída) ou o módulo `data`.
+- **R26-M3. O teste escreve numa cópia de `data/economy` em `res://.godot/`** (cache ignorado pelo Git, apagada no `after_each`), enquanto os outros 4 testes que precisam de pasta usam `DirAccess.create_temp`. Funciona em desenvolvimento e sem janela; só destoa.
+
+**Junção (previsão por `merge-tree`, só texto):** a ponta `e6bc3ec` × `main` novo (`81ce7f4`): **1 conflito de texto, só em documento** (`src/sim/economy/README.md`). Dos ajustes que a A deve fazer ao juntar o `main` (R23-I1 e R24-I1), **o 096l não acrescenta nenhum** (nenhum ID fixo nos testes novos).
+
+**8. RISCOS.** Baixo. O R26-I1 é de **processo** (autorização futura), não de código.
+
+**9. PENDÊNCIAS.** *Da A:* R26-I1 (reescrever o caso agora ou pedir a autorização junto com a liberação do arquivo), R26-M1 quando o arquivo entrar, e as duas correções de teste ao juntar o `main` (R23-I1, R24-I1). *De Arthur:* o aviso por escrito para o `service_posts.json` (a condição "depois da LW-097 no `main`" **já vale**). *Que não consegui verificar:* o `check_all` **da A**; que os 5 testes novos passam.
+
+**ACOMPANHAMENTO.** *Avanço:* a A tem **5 ramos de ajuste (096h a 096l)** prontos e, segundo Arthur, vai levar ao `main` o conjunto **096h a 096n** (ainda **não existem** 096m e 096n no GitHub) e depois a LW-094. *Próxima:* o que o vigia trouxer; **auditar em até 20 minutos** cada entrada no `main`, com `check_all` e diagnóstico de 30 dias meus (inclusive o `work_place_id` de cada NPC no começo e no fim, e a fome do povoado C na LW-094). *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `81ce7f4`.
