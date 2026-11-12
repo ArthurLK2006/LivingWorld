@@ -1,4 +1,4 @@
-11/11/2026 22:10 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R16 feitas, sem bloqueio (A: LW-096 a–e só em ramos; R13-I1/R14-I1 recusa gasta ID; R15-I1 custódia de emissor morto; R16-I1 a vaga é causa NOVA de mudança de oráculo/soak na junção A x C, a conferir morte de NPC); entradas no `main` auditadas (LW-093 `f2bcb4c`; LW-117i `4372f7f`): SÃS; AVISOS p/ Arthur: ordem de entrada A x C (recomendo a C primeiro) e a Fase B da C pode PARAR (R10-I4, R16-I1); próximo: R17 (118a da C); vigia a rearmar; sem BLOQUEADA.
+11/11/2026 22:11 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R17 feitas, sem bloqueio (A: LW-096 a–e só em ramos, R13-I1/R14-I1 recusa gasta ID, R15-I1 custódia de emissor morto, R16-I1 a vaga é causa NOVA de mudança de oráculo/soak na junção A x C; C: 097e e 118a sãs); entradas no `main` auditadas (LW-093 `f2bcb4c`; LW-117i `4372f7f`): SÃS; AVISOS p/ Arthur: ordem de entrada A x C (recomendo a C primeiro) e a Fase B da C pode PARAR (R10-I4, R16-I1); vigia a rearmar; sem BLOQUEADA.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1111,3 +1111,41 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 **9. PENDÊNCIAS.** *Da A:* R16-M1 a M7. *Da C (na Fase B, se a A entrar antes):* o teste de morte e troca de emprego no oráculo e no soak (R16-I1). *De Arthur:* ratificar a vaga única por local e por hora (R16-M1). *Que não consegui verificar:* o `check_all` **da A**; que os 8 testes novos passam; a junção real; e se há morte de NPC no oráculo e no soak.
 
 **ACOMPANHAMENTO.** *Avanço:* a LW-096 está **completa no que o `economy.md` pede** (a a e); faltam, na A, a **LW-096a (o NPC aceita a vaga)**, a **LW-095** final (`service_posts.json`, retirada do `IncomeStub`) e a **Fase B**. *Próxima:* o que o vigia trouxer e toda entrada no `main`. *Decisões de Arthur:* ordem A x C (recomendo a C primeiro; o R16-I1 é **mais um motivo**: se a C entra antes, a vaga só aparece na Fase B da A, onde a A mede a diferença sozinha), as 7 linhas de teste do R6-M2, a pergunta do R15-I1 e a vaga única (R16-M1). *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `4372f7f`.
+
+
+## RELATÓRIO — R17: ramo novo da conversa C (`lw-118a-culturas`, `6eb1ba0`, LW-118 parte a)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 11/11/2026 22:11 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio.** A parte a da LW-118 entrega **só conteúdo**: `Culture` (4 parâmetros inteiros de 0 a 100 **[HIP]**), `CultureLoader` (lê e valida `data/world/cultures.json` pelo módulo `data`, apontando arquivo, item e campo) e o arquivo com as **duas culturas genéricas e contrastantes** da DEC-203 (aprovada por Arthur). O `world` **não usa** os parâmetros; as classes ficam soltas até a LW-118c/d. **Nada de save, de hash, de módulo registrado, de evento nem de autoload.** Nenhum teste existente alterado; nenhum arquivo protegido; nenhuma tag; nenhum `main`. Empilhado na 097e (`4e614b5`), 1 commit; **o ramo não vai ao `main`** (como mandou Arthur).
+
+**2. ARQUIVOS CRIADOS / 3. MODIFICADOS.** Nenhum no projeto; só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Li o diff **inteiro** (11 arquivos: 3 `.gd`, 3 `.uid`, 2 de dados, 3 documentos), `culture.gd`, `culture_loader.gd` e o teste novo **inteiros** (128 linhas), e conferi que as funções do módulo `data` que o carregador usa (`DataSchema.add_field`, `Field.set_range`, `DataBundle.add_issue`, `is_valid`, `describe_issues`) **existem** no ramo, que `docs/fase-4/dados.md` (citado no comentário do carregador) **existe** no ramo e que `DirAccess.create_temp` tem **4 precedentes** nos testes. Sem proposta de DEC.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da C** (o ramo é só dado e dois arquivos de classe; não exportei). Rodei: contagem DEC-126, `git grep` das funções usadas, `merge-tree --trivial-merge` (só imprime).
+
+**6. RESULTADOS**
+| Item | Resultado |
+|---|---|
+| **Tamanho (DEC-126)** | **214 linhas** em **3 `.gd`** (+ 214, − 0): **dentro do teto** |
+| **Cumpre a DEC-203 e o `world.md` (Extensão da Fase 4)?** | **Sim:** duas culturas, quatro parâmetros (`trade_openness`, `foreigner_tolerance`, `martial_stance`, `authority_weight`), **contrastantes** (mercantil 80/60/30/40 contra tradicional 30/25/65/75), valores marcados **[HIP]** no código, no README e na ficha; arquivo em `data/world/` (a ficha já fixou isso, R3-M4) |
+| **Nomes genéricos (DEC-100)** | `culture_trade` e `culture_tradition`, "Cultura mercantil" e "Cultura tradicional": **genéricos**; os nomes dos campos seguem **PROPOSTA** (dito no comentário) |
+| **Hash e save** | **Não mudam:** `Culture` e o carregador não são lidos por nenhum código do jogo (só pelo teste); o `world` não os registra |
+| **Validação** | Cobre campo ausente, desconhecido, tipo errado (decimal e texto), fora da faixa (101 e −1; **bordas 0 e 100 válidas**), `id` repetido, nome vazio, lista vazia, JSON malformado e arquivo ausente, **todos com arquivo, item e campo na mensagem**; e uma terceira cultura entra **só por dado** |
+| **Camadas, tempo, aleatoriedade, `float`, dinheiro, autoload** | Limpos (nenhum `Node`, nenhum relógio, nenhum sorteio, nada de `float`; 4 parâmetros como `int`) |
+| **Testes novos (10)** | arquivo real (duas culturas, ordem, valores); contraste e faixa; nomes existem no texto e diferem; carregar duas vezes dá o mesmo; ausente/desconhecido; tipo; faixa e bordas; repetido/vazio/lista vazia; JSON ruim e arquivo ausente; terceira cultura por dado |
+
+**7. PROBLEMAS ENCONTRADOS (por gravidade)**
+**Bloqueante e importante: nenhum.**
+**MENOR**
+- **R17-M1. `cultures.json` ainda não é lido pelo jogo.** Até a LW-118d o arquivo **não passa pela validação do início do jogo** (AGENTS 13.1.7: dado inválido deve parar o jogo): quem o estraga só é pego pelo teste do arquivo real no `check_all`. É a divisão declarada (as consultas na 118c e a ligação na 118d).
+- **R17-M2. Chave em arquivo que o bloco não nomeou.** A parte acrescenta **2 chaves em `data/text/pt_br.json`** (os nomes das culturas); o bloco da C (item 5) nomeia `provinces.json` e `cultures.json`, **não** o `pt_br.json`. É conteúdo do próprio escopo (o `name_key` precisa de texto, como o dos povoados) e nenhum teste existente mudou, mas fica registrado: o `tests/soak/sp6/sp6_hud.gd` mostra que **mexer no `pt_br.json` já exigiu autorização expressa de Arthur** em outra tarefa; confirme que ele considera isto coberto.
+- **R17-M3. Classes soltas.** `Culture` e `CultureLoader` não têm chamador no jogo até a 118c/d (AGENTS 5.5 pede não criar "para depois"); aqui é **a divisão da LW-118 em partes pequenas** que a própria tarefa pede, e o README e a ficha declaram. Sem ação.
+- **R17-M4. Nome para exibição não rotulado como proposta.** O comentário do código diz que os nomes **dos campos** seguem PROPOSTA; os dois **nomes de cultura** ("Cultura mercantil" e "Cultura tradicional") não levam rótulo no `pt_br.json` (JSON não aceita comentário); o rótulo está só na ficha ("genéricas"). Basta Arthur saber que são provisórios.
+
+**Junção (previsão por `merge-tree`, só texto):** a ponta `6eb1ba0` × `main` novo (`4372f7f`): **11 trechos em 8 arquivos** (os 9 da 097e e mais **2** pela 118a: um segundo trecho em `docs/modules/world.md` e um em `src/sim/world/README.md`; **todos em documento, no `app` ou no teste do oráculo, nenhum em dado novo**). Nenhum conflito em `cultures.json` nem em `pt_br.json`.
+
+**8. RISCOS.** O ramo cresce em cima da 097e e a Fase B da C (que ainda espera a A no `main`, R10-I4 e R16-I1) vai levar tudo junto; o risco da 118a em si é **baixo** (dado e classes soltas).
+
+**9. PENDÊNCIAS.** *Da C:* nada obrigatório; R17-M1 a M4 para ciência. *De Arthur:* confirmar o `pt_br.json` (R17-M2). *Que não consegui verificar:* o `check_all` **da C**; que os 10 testes novos passam; se a validação de dados do `check_all` aceita um arquivo novo em `data/world/` sem esquema registrado (não achei nenhuma lista de arquivos em `tools/`).
+
+**ACOMPANHAMENTO.** *Avanço:* LW-118 **parte a feita** em ramo (culturas); faltam as partes b a d (províncias, adjacência, ligação povoado → província, consultas) e a validação no início do jogo. *Próxima:* o que o vigia trouxer (118b…, 095e e a 096a da A, entrada no `main`). *Decisões de Arthur:* as mesmas das rodadas anteriores e o `pt_br.json` (R17-M2). *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `4372f7f`.
