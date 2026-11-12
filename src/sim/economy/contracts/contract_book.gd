@@ -61,22 +61,11 @@ func _init(owner_book: OwnerBook, money_ledger: Ledger, goods_store: GoodsStore,
 ## Posta um contrato `labor` ou `delivery` e retém a recompensa na custódia. Tudo ou nada: valida o emissor (aberto), o tipo, a recompensa (1 ou mais), o prazo (depois de `now`) e o objetivo (`objective` com as chaves do tipo) ANTES de mudar
 ## qualquer coisa. Falhas: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_AMOUNT`, `ECON_CONTRACT_IMPOSSIBLE`, `ECON_INSUFFICIENT_FUNDS`.
 func post(contract_id: int, kind: String, issuer_id: int, reward: int, deadline: int, now: int, objective: Dictionary) -> Result:
-	var checked: Result = _book.check_open(issuer_id)
+	var checked: Result = check_post(kind, issuer_id, reward, deadline, now, objective)
 	if not checked.ok:
 		return checked
 	if _contracts.has(contract_id) or _book.has_owner(contract_id):
 		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o ID %d já está em uso." % contract_id)
-	if kind != LABOR and kind != DELIVERY:
-		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o tipo '%s' não é postado por este comando; esperado '%s' ou '%s'." % [kind, LABOR, DELIVERY])
-	if reward < 1:
-		return Result.failure(EconomyCodes.BAD_AMOUNT, "ContractBook.post: a recompensa é %d; esperado 1 ou mais." % reward)
-	if deadline <= now:
-		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o prazo %d não é depois de agora (%d)." % [deadline, now])
-	var problem: String = _objective_problem(kind, objective)
-	if not problem.is_empty():
-		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: %s." % problem)
-	if _ledger.balance_of(issuer_id) < reward:
-		return Result.failure(EconomyCodes.INSUFFICIENT_FUNDS, "ContractBook.post: o emissor %d tem saldo %d e não cobre a recompensa %d." % [issuer_id, _ledger.balance_of(issuer_id), reward])
 	var opened: Result = _book.open_owner(contract_id, KIND_OWNER)
 	if opened.ok:
 		opened = _ledger.transfer(issuer_id, contract_id, reward, Ledger.REASON_CONTRACT_ESCROW)
@@ -88,6 +77,26 @@ func post(contract_id: int, kind: String, issuer_id: int, reward: int, deadline:
 	if kind == LABOR:
 		state[KEY_WORKED] = 0
 	_contracts[contract_id] = state
+	return Result.success()
+
+
+## A validação do comando de postar, SEM o ID e sem mudar nada: emissor aberto, tipo, recompensa (1 ou mais), prazo (depois de `now`), objetivo possível e saldo do emissor. Quem chama a faz ANTES de pedir um ID ao `core`, para a recusa nunca gastar ID
+## (os IDs não se reutilizam; R13-I1). Mesmas falhas de `post`: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_AMOUNT`, `ECON_CONTRACT_IMPOSSIBLE`, `ECON_INSUFFICIENT_FUNDS`.
+func check_post(kind: String, issuer_id: int, reward: int, deadline: int, now: int, objective: Dictionary) -> Result:
+	var checked: Result = _book.check_open(issuer_id)
+	if not checked.ok:
+		return checked
+	if kind != LABOR and kind != DELIVERY:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o tipo '%s' não é postado por este comando; esperado '%s' ou '%s'." % [kind, LABOR, DELIVERY])
+	if reward < 1:
+		return Result.failure(EconomyCodes.BAD_AMOUNT, "ContractBook.post: a recompensa é %d; esperado 1 ou mais." % reward)
+	if deadline <= now:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o prazo %d não é depois de agora (%d)." % [deadline, now])
+	var problem: String = _objective_problem(kind, objective)
+	if not problem.is_empty():
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: %s." % problem)
+	if _ledger.balance_of(issuer_id) < reward:
+		return Result.failure(EconomyCodes.INSUFFICIENT_FUNDS, "ContractBook.post: o emissor %d tem saldo %d e não cobre a recompensa %d." % [issuer_id, _ledger.balance_of(issuer_id), reward])
 	return Result.success()
 
 
