@@ -65,7 +65,7 @@ static func register(runner: SimulationRunner, terrain: TerrainData, points: Arr
 	modules.economy = economy_module
 	var npc_module: NpcModule = NpcModule.new()
 	if npc_setup != null and npc_setup.result.ok:
-		npc_module = NpcModule.new(npc_setup.need_defs, npc_setup.routine, npc_setup.definitions)
+		npc_module = NpcModule.new(npc_setup.need_defs, npc_setup.routine, npc_setup.definitions, economy_module)
 	registered = runner.register_module(NPC_NAME, npc_module)
 	if not registered.ok:
 		modules.result = registered

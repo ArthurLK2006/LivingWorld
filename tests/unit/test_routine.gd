@@ -291,7 +291,7 @@ func test_invalid_data_fails_pointing_at_file_item_and_field() -> void:
 	_expect_failure("hora como texto", as_text, [BLOCKS_FILE, "item 'farmer_07_12'", "campo 'from_hour'", "tipo inválido"])
 	var bad_kind: Dictionary[String, Array] = _tables()
 	_row(bad_kind, "occupations", "farmer")["work_place_kind"] = "kitchen"
-	_expect_failure("tipo de local de trabalho inexistente", bad_kind, [OCCUPATIONS_FILE, "item 'farmer'", "campo 'work_place_kind'", "tipo de local 'kitchen' inexistente", "market_reserved"])
+	_expect_failure("tipo de local de trabalho inexistente", bad_kind, [OCCUPATIONS_FILE, "item 'farmer'", "campo 'work_place_kind'", "tipo de local 'kitchen' inexistente", "market"])
 	var unknown_field: Dictionary[String, Array] = _tables()
 	_row(unknown_field, "occupations", "guard")["salary"] = 3
 	_expect_failure("campo desconhecido", unknown_field, [OCCUPATIONS_FILE, "item 'guard'", "campo 'salary'", "campo desconhecido"])

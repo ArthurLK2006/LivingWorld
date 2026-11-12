@@ -36,7 +36,7 @@ func after_each() -> void:
 func _drawn_places() -> Array[Place]:
 	var drawn: Array[Place] = []
 	for place: Place in _places:
-		if place.kind != Place.KIND_MARKET_RESERVED:
+		if place.kind != Place.KIND_MARKET:
 			drawn.append(place)
 	return drawn
 
@@ -51,7 +51,7 @@ func test_there_is_one_box_per_drawn_place_and_none_for_the_reserved_market_and_
 	assert_eq(_view.box_count(), drawn.size())
 	assert_eq(_view.get_child_count(), drawn.size())
 	for place: Place in _places:
-		assert_eq(_view.box_of(place.id) != null, place.kind != Place.KIND_MARKET_RESERVED, "Caixa do local '%s'." % place.id)
+		assert_eq(_view.box_of(place.id) != null, place.kind != Place.KIND_MARKET, "Caixa do local '%s'." % place.id)
 	assert_eq(_view.find_children("*", "CollisionObject3D", true, false).size(), 0)
 
 
@@ -71,7 +71,7 @@ func test_each_box_is_where_the_data_says_on_the_ground_with_the_color_and_size_
 		assert_eq(colors_by_kind.values().count(color), 1, "Cada tipo tem a sua cor.")
 	assert_eq([PlacePalette.KIND_HOME, PlacePalette.KIND_WORK, PlacePalette.KIND_REST, PlacePalette.KIND_SOCIAL], [Place.KIND_HOME, Place.KIND_WORK, Place.KIND_REST, Place.KIND_SOCIAL], "Os tipos da paleta são os do world.")
 	for kind: String in Place.KINDS:
-		assert_eq(PlacePalette.is_drawn(kind), kind != Place.KIND_MARKET_RESERVED)
+		assert_eq(PlacePalette.is_drawn(kind), kind != Place.KIND_MARKET)
 
 
 func test_boxes_start_hidden_and_a_chunk_shows_and_hides_only_its_own_boxes() -> void:

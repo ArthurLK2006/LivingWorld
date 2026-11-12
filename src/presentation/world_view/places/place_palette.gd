@@ -2,7 +2,7 @@ class_name PlacePalette
 extends RefCounted
 ## Cor e tamanho provisórios da caixa de cada tipo de local (LW-074), todos [HIP] (Arthur ajusta olhando a tela). Os tipos são os do
 ## vocabulário do `world`, copiados como texto porque a apresentação não pode citar classes de src/sim; tests/unit/test_place_boxes.gd
-## confere que seguem iguais. O tipo reservado `market_reserved` não tem caixa: não está aqui.
+## confere que seguem iguais. O tipo `market` (antes `market_reserved`) não tem caixa: não está aqui.
 
 const KIND_HOME: String = "home"
 const KIND_WORK: String = "work"

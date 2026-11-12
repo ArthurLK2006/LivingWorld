@@ -27,10 +27,34 @@ Implementado (LW-092b, 11/11/2026): os locais de produção, em `production/`: o
 
 Implementado (LW-092c, 11/11/2026): os locais de produção ligados ao `EconomyModule`. As definições (`EconomyDefinitions`) ganharam as receitas, as constantes dos locais e as linhas de `production_sites.json`, e o `EconomySetup` as lê (a lista real tem 14 linhas desde a LW-097e; com a lista vazia nenhum local nasce, nenhum ID é gasto e o save não ganha o bloco). No jogo novo, cada linha vira um dono do tipo `site` com o saldo inicial do tipo (`game_start`) e um local no `ProductionBook`. O módulo anda por HORA cheia do relógio: quando a hora vira um dia, o fim do dia vem primeiro (mercados, depois locais) e então a hora de produção; os eventos `ProductionStopped` e `ProductionResumed` são publicados. O NPC entra na equipe quando abre a conta com o `work_place_id` (`request_open_owner(owner_id, kind, work_place_id)`, só no tipo `npc` e só na abertura) e sai no `NpcDied`. A porta ganhou `peek_site`, `peek_site_at` e `peek_sites_of` (respostas `SiteQuery` e `SitesQuery`). O livro tem `serialize`, `load_from` (tudo conferido antes de trocar o estado), `is_pristine` e `validate`; o bloco `production` do save só existe quando há locais.
 
+Implementado (LW-092e, 11/11/2026, pedido de Arthur): a tarifa que a regra pede passa a ser `ceil_div(total × tariff_bp, 10000)` (antes era para baixo e uma ordem pequena pagava 0); continua só calculada e devolvida, sem cobrança (LW-130). E `peek_quote` passou a receber o ator: `peek_quote(actor_id, market_id, good_id, quantity, side)`, porque a regra de comércio da Fase 4 pode depender de quem compra.
+
+Implementado (LW-092f, 11/11/2026, divisão pedida por Arthur, sem mudar comportamento): o `EconomyModule` (api/) ficou só com a porta: o ciclo de vida do `SimModule`, os comandos `request_*`, o relógio por hora e o aviso de morte. O resto foi para `support/` (internas da economia, sem nome na `api/`): `EconomyState` (o estado vivo: livros, motor de comércio, definições e regra), `EconomyQueries` (as consultas `peek_*`, que devolvem cópias), `EconomyRuntime` (o jogo novo, o fim do dia e a hora de produção) e `EconomyPersistence` (o save, o `validate` e o resumo de depuração). Nenhum teste foi alterado: o `check_all` dá os mesmos 1.293 testes, os mesmos asserts e os mesmos hashes.
+
+Implementado (LW-093, parte 2, 11/11/2026): o dinheiro inicial nasce na ABERTURA da conta (`request_open_owner` faz o `mint` `game_start` do saldo inicial do tipo, só quando o dono é novo; DEC-145 e DEC-170) e `request_consume(owner_id, good_id, quantity)` (`support/economy_commands.gd`): o NPC consome comida do inventário dele, o bem é destruído com o motivo `consumed` e a resposta (`ConsumeResult`) traz o id da necessidade e o alívio total (`need_relief` × quantidade) para o `npc` aplicar. Bem sem `need_id` devolve o código novo `ECON_NOT_CONSUMABLE`. Nada no jogo real chama `request_consume` ainda.
+
+Implementado (LW-093, parte 4, 11/11/2026; acréscimo de contrato autorizado por Arthur): `peek_good(good_id)` e `peek_goods_for_need(need_id)` (respostas `GoodQuery` e `GoodsQuery`): o `npc` lê o alívio (`need_id` e `need_relief`), o valor-base e o peso dos bens como cópia, sem importar `GoodDef`.
+
 Regras de arquitetura (`tools/check_architecture`): regra E (DEC-171 e DEC-132; alcance ampliado na LW-088d), qualquer arquivo fora da `economy` (menos `src/app`, a raiz de composição) cita dela só classes de `economy/api/`, e a `economy` não cita nada do `npc`; regra F (LW-088c; ampliada na LW-088d), só `ledger/` escreve saldo, o que inclui a atribuição simples a `balance` ou `money` (fora das respostas da `api/`) e o uso de `_balances` e `_set_balance` do Ledger.
 
 Implementado (LW-088d, 11/11/2026, correções da revisão independente do ramo B): `EconomyModule.debug_summary()` (donos, soma dos saldos, dinheiro criado e destruído, conservação do dinheiro e dos bens, locais de produção); o save e o `validate()` conferem o tipo de cada dono contra `owner_kinds.json`; as regras E e F acima.
 
+Implementado (LW-095, parte a, 11/11/2026): a folha dos locais de produção, em `production/`: `WagePayer` (tudo ou nada, pelo `Ledger`, motivo `salary`) e o evento `WagesPaid` (um por local e por hora); sem o dinheiro da folha o local para por `NO_FUNDS`, que também vai no save.
+
+Implementado (LW-095, parte b, 11/11/2026): os postos de serviço, em `posts/` (`ServicePostBook`, `PostDef`): a folha sai da conta do mercado antes dos locais de produção, tudo ou nada por posto, com um `WagesPaid` por posto e por hora; o NPC com o `work_place_id` de um posto é atribuído a ele. As definições só vêm montadas à mão nos testes; sem `service_posts.json` ainda.
+
+Implementado (LW-095, parte c, 11/11/2026): a consulta dos postos pela porta, `peek_post`, `peek_post_at` e `peek_posts_of`, com os mesmos nomes de `peek_site`.
+
+Implementado (LW-096, parte a, 11/11/2026): o livro de contratos, em `contracts/` (`ContractBook`): postar `labor` e `delivery` com a recompensa na custódia (conta do tipo `contract`), aceitar, estado e save (bloco `contracts`); ainda sem a porta do módulo, sem conclusão, sem prazo e sem vagas.
+
+Implementado (LW-096, parte b, 11/11/2026): a porta dos contratos: `request_post_contract`, `request_accept_contract`, `peek_contract`, `peek_contracts` e o evento `ContractOffered` (em `api/`).
+
+Implementado (LW-096, parte c, 11/11/2026): a conclusão dos contratos: `request_work_shift` (só `labor`; `ECON_WORKER_ALREADY_ASSIGNED` para quem já é atribuído ao local) e `request_deliver_contract`, com o pagamento pela custódia e o `ContractCompleted` (em `api/`).
+
+Implementado (LW-096, parte d, 11/11/2026): o prazo: a cada hora vence o contrato que passou do prazo, devolve a custódia ao emissor e publica `ContractFailed` (em `api/`); emissor morto não recebe de volta.
+
+Implementado (LW-096, parte e, 11/11/2026): as vagas, em `support/economy_vacancies.gd`: a economia posta UMA vaga por local de trabalho com gente faltando, o NPC a aceita por `request_accept_contract` (atribui, tira o emprego anterior e conclui), `peek_contract` mostra os nomes de `peek_site` e `peek_post`. O local sem dinheiro para a folha para e não demite.
+
 Implementado (LW-097e, 11/11/2026): os dados da distribuição pelos três povoados. `data/economy/production_sites.json` com 14 linhas (A 5, B 6, C 3; a equipe de cada uma é a linha de população que ocupa o local), 10 linhas de mercado do C em `market_targets.json` (30 no total), a farinha do B e a madeira do C com estoque inicial de 30 dias (alvo na metade, para o teto de compra caber no peso do mercado) e os testes `test_economy_distribution.gd` (nenhum povoado se basta; todo bem necessário tem produtor; equipe = população) e `test_initial_stock_covers_30_days.gd` (horas de trabalho da agenda, não 24 h). Valores [HIP]; a comida do C é só um valor pequeno até a LW-094.
 
-Planejado, ainda não existe: o comércio (LW-091) e do contrato.
+Planejado, ainda não existe: os dados dos postos (`service_posts.json`) e o comércio entre povoados (LW-098).

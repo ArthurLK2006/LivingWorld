@@ -61,8 +61,9 @@ Os números abaixo são os do SP6 e seguem **[HIP]**: vão para `data/` e o mód
 
 ## 7. Ferimento, morte e durabilidade
 
-- **`CombatantWounded`:** publicado quando um golpe causa dano (carga: `attacker_id`, `target_id`, `damage`, `place_id`, `skill_id`). **É a partir dele (e do `CombatantDied`) que `events` ou `politics` decide se houve crime** (DEC-195): o `combat` **só informa o fato** e **não** publica `CrimeCommitted`.
+- **`CombatantWounded`:** publicado quando um golpe causa dano (carga: `attacker_id`, `target_id`, `damage`, `place_id`, `skill_id`). **É a partir dele (e do `CombatantDied`) que a `politics` decide se houve crime** (DEC-195): um **adaptador da `politics`** o ouve e produz o `ActReported` (`politics.md` seção 4; decisão de 11/11/2026, LW-146g); o `combat` **só informa o fato** e **não** publica `ActReported` nem `CrimeCommitted`.
 - **`CombatantDied`:** **uma única vez** por combatente (teste obrigatório). O `character` decide o que acontece com o jogador (os dois modos da DEC-181, contrato na LW-146c); a `ecology` trata a criatura; o `military` baixa a `Force` (seção 8).
+- **Morte de NPC: um caminho só (decisão de 11/11/2026, LW-146g; PROPOSTA técnica).** Ao publicar o `CombatantDied` de um **NPC**, o `combat` pede ao `npc` **`request_apply_casualty(npc_id, "combat")`** (`npc.md` 16.8; o motivo `combat` é o da morte em combate corpóreo, `battle` é o da baixa abstrata do `military`). **O `npc` não ouve o `CombatantDied` por nome** e o `military` **não** chama `request_apply_casualty` para o que o `combat` resolveu. Como o `combat` age no seu passo, e não dentro do tratamento de um evento, ele passa o `id` do `CombatantDied` como **`cause_id` opcional** do pedido (extensão pedida a `npc.md` 16.8, como a do `request_set_route_state`, DEC-229), para a cadeia "Por quê?" ligar o `NpcDied` à morte em combate. Criatura e jogador não passam por aqui (são da `ecology` e do `character`).
 - **`CombatEnded`:** o encontro acaba quando um lado não tem mais ninguém em condições de lutar, ou quando todos se afastam além de uma distância **[HIP]**.
 - **Durabilidade:** o `combat` **pede** o desgaste (`request_wear_item(actor_id, item_id, amount)` no `character`); a durabilidade e o `ItemBroken` são do `character`. Item quebrado deixa de valer; **reparo** fica para "depois" (DEC-193).
 
@@ -70,7 +71,7 @@ Os números abaixo são os do SP6 e seguem **[HIP]**: vão para `data/` e o mód
 
 - **Um sentido só:** o **`military` pede o encontro** (`request_start_encounter`) e o **`combat` devolve as baixas por evento**. O `combat` **não** importa o `military`; o `military` importa só a `api` do `combat` (camada 4 para camada 4, mão única).
 - **Orçamento:** `max_embodied_combatants`, em dados, **cerca de 20 [HIP]**. Quem ganha corpo é escolhido por distância ao foco e, no empate, por ID crescente (determinístico). O **excedente** é resolvido de forma **abstrata** pelo `military/resolution` (LW-137); o `combat` **nunca excede** o orçamento (teste).
-- **Baixas:** cada `CombatantDied` volta à `Force` pelo evento; a soma das baixas individuais é a da força (teste da LW-158).
+- **Baixas:** cada `CombatantDied` volta à `Force` pelo evento; a soma das baixas individuais é a da força (teste da LW-158). A morte do NPC em si vem pelo comando da seção 7 (um caminho só), nunca por um segundo `request_apply_casualty` do `military`.
 - **[EM ABERTO]** a **batalha em blocos** (parte em S0, parte abstrata, na mesma batalha; TA 14.3) **não tem fórmula**, e "compatível em média" (LW-158) não diz a **tolerância**. Ficam para a LW-158 e para o teste de tropas.
 
 ## 9. Teste descartável de tropas, o SP9 (DEC-187)
@@ -88,8 +89,8 @@ Os números abaixo são os do SP6 e seguem **[HIP]**: vão para `data/` e o mód
 
 | Evento | Publica | Ouvem (previstos) | Carga |
 |---|---|---|---|
-| `CombatantWounded` | `combat` | `events` ou `politics` (crime), `npc` (reação), ponte | atacante, alvo, dano, local, habilidade |
-| `CombatantDied` | `combat` | `character` (derrota), `ecology`, `military`, `npc`, `events` | combatente, causa (atacante), local |
+| `CombatantWounded` | `combat` | adaptador do crime da `politics`, ponte (a reação do NPC vem por `request_think_in_combat`, `npc.md` 15.4, não por evento) | atacante, alvo, dano, local, habilidade |
+| `CombatantDied` | `combat` | `character` (derrota), `ecology`, `military`, adaptador do crime da `politics`, `events` (o `npc` **não** ouve: a morte dele chega por `request_apply_casualty`, seção 7) | combatente, causa (atacante), local |
 | `CombatEnded` | `combat` | `military`, ponte | encontro, vencedor |
 
 Nenhum evento por golpe em laço quente fora desses (AGENTS 4.14): o ataque automático e as habilidades **não** publicam evento próprio; o `CombatantWounded` é **agregado por encontro** quando o ritmo for alto **[HIP]**.

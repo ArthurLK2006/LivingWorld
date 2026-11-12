@@ -9,11 +9,10 @@ const KIND_HOME: String = "home"
 const KIND_WORK: String = "work"
 const KIND_REST: String = "rest"
 const KIND_SOCIAL: String = "social"
-## Tipo RESERVADO sem comportamento: é aceito na validação e nas consultas, e nenhuma ação, rotina ou regra o usa na Fase 2 (a
-## economia só chega na Fase 3).
-const KIND_MARKET_RESERVED: String = "market_reserved"
+## O local onde mora o mercado do assentamento (LW-093, DEC-160; antes `market_reserved`, reservado na Fase 2): o NPC vai até ele para comprar e vender.
+const KIND_MARKET: String = "market"
 ## Vocabulário fechado dos tipos de local (texto em snake_case).
-const KINDS: Array[String] = [KIND_HOME, KIND_WORK, KIND_REST, KIND_SOCIAL, KIND_MARKET_RESERVED]
+const KINDS: Array[String] = [KIND_HOME, KIND_WORK, KIND_REST, KIND_SOCIAL, KIND_MARKET]
 ## Faixa da capacidade [HIP]: moradores da casa, trabalhadores do local de trabalho ou ocupantes ao mesmo tempo nos de descanso e convívio.
 const MIN_CAPACITY: int = 1
 const MAX_CAPACITY: int = 64

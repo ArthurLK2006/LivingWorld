@@ -221,7 +221,7 @@ func test_an_invalid_occupation_row_is_refused_pointing_at_file_item_and_field()
 	var cases: Array[Dictionary] = [
 		{"label": "work_place_kind ausente", "erase": "work_place_kind", "expect": [item, "campo 'work_place_kind'", "obrigatório ausente"]},
 		{"label": "work_place_kind com tipo errado", "set": {"work_place_kind": 3}, "expect": [item, "campo 'work_place_kind'", "tipo inválido"]},
-		{"label": "tipo de local inexistente", "set": {"work_place_kind": "kitchen"}, "expect": [item, "campo 'work_place_kind'", "tipo de local 'kitchen' inexistente", "home, work, rest, social, market_reserved"]},
+		{"label": "tipo de local inexistente", "set": {"work_place_kind": "kitchen"}, "expect": [item, "campo 'work_place_kind'", "tipo de local 'kitchen' inexistente", "home, work, rest, social, market"]},
 		{"label": "campo desconhecido", "set": {"salary": 3}, "expect": [item, "campo 'salary'", "campo desconhecido"]},
 		{"label": "id repetido", "set": {"id": "farmer"}, "expect": ["item 'farmer'", "campo 'id'", "id duplicado"]},
 		{"label": "id fora do padrão", "set": {"id": "Tinker"}, "expect": ["item 'Tinker'", "campo 'id'", "snake_case"]},
