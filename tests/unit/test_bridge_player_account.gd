@@ -47,7 +47,7 @@ func test_the_account_opens_with_the_initial_money_of_the_kind_and_an_empty_inve
 	var created_before: int = _host.economy.peek_conservation().created
 	var opened: Result = _bridge.request_open_player_account(actor_id)
 	assert_true(opened.ok, opened.message)
-	var view: BridgeEconomyReplies.PlayerEconomyReply = _bridge.peek_player_economy(actor_id)
+	var view: BridgePlayerEconomyReplies.PlayerEconomyReply = _bridge.peek_player_economy(actor_id)
 	assert_true(view.result.ok, view.result.message)
 	assert_eq([view.funds, view.weight, view.capacity, view.goods], [_kind.initial_balance, 0, _kind.weight_capacity, [] as Array[Dictionary]], "O saldo inicial e a capacidade são os do tipo `player`; nada no inventário.")
 	assert_eq(view.funds, _host.economy.peek_balance(actor_id).balance, "O saldo que a ponte mostra é o do `Ledger`.")
@@ -78,7 +78,7 @@ func test_an_actor_the_character_does_not_know_is_refused_and_nothing_is_opened(
 
 func test_the_view_before_the_account_is_open_is_a_handled_failure() -> void:
 	var actor_id: int = _spawn()
-	var view: BridgeEconomyReplies.PlayerEconomyReply = _bridge.peek_player_economy(actor_id)
+	var view: BridgePlayerEconomyReplies.PlayerEconomyReply = _bridge.peek_player_economy(actor_id)
 	assert_eq(view.result.code, EconomyCodes.UNKNOWN_OWNER, "O personagem existe, mas ainda não tem conta na economia.")
 	assert_eq([view.funds, view.weight, view.capacity, view.goods.size()], [0, 0, 0, 0])
 
