@@ -38,7 +38,7 @@ expect_pass() {
 }
 expect_violation 'Label.text com literal' presentation 'func f(label: Label) -> void:\n\tlabel.text = "Olá"' 2
 expect_violation 'texto com acento' presentation 'func f(label: Label) -> void:\n\tlabel.text = "Ação"' 2
-expect_violation 'literal com formato' presentation 'func f(label: Label, total: int) -> void:\n\tlabel.text = "Valor: %d" % total' 2
+expect_violation 'literal com formato' presentation 'func f(label: Label, total: int) -> void:\n\tlabel.text = "Valor: %%d" %% total' 2
 expect_violation 'text +=' presentation 'func f(label: Label) -> void:\n\tlabel.text += "mais"' 2
 expect_violation 'Button.text' presentation 'func f(button: Button) -> void:\n\tbutton.text = "OK"' 2
 expect_violation 'RichTextLabel.text' presentation 'func f(rich: RichTextLabel) -> void:\n\trich.text = "[b]Negrito[/b]"' 2

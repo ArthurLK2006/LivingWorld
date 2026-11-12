@@ -1,0 +1,147 @@
+# Verificação automática do Living World: roda o mesmo `tools/check_all` que Arthur roda no Mac, mas
+# num computador limpo do GitHub, para provar que o resultado não depende da máquina de ninguém.
+# Decisão e evidências: docs/decisions/0017-ci-no-github-actions.md.
+#
+# Regras deste workflow (pedido de Arthur em 12/11/2026):
+#  - permissões mínimas e nenhum segredo;
+#  - nenhuma ação de terceiros (nem a `actions/checkout`): o código é baixado com `git` puro, o que
+#    funciona sem credencial porque o repositório é público (DEC-114). Se ele voltar a ser privado,
+#    o primeiro passo passa a precisar do token (`contents: read` já está concedido);
+#  - Godot na versão exata do ambiente de referência (docs/decisions/0001-ambiente-de-referencia.md),
+#    com duas somas de verificação conferidas ANTES de executar qualquer coisa do arquivo baixado;
+#  - só o runner padrão e gratuito do GitHub (ubuntu-24.04), sem artefatos, cache nem serviços pagos:
+#    custo zero enquanto o repositório for público (regra financeira de Arthur, 12/11/2026).
+name: check_all
+
+# `pull_request` valida cada PR antes da integração; `push` no `main` valida cada integração (o `main`
+# ainda não tem proteção: o resultado é um aviso, não um bloqueio).
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+# O job só precisa ler o código; não há permissão de escrita nem segredo.
+permissions:
+  contents: read
+
+# Em PR, um push novo cancela a execução anterior do mesmo PR (terminar um resultado velho não ajuda).
+# No `main` cada integração tem o próprio grupo (o SHA): nenhuma execução é cancelada nem substituída
+# por outra mais nova, porque cada integração precisa do seu próprio resultado.
+concurrency:
+  group: check_all-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Godot 4.7.2 estável para Linux x86_64 (mesma versão do ambiente de referência do Mac).
+  GODOT_VERSION: "4.7.2"
+  # Saída esperada de `godot --version` (docs/decisions/0001-ambiente-de-referencia.md).
+  GODOT_VERSION_STRING: "4.7.2.stable.official.ed1daf0bf"
+  # SHA-512 do zip, copiado do SHA512-SUMS.txt oficial do release 4.7.2-stable (o arquivo do
+  # repositório godotengine/godot e o do godotengine/godot-builds são idênticos).
+  GODOT_ZIP_SHA512: "9aa00f7a605200940bce3027a567b782f49bd8e940dd06ae9e987bd65aee1b1467edd56ed84fcdcbdd44354bf613bdbb4e5d2913e925850368e150c59ed54c65"
+  # SHA-256 do mesmo zip, informado pelo GitHub no release: fonte independente da anterior.
+  GODOT_ZIP_SHA256: "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4"
+
+jobs:
+  check_all:
+    name: check_all
+    # Imagem fixa (e não `ubuntu-latest`) para o resultado não mudar sozinho quando o GitHub trocar a imagem.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Baixar o código deste commit (git puro)
+        run: |
+          git init --quiet .
+          git remote add origin "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}.git"
+          git fetch --quiet --depth=1 origin "${GITHUB_SHA}"
+          git checkout --quiet --detach FETCH_HEAD
+          git log -1 --format='commit %H%n%an em %ci%n%s'
+
+      - name: Registrar o ambiente do runner
+        run: |
+          echo "Sistema: $(. /etc/os-release && printf '%s' "${PRETTY_NAME}") ($(uname -srm))"
+          echo "CPUs: $(nproc) · memória: $(awk '/^MemTotal/ {printf "%.1f GiB", $2/1048576}' /proc/meminfo)"
+          echo "/bin/sh -> $(readlink -f /bin/sh) · awk -> $(readlink -f "$(command -v awk)")"
+          sed --version | head -1
+          grep --version | head -1
+
+      # O `tools/check_prerequisites` exige o ripgrep (`rg`) e aponta `apt install ripgrep` no Linux.
+      # Vem do arquivo oficial do Ubuntu, assinado pelo apt.
+      - name: Instalar o ripgrep
+        run: |
+          if ! command -v rg > /dev/null 2>&1; then
+            sudo apt-get update -o Acquire::Retries=3
+            sudo apt-get install -y --no-install-recommends -o Acquire::Retries=3 ripgrep
+          fi
+          rg --version | head -1
+
+      - name: Baixar e verificar o Godot (versão fixada)
+        run: |
+          zip_name="Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          url="https://github.com/godotengine/godot-builds/releases/download/${GODOT_VERSION}-stable/${zip_name}"
+          mkdir -p "${RUNNER_TEMP}/godot"
+          cd "${RUNNER_TEMP}/godot"
+          curl --fail --silent --show-error --location --retry 3 --retry-delay 5 --output "${zip_name}" "${url}"
+          # As duas somas são conferidas antes de descompactar ou executar qualquer coisa do arquivo.
+          echo "${GODOT_ZIP_SHA512}  ${zip_name}" | sha512sum --check --strict -
+          echo "${GODOT_ZIP_SHA256}  ${zip_name}" | sha256sum --check --strict -
+          unzip -q "${zip_name}"
+          godot_bin="${RUNNER_TEMP}/godot/Godot_v${GODOT_VERSION}-stable_linux.x86_64"
+          chmod +x "${godot_bin}"
+          reported="$("${godot_bin}" --version | head -1)"
+          echo "Godot informa: ${reported}"
+          if [ "${reported}" != "${GODOT_VERSION_STRING}" ]; then
+            echo "ERRO: versão diferente da referência (${GODOT_VERSION_STRING})." >&2
+            exit 1
+          fi
+          # Os scripts do projeto (tools/*, tests/*.sh) procuram o Godot em GODOT_BIN.
+          echo "GODOT_BIN=${godot_bin}" >> "${GITHUB_ENV}"
+
+      # Clone novo não tem o cache `.godot/`; sem este passo as classes (`class_name`) não são achadas.
+      - name: Importar o projeto no Godot
+        timeout-minutes: 10
+        run: |
+          "${GODOT_BIN}" --headless --path . --import < /dev/null
+
+      - name: Rodar tools/check_all
+        timeout-minutes: 45
+        run: |
+          # stdin fechado de propósito: o teste de avisos usa `godot --debug` e travaria esperando o teclado.
+          tools/check_all < /dev/null 2>&1 | tee "${RUNNER_TEMP}/check_all.log"
+
+      # Só escreve o resumo da execução; nunca muda o resultado do job.
+      - name: Resumo do resultado
+        if: always()
+        run: |
+          set +e +o pipefail
+          log="${RUNNER_TEMP}/check_all.log"
+          {
+            echo "## check_all no GitHub Actions"
+            echo
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- /bin/sh: \`$(readlink -f /bin/sh)\`"
+            echo "- Runner: \`${RUNNER_OS}/${RUNNER_ARCH}\` · imagem \`${ImageOS:-?} ${ImageVersion:-?}\`"
+            if [ -n "${GODOT_BIN:-}" ]; then
+              echo "- Godot: \`$("${GODOT_BIN}" --version | head -1)\`"
+            fi
+            if [ -f "${log}" ]; then
+              echo "- Veredito do script: \`$(sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g' "${log}" | grep -E '^(VERDE|VERMELHO)' | tail -1)\`"
+              echo
+              echo '```'
+              sed -E 's/\x1b\[[0-9;]*[A-Za-z]//g' "${log}" | grep -E '^ *(Warnings|Deprecated|Scripts|Tests|Passing Tests|Failing Tests|Risky/Pending|Asserts|Time) +[0-9]' | tail -9
+              echo '```'
+            else
+              echo "- O check_all não chegou a produzir saída (algum passo anterior falhou)."
+            fi
+            echo
+            echo "Alterações no working tree depois dos testes (esperado: nenhuma):"
+            echo '```'
+            git status --porcelain | head -20
+            echo '```'
+          } >> "${GITHUB_STEP_SUMMARY}"
