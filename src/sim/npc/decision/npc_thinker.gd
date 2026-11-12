@@ -446,8 +446,6 @@ class ConditionProvider:
 	var _food: ActionConditionProvider
 	var _income: IncomeStub
 	var _trade: NpcTrade
-	## A conclusão que acabou de tirar comida do inventário do NPC: o `FoodStub` não consome a refeição de novo (LW-093).
-	var _food_from_inventory: bool = false
 
 	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, income: IncomeStub = null, trade: NpcTrade = null) -> void:
 		_places = places
@@ -481,15 +479,10 @@ class ConditionProvider:
 	func complete_action(npc_id: int, action_id: String) -> ActionConditionProvider.Completion:
 		if _trade == null:
 			return ActionConditionProvider.Completion.new()
-		var completion: ActionConditionProvider.Completion = _trade.complete(npc_id, action_id)
-		_food_from_inventory = completion.consumed_from_inventory
-		return completion
+		return _trade.complete(npc_id, action_id)
 
-	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só o FoodStub, TEMP-LW-065), menos quando a comida saiu do inventário do NPC.
+	## Repassa o fim de uma ação completa a quem guarda estoque (hoje só o FoodStub, TEMP-LW-065). O runner nem o chama quando a comida saiu do inventário do NPC (`Completion.consumed_from_inventory`).
 	func on_action_completed(action_id: String, settlement_id: String, occupation_id: String) -> void:
-		if _food_from_inventory:
-			_food_from_inventory = false
-			return
 		if _food != null:
 			_food.on_action_completed(action_id, settlement_id, occupation_id)
 

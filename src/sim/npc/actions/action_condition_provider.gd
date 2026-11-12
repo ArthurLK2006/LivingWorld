@@ -46,7 +46,7 @@ class Completion:
 	## Só quando o NPC comeu do inventário: a necessidade que o bem alivia e quanto (o runner corrige o efeito da tabela da ação por esse alívio).
 	var relieved_need_id: String = ""
 	var relief: int = 0
-	## O bem consumido saiu do inventário do NPC (da economia): o estoque provisório de comida (`FoodStub`) não consome nada desta vez.
+	## O bem consumido saiu do inventário do NPC (da economia): o `ActionRunner` NÃO chama `on_action_completed` desta vez, então o estoque provisório de comida (`FoodStub`) não consome nada.
 	var consumed_from_inventory: bool = false
 
 	static func failed(reason: String) -> Completion:

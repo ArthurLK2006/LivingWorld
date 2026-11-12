@@ -249,6 +249,7 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 		if not broken.is_empty():
 			return Result.failure(CODE_ACTION_FAILED, "ActionRunner.apply_effects: NPC %d, ação '%s' falhou ao terminar: %s; nenhum efeito foi aplicado." % [npc_id, action_id, broken])
 	var extras: Array[ActionDef.ActionEffect] = []
+	var food_from_inventory: bool = false
 	if _provider != null:
 		extras = _provider.extra_effects(action_id, state.occupation_id)
 		if progress_permille == FULL_PROGRESS:
@@ -256,6 +257,7 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 			if not planned_need.is_empty() and not _need_position.has(planned_need):
 				return Result.failure(CODE_UNKNOWN_NEED, "ActionRunner.apply_effects: NPC %d, ação '%s': a economia aliviaria a necessidade '%s', que não existe nas definições; nada foi comprado, consumido nem vendido e nenhum efeito foi aplicado." % [npc_id, action_id, planned_need])
 			var completion: ActionConditionProvider.Completion = _provider.complete_action(npc_id, action_id)
+			food_from_inventory = completion.consumed_from_inventory
 			if not completion.problem.is_empty():
 				return Result.failure(CODE_ACTION_FAILED, "ActionRunner.apply_effects: NPC %d, ação '%s' falhou ao terminar: %s; nenhum efeito foi aplicado." % [npc_id, action_id, completion.problem])
 			if not completion.relieved_need_id.is_empty():
@@ -270,7 +272,8 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 		_apply_row(state, effect, effect_progress)
 	for extra: ActionDef.ActionEffect in extras:
 		_apply_row(state, extra, effect_progress)
-	if progress_permille == FULL_PROGRESS and _provider != null:
+	# A comida que saiu do inventário do NPC (da economia) não consome de novo o estoque provisório: o resultado da conclusão, não um sinalizador do provedor, decide (R6-I1).
+	if progress_permille == FULL_PROGRESS and _provider != null and not food_from_inventory:
 		_provider.on_action_completed(action_id, state.settlement_id, state.occupation_id)
 	return Result.success()
 
