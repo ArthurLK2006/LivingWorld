@@ -40,21 +40,10 @@ env:
 
 jobs:
   check_all:
-    name: check_all (${{ matrix.variante }})
+    name: check_all
     # Imagem fixa (e não `ubuntu-latest`) para o resultado não mudar sozinho quando o GitHub trocar a imagem.
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    strategy:
-      # Cada variante termina sozinha: o resultado de uma não esconde o da outra.
-      fail-fast: false
-      matrix:
-        # `padrao` é o portão de verdade (o /bin/sh do Ubuntu é o dash, mais estrito que o do macOS).
-        # `sh-como-bash` é um EXPERIMENTO de diagnóstico: repete tudo com o /bin/sh sendo o bash, como no
-        # macOS, para separar "falha do jogo" de "script que só funciona sob bash". Não altera nenhum
-        # arquivo do projeto e deve sumir quando o defeito do script for corrigido.
-        variante: [padrao, sh-como-bash]
-    env:
-      VARIANTE: ${{ matrix.variante }}
     defaults:
       run:
         shell: bash
@@ -66,12 +55,6 @@ jobs:
           git fetch --quiet --depth=1 origin "${GITHUB_SHA}"
           git checkout --quiet --detach FETCH_HEAD
           git log -1 --format='commit %H%n%an em %ci%n%s'
-
-      # Só na variante de diagnóstico. A VM do runner é descartável: a troca some quando o job termina.
-      - name: Experimento - o /bin/sh passa a ser o bash (como no macOS)
-        if: matrix.variante == 'sh-como-bash'
-        run: |
-          sudo ln -sf /usr/bin/bash /usr/bin/sh
 
       - name: Registrar o ambiente do runner
         run: |
@@ -132,7 +115,7 @@ jobs:
           set +e +o pipefail
           log="${RUNNER_TEMP}/check_all.log"
           {
-            echo "## check_all no GitHub Actions (piloto) — variante: ${VARIANTE}"
+            echo "## check_all no GitHub Actions (piloto)"
             echo
             echo "- Commit: \`${GITHUB_SHA}\`"
             echo "- /bin/sh: \`$(readlink -f /bin/sh)\`"
