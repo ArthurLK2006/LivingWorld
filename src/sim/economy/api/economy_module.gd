@@ -121,10 +121,13 @@ func request_open_owner(owner_id: int, kind: String, work_place_id: String = "")
 
 
 ## Posta um contrato `labor` ou `delivery` (LW-096; seção 8 do contrato): o emissor paga a recompensa para a custódia (`contract_escrow`) e o `ContractOffered` sai. `objective`: `labor` com `place_id` e `minutes`; `delivery` com `good_id`, `quantity` e `destination_id`.
-## `deadline` é um minuto de simulação depois de agora. Tudo ou nada; falhas: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_AMOUNT`, `ECON_CONTRACT_IMPOSSIBLE`, `ECON_INSUFFICIENT_FUNDS`. Sem `setup` do `World` (sem relógio nem IDs) nada é postado.
+## `deadline` é um minuto de simulação depois de agora. Tudo ou nada; falhas: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_AMOUNT`, `ECON_CONTRACT_IMPOSSIBLE`, `ECON_INSUFFICIENT_FUNDS`. A recusa NUNCA gasta ID (a validação vem antes de pedir o ID; R13-I1). Sem `setup` do `World` (sem relógio nem IDs) nada é postado.
 func request_post_contract(kind: String, issuer_id: int, reward: int, deadline: int, objective: Dictionary) -> EconomyReplies.PostContractResult:
 	if _ids == null or _events == null or _clock == null:
 		return EconomyReplies.PostContractResult.new(Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "EconomyModule.request_post_contract: módulo sem setup (sem relógio, IDs nem barramento); esperado um módulo registrado no World."), IdGenerator.NO_ID)
+	var refused: Result = _state.contracts.check_post(kind, issuer_id, reward, deadline, _clock.total_minutes(), objective)
+	if not refused.ok:
+		return EconomyReplies.PostContractResult.new(refused, IdGenerator.NO_ID)
 	var contract_id: int = _ids.next_id()
 	var posted: Result = _state.contracts.post(contract_id, kind, issuer_id, reward, deadline, _clock.total_minutes(), objective)
 	if not posted.ok:

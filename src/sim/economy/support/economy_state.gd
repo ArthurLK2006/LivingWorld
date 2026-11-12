@@ -33,7 +33,7 @@ static func create(economy_definitions: EconomyDefinitions, trade_rules: TradeRu
 	state.engine = new_engine(economy_definitions, trade_rules, state.book, state.ledger, state.goods, state.markets)
 	state.production = new_production_book(economy_definitions, state.book, state.goods, state.markets, state.engine, state.ledger)
 	state.posts = new_post_book(state.book, state.markets, state.ledger)
-	state.contracts = ContractBook.new(state.book, state.ledger, state.goods, state.production, state.posts)
+	state.contracts = ContractBook.new(state.book, state.ledger, state.goods, state.production, state.posts, state.markets)
 	return state
 
 

@@ -4,8 +4,8 @@ extends RefCounted
 ## `core`; o contrato COM recompensa é dono de uma conta do tipo `contract`, a CUSTÓDIA: ao postar, o emissor paga a recompensa para ela (`contract_escrow`) e o dinheiro só sai dali para o aceitante (`contract_payout`) ou de volta para o emissor
 ## (`contract_refund`), nunca fica retido. Estado: `open`, `accepted`, `completed`, `failed`, `expired`. Esta parte: postar (validado, tudo ou nada) e aceitar (só `open`, um aceitante); a conclusão, o prazo e as vagas vêm nas partes seguintes.
 ## Conclusão (parte c): `labor` pelo turno de trabalho registrado no local (`work_shift`; "um trabalho, um pagamento": recusado se o trabalhador já é atribuído àquele local) e `delivery` pela entrega dos bens ao destino (`deliver`); a custódia paga o
-## aceitante (`contract_payout`) e o estado vira `completed`. Prazo (parte d): `expire` vence, na hora seguinte, o contrato aberto ou aceito cujo prazo passou: a custódia volta ao emissor (`contract_refund`) e o estado vira `expired`; emissor FECHADO (morreu) não recebe de volta e a recompensa fica na
-## conta do contrato [LIM] (o dinheiro continua contado no teste de ouro). `deadline` é um minuto de simulação (0 = sem prazo, só para a vaga). Nunca sorteia nem olha o relógio: quem chama passa o `now`.
+## aceitante (`contract_payout`) e o estado vira `completed`. Prazo (parte d): `expire` vence, na hora seguinte, o contrato aberto ou aceito cujo prazo passou: a custódia volta ao emissor (`contract_refund`) e o estado vira `expired`; emissor FECHADO (morreu): a custódia vai para a conta do MERCADO do povoado
+## do contrato (`ContractRefundMarket`; mesmo motivo, sem queimar nada), e fica retida na conta do contrato só se o povoado é desconhecido [LIM]. `deadline` é um minuto de simulação (0 = sem prazo, só para a vaga). Nunca sorteia nem olha o relógio: quem chama passa o `now`.
 
 const LABOR: String = "labor"
 const DELIVERY: String = "delivery"
@@ -46,37 +46,28 @@ var _ledger: Ledger
 var _goods: GoodsStore
 var _production: ProductionBook
 var _posts: ServicePostBook
+var _refund_market: ContractRefundMarket
 var _contracts: Dictionary[int, Dictionary] = {}
 
 
-## `production` e `posts` podem ser nulos (economia sem eles): então nenhum local de trabalho é conhecido.
-func _init(owner_book: OwnerBook, money_ledger: Ledger, goods_store: GoodsStore, production_book: ProductionBook, post_book: ServicePostBook) -> void:
+## `production` e `posts` podem ser nulos (economia sem eles): então nenhum local de trabalho é conhecido. `market_book` (opcional) diz para onde vai a custódia de um contrato vencido cujo emissor morreu; sem ele ela fica retida.
+func _init(owner_book: OwnerBook, money_ledger: Ledger, goods_store: GoodsStore, production_book: ProductionBook, post_book: ServicePostBook, market_book: MarketBook = null) -> void:
 	_book = owner_book
 	_ledger = money_ledger
 	_goods = goods_store
 	_production = production_book
 	_posts = post_book
+	_refund_market = ContractRefundMarket.new(owner_book, production_book, post_book, market_book)
 
 
 ## Posta um contrato `labor` ou `delivery` e retém a recompensa na custódia. Tudo ou nada: valida o emissor (aberto), o tipo, a recompensa (1 ou mais), o prazo (depois de `now`) e o objetivo (`objective` com as chaves do tipo) ANTES de mudar
 ## qualquer coisa. Falhas: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_AMOUNT`, `ECON_CONTRACT_IMPOSSIBLE`, `ECON_INSUFFICIENT_FUNDS`.
 func post(contract_id: int, kind: String, issuer_id: int, reward: int, deadline: int, now: int, objective: Dictionary) -> Result:
-	var checked: Result = _book.check_open(issuer_id)
+	var checked: Result = check_post(kind, issuer_id, reward, deadline, now, objective)
 	if not checked.ok:
 		return checked
 	if _contracts.has(contract_id) or _book.has_owner(contract_id):
 		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o ID %d já está em uso." % contract_id)
-	if kind != LABOR and kind != DELIVERY:
-		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o tipo '%s' não é postado por este comando; esperado '%s' ou '%s'." % [kind, LABOR, DELIVERY])
-	if reward < 1:
-		return Result.failure(EconomyCodes.BAD_AMOUNT, "ContractBook.post: a recompensa é %d; esperado 1 ou mais." % reward)
-	if deadline <= now:
-		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o prazo %d não é depois de agora (%d)." % [deadline, now])
-	var problem: String = _objective_problem(kind, objective)
-	if not problem.is_empty():
-		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: %s." % problem)
-	if _ledger.balance_of(issuer_id) < reward:
-		return Result.failure(EconomyCodes.INSUFFICIENT_FUNDS, "ContractBook.post: o emissor %d tem saldo %d e não cobre a recompensa %d." % [issuer_id, _ledger.balance_of(issuer_id), reward])
 	var opened: Result = _book.open_owner(contract_id, KIND_OWNER)
 	if opened.ok:
 		opened = _ledger.transfer(issuer_id, contract_id, reward, Ledger.REASON_CONTRACT_ESCROW)
@@ -88,6 +79,26 @@ func post(contract_id: int, kind: String, issuer_id: int, reward: int, deadline:
 	if kind == LABOR:
 		state[KEY_WORKED] = 0
 	_contracts[contract_id] = state
+	return Result.success()
+
+
+## A validação do comando de postar, SEM o ID e sem mudar nada: emissor aberto, tipo, recompensa (1 ou mais), prazo (depois de `now`), objetivo possível e saldo do emissor. Quem chama a faz ANTES de pedir um ID ao `core`, para a recusa nunca gastar ID
+## (os IDs não se reutilizam; R13-I1). Mesmas falhas de `post`: `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_BAD_AMOUNT`, `ECON_CONTRACT_IMPOSSIBLE`, `ECON_INSUFFICIENT_FUNDS`.
+func check_post(kind: String, issuer_id: int, reward: int, deadline: int, now: int, objective: Dictionary) -> Result:
+	var checked: Result = _book.check_open(issuer_id)
+	if not checked.ok:
+		return checked
+	if kind != LABOR and kind != DELIVERY:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o tipo '%s' não é postado por este comando; esperado '%s' ou '%s'." % [kind, LABOR, DELIVERY])
+	if reward < 1:
+		return Result.failure(EconomyCodes.BAD_AMOUNT, "ContractBook.post: a recompensa é %d; esperado 1 ou mais." % reward)
+	if deadline <= now:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: o prazo %d não é depois de agora (%d)." % [deadline, now])
+	var problem: String = _objective_problem(kind, objective)
+	if not problem.is_empty():
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post: %s." % problem)
+	if _ledger.balance_of(issuer_id) < reward:
+		return Result.failure(EconomyCodes.INSUFFICIENT_FUNDS, "ContractBook.post: o emissor %d tem saldo %d e não cobre a recompensa %d." % [issuer_id, _ledger.balance_of(issuer_id), reward])
 	return Result.success()
 
 
@@ -196,7 +207,7 @@ class Outcome:
 		return outcome
 
 
-## Vence os contratos `labor` e `delivery`, abertos ou aceitos, cujo prazo passou (`now` maior ou igual ao prazo), por ID crescente: a custódia volta ao emissor (`contract_refund`) se ele está aberto, e o estado vira `expired`. Devolve os que venceram.
+## Vence os contratos `labor` e `delivery`, abertos ou aceitos, cujo prazo passou (`now` maior ou igual ao prazo), por ID crescente: a custódia volta ao emissor (`contract_refund`) se ele está aberto ou, se morreu, vai para o mercado do povoado do contrato (se a economia o conhece), e o estado vira `expired`. Devolve os que venceram.
 func expire(now: int) -> Array[Expired]:
 	var expired: Array[Expired] = []
 	for contract_id: int in contract_ids():
@@ -205,10 +216,11 @@ func expire(now: int) -> Array[Expired]:
 		if not held or state[KEY_KIND] == VACANCY or int(state[KEY_DEADLINE]) == 0 or now < int(state[KEY_DEADLINE]):
 			continue
 		var issuer: int = state[KEY_ISSUER]
-		if _book.check_open(issuer).ok and _ledger.balance_of(contract_id) > 0:
-			var refunded: Result = _ledger.transfer(contract_id, issuer, _ledger.balance_of(contract_id), Ledger.REASON_CONTRACT_REFUND)
+		var receiver: int = issuer if _book.check_open(issuer).ok else _refund_market_of(state)
+		if receiver != IdGenerator.NO_ID and _ledger.balance_of(contract_id) > 0:
+			var refunded: Result = _ledger.transfer(contract_id, receiver, _ledger.balance_of(contract_id), Ledger.REASON_CONTRACT_REFUND)
 			if not refunded.ok:
-				push_error("ContractBook.expire: a custódia do contrato %d não voltou ao emissor %d: %s" % [contract_id, issuer, refunded.message])
+				push_error("ContractBook.expire: a custódia do contrato %d não foi devolvida a %d: %s" % [contract_id, receiver, refunded.message])
 		state[KEY_STATE] = STATE_EXPIRED
 		expired.append(Expired.new(contract_id, issuer))
 	return expired
@@ -296,7 +308,7 @@ func load_from(data: Dictionary) -> Result:
 	return Result.success()
 
 
-## Invariantes: o contrato com recompensa tem a conta de custódia, e ela guarda a recompensa inteira enquanto o contrato está aberto ou aceito e NADA depois (a custódia nunca fica retida).
+## Invariantes: o contrato com recompensa tem a conta de custódia, e ela guarda a recompensa inteira enquanto o contrato está aberto ou aceito e NADA depois; a única exceção é a custódia retida de um emissor morto cujo povoado a economia não conhece [LIM].
 func validate() -> Array[String]:
 	var problems: Array[String] = []
 	for contract_id: int in contract_ids():
@@ -308,10 +320,17 @@ func validate() -> Array[String]:
 			continue
 		var held: bool = state[KEY_STATE] == STATE_OPEN or state[KEY_STATE] == STATE_ACCEPTED
 		var expected: int = int(state[KEY_REWARD]) if held else 0
-		var retained_by_dead_issuer: bool = not held and _book.is_closed(int(state[KEY_ISSUER])) and _ledger.balance_of(contract_id) == int(state[KEY_REWARD])
+		var retained_by_dead_issuer: bool = not held and _book.is_closed(int(state[KEY_ISSUER])) and _refund_market_of(state) == IdGenerator.NO_ID and _ledger.balance_of(contract_id) == int(state[KEY_REWARD])
 		if _ledger.balance_of(contract_id) != expected and not retained_by_dead_issuer:
 			problems.append("o contrato %d (%s) deveria ter %d na custódia e tem %d" % [contract_id, state[KEY_STATE], expected, _ledger.balance_of(contract_id)])
 	return problems
+
+
+## O mercado que recebe a custódia do contrato vencido de um emissor morto: o do povoado do local de trabalho (`labor`) ou do destino (`delivery`); `IdGenerator.NO_ID` se a economia não o conhece.
+func _refund_market_of(state: Dictionary) -> int:
+	if state[KEY_KIND] == LABOR:
+		return _refund_market.of_place(str(state[KEY_PLACE]))
+	return _refund_market.of_owner(int(state[KEY_DESTINATION]))
 
 
 ## Texto do problema do objetivo, ou vazio se é possível: `labor` pede um local de trabalho que a economia conhece e minutos de 1 ou mais; `delivery`, um bem que existe, quantidade de 1 ou mais e um destino aberto.

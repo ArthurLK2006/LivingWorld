@@ -57,4 +57,8 @@ Implementado (LW-096, parte e, 11/11/2026): as vagas, em `support/economy_vacanc
 
 Implementado (LW-097e, 11/11/2026): os dados da distribuição pelos três povoados. `data/economy/production_sites.json` com 14 linhas (A 5, B 6, C 3; a equipe de cada uma é a linha de população que ocupa o local), 10 linhas de mercado do C em `market_targets.json` (30 no total), a farinha do B e a madeira do C com estoque inicial de 30 dias (alvo na metade, para o teto de compra caber no peso do mercado) e os testes `test_economy_distribution.gd` (nenhum povoado se basta; todo bem necessário tem produtor; equipe = população) e `test_initial_stock_covers_30_days.gd` (horas de trabalho da agenda, não 24 h). Valores [HIP]; a comida do C é só um valor pequeno até a LW-094.
 
+Ajustes da revisão (12/11/2026): a folha (`WagePayer.pay`) é tudo ou nada também no caminho de erro (confere o saldo inteiro e cada transferência antes de mover a primeira) e `can_pay` já recusa o que o `Ledger` recusaria; o `debug_summary()` mostra `service_posts` (a quantidade de postos) quando há postos; a recusa de `request_post_contract` não gasta ID. A frase do `economy.md` sobre a custódia do emissor morto diz agora o que o código faz ([LIM]).
+
+Implementado (12/11/2026, LW-095, item 5 do bloco v11): o carregador dos postos, `posts/post_loader.gd` (`PostLoader`), ligado ao `EconomySetup`: valida `service_posts.json` (campos, faixas, texto em branco, um posto por local) com arquivo, item e campo nas mensagens e recusa o local que tem posto e local de produção; o arquivo é opcional (sem ele não há posto). **Nenhum dado novo:** o `service_posts.json` só entra depois da LW-097 no `main`.
+
 Planejado, ainda não existe: os dados dos postos (`service_posts.json`) e o comércio entre povoados (LW-098).

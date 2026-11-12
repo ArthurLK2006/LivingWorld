@@ -23,8 +23,23 @@ static func from_dir(data_dir: String = DEFAULT_DIR, is_development_build: bool 
 	var production: ProductionLoader.LoadResult = ProductionLoader.load_dir(data_dir)
 	if not production.result.ok:
 		return setup._fail("produção", production.result)
-	setup.definitions = EconomyDefinitions.new(goods.goods, goods.kinds, markets.targets, markets.params, is_development_build, null, production.recipes, production.params, production.sites)
+	var posts: PostLoader.LoadResult = PostLoader.load_dir(data_dir)
+	if not posts.result.ok:
+		return setup._fail("postos de serviço", posts.result)
+	var conflict: String = place_conflict(production.sites, posts.posts)
+	if not conflict.is_empty():
+		return setup._fail("locais de trabalho", Result.failure(EconomyCodes.DATA_INVALID, conflict))
+	setup.definitions = EconomyDefinitions.new(goods.goods, goods.kinds, markets.targets, markets.params, is_development_build, null, production.recipes, production.params, production.sites, posts.posts)
 	return setup
+
+
+## Cada local `work` serve a UM só: o mesmo `place_id` num local de produção e num posto é recusado (texto vazio = nenhum conflito).
+static func place_conflict(sites: Array[SiteDef], posts: Array[PostDef]) -> String:
+	for post: PostDef in posts:
+		for site: SiteDef in sites:
+			if site.place_id == post.place_id:
+				return "o local '%s' tem o local de produção '%s' e o posto '%s'; esperado um só por local" % [post.place_id, site.id, post.id]
+	return ""
 
 
 func _fail(subject: String, loaded: Result) -> EconomySetup:

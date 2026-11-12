@@ -2,7 +2,7 @@ class_name NpcEmployment
 extends RefCounted
 ## O NPC aceita vaga (LW-096a; docs/modules/npc.md, 14.4; DEC-165 e DEC-169): quando a economia publica `ContractOffered` de uma `vacancy`, os NPCs do mesmo povoado a pontuam PELA UTILIDADE e o melhor candidato a aceita
 ## (`request_accept_contract`); aceitar muda o `work_place_id` dele NA MESMA PASSAGEM (um dono por dado: o `npc` é dono do `work_place_id`, a economia da lista de trabalhadores). Utilidade da vaga = o salário por hora vezes as horas
-## pagas por dia, menos o custo da caminhada de casa ao trabalho (o custo de distância dos parâmetros), mais o bônus de trabalhar no próprio ofício. O desempregado aceita se a utilidade é positiva; o empregado só TROCA se a utilidade da vaga passar
+## pagas por dia, menos o custo da caminhada de casa ao trabalho (o custo de distância dos parâmetros), mais o bônus de trabalhar no próprio ofício. O desempregado (sem `work_place_id`) aceita se a utilidade é positiva; o empregado (com `work_place_id`, mesmo que a economia não conheça o local) só TROCA se a utilidade da vaga passar
 ## da do emprego atual por mais que a HISTERESE (senão dois locais de salário parecido passariam o mesmo NPC de um para o outro em laço); o emprego só termina por morte (`NpcDied`; a economia tira o NPC da lista e a vaga reaparece) ou por
 ## aceitar outra vaga. Empate: o menor ID (nunca sorteia). Só lê a economia pela porta (`economy/api`) e mexe no que é do `npc`. As constantes abaixo são [HIP] e ficam NOMEADAS no código (nenhum dado novo nesta tarefa).
 
@@ -85,19 +85,19 @@ func _commute_cost(state: NpcState, place_id: String) -> int:
 	return IntMath.floor_div(distance_cm * _params.distance_cost_per_100m * COMMUTES_PER_DAY, CM_PER_100_M)
 
 
-## O emprego de agora: se a economia lista o NPC na equipe do local de produção ou do posto do `work_place_id` dele, a utilidade desse emprego; senão ele está desempregado (utilidade 0).
+## O emprego de agora (R18-I1): EMPREGADO é quem tem `work_place_id` preenchido (o `npc` é o dono dele). A utilidade do emprego é a do local de produção ou do posto, se a economia lista o NPC na equipe dele; um local que a economia não conhece (por
+## exemplo o posto de um povoado que ainda não tem `service_posts.json`) NÃO faz o NPC contar como desempregado: ele segue empregado, com utilidade 0 (a economia não o paga), e a histerese vale para ele. Sem `work_place_id`: desempregado.
 func _current_employment(state: NpcState) -> Employment:
 	var employment: Employment = Employment.new()
 	if state.work_place_id.is_empty():
 		return employment
+	employment.employed = true
 	var site: EconomyReplies.SiteQuery = _economy.peek_site_at(state.work_place_id)
 	if site.result.ok and site.worker_ids.has(state.npc_id):
-		employment.employed = true
 		employment.utility = _utility(state, site.place_id, site.wage_per_hour, site.occupation_id)
 		return employment
 	var post: EconomyReplies.PostQuery = _economy.peek_post_at(state.work_place_id)
 	if post.result.ok and post.worker_ids.has(state.npc_id):
-		employment.employed = true
 		employment.utility = _utility(state, post.place_id, post.wage_per_hour, post.occupation_id)
 	return employment
 
