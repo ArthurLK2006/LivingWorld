@@ -1,4 +1,69 @@
-BLOQUEADA — 12/11/2026 07:12 (Brasília) — Fase B da LW-097, 2ª tentativa (contra o main 885615c, com as suas 2 autorizações: troca dos 2 testes e resolução do conflito de test_economy_production_api): oráculo provado e estável, conflitos resolvidos, MAS o check_all da junção dá 32 falhas em testes que o bloco não lista (31 da A, de LW-095/096, mais 1 meu): todas porque o jogo real agora tem o 3º mercado, 14 locais de produção que pagam salário e vagas (os IDs deslocam, e o salário aparece). Nada commitado nem enviado; main intocado. Preciso da sua autorização para ajustar esses 7 arquivos de teste (lista exata e patch no relatório). Sem tag, sem --force. Nada rodando.
+12/11/2026 07:33 (Brasília) — CONCLUÍDA: Fase B da LW-097 NO MAIN por autorização antecipada (main avançado 885615c..81ce7f4 por avanço simples; junção d5661a4 + linha de status 81ce7f4); check_all VERDE no commit final (169 scripts, 1.444 testes, 297.868 asserts); oráculo: nove valores novos, estáveis e provados (neutralizando as causas da C voltam exatamente aos da A); soak de 30 dias do jogo real: 0 mortes, 0 ContractOffered, conservação e validate ok (depois de trocar o estoque de comida do C de 3.000 para 6.000, autorizado); hash do run_sim --days 30 --seed 1 igual antes e depois (732907967efd). Aguardando auditoria. LW-118 segue só em ramos. Parei (regra 13). Sem tag, sem --force. Nada rodando.
+
+# LW-097, Fase B (junção com o `main`) — RELATÓRIO — NO MAIN        Status: PRONTA PARA AUDITORIA (já no `main` por autorização antecipada)
+
+**Contexto.** Item 4 do Bloco C v10 e Bloco v11b: Fase B da LW-097 no `main`. A frente A entrou antes (`main` `885615c`, com LW-093 a LW-096a). Mesmo conjunto de partes da LW-097 (097a a 097e, relatadas antes), agora juntas ao `main` atual. Autorizações usadas: as do v10/v11b e as suas respostas no chat de 12/11/2026 (troca dos 2 testes da A; resolução do conflito de `test_economy_production_api.gd`; "Autorizo os 7 ajustes"; "Autorizo 6.000").
+
+## 1. RESUMO
+`git merge --no-ff --no-commit origin/main` na ponta da minha linha, conflitos resolvidos, números de teste atualizados, oráculo recalculado e provado, estoque de comida do C corrigido para o soak de 30 dias, `check_all` VERDE no commit final, e o `main` avançou `885615c..81ce7f4` por avanço simples. Dois commits: `d5661a4` (junção) e `81ce7f4` (linha de status, nenhuma contagem muda). Ramo `lw-097e-producao-e-estoque` enviado em `81ce7f4`; as partes 097a a 097d entram no `main` por ancestralidade. Sem tag, sem `--force`, nenhum ramo apagado.
+
+## 2. CONFLITOS E COMO RESOLVI (9 arquivos)
+`src/app/simulation_host.gd` e `src/app/game_app.gd`: UMA assinatura, `start_new_game(…, economy_setup, world_setup)` e `GameModules.register(…, economy_setup, world_setup)`, e as duas funções `_load_economy_setup` e `_load_world_setup` mantidas. `tests/integration/test_npc_split_oracle.gd`: só o dicionário `EXPECTED`. `docs/modules/world.md` (Q-W4: "as 3 linhas"), `data/world/README.md`, `docs/events.md` (6 implementados na Fase 3 com o `RouteStateChanged`, as linhas da A mantidas), `docs/modules/npc.md` (minha nota da 097d e o ponto novo da A) e `src/sim/economy/README.md` (as entradas da A, a da 097e e o "Planejado" sem a LW-097): documentos, mantendo os dois lados. `tests/unit/test_economy_production_api.gd` (o conflito que você autorizou): ficaram as linhas da A (motivos de parada com `NO_FUNDS` e `NO_SPACE`) com a troca de IDs 3→4 e 4→5 da 097e. `data/world/places.json`: `c_market_01` de `market_reserved` para `market`. Teste NOVO do jogo real: `tests/integration/test_real_game_has_routes_and_economy.gd` (3 rotas abertas e a economia com 3 mercados e 14 locais).
+
+## 3. TESTES EXISTENTES ALTERADOS (arquivo · teste · antes → depois)
+Os 2 autorizados na 1ª rodada:
+- `tests/unit/test_economy_start_money_and_consume.gd` · `test_the_initial_money_is_minted_only_when_the_account_opens_with_the_reason_game_start`: dinheiro criado 6000 → 11800 e 6160 → 11960 (3 mercados de 3000 e 14 locais de 200).
+- `tests/unit/test_game_economy_wiring.gd` · `test_the_default_game_has_the_markets_and_every_npc_has_an_account_with_the_initial_money`: mercados `[1, 2]` → `[1, 2, 3]` (acrescentada a conferência do C), primeiro NPC 3 → 18, dinheiro `6000 + 60 × N` → `9000 + 14 × 200 + 60 × N`.
+Os 6 do v11b (e o meu, da lista da 097e), todos só em valores esperados, sem remover verificação:
+1. `tests/unit/test_site_payroll.gd` (5 testes: `…recipe_with_no_wage…`, `…stopped_for_no_funds_comes_back_from_the_save…`, `…site_with_funds_pays_every_worker…`, `…without_enough_for_the_whole_payroll_stops…`, `…payroll_is_all_or_nothing…`): `SITE_BREAD` 3 → 4.
+2. `tests/unit/test_contract_vacancies.gd` (9 testes): `SITE` 3 → 4 e `POST` 4 → 5.
+3. `tests/unit/test_npc_vacancy.gd` (9 testes): `SITE` 3 → 4 e `POST` 4 → 5.
+4. `tests/unit/test_service_posts.gd` (5 testes): `SITE_BREAD` 3 → 4 e `POST` 4 → 5; mais 2 linhas no `_definitions` (`production_sites` vazio, porque o teste é dos postos e supõe "sem local de produção"), e 3 textos de mensagem e comentário atualizados.
+5. `tests/unit/test_service_post_queries.gd` (2 testes): `POST_GUARD` 3 → 4 e `POST_INN` 4 → 5; mais as mesmas 2 linhas de `production_sites` vazio.
+6. `tests/integration/test_npc_buys_food.gd` · `test_hungry_npcs_with_money_buy_food_at_the_market_and_eat_it_without_breaking_conservation`: motivos de dinheiro `["game_start", "trade"]` → `["game_start", "salary", "trade"]` (os locais reais agora pagam salário, LW-095).
+7. `tests/unit/test_economy_production_api.gd` (meu, da 097e) · `test_without_sites_in_the_data_nothing_changes_and_validate_finds_a_site_that_lost_its_owner`: próximo ID livre do jogo real 18 → 32 (3 mercados, 14 locais e as 14 vagas que a economia posta).
+**Honesto:** os itens 4 e 5 acrescentam 2 linhas de setup e o 6 acrescenta um elemento a uma lista; não são "só trocar número" do v11b, e foram cobertos pela sua resposta "Autorizo os 7 ajustes" de 12/11/2026 (que descrevia exatamente essas mudanças).
+
+## 4. ORÁCULO (marco 3, DEC-175)
+| fase | só A (`main` 885615c) | só C (097e, estoque do C 3.000) | junção (estoque do C 6.000) |
+|---|---|---|---|
+| intents | 8670b52b8ff6 | f3f7b6b6edba | 28802dfa9d06 |
+| alarm | b62628f049b0 | 5faee3a8bda2 | 916683019e46 |
+| resumed | 1251aaf06e2d | 153d0cffb6f9 | a2b476e37a0c |
+| switches | 6889619788b5 | 5de93474b92f | b4c379eaad55 |
+| talk | a8a97e95f464 | 137a429093c6 | a96d78a9a82f |
+| save | 781066cec584 | a65f1bd8972e | 5c885dbc09ee |
+| demote | ed884fc6fb21 | 4499213a8de0 | c5b515175b72 |
+| starved | f11a33ea9ab0 | 3a423e68c051 | d2533a12fd05 |
+| real_game | 76a65b9cfc8a | d4135eb87caf | 48857919c5ff |
+Duas execuções seguidas dão os mesmos nove. **Prova:** na árvore da junção, voltando aos arquivos do `main` para as causas da C (FoodStub, população, ofícios, agendas, locais, povoados) e sem registrar o módulo `world`, e com as constantes da A, os nove voltam exatamente aos da A (só a asserção "132 NPCs" falhou, como esperado); depois restaurei tudo. Antes da troca do estoque do C a junção dava `38bafd6df46c`, `bf3123d575c1`, `4b13a9641b08`, `2b9109b362df`, `9089c5eb9181`, `b8ab78052427`, `23025197b9e1`, `756ad4098135`, `34d6dc4bfe0b` (também estáveis e também provados).
+
+## 5. CAUSA EXTRA (v11b item 2), CONDIÇÕES (i) E (ii)
+- **Achado e correção:** no jogo real de 30 dias (script de diagnóstico fora do repositório, `start_default_game` + `run_days(30)`), com o estoque de comida do C em **3.000** morreram **28 NPCs por fome (os do C, dias 19 a 21)** e saíram **7 `ContractOffered`** (as vagas que as mortes abrem): a condição (i) **falhou**. O erro era meu (o 3.000 da 097d: "30 dias" estava calculado com 3 refeições por dia, e eles comem mais). Parei e você autorizou **6.000** [HIP] (`data/food_stub.json`, TEMP-LW-065, some na LW-094).
+- **Com 6.000:** 132 NPCs, **0 mortes, 0 `ContractOffered`**, 319 `WagesPaid`, dinheiro por motivo `game_start` 19.720, `salary` 4.400 e `trade` 15.607, **conservação do dinheiro e dos bens ok, `validate()` da economia, do `npc` e do mundo com 0 problemas**.
+- **Oráculo:** o jogo de teste dele não carrega a economia, então nenhum `ContractOffered` é possível; a fase `starved` tem 5 `NpcDied` **por desenho do cenário** (existe desde a A e dá o mesmo hash sem as causas da C); as outras fases têm 0 mortes e a `real_game` tem 132 NPCs vivos.
+- **Hash do `run_sim --days 30 --seed 1`:** antes (`885615c`) e depois (junção) **`732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`** (mundo sem módulos: não muda).
+
+## 6. TESTES EXECUTADOS
+`tools/check_all` no commit final `81ce7f4`: exit 0, **VERDE**; GDScript sem avisos (414 scripts), "IDS DE CONTEÚDO: tudo existe (129 conferências)", 169 scripts, **1.444 testes, 1.444 aprovados, 297.868 asserts**, 215,9 s. Antes: a junção sem os ajustes tinha dado 32 falhas (relatório anterior); depois dos ajustes, 0.
+
+## 7. PROBLEMAS E RISCOS
+- A causa das mortes (comida do C) é do tamanho do estoque temporário e do C não ter lavrador nem comércio até a LW-098: **a LW-094 (fim do FoodStub) precisa de uma fonte de comida para o C** (o mercado do C tem só 200 de `bread` e 10 de `grain`, [HIP] pequeno); fica como pendência para a LW-094/098.
+- O cabeçalho de contagem de `docs/events.md` (A) diz "5 já implementados" na Fase 3 mas a tabela dela tem mais (`WagesPaid`, `ContractOffered`…); só acrescentei o meu (`RouteStateChanged`), não corrigi a contagem da A.
+- A pilha da LW-118 (4 ramos) está sobre `4e614b5`, ancestral do `main` agora; entra depois, por outra autorização.
+
+## 8. BACKLOG (v11b item 3; sem autorização de commit para eles, ficam aqui)
+Uma linha cada para `docs/backlog.md`: (1) centralizar a constante 132 (população total) hoje repetida em testes e no soak (`EXPECTED_POPULATION`); (2) cobrir com teste as 6 chaves novas de `data/text/pt_br.json` das províncias e culturas (LW-118) e as do C.
+
+## 9. PENDÊNCIAS
+Auditoria da LW-097 no `main`. Aprovação da LW-118 (ramos). Fonte de comida do C para a LW-094/098. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 no `main` (aguardando auditoria); nenhuma contagem do `ROADMAP_STATUS` mudou; LW-118 em 4 ramos.
+- Próxima: aguardar sua auditoria e a ordem da LW-094 (A) e da LW-119. Não iniciadas.
+- Git: `main` em `81ce7f4`; ramo `lw-097e-producao-e-estoque` em `81ce7f4`; sem tag, sem `--force`.
+
+---
 
 # LW-097, Fase B (2ª tentativa) — RELATÓRIO — BLOQUEADA        Status: BLOQUEADA (pronta para a sua decisão)
 
