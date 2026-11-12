@@ -1,4 +1,4 @@
-12/11/2026 07:44 (Brasília) — BLOCO B v7 (manhã, limite 13:00) EM ANDAMENTO, sem BLOQUEADA minha: A LW-097 DA C ENTROU NO `main` (`81ce7f4`, avanço simples, 07:28); auditoria estrutural: SÃ (rotas E economia, uma assinatura, `c_market_01` = market, 9 valores do oráculo = os da C, 0 teste removido; 3 dos 9 testes da junção NÃO são só número, declarados pela C e cobertos pelo 'Autorizo os 7 ajustes' que ela cita); `check_all` INDEPENDENTE VERDE (169 scripts/1.444 testes/297.868 asserts, iguais aos da C) e `run_sim` 30 dias com o mesmo hash `732907967efd` (adendo 1); diagnóstico de 30 dias do jogo real EM EXECUÇÃO (adendo 2); a A empurrou `lw-096h-ids-sem-gasto` e `lw-096i-empregado-pelo-work-place` (a revisar: R22/R23); decisões de Arthur registradas na seção anterior; vigia armado.
+12/11/2026 07:45 (Brasília) — BLOCO B v7 (manhã, limite 13:00) EM ANDAMENTO, sem BLOQUEADA minha: A LW-097 DA C ENTROU NO `main` (`81ce7f4`, avanço simples, 07:28); auditoria estrutural: SÃ (rotas E economia, uma assinatura, `c_market_01` = market, 9 valores do oráculo = os da C, 0 teste removido; 3 dos 9 testes da junção NÃO são só número, declarados pela C e cobertos pelo 'Autorizo os 7 ajustes' que ela cita); `check_all` INDEPENDENTE VERDE (169 scripts/1.444 testes/297.868 asserts, iguais aos da C) e `run_sim` 30 dias com o mesmo hash `732907967efd` (adendo 1); diagnóstico de 30 dias do jogo real EM EXECUÇÃO (adendo 2); a A empurrou `lw-096h-ids-sem-gasto` e `lw-096i-empregado-pelo-work-place` (revisados: R22 e R23, sem bloqueio; R23-I1: o teste novo tem `SITE = 3` e falha quando a A juntar o `main` novo); decisões de Arthur registradas na seção anterior; vigia armado.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1489,3 +1489,38 @@ Aprovou as **recomendações técnicas** dos pontos **1, 2, 3, 4, 6, 7, 8, 10, 1
 | **Hash do soak (`run_sim --days 30 --seed 1`)** | **`732907967efd…`** na **minha** execução (`tools/run_sim`, mesma cópia exportada; "Módulos: 0", "Problemas de validação: 0"): **igual ao que a C relatou antes e depois da junção** (o mundo sem módulos não muda) |
 | **Oráculo e soaks que existem** | **Passam** dentro do `check_all` verde, com os 9 valores novos e os soaks de 7 dias com 132 NPCs |
 | **Pendente** | o **diagnóstico de 30 dias do jogo real com economia e mundo** (mortes, `ContractOffered`, conservação), que escrevi fora do repositório e está rodando: adendo 2 |
+
+
+## RELATÓRIO — R22 e R23: ramos novos da conversa A (`lw-096h-ids-sem-gasto` `0c8e73a` e `lw-096i-empregado-pelo-work-place` `7e39b80`)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 12/11/2026 07:45 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio.** Os dois ramos executam a decisão de Arthur de hoje ("a A corrige o R13/R14 e o R18-I1 em ramo agora"). **R22 (096h):** `request_post_contract` passa a validar **antes** de pedir o ID (`ContractBook.check_post`, extraído de `post`, **mesmas falhas e códigos**), então **a recusa nunca gasta ID**; teste novo compara o contador de IDs antes e depois de **7 recusas** e depois de um post que dá certo (gasta exatamente **1**); a frase do `economy.md` ("o ID só se consome ao postar") **agora é verdade**. **R23 (096i):** **empregado é quem tem `work_place_id` preenchido** (o `npc` é o dono), mesmo que a economia não conheça o local (o posto de um povoado sem `service_posts.json`); a utilidade desse emprego vale 0 e **a histerese vale**; 3 testes novos; `npc.md` atualizado com "decisão de Arthur de 12/11/2026". **Nenhum teste existente alterado, nenhum protegido, nenhum hash muda, nenhum dado novo.** Os dois estão **sobre `885615c`**, ainda **sem o `main` novo** (`81ce7f4`, com a LW-097 da C), e **fundem sem conflito de texto** com ele (0 trechos nos dois, conferido por `merge-tree`, só imprime). A 096i está sobre a 096h.
+
+**2. ARQUIVOS CRIADOS / 3. MODIFICADOS.** Nenhum no projeto; só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Li os dois diffs **inteiros** (096h: 5 arquivos, 3 `.gd`; 096i: mais 4, 2 `.gd`), `check_post` e a chamada no módulo, `npc_employment.gd` (`_current_employment`), os 5 testes novos **pelos nomes** e o teste do contador **por inteiro**, os salários reais (`data/economy/recipes.json`: **todas as 10 receitas pagam 2 por hora**) e o `SITE = 3` fixo do teste novo da 096i.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da A** (não exportei estes ramos). Rodei: contagem DEC-126, leitura e `git grep`, `merge-tree --trivial-merge` (só imprime).
+
+**6. RESULTADOS**
+| Item | Resultado |
+|---|---|
+| **Tamanho (DEC-126)** | 096h: **116 linhas** em 3 `.gd`; 096i: **+122** em 2 `.gd` (e o ramo todo, 5 `.gd`, **+221 −17**): **dentro do teto** |
+| **R13-I1/R14-I1 resolvidos?** | **Sim:** `request_post_contract` chama `check_post` **antes** de `_ids.next_id()`; o teste exige `ids.serialize()` **igual** antes e depois de 7 recusas (emissor inexistente, recompensa 0, prazo 0, local desconhecido, entrega com quantidade 0, saldo insuficiente e tipo `vacancy`) e `contract_id` = **o próximo ID que havia**, sem buraco. `post()` ainda chama `check_post` (validação repetida, **inofensiva**) e o resto continua igual |
+| **R18-I1 resolvido?** | **Sim para os dados reais:** o guarda de posto de um povoado sem posto na economia **não** vira desempregado; a vaga de um local de produção vale `2 × 8 = 16` para ele (ofício diferente, sem bônus de 10), **abaixo da histerese de 20**, então ele **não** a pega. Conferi que **todas as 10 receitas pagam 2 por hora** e que **nenhuma receita é de `guard` ou `innkeeper`**: com os dados atuais **esse NPC nunca passa dos 20**. O desempregado de verdade (sem `work_place_id`) pega a mesma vaga |
+| **Hash, save, camadas** | Nenhum estado novo; nada de `float`, sorteio ou relógio; só `economy` e `npc` pela porta (`economy/api`) |
+| **Testes novos (5)** | `test_contract_post_ids` (2: contador de IDs nas recusas e no post; a validação sozinha não muda nada e os códigos são os mesmos) e `test_npc_employment_by_work_place` (3: local desconhecido é emprego e a histerese vale; o desempregado sem `work_place_id` pega a mesma vaga e o guarda fica; **o mesmo local desconhecido TROCA quando o ganho passa da histerese**, 26 contra 20, "é a histerese, não uma exclusão") |
+
+**7. PROBLEMAS ENCONTRADOS (por gravidade)**
+**Bloqueante: nenhum.**
+**IMPORTANTE**
+- **R23-I1. O teste novo `test_npc_employment_by_work_place.gd` tem `SITE = 3` fixo e vai FALHAR quando a A juntar o `main` novo.** Com a LW-097 no `main` os dados reais têm **3 mercados** (IDs 1 a 3), então o local de produção montado à mão passa a ser o **4** (é a mesma troca que a C teve de fazer em `test_site_payroll`, `test_contract_vacancies` e `test_npc_vacancy`: 3 → 4). O teste é **novo da A** (não é "teste existente alterado"), mas o `check_all` da A só fica verde depois de trocar `SITE` para 4 (e o `test_contract_post_ids` **não** tem ID fixo, então não é afetado). **Recomendo** que a A, ao juntar o `main`, troque a constante (ou derive o ID de `peek_site_at`).
+**MENOR**
+- **R23-M1. A correção é por histerese, não por exclusão.** Quem tem `work_place_id` num local desconhecido **ainda pode trocar** se a vaga passar de 20 (o teste 3 prova); com os salários e ofícios de hoje isso **não ocorre** para guardas e estalajadeiros, mas **mudar um salário para 3 ou pôr uma receita de `guard`** reabre o caso. Só aviso.
+- **R23-M2. Doc:** o `npc.md` diz "a utilidade do emprego dele vale 0" para o NPC com local desconhecido; vale registrar quando o `service_posts.json` entrar (depois da LW-097, decisão de Arthur) que **esse caminho deixa de existir** para os 6 postos.
+- **R22-M1. O R12-M1 continua** (`post()` abre a custódia antes de transferir; inalcançável porque `check_post` já conferiu o saldo) e o **R15-I1** segue **sem decisão** de Arthur.
+
+**8. RISCOS.** Baixo; o R23-I1 é fácil e previsível. **A pilha da A está sobre `885615c`**: precisa juntar `81ce7f4` antes de empurrar (sem conflito de texto, mas com o ajuste do R23-I1).
+
+**9. PENDÊNCIAS.** *Da A:* R23-I1 ao juntar o `main`. *Que não consegui verificar:* o `check_all` **da A** (e que os 5 testes novos passam); a junção real com o `main` novo.
+
+**ACOMPANHAMENTO.** *Avanço:* as duas correções que Arthur mandou a A fazer **estão em ramo**; falta a A as juntar ao `main` (**só depois** de juntar `81ce7f4`). *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `81ce7f4`.
