@@ -1,4 +1,26 @@
-12/11/2026 07:33 (Brasília) — CONCLUÍDA: Fase B da LW-097 NO MAIN por autorização antecipada (main avançado 885615c..81ce7f4 por avanço simples; junção d5661a4 + linha de status 81ce7f4); check_all VERDE no commit final (169 scripts, 1.444 testes, 297.868 asserts); oráculo: nove valores novos, estáveis e provados (neutralizando as causas da C voltam exatamente aos da A); soak de 30 dias do jogo real: 0 mortes, 0 ContractOffered, conservação e validate ok (depois de trocar o estoque de comida do C de 3.000 para 6.000, autorizado); hash do run_sim --days 30 --seed 1 igual antes e depois (732907967efd). Aguardando auditoria. LW-118 segue só em ramos. Parei (regra 13). Sem tag, sem --force. Nada rodando.
+12/11/2026 09:39 (Brasília) — CONCLUÍDA: LW-118 NO MAIN por ordem escrita de Arthur depois da aprovação (main avançado 81ce7f4..4db060f por avanço simples; junção f2b415b + linha de status 4db060f); check_all VERDE no commit final (174 scripts, 1.490 testes, 298.360 asserts); 3 conflitos, todos de documento; nenhum teste existente e nenhum hash mudou. Aguardando auditoria. Parei (regra 13). Sem tag, sem --force. Nada rodando.
+
+# LW-118 (junção com o `main`) — RELATÓRIO — NO MAIN        Status: PRONTA PARA AUDITORIA (já no `main` por ordem escrita)
+
+**Contexto.** Depois de "Aprovo a LW-118" e "Junte ao main" (12/11/2026), fiz a junção dos quatro ramos (118a a 118d, empilhados em `4e614b5`, ancestral do `main`) com o `main` atual `81ce7f4`, como nas Fases B anteriores: B0 junção, B1 uma linha de status, B2 `check_all`, B3 push do ramo e de `…:main` só por avanço simples.
+
+## 1. RESUMO
+`git merge --no-ff` de `origin/main` na ponta da LW-118 (`lw-118d-world-ligado`), 3 conflitos, todos de **documento** e resolvidos mantendo o texto atual do `main` mais as entradas da LW-118: `docs/modules/world.md` (o cabeçalho corrigido pela 117i e o bloco "Implementado (LW-118a a LW-118d)"), `data/world/README.md` (o texto atual com o tipo `market`, mais os parágrafos de culturas, províncias e das colunas novas) e `src/sim/world/README.md` (a linha atual, mais as quatro entradas da LW-118). Nenhum conflito de código ou de teste. O `main` avançou `81ce7f4..4db060f`.
+
+## 2. COMMITS
+`f2b415b` LW-118: junção com o main (81ce7f4) · `4db060f` LW-118: linha de status no ROADMAP_STATUS (**nenhuma contagem muda**). Ramo `lw-118d-world-ligado` enviado em `4db060f`; as partes 118a a 118c entram no `main` por ancestralidade (conferido). Sem tag, sem `--force`, nenhum ramo apagado.
+
+## 3. TESTES EXECUTADOS
+`tools/check_all` na árvore da junção e de novo no commit final `4db060f`: exit 0, **VERDE**; GDScript sem avisos (427 scripts), "IDS DE CONTEÚDO: tudo existe (129 conferências)", 174 scripts, **1.490 testes, 1.490 aprovados, 298.360 asserts** (a base do `main` tinha 1.444 testes; os 46 a mais são os testes novos da LW-118). **Nenhum teste existente foi alterado e nenhum hash mudou** (o oráculo passa com os mesmos valores; a LW-118 é conteúdo, fora do save e do `state_hash`).
+
+## 4. RISCOS E PENDÊNCIAS
+Auditoria da LW-118 no `main`. A contagem da LW-117 e da LW-118 no avanço (`ROADMAP_STATUS`) segue com você (a linha de status não mexe em contagem). Próxima tarefa de fase: LW-119 (`factions/state`), que depende da LW-118 e da LW-088; **não iniciada**. Fonte de comida do C para a LW-094/098 e as 2 linhas de backlog do v11b (constante 132; chaves de texto) seguem pendentes (sem autorização de commit para o backlog).
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 e LW-118 no `main`, ambas aguardando auditoria; contagens do `ROADMAP_STATUS` inalteradas.
+- Git: `main` em `4db060f`; sem tag, sem `--force`.
+
+---
 
 # LW-097, Fase B (junção com o `main`) — RELATÓRIO — NO MAIN        Status: PRONTA PARA AUDITORIA (já no `main` por autorização antecipada)
 
