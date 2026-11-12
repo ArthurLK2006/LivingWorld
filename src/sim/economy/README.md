@@ -45,4 +45,6 @@ Implementado (LW-095, parte b, 11/11/2026): os postos de serviço, em `posts/` (
 
 Implementado (LW-095, parte c, 11/11/2026): a consulta dos postos pela porta, `peek_post`, `peek_post_at` e `peek_posts_of`, com os mesmos nomes de `peek_site`.
 
+Implementado (LW-096, parte a, 11/11/2026): o livro de contratos, em `contracts/` (`ContractBook`): postar `labor` e `delivery` com a recompensa na custódia (conta do tipo `contract`), aceitar, estado e save (bloco `contracts`); ainda sem a porta do módulo, sem conclusão, sem prazo e sem vagas.
+
 Planejado, ainda não existe: os dados dos postos (`service_posts.json`), os contratos e as vagas (LW-096), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).

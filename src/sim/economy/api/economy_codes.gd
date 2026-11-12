@@ -22,3 +22,7 @@ const NOT_CONSUMABLE: String = "ECON_NOT_CONSUMABLE"
 ## Comando de depuração chamado fora do build de desenvolvimento (mesmo padrão do `NPC_DEV_ONLY`).
 const DEV_ONLY: String = "ECON_DEV_ONLY"
 const INVALID_SAVE: String = "ECON_INVALID_SAVE"
+## Contrato (LW-096): objetivo impossível (local ou destino que não existe, quantidade ou minutos fora da faixa, prazo que já passou, tipo que o comando não posta), contrato que não existe e contrato que não está aberto.
+const CONTRACT_IMPOSSIBLE: String = "ECON_CONTRACT_IMPOSSIBLE"
+const UNKNOWN_CONTRACT: String = "ECON_UNKNOWN_CONTRACT"
+const CONTRACT_NOT_OPEN: String = "ECON_CONTRACT_NOT_OPEN"

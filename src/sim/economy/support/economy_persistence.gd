@@ -10,6 +10,7 @@ const KEY_GOODS: String = "goods"
 const KEY_MARKETS: String = "markets"
 const KEY_PRODUCTION: String = "production"
 const KEY_POSTS: String = ServicePostBook.KEY_POSTS
+const KEY_CONTRACTS: String = ContractBook.KEY_CONTRACTS
 
 
 ## Sem dono e sem movimento: bloco vazio (nada entra no hash além da presença do módulo).
@@ -25,6 +26,8 @@ static func serialize(state: EconomyState) -> Dictionary:
 		block[KEY_PRODUCTION] = state.production.serialize()
 	if state.posts != null and not state.posts.is_pristine():
 		block[KEY_POSTS] = state.posts.serialize()
+	if not state.contracts.is_pristine():
+		block[KEY_CONTRACTS] = state.contracts.serialize()
 	return block
 
 
@@ -35,8 +38,8 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 		names.append(str(key))
 	names.sort()
 	for name: String in names:
-		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS].has(name):
-			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS])
+		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS].has(name):
+			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS])
 	# Variant: valores crus do save (JSON); o tipo é conferido na linha seguinte.
 	var raw_owners: Variant = data.get(KEY_OWNERS)
 	var raw_ledger: Variant = data.get(KEY_LEDGER)
@@ -44,8 +47,9 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 	var raw_markets: Variant = data.get(KEY_MARKETS, {})
 	var raw_production: Variant = data.get(KEY_PRODUCTION, {})
 	var raw_posts: Variant = data.get(KEY_POSTS, {})
-	if typeof(raw_owners) != TYPE_DICTIONARY or typeof(raw_ledger) != TYPE_DICTIONARY or typeof(raw_goods) != TYPE_DICTIONARY or typeof(raw_markets) != TYPE_DICTIONARY or typeof(raw_production) != TYPE_DICTIONARY or typeof(raw_posts) != TYPE_DICTIONARY:
-		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s' e '%s' devem ser objetos e estar os dois no bloco 'economy' (e '%s', '%s', '%s' e '%s', se houver, também objetos)." % [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS])
+	var raw_contracts: Variant = data.get(KEY_CONTRACTS, {})
+	if typeof(raw_owners) != TYPE_DICTIONARY or typeof(raw_ledger) != TYPE_DICTIONARY or typeof(raw_goods) != TYPE_DICTIONARY or typeof(raw_markets) != TYPE_DICTIONARY or typeof(raw_production) != TYPE_DICTIONARY or typeof(raw_posts) != TYPE_DICTIONARY or typeof(raw_contracts) != TYPE_DICTIONARY:
+		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s' e '%s' devem ser objetos e estar os dois no bloco 'economy' (e '%s', '%s', '%s', '%s' e '%s', se houver, também objetos)." % [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS])
 	var market_data: Dictionary = raw_markets
 	var book: OwnerBook = OwnerBook.new()
 	var loaded: Result = book.load_from(raw_owners)
@@ -88,6 +92,12 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 		loaded = posts.load_from(posts_data)
 		if not loaded.ok:
 			return loaded
+	var contracts: ContractBook = ContractBook.new(book, ledger, goods, production, posts)
+	var contracts_data: Dictionary = raw_contracts
+	if not contracts_data.is_empty():
+		loaded = contracts.load_from(contracts_data)
+		if not loaded.ok:
+			return loaded
 	target.book = book
 	target.ledger = ledger
 	target.goods = goods
@@ -95,6 +105,7 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 	target.engine = engine
 	target.production = production
 	target.posts = posts
+	target.contracts = contracts
 	return Result.success()
 
 
@@ -117,6 +128,8 @@ static func validation_problems(state: EconomyState) -> Array[String]:
 	if state.posts != null:
 		for problem: String in state.posts.validate():
 			problems.append("[posts] " + problem)
+	for problem: String in state.contracts.validate():
+		problems.append("[contracts] " + problem)
 	return problems
 
 
