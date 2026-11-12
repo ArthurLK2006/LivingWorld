@@ -26,6 +26,8 @@ const CODE_DUPLICATE_ID: String = "NPC_DUPLICATE_ID"
 const CODE_ROUTINE_NOT_CONFIGURED: String = "NPC_ROUTINE_NOT_CONFIGURED"
 ## Alarme (LW-076): tipo do evento, gravidade máxima aceita [HIP] e o código do pedido inválido.
 const ALARM_EVENT_TYPE: String = "AlarmRaised"
+## O salário pago pela economia (LW-095): o `npc` o ouve para aliviar `income`.
+const WAGES_PAID_EVENT_TYPE: String = "WagesPaid"
 const MAX_ALARM_SEVERITY: int = 10
 const CODE_INVALID_ALARM: String = "NPC_INVALID_ALARM"
 ## Comandos que só existem em build de desenvolvimento (a flag vem em `Definitions.is_development_build`).
@@ -89,6 +91,8 @@ var _runtime: NpcDecisionRuntime
 var _player_talk: NpcPlayerTalk
 ## Detector de impasse (LW-073): recupera o NPC cuja ação passou do fim previsto sem ninguém encerrá-la, ou cujos Intents venceram por tempo em sequência. Só memória (não é salvo). Criado no construtor.
 var _impasse: NpcImpasse
+## O salário que a economia paga alivia `income` (LW-095): só existe com economia. Criado no construtor; não é salvo.
+var _wage_income: WageIncome
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -106,6 +110,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_lifecycle = NpcLifecycle.new(_npcs, _notables, _tracer, _need_defs, _defs_problem, _routine, _definitions, _unknown, economy)
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine, economy)
 	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action, NpcImpasse.DEFAULT_LIMIT_MIN, intents.has_pending, _bodies.release_body)
+	_wage_income = null if economy == null else WageIncome.new(_npcs, _need_defs, economy)
 	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
 
 
@@ -205,6 +210,8 @@ func peek_npc(npc_id: int) -> NpcQuery:
 func post_setup() -> void:
 	if _ctx != null:
 		_ctx.events.subscribe(ALARM_EVENT_TYPE, on_alarm_raised)
+		if _wage_income != null:
+			_ctx.events.subscribe(WAGES_PAID_EVENT_TYPE, on_wages_paid)
 
 
 ## Faz soar um alarme no ponto (centímetros) com a gravidade dada (1 a MAX_ALARM_SEVERITY): publica `AlarmRaised` (LW-076). SÓ em build de
@@ -227,6 +234,12 @@ func request_raise_alarm(x_cm: int, z_cm: int, severity: int) -> Result:
 ## `flee` e `help` entram entre as candidatas e a ação atual é interrompida com efeito proporcional se uma reação vencer). Quem ignora segue a vida.
 func on_alarm_raised(event: SimEvent) -> void:
 	_runtime.react_to_alarm(event, _sorted_ids())
+
+
+## Reação ao evento `WagesPaid` (LW-095): alivia `income` dos trabalhadores do local que foi pago, em ordem de ID. Sem economia o módulo nem ouve o evento.
+func on_wages_paid(event: SimEvent) -> void:
+	if _wage_income != null and _ctx != null:
+		_wage_income.on_wages_paid(event, _ctx.clock.total_minutes())
 
 
 ## Marca ou desmarca o NPC para o rastro de decisão (LW-064). SÓ em build de desenvolvimento (`Definitions.is_development_build`); fora dele,
