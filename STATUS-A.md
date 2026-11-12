@@ -1,4 +1,4 @@
-11/11/2026 22:00 (Brasília) · BLOCO A v10: LW-096 completa em código (partes a a e: livro, porta, conclusão, prazo e vagas; ponta lw-096e-vagas, `check_all` VERDE 161 scripts/1.380 testes). Falta a LW-096a (o NPC aceita vaga) e a Fase B do resto do marco 2
+11/11/2026 22:08 (Brasília) · BLOCO A v10: LW-096a enviada (o NPC aceita vaga; ramo lw-096f-npc-aceita-vaga, `check_all` VERDE 162 scripts/1.391 testes). Marco 2 em código completo (093k, 095a-d, 096a-e, 096a). Agora: Fase B do resto do marco 2 (item 5)
 
 # RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
 
