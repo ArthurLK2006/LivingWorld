@@ -1,4 +1,4 @@
-12/11/2026 07:52 (Brasília) · BLOCO A v11 CONCLUÍDO · PRONTA PARA REVISÃO (07:52): os 6 itens feitos em 5 ramos lw-096h a lw-096l a partir de 885615c, todos com `check_all` VERDE (a última ponta: 166 scripts, 1.405 testes), 9 valores do oráculo e `run_sim` IGUAIS, nada no `main`. Só 1 teste existente trocado (o autorizado no item 6). PEÇO: a sua resposta à pergunta de design da custódia do emissor morto (seção 9: opções A a D, recomendo B) e o "autorizo" da C para as 2 testes. LW-094 e IncomeStub NÃO iniciadas
+12/11/2026 09:54 (Brasília) · BLOCO A v12 PARCIAL (10:05): item 1 PRONTO (lw-096m-junta-com-o-main 4116294 enviado, check_all VERDE 173 scripts/1.458 testes); item 2 (custódia, opção B) implementado no ramo lw-096n local e PARADO: 1 teste existente a troca exige sua autorização escrita (detalhe na seção do item 2)
 
 # RELATÓRIO — Bloco A v11 (consertos das revisões da B)     Status: PRONTA PARA REVISÃO
 
