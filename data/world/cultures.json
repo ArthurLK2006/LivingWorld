@@ -1,0 +1,4 @@
+[
+	{"id": "culture_trade", "name_key": "culture.culture_trade.name", "trade_openness": 80, "foreigner_tolerance": 60, "martial_stance": 30, "authority_weight": 40},
+	{"id": "culture_tradition", "name_key": "culture.culture_tradition.name", "trade_openness": 30, "foreigner_tolerance": 25, "martial_stance": 65, "authority_weight": 75}
+]

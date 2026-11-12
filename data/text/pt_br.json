@@ -4,6 +4,8 @@
 	"settlement.test_settlement_a.name": "Povoado A",
 	"settlement.test_settlement_b.name": "Povoado B",
 	"settlement.test_settlement_c.name": "Povoado C",
+	"culture.culture_trade.name": "Cultura mercantil",
+	"culture.culture_tradition.name": "Cultura tradicional",
 	"npc.name.villager": "Aldeão {number}",
 	"ui.interact_prompt": "[{key}] Interagir",
 	"ui.interact_too_far": "Chegue mais perto.",
