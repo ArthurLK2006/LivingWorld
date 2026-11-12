@@ -1,4 +1,4 @@
-11/11/2026 20:50 (Brasília) · BLOCO A v8 em curso: LW-095 só código. Parte a (salário dos locais, df01eb1) e parte b (postos de serviço, ramo lw-095b-postos-de-servico) prontas, `check_all` VERDE (153 scripts, 1.336 testes), `run_sim` e hashes iguais. Próximas: consulta peek_post, o npc ouvindo WagesPaid, depois LW-096 e LW-096a
+11/11/2026 21:07 (Brasília) · LW-095 só código COMPLETA em 4 partes: a (salário dos locais, df01eb1), b (postos de serviço, ea5ed94), c (consulta peek_post, 9d1b0f6) e d (o npc ouve WagesPaid e alivia income, ramo lw-095d-npc-ouve-salario), todas com `check_all` VERDE (155 scripts, 1.345 testes), `run_sim` e hashes iguais. Seguindo para a LW-096 (contratos, só código)
 
 # RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
 
