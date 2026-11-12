@@ -228,4 +228,20 @@ static func _contract_query(state: EconomyState, contract_id: int) -> EconomyRep
 	query.good_id = str(contract.get(ContractBook.KEY_GOOD, ""))
 	query.quantity = int(contract.get(ContractBook.KEY_QUANTITY, 0))
 	query.destination_id = int(contract.get(ContractBook.KEY_DESTINATION, IdGenerator.NO_ID))
+	if query.kind == ContractBook.VACANCY:
+		_fill_vacancy(state, query, int(contract[ContractBook.KEY_WORKPLACE]))
 	return query
+
+
+## Os nomes de `peek_site` e `peek_post` para a vaga, lidos do local de trabalho de agora (a vaga que perdeu o local fica só com o `workplace_id`).
+static func _fill_vacancy(state: EconomyState, query: EconomyReplies.ContractQuery, workplace_id: int) -> void:
+	query.workplace_id = workplace_id
+	var view: Dictionary = EconomyVacancies.workplace_view(state, workplace_id)
+	if view.is_empty():
+		return
+	query.place_id = view["place_id"]
+	query.settlement_id = view["settlement_id"]
+	query.occupation_id = view["occupation_id"]
+	query.wage_per_hour = view["wage_per_hour"]
+	query.workers_wanted = view["workers_wanted"]
+	query.workers_assigned = (view["worker_ids"] as Array).size()

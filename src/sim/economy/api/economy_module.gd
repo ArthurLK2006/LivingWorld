@@ -73,7 +73,7 @@ func tick(_elapsed_minutes: int) -> void:
 		_last_hour += 1
 		if _last_hour % SimClock.HOURS_PER_DAY == 0:
 			EconomyRuntime.close_day(_state, _events)
-		EconomyRuntime.run_production_hour(_state, _events, _clock.total_minutes())
+		EconomyRuntime.run_production_hour(_state, _events, _ids, _clock.total_minutes())
 
 
 ## Sem dono e sem movimento: bloco vazio (nada entra no hash além da presença do módulo).
@@ -148,8 +148,12 @@ func request_deliver_contract(contract_id: int) -> Result:
 	return _announce(_state.contracts.deliver(contract_id, _clock.total_minutes()))
 
 
-## Aceita o contrato (LW-096): só `open`, um aceitante aberto que não é o emissor. Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_CONTRACT_IMPOSSIBLE`.
+## Aceita o contrato (LW-096): só `open`, um aceitante aberto que não é o emissor. A VAGA é aceita por um NPC: o atribui ao local de trabalho, tira a atribuição anterior e conclui o contrato na hora (`ContractCompleted`, recompensa 0). Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_CONTRACT_IMPOSSIBLE`.
 func request_accept_contract(contract_id: int, actor_id: int) -> Result:
+	if _state.contracts.state_of(contract_id).get(ContractBook.KEY_KIND) == ContractBook.VACANCY:
+		if _events == null:
+			return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "EconomyModule.request_accept_contract: módulo sem setup (sem barramento); esperado um módulo registrado no World.")
+		return _announce(EconomyVacancies.accept(_state, contract_id, actor_id))
 	return _state.contracts.accept(contract_id, actor_id)
 
 

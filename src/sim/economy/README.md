@@ -53,4 +53,6 @@ Implementado (LW-096, parte c, 11/11/2026): a conclusão dos contratos: `request
 
 Implementado (LW-096, parte d, 11/11/2026): o prazo: a cada hora vence o contrato que passou do prazo, devolve a custódia ao emissor e publica `ContractFailed` (em `api/`); emissor morto não recebe de volta.
 
-Planejado, ainda não existe: os dados dos postos (`service_posts.json`), os contratos e as vagas (LW-096), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).
+Implementado (LW-096, parte e, 11/11/2026): as vagas, em `support/economy_vacancies.gd`: a economia posta UMA vaga por local de trabalho com gente faltando, o NPC a aceita por `request_accept_contract` (atribui, tira o emprego anterior e conclui), `peek_contract` mostra os nomes de `peek_site` e `peek_post`. O local sem dinheiro para a folha para e não demite.
+
+Planejado, ainda não existe: os dados dos postos (`service_posts.json`), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).

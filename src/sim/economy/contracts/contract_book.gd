@@ -34,9 +34,12 @@ const KEY_QUANTITY: String = "quantity"
 const KEY_DESTINATION: String = "destination_id"
 ## Minutos de trabalho já registrados no `labor` (0 ao postar).
 const KEY_WORKED: String = "worked_minutes"
+## O local de trabalho (o `site_id` ou o `post_id`) a que a vaga se refere.
+const KEY_WORKPLACE: String = "workplace_id"
 ## Chaves do objetivo que quem posta entrega (as mesmas do estado).
 const OBJECTIVE_LABOR: Array[String] = [KEY_PLACE, KEY_MINUTES]
 const OBJECTIVE_DELIVERY: Array[String] = [KEY_GOOD, KEY_QUANTITY, KEY_DESTINATION]
+const OBJECTIVE_VACANCY: Array[String] = [KEY_WORKPLACE]
 
 var _book: OwnerBook
 var _ledger: Ledger
@@ -211,6 +214,43 @@ func expire(now: int) -> Array[Expired]:
 	return expired
 
 
+## Posta a vaga do local de trabalho `workplace_id` (a economia a posta sozinha, nunca por comando): emissor o próprio local, recompensa 0, sem prazo e SEM custódia. Falha se o ID já está em uso.
+func post_vacancy(contract_id: int, workplace_id: int) -> Result:
+	if _contracts.has(contract_id) or _book.has_owner(contract_id):
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.post_vacancy: o ID %d já está em uso." % contract_id)
+	_contracts[contract_id] = {KEY_KIND: VACANCY, KEY_ISSUER: workplace_id, KEY_REWARD: 0, KEY_DEADLINE: 0, KEY_STATE: STATE_OPEN, KEY_ACCEPTOR: IdGenerator.NO_ID, KEY_WORKPLACE: workplace_id}
+	return Result.success()
+
+
+## O ID da vaga ABERTA do local de trabalho (`IdGenerator.NO_ID` se não há).
+func open_vacancy_of(workplace_id: int) -> int:
+	for contract_id: int in contract_ids():
+		var state: Dictionary = _contracts[contract_id]
+		if state[KEY_KIND] == VACANCY and state[KEY_STATE] == STATE_OPEN and state[KEY_WORKPLACE] == workplace_id:
+			return contract_id
+	return IdGenerator.NO_ID
+
+
+## A vaga aberta que não faz mais falta falha (sem evento: quem a quiser aceitar recebe `ECON_CONTRACT_NOT_OPEN`).
+func cancel_vacancy(contract_id: int) -> void:
+	if _contracts.has(contract_id) and _contracts[contract_id][KEY_KIND] == VACANCY and _contracts[contract_id][KEY_STATE] == STATE_OPEN:
+		_contracts[contract_id][KEY_STATE] = STATE_FAILED
+
+
+## O NPC `actor_id` ocupou a vaga: o contrato fica `completed` e o resultado (recompensa 0) serve para o `ContractCompleted`. Quem chama já atribuiu o NPC ao local.
+func complete_vacancy(contract_id: int, actor_id: int) -> Outcome:
+	var state: Dictionary = _contracts[contract_id]
+	state[KEY_STATE] = STATE_COMPLETED
+	state[KEY_ACCEPTOR] = actor_id
+	var outcome: Outcome = Outcome.new()
+	outcome.result = Result.success()
+	outcome.contract_id = contract_id
+	outcome.completed = true
+	outcome.acceptor_id = actor_id
+	outcome.reward = 0
+	return outcome
+
+
 func has_contract(contract_id: int) -> bool:
 	return _contracts.has(contract_id)
 
@@ -339,7 +379,7 @@ func _objective_keys(kind: String) -> Array[String]:
 		return OBJECTIVE_LABOR
 	if kind == DELIVERY:
 		return OBJECTIVE_DELIVERY
-	return []
+	return OBJECTIVE_VACANCY
 
 
 func _is_work_place(place_id: String) -> bool:
@@ -364,6 +404,8 @@ func _parse_contract(contract_id: int, raw_entry: Variant) -> Variant:
 	var acceptor: int = EconomyJson.to_int(entry[KEY_ACCEPTOR])
 	if issuer < IdGenerator.FIRST_ID or reward < 0 or deadline < 0 or (acceptor != IdGenerator.NO_ID and acceptor < IdGenerator.FIRST_ID):
 		return "'%s' deve ser um ID positivo, '%s' e '%s' 0 ou mais e '%s' um ID positivo ou %d" % [KEY_ISSUER, KEY_REWARD, KEY_DEADLINE, KEY_ACCEPTOR, IdGenerator.NO_ID]
+	if kind == VACANCY and (reward != 0 or deadline != 0):
+		return "a vaga tem '%s' e '%s' 0 (sem recompensa e sem prazo)" % [KEY_REWARD, KEY_DEADLINE]
 	var state: Dictionary = {KEY_KIND: str(kind), KEY_ISSUER: issuer, KEY_REWARD: reward, KEY_DEADLINE: deadline, KEY_STATE: str(state_name), KEY_ACCEPTOR: acceptor}
 	if kind == LABOR:
 		if not EconomyJson.is_int_like(entry.get(KEY_WORKED)) or EconomyJson.to_int(entry[KEY_WORKED]) < 0:
@@ -372,6 +414,8 @@ func _parse_contract(contract_id: int, raw_entry: Variant) -> Variant:
 	for key: String in _objective_keys(str(kind)):
 		var value: Variant = entry.get(key)
 		var wants_text: bool = key == KEY_PLACE or key == KEY_GOOD
+		if key == KEY_WORKPLACE and (not EconomyJson.is_int_like(value) or EconomyJson.to_int(value) < IdGenerator.FIRST_ID):
+			return "'%s' deve ser um ID positivo" % key
 		if wants_text and (typeof(value) != TYPE_STRING or str(value).is_empty()):
 			return "'%s' deve ser texto não vazio" % key
 		if not wants_text and not EconomyJson.is_int_like(value):

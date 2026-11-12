@@ -32,8 +32,8 @@ static func close_day(state: EconomyState, events: EventBus) -> void:
 		state.production.end_of_day()
 
 
-## A hora da folha: primeiro os postos de serviço, pela conta do mercado (passo 0), depois os locais de produção e, por fim, os contratos que venceram (`now` é o minuto atual).
-static func run_production_hour(state: EconomyState, events: EventBus, now: int) -> void:
+## A hora da folha: primeiro os postos de serviço, pela conta do mercado (passo 0), depois os locais de produção os contratos que venceram (`now` é o minuto atual) e, por fim, as vagas (a conferência de quem falta nos locais de trabalho).
+static func run_production_hour(state: EconomyState, events: EventBus, ids: IdGenerator, now: int) -> void:
 	if state.posts != null:
 		for event: SimEvent in state.posts.hour_step():
 			events.publish(event)
@@ -42,6 +42,7 @@ static func run_production_hour(state: EconomyState, events: EventBus, now: int)
 			events.publish(event)
 	for expired: ContractBook.Expired in state.contracts.expire(now):
 		events.publish(ContractFailed.new(expired.contract_id, expired.issuer_id, ContractFailed.REASON_EXPIRED))
+	EconomyVacancies.refresh(state, ids, events)
 
 
 ## Saldo inicial do tipo `market` (se o tipo tem) e o estoque inicial de cada bem negociado no assentamento.
