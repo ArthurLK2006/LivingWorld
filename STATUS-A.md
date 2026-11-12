@@ -1,4 +1,4 @@
-11/11/2026 22:15 (Brasília) · BLOCO A v10 CONCLUÍDO · PRONTA PARA REVISÃO: Fase B da LW-093 e do resto do marco 2 (093k, LW-095 a a d só código, LW-096 a a e, LW-096a) no `main` por avanço simples, `main` em 885615c, `check_all` VERDE (162 scripts, 1.391 testes), 9 valores do oráculo e `run_sim` IGUAIS, sem tag. Preparação da manhã (lista de testes da LW-094, rascunho dos 6 postos, plano do IncomeStub) escrita neste arquivo. Aguardo a sua autorização da lista. LW-094 não iniciada
+12/11/2026 07:02 (Brasília) · Arthur AUTORIZOU a lista da LW-094 (12/11, 07:00), mas a LW-094 só começa com a LW-097 da C no `main` (DEC-236): o `main` segue em 885615c e a Fase B da C está bloqueada por 2 testes da economia da A, à espera do seu "autorizo trocar os números desses 2 testes". Sem a produção nos dados o jogo real e o soak de 7 dias morrem de fome. Premissas e plano no topo do relatório
 
 # RELATÓRIO — LW-095 (só código), LW-096 (partes a a e), LW-096a, 093k e as duas Fases B     Status: PRONTA PARA REVISÃO
 
@@ -77,6 +77,10 @@ Ramos locais vazios ou obsoletos que ficam (não posso apagar): `lw-093-npcs-no-
 2. Autorizar a troca do teste `test_npc_trade.gd:179` e a retirada do sinalizador `_food_from_inventory` (R6-I1 completo).
 3. Registrar as DEC-237 a DEC-241 propostas no item 4, se concordar.
 4. A C junta a LW-097 depois; os valores do oráculo e do soak serão os dela (não toquei).
+
+# AUTORIZAÇÃO DA LISTA DA LW-094 (12/11/2026, 07:00) E O QUE A SEGURA
+Arthur escreveu: "Autorizo a lista da LW-094" (a lista do item 6(a) e 6(c) abaixo: 1 arquivo de teste apagado, 8 alterados e a troca dos 9 valores do oráculo e dos soaks pela causa "fim do FoodStub"; a do `IncomeStub` é a 6(c), a executar em seguida se ele mandar). **A LW-094 NÃO foi iniciada, e a razão é o pré-requisito dele, não falta de autorização:** a DEC-236 e o bloco v8 põem a LW-097 da C no `main` ANTES da LW-094, e o `main` segue em `885615c` sem ela (a Fase B da C está BLOQUEADA por 2 testes existentes da economia da A, à espera do "autorizo trocar os números desses 2 testes" dele, patch pronto no `STATUS-C.md`). **Razão técnica:** sem os locais de produção nos dados o jogo real e o soak de 7 dias ficam sem comida (medido: os 100 NPCs morrem em 6 dias sem o `FoodStub`), então a LW-094 não fecha `check_all` verde em cima do `main` de agora.
+**Premissas que vou seguir (me avise se discordar):** (1) os mundos de teste sem economia passam a usar a economia real e os locais de produção da C; (2) `Definitions.food` e `has_food(settlement)` ficam como interface. **Começo no dia em que a LW-097 estiver no `main`**, em duas partes (código e dados; depois os testes da lista), cada uma com `check_all` verde e com os valores novos mostrados (antigo, novo e causa).
 
 # PREPARAÇÃO DA MANHÃ (só relatório; NADA foi escrito em código, em dado ou em teste)
 ## (a) O que a LW-094 apagaria ou alteraria nos testes, com antes e depois
