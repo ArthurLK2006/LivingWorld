@@ -1,4 +1,4 @@
-11/11/2026 22:36 (Brasília) — NOITE (bloco B v6) ENCERRADA, RELATÓRIO FINAL ESCRITO (abaixo): R8 a R21 e 3 auditorias de entrada no `main` (LW-093 `f2bcb4c`, LW-117i `4372f7f`, A `885615c`: as três SÃS, `check_all` independente VERDE em `885615c`: 162 scripts/1.391 testes); parei por 'nada mais novo' (A concluiu às 22:15, C parou às 22:25; vigia desligado); sem BLOQUEADA; A DECIDIR POR ARTHUR (seção 4 do relatório final): autorizar a Fase B da C (só depois de refazer a prova do oráculo sobre `885615c`), `service_posts.json` e R18-I1 antes dela, destino da custódia de emissor morto (R15-I1), vaga única por hora (R16-M1), ofício acompanha emprego (R18-M3), tamanho da 118b (R19-I1), `pt_br.json`; CORREÇÃO MINHA: nos R9-I2/R10-I2 'os NPCs de posto são 36' é na verdade 30.
+12/11/2026 07:03 (Brasília) — DECISÃO DE ARTHUR REGISTRADA (seção final): à pergunta 'Autoriza a Fase B da C depois de refazer a prova do oráculo sobre 885615c?' ele respondeu 'Autorizo, com condições' (condições não detalhadas; entendimento da B: refazer a prova do oráculo sobre `885615c`, conferir morte de NPC, e o conflito em `test_economy_production_api.gd` precisa de autorização escrita à parte); a B não repassa à C nem à A. NOITE (bloco B v6) ENCERRADA, RELATÓRIO FINAL ESCRITO (abaixo): R8 a R21 e 3 auditorias de entrada no `main` (LW-093 `f2bcb4c`, LW-117i `4372f7f`, A `885615c`: as três SÃS, `check_all` independente VERDE em `885615c`: 162 scripts/1.391 testes); parei por 'nada mais novo' (A concluiu às 22:15, C parou às 22:25; vigia desligado); sem BLOQUEADA; A DECIDIR POR ARTHUR (seção 4 do relatório final): autorizar a Fase B da C (só depois de refazer a prova do oráculo sobre `885615c`), `service_posts.json` e R18-I1 antes dela, destino da custódia de emissor morto (R15-I1), vaga única por hora (R16-M1), ofício acompanha emprego (R18-M3), tamanho da 118b (R19-I1), `pt_br.json`; CORREÇÃO MINHA: nos R9-I2/R10-I2 'os NPCs de posto são 36' é na verdade 30.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1371,3 +1371,20 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 **8. GIT.** Único alvo de escrita: o ramo `status-b` (commit e push a cada revisão, **sem outras referências**, **sem tag, sem `--force`, sem merge, sem apagar ramo**). `main` em `885615c` (não toquei). Tags remotas iguais às de antes (`fase-0/1/2-concluida`). Só leitura nos ramos `origin/...` das duas conversas; nenhum worktree alheio mexido.
 
 **ACOMPANHAMENTO.** *Avanço:* os dois marcos da A (2 em código, 3 sem posto/IncomeStub) e a LW-118 da C estão **revisados**; faltam, na A, a **LW-095 final** (`service_posts.json`, retirada do `IncomeStub`) e a **LW-094** (não iniciada); na C, a **Fase B da LW-097** (bloqueada). *Próxima tarefa recomendada:* a decisão 1 e 2 acima (junção da C sobre `885615c`). **Não iniciada.** *Git:* nada para commitar além deste arquivo; `status-b` publicado.
+
+
+## DECISÃO DE ARTHUR REGISTRADA — Fase B da LW-097 (conversa C)        12/11/2026 07:03 (Brasília) · registro a pedido de Arthur, feito pela conversa B
+
+**A decisão (palavras de Arthur, pelo painel do chat):** à pergunta "Autoriza a Fase B da C depois de refazer a prova do oráculo sobre 885615c?", Arthur respondeu **"Autorizo, com condições"**. **Ele não detalhou as condições.**
+
+**Entendimento da B sobre as condições (NÃO são palavras de Arthur; são as 3 da recomendação do relatório final, seção 4, item 1):**
+1. **(a)** a C refaz a prova do oráculo sobre o `main` de agora (`885615c`); a anterior foi feita sobre `4372f7f`;
+2. **(b)** a C confere se algum NPC morre no oráculo e no soak (R16-I1 e R18-I1); se morrer, a causa não está entre as autorizadas e a aprovação por antecipação não vale;
+3. **(c)** o conflito em `tests/unit/test_economy_production_api.gd` não está na lista de conflitos que o bloco da C aceita; **este "Autorizo" não o cobre por si só**: precisa de autorização escrita de Arthur que cite o arquivo, ou a A faz a junção desse teste.
+
+**O que este registro NÃO faz:**
+- **Não** autoriza a troca dos números dos 2 testes da A (`test_game_economy_wiring` e `test_economy_start_money_and_consume`) que o `status-c` pede; Arthur não disse isso.
+- **Não** decide o `service_posts.json` nem a correção do R18-I1 pela A antes da junção (decisão 2 do relatório final).
+- **Não** é uma instrução da B à C ou à A: elas recebem as decisões direto de Arthur (regra de 11/11/2026). A B só registra o que ele decidiu.
+
+**Estado:** nenhum documento do repositório foi editado; `main` em `885615c`; A e C paradas; a B não iniciou nenhuma tarefa nova (regra 13).
