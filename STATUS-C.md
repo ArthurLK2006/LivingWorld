@@ -1,4 +1,56 @@
-11/11/2026 21:31 (Brasília) — CONCLUÍDA: LW-097e (14 locais de produção, mercado do C, estoque inicial de 30 dias e os testes de distribuição e de 30 dias): commit 4e614b5 ENVIADO só ao ramo lw-097e-producao-e-estoque (empilhado na 097d, f346ed9); check_all VERDE (148 scripts, 1.344 testes, 296.179 asserts); 14 testes existentes em 6 arquivos atualizados por autorização de Arthur (lista no relatório); oráculo do marco 3 NÃO mudou nesta pilha. Próxima da cadeia da noite: 117i (só documentos, a partir do origin/main). LW-097 NÃO vai ao main antes da Fase B (autorizada por antecipação no Bloco v10, depois da A). main intocado por mim. Sem tag, sem --force. Nada rodando.
+11/11/2026 21:41 (Brasília) — CONCLUÍDA: LW-117i (só documentos) NO MAIN por autorização de Arthur: main avançado f2bcb4c..4372f7f por avanço simples (2 commits: 5a53963 conteúdo, 4372f7f status), check_all VERDE (151 scripts, 1.322 testes, 293.484 asserts); DEC-234 PROPOSTA, DEC-235 e DEC-236 APROVADAS, DECISIONS 0.16 com 236 entradas. A frente A JÁ ESTÁ NO MAIN (f2bcb4c), então a espera acabou. LW-097e pronta (4e614b5, só no ramo). Próximo: Fase B da 097 por antecipação (merge de origin/main, oráculo em três árvores). Sem tag, sem --force. Rodando: nada.
+
+# LW-117i — RELATÓRIO — Registro das ordens de Arthur de 11/11/2026 e correções de texto das fichas        Status: PRONTA PARA REVISÃO (já no `main` pela Fase B curta autorizada)
+
+**Contexto.** Item 2 do Bloco C v10 (e item 4 do v9): só documentos, ramo novo `lw-117i-registro-das-ordens` saído do `origin/main` (`f2bcb4c`, com a LW-093 da A já dentro), não empilhado na 097. Edição do `DECISIONS.md` só no que o bloco nomeia; `DEVELOPMENT_ROADMAP.md` só na linha da LW-094.
+
+**Declaração do início (AGENTS 2.3).** Li: AGENTS 0.4; o bloco de ordens (texto da DEC-234 e lista de correções); `docs/DECISIONS.md` (índice, totais, seções 2, 7 e 8, DEC-053, DEC-107, DEC-132, DEC-142, DEC-146, DEC-233); a linha da LW-094 do roadmap; os cabeçalhos das fichas da Fase 4; `economy.md` (17.4, 17.8); `docs/events.md` (linhas de `PriceChanged`, `ShortageDeclared`, `ShortageEnded`); o código de `price_changed.gd` e `trade_engine.gd`. Decisões: DEC-234 PROPOSTA (nova), DEC-235 e DEC-236 APROVADAS por Arthur (novas).
+
+## 1. RESUMO
+Registrei no `DECISIONS.md` (versão 0.16, 236 entradas) a DEC-234 (PROPOSTA, nunca APROVADA), a DEC-235 e a DEC-236 (APROVADAS por Arthur em 11/11/2026), restaurei a nota da DEC-053, atualizei a linha da LW-094 do roadmap (dependências e marco 3) e corrigi os textos R5-M2, R4-M4, R5-M3 e R5-M4. A Fase B curta pôs tudo no `main` por avanço simples.
+
+## 2. ARQUIVOS CRIADOS
+Nenhum.
+
+## 3. ARQUIVOS MODIFICADOS (12, só documentos)
+- `docs/DECISIONS.md` (+50/−4): cabeçalho 0.16 e totais; 3 linhas no índice (DEC-234 na Área 9, DEC-235 na Área 6, DEC-236 na Área 10); as 3 entradas completas; seção 7 ("próximo número livre" DEC-237; faixas A 237–239, B 240–259, C 260–279); linha 0.16 no histórico; DEC-053 "Consequências".
+- `docs/DEVELOPMENT_ROADMAP.md` (1 linha, a da LW-094): dependências "LW-093, LW-065, LW-095 (só o código do salário) e LW-097 (DEC-236)"; o aceite "ainda no marco 2 de hash" virou "no marco 3 de hash (DEC-175), entregue junto dele e só pela causa «fim do `FoodStub`» (DEC-236)".
+- Cabeçalhos das 6 fichas da Fase 4 (`npc`, `world`, `factions`, `politics`, `military`, `chronicle`) e `docs/decisions/0016-desvios-tecnicos-da-fase-4.md` (R5-M2): agora dizem que só as DEC-227 a DEC-233 foram aprovadas por Arthur e que os demais itens da revisão R3 e da LW-117h seguem PROPOSTA. A ficha da economia já dizia só "LW-117g (DEC-227 a DEC-233)" e não mudou aqui.
+- `docs/modules/economy.md` (R4-M4 e R5-M3): a frase "o código da Fase 3 arredonda para baixo" virou "o código já arredonda para cima, com mínimo de 1, em `ceil_div` de `trade_engine.gd`" (conferi no código); nota nova em 17.8: `PriceChanged`, `ShortageDeclared` e `ShortageEnded` já existem sem `settlement_id`, a LW-126 o acrescenta e antes disso a tarefa é obrigada a parar e perguntar (AGENTS 16.2).
+- `docs/events.md` (R5-M4): a linha do `PriceChanged` agora diz "nenhum no código do jogo hoje (a classe existe e é publicada pela `economy` desde a LW-090b; só os testes a ouvem)" e "ainda sem `settlement_id`, que a LW-126 acrescenta". Conferi no código: a classe tem `market_id`, `good_id`, `old_price` e `new_price`, e nenhum `subscribe` em `src/` a ouve.
+- `docs/ROADMAP_STATUS.md` (+2 linhas, commit de status): entrada da LW-117i, sem mudar nenhuma contagem.
+
+## 4. DECISÕES TÉCNICAS
+- **DEC-234:** o texto é o que Arthur ditou, sem acréscimo meu, com os 7 campos do modelo; `Relações`: DEC-107, DEC-132, DEC-146.
+- **Onde pus as novas linhas do índice:** DEC-234 depois da DEC-209 (Área 9, arquitetura), DEC-235 depois da DEC-231 (Área 6, economia e sociedade), DEC-236 depois da DEC-233 (Área 10, processo).
+- **DEC-053:** só troquei `|*Nota ...` por `**Nota ...` nas duas notas; texto intacto; a linha tem agora as 3 barras da tabela (conferido por script).
+- **Totais:** recontei por script a partir das linhas do índice antes e depois: antes 151/54/17/10/1 = 233 (como estava), depois 153/55/17/10/1 = 236.
+- **R5-M2 no 0016:** o 0016 não traz a frase "com os ajustes da 117g e da 117h"; acrescentei ao Status dele a mesma separação (DEC-227 a DEC-233 aprovadas; o resto PROPOSTA), sem mexer no que já dizia sobre os três desvios.
+- Proposta de entrada para `DECISIONS.md`: nenhuma além das três registradas.
+
+## 5. TESTES EXECUTADOS
+- `tools/check_all` no commit final (`4372f7f`): exit 0, **VERDE**; GDScript sem avisos (379 scripts), "IDS DE CONTEÚDO: tudo existe (55 conferências)", 151 scripts, **1.322 testes, 1.322 aprovados, 293.484 asserts**, 191,4 s. (A primeira rodada deu VERMELHO só porque o worktree novo não tinha a importação do Godot; rodei `--import` e repeti.)
+- Conferências por script: totais do índice (236, 153/55/17/10/1) e 3 barras na linha da DEC-053.
+
+## 6. RESULTADOS
+Aprovados 1.322, falhos 0, pulados 0. Critério cumprido: só documentos; nenhum código, dado ou teste mudou.
+
+## 7. PROBLEMAS ENCONTRADOS
+- **A consequência da DEC-234** ("a linha de cada evento em `docs/events.md` passa a citar o número") **não foi aplicada** nas linhas de `NpcDied`, `ActReported` e `GoodsForged`: o bloco manda tocar o `events.md` só na linha do `PriceChanged`. Fica pendente para quando Arthur aprovar a DEC-234.
+- **Blocos "LW-146g" da B lidos** (`politics.md` seções 4 e 6, `factions.md`, `npc.md` 15.9 e a seção 18 do `economy.md`): não achei contradição com as minhas fichas. `request_apply_stability_modifier`/`request_remove_stability_modifier`, `request_raise_tension` e o `ItemSold` no adaptador do crime só acrescentam; o `ItemSold` é lido por nome e cabe no ponto 2 da DEC-234 (campos da seção 4 da ficha). **Pedido a registrar:** a B pede `cause_id` opcional em `request_apply_casualty` (a minha 16.8 ainda tem só `(npc_id, reason)`); não alterei a minha ficha.
+
+## 8. RISCOS
+A ficha da economia (seções 3 a 16, 17 e 18) segue sem a união das seções (fora do escopo, como o bloco manda). Os números DEC-240 a DEC-243 da B seguem sem registro.
+
+## 9. PENDÊNCIAS
+Aprovação da 117i. Contagem da LW-117 no avanço (recomendação anterior: 1 das 29 da Fase 4) segue com Arthur. Teste manual: nenhum.
+
+## ACOMPANHAMENTO
+- Avanço: Fase 3 sem mudança de contagem; LW-097 pronta até a 097e (ramos), Fase B pendente.
+- Próxima tarefa: **item 4, Fase B da LW-097** (a A já está no `main`). Em curso agora.
+- Git: ramo `lw-117i-registro-das-ordens` em `4372f7f` enviado; **`main` avançado `f2bcb4c..4372f7f` por avanço simples**; sem tag, sem `--force`, sem apagar ramo.
+
+---
 
 # LW-097e — RELATÓRIO — Locais de produção, mercado do C, estoque inicial de 30 dias e testes de distribuição        Status: PRONTA PARA REVISÃO
 
