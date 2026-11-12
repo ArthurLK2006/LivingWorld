@@ -1,4 +1,30 @@
-12/11/2026 09:39 (Brasília) — CONCLUÍDA: LW-118 NO MAIN por ordem escrita de Arthur depois da aprovação (main avançado 81ce7f4..4db060f por avanço simples; junção f2b415b + linha de status 4db060f); check_all VERDE no commit final (174 scripts, 1.490 testes, 298.360 asserts); 3 conflitos, todos de documento; nenhum teste existente e nenhum hash mudou. Aguardando auditoria. Parei (regra 13). Sem tag, sem --force. Nada rodando.
+12/11/2026 15:20 (Brasília) — EM ANDAMENTO: LW-108 (painel de depuração da economia, SÓ `--headless`, nenhuma janela aberta). Partes A (contrato) e B (consultas da ponte) FECHADAS e verdes nos ramos (`lw-108a-contrato-do-painel`, `lw-108b-consultas-da-ponte`, enviados); C, D e E escritas, com `check_all` rodando. Nada no `main` ainda. A LW-119 NÃO foi iniciada (o Bloco v12 trocou a tarefa).
+
+# LW-108 — Painel de depuração econômico — RELATÓRIO (PARCIAL, em andamento)        Status: PARCIAL
+
+**Contexto.** Bloco C v12 (12/11/2026, 12:58): LW-108 adiantada, só `--headless`, partes de até ~450 linhas / ~12 arquivos, entrada no `main` por antecipação só se as condições (a) a (g) valerem. A LW-119, que eu tinha começado a ler, ficou **parada** (nada foi criado para ela).
+
+## 1. RESUMO
+O painel mostra, em desenvolvimento, a conferência da economia: **CONSERVAÇÃO OK (verde) ou ERRO (vermelho)** para o dinheiro e para os bens, o dinheiro total (em circulação, criado, destruído e o movimento por motivo), e por povoado o preço e o estoque de cada bem e os locais de produção com a equipe e o **motivo de parada**. Só lê. As causas de escassez ficam de fora ([LIM], dependem da LW-104). Dividi em cinco partes (a parte D passaria de 600 linhas, então a prova do "só lê" virou a parte E).
+
+## 2. PARTES (ramo · commit · o que é · tamanho em linhas de código e teste, sem comentário nem linha em branco)
+- **A** `lw-108a-contrato-do-painel` · `fa16d7c` · só contrato: `bridge.md` (três consultas `peek_economy_*`, sem `request_*`, sem evento) e `tools.md` (seção "Painel econômico"). `check_all` **VERDE** (174 scripts, 1.490 testes, 298.360 asserts). Só documento.
+- **B** `lw-108b-consultas-da-ponte` · `0b73e31` · `bridge_economy_replies.gd`, `bridge_economy_inspect.gd`, 3 funções delegadas no `sim_bridge.gd` (a ponte lê `host.economy`; o construtor e o `GameApp` não mudam; código novo `BRIDGE_NO_ECONOMY`), teste `test_sim_bridge_economy_inspect.gd` (9 testes). ~370 linhas, 4 arquivos de código. `check_all` **VERDE** (175 scripts, **1.499 testes**, 298.610 asserts).
+- **C** `lw-108c-modelo-do-painel` · `b685940` · `economy_inspector_model.gd` (sem nó) + 42 chaves `tools.economy_inspector.*` em `pt_br.json` + `test_economy_inspector_model.gd` (12 testes). ~390 linhas.
+- **D** `lw-108d-paineis-e-tecla` · `486a0d3` · `economy_inspector_panel.gd`, `economy_inspector_mount.gd`, uma linha de gancho (e o campo) em `main_world_view.gd`, `test_economy_inspector_panel.gd` (8) e `test_economy_inspector_activation.gd` (6). ~400 linhas.
+- **E** `lw-108e-prova-do-so-le` · `95c8d98` · `tests/integration/test_economy_debug_panel.gd` (6 testes: jogos gêmeos, ponte espiã sem nenhuma escrita, varredura de `src/tools/economy_inspector`). ~225 linhas.
+
+## 3. DECISÕES TÉCNICAS
+1. **Tecla: Shift+Tab** (a ação `inspector_toggle_alt` que já existe, com o Shift apertado). Motivos: o `project.godot` não pode mudar; as teclas F no Mac são do sistema; Tab continua abrindo só o painel de NPC. O painel da economia é montado DEPOIS do de NPC (o Godot entrega a entrada não tratada do último nó para o primeiro) e consome o evento; um teste com os dois painéis na mesma árvore prova que Shift+Tab abre só a economia e Tab só o de NPC. **[LIM]** o certo é uma ação própria no `project.godot` (`economy_inspector_toggle`); fica como proposta: peço autorização para isso, em tarefa de contrato. Se um controle de interface tem o foco (por exemplo a lista do painel de NPC depois de um clique), o Godot usa Shift+Tab para trocar o foco e o painel não vê o evento.
+2. **A ponte lê `host.economy` a cada chamada**, como já faz com `character` e `interaction`: o construtor da `SimBridge` e o `GameApp` não mudam.
+3. **Painel na lateral esquerda, 40% da largura**, fundo semitransparente, camada 21; atualiza 1 vez por segundo [HIP]. **A cor nunca é a única pista**: as linhas dizem "OK", "ERRO" e "PARADO".
+4. **Parado é âmbar, não vermelho** (não é erro de conta); vermelho é só o que não fecha ou falhou.
+5. **Custo medido** (jogo real, 2 dias, média de 200 chamadas, `--headless`): `validate()` da economia ≈ 0,19 ms; `peek_economy_overview` ≈ 0,30 ms; `peek_economy_markets` ≈ 0,51 ms; `peek_economy_sites` ≈ 0,20 ms.
+6. Nome do campo do dinheiro do mercado: `cash` (o `check_architecture` acusava `balance =` fora do `Ledger`, falso positivo; troquei o nome em vez de mexer na regra).
+
+## 4. PENDÊNCIAS
+Falta: `check_all` de C, D e E; depois a junção com o `main` por antecipação (B0), oráculo, `run_sim`, 30 dias do jogo real, linha de status e push. Este relatório será atualizado.
+
 
 # LW-118 (junção com o `main`) — RELATÓRIO — NO MAIN        Status: PRONTA PARA AUDITORIA (já no `main` por ordem escrita)
 
