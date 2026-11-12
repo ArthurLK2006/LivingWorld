@@ -33,3 +33,14 @@ static func view(character: CharacterModule, economy: EconomyModule, actor_id: i
 	for row: Dictionary in inventory.rows:
 		goods.append(row.duplicate())
 	return BridgeEconomyReplies.PlayerEconomyReply.new(Result.success(), balance.balance, inventory.weight, inventory.capacity, goods)
+
+
+## A ordem de compra (`buy`) ou de venda (`sell`) do jogador num mercado: repasse a `EconomyModule.request_trade`, que é ATÔMICO (tudo ou nada; a economia confere dono aberto, estoque, fundos, teto de compra
+## e capacidade de peso, e o saldo e os bens só mudam pelo `Ledger` e pelo `GoodsStore`). Só vale para um ator que o `character` conhece: um ID solto, de NPC ou de outro dono (o próprio mercado, por exemplo)
+## é recusado antes, com o código do `character`, então a ponte nunca move bens de quem não é o jogador. A resposta traz sempre a chave do texto.
+static func trade(character: CharacterModule, economy: EconomyModule, actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> BridgeEconomyReplies.PlayerTradeReply:
+	var known: CharacterQuery = character.peek_character(actor_id)
+	if not known.result.ok:
+		return BridgeEconomyReplies.PlayerTradeReply.new(known.result, 0, 0, side)
+	var traded: EconomyReplies.TradeResult = economy.request_trade(actor_id, market_id, good_id, quantity, side)
+	return BridgeEconomyReplies.PlayerTradeReply.new(traded.result, traded.quantity, traded.total, side)

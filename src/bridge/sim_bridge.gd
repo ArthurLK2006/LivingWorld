@@ -209,6 +209,18 @@ func peek_player_economy(actor_id: int) -> BridgeEconomyReplies.PlayerEconomyRep
 	return BridgePlayerEconomy.view(character, economy, actor_id)
 
 
+## LW-105: a ordem de compra (`buy`) ou de venda (`sell`) do jogador num mercado (`BridgeEconomyReplies.SIDE_BUY` e `SIDE_SELL`), atômica, pela `economy`. Só para um ator que o `character` conhece. A resposta traz o
+## resultado, a quantidade e o total e SEMPRE a chave do texto (a de compra ou de venda, ou a da recusa pelo código). A ponte não confere se o jogador está perto do mercado (a economia não tem posição; interface, LW-106).
+func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> BridgeEconomyReplies.PlayerTradeReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgeEconomyReplies.PlayerTradeReply.new(_missing_character("request_trade"), 0, 0, side)
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgeEconomyReplies.PlayerTradeReply.new(_missing_economy("request_trade"), 0, 0, side)
+	return BridgePlayerEconomy.trade(character, economy, actor_id, market_id, good_id, quantity, side)
+
+
 ## Intenções de NPC em S0 que a apresentação ainda não cumpriu (LW-070), em CÓPIAS, em ordem crescente de NPC, com o destino em metros e a
 ## altura do terreno. A ponte só repassa: quem decide o que é uma intenção é o `npc`. Sem terreno: BRIDGE_NO_TERRAIN; sem `npc`: BRIDGE_NO_NPC.
 func peek_pending_npc_intents() -> BridgeReplies.NpcIntentsReply:
