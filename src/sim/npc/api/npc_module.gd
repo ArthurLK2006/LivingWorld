@@ -28,6 +28,8 @@ const CODE_ROUTINE_NOT_CONFIGURED: String = "NPC_ROUTINE_NOT_CONFIGURED"
 const ALARM_EVENT_TYPE: String = "AlarmRaised"
 ## O salário pago pela economia (LW-095): o `npc` o ouve para aliviar `income`.
 const WAGES_PAID_EVENT_TYPE: String = "WagesPaid"
+## A oferta de contrato da economia (LW-096a): o `npc` só reage à vaga.
+const CONTRACT_OFFERED_EVENT_TYPE: String = "ContractOffered"
 const MAX_ALARM_SEVERITY: int = 10
 const CODE_INVALID_ALARM: String = "NPC_INVALID_ALARM"
 ## Comandos que só existem em build de desenvolvimento (a flag vem em `Definitions.is_development_build`).
@@ -93,6 +95,8 @@ var _player_talk: NpcPlayerTalk
 var _impasse: NpcImpasse
 ## O salário que a economia paga alivia `income` (LW-095): só existe com economia. Criado no construtor; não é salvo.
 var _wage_income: WageIncome
+## A vaga de emprego que a economia oferece (LW-096a): o NPC a pontua e aceita. Só existe com economia. Criado no construtor; não é salvo.
+var _employment: NpcEmployment
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -111,6 +115,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine, economy)
 	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action, NpcImpasse.DEFAULT_LIMIT_MIN, intents.has_pending, _bodies.release_body)
 	_wage_income = null if economy == null else WageIncome.new(_npcs, _need_defs, economy)
+	_employment = null if economy == null else NpcEmployment.new(_npcs, economy, _definitions.places if _definitions != null else null, _definitions.params if _definitions != null else null)
 	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
 
 
@@ -212,6 +217,8 @@ func post_setup() -> void:
 		_ctx.events.subscribe(ALARM_EVENT_TYPE, on_alarm_raised)
 		if _wage_income != null:
 			_ctx.events.subscribe(WAGES_PAID_EVENT_TYPE, on_wages_paid)
+		if _employment != null:
+			_ctx.events.subscribe(CONTRACT_OFFERED_EVENT_TYPE, on_contract_offered)
 
 
 ## Faz soar um alarme no ponto (centímetros) com a gravidade dada (1 a MAX_ALARM_SEVERITY): publica `AlarmRaised` (LW-076). SÓ em build de
@@ -240,6 +247,12 @@ func on_alarm_raised(event: SimEvent) -> void:
 func on_wages_paid(event: SimEvent) -> void:
 	if _wage_income != null and _ctx != null:
 		_wage_income.on_wages_paid(event, _ctx.clock.total_minutes())
+
+
+## Reação ao evento `ContractOffered` (LW-096a): se é uma vaga, os NPCs do povoado a pontuam pela utilidade e o melhor a aceita (muda o `work_place_id` na mesma passagem). Sem economia o módulo nem ouve o evento.
+func on_contract_offered(event: SimEvent) -> void:
+	if _employment != null:
+		_employment.on_contract_offered(event)
 
 
 ## Marca ou desmarca o NPC para o rastro de decisão (LW-064). SÓ em build de desenvolvimento (`Definitions.is_development_build`); fora dele,
