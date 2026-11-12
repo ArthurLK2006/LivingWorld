@@ -222,7 +222,7 @@ JSON em `data/economy/` (subpasta, como `data/world/`), uma lista de objetos com
 | `site_upkeep.json` | 092 | manutenção: por receita, o bem (`tool`, `plank` ou `fabric`), a quantidade e o período em dias |
 | `site_params.json` | 092 | eficiência: queda e recuperação por dia e o piso (uma linha) |
 | `production_sites.json` | 092 | os locais de produção: assentamento, local, receita, equipe desejada (14 linhas na distribuição proposta, seção 6) |
-| `service_posts.json` | 095 | os postos de serviço: assentamento, local, ofício, equipe desejada e salário (6 linhas) |
+| `service_posts.json` | 095 | os postos de serviço: assentamento, local, ofício, equipe desejada e salário (6 linhas). **O carregador (`PostLoader`) existe desde 12/11/2026 (LW-095, item 5 do bloco v11) e o arquivo é OPCIONAL: sem ele não há posto. O arquivo em si NÃO existe ainda e só entra depois da LW-097 no `main`, com o aviso de Arthur por escrito** |
 | `world/routes.json` | 097 | rotas (dado do `world`, contrato do `world`) |
 
 **Dados de outros módulos que esta extensão muda** (só dados, salvo a coluna nova): `occupations.json` ganha `miner` e `shepherd` (decidido por Arthur; LW-092 ou LW-097); `population.json` ganha linhas e a coluna `work_place_id` (LW-097; o carregador do `npc` aceita a coluna); `world/places.json` e `world/settlements.json` ganham o 3º povoado e os **10 locais `work` novos** (LW-097); `actions*.json` ganha `buy` e `sell` (LW-093). Marcas **TEMP** (`data/food_stub.json` e `data/income_stub.json`) saem nas LW-094 e LW-095.

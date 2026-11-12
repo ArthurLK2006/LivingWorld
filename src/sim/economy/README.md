@@ -58,3 +58,5 @@ Implementado (LW-096, parte e, 11/11/2026): as vagas, em `support/economy_vacanc
 Planejado, ainda não existe: os dados dos postos (`service_posts.json`), os povoados novos e as rotas (LW-097) e o comércio entre povoados (LW-098).
 
 Ajustes da revisão (12/11/2026): a folha (`WagePayer.pay`) é tudo ou nada também no caminho de erro (confere o saldo inteiro e cada transferência antes de mover a primeira) e `can_pay` já recusa o que o `Ledger` recusaria; o `debug_summary()` mostra `service_posts` (a quantidade de postos) quando há postos; a recusa de `request_post_contract` não gasta ID. A frase do `economy.md` sobre a custódia do emissor morto diz agora o que o código faz ([LIM]).
+
+Implementado (12/11/2026, LW-095, item 5 do bloco v11): o carregador dos postos, `posts/post_loader.gd` (`PostLoader`), ligado ao `EconomySetup`: valida `service_posts.json` (campos, faixas, texto em branco, um posto por local) com arquivo, item e campo nas mensagens e recusa o local que tem posto e local de produção; o arquivo é opcional (sem ele não há posto). **Nenhum dado novo:** o `service_posts.json` só entra depois da LW-097 no `main`.
