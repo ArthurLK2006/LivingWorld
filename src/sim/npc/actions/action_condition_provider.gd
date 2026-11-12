@@ -26,6 +26,12 @@ func has_goods(_npc_id: int) -> bool:
 	return false
 
 
+## LW-093 (R6-I1): a necessidade que a conclusão da ação vai aliviar pela economia ('' = nenhuma), SEM mudar nada. O `ActionRunner` confere que ela existe nas definições ANTES de chamar `complete_action`, para a economia nunca
+## comprar, consumir ou vender por uma ação que depois falharia (troca atômica, npc.md 14.2). O padrão não alivia nenhuma.
+func completion_need_id(_npc_id: int, _action_id: String) -> String:
+	return ""
+
+
 ## LW-093: a ação COMPLETA do NPC pede à economia o que ela faz (comprar, vender, consumir): devolve o `problem` (texto; vazio = deu certo) e, se comeu do inventário, a necessidade aliviada e o alívio do bem. O runner
 ## chama depois de conferir de novo as condições e ANTES de aplicar qualquer efeito; com `problem`, a ação falha por regra e nenhum efeito é aplicado. O padrão não faz nada.
 func complete_action(_npc_id: int, _action_id: String) -> Completion:

@@ -252,6 +252,9 @@ func apply_effects(npc_id: int, action_id: String, _place_id: String, progress_p
 	if _provider != null:
 		extras = _provider.extra_effects(action_id, state.occupation_id)
 		if progress_permille == FULL_PROGRESS:
+			var planned_need: String = _provider.completion_need_id(npc_id, action_id)
+			if not planned_need.is_empty() and not _need_position.has(planned_need):
+				return Result.failure(CODE_UNKNOWN_NEED, "ActionRunner.apply_effects: NPC %d, ação '%s': a economia aliviaria a necessidade '%s', que não existe nas definições; nada foi comprado, consumido nem vendido e nenhum efeito foi aplicado." % [npc_id, action_id, planned_need])
 			var completion: ActionConditionProvider.Completion = _provider.complete_action(npc_id, action_id)
 			if not completion.problem.is_empty():
 				return Result.failure(CODE_ACTION_FAILED, "ActionRunner.apply_effects: NPC %d, ação '%s' falhou ao terminar: %s; nenhum efeito foi aplicado." % [npc_id, action_id, completion.problem])

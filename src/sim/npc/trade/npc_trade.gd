@@ -5,6 +5,9 @@ extends RefCounted
 ## fome por moeda no mercado do povoado dele, até `buy_units` unidades, as que o saldo e o estoque deixam; come do inventário a comida de menor `good_id`, e o alívio vem do bem (a tabela de efeitos de `eat` fala de 60; o que o
 ## bem alivia a mais ou a menos entra como efeito extra); vende ao mercado o que tem no inventário (o primeiro bem, por id, que o mercado negocia).
 
+## Escalas das contas inteiras (não são valores de jogo): a porcentagem tem base 100 e o alívio por moeda é medido em milésimos (base 1000), para a divisão inteira não perder precisão.
+const PERCENT_SCALE: int = 100
+const PERMILLE_SCALE: int = 1000
 ## A necessidade que a comida alivia (id de `data/needs.json`).
 const FOOD_NEED_ID: String = "hunger"
 ## Os dois lados de `request_trade` (`economy.md`, seção 5).
@@ -55,7 +58,7 @@ func buy_value(npc_id: int) -> int:
 	var plan: FoodPlan = plan_food(npc_id)
 	if plan.is_empty():
 		return 0
-	return maxi(0, plan.relief - IntMath.floor_div(plan.total * _price_percent, 100))
+	return maxi(0, plan.relief - IntMath.floor_div(plan.total * _price_percent, PERCENT_SCALE))
 
 
 ## O NPC tem comida no inventário (algum bem que alivia a fome)?
@@ -79,6 +82,14 @@ func complete(npc_id: int, action_id: String) -> ActionConditionProvider.Complet
 		SELL_ACTION_ID:
 			return _complete_sell(npc_id)
 	return ActionConditionProvider.Completion.new()
+
+
+## A necessidade que `complete` aliviaria para esta ação, sem mudar nada: a da comida que o `eat` consumiria do inventário (`need_id` do bem, da economia); vazio para as outras ações ou sem comida no inventário (R6-I1).
+func completion_need_id(npc_id: int, action_id: String) -> String:
+	if action_id != EAT_ACTION_ID:
+		return ""
+	var row: Dictionary = _food_row(npc_id)
+	return "" if row.is_empty() else _economy.peek_good(str(row["good_id"])).need_id
 
 
 func _complete_buy(npc_id: int) -> ActionConditionProvider.Completion:
@@ -165,7 +176,7 @@ class FoodPlan:
 
 	## Fica com a oferta se alivia mais por moeda que a atual (empate: o menor `good_id`, que já chega primeiro).
 	func consider(market: int, good: EconomyReplies.GoodQuery, offered_units: int, offered_total: int) -> void:
-		var per_coin: int = IntMath.floor_div(good.need_relief * offered_units * 1000, offered_total)
+		var per_coin: int = IntMath.floor_div(good.need_relief * offered_units * PERMILLE_SCALE, offered_total)
 		if is_empty() or per_coin > relief_per_coin_permille:
 			market_id = market
 			good_id = good.good_id

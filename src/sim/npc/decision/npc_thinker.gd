@@ -473,6 +473,10 @@ class ConditionProvider:
 	func buy_value(npc_id: int) -> int:
 		return 0 if _trade == null else _trade.buy_value(npc_id)
 
+	## A necessidade que a conclusão da ação vai aliviar pela economia (só o `eat` do inventário); vazio se nenhuma. Não muda nada: o runner a confere antes de `complete_action`.
+	func completion_need_id(npc_id: int, action_id: String) -> String:
+		return "" if _trade == null else _trade.completion_need_id(npc_id, action_id)
+
 	## A ação completa do NPC na economia (comprar, comer do inventário, vender); sem economia nada.
 	func complete_action(npc_id: int, action_id: String) -> ActionConditionProvider.Completion:
 		if _trade == null:
