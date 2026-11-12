@@ -135,7 +135,7 @@ static func validation_problems(state: EconomyState) -> Array[String]:
 
 ## Resumo para o painel de depuração (backlog I4; revisão independente I1): só números e se a conservação do dinheiro e dos bens fecha. Não vai para o save nem para o hash.
 static func summary(state: EconomyState) -> Dictionary:
-	return {
+	var report: Dictionary = {
 		"owners": state.book.owner_ids().size(),
 		"balances_sum": state.ledger.sum_of_balances(),
 		"money_created": state.ledger.total_created(),
@@ -144,3 +144,7 @@ static func summary(state: EconomyState) -> Dictionary:
 		"goods_conserved": state.goods.is_conserved(),
 		"production_sites": 0 if state.production == null else state.production.site_ids().size(),
 	}
+	# Os postos de serviço (R8-M2; AGENTS 4.15): a chave só aparece quando há postos, porque `test_economy_debug_and_kinds.gd` compara o resumo inteiro em três pontos (sem postos) e nenhum teste existente pode mudar.
+	if state.posts != null and not state.posts.is_pristine():
+		report["service_posts"] = state.posts.post_ids().size()
+	return report
