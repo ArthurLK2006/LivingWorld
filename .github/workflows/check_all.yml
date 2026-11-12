@@ -27,11 +27,12 @@ on:
 permissions:
   contents: read
 
-# Um push novo no mesmo PR cancela a execução anterior (terminar um resultado velho não ajuda); no
-# `main` nenhuma execução é cancelada, porque cada integração precisa do seu próprio resultado.
+# Em PR, um push novo cancela a execução anterior do mesmo PR (terminar um resultado velho não ajuda).
+# No `main` cada integração tem o próprio grupo (o SHA): nenhuma execução é cancelada nem substituída
+# por outra mais nova, porque cada integração precisa do seu próprio resultado.
 concurrency:
-  group: check_all-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  group: check_all-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 env:
   # Godot 4.7.2 estável para Linux x86_64 (mesma versão do ambiente de referência do Mac).
