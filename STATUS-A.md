@@ -1,4 +1,4 @@
-11/11/2026 21:32 (Brasília) · BLOCO A v10: Fase B da LW-093 no `main` (f2bcb4c); 093k enviada (ramo lw-093k-ajustes-da-r6, `check_all` VERDE 157 scripts/1.354 testes; R6-I1 atômica feita, sinalizador mantido por causa de 1 teste existente: ver relatório). Seguindo com o resto da LW-096 (porta, conclusão, prazo, vagas) e a LW-096a
+11/11/2026 21:38 (Brasília) · BLOCO A v10: LW-096 parte b enviada (porta dos contratos; ramo lw-096b-porta-dos-contratos, `check_all` VERDE 158 scripts/1.360 testes). Seguindo com a parte c (conclusão), d (prazo) e e (vagas), depois a LW-096a
 
 # RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
 
