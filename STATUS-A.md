@@ -1,5 +1,41 @@
-12/11/2026 14:05 (Brasília) · BLOCO A v13 (limite 18:30): itens 1 a 3 do v12 FECHADOS e a ENTRADA NO main FEITA (main=69bbbb4, 096h a 096n, check_all VERDE 179 scripts/1.512 testes, 30 dias 132 vivos); seguindo para a LW-094 (so o FoodStub), depois LW-105 se a 094 parar
+12/11/2026 15:15 (Brasília) · LW-094 BLOQUEADA (14:25): sem o FoodStub os 132 NPCs morrem em 30 dias (locais sem dinheiro NO_FUNDS desde o dia 1, tambem no main); nada da 094 no main; opcoes A-D com recomendacao abaixo. Entrada do v12 JA FEITA (main=69bbbb4). Seguindo para a LW-105 (so em ramos)
 
+
+# RELATÓRIO — LW-094 (só o `FoodStub`) — PARTE 2 do bloco v13 (14:25)     Status: **BLOQUEADA — PAREI como o v12c mandou; nada da LW-094 entrou no `main`**
+
+## 1. O QUE ACONTECEU, EM PALAVRAS SIMPLES
+Fiz a parte de código da LW-094 (tirar o `FoodStub`) e **medi antes de mexer nos testes**, como você mandou. **Sem o `FoodStub`, no jogo real de 30 dias morrem os 132 NPCs** (A até o dia 6, C até o dia 9, B até o dia 15). Pela regra do v12c ("se o povoado passar fome: PARE, não mexa nos dados, escreva as opções"), **parei a LW-094**, não toquei em nenhum dado de jogo, não mexi nos testes e não levei nada ao `main`. O código pronto fica guardado no ramo `lw-094a-fim-do-foodstub-codigo` (`8c47b4c`, enviado, **NÃO verde**: os testes que citam o `FoodStub` ainda não foram trocados; **não entra no `main`**).
+
+## 2. MEDIÇÃO (só `--headless`; jogo real = `start_default_game` + `run_days`; conservação do dinheiro e dos bens `true` e `validate()` com 0 problemas nos dois casos)
+| | Com `FoodStub` (`main` 69bbbb4) | Sem `FoodStub` (`8c47b4c`) |
+|---|---|---|
+| NPCs vivos no dia 30 | **132** de 132 | **0** de 132 |
+| Mortes | 0 | **132** (`NpcDied`) |
+| `ContractOffered` em 30 dias | 0 | 14 (as vagas que a morte abre) |
+| Comida (pão + grão) no mercado no dia 30 | A 0 · B 0 · C 38 | A 0 · B 114 · C 35 |
+| Livro-razão (`salary` / `trade`) | 4.400 / 15.607 | 4.870 / 19.970 |
+| Primeira morte / todos mortos | — | A: dia 5 / dia 6 · C: dia 5 / dia 9 · B: dia 8 / dia 15 |
+
+## 3. POR QUE MORREM (fatos medidos; a causa NÃO é só o povoado C)
+1. **Os locais de produção ficam sem dinheiro (`NO_FUNDS`) já no 1º dia**, **com ou sem** o `FoodStub` (medi também no `main`: é igual; o estoque provisório só esconde isso dando comida de graça). No dia 1 do `main`: A parou os 5 locais, B parou 3 de 6 e C 2 de 3; no dia 5 quase tudo parou. A conta do local nasce com 200 (tipo `site`, [HIP]) e a folha é 2 por hora por trabalhador ([HIP]) para 4 a 12 trabalhadores por local (46 em A): **o dinheiro acaba em menos de um dia**, e o local só ganha dinheiro vendendo o que produz, o que ele deixa de produzir quando para (círculo sem partida).
+2. **A comida do mercado de A acaba no dia 2** (50 pão e 92 grão para 60 NPCs) e nada a repõe, porque os locais de A pararam. Os NPCs de A morrem **com dinheiro no bolso** (1.756 moedas somadas no dia 5): é falta de oferta.
+3. **Em B o mercado guarda 80 pães do dia 6 ao 30 e os 44 NPCs morrem mesmo assim**: sem salário o dinheiro deles acaba (dia 5: 20 dos 44 com menos de 5 moedas; dia 7: 37). É falta de renda. Em C o dinheiro dos NPCs acaba no dia 2 (12 dos 28).
+4. Isso confirma o que o `STATUS-A` já dizia: o estoque inicial do mercado da C (200 pão e 10 grão) e o resto da economia **não sustentam** o povo sozinhos. O que falta é a **calibração de partida** da cadeia de produção (saldo inicial dos locais, salário por hora, estoque inicial), que o roadmap põe nas LW-103/LW-104 e LW-109 a LW-113.
+
+## 4. OPÇÕES (todas mexem em valor [HIP] de jogo: **é decisão sua**; não decidi nada)
+- **A (minha recomendação): manter o `FoodStub` e adiar a LW-094** até a economia sustentar a comida. Custo: a marca `TEMP-LW-065` continua no código; a LW-114 (`check_temp`) só passa depois. Vantagem: nada muda no jogo, e o ramo `8c47b4c` já tem a remoção pronta (14 arquivos, ~430 linhas apagadas) para quando a economia aguentar. Eu proporia uma **tarefa de calibração de partida** antes da LW-094, com você decidindo os números.
+- **B: ajustar só dados de partida** (sem código): subir o saldo inicial do tipo `site` (`owner_kinds.json`) e/ou baixar `wage_per_hour`, e subir o estoque inicial de comida dos mercados de A e C (`markets.json`). Os números são [HIP]; não os escolhi. Posso **medir** candidatos que você indicar (só em memória, sem gravar dado) e dizer quantos dias o povo aguenta.
+- **C: reduzir a folha por regra** (por exemplo, o local só paga quando tem dinheiro e os trabalhadores trabalham, ou o mercado "compra a produção" antes do salário): é **mudança de contrato da economia** (seções 6 e 7 do `economy.md`), então precisa de decisão e de tarefa de contrato.
+- **D (não recomendo): o `FoodStub` vira rede de segurança permanente** só quando o mercado não tem comida: é "comida mágica", que o `economy.md` (seção 14, LW-094) proíbe.
+- **Se você escolher A:** nada mais a fazer na LW-094 agora; o ramo fica guardado. **Se escolher B ou C:** me diga os números ou autorize a tarefa de contrato.
+
+## 5. O QUE FIZ NO CÓDIGO (no ramo `lw-094a-fim-do-foodstub-codigo`, só guardado)
+Apaguei `food_stub.gd` e `food_stub_loader.gd` (e os `.uid`) e `data/food_stub.json`; tirei `peek_food_stock`, `request_set_food_stock`, `CODE_FOOD_NOT_CONFIGURED`, a chave `food_stock` do save do `npc` (serialize, validate, resumo, carga) e a ligação no `NpcSetup`; o `NpcPersistence` perdeu o campo `_definitions` que ficou sem uso. **Mantive** `Definitions.food` e `has_food(settlement)` como interface. Comentários e o README do `npc` atualizados. A busca por `TEMP-LW-065` em `src/`, `data/`, `tools/` e `scenes/` ficou **vazia**; em `tests/` ainda tem 6 arquivos (a parte 2 da LW-094, parada). **Não rodei o `check_all` neste ramo** (sabidamente vermelho: os testes citam o que apaguei); **NÃO EXECUTADO** por isso.
+
+## 6. DECISÃO QUE DEPENDE DE ARTHUR
+Escolher A, B, C ou outra. **Recomendo A** e, em paralelo, uma tarefa de calibração de partida. Enquanto você não decidir, sigo para o item 3 do v13 (**LW-105**), que não depende disto.
+
+- **Git:** `main` = `69bbbb4` (não mudou); `lw-094a-fim-do-foodstub-codigo` = `8c47b4c` (enviado, não verde, não vai ao `main`). `lw-094b` **não criado** (a parte de testes não foi feita).
 
 # RELATÓRIO — Bloco A v12 + v12c + v13 (PARTE 1: itens 1 a 3 FECHADOS; entrada no `main` FEITA)     Status: PRONTA PARA REVISÃO (esta parte); a LW-094 vem a seguir
 
