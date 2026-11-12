@@ -2,7 +2,7 @@ class_name ProvinceService
 extends RefCounted
 ## Consultas sobre as províncias e a adjacência (LW-118b; contrato em docs/modules/world.md, "Extensão da Fase 4"). Conteúdo somente leitura e SEM estado: não é salvo nem entra no state_hash. Toda
 ## consulta devolve CÓPIAS e, quando falha, uma falha tratada com código e mensagem que diz o que falhou, onde e o esperado. As listas saem sempre em ordem crescente de `id`, nunca pela ordem de um
-## Dictionary (regra do MODELO.md). A adjacência não tem direção: se a é vizinha de b, b é vizinha de a. Os povoados de cada província entram com a LW-118c.
+## Dictionary (regra do MODELO.md). A adjacência não tem direção: se a é vizinha de b, b é vizinha de a. Os povoados de cada província (LW-118c) vêm da coluna `province_id` do povoado.
 
 const CODE_PROVINCE_UNKNOWN: String = "PROVINCE_UNKNOWN"
 ## Quantos ids uma mensagem de erro lista antes de resumir o resto.
@@ -12,18 +12,23 @@ var _provinces: Dictionary[String, Province] = {}
 var _province_ids: Array[String] = []
 ## Ids das províncias vizinhas de cada uma, em ordem crescente.
 var _neighbors: Dictionary[String, Array] = {}
+## Ids dos povoados de cada província, em ordem crescente (LW-118c), e a província de cada povoado.
+var _settlement_ids_by_province: Dictionary[String, Array] = {}
+var _province_of: Dictionary[String, String] = {}
+var _settlement_ids: Array[String] = []
 ## Inconsistências do conteúdo recebido (id repetido, ligação para província inexistente).
 var _problems: Array[String] = []
 
 
 ## O serviço guarda os objetos recebidos como conteúdo somente leitura: quem os entrega (o carregador) não deve alterá-los depois.
-func _init(provinces: Array[Province], links: Array[ProvinceLink]) -> void:
+func _init(provinces: Array[Province], links: Array[ProvinceLink], settlements: Array[Settlement] = []) -> void:
 	for province: Province in provinces:
 		if _provinces.has(province.id):
 			_problems.append("província '%s' repetida." % province.id)
 			continue
 		_provinces[province.id] = province
 		_neighbors[province.id] = []
+		_settlement_ids_by_province[province.id] = []
 	_province_ids.assign(_provinces.keys())
 	_province_ids.sort()
 	for link: ProvinceLink in links:
@@ -35,13 +40,34 @@ func _init(provinces: Array[Province], links: Array[ProvinceLink]) -> void:
 			_neighbors[link.province_b_id].append(link.province_a_id)
 	for province_id: String in _province_ids:
 		_neighbors[province_id].sort()
+	for settlement: Settlement in settlements:
+		_settlement_ids.append(settlement.id)
+		if not _provinces.has(settlement.province_id):
+			_problems.append("o povoado '%s' cita uma província que não existe ('%s')." % [settlement.id, settlement.province_id])
+			continue
+		_province_of[settlement.id] = settlement.province_id
+		_settlement_ids_by_province[settlement.province_id].append(settlement.id)
+	_settlement_ids.sort()
+	for province_id: String in _province_ids:
+		_settlement_ids_by_province[province_id].sort()
 
 
-## A província (cópia). Província desconhecida: falha `PROVINCE_UNKNOWN`.
+## A província (cópia) e os ids dos povoados dela, em ordem crescente. Província desconhecida: falha `PROVINCE_UNKNOWN`.
 func peek_province(province_id: String) -> ProvinceQuery:
 	if not _provinces.has(province_id):
 		return ProvinceQuery.new(_unknown("peek_province", province_id), null)
-	return ProvinceQuery.new(Result.success(), _copy(_provinces[province_id]))
+	var settlement_ids: Array[String] = []
+	settlement_ids.assign(_settlement_ids_by_province[province_id])
+	return ProvinceQuery.new(Result.success(), _copy(_provinces[province_id]), settlement_ids)
+
+
+## A província do povoado (cópia, com os ids dos povoados dela). Povoado desconhecido: falha `SETTLEMENT_UNKNOWN`; povoado sem província: `PROVINCE_UNKNOWN`.
+func peek_province_of(settlement_id: String) -> ProvinceQuery:
+	if not _settlement_ids.has(settlement_id):
+		return ProvinceQuery.new(Result.failure(SettlementService.CODE_SETTLEMENT_UNKNOWN, "ProvinceService.peek_province_of: o povoado '%s' não existe; esperado um dos %d carregados (%s)." % [settlement_id, _settlement_ids.size(), ", ".join(_settlement_ids.slice(0, MAX_LISTED_IDS))]), null)
+	if not _province_of.has(settlement_id):
+		return ProvinceQuery.new(Result.failure(CODE_PROVINCE_UNKNOWN, "ProvinceService.peek_province_of: o povoado '%s' não tem uma província que exista; esperado um povoado com province_id de provinces.json." % settlement_id), null)
+	return peek_province(_province_of[settlement_id])
 
 
 ## Todas as províncias (cópias), em ordem crescente de `id`.
@@ -83,16 +109,18 @@ func _unknown(query_name: String, province_id: String) -> Result:
 	return Result.failure(CODE_PROVINCE_UNKNOWN, "ProvinceService.%s: a província '%s' não existe; esperado uma das %d carregadas (%s%s)." % [query_name, province_id, _province_ids.size(), ", ".join(listed), more])
 
 
-## Resposta de `peek_province`: `province` (cópia) só vale se `result.ok`.
+## Resposta de `peek_province` e `peek_province_of`: `province` (cópia) e `settlement_ids` (em ordem crescente) só valem se `result.ok`.
 class ProvinceQuery:
 	extends RefCounted
 
 	var result: Result
 	var province: Province
+	var settlement_ids: Array[String]
 
-	func _init(query_result: Result, found: Province) -> void:
+	func _init(query_result: Result, found: Province, found_settlement_ids: Array[String] = []) -> void:
 		result = query_result
 		province = found
+		settlement_ids = found_settlement_ids
 
 
 ## Resposta de `peek_provinces` e `peek_adjacent_provinces`: `provinces` (cópias, em ordem crescente de `id`) só vale se `result.ok`.
