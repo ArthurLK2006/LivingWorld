@@ -92,7 +92,7 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 		loaded = posts.load_from(posts_data)
 		if not loaded.ok:
 			return loaded
-	var contracts: ContractBook = ContractBook.new(book, ledger, goods, production, posts)
+	var contracts: ContractBook = ContractBook.new(book, ledger, goods, production, posts, markets)
 	var contracts_data: Dictionary = raw_contracts
 	if not contracts_data.is_empty():
 		loaded = contracts.load_from(contracts_data)
