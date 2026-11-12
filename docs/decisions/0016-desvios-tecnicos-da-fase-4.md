@@ -1,6 +1,6 @@
 # Registro técnico — Três desvios técnicos da Fase 4 (AGENTS 16.3)
 
-- **Status:** **aprovado por Arthur em 11/11/2026**, por autorização escrita na LW-117h (os três, de uma vez). Todos **serão reavaliados na LW-144** (revisão da Fase 4). Este registro **não** altera o status de nenhuma decisão (`DECISIONS.md`).
+- **Status:** **aprovado por Arthur em 11/11/2026**, por autorização escrita na LW-117h (os três, de uma vez). Das decisões de `DECISIONS.md` ligadas a esta rodada, **só as DEC-227 a DEC-233 foram aprovadas por Arthur**; os demais itens da revisão R3 e da LW-117h seguem **PROPOSTA**. Todos **serão reavaliados na LW-144** (revisão da Fase 4). Este registro **não** altera o status de nenhuma decisão (`DECISIONS.md`).
 - **Data e tarefa:** 11/11/2026 (Brasília), LW-117h (DOC). Número `0016`: o `0013` é o pré-voo da Fase 4, o `0014` o da Fase 5 e o `0015` os marcos de hash.
 - **Contexto e problema:** ao escrever as fichas `politics.md` e `military.md` (LW-117c e LW-117d), três pontos saíram do que a arquitetura ou o alerta do AGENTS 5.2 pedem. Cada um estava descrito dentro da ficha e no `0013`, mas sem registro aprovado em `docs/decisions/`. Aqui estão, no formato do AGENTS 16.3.
 - **Desvio (a): o país (polity) tem ID próprio.**
