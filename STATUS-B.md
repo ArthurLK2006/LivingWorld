@@ -1,4 +1,4 @@
-11/11/2026 22:21 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R20 e 3 auditorias de entrada no `main` feitas, sem bloqueio (LW-093 `f2bcb4c`, LW-117i `4372f7f` e a A `885615c`: SÃS, `check_all` independente VERDE 162/1.391); achados p/ a A já no `main`: R13-I1/R14-I1, R15-I1, R18-I1; p/ a C: R19-I1 (a 118b passou da tolerância: 526 > 450 linhas); RISCO p/ a Fase B da C (BLOQUEADA desde 21:52, espera Arthur): refazer a prova do oráculo sobre `885615c`, conferir mortes de NPC (R16-I1 + R18-I1) e o conflito em `test_economy_production_api.gd`; vigia a rearmar; sem BLOQUEADA minha.
+11/11/2026 22:35 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R21 e 3 auditorias de entrada no `main` feitas, sem bloqueio; A e C declararam que PARARAM (A concluiu o bloco v10 às 22:15 com o `main` em `885615c`; C fechou a LW-118 às 22:25); falta só o relatório final da noite; sem BLOQUEADA minha.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1291,3 +1291,39 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 **9. PENDÊNCIAS.** *Da C:* nada obrigatório (R19-I1, da parte anterior, segue aberto); M1 a M4 para ciência. *Que não consegui verificar:* o `check_all` **da C** (em especial que `test_settlements`, `test_population` e os soaks seguem verdes com as colunas novas); que os 10 testes novos passam; a junção real.
 
 **ACOMPANHAMENTO.** *Avanço:* LW-118 partes **a, b e c** feitas em ramo; falta a **118d** (ligação no módulo e a validação no início do jogo). *Próxima:* o que o vigia trouxer. *Decisões de Arthur:* as mesmas das rodadas anteriores. *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `885615c`.
+
+
+## RELATÓRIO — R21: ramo novo da conversa C (`lw-118d-world-ligado`, `15b95d4`, LW-118 parte d, a última)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 11/11/2026 22:35 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio, nenhum achado importante nesta parte.** A 118d **liga a estrutura ao jogo**: o `WorldSetup` (em `src/app/`) passa a ler e conferir `provinces.json`, `province_adjacency.json` e `cultures.json` e a conferir os povoados contra eles (`SettlementProvinceCheck`); falha vira **uma** falha tratada (`WORLD_SETUP_INVALID`, com arquivo, item e campo); o `WorldModule` responde `peek_province`, `peek_provinces`, `peek_province_of`, `peek_adjacent_provinces`, `peek_culture` e `peek_culture_of` (cópias) e o `validate()` dele acusa as inconsistências; o `GameModules` entrega os serviços ao módulo. **Fecha a LW-118** (a a d, só em ramos). **Nada no save nem no `state_hash`** (teste); **nenhum teste existente alterado**; nenhum protegido; nenhuma tag; nada no `main`. Empilhado na 118c (`4e8ce98`), 1 commit. A C **parou** aqui (fim da cadeia da noite, `status-c` das 22:25).
+
+**2. ARQUIVOS CRIADOS / 3. MODIFICADOS.** Nenhum no projeto; só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Li o diff **inteiro** (7 arquivos: 4 `.gd`, 1 `.uid`, 2 documentos), o `world_setup.gd` **inteiro**, o diff de `world_module.gd` e `game_modules.gd`, e os **7 testes pelos nomes**. Conferi os **quatro chamadores** de `WorldSetup.from_dir` (`game_app.gd` e os testes `test_world_module`, `test_world_province_queries`): o `test_world_module.gd` **antigo** carrega os povoados **do diretório real** (que já têm as colunas desde a 118c) e o caso "pasta que não existe" falha **antes**, nas rotas (a mensagem ainda cita `routes.json`): **os testes antigos seguem compatíveis sem mudança**. Conferi também o que a ficha diz do `check_content_ids` (as colunas que ele "precisará conhecer" são as de **outros** módulos; `province_id` e `culture_id` do povoado são do próprio `world` e são conferidas no carregamento): **a C não precisava alterar o verificador**.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da C.** A C relata `check_all` VERDE na 118d (**153 scripts, 1.390 testes, 296.671 asserts**) e "nenhum hash mudou"; **não conferi** esses números. Rodei: contagem DEC-126, `git grep` dos chamadores, leitura da ficha, `merge-tree --trivial-merge` (só imprime).
+
+**6. RESULTADOS**
+| Item | Resultado |
+|---|---|
+| **Tamanho (DEC-126)** | **221 linhas** (+217 −4) em **4 `.gd`**: **dentro do teto** |
+| **Hash e save** | **Não mudam** (a estrutura é conteúdo; testes: "não entra no save nem no hash" e "um jogo salvo carregado num mundo novo dá as mesmas consultas"). O registro do `world` e a população nova (que **mudam** o hash) já eram da LW-097, da C, e **continuam fora do `main`** |
+| **Compatibilidade** | `WorldModule._init` ganha **2 parâmetros com valor padrão** (`null` = sem províncias nem culturas, o módulo segue funcionando: teste); `validate()` só **acrescenta** os problemas dos serviços |
+| **Dados inválidos no início (AGENTS 13.1.7)** | **Cumprido:** o jogo não inicia com `provinces.json`, `province_adjacency.json`, `cultures.json` ou `settlements.json` incoerentes (uma falha tratada com arquivo, item e campo; testes de arquivo ausente, inválido e povoado que não bate) |
+| **Camadas, tempo, aleatoriedade, `float`, dinheiro, autoload** | Limpos; `src/app` só orquestra, a regra mora em `src/sim/world` |
+| **Testes novos (7)** | o módulo responde as seis consultas com os dados reais; ids desconhecidos com os códigos; mundo registrado **sem** a estrutura funciona; a estrutura **não entra** no save nem no hash; jogo salvo carrega num mundo novo e dá as mesmas consultas; o `setup` falha com **um** erro tratado (arquivo ausente ou inválido); falha quando um povoado não bate com as províncias ou as culturas |
+
+**7. PROBLEMAS ENCONTRADOS (por gravidade)**
+**Bloqueante e importante: nenhum nesta parte.** (O **R19-I1**, o tamanho da 118b, **continua aberto** na parte anterior.)
+**MENOR**
+- **R21-M1. `WorldSetup` ficou mais estrito com o diretório de dados:** qualquer teste, ferramenta ou soak futuro que o chame com um diretório que **não tenha** as três tabelas novas passa a falhar. Hoje os 4 chamadores usam o diretório real (ou um que falha antes), então nada quebra.
+- **R21-M2. `debug_summary` do `WorldModule` não ganhou a contagem de províncias e culturas** (os serviços têm o `debug_summary` deles). Como é conteúdo, não é exigência do AGENTS 4.15; só facilitaria a depuração.
+- **R21-M3. A ordem das conferências** (rotas, províncias, culturas, povoados) devolve **o primeiro** erro, não todos; é o padrão dos outros carregadores.
+
+**Junção (previsão por `merge-tree`, só texto; `main` = `885615c`):** a ponta `15b95d4` × `main`: **14 trechos em 10 arquivos, os mesmos da 118b e da 118c** (a 118d **não** acrescenta nenhum arquivo em conflito). Os de código e teste continuam: `game_app.gd` ×2, `simulation_host.gd` ×2, `test_npc_split_oracle.gd` e **`test_economy_production_api.gd`** (este fora da lista esperada do bloco da C).
+
+**8. RISCOS.** Baixo nesta parte. O que pesa na C é a **Fase B da LW-097** (BLOQUEADA, espera Arthur) e a junção sobre o `main` novo.
+
+**9. PENDÊNCIAS.** *Da C:* nada novo; R19-I1 (tamanho da 118b); R21-M1 a M3 para ciência. *De Arthur:* as da seção final. *Que não consegui verificar:* o `check_all` **da C** (aceito o relato dela); que os 7 testes novos passam; a junção real.
+
+**ACOMPANHAMENTO.** *Avanço:* **LW-118 completa em ramos (a a d)**; nada dela no `main`. *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `885615c`.
