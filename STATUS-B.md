@@ -1,4 +1,4 @@
-12/11/2026 07:03 (Brasília) — DECISÃO DE ARTHUR REGISTRADA (seção final): à pergunta 'Autoriza a Fase B da C depois de refazer a prova do oráculo sobre 885615c?' ele respondeu 'Autorizo, com condições' (condições não detalhadas; entendimento da B: refazer a prova do oráculo sobre `885615c`, conferir morte de NPC, e o conflito em `test_economy_production_api.gd` precisa de autorização escrita à parte); a B não repassa à C nem à A. NOITE (bloco B v6) ENCERRADA, RELATÓRIO FINAL ESCRITO (abaixo): R8 a R21 e 3 auditorias de entrada no `main` (LW-093 `f2bcb4c`, LW-117i `4372f7f`, A `885615c`: as três SÃS, `check_all` independente VERDE em `885615c`: 162 scripts/1.391 testes); parei por 'nada mais novo' (A concluiu às 22:15, C parou às 22:25; vigia desligado); sem BLOQUEADA; A DECIDIR POR ARTHUR (seção 4 do relatório final): autorizar a Fase B da C (só depois de refazer a prova do oráculo sobre `885615c`), `service_posts.json` e R18-I1 antes dela, destino da custódia de emissor morto (R15-I1), vaga única por hora (R16-M1), ofício acompanha emprego (R18-M3), tamanho da 118b (R19-I1), `pt_br.json`; CORREÇÃO MINHA: nos R9-I2/R10-I2 'os NPCs de posto são 36' é na verdade 30.
+12/11/2026 07:17 (Brasília) — BLOCO B v7 (manhã, limite 13:00) EM ANDAMENTO, sem BLOQUEADA minha: decisões dele registradas (lista aberta e `dados.md` seção 9, seções A e B abaixo; nada em `DECISIONS.md`, nada editado em documento); vigia religado às 07:15 (até 12:50); `main` em `885615c`; C BLOQUEADA (07:12, pede autorização para 7 arquivos de teste, dos quais 3 NÃO são só número: seção D); A esperando a LW-097 no `main`; nenhum ramo novo ainda.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1388,3 +1388,72 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 - **Não** é uma instrução da B à C ou à A: elas recebem as decisões direto de Arthur (regra de 11/11/2026). A B só registra o que ele decidiu.
 
 **Estado:** nenhum documento do repositório foi editado; `main` em `885615c`; A e C paradas; a B não iniciou nenhuma tarefa nova (regra 13).
+
+
+## BLOCO B v7 — MANHÃ (12/11/2026, 07:10; limite 13:00): decisões de Arthur registradas, estado das frentes e vigia        12/11/2026 07:17 (Brasília)
+
+**Declaração do início (AGENTS 2.3).** *Li:* o bloco v7 de Arthur; a primeira linha e o relatório de `origin/status-a` e `origin/status-c` (só leitura); `docs/fase-5/dados.md`, seção 9, **no `main`** (`885615c`). *Tarefa:* religar o vigia; registrar as decisões dele; fazer a revisão cruzada quando a C empurrar a Fase B da LW-097 ou a A empurrar `lw-096h-…`. *Git:* só commit e push do `status-b`; **nenhum documento do repositório editado**, nada no `main`.
+
+### A. Decisões técnicas de Arthur sobre a minha lista de decisões abertas (12/11, 07:10; rótulo dele: **PROPOSTA**)
+| Item da lista | Decisão de Arthur | Quem executa e o que a B confere depois |
+|---|---|---|
+| **R13-I1/R14-I1** (recusa de `request_post_contract` gasta ID) | A **A corrige em ramo agora** | A, ramo `lw-096h-…`; a B confere que a validação vem **antes** de pedir o ID e que há teste do contador |
+| **R18-I1** (desempregado = lista da economia) | A **A corrige em ramo agora** | A, mesmo ramo; a B confere que quem tem `work_place_id` em local sem local de produção nem posto **não** conta como desempregado, com teste |
+| **`service_posts.json`** | **Só entra depois da LW-097 no `main`**; o `PostLoader` entra **antes, só em código** | A |
+| **R16-M1** (vaga única por local e por hora) | **Fica como está** | — |
+| **R19-I1** (118b com 526 linhas) | **Exceção única aceita** | — |
+| **`pt_br.json`** (6 chaves da C, R17-M2/R19-M1) | **Vão para o backlog da C** | C |
+| **R6-M2** (7 linhas de teste) | **Ficam no backlog**; nenhum teste existente é editado por elas | — |
+| **R9-I3** (tolerância de arquivos da 097d) | **Ratificada** | — |
+| **R15-I1** (custódia de emissor morto) | **SEM decisão ainda** (ele avisa) | — |
+| **R18-M3** (o ofício acompanha o emprego?) | **SEM decisão ainda** (ele avisa) | — |
+
+### B. Decisões de Arthur sobre `docs/fase-5/dados.md`, seção 9 (12/11, 07:05)
+Aprovou as **recomendações técnicas** dos pontos **1, 2, 3, 4, 6, 7, 8, 10, 11, 12, 13 e 14**; o ponto 15 só diz que todo número é **[HIP]**.
+| Ponto | Texto resumido da recomendação | Decisão |
+|---|---|---|
+| 1 | Dois arquivos de habilidades (`skills.json` e `combat_skills.json`), sem mexer no `skill_id` do contrato do `combat` | **APROVADA** |
+| 2 | A arma liga o golpe à habilidade (`weapons.skill_id`, não uma coluna no golpe) | **APROVADA** |
+| 3 | Porcentagem inteira no combate (`_pct`) em vez de pontos-base | **APROVADA** |
+| 4 | Limiar de "ferido" em **dois** valores (`combat.md` seção 10 e `character.md` E7) com teste de igualdade | **APROVADA** |
+| 5 | O que o nível de cada habilidade faz | **Decisão de jogo dele: só a furtividade tem efeito** (LW-163); **corpo a corpo, arco e comércio só registram o nível** (sem bônus de dano por nível) |
+| 6 | `bound` na **instância** do item (nasce de `origin_items.bound`) | **APROVADA** |
+| 7 | Sem habilidade de forja (qualidade só pela receita na Fase 5); a qualidade só muda o valor de venda, em fórmula da LW-148 | **APROVADA** |
+| 8 | Três origens do protótipo **sem relações iniciais** | **APROVADA** |
+| 9 | **Sem linha, por falta de decisão:** arco e munição; efeito de "ferido"; vida ao renascer; minério escondido (`ore_deposit`); recompensa da ruína; onde começa quem vem da estrada | **SEM DECISÃO** (continuam em aberto) |
+| 10 | Visibilidade: `outpost` = `always`, `camp` = `discovered`, `respawn` = `always` | **APROVADA** |
+| 11 | Província do covil guardada **só no ponto** (a `ecology` lê do `world`); hoje o `dados.md` a mantém nos dois arquivos com teste de igualdade | **APROVADA** (a mudança no `dados.md` fica para a tarefa DOC dele) |
+| 12 | Pasta por módulo (`data/events/` etc.) e **um só** `dados.md` | **APROVADA** |
+| 13 | `fight`, `surrender` e `take_item` em dados pedem condições novas no vocabulário do `npc`: **uma parte nova da série de contratos antes da LW-155** | **APROVADA** |
+| 14 | Coluna `scope_poi_kind` em `events.json` e tabela `forgeable_goods` com `owner_kind_id` | **APROVADA** |
+| 15 | Todo número é **[HIP]** | só registro |
+
+**O que a B NÃO fez, por ordem dele:** não registrou nada em `DECISIONS.md`; não mudou o cabeçalho do `dados.md`; não editou nenhum documento. **Isso vira tarefa DOC dele depois das junções.** A B só registra aqui o que ele decidiu; **não repassa** nada à A nem à C.
+
+### C. Estado das frentes às 07:15 (só leitura)
+- **`main`:** `885615c` (nada novo desde a entrada da A); as 3 tags iguais.
+- **A** (`status-a`, 07:02): a lista da LW-094 foi autorizada, mas a LW-094 **só começa com a LW-097 no `main`** (DEC-236); sem a produção nos dados o jogo real e o soak de 7 dias morrem de fome. **Nenhum ramo novo** desde as 22:37 (nenhum `lw-096h-…` ainda).
+- **C** (`status-c`, 07:12): **BLOQUEADA** na 2ª tentativa da Fase B da LW-097 (contra `885615c`, com as 2 autorizações dele: os 2 testes da A e o conflito de `test_economy_production_api.gd`). Oráculo **provado e estável** (9 valores novos da junção; duas execuções iguais; neutralizando as causas da C os 9 voltam **exatamente** aos da A), conflitos resolvidos, `c_market_01` = `market`, teste novo do jogo real. **Mas o `check_all` da junção dá 32 falhas** (1.444 testes, 1.412 aprovados) em **7 arquivos de teste** que o bloco dela não lista. **Nada commitado nem enviado; `main` intocado; ela pede autorização por escrito para ajustar esses 7 arquivos.** (O push dela ainda **não** aconteceu: não há código para revisar.)
+
+### D. Leitura de apoio à decisão dele: o que são os 7 ajustes que a C propõe (a partir do relatório dela; **não é a revisão de código**, que só posso fazer quando houver push)
+| Arquivo | Falhas | O ajuste proposto pela C | Só número? | Verificado por ela? |
+|---|---|---|---|---|
+| `tests/unit/test_site_payroll.gd` (A) | 5 | `SITE_BREAD` 3 → 4 | **Sim** (ID) | Sim, 7 de 7 |
+| `tests/unit/test_contract_vacancies.gd` (A) | 9 | `SITE` 3 → 4 e `POST` 4 → 5 | **Sim** (IDs) | Sim, 9 de 9 |
+| `tests/unit/test_npc_vacancy.gd` (A) | 9 | `SITE` 3 → 4 e `POST` 4 → 5 | **Sim** (IDs) | Sim, 11 de 11 |
+| `tests/unit/test_service_posts.gd` (A) | 5 | acrescentar `production_sites = []` em `_definitions` | **Não:** muda a **montagem** do teste (tira os 14 locais reais) | **Não** |
+| `tests/unit/test_service_post_queries.gd` (A) | 2 | idem | **Não:** idem | **Não** |
+| `tests/integration/test_npc_buys_food.gd` (A) | 1 | passar a **esperar também o motivo `salary`** (com comentário) | **Não:** **amplia** uma expectativa (os 3 dias de jogo real agora têm salário) | **Não** |
+| `tests/unit/test_economy_production_api.gd` (da 097e, da C) | 1 | próximo ID livre 18 → 32 (3 mercados + 14 locais + 14 vagas = 31 usados) | **Sim** (número do teste dela) | **Não** |
+
+**Minhas observações, para ele decidir (nenhuma é achado de código):**
+1. **Só 4 dos 7 são só número** (3 de ID e 1 número da própria C); **3 mudam outra coisa** (2 de montagem, 1 amplia uma lista esperada). Todos preservam o objetivo do teste segundo a C, mas o critério dele ("os testes antigos trocados são só números") **não vale para esses 3**: a autorização precisa ser **explícita para eles**.
+2. **4 dos 7 ajustes não foram verificados** por ela (`test_service_posts`, `test_service_post_queries`, `test_npc_buys_food` e `test_economy_production_api`).
+3. **A conta de IDs bate** (3 mercados + 14 locais + 14 vagas = 31 usados, próximo livre = 32; antes 3 + 14 = 17, próximo 18): as **14 vagas** vêm de um mundo de teste **sem NPCs**, onde nenhum local tem equipe; com os **132 NPCs** do jogo real cada local de produção nasce com exatamente `workers_wanted` (conferi nos dados da C, R16-I1), **então não deve nascer vaga na hora 1**. **Isto precisa ser conferido no soak de 30 dias quando houver push** (critério dele: nenhum `ContractOffered`).
+4. **Confirma o que a B previu** (R10-I4 e R16-I1): o `main` com a pilha da A + a LW-097 desloca IDs e liga o salário nos testes que usam os dados reais.
+5. **Não vi, no relatório dela, a conferência de "nenhum NPC morre"** (nova condição dele); a conferir quando a Fase B for empurrada.
+
+### E. Vigia
+**Religado às 07:15** (`watch_gh.sh`, consulta a cada 10 min, **sem gastar rodada enquanto nada muda**; limite 12:50; linha de base de 153 referências, `main` em `885615c`). *Quando a C empurrar a Fase B* (ramo ou `main`) ou a A empurrar `lw-096h-…`: **revisão cruzada só de leitura**, um commit e push do `status-b` por revisão. *Se a LW-097 entrar no `main`* (auditoria em até 20 minutos): avanço simples e tags; rotas **e** economia no jogo real (`start_default_game`); uma assinatura de `start_new_game` e de `register`; `c_market_01` = `market`; os **9 valores do oráculo** e o **hash do soak** só pelas causas que ele autorizou; **nenhum NPC morrendo**; **nenhum `ContractOffered` no soak de 30 dias**; conservação; se os testes antigos trocados são **só números**; `check_all` **meu**, independente, em cópia exportada. *Se a A empurrar o `lw-096h`:* conferir o R13-I1/R14-I1 e o R18-I1 como na tabela A.
+
+**O que não consegui verificar ainda:** tudo o que depende de push (código da Fase B, `check_all` da junção, oráculo e soak no `main`); o relatório da C é a única fonte do que está no diretório de trabalho dela.
