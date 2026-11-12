@@ -1,4 +1,4 @@
-11/11/2026 22:20 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R19 e 3 auditorias de entrada no `main` feitas, sem bloqueio (LW-093 `f2bcb4c`, LW-117i `4372f7f` e a A `885615c`: SÃS, `check_all` independente VERDE 162/1.391); achados p/ a A já no `main`: R13-I1/R14-I1, R15-I1, R18-I1; p/ a C: R19-I1 (a 118b passou da tolerância: 526 > 450 linhas); RISCO p/ a Fase B da C (BLOQUEADA desde 21:52, espera Arthur): refazer a prova do oráculo sobre `885615c`, conferir mortes de NPC (R16-I1 + R18-I1) e o conflito em `test_economy_production_api.gd`; próximo: R20 (118c da C); vigia a rearmar; sem BLOQUEADA minha.
+11/11/2026 22:21 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R20 e 3 auditorias de entrada no `main` feitas, sem bloqueio (LW-093 `f2bcb4c`, LW-117i `4372f7f` e a A `885615c`: SÃS, `check_all` independente VERDE 162/1.391); achados p/ a A já no `main`: R13-I1/R14-I1, R15-I1, R18-I1; p/ a C: R19-I1 (a 118b passou da tolerância: 526 > 450 linhas); RISCO p/ a Fase B da C (BLOQUEADA desde 21:52, espera Arthur): refazer a prova do oráculo sobre `885615c`, conferir mortes de NPC (R16-I1 + R18-I1) e o conflito em `test_economy_production_api.gd`; vigia a rearmar; sem BLOQUEADA minha.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1253,3 +1253,41 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 **9. PENDÊNCIAS.** *Da C:* R19-I1 (dividir ou pedir o desvio) e M1 a M5 para ciência. *De Arthur:* o `pt_br.json` (R17-M2) e, se a C pedir, o desvio de tamanho. *Que não consegui verificar:* o `check_all` **da C**; que os 19 testes novos passam; a junção real.
 
 **ACOMPANHAMENTO.** *Avanço:* LW-118 partes **a e b** feitas em ramo; a **118c** (`lw-118c-povoado-e-provincia`, `4e8ce98`) acabou de aparecer no GitHub: será a R20. *Decisões de Arthur:* as mesmas das rodadas anteriores. *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `885615c`.
+
+
+## RELATÓRIO — R20: ramo novo da conversa C (`lw-118c-povoado-e-provincia`, `4e8ce98`, LW-118 parte c)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 11/11/2026 22:21 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio, nenhum achado importante.** A parte c liga o **povoado à província e à cultura**: as colunas `province_id` e `culture_id` entram em `settlements.json` (A e B: `province_a`/`province_b` e `culture_trade`; C: `province_c` e `culture_tradition`), `SettlementProvinceCheck` confere tudo (coluna ausente, referência quebrada, província `settled` **sem** povoado, `frontier` **com** povoado), `ProvinceService` ganha `peek_province_of` e os **ids dos povoados** em `peek_province`, e o novo `CultureService` traz `peek_culture`, `peek_cultures` e `peek_culture_of`. **Diferente das partes a e b, esta mexe em arquivos que já existiam** (`Settlement`, `SettlementLoader`, `settlements.json`), mas de forma **compatível** (colunas opcionais no carregador, parâmetros com valor padrão no construtor). **Nenhum teste existente alterado; nenhum protegido; sem save, hash, evento, módulo registrado ou autoload; nada no `main`.** Empilhado na 118b (`5f352a7`), 1 commit.
+
+**2. ARQUIVOS CRIADOS / 3. MODIFICADOS.** Nenhum no projeto; só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Li o diff **inteiro** (13 arquivos: 6 `.gd`, 3 `.uid`, 1 dado, 3 documentos), `culture_service.gd` e `settlement_province_check.gd` **inteiros**, os diffs de `province_service.gd`, `settlement.gd` e `settlement_loader.gd`, e os **10 testes pelos nomes**; conferi quem lê `settlements.json` nos testes existentes (`test_population`, `test_new_occupation_by_data`, `test_food_stub`, `test_settlements`, os soaks `game_release` e `sp2`: **só leem ids e coordenadas**, que **não mudaram**) e que **nenhum código fora dos testes chama** os serviços novos (`git grep` em `src` e `tools`). Sem proposta de DEC.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da C** (não exportei este ramo). Rodei: contagem DEC-126, `git grep` dos usos, `merge-tree --trivial-merge` (só imprime).
+
+**6. RESULTADOS**
+| Item | Resultado |
+|---|---|
+| **Tamanho (DEC-126)** | **370 linhas** (+362 −8) em **6 `.gd`** (103 + 40 + 8 + 5 + 60 de código e 154 de teste): **acima do teto de 300, dentro da tolerância de 450** |
+| **Cumpre `world.md` e `fase-4/dados.md`?** | **Sim:** as 3 linhas de partida batem com a ficha (A e B em `province_a`/`province_b` com `culture_trade`; C em `province_c` com `culture_tradition`); a fronteira **sem povoado**; consultas e códigos (`PROVINCE_UNKNOWN`, `CULTURE_UNKNOWN`, `SETTLEMENT_UNKNOWN`, este **reaproveitado** do `SettlementService`) como a ficha manda |
+| **Compatibilidade com o que existe** | Colunas **opcionais** no esquema (arquivos antigos e de teste seguem carregando: há teste "sem as colunas funciona; com elas, chegam"); `Settlement._init` ganha **2 parâmetros com valor padrão** (`""`), então nenhum chamador existente quebra |
+| **Hash e save** | **Não mudam:** `settlements.json` é conteúdo (não entra no save nem no hash); as coordenadas **não mudaram**, então o oráculo e os soaks que leem posição não deveriam mudar (a prova é o `check_all` dela, que **não vi**) |
+| **Cópias, ordem e erros** | Respostas são **cópias**; listas em ordem crescente de `id`; falhas com código e mensagem que diz o que falhou, onde e o esperado (teste) |
+| **Camadas, tempo, aleatoriedade, `float`, dinheiro, autoload** | Limpos |
+| **Testes novos (10)** | arquivo real passa a conferência e todo povoado tem província e cultura; cada povoado na sua província e a fronteira sem nenhum; culturas A/B mercantil e C tradicional; cópias; ids desconhecidos com os códigos; carregador sem as colunas e com elas; povoado sem província ou cultura (arquivo, item e campo); referência quebrada com os ids conhecidos; `settled` sem povoado e `frontier` com povoado; vários problemas juntos e um mundo válido |
+
+**7. PROBLEMAS ENCONTRADOS (por gravidade)**
+**Bloqueante e importante: nenhum.**
+**MENOR**
+- **R20-M1. A conferência ainda não roda no início do jogo** (a ligação no módulo é da 118d): `SettlementProvinceCheck.check` só é chamado pelos testes; quem quebrar as colunas reais só é pego pelo `check_all` (mesma situação do R17-M1).
+- **R20-M2. "Obrigatória" na ficha, "opcional" no esquema.** `fase-4/dados.md` diz que `province_id` e `culture_id` são **obrigatórias**; o esquema as marca opcionais (para não quebrar arquivos antigos) e a obrigação fica no `SettlementProvinceCheck`. É uma escolha de implementação razoável e **documentada no código**; só registro que a regra só vale depois da 118d.
+- **R20-M3. Os serviços não impedem `id` de povoado repetido** (`_settlement_ids` acumula): quem garante a unicidade é o `SettlementLoader` (esquema), então hoje não ocorre.
+- **R20-M4. `ProvinceService` aceita o terceiro argumento opcional `settlements`** (`= []`): quem o construir sem povoados terá `peek_province_of` falhando com `SETTLEMENT_UNKNOWN` para todos; é o comportamento certo, mas a 118d precisa lembrar de passá-los.
+
+**Junção (previsão por `merge-tree`, só texto; `main` = `885615c`):** a ponta `4e8ce98` × `main`: **14 trechos em 10 arquivos, os mesmos da 118b** (nenhum arquivo novo em conflito: `settlements.json` **não** conflita, a A não o tocou). Continuam entre eles os 4 de código e teste (`game_app.gd` ×2, `simulation_host.gd` ×2, `test_npc_split_oracle.gd` e **`test_economy_production_api.gd`**, este fora da lista esperada do bloco da C).
+
+**8. RISCOS.** Baixo; é a primeira parte da LW-118 que **altera** arquivo existente, então o `check_all` dela (que não vi) é a prova que importa; a Fase B da C segue BLOQUEADA aguardando Arthur.
+
+**9. PENDÊNCIAS.** *Da C:* nada obrigatório (R19-I1, da parte anterior, segue aberto); M1 a M4 para ciência. *Que não consegui verificar:* o `check_all` **da C** (em especial que `test_settlements`, `test_population` e os soaks seguem verdes com as colunas novas); que os 10 testes novos passam; a junção real.
+
+**ACOMPANHAMENTO.** *Avanço:* LW-118 partes **a, b e c** feitas em ramo; falta a **118d** (ligação no módulo e a validação no início do jogo). *Próxima:* o que o vigia trouxer. *Decisões de Arthur:* as mesmas das rodadas anteriores. *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `885615c`.
