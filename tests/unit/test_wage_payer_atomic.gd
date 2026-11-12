@@ -10,6 +10,7 @@ const FIRST: int = 2
 const SECOND: int = 3
 const POST: int = 9
 const WAGE: int = 10
+const MARKETS: int = 3
 
 
 class Rig:
@@ -82,6 +83,8 @@ func test_the_economy_debug_summary_shows_the_posts_only_when_there_are_posts() 
 	var with_posts: EconomyDefinitions = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR).definitions
 	var posts: Array[PostDef] = [PostDef.new("post_a_guard", SETTLEMENT_A, "a_work_05", "guard", 8, WAGE), PostDef.new("post_a_inn", SETTLEMENT_A, "a_work_04", "innkeeper", 6, WAGE)]
 	with_posts.service_posts = posts
+	var no_sites: Array[SiteDef] = []
+	with_posts.production_sites = no_sites
 	var module: EconomyModule = EconomyModule.new(false, with_posts)
 	var clock: SimClock = SimClock.new()
 	var world: World = World.new(SimContext.new(clock, EventBus.new(clock), WorldRng.new(SEED), IdGenerator.new()))
@@ -91,5 +94,5 @@ func test_the_economy_debug_summary_shows_the_posts_only_when_there_are_posts() 
 	world.on_new_game(SEED)
 	var summary: Dictionary = module.debug_summary()
 	assert_eq(summary["service_posts"], 2, "Dois postos.")
-	assert_eq([summary["owners"], summary["production_sites"], summary["money_conserved"]], [2, 0, true], "O resto do resumo não mudou: os postos não são donos.")
+	assert_eq([summary["owners"], summary["production_sites"], summary["money_conserved"]], [MARKETS, 0, true], "Sem locais de produção só restam os mercados (um por povoado dos dados): os postos não são donos.")
 	world.teardown()

@@ -10,7 +10,6 @@ const SETTLEMENT_A: String = "test_settlement_a"
 const SITE_PLACE: String = "a_work_01"
 const UNKNOWN_PLACE: String = "a_work_05"
 const HOME: String = "home_near"
-const SITE: int = 3
 const NEED_IDS: Array[String] = ["hunger", "rest", "safety", "income", "social"]
 
 
@@ -53,6 +52,11 @@ func _world() -> Array:
 	return [world, economy, npc]
 
 
+## O ID do local de produção é o que a economia abriu para `a_work_01` (depende de quantos donos os dados reais já têm); o teste o lê do jogo em vez de fixá-lo.
+func _site_id(economy: EconomyModule) -> int:
+	return economy.peek_site_at(SITE_PLACE).workplace_id
+
+
 func _spawn(npc: NpcModule, work_place_id: String, occupation_id: String) -> int:
 	var spec: NpcSpec = NpcSpec.new()
 	spec.name_key = "npc.name.villager"
@@ -81,9 +85,9 @@ func test_a_npc_with_a_work_place_the_economy_does_not_know_is_employed_and_the_
 	var baker: int = _spawn(npc, SITE_PLACE, "artisan")
 	var guard: int = _spawn(npc, UNKNOWN_PLACE, "guard")
 	_run_hours(world, 3)
-	assert_false(economy.peek_site(SITE).worker_ids.has(guard), "Vaga de 16 contra 20 de histerese: o guarda, que TEM `work_place_id`, não troca.")
+	assert_false(economy.peek_site(_site_id(economy)).worker_ids.has(guard), "Vaga de 16 contra 20 de histerese: o guarda, que TEM `work_place_id`, não troca.")
 	assert_eq(npc.peek_npc(guard).work_place_id, UNKNOWN_PLACE, "O `work_place_id` dele não mudou.")
-	assert_eq(economy.peek_site(SITE).worker_ids, [baker] as Array[int], "A vaga segue aberta, sem ninguém para pegá-la.")
+	assert_eq(economy.peek_site(_site_id(economy)).worker_ids, [baker] as Array[int], "A vaga segue aberta, sem ninguém para pegá-la.")
 	assert_eq(economy.peek_contracts("open").contracts.size(), 1)
 	world.teardown()
 
@@ -97,7 +101,7 @@ func test_the_jobless_npc_without_a_work_place_takes_the_same_vacancy_and_the_gu
 	var guard: int = _spawn(npc, UNKNOWN_PLACE, "guard")
 	var jobless: int = _spawn(npc, "", "guard")
 	_run_hours(world, 3)
-	assert_eq([economy.peek_site(SITE).worker_ids.has(jobless), npc.peek_npc(jobless).work_place_id], [true, SITE_PLACE], "Sem `work_place_id` é desempregado de verdade: 16 é positivo e ele aceita.")
+	assert_eq([economy.peek_site(_site_id(economy)).worker_ids.has(jobless), npc.peek_npc(jobless).work_place_id], [true, SITE_PLACE], "Sem `work_place_id` é desempregado de verdade: 16 é positivo e ele aceita.")
 	assert_eq(npc.peek_npc(guard).work_place_id, UNKNOWN_PLACE, "O guarda de local desconhecido não pegou a vaga na frente dele.")
 	world.teardown()
 
@@ -110,5 +114,5 @@ func test_the_same_unknown_work_place_does_switch_when_the_gain_passes_the_hyste
 	_spawn(npc, SITE_PLACE, "artisan")
 	var artisan: int = _spawn(npc, UNKNOWN_PLACE, "artisan")
 	_run_hours(world, 3)
-	assert_eq([economy.peek_site(SITE).worker_ids.has(artisan), npc.peek_npc(artisan).work_place_id], [true, SITE_PLACE], "16 mais o bônus de ofício de 10 dão 26, acima da histerese de 20: troca (é a histerese, não uma exclusão).")
+	assert_eq([economy.peek_site(_site_id(economy)).worker_ids.has(artisan), npc.peek_npc(artisan).work_place_id], [true, SITE_PLACE], "16 mais o bônus de ofício de 10 dão 26, acima da histerese de 20: troca (é a histerese, não uma exclusão).")
 	world.teardown()
