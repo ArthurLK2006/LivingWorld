@@ -1,4 +1,4 @@
-11/11/2026 21:03 (Brasília) — BLOCO B v4 CONCLUÍDO: `main` agora em `ca86f87` (ajuste de uma palavra, avanço simples, sem tag, `check_all` verde 1293 de 1293); R6 (LW-093 da A) e R7 (LW-097a a c da C e o choque A x C) feitas, só leitura: nenhum bloqueio na R6 e um bloqueio de junção na R7 (`c_market_01`); PARADO (regra 13).
+11/11/2026 21:26 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 (LW-095 a a d da A) feita, só leitura: nenhum bloqueio, 1 importante (LW-095 incompleta, `IncomeStub` vivo) e 5 menores; vigia do GitHub armado às 21:21; próximo: R9 (LW-097d da C); `main` em `ca86f87`; sem BLOQUEADA.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -748,3 +748,55 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 - **Próxima tarefa recomendada:** a **Fase B da A** (a 093 ao `main`), com o R6-I1 resolvido, e **depois** a da C (R7); as minhas, **só quando você mandar**: atualizar o A2 do `app.md` com o módulo `world` (R7-I4) e a extensão do contrato do `npc` para as condições de combate (ponto 13 do `docs/fase-5/dados.md`). **Não iniciadas.**
 - **O que eu não fiz:** merge, rebase, reset, stash, tag, `--force`, apagar ramo; nada nos ramos da A e da C (só `origin/…` por `git diff`, `git show` e `git merge-tree` em modo de impressão); **não avisei as conversas A e C** (você disse que elas recebem as decisões direto de você).
 - **Git:** `main` em `ca86f87` (três commits novos desde a 146g: `aad7be9`, `7efbb84` e `ca86f87`); o ramo local `lw-146h-dados-fase-5` está igual ao `main` e o remoto de mesmo nome segue em `7efbb84`; `status-b` recebe o commit deste relatório.
+
+
+## RELATÓRIO — R8: LW-095, partes a a d da conversa A (ponta `2c8525b`)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 11/11/2026 21:26 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio.** A folha dos locais, os postos de serviço pagos pelo mercado, a consulta dos postos e o `npc` que ouve o salário **cumprem o contrato** (`economy.md` seção 6; `npc.md` Q18; DEC-151, 152, 164, 171 e 175) no que as quatro partes se propõem. As duas linhas trocadas em teste antigo **não enfraquecem nada**. O ponto que pede atenção é de **escopo**: a **LW-095 ainda não está completa** (o `IncomeStub` segue vivo em 12 arquivos) e há **1 importante e 5 menores**, todos de conserto pequeno.
+
+**2. ARQUIVOS CRIADOS.** Nenhum no projeto (só este relatório, no `STATUS-B.md`). **3. ARQUIVOS MODIFICADOS.** Só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Alvo: `lw-095a-salario-dos-locais` (`df01eb1`), `lw-095b-postos-de-servico` (`ea5ed94`), `lw-095c-consulta-dos-postos` (`9d1b0f6`) e `lw-095d-npc-ouve-salario` (`2c8525b`), 4 commits empilhados sobre `e16072b` (a ponta da LW-093 que o Arthur aprovou). Li os diffs inteiros com `git diff` e `git show` pelas referências `origin/…`, sem trocar de ramo e sem tocar nos worktrees da A; li por inteiro `wage_payer.gd`, `service_post_book.gd`, `post_def.gd`, `wages_paid.gd`, `wage_income.gd` e os trechos novos de `production_book.gd`, `economy_module.gd`, `economy_runtime.gd`, `economy_persistence.gd`, `economy_state.gd`, `economy_queries.gd` e `npc_module.gd`. Nenhuma proposta de DEC; as recomendações estão nos achados.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da A** (não rodo os dele; o que a A diz de resultado é informação, não prova). **O que rodei:** `git diff --numstat` e um script que conta só código e teste (DEC-126); `git grep` por importações (camadas), por `float`, aleatoriedade, tempo real, `await`, `print` e literais soltos; comparação de `data/needs.json` e `data/economy/recipes.json` com as afirmações da A. Todos terminaram sem erro.
+
+**6. RESULTADOS** (a sua lista, item por item)
+| Pergunta | Resposta |
+|---|---|
+| **Contrato (folha, `NO_FUNDS`, postos, `WagesPaid`, Q18)** | **Cumprido.** A hora segue o passo 0 e os passos 1 a 5 do `economy.md`: postos primeiro por `post_id` (`economy_runtime.gd`, `run_production_hour`), depois, por local, compra, conferência com `NO_FUNDS` (`production_book.gd:245`), pagamento (`:250`), lotes e venda. Folha **tudo ou nada**; o posto sem fundos **para e não publica `ProductionStopped`** (o motivo vai em `peek_post`); **um** `WagesPaid` por local ou posto e por hora; o dinheiro da venda cobre a folha da hora seguinte; o `npc` lê os trabalhadores por `peek_site` ou `peek_post` (`wage_income.gd:36-42`) e alivia `income` só dos NPCs dele (Q18). |
+| **Camadas e portas (DEC-171, regra E)** | **Limpo.** Em `src/sim/npc` há **zero** citações de classe de economia fora de `economy/api/` (`WageIncome` usa `EconomyModule`, `EconomyReplies` e `WagesPaid`, todos de `api/`); a economia **não cita** o `npc` (zero). O `npc` só ouve o evento se houver economia (`npc_module.gd:213-214`). |
+| **Dinheiro só pelo `Ledger`, em inteiros, sem sorteio nem relógio real** | **Limpo.** Todo pagamento é `Ledger.transfer(…, REASON_SALARY)` (`wage_payer.gd:32`); o `npc` nunca move dinheiro; **zero** `float`, aleatoriedade, `Time.*`, `OS.*`, `await` e `print` nas linhas novas de `src/`. O `Ledger` não restringe o pagador de `salary` (o contrato diz "locais de produção e postos"). |
+| **Estado novo** | **Bloco `posts` do save, só quando há postos** (`economy_persistence.gd`: `serialize` condicionado a `is_pristine`; `on_load` aceita a chave e **confere tudo antes de trocar o estado**; chave desconhecida segue recusada); `ServicePostBook` tem `serialize`, `load_from` e `validate`. **`save_version` não foi tocado** (nenhum arquivo do codec mudou; segue 2). Sem postos nos dados, o bloco e o hash **não mudam**, como a A diz. **Falta o `debug_summary` dos postos** (R8-M2). |
+| **`WagesPaid` de `events/` para `api/`** | Justificado e **coerente com a DEC-171** (o `npc` cita só `economy/api`; sem reflexão, só um *cast* tipado). Os `.uid` e o `README` foram junto e o `events.md` foi atualizado. **Abre um precedente** (R8-M5). |
+| **As 2 linhas trocadas em teste antigo** (`test_economy_production_api.gd:181-182`) | **Não enfraquecem.** `:181` só ganha `NO_FUNDS` na lista esperada da mensagem; `:182` troca o exemplo de motivo inválido (`NO_FUNDS`, que passou a ser válido) por `NO_SPACE`, **mantendo** o caso "motivo fora do conjunto". O retorno de `NO_FUNDS` pelo save tem teste novo (`test_site_payroll.gd:124`). É o **único** teste antigo tocado nas quatro partes. A autorização que a A cita ("com a autorização de Arthur") eu **não verifico**; o bloco dela diz que você as ratificou. |
+| **`RELIEF_PER_COIN` [HIP]** | **Ok.** `wage_income.gd:10`, constante **nomeada** e rotulada [HIP], com a razão no comentário. Conferi: `income` sobe 2 por hora (`needs.json`), o salário das 10 receitas é 2 por hora, então `1` mantém a necessidade estável. Vai para `data/` com a distribuição dos povoados. |
+| **Código morto ou literal sem nome** | **Nenhum novo** nas quatro partes (busca de literais ≥ 2 e de ganchos sem chamador: zero achados). |
+
+**Tamanho de cada parte (DEC-126: só código e teste, sem comentário nem linha em branco; teto ~300 linhas e ~8 arquivos, tolerância de 1,5×)**
+| Parte | Linhas | Arquivos `.gd` | Situação |
+|---|---|---|---|
+| 095a (`df01eb1`, folha dos locais) | 233 | 8 | dentro do teto |
+| 095b (`ea5ed94`, postos de serviço) | **366** | 8 | **acima do teto, dentro da tolerância** (450) |
+| 095c (`9d1b0f6`, consulta dos postos) | 123 | 4 | dentro do teto |
+| 095d (`2c8525b`, o `npc` ouve o salário) | 169 | 4 | dentro do teto |
+
+**7. PROBLEMAS ENCONTRADOS (por gravidade)**
+**Bloqueante: nenhum.**
+**IMPORTANTE**
+- **R8-I1. A LW-095 ainda não está completa e o `IncomeStub` segue vivo.** O aceite do roadmap diz "`IncomeStub` removido; busca por `TEMP-LW-066` vazia em `src/`, `data/`, `tests/`, `tools/` e `scenes/`": hoje a busca acha **12 arquivos** (`income_stub.gd`, `income_stub_loader.gd`, `data/income_stub.json`, `npc_thinker.gd`, `npc_decision_runtime.gd`, `npc_module.gd`, …). A A **declara** isso ("o `IncomeStub` segue ao lado, sem ser removido"; "parte final"). Faltam também: os **postos nos dados** (`service_posts.json`, que o roadmap põe na distribuição da LW-097, hoje só montados à mão nos testes), o **teste de integração** que o `economy.md` (seção 6) pede para a LW-095 ("a lista de trabalhadores da economia coincide com o `work_place_id` do `npc`"; **não existe**, só há unitários) e os **valores novos do oráculo** do marco 2. **Risco concreto:** quando os dados reais tiverem locais e postos (097e), `WageIncome` **e** o `IncomeStub` aliviariam `income` ao mesmo tempo (**dupla contagem**). **Recomendo:** a A não declarar a LW-095 pronta antes da parte que remove o `IncomeStub`, e essa parte trazer o teste de integração.
+**MENOR**
+- **R8-M1. "Tudo ou nada" não é atômico se uma transferência falhar no meio.** `wage_payer.gd:28-35` (`pay`) paga em laço e devolve o primeiro erro **sem desfazer** o que já pagou; o `can_pay` (`:16`) confere saldo e contas, então o caminho é praticamente inalcançável. Mas, se acontecesse, `production_book.gd:250-257` faz só `push_error` e **continua a produzir**, e `service_post_book.gd:102` marca o posto como parado com dinheiro já movido. Hoje é inofensivo; **recomendo** um teste do caminho de erro ou desfazer os pagamentos parciais.
+- **R8-M2. Estado novo sem `debug_summary`.** O AGENTS 4.15 pede `serialize`, `on_load`, `validate` **e** `debug_summary`; `economy_persistence.gd:124-132` (`summary`) continua contando só `production_sites`, **sem os postos**.
+- **R8-M3. `ledger: Ledger = null` em `ProductionBook._init` (`production_book.gd:40`)** deixa existir um livro **sem folha** em silêncio (a A usa isso para "rigs antigos" de teste). Em produção `EconomyState` sempre passa o `Ledger`, mas um futuro chamador que esquecer o argumento **não paga ninguém sem erro**. **Recomendo** exigir o argumento e ajustar os testes antigos que dependem do padrão.
+- **R8-M4. Custo do `WageIncome`.** Para cada `WagesPaid`, `_workers_of` chama `peek_site` (`wage_income.gd:38`), que monta a cópia **inteira** do local (receita, manutenção e estoque) só para ler `worker_ids`. Com uns 20 locais e postos por hora, é desprezível; com mais, convém uma consulta só da equipe. Sem medição (AGENTS 4.18): só registro.
+- **R8-M5. Precedente do `WagesPaid` em `api/`.** Os demais eventos da economia continuam em `events/`; só o que o `npc` consome mora em `api/`. É coerente com a regra E, mas a próxima fase que tiver outro módulo ouvindo evento da economia (ou o inverso) deve **seguir a mesma regra** e o `economy.md` poderia dizer isso em uma frase.
+
+**8. RISCOS.** A dupla contagem de `income` (R8-I1) quando os dados reais tiverem locais e postos; o custo do pensador somado ao da R6-M3 (A) com a economia ligada; o espiral de morte por hora parada que o contrato já registra (R3.3) e que a LW-112 calibra: **não verificado**.
+
+**9. PENDÊNCIAS.** *Da A (ela decide):* R8-I1 e, se quiser, os menores. *Que eu não consegui verificar:* (1) **qualquer resultado de `check_all` ou de hash da A**; (2) a **autorização** citada para as 2 linhas do teste antigo; (3) se o "teste de ouro" do roadmap passa; (4) o comportamento **somado** do `WageIncome` com a LW-093 em jogo real (só há testes unitários); (5) a `096a` (`ebd0a06`), que já está sobre a `2c8525b` e **fica para a próxima revisão da fila**.
+
+**ACOMPANHAMENTO**
+- **Avanço:** a LW-095 está em **4 de ~5 partes** (a final remove o `IncomeStub`); nada da LW-095 está no `main`. Código da Fase 5: 0%.
+- **Próxima tarefa recomendada:** **R9** (LW-097d da C), já em curso; depois a `096a` da A.
+- **Decisões que dependem de Arthur:** nenhuma nova; o R8-I1 vai à A.
+- **Git:** só leitura nos ramos remotos; **este relatório** é o único commit (`status-b`); `main` em `ca86f87`. Vigia do GitHub armado às 21:21 (consulta a cada 10 min).
