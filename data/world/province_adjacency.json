@@ -1,0 +1,6 @@
+[
+	{"id": "province_a__province_b", "province_a_id": "province_a", "province_b_id": "province_b"},
+	{"id": "province_a__province_border", "province_a_id": "province_a", "province_b_id": "province_border"},
+	{"id": "province_b__province_border", "province_a_id": "province_b", "province_b_id": "province_border"},
+	{"id": "province_border__province_c", "province_a_id": "province_border", "province_b_id": "province_c"}
+]

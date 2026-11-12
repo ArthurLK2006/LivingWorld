@@ -10,9 +10,15 @@ var id: String
 var name_key: String
 ## Metros; centro do assentamento, y = altura do terreno em (x, z).
 var position: Vector3
+## A província do povoado (LW-118c, `provinces.json`) e a cultura dele (`cultures.json`); vazios quando o arquivo não traz as colunas. A conferência de que existem e de que batem com as
+## províncias e as culturas é do `SettlementProvinceCheck`, não do `SettlementLoader`.
+var province_id: String
+var culture_id: String
 
 
-func _init(settlement_id: String, settlement_name_key: String, settlement_position: Vector3) -> void:
+func _init(settlement_id: String, settlement_name_key: String, settlement_position: Vector3, settlement_province_id: String = "", settlement_culture_id: String = "") -> void:
 	id = settlement_id
 	name_key = settlement_name_key
 	position = settlement_position
+	province_id = settlement_province_id
+	culture_id = settlement_culture_id

@@ -1,0 +1,6 @@
+[
+	{"id": "province_a", "name_key": "province.province_a.name", "kind": "settled"},
+	{"id": "province_b", "name_key": "province.province_b.name", "kind": "settled"},
+	{"id": "province_c", "name_key": "province.province_c.name", "kind": "settled"},
+	{"id": "province_border", "name_key": "province.province_border.name", "kind": "frontier"}
+]

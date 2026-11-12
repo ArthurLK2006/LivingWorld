@@ -25,6 +25,9 @@ static func build_schemas(settlements_file: String = DEFAULT_SETTLEMENTS_FILE, p
 	settlements.add_field("name_key", DataSchema.FieldType.STRING)
 	settlements.add_field("x_cm", DataSchema.FieldType.INT).set_range(0, MAX_COORDINATE_CM)
 	settlements.add_field("z_cm", DataSchema.FieldType.INT).set_range(0, MAX_COORDINATE_CM)
+	## LW-118c: `province_id` e `culture_id` são OPCIONAIS aqui (arquivos antigos e de teste não as trazem); o `SettlementProvinceCheck` exige as duas e confere as referências.
+	settlements.add_field("province_id", DataSchema.FieldType.STRING, false)
+	settlements.add_field("culture_id", DataSchema.FieldType.STRING, false)
 	var places: DataSchema = DataSchema.new(PLACES_TABLE, places_file)
 	places.add_field("settlement_id", DataSchema.FieldType.STRING).set_ref(SETTLEMENTS_TABLE)
 	places.add_field("kind", DataSchema.FieldType.STRING)
@@ -116,7 +119,7 @@ static func _check_relations(bundle: DataBundle) -> void:
 static func _build(bundle: DataBundle, terrain: TerrainData) -> LoadResult:
 	var settlements: Array[Settlement] = []
 	for record: Dictionary in bundle.tables[SETTLEMENTS_TABLE]:
-		settlements.append(Settlement.new(str(record["id"]), str(record["name_key"]), _ground_position(record, terrain)))
+		settlements.append(Settlement.new(str(record["id"]), str(record["name_key"]), _ground_position(record, terrain), str(record.get("province_id", "")), str(record.get("culture_id", ""))))
 	var places: Array[Place] = []
 	for record: Dictionary in bundle.tables[PLACES_TABLE]:
 		places.append(Place.new(str(record["id"]), str(record["settlement_id"]), str(record["kind"]), _ground_position(record, terrain), int(record["capacity"])))
