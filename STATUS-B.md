@@ -1,4 +1,4 @@
-11/11/2026 22:19 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R18 e 3 auditorias de entrada no `main` feitas, sem bloqueio (LW-093 `f2bcb4c`: SÃ; LW-117i `4372f7f`: SÃ; A resto do marco 2 `885615c`: SÃ, `check_all` independente VERDE 162/1.391); achados p/ a A já no `main`: R13-I1/R14-I1, R15-I1, R18-I1; RISCO p/ a Fase B da C (BLOQUEADA desde 21:52, espera Arthur): refazer a prova do oráculo sobre `885615c` e conferir mortes de NPC (R16-I1 + R18-I1); AVISO p/ Arthur: a C só continua com a sua autorização para trocar os números dos 2 testes; vigia armado; sem BLOQUEADA minha.
+11/11/2026 22:20 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 a R19 e 3 auditorias de entrada no `main` feitas, sem bloqueio (LW-093 `f2bcb4c`, LW-117i `4372f7f` e a A `885615c`: SÃS, `check_all` independente VERDE 162/1.391); achados p/ a A já no `main`: R13-I1/R14-I1, R15-I1, R18-I1; p/ a C: R19-I1 (a 118b passou da tolerância: 526 > 450 linhas); RISCO p/ a Fase B da C (BLOQUEADA desde 21:52, espera Arthur): refazer a prova do oráculo sobre `885615c`, conferir mortes de NPC (R16-I1 + R18-I1) e o conflito em `test_economy_production_api.gd`; próximo: R20 (118c da C); vigia a rearmar; sem BLOQUEADA minha.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -1214,3 +1214,42 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 **Efeito sobre a C (bloqueada desde 21:52, `status-c`):** a causa que ela relatou (2 testes da A que falham na junção por IDs e dinheiro: `test_game_economy_wiring` e `test_economy_start_money_and_consume`) é **a que eu previ na R10-I4**. Com a A agora no `main`, **a prova do oráculo da C ("só A") precisa ser refeita sobre `885615c`** (ela a fez sobre `4372f7f`, que não tinha as vagas nem o `npc` aceitando emprego) e a junção passa a incluir o código de vaga e de emprego: **conferir mortes de NPC no oráculo e no soak** antes de aprovar valores (R16-I1 e R18-I1). Ela continua aguardando a **sua** autorização para trocar os números dos 2 testes.
 
 **O que NÃO consegui verificar:** (1) a **autorização** da A para entrar no `main` (vejo o texto "por autorização antecipada de Arthur" no commit e no status dela, não o bloco original); (2) o comportamento no **jogo real em tela** (só testes); (3) soak **longo** (o `check_all` roda o curto); (4) se há **morte de NPC** no oráculo e no soak (R16-I1); (5) a conferência de `tools/check_architecture` ao pé da letra além do que o `check_all` já reporta verde.
+
+
+## RELATÓRIO — R19: ramo novo da conversa C (`lw-118b-provincias`, `5f352a7`, LW-118 parte b)        Status: PRONTA PARA REVISÃO (revisão independente, SÓ LEITURA) · 11/11/2026 22:20 (Brasília)
+
+**1. RESUMO.** **Nenhum bloqueio, mas 1 achado importante de tamanho (R19-I1).** A parte b entrega as **4 províncias da DEC-207** (`province_a`, `province_b`, `province_c` e `province_border`) e a **adjacência de partida** em `data/world/`, com `Province`, `ProvinceLink`, `ProvinceLoader` (valida o grafo: ligação com ela mesma, par repetido **inclusive invertido**, pontas fora de ordem, `id` que não bate com as colunas, referência quebrada, grafo **não conexo**) e `ProvinceService` (consultas `peek_province`, `peek_provinces` e `peek_adjacent_provinces`, **cópias**, em ordem crescente de `id`, falha tratada `PROVINCE_UNKNOWN`). **Só conteúdo e classes soltas:** nada de save, hash, módulo registrado, evento ou autoload; **nenhum teste existente alterado; nenhum protegido; nenhuma tag; nada no `main`.** Empilhado na 118a (`6eb1ba0`), 1 commit.
+
+**2. ARQUIVOS CRIADOS / 3. MODIFICADOS.** Nenhum no projeto; só `STATUS-B.md`.
+
+**4. DECISÕES TÉCNICAS (do revisor).** Li o diff **inteiro** (18 arquivos: 6 `.gd`, 4 `.uid`, 3 de dados, 3 documentos, `pt_br.json`), `province.gd`, `province_link.gd`, `province_service.gd` e `province_loader.gd` **inteiros**, e os **19 testes pelos nomes**; conferi os dados contra `docs/fase-4/dados.md` seção 1 ("Linhas de partida": as 4 províncias e as 4 ligações `a__b`, `a__border`, `b__border` e `border__c`) e que `DataSchema.set_ref` **existe**. Sem proposta de DEC.
+
+**5. TESTES EXECUTADOS.** **NÃO EXECUTADO: o Godot e o `check_all` da C** (não exportei este ramo). Rodei: contagem DEC-126, `git grep` da API do módulo `data`, `merge-tree --trivial-merge` (só imprime).
+
+**6. RESULTADOS**
+| Item | Resultado |
+|---|---|
+| **Tamanho (DEC-126)** | **526 linhas** em **6 `.gd`** (281 de código: 20 + 23 + 131 + 107; 245 de teste: 121 + 124): **ACIMA do teto de 300 e ACIMA da tolerância de 450** (**+76**, 17%). **Só esta parte passou da tolerância em toda a noite** (a 096e da A ficou em 400 e a 096a do `npc` em 450 exatos) |
+| **Cumpre a ficha (`world.md`, DEC-207, `fase-4/dados.md`)?** | **Sim:** 4 províncias com `kind` (`settled` x3, `frontier` x1), adjacência **sem direção**, o grafo de partida é o da ficha (a fronteira é o amortecedor: A e B chegam a C **só pela fronteira**, e há teste) |
+| **Hash e save** | **Não mudam:** nada é lido por código do jogo (só pelos testes); `ProvinceService` não guarda estado salvo; tem `validate()` e `debug_summary()` mesmo assim |
+| **Validação** | Todos os casos citados acima com **arquivo, item e campo**; uma 5ª província entra **só por dado** (teste) |
+| **Consultas** | Cópias (alterar uma resposta não muda nada), ordem crescente de `id`, **independentes da ordem do conteúdo** (teste), `PROVINCE_UNKNOWN` com os ids conhecidos na mensagem |
+| **Camadas, tempo, aleatoriedade, `float`, dinheiro, autoload** | Limpos (nada de `Node`, relógio, sorteio ou `float`; `Dictionary[String, Array]` tipado) |
+| **Testes novos (19)** | `test_provinces` (8): arquivo real, adjacência de partida, sem direção e conexo, cópias, desconhecida, ordem independente, serviço acusa repetida e ligação quebrada, nomes existem e diferem; `test_provinces_data` (11): campo ausente/desconhecido, tipo/`id` repetido/nome vazio/`kind` fora do vocabulário, lista vazia, referência quebrada, ligação com ela mesma, par repetido (inclusive invertido), ordem das pontas e `id` que não bate, não conexo, província única, JSON ruim e arquivo ausente, 4ª província por dado |
+
+**7. PROBLEMAS ENCONTRADOS (por gravidade)**
+**Bloqueante: nenhum.**
+**IMPORTANTE**
+- **R19-I1. A parte passou da tolerância de tamanho (526 > 450).** O AGENTS 5.2 manda **PARAR e propor a divisão** quando passa de ~300 linhas; a DEC-126 só tolera até 1,5x, e o bloco da C (item 5) pede "partes pequenas (DEC-126)". Não há pedido de desvio no commit nem no relatório que eu possa ver. **Recomendo à C:** dividir em **118b** (Province, ProvinceLink, ProvinceLoader, dados e `test_provinces_data`: 20 + 23 + 131 + 124 = **298**) e **118b2** (ProvinceService e `test_provinces`: 107 + 121 = **228**), o que dá duas partes **dentro do teto**, ou então registrar o desvio (AGENTS 16.3) para Arthur aprovar. É conserto de organização de ramos, **não** de código.
+**MENOR**
+- **R19-M1 a M3 (os mesmos do R17):** o arquivo `provinces.json` e `province_adjacency.json` **só são lidos pelo teste** até a LW-118d (nenhuma validação no início do jogo); o `data/text/pt_br.json` ganhou **mais 4 chaves** (nomes das províncias) sem estar nomeado no bloco da C (ver R17-M2); nomes de exibição ("Província A", "Fronteira") não levam rótulo de proposta.
+- **R19-M4. `ProvinceService` copia o conteúdo na entrada?** Não: o construtor **guarda os objetos recebidos** (diz o comentário "não deve alterá-los depois") e só as **respostas** são cópias. Basta o carregador nunca reaproveitar os objetos; hoje é o caso. Sem ação.
+- **R19-M5. A ordem das pontas é cobrada no dado** (`province_a_id` antes de `province_b_id` por ordem alfabética, `id` = `a__b`): exatamente o que a ficha manda; só lembro que **uma província nova** (por dado) com nome que quebre a convenção alfabética vai ser recusada com mensagem clara.
+
+**Junção (previsão por `merge-tree`, só texto; o `main` agora é `885615c`, com a pilha da A):** a ponta `5f352a7` × `main`: **14 trechos em 10 arquivos** (a 097e sozinha dá **12 em 9**; a 118a e a 118b acrescentam um em `world.md` e um em `src/sim/world/README.md`). **Entre eles estão 4 arquivos de código e teste:** `src/app/game_app.gd` (2), `src/app/simulation_host.gd` (2), `tests/integration/test_npc_split_oracle.gd` (1) e **`tests/unit/test_economy_production_api.gd` (1, o teste que a A alterou na LW-095a)**; este último **não está** na lista de conflitos esperados do bloco da C (item 4, B0), então a Fase B dela deve **PARAR** nele, como o R10-I4(b) previu.
+
+**8. RISCOS.** O risco do ramo em si é **baixo** (dado e classes soltas); o do **tamanho** é o R19-I1; o da junção com o `main` é o de sempre (a Fase B da C continua BLOQUEADA, esperando Arthur).
+
+**9. PENDÊNCIAS.** *Da C:* R19-I1 (dividir ou pedir o desvio) e M1 a M5 para ciência. *De Arthur:* o `pt_br.json` (R17-M2) e, se a C pedir, o desvio de tamanho. *Que não consegui verificar:* o `check_all` **da C**; que os 19 testes novos passam; a junção real.
+
+**ACOMPANHAMENTO.** *Avanço:* LW-118 partes **a e b** feitas em ramo; a **118c** (`lw-118c-povoado-e-provincia`, `4e8ce98`) acabou de aparecer no GitHub: será a R20. *Decisões de Arthur:* as mesmas das rodadas anteriores. *Git:* só leitura nos ramos remotos; único commit é o `status-b`; `main` em `885615c`.
