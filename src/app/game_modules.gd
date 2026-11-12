@@ -46,7 +46,7 @@ static func register(runner: SimulationRunner, terrain: TerrainData, points: Arr
 		if not world_setup.result.ok:
 			modules.result = world_setup.result
 			return modules
-		world_module = WorldModule.new(world_setup.routes, world_setup.is_development_build)
+		world_module = WorldModule.new(world_setup.routes, world_setup.is_development_build, world_setup.provinces, world_setup.cultures)
 	registered = runner.register_module(WORLD_NAME, world_module)
 	if not registered.ok:
 		modules.result = registered
