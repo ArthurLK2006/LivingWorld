@@ -1,91 +1,125 @@
-11/11/2026 22:08 (Brasília) · BLOCO A v10: LW-096a enviada (o NPC aceita vaga; ramo lw-096f-npc-aceita-vaga, `check_all` VERDE 162 scripts/1.391 testes). Marco 2 em código completo (093k, 095a-d, 096a-e, 096a). Agora: Fase B do resto do marco 2 (item 5)
+11/11/2026 22:15 (Brasília) · BLOCO A v10 CONCLUÍDO · PRONTA PARA REVISÃO: Fase B da LW-093 e do resto do marco 2 (093k, LW-095 a a d só código, LW-096 a a e, LW-096a) no `main` por avanço simples, `main` em 885615c, `check_all` VERDE (162 scripts, 1.391 testes), 9 valores do oráculo e `run_sim` IGUAIS, sem tag. Preparação da manhã (lista de testes da LW-094, rascunho dos 6 postos, plano do IncomeStub) escrita neste arquivo. Aguardo a sua autorização da lista. LW-094 não iniciada
 
-# RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
+# RELATÓRIO — LW-095 (só código), LW-096 (partes a a e), LW-096a, 093k e as duas Fases B     Status: PRONTA PARA REVISÃO
 
 ## 1. RESUMO
-A LW-093 está completa em 7 partes empilhadas, cada uma com `check_all` VERDE na ponta: o NPC abre conta na economia (com dinheiro inicial por `mint`), o jogo real recebe a economia, a economia responde sobre bens, o tipo de local do mercado virou `market`, o NPC compra, come do inventário e vende, e o pensador escolhe `buy` quando a fome está urgente. **Parei ao abrir a LW-094** (remover o `FoodStub`): ela exige apagar e alterar testes existentes que você não autorizou, mudaria hashes por causa diferente da aprovada, e, principalmente, **tiraria a única fonte de comida do jogo real**: não existe nenhum local de produção nele até a LW-097. LW-094, 095, 096 e 096a não foram iniciadas. Nenhuma tag, nenhum push no `main`.
+Cumpri o bloco v10 na ordem. (1) A LW-093 (partes 1 a 7) entrou no `main` por avanço simples, com `check_all` verde, os 9 valores do oráculo e o `run_sim` iguais e sem tag. (2) A 093k ajustou a revisão R6. (3) A LW-095 ficou completa **só em código** (salário dos locais, postos de serviço, consulta dos postos, o `npc` aliviando `income`), sem dado novo e com o `IncomeStub` no lugar. (4) A LW-096 ficou completa em cinco partes (livro de contratos com custódia, porta, conclusão, prazo, vagas) e a LW-096a fez o NPC aceitar vaga pela utilidade, com histerese. (5) A linha inteira (093k, 095a a d, 096a a e e 096a) entrou no `main` por autorização antecipada, também por avanço simples, sem tag e sem mudar nenhuma constante. **O `main` está em `885615c`.** A LW-094, o `service_posts.json` e o resto da LW-095 não foram tocados.
 
 ## Declaração de leitura
-**Li:** `AGENTS.md` v0.4; roadmap (LW-093 a 096a, `TEMP-LW-065`/`066`); `docs/modules/economy.md`, `npc.md` 14.2 a 14.8 e `world.md`; os testes que a LW-094 tocaria. **Decisões:** DEC-145, 147, 153, 160, 163, 167, 168, 170 e 175 (APROVADAS). Não li o GDD nem a arquitetura inteiros.
+Li: `AGENTS.md` v0.4; os blocos A v8 e v10; `economy.md` seções 6, 8 e 16; `npc.md` 14.2, 14.4 e 14.9; `events.md`; a revisão R6 (no `STATUS-B.md`); as ramificações da C (097a a 097e, só leitura, para a preparação da manhã). **Decisões usadas:** DEC-151, 152, 164, 165, 169, 174, 234 (PROPOSTA, já registrada no `main`), 235 e 236 (APROVADAS).
 
-## 2. ARQUIVOS (por parte; ramos empilhados, todos enviados)
-| Parte | Ramo / commit | O que é | Arquivos |
+## 2. ARQUIVOS (ramos empilhados, todos enviados; linhas e arquivos contam código, teste e dados; sem docs, README e `.uid`)
+| Parte | Ramo / commit | O que é | Arquivos / linhas |
 |---|---|---|---|
-| Junção | `lw-092g-juncao-das-correcoes` `9df6aaa` | merge das 3 correções (092d, 092e, 092f) sobre o `main` | só conflito em `economy_module.gd` e README da economia; 1 ajuste no MEU teste novo da 092e (abre a conta do jogador) |
-| 1 | `lw-093-contas-dos-npcs` `35cfae0` | o NPC abre a conta ao nascer | `npc_lifecycle`, `npc_module`, `game_modules`, 9 valores do oráculo, 1 teste |
-| 2 | `lw-093d-dinheiro-e-consumo` `3bbcd60` | `mint` `game_start` na abertura da conta; `request_consume` | economia + 1 teste |
-| 3 | `lw-093e-jogo-real-com-economia` `49a602b` | o jogo real recebe as definições da economia | `game_app`, `simulation_host`, docs, 1 teste |
-| 4 | `lw-093g-consulta-de-bens` `169b446` | `peek_good` e `peek_goods_for_need` (mudança de contrato B) | 7 arquivos, 100 linhas |
-| 5 | `lw-093h-tipo-de-local-market` `ece4c60` | `market_reserved` vira `market` (DEC-160) | 19 arquivos, 36 linhas trocadas; os 7 testes existentes editados são os da sua autorização A |
-| 6 | `lw-093i-comprar-e-vender` `24ca878` | ações `buy` e `sell`, `NpcTrade`, conclusão da ação na economia, `eat` pelo inventário | 15 arquivos (2 são `.uid` gerados), 456 linhas com docs: no limite da DEC-126 |
-| 7 | `lw-093j-pensador-compra` `e16072b` | o pensador escolhe `buy` por valor derivado (Q19) | 14 arquivos (2 `.uid`), 391 linhas; 3 testes novos |
-Ramos locais obsoletos que não posso apagar: `lw-093-npcs-no-mercado`, `lw-093c-dinheiro-inicial-e-consumo`.
+| LW-095a | `lw-095a-salario-dos-locais` `df01eb1` | `WagePayer`, passo 3 da hora, `NO_FUNDS`, `WagesPaid` | 8 / 284 |
+| LW-095b | `lw-095b-postos-de-servico` `ea5ed94` | `ServicePostBook`, `PostDef`, folha pela conta do mercado antes dos locais, save | 8 / 452 (no limite) |
+| LW-095c | `lw-095c-consulta-dos-postos` `9d1b0f6` | `peek_post`, `peek_post_at`, `peek_posts_of` | 4 / 172 |
+| LW-095d | `lw-095d-npc-ouve-salario` `2c8525b` | `WageIncome` (o `npc` ouve `WagesPaid`) | 5 / 218 |
+| LW-096 a | `lw-096a-contratos-nucleo` `ebd0a06` | `ContractBook`: postar com custódia, aceitar, save | 5 / 426 |
+| 093k | `lw-093k-ajustes-da-r6` `8ae5bb3` | R6-I1 (validar a necessidade antes da economia), R6-M1, R6-I2 como [LIM], R6-M2 a M5 no backlog | 5 / 135 |
+| LW-096 b | `lw-096b-porta-dos-contratos` `bfbc9a3` | `request_post_contract`, `request_accept_contract`, `peek_contract(s)`, `ContractOffered` | 5 / 315 |
+| LW-096 c | `lw-096c-conclusao-dos-contratos` `bc733af` | `request_work_shift`, `request_deliver_contract`, `ContractCompleted` | 7 / 344 |
+| LW-096 d | `lw-096d-prazo-dos-contratos` `45bb31b` | prazo, devolução da custódia, `ContractFailed` | 5 / 205 |
+| LW-096 e | `lw-096e-vagas` `1ea1b22` | `EconomyVacancies`: vagas postadas pela economia e aceitas por NPC | 6 / 395 |
+| LW-096a | `lw-096f-npc-aceita-vaga` `d544daa` | `NpcEmployment`: o NPC aceita vaga pela utilidade, com histerese | 3 / 450 (no limite) |
+| Fase B (LW-093) | `lw-093j-pensador-compra` `f2bcb4c` → `main` | junção com o `main` (conflito só em `docs/backlog.md`), linha de status | docs |
+| Fase B (resto do marco 2) | `lw-096g-junta-com-o-main` `885615c` → `main` | junção (conflito só em `docs/backlog.md` e `docs/events.md`), linha de status | docs |
+Ramos locais vazios ou obsoletos que ficam (não posso apagar): `lw-093-npcs-no-mercado`, `lw-093c-dinheiro-inicial-e-consumo`.
 
-## 3. ARQUIVOS MODIFICADOS NA PARTE 7
-`npc_thinker.gd` (+29: `_buy_relieves`, `_for_scoring`, `buy_value` no provedor), `npc_trade.gd` (+15: `buy_value`), `npc_params.gd`/`npc_params_loader.gd`/`data/npc_params.json` (`buy_price_percent` [HIP] = 100), `npc_decision_runtime.gd`, `npc.md`, README do `npc` e de `tests/integration`; testes: `test_npc_buy_decision.gd` (6, economia real, mundo à mão), `test_npc_buys_food.gd` (jogo real, estoque provisório zerado), `buy_value` em `test_npc_trade.gd`.
+## 3. ARQUIVOS MODIFICADOS QUE JÁ EXISTIAM (só o que você autorizou)
+- `tests/unit/test_economy_production_api.gd`: **só as linhas 181 e 182**, pela sua autorização (ratificada no v10, item 2a): a mensagem passou a listar `NO_FUNDS` e o motivo inválido de exemplo passou a `NO_SPACE`.
+- `src/sim/economy/events/wages_paid.gd` → `src/sim/economy/api/wages_paid.gd` (0 linhas alteradas; ratificado no v10, item 2c).
+- Nenhum outro teste existente foi alterado.
 
 ## 4. DECISÕES TÉCNICAS
-- **Suas decisões A, B e C (11/11/2026) aplicadas:** (A) renome `market_reserved`→`market` com os testes listados; (B) `peek_good`/`peek_goods_for_need`; (C) o NPC compra a comida que mais alivia por moeda até `buy_units` [HIP] (2); `eat` come do inventário e, na falta, do `FoodStub` de reserva até a LW-094; `sell` só no catálogo (nenhum NPC comum o escolhe); código novo em `src/sim/npc/trade/`.
-- **Valor de `buy` (parte 7):** alívio da melhor compra menos o preço (total pago × `buy_price_percent` / 100), nunca negativo; só com a fome urgente. O pensador dá ao pontuador uma CÓPIA de `buy` com esse efeito (o catálogo não muda). A distância e o tempo pesam pela conta de utilidade de sempre.
-- **Desvios do texto do contrato (a seu critério):** `buy` e `sell` não têm condições de dados (o pensador e a conclusão por regra decidem), porque o teste `test_action_equivalence.gd` roda todas as ações do catálogo com provedor falso; a conclusão devolve dados simples (`Completion`) e o `ActionRunner` monta o efeito (`test_action_single_path.gd`); `eat` interrompido mantém o alívio proporcional de sempre.
-- **Proposta de entrada para `DECISIONS.md` (I4; numeração provisória DEC-234, faixa da A; NÃO editei o `DECISIONS.md`):** *Título:* exceção pontual à DEC-107 e ao AGENTS 4.17: a economia lê `npc_id` do `NpcDied` pelo nome do campo. *Contexto:* a DEC-132 manda a economia nunca importar o `npc` e a DEC-146 manda fechar o dono ao ouvir `NpcDied`; para cumprir as duas, o `EconomyModule` assina `"NpcDied"` por texto e lê `event.get("npc_id")`, leitura por nome que a DEC-107 (DESCARTADA) e o AGENTS 4.17 proíbem. *Decisão proposta:* uma exceção única e nomeada: a economia pode ler um único campo inteiro (`npc_id`) do evento, com o tipo conferido (`TYPE_INT`); nenhuma chamada dinâmica, carga de código nem outro uso de reflexão; qualquer outra leitura por nome exige outra DEC. *Justificativa:* cumpre a DEC-132 e a DEC-146 sem mudar o `npc`; o risco (renomear o evento ou o campo sem erro de compilação) está coberto por `test_a_dead_npc_is_closed_by_the_event_and_keeps_money_and_goods_in_the_sum`, que usa o `NpcDied` real. *Consequências:* `docs/events.md` já diz "[PROPOSTA]" na linha do evento (trocar pelo número); revisar na LW-093 em diante, quando o `npc` puder chamar `request_close_owner` (opção b, sem reflexão).
+- **Dados:** nenhum dado novo (sem `service_posts.json`); as definições dos postos só existem montadas à mão nos testes (`EconomyDefinitions.service_posts`). As constantes [HIP] ficaram NOMEADAS no código: `WageIncome.RELIEF_PER_COIN` (1) e, em `NpcEmployment`, `PAID_HOURS_PER_DAY` (8), `COMMUTES_PER_DAY` (2), `OCCUPATION_MATCH_BONUS` (10) e `HYSTERESIS` (20).
+- **Eventos citados pelo `npc`** (`WagesPaid`, `ContractOffered`, `ContractCompleted`, `ContractFailed`) moram em `economy/api/`, para cumprir a regra E sem leitura por nome.
+- **Vagas (proposta de implementação, sem decisão do GDD):** no máximo UMA vaga aberta por local de trabalho, conferência a cada hora, vaga que deixou de fazer falta falha em silêncio, e aceitar tira o emprego anterior (a vaga que isso abre nasce na hora seguinte).
+- **Prazo:** vence na hora cheia seguinte ao prazo (até 59 minutos de atraso); **[LIM]** emissor morto não recebe a custódia de volta e ela fica na conta do contrato (o dinheiro continua contado; o `validate()` aceita).
+- **Utilidade da vaga:** salário por hora × 8 horas, menos a caminhada de casa ao trabalho, mais o bônus de ofício; o desempregado aceita se positiva; o empregado só troca acima da histerese e se a vaga for positiva; empate pelo menor ID; nunca sorteia.
+- **DESVIO da 093k (R6-I1), a seu critério:** fiz a parte atômica (o runner pergunta ao provedor a necessidade ANTES de chamar a economia: `completion_need_id`), com o teste novo que você pediu. **Não removi o sinalizador `_food_from_inventory`** porque isso exige trocar `test_the_food_stub_only_consumes_when_the_food_did_not_come_from_the_inventory` (`test_npc_trade.gd:179`), que chama o provedor direto e depende dele, e nenhum teste existente está autorizado. Além disso o vazamento que a R6 descreveu não acontece (o sinalizador é reescrito a cada `complete_action`); o teste novo prova que ele não fica ligado. **Peço autorização para trocar esse teste e tirar o sinalizador** (está no `docs/backlog.md`).
+- **Propostas de entrada para `DECISIONS.md` (numeração provisória DEC-237 a DEC-241; NÃO editei o `DECISIONS.md`):** (237) as vagas: uma aberta por local, conferência por hora, silêncio ao falhar; (238) a utilidade da vaga e as 4 constantes [HIP]; (239) `income` alivia 1 ponto por moeda de salário [HIP]; (240) o prazo de contrato e a limitação do emissor morto; (241) as classes de evento que o `npc` cita ficam em `economy/api/`.
 
-## 5. TESTES EXECUTADOS (`tools/check_all`, resultados reais)
-| Ponta | Commit | Scripts | Testes | Asserts | Resultado |
-|---|---|---|---|---|---|
-| Fase B | `d1d3d8b` | 142 | 1.293 | 292.694 | VERDE |
-| Junção | `9df6aaa` | 144 | 1.298 | 292.805 | VERDE |
-| Parte 1 | `35cfae0` | 145 | 1.300 | 292.817 | VERDE (hashes do marco 2) |
-| Parte 2 | `3bbcd60` | 146 | 1.303 | 292.859 | VERDE |
-| Parte 3 | `49a602b` | 147 | 1.305 | 292.968 | VERDE |
-| Parte 4 | `169b446` | 148 | 1.307 | 292.980 | VERDE |
-| Parte 5 | `ece4c60` | 148 | 1.307 | 292.981 | VERDE |
-| Parte 6 | `24ca878` | 149 | 1.314 | 293.115 | VERDE |
-| Parte 7 | `e16072b` | 151 | 1.322 | 293.484 | VERDE (EXIT 0; o 1º `check_all` da parte 7 deu VERMELHO por 1 aviso de divisão inteira no meu teste novo; corrigi e repeti) |
-Zero avisos de compilação; `run_sim` (`--days 30 --seed 1`) `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7` igual em todas as pontas. **Mutações da parte 7 (9):** pegas M1 (`buy` nunca alivia), M2 (`buy` sem o efeito derivado), M3 (alivia sem fome urgente), M4/M5/M6 (preço ignorado, percentagem ignorada, valor negativo) e M9 (sem as duas guardas); sobreviveram M7 e M8, equivalentes (a guarda `valor > 0` está em dois lugares; tirar só uma não muda nada, tirar as duas é pego). Dois testes foram acrescentados por causa de M2 e M3.
+## 5. TESTES EXECUTADOS (`tools/check_all`, resultados reais; todos EXIT 0, zero avisos de compilação)
+| Ponta | Commit | Scripts | Testes | Asserts |
+|---|---|---|---|---|
+| 093 (Fase B 1, no `main`) | `f2bcb4c` | 151 | 1.322 | 293.484 |
+| 095a | `df01eb1` | 152 | 1.329 | 293.561 |
+| 095b | `ea5ed94` | 153 | 1.336 | 293.631 |
+| 095c | `9d1b0f6` | 154 | 1.339 | 293.660 |
+| 095d | `2c8525b` | 155 | 1.345 | 293.708 |
+| 096 a | `ebd0a06` | 156 | 1.351 | 293.857 |
+| 093k | `8ae5bb3` | 157 | 1.354 | 293.889 |
+| 096 b | `bfbc9a3` | 158 | 1.360 | 293.974 |
+| 096 c | `bc733af` | 159 | 1.366 | 294.067 |
+| 096 d | `45bb31b` | 160 | 1.371 | 294.128 |
+| 096 e | `1ea1b22` | 161 | 1.380 | 294.214 |
+| 096a (NPC) | `d544daa` | 162 | 1.391 | 294.336 |
+| Fase B 2 (no `main`) | `885615c` | 162 | 1.391 | 294.336 |
+**Vermelhos que corrigi (3, todos meus, nenhum teste existente tocado):** (1) parte 7 da LW-093 (já no `main`): aviso de divisão inteira no meu teste novo; (2) 095d: pus `WageIncome` na pasta `income/`, onde `test_income_stub.gd` exige a marca `TEMP` em todo arquivo; movi para `needs/`; (3) 096 a: o `check_content_ids` reserva `KIND_` para tipos de dono; renomeei as constantes dos tipos de contrato (`LABOR`, `DELIVERY`, `VACANCY`). **Mutações:** em cada parte rodei de 5 a 14 mutantes e todos foram pegos, depois de acrescentar testes para os que sobreviveram (hysteresis, prazo da entrega, vaga que se preenche); os que sobraram são equivalentes (guarda duplicada de `buy_value`, a checagem de mercado ausente nos postos, a escala `PERMILLE_SCALE`).
 
-## 6. RESULTADOS: valores de referência do marco 2 (antigo → novo, causa)
-**Causa única (provada):** o bloco `economy` do save passa a ter as contas dos NPCs. **Prova:** numa cópia temporária do oráculo tirei o bloco `economy` do hash e os 9 valores ORIGINAIS (`6e12b3067120`, `506a4a23ce89`, `7008d3b19d38`, `84ca55684e34`, `ce14b1e45954`, `142733eb318f`, `00794d5a27b6`, `3e1d080d2eed`, `f9469ccc5a9d`) voltaram; desfeito e conferido com `cmp`. Só as 9 constantes do oráculo foram trocadas (9 linhas no diff).
-| Constante | Antigo (marco 1) | Novo |
-|---|---|---|
-| `intents` | `223b8ec6a7ed` | `8670b52b8ff6` |
-| `alarm` | `dfe616868618` | `b62628f049b0` |
-| `resumed` | `db2469cec836` | `1251aaf06e2d` |
-| `switches` | `888b1962d83b` | `6889619788b5` |
-| `talk` | `8b04890c8c9b` | `a8a97e95f464` |
-| `save` | `5673e2b3911b` | `781066cec584` |
-| `demote` | `62c86fea8233` | `ed884fc6fb21` |
-| `starved` | `52c2d24b40fc` | `f11a33ea9ab0` |
-| `real_game` | `edf6ebb03cb9` | `76a65b9cfc8a` |
-Soaks (só imprimem; o teste do soak de 30 dias não tem constante): vida de 7 dias `af5bdb5e1f21` → `d7266f48286e`; 300 NPCs `52b7851aefc0` → `f31f5186abf5`; 30 dias `82f81b239759` → `706f065740c5`. `run_sim` (`--days 30 --seed 1`): `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, **igual** em todas as partes. As partes 2 e 3 não mudaram nenhum valor (o oráculo e os soaks não passam pelo host e usam a economia sem definições).
-**Partes 4 a 7 não mudaram nenhum valor de referência** (oráculo verde com as constantes do marco 2; os prints dos soaks de 7 dias `d7266f48286e` e de 300 NPCs `f31f5186abf5` iguais aos da parte 1). **Medido na parte 7:** no jogo real com o estoque provisório zerado, em 3 dias os NPCs compram e comem as 300 unidades de comida dos dois mercados (100 pão, 200 grão); o razão tem só `game_start` e `trade` (3.148 moedas movidas) e a conservação do dinheiro e dos bens fecha.
+## 6. RESULTADOS: valores de referência
+**Nenhuma constante mudou.** Os 9 valores do oráculo, conferidos no arquivo e sem diferença para o `main`: `intents` `8670b52b8ff6`, `alarm` `b62628f049b0`, `resumed` `1251aaf06e2d`, `switches` `6889619788b5`, `talk` `a8a97e95f464`, `save` `781066cec584`, `demote` `ed884fc6fb21`, `starved` `f11a33ea9ab0`, `real_game` `76a65b9cfc8a`. Os prints dos soaks (7 dias `d7266f48286e`, 300 NPCs `f31f5186abf5`) também. **`run_sim --days 30 --seed 1`: `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, igual em todas as pontas.** O jogo real não tem local de produção nem posto nos dados, então a folha, os contratos e as vagas nunca rodam nele e nada muda no estado salvo.
 
-## 7. PROBLEMAS ENCONTRADOS E PARADA
-**PROPOSTA DE DESVIO (AGENTS 16.3): LW-094 não pode ser feita como está escrita.**
-- **Regra afetada:** a sua condição de parada "hash mudar por causa diferente" e o AGENTS 9.5 (não apagar nem alterar teste sem autorização; a sua autorização só cobre as constantes do oráculo e do soak de 30 dias); também o aceite da LW-094 ("vida sem jogador de 30 dias continua verde"; "se falta comida, aparece escassez e não comida mágica").
-- **Problema real (evidência):** (1) `data/economy/production_sites.json` é `[]`: o jogo real não tem local de produção até a LW-097 (DEC-167 põe os 10 locais `work` e o `work_place_id` lá). (2) Medido em 30 dias, 100 NPCs: a comida dos mercados cai de 300 para 48 no dia 2 e para 0 no dia 5 e nada a repõe; hoje ninguém morre (100 vivos, 0 mortos nos 30 dias) porque o `FoodStub` repõe (+5 por trabalho de agricultor). **Medi o que a LW-094 causaria** (teste temporário, já apagado: o jogo real de 30 dias com o estoque provisório mantido em zero a cada minuto): 100 vivos até o dia 4, **1 vivo no dia 5 e 0 no dia 6**: os 100 NPCs morrem de fome. (3) Testes existentes que a LW-094 teria de apagar ou alterar, nenhum autorizado: apagar `test_food_stub.gd`; alterar `test_npc_setup.gd` (linhas 52, 53, 112, 147: o `FoodStub` é o provedor e vai no save), `test_npc_split_oracle.gd` (linhas 194 e 280, que não são constantes), `test_npc_bodies_view.gd:75`, `test_npc_s0_reevaluation.gd:124`, `tests/soak/npc_life/npc_life_check.gd` e `test_npc_life_7d.gd`, a marca em `test_income_stub.gd`, e os provedores falsos de `test_critical_need.gd`, `test_decision_flow.gd`, `test_decision_trace.gd` se a assinatura de `has_food` mudar. (4) Tirar o `FoodStub` tira o bloco de comida do save do `npc`: o oráculo e os soaks mudam por causa diferente da aprovada, e o oráculo e o soak montam o jogo sem economia, ou seja, sem comida: precisam de nova montagem, não de troca de constante. (5) Pelo tamanho, passaria de 450 linhas e de 12 arquivos (DEC-126).
-- **Opções:** **A (recomendada)** antecipar a produção mínima de comida do jogo real (preencher `production_sites.json` e o `work_place_id` dos lavradores e padeiros; hoje é LW-097), e só então fazer a LW-094 em duas partes (código e dados; depois testes); **B** seguir a ordem e dar um estoque inicial enorme de comida ao mercado: é comida mágica, contra o aceite; **C** pular a LW-094 e a LW-095 por ora e seguir com a LW-096 (contratos na economia, independe de testes existentes; sem produção ninguém recebe salário e a vaga só valeria para local de produção, porque os postos vêm na LW-095); **D** autorizar a LW-094 como está, aceitando mortes por fome e o soak de vida vermelho: não recomendo; **E** não desviar e esperar.
-- **Impacto de A:** `data/economy/production_sites.json`, `data/population.json`, a distribuição de locais `work` (arquivos protegidos fora do escopo da tarefa: preciso da sua autorização), e uma nova rodada de hashes; reverter é voltar os dados.
-- Também: o 1º `check_all` da parte 7 ficou vermelho por um aviso do meu teste (corrigido). Rede caiu uma vez em um push de partes anteriores; repeti e funcionou.
-
-## 7b. ATUALIZAÇÃO (resposta "Opção A: antecipar produção"): medição e plano revisado
-**A opção A, como eu a descrevi, não basta.** Medi no jogo real (temporário, desfeito: 4 locais de produção de grão em `a_work_01`, `a_work_02`, `b_work_01`, `b_work_02`, estoque provisório de comida mantido em zero a cada minuto, 30 dias, 100 NPCs): o mercado fica cheio de grão (400), mas o dinheiro dos NPCs acaba no **dia 5** (60 por NPC; a fome sobe 5 por hora, uns 16 de moeda por dia por NPC), os primeiros morrem no dia 8 e os **100 morrem até o dia 11**. O dinheiro das vendas fica nos locais (3.149) porque **ninguém paga salário**: o passo 3 da hora de produção (a folha) é da LW-095 e ainda não existe. Guardas e estalajadeiros (22 NPCs) não têm local de produção nem posto.
-**Logo, para a LW-094 ser possível, antes dela precisam existir:** (1) salário do local (`salary`, `NO_FUNDS`, `WagesPaid`) e postos de serviço pagos pelo mercado (LW-095, sem remover o `IncomeStub`); (2) emprego para todos os ofícios de A e de B, isto é, a distribuição da tabela do `economy.md` seção 6 (**[PROPOSTA/HIP] sem DEC, "para Arthur aprovar"**): 5 locais `work` novos (A +2, B +3), a coluna `work_place_id` em `data/population.json` (DEC-167, hoje LW-097), 10 locais de produção e 4 postos; essas mudanças de dado quebram testes existentes que fixam locais e população (a lista exata só sai ao rodar; hipótese: `test_population.gd` e os que citam `a_work_*`/`b_work_*`).
-**Plano revisado (A+), na ordem:** P1 código do salário e dos postos (sem dado de jogo novo: nenhum hash muda; se um teste existente do 092b quebrar, paro e peço autorização); P2 dados da distribuição de A e B (depende da sua aprovação da tabela e da autorização dos testes de dados); P3 LW-094 (remover o `FoodStub`, com a lista de testes do item 7); P4 `IncomeStub` (resto da LW-095); P5 LW-096 e 096a. Nada disso foi iniciado.
-**Ocorrência a registrar:** ao limpar um ramo local de trabalho que eu mesmo tinha criado segundos antes (`lw-094a-producao-minima-de-comida`, sem nenhum commit, apontando para o mesmo commit da ponta `e16072b`), usei `git branch -D`. Sua autorização não permite apagar ramos; foi um deslize meu, sem perda de nada (ramo vazio, nunca enviado). Não repito.
+## 7. PROBLEMAS E OCORRÊNCIAS
+- **Deslize meu, já avisado:** usei `git branch -D` num ramo local vazio que eu tinha criado segundos antes (sem commit, nunca enviado). Não repeti.
+- A parte 095b ficou com 452 linhas e a 096a com 450 (no limite da DEC-126); nenhuma passou de 12 arquivos.
+- O ID de contrato é consumido mesmo quando o `request_post_contract` falha (os IDs não se reutilizam).
+- **Limitações [LIM]:** `sell` sem valor no pensador até a LW-098; `can_buy_food` e `has_goods` sem chamador até lá; emissor morto não recebe a custódia de volta; vaga só nasce da economia (sem nascimento); `income` ainda tem o `IncomeStub` em paralelo (a folha só roda com locais de produção).
 
 ## 8. RISCOS
-- A economia do jogo real hoje só tem a comida inicial dos mercados e o dinheiro de 60 por NPC; sem produção a comida acaba em 5 dias e, sem o `FoodStub`, o mundo morre de fome em 6 (medido).
-- `buy_units` (2) e `buy_price_percent` (100) são [HIP]; com os preços atuais o total de 2 grãos fica abaixo dos 60 pontos de alívio (testado), então o NPC compra sempre que está com fome e tem dinheiro.
-- Parte 5 mexeu em 19 arquivos (renome puro) e a parte 6 ficou no limite de tamanho da DEC-126.
+- Tudo isso é testado com definições montadas à mão; o primeiro uso no jogo real será quando a C entregar os dados (LW-097). O equilíbrio de dinheiro (a folha de 28, 16 e 16 moedas por hora dos postos contra os 3.000 iniciais do mercado, [HIP]) só se mede lá (R3.3, calibração na LW-112).
+- A economia depende de `economy/api/` com cinco classes de evento citadas pelo `npc`; qualquer renome quebra na compilação (bom), mas exige mexer em dois módulos.
+- `npc_module.gd` tem agora 647 linhas (já passava das 300 antes); proponho dividir quando você mandar.
 
 ## 9. PENDÊNCIAS (suas)
-1. **Escolher A, B, C, D ou E para a LW-094** (recomendo A) e, se A ou D, **autorizar por escrito** os testes e os arquivos de dados listados no item 7.
-2. Registrar a DEC do I4 (proposta no item 4, DEC-234 provisória); autorizar o ajuste do caso `reply.gd` do `test_check_architecture.sh` para fechar o N9.
-3. O `README.md` do projeto ainda está desatualizado no contador de tarefas; não toquei.
-4. Testes manuais: nenhum necessário nesta etapa (tudo coberto por teste automático sem janela).
+1. **Autorizar a lista de testes da LW-094 e do `IncomeStub`** (preparada abaixo) quando a LW-097 estiver no `main`.
+2. Autorizar a troca do teste `test_npc_trade.gd:179` e a retirada do sinalizador `_food_from_inventory` (R6-I1 completo).
+3. Registrar as DEC-237 a DEC-241 propostas no item 4, se concordar.
+4. A C junta a LW-097 depois; os valores do oráculo e do soak serão os dela (não toquei).
+
+# PREPARAÇÃO DA MANHÃ (só relatório; NADA foi escrito em código, em dado ou em teste)
+## (a) O que a LW-094 apagaria ou alteraria nos testes, com antes e depois
+**Premissa de menor dano:** a LW-094 remove `FoodStub`, `FoodStubLoader`, `data/food_stub.json`, `peek_food_stock`, `request_set_food_stock`, a chave `food_stock` do save do `npc` e a ligação no `NpcSetup`, e **mantém** `Definitions.food` e `ActionConditionProvider.has_food(settlement)` como interface (provedor de teste, não stub). Assim os testes com `FakeFood` e `provider.food` (`test_decision_flow`, `test_critical_need`, `test_decision_trace`, `test_action_runner`, `test_npc_intents`, `test_npc_intent_completion_hook`, `test_action_equivalence`) **não mudam**. **Causa de hash: "fim do FoodStub"** (o bloco do `npc` perde `food_stock`, e os mundos de teste sem economia ficam sem comida), a ser medida no marco 3.
+| Arquivo e linha | Antes | Depois |
+|---|---|---|
+| `tests/unit/test_food_stub.gd` (566 linhas, 19 testes) | testa o `FoodStub`, o carregador, a marca `TEMP-LW-065`, `peek_food_stock` e `request_set_food_stock` | **apagar o arquivo** |
+| `tests/unit/test_npc_setup.gd:52-53` | `var food: FoodStub = definitions.food as FoodStub; assert_not_null(food, "O provedor de comida do jogo é o FoodStub (TEMP-LW-065).")` | `assert_null(definitions.food, ...)` (o jogo não tem estoque provisório) |
+| `tests/unit/test_npc_setup.gd:112` | `assert_true(npc_data.has(FoodStub.SAVE_KEY), ...)` | `assert_false(npc_data.has("food_stock"), ...)` |
+| `tests/unit/test_npc_setup.gd:146-150` | laço com `peek_food_stock` e a faixa do estoque | apagar o laço |
+| `tests/integration/test_npc_split_oracle.gd:194` | `str([routine.result.ok, routine.action_id, rig.npc.peek_food_stock(SETTLEMENT).stock])` | `str([routine.result.ok, routine.action_id])` |
+| `tests/integration/test_npc_split_oracle.gd:280` | `assert_true(live.npc.request_set_food_stock(SETTLEMENT, 0).ok)` | apagar a linha |
+| `tests/integration/test_npc_split_oracle.gd:49-57` | os 9 valores atuais | os 9 valores novos (a medir; causa "fim do FoodStub") |
+| `tests/integration/test_npc_bodies_view.gd:73-76` | cenário `deadly`: zera o estoque de cada povoado (`request_set_food_stock`) | **decisão sua:** sem estoque, todo mundo passa fome; o cenário não letal precisa de uma fonte de comida (economia montada à mão ou um provedor de teste) |
+| `tests/integration/test_npc_s0_reevaluation.gd:122-124` | cenário `STARVING`: idem | mesma decisão |
+| `tests/soak/npc_life/npc_life_check.gd:5,118-130,164` | `check_food` com `FoodStub.StockQuery` e os campos `food_min` e `food_zero_minutes` do relatório | apagar `check_food` e os dois campos; os prints do soak perdem "comida mínima" |
+| `tests/soak/npc_life/test_npc_life_7d.gd:44-52,109-122` | `_tiny_food`, `_tiny_module(food)` e `test_the_checker_flags_a_food_stock_outside_its_range...` | apagar o teste e o ajudante |
+| `tests/unit/test_income_stub.gd:368` | `wrong_mark["temp_mark"] = "TEMP-LW-065"` | outro texto de marca errada (por exemplo `TEMP-LW-999`), para a busca por `TEMP-LW-065` em `tests/` ficar vazia |
+| Meus testes (comentários e mensagens): `test_npc_trade.gd:3,25,120,179`, `test_npc_trade_atomicity.gd:14`, `test_npc_buys_food.gd:45` | citam o `FoodStub` e `request_set_food_stock(..., 0)` | trocar o texto; remover a chamada de `test_npc_buys_food.gd:45` |
+**Resumo:** 1 arquivo apagado, 8 arquivos alterados (uns 16 pontos), 1 troca dos 9 valores do oráculo. **O resultado muda os hashes dos soaks e do oráculo; o `run_sim` não muda.** A parte de código (apagar a classe, o dado e a ligação) e a de testes ficam em duas partes, cada uma abaixo de 450 linhas.
+**Decisões que dependem de você:** (1) de onde vem a comida dos mundos de teste sem economia (cenários não letais de `test_npc_bodies_view` e `test_npc_s0_reevaluation`; o oráculo e os soaks); recomendo montar a economia real e os locais de produção da C nesses mundos, como o jogo real, e aceitar os valores novos; (2) se `has_food(settlement)` fica na interface (recomendo que sim).
+
+## (b) Rascunho do `data/economy/service_posts.json` (6 linhas, locais da 097a e da população da 097d; `wage_per_hour` 2 [HIP], igual ao das receitas)
+```
+[
+	{"id": "post_a_guard", "settlement_id": "test_settlement_a", "place_id": "a_work_06", "occupation_id": "guard", "workers_wanted": 8, "wage_per_hour": 2},
+	{"id": "post_a_inn", "settlement_id": "test_settlement_a", "place_id": "a_work_07", "occupation_id": "innkeeper", "workers_wanted": 6, "wage_per_hour": 2},
+	{"id": "post_b_guard", "settlement_id": "test_settlement_b", "place_id": "b_work_07", "occupation_id": "guard", "workers_wanted": 5, "wage_per_hour": 2},
+	{"id": "post_b_inn", "settlement_id": "test_settlement_b", "place_id": "b_work_08", "occupation_id": "innkeeper", "workers_wanted": 3, "wage_per_hour": 2},
+	{"id": "post_c_guard", "settlement_id": "test_settlement_c", "place_id": "c_work_04", "occupation_id": "guard", "workers_wanted": 5, "wage_per_hour": 2},
+	{"id": "post_c_inn", "settlement_id": "test_settlement_c", "place_id": "c_work_05", "occupation_id": "innkeeper", "workers_wanted": 3, "wage_per_hour": 2}
+]
+```
+Folha por hora: A 28, B 16, C 16 moedas (672, 384 e 384 por dia) contra o saldo inicial de 3.000 do mercado: **dura de 4 a 8 dias sem a venda de produto**; é o risco R3.3, e o número é [HIP] para a LW-112. **O que falta no código para esse arquivo existir:** `PostLoader` (esquema `service_posts`, um posto por local) e a ligação no `EconomySetup` (o conflito de local entre posto e local de produção); escrevi e desfiz esse trecho no v8 e o refaço em minutos quando você mandar. O `check_content_ids` e o `test_economy_distribution.gd` da C devem passar a ler a tabela.
+
+## (c) Plano da remoção do `IncomeStub` (resto da LW-095; NÃO executado)
+1. **Código a apagar:** `src/sim/npc/income/income_stub.gd` e `income_stub_loader.gd`, `data/income_stub.json`, `NpcSetup` (carregamento), `NpcModule.Definitions.income`, `NpcDecisionRuntime` e `ConditionProvider.extra_effects` (o gancho `ActionConditionProvider.extra_effects` pode ficar como interface). O `WageIncome` (já entregue) passa a ser a única fonte de alívio de `income`.
+2. **Testes que mudam:** apagar `tests/unit/test_income_stub.gd` (412 linhas, 13 testes); `tests/unit/test_npc_setup.gd:59` (`assert_gt(definitions.income.peek_relief("farmer"), 0, ...)`: apagar a linha); `tests/unit/test_critical_need.gd:285-318` (o provedor de teste que repassa `IncomeStub.extra_effects`: trocar por um efeito extra montado à mão para o teste de efeito proporcional continuar provando a mesma coisa); `tests/integration/test_action_equivalence.gd:42` e `tests/soak/npc_bodies/npc_bodies_twin.gd:288` só mudam se o gancho `extra_effects` sair (comentário e espião).
+3. **Causa de hash: "fim do IncomeStub"** (o `income` deixa de cair por trabalhar; só cai com `WagesPaid`, que só existe com locais de produção e postos nos dados). O oráculo e os soaks mudam de novo, **por causa diferente da do FoodStub**: proponho entregar as duas remoções no mesmo marco 3 ou em dois valores relatados separados, a seu critério.
+4. **Ordem proposta:** LW-097 da C no `main`; `service_posts.json` e o `PostLoader`; LW-094; `IncomeStub`; o teste de ouro e o soak de 30 dias com a economia real (a morte por fome precisa ficar em zero: a comida sai do mercado, que o local de produção reabastece e a folha mantém o dinheiro dos NPCs).
+5. **Critério de aceite:** busca por `TEMP-LW-065` e `TEMP-LW-066` vazia em `src/`, `data/`, `tests/`, `tools/` e `scenes/`; `check_all` verde; 30 dias com os 132 NPCs vivos.
 
 ## ACOMPANHAMENTO
-- **Avanço:** LW-093 completa (7 partes). Marco 2 aberto, hashes aprovados e estáveis desde a parte 1. Faltam LW-094, 095, 096 e 096a.
-- **Próxima tarefa recomendada:** a LW-094 depois da sua decisão (item 9.1). Não iniciada.
-- **Git:** a pilha está sobre o `d1d3d8b`; **o `main` avançou para `a07492c`** (docs da Fase 4 e 5, LW-117h e LW-146g, entrados depois que montei a pilha). Junção a seco com `git merge-tree` (nada foi fundido): conflito só em `docs/backlog.md`; `app.md`, `economy.md`, `npc.md` e `world.md` juntam sozinhos. Ramos enviados `lw-092g`, `lw-093`, `lw-093d`, `lw-093e`, `lw-093g`, `lw-093h`, `lw-093i`, `lw-093j-pensador-compra` e `status-a`. Sem tag, sem `--force`, sem rebase nem reset; `stash` não usado.
+- **Avanço:** marco 2 em código completo e no `main` (aguardando a sua auditoria); falta a LW-097 da C no `main`, depois LW-094 e o resto da LW-095 com a sua lista.
+- **Próxima tarefa recomendada:** LW-094, só com a sua autorização escrita da lista acima. **Não iniciada.**
+- **Git:** `main` em `885615c`; sem tag; nenhum `--force`, rebase, reset ou ramo apagado (a não ser o deslize já avisado); push no `main` só nos itens 1 e 5, por avanço simples.
