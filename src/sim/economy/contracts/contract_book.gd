@@ -4,7 +4,8 @@ extends RefCounted
 ## `core`; o contrato COM recompensa é dono de uma conta do tipo `contract`, a CUSTÓDIA: ao postar, o emissor paga a recompensa para ela (`contract_escrow`) e o dinheiro só sai dali para o aceitante (`contract_payout`) ou de volta para o emissor
 ## (`contract_refund`), nunca fica retido. Estado: `open`, `accepted`, `completed`, `failed`, `expired`. Esta parte: postar (validado, tudo ou nada) e aceitar (só `open`, um aceitante); a conclusão, o prazo e as vagas vêm nas partes seguintes.
 ## Conclusão (parte c): `labor` pelo turno de trabalho registrado no local (`work_shift`; "um trabalho, um pagamento": recusado se o trabalhador já é atribuído àquele local) e `delivery` pela entrega dos bens ao destino (`deliver`); a custódia paga o
-## aceitante (`contract_payout`) e o estado vira `completed`. `deadline` é um minuto de simulação (0 = sem prazo, só para a vaga). Nunca sorteia nem olha o relógio: quem chama passa o `now`.
+## aceitante (`contract_payout`) e o estado vira `completed`. Prazo (parte d): `expire` vence, na hora seguinte, o contrato aberto ou aceito cujo prazo passou: a custódia volta ao emissor (`contract_refund`) e o estado vira `expired`; emissor FECHADO (morreu) não recebe de volta e a recompensa fica na
+## conta do contrato [LIM] (o dinheiro continua contado no teste de ouro). `deadline` é um minuto de simulação (0 = sem prazo, só para a vaga). Nunca sorteia nem olha o relógio: quem chama passa o `now`.
 
 const LABOR: String = "labor"
 const DELIVERY: String = "delivery"
@@ -157,6 +158,18 @@ func deliver(contract_id: int, now: int) -> Outcome:
 	return _complete(contract_id)
 
 
+## Um contrato que acabou de vencer (para quem chama publicar o `ContractFailed`).
+class Expired:
+	extends RefCounted
+
+	var contract_id: int
+	var issuer_id: int
+
+	func _init(expired_contract_id: int, contract_issuer_id: int) -> void:
+		contract_id = expired_contract_id
+		issuer_id = contract_issuer_id
+
+
 ## O que um comando de conclusão fez: `result`, o contrato (`IdGenerator.NO_ID` se nenhum) e, se ele foi concluído, o aceitante e a recompensa paga (para quem chama publicar o `ContractCompleted`).
 class Outcome:
 	extends RefCounted
@@ -178,6 +191,24 @@ class Outcome:
 		outcome.result = Result.success()
 		outcome.contract_id = worked_contract_id
 		return outcome
+
+
+## Vence os contratos `labor` e `delivery`, abertos ou aceitos, cujo prazo passou (`now` maior ou igual ao prazo), por ID crescente: a custódia volta ao emissor (`contract_refund`) se ele está aberto, e o estado vira `expired`. Devolve os que venceram.
+func expire(now: int) -> Array[Expired]:
+	var expired: Array[Expired] = []
+	for contract_id: int in contract_ids():
+		var state: Dictionary = _contracts[contract_id]
+		var held: bool = state[KEY_STATE] == STATE_OPEN or state[KEY_STATE] == STATE_ACCEPTED
+		if not held or state[KEY_KIND] == VACANCY or int(state[KEY_DEADLINE]) == 0 or now < int(state[KEY_DEADLINE]):
+			continue
+		var issuer: int = state[KEY_ISSUER]
+		if _book.check_open(issuer).ok and _ledger.balance_of(contract_id) > 0:
+			var refunded: Result = _ledger.transfer(contract_id, issuer, _ledger.balance_of(contract_id), Ledger.REASON_CONTRACT_REFUND)
+			if not refunded.ok:
+				push_error("ContractBook.expire: a custódia do contrato %d não voltou ao emissor %d: %s" % [contract_id, issuer, refunded.message])
+		state[KEY_STATE] = STATE_EXPIRED
+		expired.append(Expired.new(contract_id, issuer))
+	return expired
 
 
 func has_contract(contract_id: int) -> bool:
@@ -237,7 +268,8 @@ func validate() -> Array[String]:
 			continue
 		var held: bool = state[KEY_STATE] == STATE_OPEN or state[KEY_STATE] == STATE_ACCEPTED
 		var expected: int = int(state[KEY_REWARD]) if held else 0
-		if _ledger.balance_of(contract_id) != expected:
+		var retained_by_dead_issuer: bool = not held and _book.is_closed(int(state[KEY_ISSUER])) and _ledger.balance_of(contract_id) == int(state[KEY_REWARD])
+		if _ledger.balance_of(contract_id) != expected and not retained_by_dead_issuer:
 			problems.append("o contrato %d (%s) deveria ter %d na custódia e tem %d" % [contract_id, state[KEY_STATE], expected, _ledger.balance_of(contract_id)])
 	return problems
 

@@ -73,7 +73,7 @@ func tick(_elapsed_minutes: int) -> void:
 		_last_hour += 1
 		if _last_hour % SimClock.HOURS_PER_DAY == 0:
 			EconomyRuntime.close_day(_state, _events)
-		EconomyRuntime.run_production_hour(_state, _events)
+		EconomyRuntime.run_production_hour(_state, _events, _clock.total_minutes())
 
 
 ## Sem dono e sem movimento: bloco vazio (nada entra no hash além da presença do módulo).
