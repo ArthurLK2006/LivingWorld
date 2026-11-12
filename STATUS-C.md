@@ -1,4 +1,57 @@
-11/11/2026 21:41 (Brasília) — CONCLUÍDA: LW-117i (só documentos) NO MAIN por autorização de Arthur: main avançado f2bcb4c..4372f7f por avanço simples (2 commits: 5a53963 conteúdo, 4372f7f status), check_all VERDE (151 scripts, 1.322 testes, 293.484 asserts); DEC-234 PROPOSTA, DEC-235 e DEC-236 APROVADAS, DECISIONS 0.16 com 236 entradas. A frente A JÁ ESTÁ NO MAIN (f2bcb4c), então a espera acabou. LW-097e pronta (4e614b5, só no ramo). Próximo: Fase B da 097 por antecipação (merge de origin/main, oráculo em três árvores). Sem tag, sem --force. Rodando: nada.
+BLOQUEADA — 11/11/2026 21:52 (Brasília) — Fase B da LW-097 (item 4 do Bloco v10) PARADA por condição (c): na junção com o main (4372f7f) o check_all dá 2 falhas em testes EXISTENTES DA A que o bloco não lista (test_game_economy_wiring e test_economy_start_money_and_consume: só números de IDs e dinheiro, porque o jogo real agora tem 3 mercados, 14 locais de produção e 132 NPCs). Nada commitado nem enviado na junção; main intocado; LW-097 NÃO está no main. Prova do oráculo pronta (só A, só C, junção, e neutralização exata). Falta só a sua autorização para trocar os números desses 2 testes (patch pronto e verificado). 097e e 117i já relatadas (117i no main, 4372f7f). Sem tag, sem --force. Nada rodando.
+
+# LW-097, Fase B (junção com o `main`) — RELATÓRIO — BLOQUEADA        Status: BLOQUEADA (pronta para a manhã)
+
+**Contexto.** Item 4 do Bloco C v10: Fase B da LW-097 no `main` por autorização antecipada, só se as condições (a) a (d) valessem. A frente A já estava no `main` (`f2bcb4c`) e a 117i entrou depois (`4372f7f`); a junção foi feita contra `origin/main` = `4372f7f`.
+
+## 1. RESUMO
+B0 feito no worktree `.worktrees/lw-097e` (ramo `lw-097e-producao-e-estoque`, ponta `4e614b5`): `git merge --no-ff --no-commit origin/main` com os 7 conflitos resolvidos, o `c_market_01` trocado para `market`, a assinatura única nos dois arquivos do app, o teste novo do jogo real e os nove valores do oráculo recalculados e provados. **O `check_all` da junção ficou VERMELHO: 2 testes existentes da A falham, e o bloco proíbe mexer em teste existente fora da lista (condições (a) e (c) e o item 6). Parei.** A junção está **sem commit e sem push**; o `main` e os ramos enviados não mudaram.
+
+## 2. O QUE FOI FEITO NA JUNÇÃO (tudo no diretório de trabalho, sem commit)
+- **Conflitos (7, todos da lista do bloco ou de documento):** `src/app/simulation_host.gd` e `src/app/game_app.gd` com UMA assinatura só, `start_new_game(…, economy_setup, world_setup)` (`GameModules.register(…, economy_setup, world_setup)` já saiu certo do merge automático); `tests/integration/test_npc_split_oracle.gd` (só o dicionário `EXPECTED`); `docs/modules/world.md` (Q-W4: "as 2 linhas" virou "as 3 linhas de `places.json`", mantida a marca [IMPLEMENTADO] da A e o texto do 3º povoado da 097a); `data/world/README.md` (texto da C, com o tipo `market`); `docs/events.md` (60 eventos, 6 implementados na Fase 3 com o `RouteStateChanged`); `src/sim/economy/README.md` (a entrada da 097e mais a linha "Planejado" da A sem a LW-097). Nenhum conflito em outro arquivo de código ou de teste.
+- `data/world/places.json`: `c_market_01` de `market_reserved` para `market` (o único ajuste de dado autorizado).
+- Teste NOVO do jogo real: `tests/integration/test_real_game_has_routes_and_economy.gd` (2 testes: `start_default_game` nasce com as 3 rotas abertas no `world` E com 3 mercados de 10 bens e 14 locais de produção na economia; os 3 locais de mercado são do tipo `market`). Passa.
+
+## 3. PROVA DO ORÁCULO (marco 3, DEC-175), três árvores
+| fase | só A (`main` 4372f7f) | só C (097e) | junção |
+|---|---|---|---|
+| intents | 8670b52b8ff6 | f3f7b6b6edba | 38bafd6df46c |
+| alarm | b62628f049b0 | 5faee3a8bda2 | bf3123d575c1 |
+| resumed | 1251aaf06e2d | 153d0cffb6f9 | 4b13a9641b08 |
+| switches | 6889619788b5 | 5de93474b92f | 2b9109b362df |
+| talk | a8a97e95f464 | 137a429093c6 | 9089c5eb9181 |
+| save | 781066cec584 | a65f1bd8972e | b8ab78052427 |
+| demote | ed884fc6fb21 | 4499213a8de0 | 23025197b9e1 |
+| starved | f11a33ea9ab0 | 3a423e68c051 | 756ad4098135 |
+| real_game | 76a65b9cfc8a | d4135eb87caf | 34d6dc4bfe0b |
+- **Só A:** o oráculo passa no `main` (2 de 2, rodado). **Só C:** valores da 097d, que passaram no `check_all` da 097e.
+- **Junção:** nove valores novos. **(b) duas execuções seguidas dão os mesmos nove valores** (rodei duas vezes; iguais).
+- **(d) a causa é só a soma das causas da C (provado por neutralização):** na árvore da junção, voltei temporariamente aos arquivos do `main` para as causas da C (`food_stub.json`, `population.json`, `occupations.json`, `routine_blocks.json`, `places.json`, `settlements.json`) e desliguei o registro do módulo `world`, com as constantes da A: **os nove valores voltam exatamente aos da A** (só a asserção "132 NPCs" falhou, como esperado). Depois restaurei tudo. Os dados da economia da 097e (locais de produção e mercado do C) não entram no oráculo (os jogos de teste não carregam a economia). Logo não há terceira causa.
+- **Os valores da junção NÃO foram gravados como aprovados:** estão só no diretório de trabalho do teste (sem commit), porque (a) e (c) falharam.
+
+## 4. TESTES EXECUTADOS
+`tools/check_all` na junção: **VERMELHO**; GDScript sem avisos (392 scripts), "IDS DE CONTEÚDO: tudo existe (127 conferências)", 158 scripts, **1.375 testes, 1.373 aprovados, 2 falhos**, 297.011 de 297.016 asserts, 213,4 s. Nenhum outro teste falhou (o oráculo, o teste novo e os 14 testes da 097e passam).
+
+**As 2 falhas (testes existentes da A, fora da lista do bloco):**
+1. `tests/unit/test_game_economy_wiring.gd` · `test_the_default_game_has_the_markets_and_every_npc_has_an_account_with_the_initial_money`: espera mercados A e B com IDs 1 e 2, primeiro NPC com ID 3 e dinheiro criado 6000 + 60 por NPC; no jogo real de hoje há 3 mercados (IDs 1 a 3), 14 locais de produção (IDs 4 a 17), primeiro NPC 18 e dinheiro 9000 + 14 × 200 + 60 × 132 = 19.720.
+2. `tests/unit/test_economy_start_money_and_consume.gd` · `test_the_initial_money_is_minted_only_when_the_account_opens_with_the_reason_game_start`: espera 6000 / 6160 de dinheiro criado com os dados reais; agora são 11.800 (3 mercados de 3000 e 14 locais de 200) e 11.960.
+São só números esperados que a LW-097 muda por definição (3º mercado e locais de produção); nenhuma verificação some.
+
+## 5. PATCH PRONTO (não aplicado)
+`/private/tmp/claude-501/-Users-arthurlk-LivingWorld/2f6af53d-6ac9-46b5-a9f4-a1b635626d61/scratchpad/proposta_2_testes_da_A.patch` (49 linhas): troca esses números e acrescenta a conferência do 3º mercado. **Apliquei-o um instante, os dois testes passaram (2 de 2 e 3 de 3), e desfiz.** Cópia de segurança da junção inteira: `…/scratchpad/juncao_097_sem_commit.patch`.
+
+## 6. O QUE FALTA (com a sua autorização)
+(1) "Autorizo trocar os números desses 2 testes" (o patch); (2) eu commito a junção (`LW-097: junção com o main (4372f7f)`), rodo o `check_all` no commit final, faço B1 (linha de status no `ROADMAP_STATUS.md`, nenhuma contagem muda) e B3 (push do ramo e `…:main` só por avanço simples). Os valores do oráculo entram então como aprovados por antecipação (condições (a) a (d) cumpridas).
+
+## 7. RISCOS
+O estado da junção é um merge sem commit no worktree `.worktrees/lw-097e`; se alguém limpar o worktree, refaço pelo patch e pelo roteiro acima (7 conflitos, mesmas resoluções). O `main` pode andar até lá (nova junção e novo `check_all`, até 3 voltas).
+
+## ACOMPANHAMENTO
+- Avanço: LW-097 pronta em 5 partes (ramos), Fase B bloqueada só por 2 números de teste da A.
+- Próxima: Fase B, depois da sua autorização. LW-118 (item 5): **a causa da parada não afeta o `world`**; sigo com a LW-118 só em ramos empilhados na ponta da 097e (`4e614b5`), sem tocar no `main`.
+- Git: ramos `lw-097e-producao-e-estoque` (`4e614b5`) e `lw-117i-registro-das-ordens` (`4372f7f`, no `main`) enviados; junção sem commit; sem tag, sem `--force`, sem apagar ramo.
+
+---
 
 # LW-117i — RELATÓRIO — Registro das ordens de Arthur de 11/11/2026 e correções de texto das fichas        Status: PRONTA PARA REVISÃO (já no `main` pela Fase B curta autorizada)
 
