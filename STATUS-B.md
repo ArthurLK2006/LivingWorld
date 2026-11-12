@@ -1,4 +1,4 @@
-11/11/2026 21:30 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 e R9 feitas, só leitura, sem bloqueio (R9: 3 importantes, 2 de coordenação A×C: receitas `mine_ore`/`shear_wool` e dono de `service_posts.json`); a 097d não acrescenta conflito de texto novo com a A; vigia do GitHub armado (21:21); próximo: 096a da A; `main` em `ca86f87`; sem BLOQUEADA.
+11/11/2026 21:37 (Brasília) — NOITE (bloco B v6) EM ANDAMENTO: R8 e R9 feitas; ENTRADA DA A NO `main` AUDITADA: LW-093 em `f2bcb4c`, avanço simples, nada protegido, sem tag, oráculo idêntico, `check_all` independente VERDE (1322 de 1322): SÃ; próximo: 097e da C e 096a da A; vigia armado; sem BLOQUEADA.
 
 # RELATÓRIO — LW-146a a LW-146e: registro das decisões da Fase 5 e contratos novos     Status: PRONTA PARA REVISÃO
 
@@ -847,3 +847,25 @@ Todos rotulados como tais (`route.gd:14-19`, contrato). `routes.json`: comprimen
 - **Próxima tarefa recomendada:** **`096a` da A** (`ebd0a06`, já no remoto sobre a `2c8525b`), que entra na fila agora; o vigia do GitHub segue armado.
 - **Decisões que dependem de Arthur:** (1) **dono de `service_posts.json`** (recomendo a A, na parte final da LW-095, porque o `economy.md` o põe lá e o arquivo é da economia); (2) **exceção de tamanho da 097d** (recomendo aceitar por escrito e centralizar a constante da população).
 - **Git:** só leitura nos ramos remotos; este relatório é o único commit (`status-b`); `main` em `ca86f87`.
+
+
+## AUDITORIA DE ENTRADA NO `main` — A: LW-093 (partes 1 a 7), `ca86f87` → `f2bcb4c` · push às 21:21, detectado às 21:31, auditado às 11/11/2026 21:37 (Brasília; dentro dos 20 minutos)
+
+**Veredito: SÃ. Nada fugiu do combinado.** Ordem **A primeiro, C depois**: cumprida (a C ainda não entrou).
+
+| Item | Resultado |
+|---|---|
+| **Forma da entrada** | **Avanço simples:** o `main` antigo (`ca86f87`) é ancestral do novo (`f2bcb4c`); sem `--force`. São 15 commits: a junção das correções da 092 (`092d` a `092g`, que a R4 revisou), as 7 partes da 093 (ponta `e16072b`, que a R6 revisou), uma **junção do `main` dentro do ramo da A** (`0abcc5f`, feita **antes** do push) e um commit de status (`f2bcb4c`). |
+| **O que a junção e o status trouxeram além do que revisei** | **Só `docs/ROADMAP_STATUS.md`** (+1 parágrafo): a LW-093 "entrou pela Fase B, aprovada por Arthur, sem tag"; **"não altera contagens nem porcentagens: o marco 2 de hash só fecha na LW-096a"**. Nenhum outro arquivo mudou fora do trabalho da A. |
+| **Conflitos resolvidos na junção** | 5 documentos (`backlog.md`, `app.md`, `economy.md`, `npc.md`, `world.md`). Conferi **linha por linha o que foi removido** do `main` antigo: só as reescritas intencionais da A (renomeação `market_reserved` → `market`, `peek_quote` com o ator, o status da LW-088a). **Nada da 146g e da 146h se perdeu.** Nenhum marcador de conflito esquecido (`<<<<<<<`) em lugar nenhum. |
+| **Arquivos protegidos (AGENTS 12.5)** | **Nenhum alterado** (`AGENTS.md`, `GDD.md`, `TECHNICAL_ARCHITECTURE.md`, `DECISIONS.md`, `DEVELOPMENT_ROADMAP.md`, `project.godot`, `.gitignore`, `addons/`, `tests/fixtures/`). |
+| **Tags** | **Nenhuma** nova (as remotas seguem `fase-0-concluida`, `fase-1-concluida` e `fase-2-concluida`). |
+| **Testes antigos alterados** (contra o `main` anterior) | **10 arquivos**, todos já revisados: os 7 da R6 (`test_action_catalog`, `test_place_boxes`, `test_place_chooser`, `test_routine`, `test_settlements`, `test_settlements_data`, `test_new_occupation_by_data`), o oráculo e os 2 da 092e na R4 (`test_economy_trade_api`, `test_trade`), mais o `README` de integração. Nenhum teste antigo novo depois da ponta revisada. 9 testes novos. |
+| **Oráculo e soak** | O oráculo (`test_npc_split_oracle.gd`) é **idêntico** ao da ponta `e16072b`: os 9 valores mudaram **só na parte 1** (marco 2, causa: as contas dos NPCs entram no bloco `economy`), e a **ratificação** que você deu à A cobre isso. Nada mudou depois. O soak curto roda dentro do `check_all` (abaixo). |
+| **`check_all` independente do `main` novo** (cópia exportada por `git archive` no meu scratchpad; nada escrito no repositório nem nos worktrees alheios) | **VERDE.** Código 0 (21:32:26 a 21:36:49), `Scripts 151`, `Tests 1322`, `Passing Tests 1322`, `Asserts 293484`, `Time 192,9 s`; `Warnings 1` e `Deprecated 1` iguais aos de sempre; "IDS DE CONTEÚDO: tudo existe (55 conferências)"; **0** `SCRIPT ERROR` e **0** `Parse Error`; as 68 linhas `ERROR` são **idênticas, tipo por tipo**, às do `main` anterior; as de "falhou/failed" sobem de 9 para 11 porque entraram **dois nomes de teste** (`test_a_failed_delivery_…` e `test_a_failed_payment_…`). Isso **prova que os valores do oráculo e do soak batem com o código do `main`**. |
+| **Junção "sã" (rotas e economia, uma assinatura, `c_market_01`)** | **Não se aplica a esta entrada** (é da C). A economia **está** no jogo real (`test_game_economy_wiring` e `test_npc_buys_food` passam). |
+| **Pendências conhecidas que entraram junto** | **R6-I1** (a economia muda antes de a ação ser validada) e **R6-I2** (`sell` sem valor, código morto): **vão para a A** (você decidiu); **seguem abertas** no `main`. Nenhuma é bloqueio. |
+
+**O que eu NÃO consegui verificar:** (1) o `check_all` **da A** (rodei o meu, independente, sobre o mesmo commit); (2) **quando** o `main` andou, só vejo os horários dos commits (21:21) e a minha detecção (21:31); (3) se a Fase B da A tinha **autorização** própria para o push no `main` (o seu bloco diz que você aprovou a LW-093; **o push eu não vi**).
+
+**Próximo:** `lw-097e-producao-e-estoque` (`4e614b5`, publicada às 21:30) e depois `lw-096a-contratos-nucleo` (`ebd0a06`). `main` agora em **`f2bcb4c`**. Vigia do GitHub **rearmado** com a nova linha de base.
