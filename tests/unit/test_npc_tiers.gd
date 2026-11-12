@@ -472,7 +472,7 @@ func test_the_real_world_takes_forty_notables_refuses_the_next_and_lives_on_exac
 	var with_notables: RealGame = _real_game()
 	var control: RealGame = _real_game()
 	var ids: Array[int] = with_notables.modules.npc.peek_npc_ids()
-	assert_eq(ids.size(), 100)
+	assert_eq(ids.size(), 132)
 	for index: int in REAL_LIMIT:
 		var promoted: Result = with_notables.modules.npc.request_promote(ids[index], NOTABLE)
 		assert_true(promoted.ok, promoted.message)
@@ -484,7 +484,7 @@ func test_the_real_world_takes_forty_notables_refuses_the_next_and_lives_on_exac
 	control.runner.run_steps(1440)
 	var entries_with: Dictionary = with_notables.modules.npc.serialize()["npcs"]
 	var entries_control: Dictionary = control.modules.npc.serialize()["npcs"]
-	assert_eq(entries_with.size(), 100)
+	assert_eq(entries_with.size(), 132)
 	for key: Variant in entries_control:
 		var with_entry: Dictionary = entries_with[key]
 		var control_entry: Dictionary = entries_control[key]

@@ -1,4 +1,5 @@
 [
 	{"id": "test_settlement_a", "name_key": "settlement.test_settlement_a.name", "x_cm": 32000, "z_cm": 54000},
-	{"id": "test_settlement_b", "name_key": "settlement.test_settlement_b.name", "x_cm": 80000, "z_cm": 66000}
+	{"id": "test_settlement_b", "name_key": "settlement.test_settlement_b.name", "x_cm": 80000, "z_cm": 66000},
+	{"id": "test_settlement_c", "name_key": "settlement.test_settlement_c.name", "x_cm": 56000, "z_cm": 86000}
 ]

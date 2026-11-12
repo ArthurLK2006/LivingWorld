@@ -9,20 +9,23 @@ const SETTLEMENT_A: String = "test_settlement_a"
 const PLACE_POST: String = "a_work_05"
 const PLACE_BREAD: String = "a_work_01"
 const MARKET_A: int = 1
-const SITE_BREAD: int = 3
-const POST: int = 4
+const SITE_BREAD: int = 4
+const POST: int = 5
 const GUARDS: Array[int] = [100, 101, 102]
 const WAGE: int = 3
 const NPC_START_MONEY: int = 60
 
 
-## `market_money`: o saldo inicial do tipo `market`; `with_site`: acrescenta um local de produção de pão em `a_work_01` (ID 3; o posto fica com o 4).
+## `market_money`: o saldo inicial do tipo `market`; `with_site`: acrescenta um local de produção de pão em `a_work_01` (ID 4; o posto fica com o 5; os mercados A, B e C levam 1 a 3).
 func _definitions(market_money: int, with_site: bool = false) -> EconomyDefinitions:
 	var setup: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR)
 	assert_true(setup.result.ok, setup.result.message)
 	var definitions: EconomyDefinitions = setup.definitions
 	var posts: Array[PostDef] = [PostDef.new("post_a_guard", SETTLEMENT_A, PLACE_POST, "guard", 8, WAGE)]
 	definitions.service_posts = posts
+	## LW-097: os dados reais já têm 14 locais de produção (IDs 4 a 17); este teste é dos postos e conta com a lista vazia, como antes da LW-097, salvo `with_site`.
+	var no_sites: Array[SiteDef] = []
+	definitions.production_sites = no_sites
 	if with_site:
 		var sites: Array[SiteDef] = [SiteDef.new("site_bread", SETTLEMENT_A, PLACE_BREAD, "bake_bread", 4)]
 		definitions.production_sites = sites
@@ -70,7 +73,7 @@ func test_the_market_pays_every_guard_each_hour_and_one_event_comes_out_per_post
 	var market_before: int = module.peek_balance(MARKET_A).balance
 	_run_minutes(world, 2 * MINUTES_PER_HOUR)
 	assert_eq(paid.size(), 2, "Um evento por hora, não um por guarda.")
-	assert_eq([paid[0].workplace_id, paid[0].amount_each], [POST - 1, WAGE], "O posto leva o ID depois dos mercados (1 e 2): sem local de produção é o 3.")
+	assert_eq([paid[0].workplace_id, paid[0].amount_each], [POST - 1, WAGE], "O posto leva o ID depois dos mercados (1 a 3): sem local de produção é o 4.")
 	assert_eq(_money(module, GUARDS), [NPC_START_MONEY + 2 * WAGE, NPC_START_MONEY + 2 * WAGE, NPC_START_MONEY + 2 * WAGE] as Array[int])
 	assert_eq(module.peek_balance(MARKET_A).balance, market_before - 2 * WAGE * GUARDS.size(), "O dinheiro saiu da conta do mercado, pelo `Ledger`.")
 	assert_true(module.peek_conservation().ok)
@@ -104,7 +107,7 @@ func test_the_posts_are_paid_before_the_production_sites() -> void:
 	var order: Array[int] = []
 	world.context.events.subscribe("WagesPaid", func(event: SimEvent) -> void: order.append((event as WagesPaid).workplace_id))
 	_run_minutes(world, MINUTES_PER_HOUR)
-	assert_eq(order, [POST, SITE_BREAD] as Array[int], "A folha do posto (ID 4) sai antes da do local de produção (ID 3).")
+	assert_eq(order, [POST, SITE_BREAD] as Array[int], "A folha do posto (ID 5) sai antes da do local de produção (ID 4).")
 	world.teardown()
 
 

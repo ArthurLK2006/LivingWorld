@@ -3,6 +3,7 @@
 	"poi.test_marker_far": "Restos frios de uma fogueira, apagada há muito tempo.",
 	"settlement.test_settlement_a.name": "Povoado A",
 	"settlement.test_settlement_b.name": "Povoado B",
+	"settlement.test_settlement_c.name": "Povoado C",
 	"npc.name.villager": "Aldeão {number}",
 	"ui.interact_prompt": "[{key}] Interagir",
 	"ui.interact_too_far": "Chegue mais perto.",

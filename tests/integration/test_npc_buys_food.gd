@@ -45,7 +45,7 @@ func test_hungry_npcs_with_money_buy_food_at_the_market_and_eat_it_without_break
 		assert_true(_host.npc.request_set_food_stock(settlement_id, 0).ok, "O estoque provisório de %s zerou." % settlement_id)
 	var before: int = _food_destroyed(economy)
 	_host.runner.run_days(DAYS)
-	assert_eq(_money_reasons(economy), ["game_start", "trade"] as Array[String], "Todo o dinheiro novo veio de `mint` `game_start` e a única movimentação é a compra (`trade`): nenhum outro caminho mexe em saldo.")
+	assert_eq(_money_reasons(economy), ["game_start", "salary", "trade"] as Array[String], "Todo o dinheiro novo veio de `mint` `game_start` e as únicas movimentações são a compra (`trade`) e, desde a LW-097, o salário dos 14 locais de produção dos dados reais (`salary`, LW-095): nenhum outro caminho mexe em saldo.")
 	assert_true(_food_destroyed(economy) > before, "Comida foi consumida do inventário dos NPCs.")
 	assert_true(economy.peek_conservation().ok and economy.peek_goods_conservation().ok)
 	assert_eq(economy.validate(), [] as Array[String])

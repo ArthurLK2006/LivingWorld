@@ -848,6 +848,6 @@ func test_the_real_world_has_the_kinds_loaded_and_notables_remember_through_a_da
 		assert_eq(query.records.size(), 1, "O NPC %d guardou o episódio por um dia." % ids[index])
 		assert_eq(query.records[0].actors[0], ids[index + 10])
 	assert_gte(game.modules.npc.debug_summary()["memory_records"], 5, "Os 5 episódios gravados aqui, mais os das conversas da noite entre notáveis (LW-080).")
-	assert_eq(game.modules.npc.peek_counts()[NpcModule.COUNT_ALIVE], 100)
+	assert_eq(game.modules.npc.peek_counts()[NpcModule.COUNT_ALIVE], 132)
 	assert_eq(game.runner.world.validate().size(), 0, str(game.runner.world.validate()))
 	game.runner.finish()

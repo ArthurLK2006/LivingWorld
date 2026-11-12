@@ -8,7 +8,15 @@ extends GutTest
 ## esperados saíram do commit 5a7d453, ANTES da divisão, e cinco deles seguem os mesmos até hoje (intents, alarm, resumed, switches e real_game). Os outros
 ## quatro (talk, save, demote e starved) foram trocados na LW-073b (commit 5346091), por decisão de Arthur em 10/11/2026: o NPC LATE, de corpo mais atrasado que o
 ## tempo limite do Intent, passou a ser recuperado pelo detector de impasse (`result_timeout`), e isso muda o mundo dali em diante. Se um mudar de propósito, o valor
-## novo é decisão de Arthur, nunca um ajuste para o teste passar.
+## novo é decisão de Arthur, nunca um ajuste para o teste passar. Na LW-097a (marco 3, DEC-175) os nove valores foram trocados por decisão de Arthur em 11/11/2026: o
+## terceiro povoado ganhou a regra do FoodStub (`food_test_settlement_c`, TEMP-LW-065), e o estoque de comida de cada povoado entra no save do `npc`, então todo hash mudou.
+## Na LW-097c (marco 3) os nove valores mudaram de novo: o `world` virou módulo registrado e ganhou o bloco dele no save (`world`, vazio com todas as rotas abertas); o valor novo
+## é só o registro do marco 3, que Arthur já aprovou na LW-097a (DEC-175).
+## Na LW-097d (marco 3) os nove valores mudaram de novo, pela população real aprovada por Arthur em 11/11/2026: 132 NPCs (A 60, B 44 com os 4 pastores, C 28 [HIP]), um local
+## de trabalho por linha (`work_place_id`, DEC-167), os ofícios `miner` e `shepherd`, a nona casa do B e o estoque de comida do C no FoodStub (3.000, TEMP-LW-065).
+## Na Fase B da LW-097 (junção com o `main`, marco 3) os nove valores mudaram de novo, por autorização antecipada de Arthur (Bloco C v10, 11/11/2026): o `main` já trazia os valores da frente A (LW-093 a LW-096a; `intents` 8670b52b8ff6, `alarm` b62628f049b0, `resumed` 1251aaf06e2d, `switches` 6889619788b5,
+## `talk` a8a97e95f464, `save` 781066cec584, `demote` ed884fc6fb21, `starved` f11a33ea9ab0 e `real_game` 76a65b9cfc8a), e a linha da LW-097 trazia os da população real (os da LW-097d, que seguem no histórico do git); os valores da junção são a soma das duas causas, com o estoque de comida do C trocado de 3.000 para 6.000 (autorizado por Arthur em 12/11/2026: com 3.000 os 28 NPCs do C morriam de fome entre os dias 19 e 21 do jogo real de 30 dias). Prova:
+## com as causas da C neutralizadas na árvore da junção (FoodStub do C, população, ofícios, agendas, locais, povoados e o módulo `world`), os nove voltam exatamente aos da A.
 
 const WORLD_SEED: int = 11
 const ACTOR_ID: int = 77
@@ -46,15 +54,15 @@ const T_STARVED: int = 4 * DAY + 9 * HOUR
 ## acrescentou ao save do mundo o bloco vazio `economy`, e só isso mudou os nove valores (sem o bloco, voltam todos aos anteriores, que eram os de 5a7d453 para `intents`,
 ## `alarm`, `resumed` e `switches`, e os da LW-073b e da LW-085 para os demais; ver o cabeçalho).
 const EXPECTED: Dictionary[String, String] = {
-	"intents": "8670b52b8ff6c42908d2950e80e9bc39482688a5e28f2c1637587130c21639bb",
-	"alarm": "b62628f049b04c9995a45a7d9d485600329ff29f3e2234521f58a178443c619d",
-	"resumed": "1251aaf06e2d84f668d31f23341955576c44da09b58a24a3261156292bbe0add",
-	"switches": "6889619788b597514f3ede58d1466f61a7feac3ee0fefb402fbe1f4e1ba6c923",
-	"talk": "a8a97e95f464f9091d6ca4903b76c6e9971d337dea483674df260ba9b31239cd",
-	"save": "781066cec58488fc2460b3008c11b6b623b8b7af1b0d60a25299821e72e98772",
-	"demote": "ed884fc6fb2131fd56f6767ba6781c43a5a1868e91aca2bc8e9ced9d7d4c2056",
-	"starved": "f11a33ea9ab0634b151030e46d48944c267c4912310b36b3b2270ec20ea743bb",
-	"real_game": "76a65b9cfc8ac1552ebc85a196ba393a6a102986a79b7b1f68e5a6a84a49db74",
+	"intents": "28802dfa9d06e0320247f9c3bae14bba887a78bccfacb0803a5ca8d18dd936d6",
+	"alarm": "916683019e46cf83bad1c75127c5370d7bb1403a8107a0def7956617f3832bd7",
+	"resumed": "a2b476e37a0c5462173369c3ee89c93170b2e18d1fdc3a3815e53e14607e62ff",
+	"switches": "b4c379eaad55b668e299a969761aad1191213f95292d3b2c6a0447ed95890dcd",
+	"talk": "a96d78a9a82fde4b81225e97d0c0778ed6c1525b03af5c3909789302986e2e8f",
+	"save": "5c885dbc09eea1495b195c8d03e737d0317003015ec3d02e6ed4019b3af558c9",
+	"demote": "c5b515175b726d328fbe5b481c0474f08cfdbe8e0d6c251cc4b46c342c569895",
+	"starved": "d2533a12fd058d0eb1a41ce42b001782b8f9285f41bc7d68dac2fb6bc01502a6",
+	"real_game": "48857919c5ffce261b0bcfff4e933785adcd5085b6d63cb2f0802e0f81e5e1b4",
 }
 
 var _data: NpcLifeCheck.GameData
@@ -295,7 +303,7 @@ func test_the_five_responsibilities_of_the_module_behave_exactly_as_before_the_s
 func test_the_real_game_with_one_hundred_npcs_behaves_exactly_as_before_the_split() -> void:
 	var rig: Rig = _rig({}, true)
 	var ids: Array[int] = rig.npc.peek_npc_ids()
-	assert_eq(ids.size(), NpcLifeCheck.EXPECTED_POPULATION, "O jogo real nasce com os 100 NPCs.")
+	assert_eq(ids.size(), NpcLifeCheck.EXPECTED_POPULATION, "O jogo real nasce com os 132 NPCs.")
 	for index: int in REAL_GAME_NOTABLES:
 		assert_true(rig.npc.request_promote(ids[index], NpcState.TIER_NOTABLE).ok)
 	rig.watched.assign(ids.slice(0, REAL_GAME_NOTABLES))

@@ -4,7 +4,7 @@ extends GutTest
 ## falha apontando arquivo, item e campo, com tabelas em memória (nada é gravado em disco).
 
 const DATA_DIR: String = "res://data"
-const OCCUPATION_IDS: Array[String] = ["farmer", "lumberjack", "artisan", "guard", "innkeeper"]
+const OCCUPATION_IDS: Array[String] = ["farmer", "lumberjack", "artisan", "guard", "innkeeper", "miner", "shepherd"]
 const OCCUPATIONS_FILE: String = "occupations.json"
 const BLOCKS_FILE: String = "routine_blocks.json"
 const ISSUE_CODE: String = "ROUTINE_DATA_INVALID"
@@ -141,7 +141,7 @@ func test_the_table_keeps_the_occupation_order_and_the_work_place_kind() -> void
 
 # ---------------------------------------------------------------------------------------------------- arquivos reais
 
-func test_the_real_files_load_five_occupations_that_cover_the_24_hours_with_known_actions() -> void:
+func test_the_real_files_load_seven_occupations_that_cover_the_24_hours_with_known_actions() -> void:
 	var loaded: RoutineLoader.LoadResult = RoutineLoader.load_dir()
 	assert_true(loaded.result.ok, loaded.result.message)
 	var catalog: ActionCatalogLoader.LoadResult = ActionCatalogLoader.load_dir()

@@ -438,7 +438,7 @@ func test_the_game_registers_the_npc_module_after_the_character() -> void:
 	assert_not_null(original_modules.npc)
 	original.start_new_game()
 	var module_names: Array = original.world.debug_summary()["modules"].keys()
-	assert_eq(module_names, [GameModules.CHARACTER_NAME, GameModules.ECONOMY_NAME, GameModules.NPC_NAME], "O npc é registrado depois do character e da economy (LW-088a).")
+	assert_eq(module_names, [GameModules.CHARACTER_NAME, GameModules.WORLD_NAME, GameModules.ECONOMY_NAME, GameModules.NPC_NAME], "O npc é registrado depois do character, do world (LW-097c) e da economy (LW-088a).")
 	var hash_empty: String = original.world.state_hash()
 	var created: NpcModule.CreateResult = original_modules.npc.request_create_npc(_full_spec())
 	assert_true(created.result.ok, created.result.message)

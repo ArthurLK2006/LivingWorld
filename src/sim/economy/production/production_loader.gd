@@ -1,7 +1,7 @@
 class_name ProductionLoader
 extends RefCounted
 ## Lê e valida as seis tabelas da produção pelo módulo `data` (LW-092; docs/economy/dados.md), LENDO JUNTO os bens (para as referências `good_id`): `recipes`, `recipe_inputs`, `recipe_outputs`, `site_upkeep`, `site_params` (uma linha) e
-## `production_sites` (pode estar vazia: os dados dos povoados são da LW-097). O que o esquema não vê é conferido aqui: par (receita, bem) único em cada tabela; toda receita com ao menos uma saída e nenhum bem como insumo e saída
+## `production_sites` (pode estar vazia; os dados reais têm 14 linhas, da LW-097). O que o esquema não vê é conferido aqui: par (receita, bem) único em cada tabela; toda receita com ao menos uma saída e nenhum bem como insumo e saída
 ## da mesma receita; todo bem produzido por EXATAMENTE uma receita; a REGRA DE MARGEM (o valor dos produtos é maior que o dos insumos mais o salário do lote, senão o local não paga a folha com a venda); manutenção só de `tool`, `plank`
 ## ou `fabric`; `min_efficiency_bp` de 1 a 10000; um local de produção por `place_id`. Falha com `ECON_DATA_INVALID`, arquivo, item e campo. Nunca carrega recurso nem executa nada do arquivo.
 

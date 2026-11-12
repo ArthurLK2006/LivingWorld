@@ -7,6 +7,7 @@ const SEED: int = 41
 const MINUTES_PER_DAY: int = 1440
 const MARKET_A: int = 1
 const MARKET_B: int = 2
+const MARKET_C: int = 3
 const SITE: int = 1000
 
 
@@ -56,10 +57,11 @@ func test_a_new_game_opens_one_funded_market_per_settlement_with_the_initial_sto
 	assert_true(market.result.ok, market.result.message)
 	assert_eq([market.market_id, market.settlement_id, market.rows.size()], [MARKET_A, "test_settlement_a", 10], "Os IDs vêm do `core`, por assentamento em ordem alfabética.")
 	assert_eq(module.peek_market_of("test_settlement_b").market_id, MARKET_B)
-	assert_eq([module.peek_balance(MARKET_A).balance, module.peek_balance(MARKET_B).balance], [3000, 3000], "O saldo inicial do tipo `market`.")
+	assert_eq(module.peek_market_of("test_settlement_c").market_id, MARKET_C, "O terceiro povoado (LW-097) tem o seu mercado, com os 10 bens.")
+	assert_eq([module.peek_balance(MARKET_A).balance, module.peek_balance(MARKET_B).balance, module.peek_balance(MARKET_C).balance], [3000, 3000, 3000], "O saldo inicial do tipo `market`.")
 	var conservation: EconomyReplies.ConservationQuery = module.peek_conservation()
-	assert_eq([conservation.sum, conservation.created, conservation.ok], [6000, 6000, true], "Dinheiro criado só por `game_start`.")
-	assert_eq(module.peek_ledger_totals().rows, [{"reason": "game_start", "moved": 0, "created": 6000, "destroyed": 0}] as Array[Dictionary])
+	assert_eq([conservation.sum, conservation.created, conservation.ok], [11800, 11800, true], "Dinheiro criado só por `game_start`: 3 mercados de 3000 e os 14 locais de produção dos dados, de 200.")
+	assert_eq(module.peek_ledger_totals().rows, [{"reason": "game_start", "moved": 0, "created": 11800, "destroyed": 0}] as Array[Dictionary])
 	var bread: Dictionary = _row(market.rows, "bread")
 	assert_eq([bread["stock"], bread["target_stock"], bread["price"], bread["ask"], bread["bid"], bread["in_shortage"]], [60, 60, 10, 11, 9, false], "Estoque igual ao alvo: preço igual ao valor-base; spread de 10%.")
 	assert_eq([module.peek_stock(MARKET_A, "tool").value, module.peek_stock(MARKET_B, "plank").value, module.peek_price(MARKET_A, "tool").value], [29, 21, PriceMath.goal_price(26, 29, 29, MarketLoader.load_dir(EconomySetup.DEFAULT_DIR).params)])
@@ -108,7 +110,7 @@ func test_set_stock_is_a_development_command_that_keeps_the_conservation_of_good
 	assert_eq(module.peek_stock(MARKET_A, "bread").value, 80)
 	assert_true(module.request_set_stock(MARKET_A, "bread", 80).ok, "Pôr o mesmo estoque não muda nada.")
 	var conservation: Array[Dictionary] = module.peek_goods_conservation().rows
-	assert_eq([_row(conservation, "bread")["created"], _row(conservation, "bread")["destroyed"], _row(conservation, "bread")["ok"]], [60 + 40 + 60, 40, true], "O pão criado é o dos dois mercados (60 e 40) mais os 60 de `produced`; destruído, os 40 de `consumed`; e a conservação fecha.")
+	assert_eq([_row(conservation, "bread")["created"], _row(conservation, "bread")["destroyed"], _row(conservation, "bread")["ok"]], [60 + 40 + 200 + 60, 40, true], "O pão criado é o dos três mercados (60, 40 e 200) mais os 60 de `produced`; destruído, os 40 de `consumed`; e a conservação fecha.")
 	assert_eq(module.request_set_stock(99, "bread", 1).code, EconomyCodes.UNKNOWN_MARKET)
 	assert_eq(module.request_set_stock(MARKET_A, "gold", 1).code, EconomyCodes.UNKNOWN_GOOD)
 	assert_eq(module.request_set_stock(MARKET_A, "bread", -1).code, EconomyCodes.BAD_QUANTITY)

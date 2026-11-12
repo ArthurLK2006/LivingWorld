@@ -8,7 +8,8 @@ const DATA_DIR: String = "res://data"
 const MAIN_SCENE: String = "res://scenes/main.tscn"
 const WORLD_SEED: int = 5
 const A_M: Vector3 = Vector3(320.0, 10.0, 540.0)
-const FAR_M: Vector3 = Vector3(600.0, 10.0, 900.0)
+## Longe dos três povoados (o C, da LW-097d, fica em 560 m, 860 m; o raio de saída do S0 é de 120 m).
+const FAR_M: Vector3 = Vector3(700.0, 10.0, 960.0)
 const MAX_S0: int = 50
 const PREWARM: int = 60
 const STEPS: int = 5

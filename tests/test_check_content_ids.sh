@@ -35,7 +35,7 @@ expect_invalid() {
 fresh
 expect_valid 'dados e constantes reais'
 sites "$(site test_settlement_a a_work_01 4)"
-edit population.json 's/"count": 24}/"count": 24, "work_place_id": "a_work_01"}/'
+edit population.json 's/"work_place_id": "a_work_01"/"work_place_id": "a_work_01"/'
 expect_valid 'local de produção e work_place_id certos'
 sites "$(site test_settlement_a a_work_01 12)"
 expect_valid 'equipe desejada igual à capacidade do local'
@@ -58,7 +58,7 @@ $(site test_settlement_a a_work_01 4)"
 expect_invalid 'dois locais de produção no mesmo local' 'um local de produção por local'
 sites "$(site test_settlement_a a_work_01 13)"
 expect_invalid 'workers_wanted acima da capacidade' "campo 'workers_wanted'" 'passa da capacidade (12)'
-edit population.json 's/"count": 24}/"count": 24, "work_place_id": "ghost_place"}/'
+edit population.json 's/"work_place_id": "a_work_01"/"work_place_id": "ghost_place"/'
 expect_invalid 'work_place_id que não existe' 'population.json' "campo 'work_place_id'" 'ghost_place'
 grep -v '"id": "flee"' "$project_dir/data/actions.json" > "$tree/data/actions.json"
 expect_invalid 'id removido de actions.json' 'npc_thinker.gd' 'FLEE_ACTION_ID' '"flee"' 'data/actions.json'

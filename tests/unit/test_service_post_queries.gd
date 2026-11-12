@@ -1,13 +1,13 @@
 extends GutTest
 ## LW-095 (parte c): a consulta dos postos de serviço pela porta da economia (docs/modules/economy.md, seção 6): `peek_post`, `peek_post_at` e `peek_posts_of`, com os MESMOS nomes de `peek_site` (`workplace_id`, `place_id`, `settlement_id`,
 ## `occupation_id`, `wage_per_hour`, `workers_wanted`, `workers_assigned`, `worker_ids`, `running`, `reason`) para a LW-096a pontuar a vaga sem distinguir o local de produção do posto. Economia REAL com as definições de postos montadas à mão: um posto
-## de `guard` em `a_work_05` e um de `innkeeper` em `a_work_04`, ambos no povoado A (IDs 3 e 4, depois dos mercados). A resposta é uma CÓPIA e o ID que não existe falha tratada.
+## de `guard` em `a_work_05` e um de `innkeeper` em `a_work_04`, ambos no povoado A (IDs 4 e 5, depois dos três mercados). A resposta é uma CÓPIA e o ID que não existe falha tratada.
 
 const SEED: int = 67
 const MINUTES_PER_HOUR: int = 60
 const SETTLEMENT_A: String = "test_settlement_a"
-const POST_GUARD: int = 3
-const POST_INN: int = 4
+const POST_GUARD: int = 4
+const POST_INN: int = 5
 const GUARDS: Array[int] = [102, 100, 101]
 
 
@@ -17,6 +17,9 @@ func _definitions(market_money: int) -> EconomyDefinitions:
 	var definitions: EconomyDefinitions = setup.definitions
 	var posts: Array[PostDef] = [PostDef.new("post_a_guard", SETTLEMENT_A, "a_work_05", "guard", 8, 3), PostDef.new("post_a_inn", SETTLEMENT_A, "a_work_04", "innkeeper", 6, 2)]
 	definitions.service_posts = posts
+	## LW-097: os dados reais já têm 14 locais de produção (IDs 4 a 17); este teste é dos postos e conta com a lista vazia, como antes da LW-097.
+	var no_sites: Array[SiteDef] = []
+	definitions.production_sites = no_sites
 	for kind: OwnerKindDef in definitions.kinds:
 		if kind.id == MarketBook.KIND_MARKET:
 			kind.initial_balance = market_money
