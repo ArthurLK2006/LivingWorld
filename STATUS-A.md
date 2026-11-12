@@ -1,4 +1,4 @@
-11/11/2026 21:38 (Brasília) · BLOCO A v10: LW-096 parte b enviada (porta dos contratos; ramo lw-096b-porta-dos-contratos, `check_all` VERDE 158 scripts/1.360 testes). Seguindo com a parte c (conclusão), d (prazo) e e (vagas), depois a LW-096a
+11/11/2026 21:45 (Brasília) · BLOCO A v10: LW-096 parte c enviada (conclusão: turno de trabalho e entrega; ramo lw-096c-conclusao-dos-contratos, `check_all` VERDE 159 scripts/1.366 testes). Seguindo com a parte d (prazo e devolução) e e (vagas), depois a LW-096a
 
 # RELATÓRIO — LW-093 (partes 1 a 7, completa) e parada na LW-094     Status: PARCIAL (PARADA na LW-094: precisa da sua autorização e de uma decisão de design)
 
