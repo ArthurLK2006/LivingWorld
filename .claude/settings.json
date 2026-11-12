@@ -45,11 +45,13 @@
       "Bash(git stash drop:*)",
       "Bash(git stash drop *)",
       "Bash(git stash clear:*)",
+      "Bash(git stash clear *)",
       "Bash(git push --delete:*)",
       "Bash(git push --delete *)",
       "Bash(git worktree remove:*)",
       "Bash(git worktree remove *)",
       "Bash(git worktree prune:*)",
+      "Bash(git worktree prune *)",
       "Bash(gh pr merge:*)",
       "Bash(gh pr merge *)"
     ],
