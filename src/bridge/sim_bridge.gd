@@ -22,6 +22,8 @@ const CODE_NO_INTERACTION: String = "BRIDGE_NO_INTERACTION"
 const CODE_NO_NPC: String = "BRIDGE_NO_NPC"
 ## O desfecho recebido não é um dos quatro de `BridgeReplies.NpcOutcome` (só acontece com conversão forçada de inteiro).
 const CODE_INVALID_OUTCOME: String = "BRIDGE_INVALID_OUTCOME"
+## Há jogo iniciado, mas ele não tem o módulo da economia (começou sem terreno): as chamadas do jogador na economia (LW-105) falham com este código.
+const CODE_NO_ECONOMY: String = "BRIDGE_NO_ECONOMY"
 
 var _host: SimulationHostNode
 var _terrain: TerrainData
@@ -184,6 +186,29 @@ func peek_character(actor_id: int) -> BridgeReplies.CharacterReply:
 	return BridgeReplies.CharacterReply.new(query.result, query.position, query.yaw)
 
 
+## LW-105: abre a conta de dinheiro e o inventário do jogador na economia (o tipo `player` de `owner_kinds.json`: saldo inicial por `mint` `game_start` e capacidade de peso, [HIP]).
+## Idempotente. Só vale para um ator que o `character` conhece (ator desconhecido: o código dele, nada é aberto). A ponte não decide QUANDO: quem guarda o `actor_id` chama.
+func request_open_player_account(actor_id: int) -> Result:
+	var character: CharacterModule = _character()
+	if character == null:
+		return _missing_character("request_open_player_account")
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return _missing_economy("request_open_player_account")
+	return BridgePlayerEconomy.open_account(character, economy, actor_id)
+
+
+## LW-105: o saldo (do `Ledger`), o peso, a capacidade e os bens do jogador, em CÓPIA (`BridgeEconomyReplies.PlayerEconomyReply`). Ator desconhecido ou sem conta aberta: falha tratada.
+func peek_player_economy(actor_id: int) -> BridgeEconomyReplies.PlayerEconomyReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgeEconomyReplies.PlayerEconomyReply.new(_missing_character("peek_player_economy"))
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgeEconomyReplies.PlayerEconomyReply.new(_missing_economy("peek_player_economy"))
+	return BridgePlayerEconomy.view(character, economy, actor_id)
+
+
 ## Intenções de NPC em S0 que a apresentação ainda não cumpriu (LW-070), em CÓPIAS, em ordem crescente de NPC, com o destino em metros e a
 ## altura do terreno. A ponte só repassa: quem decide o que é uma intenção é o `npc`. Sem terreno: BRIDGE_NO_TERRAIN; sem `npc`: BRIDGE_NO_NPC.
 func peek_pending_npc_intents() -> BridgeReplies.NpcIntentsReply:
@@ -295,6 +320,13 @@ func _character() -> CharacterModule:
 	return _host.character
 
 
+## Módulo da economia do jogo atual, ou nulo (sem host, sem jogo ou jogo sem terreno).
+func _economy() -> EconomyModule:
+	if _host == null or _host.runner == null:
+		return null
+	return _host.economy
+
+
 ## Serviço de interação do jogo atual, ou nulo (sem host, sem jogo ou jogo sem terreno).
 func _interaction() -> InteractionService:
 	if _host == null or _host.runner == null:
@@ -312,6 +344,12 @@ func _missing_character(caller: String) -> Result:
 	if _host == null or _host.runner == null:
 		return _missing_game(caller)
 	return Result.failure(CODE_NO_CHARACTER, "SimBridge.%s: o jogo atual não tem o módulo do personagem; esperado um jogo iniciado com terreno (SimulationHost.start_new_game(seed, terreno))." % caller)
+
+
+func _missing_economy(caller: String) -> Result:
+	if _host == null or _host.runner == null:
+		return _missing_game(caller)
+	return Result.failure(CODE_NO_ECONOMY, "SimBridge.%s: o jogo atual não tem o módulo da economia; esperado um jogo iniciado com terreno (SimulationHost.start_new_game(seed, terreno))." % caller)
 
 
 func _missing_npc(caller: String) -> Result:
