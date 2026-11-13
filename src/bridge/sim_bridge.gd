@@ -210,8 +210,8 @@ func peek_player_economy(actor_id: int) -> BridgePlayerEconomyReplies.PlayerEcon
 	return BridgePlayerEconomy.view(character, economy, actor_id)
 
 
-## LW-105: a ordem de compra (`buy`) ou de venda (`sell`) do jogador num mercado (`BridgeEconomyReplies.SIDE_BUY` e `SIDE_SELL`), atômica, pela `economy`. Só para um ator que o `character` conhece. A resposta traz o
-## resultado, a quantidade e o total e SEMPRE a chave do texto (a de compra ou de venda, ou a da recusa pelo código). A ponte não confere se o jogador está perto do mercado (a economia não tem posição; interface, LW-106).
+## LW-105: a ordem de compra (`buy`) ou de venda (`sell`) do jogador num mercado (`BridgePlayerEconomyReplies.SIDE_BUY` e `SIDE_SELL`), atômica, pela `economy`. Só para um ator que o `character` conhece. A resposta traz o
+## resultado, a quantidade e o total e SEMPRE a chave do texto (a de compra ou de venda, ou a da recusa pelo código). A ponte ainda não confere se o jogador está perto do mercado (a economia não tem posição; a regra será do `world` e a ponte só coordena: LW-105d).
 func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> BridgePlayerEconomyReplies.PlayerTradeReply:
 	var character: CharacterModule = _character()
 	if character == null:
