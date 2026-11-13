@@ -8,10 +8,11 @@ const FRAMES_PER_MINUTE: int = 50
 const MINUTES_TO_SIX: int = 360
 const MINUTES_TO_23_59: int = 1439
 const CLOSE_HOURS: float = 0.0001
-## Pior caso das curvas [HIP] para 0,0001 h: elevação 15,7 graus/h x 0,0001 = 0,0016; energia 0,7/h x 0,0001 = 0,00007.
+## Pior caso das curvas [HIP] para 0,0001 h: elevação 15,7 graus/h x 0,0001 = 0,0016; energia 2,3/h x 0,0001 = 0,00023; luz do dia 4,5/h x 0,0001 = 0,00045 (às 06:00 e às 18:00).
+## ART-4 mudou de propósito os dois últimos (eram 0,00007 e 0,00008): o crepúsculo aprovado fecha a luz em 5 graus (de -2 a 3), e não em 14 (de -2 a 12), então a curva é mais íngreme, mas continua sem degrau.
 const MAX_CLOSE_ELEVATION_STEP: float = 0.002
-const MAX_CLOSE_ENERGY_STEP: float = 0.0001
-const MAX_CLOSE_DAYLIGHT_STEP: float = 0.0003
+const MAX_CLOSE_ENERGY_STEP: float = 0.0003
+const MAX_CLOSE_DAYLIGHT_STEP: float = 0.0006
 ## Um quadro (1/50 de minuto) deve mover a luz bem menos que 1/10 da mudança de um minuto inteiro.
 const MAX_FRAME_SHARE_OF_A_MINUTE: float = 0.1
 const FRACTION_TOLERANCE: float = 0.0001

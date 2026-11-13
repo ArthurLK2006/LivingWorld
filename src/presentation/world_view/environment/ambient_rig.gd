@@ -84,7 +84,7 @@ func apply_to(world_environment: WorldEnvironment, sun: DirectionalLight3D) -> b
 	return apply_state_to(world_environment, sun, DayNightCycle.day_state(config) if config != null else null)
 
 
-## Aplica um estado de luz da curva (energia do sol, elevação e cores) pelos caminhos da cena.
+## Aplica um estado de luz da curva (sol, céu, ambiente, névoa e bloom) pelos caminhos da cena.
 func apply_state(state: DayNightCycle.LightState) -> bool:
 	var world_environment: WorldEnvironment = get_node_or_null(environment_path) as WorldEnvironment
 	var sun: DirectionalLight3D = get_node_or_null(sun_path) as DirectionalLight3D
@@ -108,9 +108,9 @@ func apply_state_to(world_environment: WorldEnvironment, sun: DirectionalLight3D
 
 
 func _apply_sun(sun: DirectionalLight3D, state: DayNightCycle.LightState) -> void:
-	sun.light_color = config.sun_color
+	sun.light_color = state.sun_color
 	sun.light_energy = state.sun_energy
-	sun.rotation_degrees = Vector3(-state.elevation_degrees, config.sun_yaw_degrees, 0.0)
+	sun.rotation_degrees = Vector3(-state.elevation_degrees, state.sun_yaw_degrees, 0.0)
 	sun.shadow_enabled = config.shadows_enabled
 	sun.directional_shadow_mode = config.shadow_mode
 	sun.directional_shadow_max_distance = config.shadow_max_distance_m
@@ -141,5 +141,9 @@ func _apply_environment(world_environment: WorldEnvironment, state: DayNightCycl
 	environment.ambient_light_energy = state.ambient_energy
 	environment.fog_enabled = config.fog_enabled
 	environment.fog_light_color = state.fog_color
-	environment.fog_density = config.fog_density
+	environment.fog_density = state.fog_density
 	environment.fog_sky_affect = config.fog_sky_affect
+	environment.glow_enabled = config.glow_enabled
+	environment.glow_intensity = state.glow_intensity
+	environment.glow_hdr_threshold = state.glow_hdr_threshold
+	environment.glow_bloom = state.glow_bloom
