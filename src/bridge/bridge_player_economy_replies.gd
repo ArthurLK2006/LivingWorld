@@ -59,3 +59,18 @@ class PlayerTradeReply:
 			text_key = KEY_BOUGHT if side == BridgePlayerEconomyReplies.SIDE_BUY else KEY_SOLD
 		else:
 			text_key = FAILURE_KEYS.get(reply_result.code, FALLBACK_KEY)
+
+
+## `peek_market_in_reach` (LW-106b; contrato em docs/modules/bridge.md, "Mercado ao alcance"): o mercado ao alcance do ator, na posição GUARDADA no `character`. `market_id` e `settlement_id` (o assentamento dele) só valem se `result.ok`.
+## SEM `place_id` (o `MarketReach` do `world` devolve só um `Result`: a ponte não escolhe local nem mede distância) e SEM `text_key` (é consulta, não ordem: quem mostra o aviso escolhe o texto).
+class MarketInReachReply:
+	extends RefCounted
+
+	var result: Result
+	var market_id: int
+	var settlement_id: String
+
+	func _init(reply_result: Result, id_of_market: int = IdGenerator.NO_ID, id_of_settlement: String = "") -> void:
+		result = reply_result
+		market_id = id_of_market
+		settlement_id = id_of_settlement
