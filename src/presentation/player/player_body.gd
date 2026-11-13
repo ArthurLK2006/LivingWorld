@@ -196,7 +196,8 @@ func _recover_if_below_terrain() -> void:
 
 ## Pede à simulação um personagem para este corpo, abre a conta dele na economia (LW-105e; a ponte garante que abrir de novo não cria
 ## dinheiro) e relata a posição de nascimento. Falha (ponte sem jogo ou sem módulo do personagem): um aviso no log e o corpo segue sem
-## relatar; conta que não abre (ex.: jogo sem os dados da economia): um aviso e o corpo segue relatando; nunca derruba nem trava o corpo.
+## relatar. Conta que a economia recusa abrir (ex.: `owner_kinds.json` sem o tipo `player`; sem definições a conta abre vazia, sem aviso):
+## um aviso e o corpo segue relatando. Nunca derruba nem trava o corpo.
 func _spawn_character() -> void:
 	_actor_id = IdGenerator.NO_ID
 	_frames_since_report = 0

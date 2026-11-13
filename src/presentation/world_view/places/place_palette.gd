@@ -18,7 +18,7 @@ const COLORS: Dictionary[String, Color] = {
 	KIND_MARKET: Color(0.92, 0.92, 0.88),
 }
 ## Largura em x, altura e profundidade em z (metros). A maior caixa (8 m) cabe folgada nos 14 m entre os locais dos povoados de teste.
-## O mercado tem meia largura de 2 m, menor que a das caixas de trabalho e de convívio (3 a 4 m): a 3 m do centro o jogador fica a 1 m da parede.
+## O mercado tem meia largura de 2 m, menor que a das caixas de trabalho e de convívio (3 a 4 m). Se o alcance de comércio for de 3 m [HIP] (LW-105d, ainda sem regra), o jogador comerciará a 1 m da parede.
 const SIZES: Dictionary[String, Vector3] = {
 	KIND_HOME: Vector3(5.0, 3.0, 5.0),
 	KIND_WORK: Vector3(8.0, 4.0, 6.0),
