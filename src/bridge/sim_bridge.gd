@@ -23,7 +23,7 @@ const CODE_NO_INTERACTION: String = "BRIDGE_NO_INTERACTION"
 const CODE_NO_NPC: String = "BRIDGE_NO_NPC"
 ## O desfecho recebido não é um dos quatro de `BridgeReplies.NpcOutcome` (só acontece com conversão forçada de inteiro).
 const CODE_INVALID_OUTCOME: String = "BRIDGE_INVALID_OUTCOME"
-## Há jogo iniciado, mas ele não tem o módulo da economia (começou sem terreno): as consultas `peek_economy_*` (LW-108b) e as chamadas do jogador na economia (LW-105) falham com este código.
+## Há jogo iniciado, mas ele não tem o módulo da economia (começou sem terreno): as consultas `peek_economy_*` (LW-108b), as chamadas do jogador na economia (LW-105) e `peek_market_in_reach` (LW-106b) falham com este código.
 const CODE_NO_ECONOMY: String = "BRIDGE_NO_ECONOMY"
 
 var _host: SimulationHostNode
@@ -220,6 +220,17 @@ func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int
 	if economy == null:
 		return BridgePlayerEconomyReplies.PlayerTradeReply.new(_missing_economy("request_trade"), 0, 0, side)
 	return BridgePlayerEconomy.trade(character, economy, _places, actor_id, market_id, good_id, quantity, side)
+
+
+## LW-106b: o mercado ao alcance do jogador (SÓ LEITURA), pela posição GUARDADA no `character`. A ponte só delega: a regra e o alcance são do `world` (`MarketReach`); nenhum ao alcance: `PLACE_TOO_FAR` do `world`, sem tradução.
+func peek_market_in_reach(actor_id: int) -> BridgePlayerEconomyReplies.MarketInReachReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgePlayerEconomyReplies.MarketInReachReply.new(_missing_character("peek_market_in_reach"))
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgePlayerEconomyReplies.MarketInReachReply.new(_missing_economy("peek_market_in_reach"))
+	return BridgePlayerEconomy.market_in_reach(character, economy, _places, actor_id)
 
 
 ## Intenções de NPC em S0 que a apresentação ainda não cumpriu (LW-070), em CÓPIAS, em ordem crescente de NPC, com o destino em metros e a

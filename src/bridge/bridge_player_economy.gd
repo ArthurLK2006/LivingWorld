@@ -52,3 +52,18 @@ static func trade(character: CharacterModule, economy: EconomyModule, places: Ar
 			return BridgePlayerEconomyReplies.PlayerTradeReply.new(reach, 0, 0, side)
 	var traded: EconomyReplies.TradeResult = economy.request_trade(actor_id, market_id, good_id, quantity, side)
 	return BridgePlayerEconomyReplies.PlayerTradeReply.new(traded.result, traded.quantity, traded.total, side)
+
+
+## O mercado ao alcance do jogador (LW-106b; contrato em docs/modules/bridge.md, "Mercado ao alcance"), SÓ LEITURA: nada muda e nada é publicado. (1) O ator é um personagem do `character` (ID solto ou de NPC: o código do `character`, como no `trade`), e dele
+## vem a posição GUARDADA, nunca a da apresentação. (2) Os mercados são os de `peek_economy_markets` (a mesma lista: `BridgeEconomyInspect.markets`, em ordem crescente de `market_id`); para cada um a ponte faz ao `world` (`MarketReach`, dono da regra e do alcance) a
+## mesma pergunta do `trade` sobre o assentamento dele, e vale o PRIMEIRO que passa: a ponte não tem constante de alcance nem conta de distância. (3) Nenhum ao alcance (inclusive sem mercado algum): `PLACE_TOO_FAR` do `world`, sem tradução e sem chave de texto.
+static func market_in_reach(character: CharacterModule, economy: EconomyModule, places: Array[Place], actor_id: int) -> BridgePlayerEconomyReplies.MarketInReachReply:
+	var known: CharacterQuery = character.peek_character(actor_id)
+	if not known.result.ok:
+		return BridgePlayerEconomyReplies.MarketInReachReply.new(known.result)
+	var listed: BridgeEconomyReplies.EconomyMarketsReply = BridgeEconomyInspect.markets(economy, BridgeEconomyInspect.settlement_ids_of(places))
+	for market: BridgeEconomyReplies.EconomyMarketEntry in listed.markets:
+		if MarketReach.peek_within_reach(places, market.settlement_id, known.position).ok:
+			return BridgePlayerEconomyReplies.MarketInReachReply.new(Result.success(), market.market_id, market.settlement_id)
+	var too_far: String = "BridgePlayerEconomy.market_in_reach: o ator %d, na posição guardada %s, não está ao alcance de nenhum dos %d mercados da economia; esperado estar ao alcance de um deles (regra do `world`: MarketReach)." % [actor_id, str(known.position), listed.markets.size()]
+	return BridgePlayerEconomyReplies.MarketInReachReply.new(Result.failure(MarketReach.CODE_PLACE_TOO_FAR, too_far))
