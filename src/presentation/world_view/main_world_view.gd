@@ -2,7 +2,7 @@ extends Node3D
 ## Script da cena principal: entrega a ponte à TerrainView e à DecorationView, faz o PlayerBody nascer, liga a câmera de terceira
 ## pessoa ao jogador (e o jogador à câmera, que é a referência de direção dele) e informa o foco do terreno: a posição do
 ## PlayerBody; se ele não nascer, a da câmera, que fica onde a cena a pôs (D1 de Arthur: direto, sem passar pela ponte). Carrega os
-## textos de jogo (UiText) e os entrega ao HUD (LW-051) e à InteractionView (LW-050). Cria em código os corpos dos NPCs em S0 (LW-072f). Sem regra de jogo.
+## textos de jogo (UiText) e os entrega ao HUD (LW-051) e à InteractionView (LW-050). Cria em código os corpos dos NPCs em S0 (LW-072f) e a tela de mercado (LW-106e). Sem regra de jogo.
 
 ## Árvores e pedras de blockout (LW-043): dados em data/world, só visuais.
 const DECORATIONS_PATH: String = "res://data/world/decorations.json"
@@ -11,6 +11,7 @@ const GAME_NAME_SETTING: String = "application/config/name"
 const PLACE_VIEW_NAME: String = "PlaceBoxesView"
 const BODIES_VIEW_NAME: String = "NpcBodiesView"
 const BODY_DRIVER_NAME: String = "NpcBodyDriver"
+const MARKET_VIEW_NAME: String = "MarketView"
 
 @onready var _terrain_view: TerrainView = $TerrainView
 @onready var _decoration_view: DecorationView = $DecorationView
@@ -27,6 +28,8 @@ var _texts: UiText
 ## Os corpos dos NPCs em S0 (LW-072f) e o motorista que os leva até os Intents, criados em código como as caixas dos locais.
 var _bodies_view: NpcBodiesView
 var _body_driver: NpcBodyDriver
+## A tela de mercado (LW-106e), criada em código como as outras views: só existe se o jogador nasceu; a tecla `interact` a abre pela `InteractionView`.
+var _market_view: MarketView
 ## O painel de depuração de NPC (LW-082g): só existe em build de desenvolvimento (nulo fora dele).
 var _npc_inspector: NpcInspectorPanel
 ## O painel de depuração da economia (LW-108d): só existe em build de desenvolvimento (nulo fora dele).
@@ -61,6 +64,7 @@ func _ready() -> void:
 	if _player.setup(bridge, _terrain_view, _camera):
 		_camera.setup(bridge, _player)
 		_interaction_view.setup(bridge, _player, _terrain_view, _texts, _prompt_label, _result_label)
+		_setup_market_view(bridge)
 	_setup_npc_bodies(bridge)
 	_interaction_view.set_npc_bodies(_bodies_view)
 	_terrain_view.set_focus(_focus_position())
@@ -69,6 +73,26 @@ func _ready() -> void:
 	_npc_inspector = NpcInspectorMount.mount(self, bridge, _texts, OS.is_debug_build())
 	# Depois do painel de NPC, de propósito: a entrada não tratada chega primeiro ao último nó da árvore, e assim o Shift+Tab é do painel da economia (LW-108d).
 	_economy_inspector = EconomyInspectorMount.mount(self, bridge, _texts, OS.is_debug_build())
+
+
+## A tela de mercado (LW-106e): o jogador e a câmera ficam parados enquanto ela está aberta e a `InteractionView` fica bloqueada (sem aviso e sem a tecla), então só a tela lê o `interact`.
+## `setup` que falha: a tela é descartada e a cena segue sem ela.
+func _setup_market_view(bridge: SimBridge) -> void:
+	_market_view = MarketView.new()
+	_market_view.name = MARKET_VIEW_NAME
+	add_child(_market_view)
+	var frozen: Array[Node] = [_player, _camera]
+	if not _market_view.setup(bridge, _texts, _player.get_actor_id(), frozen):
+		_market_view.queue_free()
+		_market_view = null
+		return
+	_interaction_view.market_requested.connect(_open_market)
+	_market_view.closed.connect(_interaction_view.set_blocked.bind(false))
+
+
+func _open_market(market_id: int) -> void:
+	_interaction_view.set_blocked(true)
+	_market_view.open(market_id)
 
 
 ## Os corpos dos NPCs (LW-072f). A `NpcBodiesView` liga o interruptor de corpos da simulação ao ser ligada à ponte e o motorista é ligado logo em seguida, neste

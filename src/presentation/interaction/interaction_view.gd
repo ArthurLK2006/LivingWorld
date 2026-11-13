@@ -6,10 +6,12 @@ extends Node3D
 ## alguns segundos. A detecção do ponto próximo é só DICA VISUAL (distância horizontal, a mesma regra do mundo): quem decide é a
 ## simulação, que confere a distância pela posição guardada no personagem. Todo texto vem de data/text/pt_br.json (UiText); o código
 ## só conhece chaves. Sem regra de jogo. LW-083e: a mesma tecla também conversa com o NPC a até 3 m (`InteractionTarget` escolhe; o mais perto vence e o NPC ganha o
-## empate); o texto é o da chave da resposta da ponte. Contrato: docs/modules/presentation.md.
+## empate); o texto é o da chave da resposta da ponte. LW-106e: o mercado é o TERCEIRO alvo da tecla, SÓ sem ponto nem NPC ao alcance e se a ponte (`peek_market_in_reach`) diz que há um
+## ao alcance: aviso `ui.market.prompt` e o sinal `market_requested`; a regra e a distância são do `world`. Contrato: docs/modules/presentation.md.
 
-## Valores [HIP]: quanto tempo o texto do resultado fica na tela (s) e o desenho do marcador (m).
+## Valores [HIP]: quanto tempo o texto do resultado fica na tela (s), de quanto em quanto tempo se pergunta pelo mercado ao alcance (s; só para o aviso) e o desenho do marcador (m).
 const RESULT_TEXT_SECONDS: float = 5.0
+const MARKET_QUERY_INTERVAL_S: float = 0.25
 const MARKER_RADIUS_M: float = 0.4
 const MARKER_HEIGHT_M: float = 2.5
 ## Cor provisória do marcador [HIP]: ciano vivo, para não se confundir com o terreno nem com a cápsula laranja.
@@ -18,6 +20,7 @@ const MARKER_NAME_PREFIX: String = "Marker_"
 const HALF: float = 0.5
 ## Chaves de texto usadas aqui (as frases moram em data/text/pt_br.json).
 const KEY_PROMPT: String = "ui.interact_prompt"
+const KEY_MARKET_PROMPT: String = "ui.market.prompt"
 const KEY_TOO_FAR: String = "ui.interact_too_far"
 const KEY_UNKNOWN: String = "ui.interact_unknown"
 const KEY_FAILED: String = "ui.interact_failed"
@@ -25,6 +28,9 @@ const KEY_FAILED: String = "ui.interact_failed"
 ## (regra B do check_architecture); tests/unit/test_interaction_view.gd confere que continuam iguais.
 const CODE_TOO_FAR: String = "INTERACTION_TOO_FAR"
 const CODE_UNKNOWN_POI: String = "INTERACTION_UNKNOWN_POI"
+
+## Pede abrir a tela do mercado `market_id` (LW-106e): sai quando a tecla é apertada sem ponto nem NPC ao alcance e com um mercado ao alcance; a cena principal o liga à `MarketView`.
+signal market_requested(market_id: int)
 
 var _bridge: SimBridge
 var _player: PlayerBody
@@ -39,6 +45,10 @@ var _nearest_id: String = ""
 var _bodies: NpcBodiesView
 var _target: InteractionTarget = InteractionTarget.new()
 var _result_left_s: float = 0.0
+## LW-106e: bloqueada pela cena enquanto a tela de mercado está aberta; o último mercado ao alcance que a ponte disse (só para o aviso) e quanto falta para perguntar de novo.
+var _is_blocked: bool = false
+var _market_id: int = IdGenerator.NO_ID
+var _market_wait_s: float = 0.0
 
 
 func _ready() -> void:
@@ -76,6 +86,14 @@ func set_npc_bodies(bodies: NpcBodiesView) -> void:
 	_bodies = bodies
 
 
+## Bloqueia ou libera a view (LW-106e); a cena a bloqueia enquanto a tela de mercado está aberta. Bloqueada, o aviso some (o do ponto e o do mercado), o mercado não é consultado e `interact()` não faz
+## nada; liberada, volta ao normal no próximo `refresh`.
+func set_blocked(blocked: bool) -> void:
+	_is_blocked = blocked
+	if blocked and _prompt_label != null:
+		_prompt_label.visible = false
+
+
 ## Quantos marcadores existem (um por ponto, criados uma vez em `setup`).
 func marker_count() -> int:
 	return _markers.size()
@@ -102,16 +120,18 @@ func refresh() -> void:
 		return
 	_target = _choose_target()
 	_nearest_id = _target.point_id
-	_prompt_label.visible = _target.kind != InteractionTarget.Kind.NONE
+	var prompt_key: String = _prompt_key()
+	_prompt_label.visible = not prompt_key.is_empty()
 	if _prompt_label.visible:
-		_prompt_label.text = _texts.get_text(KEY_PROMPT, {"key": _interact_key_label()})
+		_prompt_label.text = _texts.get_text(prompt_key, {"key": _interact_key_label()})
 	for point_id: String in _markers:
 		var marker: MeshInstance3D = _markers[point_id]
 		marker.visible = _terrain.has_collision_at(marker.global_position)
 
 
-## Passa o tempo do texto do resultado: depois de RESULT_TEXT_SECONDS ele some.
+## Passa o tempo do texto do resultado (depois de RESULT_TEXT_SECONDS ele some) e o da próxima pergunta pelo mercado ao alcance (MARKET_QUERY_INTERVAL_S).
 func tick(delta_seconds: float) -> void:
+	_market_wait_s = maxf(_market_wait_s - delta_seconds, 0.0)
 	if _result_left_s <= 0.0:
 		return
 	_result_left_s -= delta_seconds
@@ -121,12 +141,18 @@ func tick(delta_seconds: float) -> void:
 
 ## Pede a interação ao ponto ao alcance (ou, se nenhum está ao alcance, ao mais próximo de todos: a simulação recusa e a tela mostra
 ## o texto de "chegue mais perto"). Sucesso: o texto do ponto; falha: o texto da chave de erro do código. Devolve se a interação valeu.
-## Com o relógio da simulação pausado nada é enviado nem mostrado (LW-051, decisão D1 de Arthur: a pausa congela o personagem).
+## Com o relógio da simulação pausado nada é enviado nem mostrado (LW-051, decisão D1 de Arthur: a pausa congela o personagem). LW-106e: bloqueada, não faz nada; e SÓ sem ponto nem NPC ao alcance
+## ela pergunta de novo, na hora (sem usar o último resultado), pelo mercado ao alcance: havendo um, emite `market_requested` e devolve verdadeiro; senão segue como acima.
 func interact() -> bool:
-	if _bridge == null or _is_game_paused():
+	if _bridge == null or _is_blocked or _is_game_paused():
 		return false
 	if _target.kind == InteractionTarget.Kind.NPC:
 		return _talk_to(_target.npc_id)
+	if _target.kind == InteractionTarget.Kind.NONE:
+		var market_id: int = _market_in_reach()
+		if market_id != IdGenerator.NO_ID:
+			market_requested.emit(market_id)
+			return true
 	var target_id: String = _nearest_id if not _nearest_id.is_empty() else _nearest_point_overall()
 	if target_id.is_empty():
 		_show_result(_texts.get_text(KEY_FAILED))
@@ -150,6 +176,25 @@ func _talk_to(npc_id: int) -> bool:
 func _is_game_paused() -> bool:
 	var time: BridgeReplies.TimeSnapshot = _bridge.peek_time()
 	return time.result.ok and time.is_paused
+
+
+## A chave do aviso agora, ou "" se não há aviso (LW-106e): bloqueada, nenhum; com ponto ou NPC ao alcance, o de sempre; SÓ sem eles, o do mercado, se a ponte disse que há um ao alcance
+## (a pergunta se repete no máximo a cada MARKET_QUERY_INTERVAL_S; entre elas vale o último resultado).
+func _prompt_key() -> String:
+	if _is_blocked:
+		return ""
+	if _target.kind != InteractionTarget.Kind.NONE:
+		return KEY_PROMPT
+	if _market_wait_s <= 0.0:
+		_market_wait_s = MARKET_QUERY_INTERVAL_S
+		_market_id = _market_in_reach()
+	return KEY_MARKET_PROMPT if _market_id != IdGenerator.NO_ID else ""
+
+
+## O mercado ao alcance do jogador segundo a ponte (a regra e a distância são do `world`; a posição é a guardada na simulação), ou IdGenerator.NO_ID se nenhum.
+func _market_in_reach() -> int:
+	var reply: BridgePlayerEconomyReplies.MarketInReachReply = _bridge.peek_market_in_reach(_player.get_actor_id())
+	return reply.market_id if reply.result.ok else IdGenerator.NO_ID
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -233,4 +278,6 @@ func _clear() -> void:
 	_nearest_id = ""
 	_target = InteractionTarget.new()
 	_result_left_s = 0.0
+	_market_id = IdGenerator.NO_ID
+	_market_wait_s = 0.0
 	_bridge = null

@@ -21,6 +21,7 @@
 	"ui.hud_pause_hint": "[{key}] pausar ou continuar",
 	"ui.hud_pace_paused": "PAUSADO",
 	"ui.hud_pace_speed": "{speed}x",
+	"ui.market.prompt": "[{key}] Abrir o mercado",
 	"ui.market.title": "Mercado",
 	"ui.market.funds": "Dinheiro: {funds}",
 	"ui.market.weight": "Peso: {weight} de {capacity}",
