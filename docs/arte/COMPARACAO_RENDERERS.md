@@ -9,6 +9,11 @@ As três referências (DEC-280) dependem de efeitos que, pelo que se sabe, são 
 `tools/visual/run_renderer_test [pasta-de-saída]`: roda a cena `scenes/demo/renderer_test.tscn` duas vezes, com `--rendering-method gl_compatibility` e depois `--rendering-method forward_plus`, em modo automático (3 predefinições de luz x 3 câmeras), e grava PNGs e `resumo.txt` por renderer. Não altera o `project.godot`.
 Teclas na cena interativa: `1`, `2`, `3` luz (dia, hora dourada, crepúsculo); `Q`, `W`, `E` câmera (próxima, isométrica, estratégica); `B` bloom, `O` oclusão ambiente, `F` névoa, `D` profundidade de campo.
 
+## Onde está o código
+- Cena: `scenes/demo/renderer_test.tscn`; código: `tools/visual/renderer_test/` (5 scripts); executor: `tools/visual/run_renderer_test`; teste sem janela: `tests/unit/test_renderer_test_scene.gd`. Fica FORA de `src/`: não lê a simulação nem a ponte, não é montada pelo jogo, não tem autoload e não altera o `project.godot` (o teste da LW-082h exige que `src/tools` só leia pela ponte, e o `tools/check_input_keys` proíbe teclas fixas em `src/`).
+- Teclas (1, 2, 3 luz; Q, W, E câmera; B, O, F, D efeitos): guardadas como `InputEventKey` na própria cena, porque o `project.godot` é protegido (não há ações novas para elas). A cena mede 63.948 triângulos, 10 materiais, 4 `MultiMeshInstance3D` e 7 luzes pontuais.
+- Tamanho: 842 linhas de código e 172 de teste, acima do teto de tarefa do AGENTS 5.2 (~300): ferramenta isolada de demonstração, só com arquivos novos (sinalizado no PR).
+
 ## Achados sem janela (13/11/2026, Godot 4.7.2, headless)
 - Em headless, `get_current_rendering_method()` devolve `gl_compatibility`. A cena mede 63.948 triângulos, 80 nós, 66 malhas, 4 `MultiMeshInstance3D` (6.000 tufos de grama e 720 flores), 10 materiais e 7 luzes pontuais.
 - Ao ligar no Compatibility, a engine IMPRIME ERRO para a névoa volumétrica ("só Forward+") e para a profundidade de campo ("só Forward+ ou Mobile"): confirmado por experimento. Para a oclusão ambiente e o bloom o setter não imprime nada, e isso NÃO prova que funcionem: só a janela mostra. A tabela de suporte da cena (`RendererPresets.SUPPORTED`) é hipótese [HIP] até a execução com janela; `--force-effects` liga tudo para conferir.

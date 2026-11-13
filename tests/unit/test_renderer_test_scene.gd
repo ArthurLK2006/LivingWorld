@@ -3,7 +3,7 @@ extends GutTest
 ## ARTE-F0: a cena de teste de renderizadores monta SEM renderizar (o modo sem janela usa renderer de mentira): contagens, orçamento de triângulos e de materiais, determinismo, predefinições, teclas,
 ## faces facetadas e viradas para fora, e ausência de sorteio da engine. O que só a janela mostra (cor, sombra, bloom, desempenho) não é testado aqui.
 const SCENE_PATH: String = "res://scenes/demo/renderer_test.tscn"
-const SOURCE_DIR: String = "res://src/tools/renderer_test"
+const SOURCE_DIR: String = "res://tools/visual/renderer_test"
 const FORBIDDEN_RANDOM: String = "\\b(randf|randi|randomize|randf_range|randi_range|randfn|rand_from_seed)\\s*\\(|RandomNumberGenerator|\\.(shuffle|pick_random)\\s*\\("
 const TOLERANCE: float = 0.001
 const BOUND_ACTIONS: int = 10

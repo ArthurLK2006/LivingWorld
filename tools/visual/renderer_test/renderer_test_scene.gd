@@ -1,7 +1,7 @@
 class_name RendererTestScene
 extends Node3D
 ## Cena de TESTE dos renderizadores Compatibility (`gl_compatibility`, o do projeto) e Forward+ (`forward_plus`) (ARTE-F0): uma praça de mercado procedural isolada, sem ligação com a simulação, a ponte, o
-## `main.tscn` nem autoload, e sem mexer no `project.godot`. Ferramenta de desenvolvimento (como src/tools/economy_inspector). Rode com `tools/visual/run_renderer_test` (abre janela; automático, dois
+## `main.tscn` nem autoload, e sem mexer no `project.godot`. Ferramenta de desenvolvimento isolada, fora de `src/` (não lê a ponte; o teste da LW-082h exige que `src/tools` só leia pela ponte). Rode com `tools/visual/run_renderer_test` (abre janela; automático, dois
 ## renderers em sequência) ou à mão: `godot --path . --rendering-method forward_plus res://scenes/demo/renderer_test.tscn`.
 ## Teclas (dados da cena, ver `key_bindings`): 1, 2 e 3 trocam a luz (dia, hora dourada, crepúsculo); Q, W e E trocam a câmera (próxima, isométrica, estratégica); B bloom, O oclusão ambiente, F névoa e
 ## D profundidade de campo ligam e desligam o efeito. Argumentos de usuário (depois de `--`): `--auto --out=<pasta>` (modo automático, ver RendererAutoRun) e `--force-effects` (liga todos os efeitos mesmo

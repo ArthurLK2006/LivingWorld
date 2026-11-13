@@ -1,6 +1,6 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://src/tools/renderer_test/renderer_test_scene.gd" id="1_scene"]
+[ext_resource type="Script" path="res://tools/visual/renderer_test/renderer_test_scene.gd" id="1_scene"]
 
 [sub_resource type="InputEventKey" id="key_light_day"]
 physical_keycode = 49
