@@ -22,6 +22,7 @@ status=0
 "$project_dir/tests/test_filter_env_noise.sh" >> "$output_file" 2>&1 || status=1
 "$project_dir/tests/test_compare_sp1_runs.sh" >> "$output_file" 2>&1 || status=1
 "$project_dir/tests/test_main_scene.sh" >> "$output_file" 2>&1 || status=1
+"$project_dir/tests/test_measure_economy.sh" >> "$output_file" 2>&1 || status=1
 "$project_dir/tools/run_tests" "$@" >> "$output_file" 2>&1 || status=1
 cat "$output_file"
 if grep -E 'SCRIPT ERROR|Parse Error' "$output_file" >/dev/null; then
