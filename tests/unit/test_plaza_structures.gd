@@ -7,10 +7,10 @@ const BUILD_ORDER: Array[String] = ["Ground", "Stall0", "Stall4", "Crate0", "Sac
 var _root: Node3D
 
 
-func _build() -> RendererMarketBuilder.Built:
+func _build() -> PlazaBuilder.Built:
 	_root = Node3D.new()
 	add_child_autofree(_root)
-	return RendererMarketBuilder.new().build(_root)
+	return PlazaBuilder.new().build(_root)
 
 
 func _count(pattern: String, type: String) -> int:
@@ -32,8 +32,8 @@ func _fingerprint() -> int:
 
 
 func test_market_has_the_requested_content() -> void:
-	var built: RendererMarketBuilder.Built = _build()
-	var stalls: int = RendererMarketData.STALL_SPOTS.size()
+	var built: PlazaBuilder.Built = _build()
+	var stalls: int = PlazaData.STALL_SPOTS.size()
 	assert_eq(_count("Stall?", "MeshInstance3D"), stalls, "barracas")
 	assert_eq(_count("Crate*", "MeshInstance3D"), 2 * stalls, "caixotes")
 	assert_eq(_count("Barrel*", "MeshInstance3D"), stalls, "barris")
@@ -41,14 +41,14 @@ func test_market_has_the_requested_content() -> void:
 	assert_eq(_count("LampPost?", "MeshInstance3D"), 4, "postes com lampião")
 	assert_eq(_count("Bunting?", "MeshInstance3D"), 4, "fios de bandeirolas")
 	assert_eq(_count("House?", "MeshInstance3D"), 3, "casas")
-	assert_eq(_count("Tree*", "MeshInstance3D"), RendererMarketData.TREE_COUNT, "árvores")
+	assert_eq(_count("Tree*", "MeshInstance3D"), PlazaData.TREE_COUNT, "árvores")
 	assert_eq(_count("Well", "MeshInstance3D"), 1, "poço")
 	assert_eq(built.lamp_lights.size(), 4, "luzes dos lampiões")
-	assert_eq(_count("*", "OmniLight3D"), 4 + RendererMarketData.TORCH_SPOTS.size(), "luzes pequenas (lampiões e tochas)")
+	assert_eq(_count("*", "OmniLight3D"), 4 + PlazaData.TORCH_SPOTS.size(), "luzes pequenas (lampiões e tochas)")
 	var instances: int = 0
 	for node: Node in _root.find_children("*", "MultiMeshInstance3D", true, false):
 		instances += (node as MultiMeshInstance3D).multimesh.instance_count
-	assert_eq(instances, RendererMarketData.GRASS_COUNT + RendererMarketData.FLOWERS_PER_COLOR * RendererMarketData.FLOWER_COLORS.size(), "instâncias de grama e flores")
+	assert_eq(instances, PlazaData.GRASS_COUNT + PlazaData.FLOWERS_PER_COLOR * PlazaData.FLOWER_COLORS.size(), "instâncias de grama e flores")
 
 
 func test_children_follow_the_build_order() -> void:
@@ -62,12 +62,12 @@ func test_children_follow_the_build_order() -> void:
 
 
 func test_built_hands_over_the_lights_and_the_materials_the_scene_drives() -> void:
-	var built: RendererMarketBuilder.Built = _build()
-	assert_eq(built.lamp_lights.size(), RendererMarketData.LAMP_SPOTS.size(), "um lampião por poste")
-	assert_eq(built.torch_lights.size(), RendererMarketData.TORCH_SPOTS.size(), "uma luz por tocha")
+	var built: PlazaBuilder.Built = _build()
+	assert_eq(built.lamp_lights.size(), PlazaData.LAMP_SPOTS.size(), "um lampião por poste")
+	assert_eq(built.torch_lights.size(), PlazaData.TORCH_SPOTS.size(), "uma luz por tocha")
 	for index: int in built.lamp_lights.size():
 		assert_eq(built.lamp_lights[index].get_parent().name, StringName("LampPost%d" % index), "a luz %d fica no poste" % index)
-		assert_almost_eq(built.lamp_lights[index].omni_range, RendererMarketData.LAMP_RANGE_M, TOLERANCE, "alcance do lampião")
+		assert_almost_eq(built.lamp_lights[index].omni_range, PlazaData.LAMP_RANGE_M, TOLERANCE, "alcance do lampião")
 	for index: int in built.torch_lights.size():
 		assert_eq(built.torch_lights[index].get_parent().name, StringName("Torch%d" % index), "a luz %d fica na tocha" % index)
 		assert_false(built.torch_lights[index].shadow_enabled, "luz pequena sem sombra")

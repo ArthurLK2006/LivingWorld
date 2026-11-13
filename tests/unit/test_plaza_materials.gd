@@ -6,7 +6,7 @@ const WIND: Array[StringName] = [&"grass", &"flower0", &"flower1", &"flower2"]
 
 
 func test_materials_are_complete_and_the_wind_ones_share_one_shader() -> void:
-	var materials: Dictionary[StringName, Material] = RendererMarketMaterials.create()
+	var materials: Dictionary[StringName, Material] = PlazaMaterials.create()
 	assert_eq(materials.keys(), [&"solid", &"cloth", &"lantern", &"flame", &"accent_warm", &"accent_cyan", &"grass", &"flower0", &"flower1", &"flower2"], "nomes e ordem de sempre")
 	for key: StringName in EMISSIVE:
 		assert_true((materials[key] as StandardMaterial3D).emission_enabled, "%s emite luz" % key)
