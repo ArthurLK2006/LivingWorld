@@ -1,0 +1,48 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://src/tools/renderer_test/renderer_test_scene.gd" id="1_scene"]
+
+[sub_resource type="InputEventKey" id="key_light_day"]
+physical_keycode = 49
+
+[sub_resource type="InputEventKey" id="key_light_golden"]
+physical_keycode = 50
+
+[sub_resource type="InputEventKey" id="key_light_dusk"]
+physical_keycode = 51
+
+[sub_resource type="InputEventKey" id="key_view_near"]
+physical_keycode = 81
+
+[sub_resource type="InputEventKey" id="key_view_isometric"]
+physical_keycode = 87
+
+[sub_resource type="InputEventKey" id="key_view_strategic"]
+physical_keycode = 69
+
+[sub_resource type="InputEventKey" id="key_bloom"]
+physical_keycode = 66
+
+[sub_resource type="InputEventKey" id="key_ssao"]
+physical_keycode = 79
+
+[sub_resource type="InputEventKey" id="key_fog"]
+physical_keycode = 70
+
+[sub_resource type="InputEventKey" id="key_dof"]
+physical_keycode = 68
+
+[node name="RendererTest" type="Node3D"]
+script = ExtResource("1_scene")
+key_bindings = Dictionary[StringName, InputEvent]({
+&"light_day": SubResource("key_light_day"),
+&"light_golden": SubResource("key_light_golden"),
+&"light_dusk": SubResource("key_light_dusk"),
+&"view_near": SubResource("key_view_near"),
+&"view_isometric": SubResource("key_view_isometric"),
+&"view_strategic": SubResource("key_view_strategic"),
+&"bloom": SubResource("key_bloom"),
+&"ssao": SubResource("key_ssao"),
+&"fog": SubResource("key_fog"),
+&"dof": SubResource("key_dof")
+})
