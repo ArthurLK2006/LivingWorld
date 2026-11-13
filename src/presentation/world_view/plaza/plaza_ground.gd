@@ -1,14 +1,16 @@
 class_name PlazaGround
 extends RefCounted
-## O chão da praça e o que cresce ou repousa nele: relevo suave com caminho de terra (altura e peso do caminho, que também apoiam as peças de PlazaStructures), malha do chão facetada, 12 árvores, rochas, e grama e flores por MultiMesh com vento por shader. Tudo procedural e facetado (cor por vértice, sem textura), variação por hash de inteiros (PlazaMeshKit); formas e lugares são [HIP] a calibrar olhando a cena.
+## O chão da praça e o que cresce ou repousa nele: relevo suave com caminho de terra (altura e peso do caminho, que também apoiam as peças de PlazaStructures), malha do chão facetada, 12 árvores, rochas, e grama e flores por MultiMesh com vento por shader. Tudo procedural e facetado (cor por vértice, sem textura), variação por hash de inteiros (PlazaMeshKit); formas e lugares são [HIP] a calibrar olhando a cena. A altura de cada peça vem de um provedor `Callable(x, z) -> float` em coordenadas LOCAIS da raiz (ART-2a; sem provedor, o relevo da demonstração, `ground_height`), e `add_patch` faz a mancha de terra batida do jogo.
 
 var _root: Node3D
 var _materials: Dictionary[StringName, Material]
+var _height: Callable
 
 
-func _init(root: Node3D, materials: Dictionary[StringName, Material]) -> void:
+func _init(root: Node3D, materials: Dictionary[StringName, Material], height_provider: Callable = Callable()) -> void:
 	_root = root
 	_materials = materials
+	_height = height_provider if height_provider.is_valid() else ground_height
 
 
 ## Altura do relevo em (x, z): ondas suaves que crescem fora da clareira do poço.
@@ -26,6 +28,11 @@ static func path_weight(x: float, z: float) -> float:
 	return maxf(on_lane, on_plaza)
 
 
+## Altura do chão em (x, z), em coordenadas locais da raiz, pelo provedor entregue na criação. O retorno de Callable.call é Variant (fronteira com o código de quem monta): a conversão para float é feita aqui, num lugar só.
+func height_at(x: float, z: float) -> float:
+	return _height.call(x, z)
+
+
 ## Cria o MeshInstance3D `node_name` com a transformação dada como filho da raiz da praça e o devolve.
 func attach(mesh: Mesh, node_name: String, placement: Transform3D) -> MeshInstance3D:
 	var instance: MeshInstance3D = MeshInstance3D.new()
@@ -36,9 +43,9 @@ func attach(mesh: Mesh, node_name: String, placement: Transform3D) -> MeshInstan
 	return instance
 
 
-## Põe a malha no chão em (x, z) (a altura vem do relevo), com giro e escala.
+## Põe a malha no chão em (x, z) (a altura vem do provedor), com giro e escala.
 func spawn(mesh: Mesh, node_name: String, spot: Vector2, yaw: float = 0.0, size: float = 1.0) -> MeshInstance3D:
-	var placement: Transform3D = Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3.ONE * size), Vector3(spot.x, ground_height(spot.x, spot.y), spot.y))
+	var placement: Transform3D = Transform3D(Basis(Vector3.UP, yaw).scaled(Vector3.ONE * size), Vector3(spot.x, height_at(spot.x, spot.y), spot.y))
 	return attach(mesh, node_name, placement)
 
 
@@ -63,7 +70,7 @@ func add_floor() -> void:
 
 
 func _ground_point(x: float, z: float) -> Vector3:
-	return Vector3(x, ground_height(x, z), z)
+	return Vector3(x, height_at(x, z), z)
 
 
 ## Cor do triângulo: terra ocre no caminho e na clareira, oliva no resto, com manchas e variação por triângulo.
@@ -73,6 +80,45 @@ func _ground_color(point: Vector3, tri_index: int) -> Color:
 	var dirt: Color = PlazaData.DIRT.lerp(PlazaData.DIRT_DARK, PlazaMeshKit.unit(tri_index, PlazaData.Channel.DIRT) * 0.7)
 	var grass: Color = PlazaData.GRASS.lerp(PlazaData.GRASS_DARK, PlazaMeshKit.unit(tri_index, PlazaData.Channel.GRASS))
 	return grass.lerp(dirt, smoothstep(0.35, 0.65, wear))
+
+
+## A mancha de terra batida do jogo (ART-2a): um disco facetado de `radius_m` em torno da origem da raiz (PlazaData.PATCH_RINGS anéis de PlazaData.PATCH_SEGMENTS setores, do centro para fora), cada ponto na altura do provedor mais PlazaData.PATCH_LIFT_M. Não projeta sombra: colada no terreno, só a recebe (evita acne de sombra [HIP], a conferir no jogo). Devolve o nó `PlazaPatch`.
+func add_patch(radius_m: float) -> MeshInstance3D:
+	assert(radius_m > 0.0, "PlazaGround.add_patch: o raio da mancha deve ser positivo, recebeu %s" % radius_m)
+	var kit: PlazaMeshKit = PlazaMeshKit.new()
+	kit.is_shaded = false
+	for ring: int in PlazaData.PATCH_RINGS:
+		var inner: float = radius_m * ring / PlazaData.PATCH_RINGS
+		var outer: float = radius_m * (ring + 1) / PlazaData.PATCH_RINGS
+		for sector: int in PlazaData.PATCH_SEGMENTS:
+			var a: Vector3 = _patch_point(inner, sector)
+			var b: Vector3 = _patch_point(inner, sector + 1)
+			var c: Vector3 = _patch_point(outer, sector + 1)
+			var d: Vector3 = _patch_point(outer, sector)
+			var color: Color = _patch_color(ring, ring * PlazaData.PATCH_SEGMENTS + sector)
+			var below: Vector3 = Vector3(a.x, PlazaData.GROUND_FLOOR_M, a.z)
+			if ring == 0:
+				kit.tri(a, c, d, color, below)
+			else:
+				kit.quad(a, b, c, d, color, below)
+	var patch: MeshInstance3D = attach(kit.finish(ArrayMesh.new(), _materials[&"solid"]), "PlazaPatch", Transform3D.IDENTITY)
+	patch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return patch
+
+
+## Ponto do disco no raio dado; o setor volta ao zero depois do último, então a costura reaproveita o mesmo vértice.
+func _patch_point(radius_m: float, sector: int) -> Vector3:
+	var angle: float = TAU * (sector % PlazaData.PATCH_SEGMENTS) / PlazaData.PATCH_SEGMENTS
+	var x: float = cos(angle) * radius_m
+	var z: float = sin(angle) * radius_m
+	return Vector3(x, height_at(x, z) + PlazaData.PATCH_LIFT_M, z)
+
+
+## Cor do quadro da mancha: a terra do chão (tom por quadro) e, do centro para fora, cada vez mais grama (PlazaData.PATCH_RIM_GRASS no anel de fora), para a borda se misturar à grama do terreno.
+func _patch_color(ring: int, tile: int) -> Color:
+	var dirt: Color = PlazaData.DIRT.lerp(PlazaData.DIRT_DARK, PlazaMeshKit.unit(tile, PlazaData.Channel.DIRT))
+	var grass: Color = PlazaData.GRASS.lerp(PlazaData.GRASS_DARK, PlazaMeshKit.unit(tile, PlazaData.Channel.GRASS))
+	return dirt.lerp(grass, PlazaData.PATCH_RIM_GRASS * ring / maxi(PlazaData.PATCH_RINGS - 1, 1))
 
 
 ## As árvores, em anel em volta da praça (as variações de malha se repartem por índice).
@@ -132,7 +178,7 @@ func _scatter(node_name: String, mesh: ArrayMesh, count: int, key_offset: int, m
 		var fade: float = 1.0 - smoothstep(PlazaData.SCATTER_FADE_FROM, 1.0, path_weight(spot.x, spot.y))
 		var size: float = PlazaMeshKit.between(key, PlazaData.Channel.SCATTER_SIZE, size_range.x, size_range.y) * fade
 		var turned: Basis = Basis(Vector3.UP, PlazaMeshKit.between(key, PlazaData.Channel.SCATTER_YAW, 0.0, TAU)).scaled(Vector3.ONE * size)
-		multimesh.set_instance_transform(index, Transform3D(turned, Vector3(spot.x, ground_height(spot.x, spot.y), spot.y)))
+		multimesh.set_instance_transform(index, Transform3D(turned, Vector3(spot.x, height_at(spot.x, spot.y), spot.y)))
 	var instance: MultiMeshInstance3D = MultiMeshInstance3D.new()
 	instance.name = node_name
 	instance.multimesh = multimesh
