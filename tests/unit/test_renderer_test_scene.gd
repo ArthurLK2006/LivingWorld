@@ -28,7 +28,7 @@ func _key(code: Key) -> InputEventKey:
 
 func test_scene_has_the_requested_content() -> void:
 	var scene: RendererTestScene = _build()
-	var stalls: int = RendererMarketData.STALL_SPOTS.size()
+	var stalls: int = PlazaData.STALL_SPOTS.size()
 	assert_eq(_count(scene, "Stall?", "MeshInstance3D"), stalls, "barracas")
 	assert_eq(_count(scene, "Crate*", "MeshInstance3D"), 2 * stalls, "caixotes")
 	assert_eq(_count(scene, "Barrel*", "MeshInstance3D"), stalls, "barris")
@@ -36,15 +36,15 @@ func test_scene_has_the_requested_content() -> void:
 	assert_eq(_count(scene, "LampPost?", "MeshInstance3D"), 4, "postes com lampião")
 	assert_eq(_count(scene, "Bunting?", "MeshInstance3D"), 4, "fios de bandeirolas")
 	assert_eq(_count(scene, "House?", "MeshInstance3D"), 3, "casas")
-	assert_eq(_count(scene, "Tree*", "MeshInstance3D"), RendererMarketData.TREE_COUNT, "árvores")
+	assert_eq(_count(scene, "Tree*", "MeshInstance3D"), PlazaData.TREE_COUNT, "árvores")
 	assert_eq(_count(scene, "Well", "MeshInstance3D"), 1, "poço")
 	assert_eq(scene.built.lamp_lights.size(), 4, "luzes dos lampiões")
-	assert_eq(_count(scene, "*", "OmniLight3D"), 4 + RendererMarketData.TORCH_SPOTS.size(), "luzes pequenas (lampiões e tochas)")
+	assert_eq(_count(scene, "*", "OmniLight3D"), 4 + PlazaData.TORCH_SPOTS.size(), "luzes pequenas (lampiões e tochas)")
 	assert_eq(_count(scene, "*", "DirectionalLight3D"), 1, "sol")
 	var instances: int = 0
 	for node: Node in scene.find_children("*", "MultiMeshInstance3D", true, false):
 		instances += (node as MultiMeshInstance3D).multimesh.instance_count
-	assert_eq(instances, RendererMarketData.GRASS_COUNT + RendererMarketData.FLOWERS_PER_COLOR * RendererMarketData.FLOWER_COLORS.size(), "instâncias de grama e flores")
+	assert_eq(instances, PlazaData.GRASS_COUNT + PlazaData.FLOWERS_PER_COLOR * PlazaData.FLOWER_COLORS.size(), "instâncias de grama e flores")
 
 
 func test_triangle_and_material_budgets() -> void:

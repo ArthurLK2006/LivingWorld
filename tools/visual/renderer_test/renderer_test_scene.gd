@@ -28,7 +28,7 @@ var rendering_method: String = ""
 ## Efeitos que o renderer aceita (RendererPresets.SUPPORTED, [HIP]) e chaves ligadas pelo jogador; o efeito só fica ligado se as duas coisas valem.
 var supported: Dictionary[StringName, bool] = {}
 var switches: Dictionary[StringName, bool] = {&"bloom": true, &"ssao": true, &"fog": true, &"dof": true}
-var built: RendererMarketBuilder.Built
+var built: PlazaBuilder.Built
 var sun: DirectionalLight3D
 var environment: Environment
 var camera: Camera3D
@@ -43,7 +43,7 @@ func _ready() -> void:
 	supported = RendererPresets.supported_effects(rendering_method)
 	_register_support(arguments.has(ARG_FORCE_EFFECTS))
 	_build_rig()
-	built = RendererMarketBuilder.new().build(self)
+	built = PlazaBuilder.new().build(self)
 	apply_preset(0)
 	if RendererAutoRun.is_requested(arguments):
 		await RendererAutoRun.new().run(self, RendererAutoRun.out_dir(arguments))

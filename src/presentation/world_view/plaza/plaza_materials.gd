@@ -1,4 +1,4 @@
-class_name RendererMarketMaterials
+class_name PlazaMaterials
 extends RefCounted
 ## Materiais compartilhados da praça (guia visual, seção 5: poucos materiais por cena) e o shader de vento da grama e das flores. Sem textura: a cor vem do vértice (sólido e pano) ou dos uniformes do shader.
 
@@ -35,17 +35,17 @@ static func create() -> Dictionary[StringName, Material]:
 	var materials: Dictionary[StringName, Material] = {}
 	materials[&"solid"] = _standard(Color.WHITE, true, BaseMaterial3D.CULL_BACK)
 	materials[&"cloth"] = _standard(Color.WHITE, true, BaseMaterial3D.CULL_DISABLED)
-	materials[&"lantern"] = _standard(RendererMarketData.LAMP_COLOR, false, BaseMaterial3D.CULL_DISABLED)
-	materials[&"flame"] = _standard(RendererMarketData.TORCH_COLOR, false, BaseMaterial3D.CULL_DISABLED)
-	materials[&"accent_warm"] = _standard(RendererMarketData.TORCH_COLOR, false, BaseMaterial3D.CULL_DISABLED)
-	materials[&"accent_cyan"] = _standard(RendererMarketData.CYAN, false, BaseMaterial3D.CULL_DISABLED)
+	materials[&"lantern"] = _standard(PlazaData.LAMP_COLOR, false, BaseMaterial3D.CULL_DISABLED)
+	materials[&"flame"] = _standard(PlazaData.TORCH_COLOR, false, BaseMaterial3D.CULL_DISABLED)
+	materials[&"accent_warm"] = _standard(PlazaData.TORCH_COLOR, false, BaseMaterial3D.CULL_DISABLED)
+	materials[&"accent_cyan"] = _standard(PlazaData.CYAN, false, BaseMaterial3D.CULL_DISABLED)
 	for key: StringName in [&"lantern", &"flame", &"accent_warm", &"accent_cyan"]:
 		var emissive: StandardMaterial3D = materials[key] as StandardMaterial3D
 		emissive.emission_enabled = true
 		emissive.emission = emissive.albedo_color
-	materials[&"grass"] = _wind(wind_shader, RendererMarketData.GRASS_LOW, RendererMarketData.GRASS_HIGH, Color.BLACK)
-	for index: int in RendererMarketData.FLOWER_COLORS.size():
-		materials[StringName("flower%d" % index)] = _wind(wind_shader, RendererMarketData.FLOWER_STEM, RendererMarketData.FLOWER_STEM, RendererMarketData.FLOWER_COLORS[index])
+	materials[&"grass"] = _wind(wind_shader, PlazaData.GRASS_LOW, PlazaData.GRASS_HIGH, Color.BLACK)
+	for index: int in PlazaData.FLOWER_COLORS.size():
+		materials[StringName("flower%d" % index)] = _wind(wind_shader, PlazaData.FLOWER_STEM, PlazaData.FLOWER_STEM, PlazaData.FLOWER_COLORS[index])
 	return materials
 
 
@@ -54,9 +54,9 @@ static func _standard(albedo: Color, uses_vertex_color: bool, cull: BaseMaterial
 	material.albedo_color = albedo
 	material.vertex_color_use_as_albedo = uses_vertex_color
 	material.vertex_color_is_srgb = true
-	material.roughness = RendererMarketData.SURFACE_ROUGHNESS
+	material.roughness = PlazaData.SURFACE_ROUGHNESS
 	material.rim_enabled = true
-	material.rim = RendererMarketData.RIM_STRENGTH
+	material.rim = PlazaData.RIM_STRENGTH
 	material.cull_mode = cull
 	return material
 

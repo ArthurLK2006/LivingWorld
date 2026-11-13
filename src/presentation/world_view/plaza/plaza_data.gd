@@ -1,6 +1,6 @@
-class_name RendererMarketData
+class_name PlazaData
 extends RefCounted
-## Dados da praça de mercado procedural (cerca de 30 x 30 m) da cena de teste de renderizadores (ARTE-F0): contagens, lugares, medidas, paleta e canais de hash. Só constantes, sem lógica: os componentes de montagem (materiais, chão e estruturas) leem daqui, e o teste e o resumo da cena leem as contagens. Formas e lugares são [HIP] de composição, a calibrar olhando a cena.
+## Dados da praça de mercado procedural (cerca de 30 x 30 m), nascida na cena de teste de renderizadores (ARTE-F0) e promovida ao jogo na ART-1: contagens, lugares, medidas, paleta e canais de hash. Só constantes, sem lógica: os componentes de montagem (materiais, chão e estruturas) leem daqui, e o teste e o resumo da cena leem as contagens. Formas e lugares são [HIP] de composição, a calibrar olhando a cena.
 
 ## Contagens da cena (o teste e o resumo usam estas constantes).
 const GROUND_HALF_M: int = 18
@@ -81,7 +81,7 @@ const ROOF_COLORS: Array[Color] = [Color("503050"), Color("705030"), Color("A048
 const TREE_GREENS: Array[Color] = [Color("587838"), Color("48683A"), Color("688840")]
 const SURFACE_ROUGHNESS: float = 0.85
 const RIM_STRENGTH: float = 0.2
-## Cada canal é uma sequência independente do hash (RendererMeshKit.unit). ROCK_RADIUS e TREE_RADIUS vêm logo depois do ângulo: `_ring_spot` usa canal e canal + 1.
+## Cada canal é uma sequência independente do hash (PlazaMeshKit.unit). ROCK_RADIUS e TREE_RADIUS vêm logo depois do ângulo: `_ring_spot` usa canal e canal + 1.
 enum Channel { PATCH, DIRT, GRASS, PROP_X, PROP_Z, PROP_YAW, PROP_SCALE, STRIP, HOUSE, STONE, TREE_ANGLE, TREE_RADIUS, TREE_YAW, TREE_SCALE, ROCK_ANGLE, ROCK_RADIUS, ROCK_SIZE, ROCK_YAW, SCATTER_X, SCATTER_Z, SCATTER_ACCEPT, SCATTER_SIZE, SCATTER_YAW }
 ## Grama e flores: lâmina de 5 pontos (3 triângulos) e quatro diagonais do chão alternadas.
 const BLADE_POINTS: PackedVector3Array = [Vector3(-0.04, 0.0, 0.0), Vector3(0.04, 0.0, 0.0), Vector3(-0.025, 0.18, 0.0), Vector3(0.025, 0.18, 0.0), Vector3(0.0, 0.38, 0.03)]

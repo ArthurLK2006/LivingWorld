@@ -1,6 +1,6 @@
-class_name RendererMeshKit
+class_name PlazaMeshKit
 extends RefCounted
-## Construtor de malhas FACETADAS da cena de teste de renderizadores (ARTE-F0; ferramenta de desenvolvimento, sem relação com a simulação): cada triângulo tem a própria normal plana
+## Construtor de malhas FACETADAS da praça de mercado procedural, nascido na cena de teste de renderizadores (ARTE-F0) e promovido ao jogo na ART-1 (só apresentação, sem relação com a simulação): cada triângulo tem a própria normal plana
 ## (vértices duplicados por triângulo) e cor por vértice, sem textura. O sentido da face é corrigido por um ponto "de dentro" da forma, então cada forma só informa o centro.
 ## A variação (escala, giro, tom) vem de uma função de hash de inteiros: nenhum sorteio da engine (AGENTS 4.9), tudo reproduzível.
 
