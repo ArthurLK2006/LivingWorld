@@ -168,6 +168,7 @@ func test_a_bridge_without_a_game_leaves_the_body_walking_without_reporting() ->
 	assert_true(body.is_spawned())
 	assert_eq(body.get_actor_id(), IdGenerator.NO_ID, "Sem jogo na simulação o corpo não tem personagem.")
 	assert_push_warning("o personagem não nasceu na simulação")
+	assert_push_warning_count(1, "Sem personagem não há conta a abrir (LW-105e): nenhum aviso a mais.")
 	await _frames(SETTLE_FRAMES)
 	var start: Vector3 = body.global_position
 	Input.action_press(InputActions.MOVE_FORWARD)

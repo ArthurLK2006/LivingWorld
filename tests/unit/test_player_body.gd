@@ -335,3 +335,23 @@ func test_the_main_scene_has_one_player_body_that_spawns_and_gives_the_terrain_i
 	assert_eq(player.global_position, spawn + Vector3(0.0, SPAWN_CLEARANCE_M, 0.0))
 	var terrain: TerrainView = scene.get_node("TerrainView") as TerrainView
 	assert_eq(terrain.focus(), Vector2(spawn.x, spawn.z), "O foco do terreno é a posição do jogador.")
+
+
+func test_the_player_of_the_main_scene_is_born_with_an_open_account_and_opening_it_again_changes_nothing() -> void:
+	var setup: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR)
+	assert_true(setup.result.ok, setup.result.message)
+	var kind: OwnerKindDef
+	for candidate: OwnerKindDef in setup.definitions.kinds:
+		if candidate.id == BridgePlayerEconomy.OWNER_KIND:
+			kind = candidate
+	assert_not_null(kind, "O tipo `player` existe nos dados da economia: o teste LÊ o saldo e a capacidade deles em vez de fixá-los.")
+	var scene: Node = (load("res://scenes/main.tscn") as PackedScene).instantiate()
+	add_child_autofree(scene)
+	var player: PlayerBody = scene.find_children("*", "PlayerBody", true, false)[0] as PlayerBody
+	var game_bridge: SimBridge = (get_node("/root/GameApp") as GameAppNode).peek_bridge()
+	assert_gt(player.get_actor_id(), IdGenerator.NO_ID, "No jogo real o corpo tem personagem.")
+	var account: BridgePlayerEconomyReplies.PlayerEconomyReply = game_bridge.peek_player_economy(player.get_actor_id())
+	assert_true(account.result.ok, account.result.message)
+	assert_eq([account.funds, account.capacity], [kind.initial_balance, kind.weight_capacity], "O corpo abriu a conta ao nascer: saldo e capacidade do tipo `player`.")
+	assert_true(game_bridge.request_open_player_account(player.get_actor_id()).ok, "Abrir de novo é idempotente.")
+	assert_eq(game_bridge.peek_player_economy(player.get_actor_id()).funds, kind.initial_balance, "Sem novo dinheiro: o saldo não mudou.")

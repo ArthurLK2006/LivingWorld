@@ -1,8 +1,8 @@
 class_name PlayerBody
 extends CharacterBody3D
 ## Corpo provisório do jogador (LW-045): uma cápsula visível que anda, corre e pula sobre o terreno. A FÍSICA FICA NA
-## APRESENTAÇÃO (arquitetura 15): quem manda na posição é este corpo. Ao nascer ele pede à simulação um personagem (pela ponte) e,
-## a cada poucos quadros de física, RELATA a posição e a orientação (LW-048); a simulação guarda o que foi relatado e nunca devolve
+## APRESENTAÇÃO (arquitetura 15): quem manda na posição é este corpo. Ao nascer ele pede à simulação um personagem (pela ponte), abre a
+## conta dele na economia (LW-105e) e, a cada poucos quadros de física, RELATA a posição e a orientação (LW-048); a simulação guarda o que foi relatado e nunca devolve
 ## posição ao corpo (fluxo de um sentido só). Lê o teclado só por ações nomeadas (InputActions). A direção do movimento é relativa ao giro do nó de referência
 ## (a câmera de terceira pessoa). Enquanto o chão sob o corpo não tem colisão que valha (TerrainView.has_collision_at) ele fica
 ## parado, sem cair nem andar. LIMITES (LW-047): encostas acima da inclinação máxima o bloqueiam, ele não passa da borda do mapa
@@ -194,8 +194,9 @@ func _recover_if_below_terrain() -> void:
 		_place_at(Vector3(global_position.x, ground.height_m, global_position.z))
 
 
-## Pede à simulação um personagem para este corpo e relata a posição de nascimento. Falha (ponte sem jogo ou sem módulo do
-## personagem): um aviso no log e o corpo segue sem relatar; nunca derruba nem trava o corpo.
+## Pede à simulação um personagem para este corpo, abre a conta dele na economia (LW-105e; a ponte garante que abrir de novo não cria
+## dinheiro) e relata a posição de nascimento. Falha (ponte sem jogo ou sem módulo do personagem): um aviso no log e o corpo segue sem
+## relatar; conta que não abre (ex.: jogo sem os dados da economia): um aviso e o corpo segue relatando; nunca derruba nem trava o corpo.
 func _spawn_character() -> void:
 	_actor_id = IdGenerator.NO_ID
 	_frames_since_report = 0
@@ -205,6 +206,9 @@ func _spawn_character() -> void:
 		_warn_once(reply.result, "o personagem não nasceu na simulação")
 		return
 	_actor_id = reply.actor_id
+	var account: Result = _bridge.request_open_player_account(_actor_id)
+	if not account.ok:
+		_warn_once(account, "a conta do jogador não abriu na economia")
 	_report_position()
 
 
