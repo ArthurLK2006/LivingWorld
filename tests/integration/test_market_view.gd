@@ -328,6 +328,10 @@ func test_open_freezes_the_nodes_and_close_gives_back_the_mode_they_had() -> voi
 
 
 func test_cancel_interact_and_the_close_button_close_the_screen_and_closed_comes_out_once_each() -> void:
+	## A marca "tratado" é da janela e outros testes a deixam ligada (no CI, a ordem do conjunto inteiro a deixou): liga de propósito e zera com uma entrada nova, só então confere.
+	get_viewport().set_input_as_handled()
+	get_viewport().push_input(_action(&"market_view_test_baseline"))
+	assert_false(get_viewport().is_input_handled(), "Pré-condição: a entrada nova zerou a marca.")
 	_view._input(_action(InputActions.INTERACT))
 	assert_false(get_viewport().is_input_handled(), "Fechada, a tela não toca a tecla (a `InteractionView` ainda a lê).")
 	_view.open(_market_id)
