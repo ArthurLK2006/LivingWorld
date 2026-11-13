@@ -1,0 +1,30 @@
+#!/bin/sh
+# CAP: captura de telas do JOGO REAL (scenes/main.tscn) para o aceite visual da arte: para cada local x hora x câmera põe o jogador no local, força a luz da hora e enquadra a câmera, e grava um PNG e as medidas (resumo.txt).
+# ABRE UMA JANELA do Godot (1280x720) por cerca de 1 a 3 minutos com os padrões (18 capturas de 210 quadros cada); mais combinações levam mais tempo. Não mexa na janela. Não altera o project.godot nem apaga nada.
+# Uso: tools/visual/run_game_capture [pasta-de-saída] [--spots=market:a_market_01,spawn,xz:<x>,<z>] [--hours=12,17.5,19] [--cams=near,iso,strategic]
+# Pasta padrão: uma pasta nova sob $TMPDIR. Variável opcional: GODOT_BIN (padrão: /Applications/Godot 2.app/Contents/MacOS/Godot).
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+out_dir=
+case "${1:-}" in
+    "" | --*) ;;
+    *) out_dir=$1; shift ;;
+esac
+if [ -z "$out_dir" ]; then
+    out_dir=$(mktemp -d "${TMPDIR:-/tmp}/lw-game-capture.XXXXXX") || exit 1
+fi
+mkdir -p "$out_dir" || exit 1
+# Caminho absoluto: o Godot roda com a pasta do projeto como pasta atual, e um caminho relativo cairia dentro dela.
+out_dir=$(CDPATH= cd -- "$out_dir" && pwd) || exit 1
+echo "AVISO: esta captura abre uma janela do Godot por cerca de 1 a 3 minutos com os padrões. Não mexa na janela."
+echo "Saída em: $out_dir"
+if ! "$godot_bin" --path "$project_dir" --rendering-method gl_compatibility --resolution 1280x720 --position 0,0 -s res://tools/visual/game_capture/game_capture.gd -- "--out=$out_dir" "$@"; then
+    echo "FALHA: o Godot terminou com erro (veja as mensagens acima)." >&2
+    exit 1
+fi
+echo "Resumo: $out_dir/resumo.txt"
