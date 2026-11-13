@@ -2,13 +2,14 @@ extends Node3D
 ## Script da cena principal: entrega a ponte à TerrainView e à DecorationView, faz o PlayerBody nascer, liga a câmera de terceira
 ## pessoa ao jogador (e o jogador à câmera, que é a referência de direção dele) e informa o foco do terreno: a posição do
 ## PlayerBody; se ele não nascer, a da câmera, que fica onde a cena a pôs (D1 de Arthur: direto, sem passar pela ponte). Carrega os
-## textos de jogo (UiText) e os entrega ao HUD (LW-051) e à InteractionView (LW-050). Cria em código os corpos dos NPCs em S0 (LW-072f) e a tela de mercado (LW-106e). Sem regra de jogo.
+## textos de jogo (UiText) e os entrega ao HUD (LW-051) e à InteractionView (LW-050). Cria em código os corpos dos NPCs em S0 (LW-072f), a tela de mercado (LW-106e) e as praças dos mercados (ART-2b). Sem regra de jogo.
 
 ## Árvores e pedras de blockout (LW-043): dados em data/world, só visuais.
 const DECORATIONS_PATH: String = "res://data/world/decorations.json"
 ## Configuração do projeto de onde vem o título do jogo mostrado no HUD.
 const GAME_NAME_SETTING: String = "application/config/name"
 const PLACE_VIEW_NAME: String = "PlaceBoxesView"
+const PLAZA_VIEW_NAME: String = "MarketPlazaView"
 const BODIES_VIEW_NAME: String = "NpcBodiesView"
 const BODY_DRIVER_NAME: String = "NpcBodyDriver"
 const MARKET_VIEW_NAME: String = "MarketView"
@@ -55,6 +56,7 @@ func _ready() -> void:
 	_place_view.setup(bridge)
 	_terrain_view.chunk_loaded.connect(_place_view.set_chunk_visible.bind(true))
 	_terrain_view.chunk_unloaded.connect(_place_view.set_chunk_visible.bind(false))
+	_setup_market_plazas(bridge)
 	_terrain_view.setup(bridge)
 	var decorations: DecorationReader.ReadResult = DecorationReader.read_file(DECORATIONS_PATH)
 	if decorations.result.ok:
@@ -73,6 +75,20 @@ func _ready() -> void:
 	_npc_inspector = NpcInspectorMount.mount(self, bridge, _texts, OS.is_debug_build())
 	# Depois do painel de NPC, de propósito: a entrada não tratada chega primeiro ao último nó da árvore, e assim o Shift+Tab é do painel da economia (LW-108d).
 	_economy_inspector = EconomyInspectorMount.mount(self, bridge, _texts, OS.is_debug_build())
+
+
+## As praças dos mercados (ART-2b) no lugar das caixas brancas: criadas em código antes do terreno, como as caixas, e ligadas aos mesmos sinais de chunk; só apresentação.
+## `setup` que falha (a view já registrou o motivo): a view é descartada e as caixas de mercado continuam à vista.
+func _setup_market_plazas(bridge: SimBridge) -> void:
+	var plaza_view: MarketPlazaView = MarketPlazaView.new()
+	plaza_view.name = PLAZA_VIEW_NAME
+	add_child(plaza_view)
+	if not plaza_view.setup(bridge):
+		plaza_view.queue_free()
+		return
+	_place_view.set_kind_hidden(PlacePalette.KIND_MARKET, true)
+	_terrain_view.chunk_loaded.connect(plaza_view.set_chunk_visible.bind(true))
+	_terrain_view.chunk_unloaded.connect(plaza_view.set_chunk_visible.bind(false))
 
 
 ## A tela de mercado (LW-106e): o jogador e a câmera ficam parados enquanto ela está aberta e a `InteractionView` fica bloqueada (sem aviso e sem a tecla), então só a tela lê o `interact`.
