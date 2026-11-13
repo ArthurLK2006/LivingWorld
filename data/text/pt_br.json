@@ -39,6 +39,7 @@
 	"economy.trade.market_full": "O mercado não compra mais disso agora.",
 	"economy.trade.market_no_funds": "O mercado não tem dinheiro para pagar isso.",
 	"economy.trade.banned": "Esse comércio é proibido aqui.",
+	"economy.trade.too_far": "Você está longe demais do mercado. Chegue mais perto para negociar.",
 	"economy.trade.failed": "Não foi possível fazer o negócio.",
 	"tools.npc_inspector.title": "Painel de depuração de NPC",
 	"tools.npc_inspector.hint": "F3 ou Tab fecha · N próximo · B anterior · T marca o rastro",

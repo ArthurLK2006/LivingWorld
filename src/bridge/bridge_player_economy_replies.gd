@@ -28,7 +28,7 @@ class PlayerEconomyReply:
 
 
 ## `request_trade`: o desfecho da ordem do jogador. `quantity` e `total` (inteiros, em dinheiro do jogo) só valem se `result.ok`. `text_key` é SEMPRE a chave do texto a mostrar, nunca o texto (DEC-036):
-## no sucesso, a de compra ou de venda; na recusa, a do código de falha (`FAILURE_KEYS`); código sem chave própria (os da ponte, os do `character` e os de ordem inválida) usa `FALLBACK_KEY`.
+## no sucesso, a de compra ou de venda; na recusa, a do código de falha (`FAILURE_KEYS`, que inclui o `PLACE_TOO_FAR` do `world`: longe do mercado, LW-105d); código sem chave própria (os da ponte, os do `character` e os de ordem inválida) usa `FALLBACK_KEY`.
 class PlayerTradeReply:
 	extends RefCounted
 
@@ -43,6 +43,7 @@ class PlayerTradeReply:
 		EconomyCodes.MARKET_FULL: "economy.trade.market_full",
 		EconomyCodes.MARKET_NO_FUNDS: "economy.trade.market_no_funds",
 		EconomyCodes.TRADE_BANNED: "economy.trade.banned",
+		MarketReach.CODE_PLACE_TOO_FAR: "economy.trade.too_far",
 	}
 
 	var result: Result
