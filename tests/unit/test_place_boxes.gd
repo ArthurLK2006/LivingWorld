@@ -1,6 +1,6 @@
 extends GutTest
 ## LW-074: uma caixa provisória por local, montada pelos dados que a ponte devolve, sem janela: contagem, posição, base no chão, cor e
-## tamanho por tipo, escondida até o chunk existir, sem colisão. O tipo reservado (mercado) não é desenhado.
+## tamanho por tipo, escondida até o chunk existir, sem colisão. O mercado também tem caixa (LW-105e): provisória, sem modelo nem interação.
 
 const BLOCKOUT_DIR: String = "res://data/world"
 const MAIN_SCENE_PATH: String = "res://scenes/main.tscn"
@@ -33,31 +33,24 @@ func after_each() -> void:
 	_view.free()
 
 
-func _drawn_places() -> Array[Place]:
-	var drawn: Array[Place] = []
-	for place: Place in _places:
-		if place.kind != Place.KIND_MARKET:
-			drawn.append(place)
-	return drawn
-
-
 func _chunk_of(place: Place) -> Vector2i:
 	return Vector2i(floori(place.position.x / _chunk_size_m), floori(place.position.z / _chunk_size_m))
 
 
-func test_there_is_one_box_per_drawn_place_and_none_for_the_reserved_market_and_no_collision() -> void:
-	var drawn: Array[Place] = _drawn_places()
-	assert_lt(drawn.size(), _places.size(), "Os dados têm locais de mercado reservado, que não são desenhados.")
-	assert_eq(_view.box_count(), drawn.size())
-	assert_eq(_view.get_child_count(), drawn.size())
+func test_there_is_one_box_per_place_including_the_provisional_market_and_no_collision() -> void:
+	assert_eq(_view.box_count(), _places.size())
+	assert_eq(_view.get_child_count(), _places.size())
+	var market_count: int = 0
 	for place: Place in _places:
-		assert_eq(_view.box_of(place.id) != null, place.kind != Place.KIND_MARKET, "Caixa do local '%s'." % place.id)
+		assert_not_null(_view.box_of(place.id), "Caixa do local '%s'." % place.id)
+		market_count += 1 if place.kind == Place.KIND_MARKET else 0
+	assert_gt(market_count, 0, "Os dados têm locais de mercado, que também têm caixa.")
 	assert_eq(_view.find_children("*", "CollisionObject3D", true, false).size(), 0)
 
 
 func test_each_box_is_where_the_data_says_on_the_ground_with_the_color_and_size_of_its_kind() -> void:
 	var colors_by_kind: Dictionary[String, Color] = {}
-	for place: Place in _drawn_places():
+	for place: Place in _places:
 		var box: MeshInstance3D = _view.box_of(place.id)
 		var mesh: BoxMesh = box.mesh as BoxMesh
 		var color: Color = (mesh.material as StandardMaterial3D).albedo_color
@@ -66,30 +59,31 @@ func test_each_box_is_where_the_data_says_on_the_ground_with_the_color_and_size_
 		assert_eq(mesh.size, PlacePalette.SIZES[place.kind])
 		assert_eq(color, PlacePalette.COLORS[place.kind])
 		colors_by_kind[place.kind] = color
-	assert_eq(colors_by_kind.size(), 4, "Os dados têm os quatro tipos desenhados.")
+	assert_eq(colors_by_kind.size(), 5, "Os dados têm os cinco tipos desenhados.")
 	for color: Color in colors_by_kind.values():
 		assert_eq(colors_by_kind.values().count(color), 1, "Cada tipo tem a sua cor.")
-	assert_eq([PlacePalette.KIND_HOME, PlacePalette.KIND_WORK, PlacePalette.KIND_REST, PlacePalette.KIND_SOCIAL], [Place.KIND_HOME, Place.KIND_WORK, Place.KIND_REST, Place.KIND_SOCIAL], "Os tipos da paleta são os do world.")
+	assert_eq([PlacePalette.KIND_HOME, PlacePalette.KIND_WORK, PlacePalette.KIND_REST, PlacePalette.KIND_SOCIAL, PlacePalette.KIND_MARKET], [Place.KIND_HOME, Place.KIND_WORK, Place.KIND_REST, Place.KIND_SOCIAL, Place.KIND_MARKET], "Os tipos da paleta são os do world.")
 	for kind: String in Place.KINDS:
-		assert_eq(PlacePalette.is_drawn(kind), kind != Place.KIND_MARKET)
+		assert_true(PlacePalette.is_drawn(kind), "Todo tipo do world tem caixa: '%s'." % kind)
+	assert_false(PlacePalette.is_drawn("tipo_fora_das_tabelas"), "Tipo que não está na paleta não é desenhado.")
 
 
 func test_boxes_start_hidden_and_a_chunk_shows_and_hides_only_its_own_boxes() -> void:
-	var chunk: Vector2i = _chunk_of(_drawn_places()[0])
-	for place: Place in _drawn_places():
+	var chunk: Vector2i = _chunk_of(_places[0])
+	for place: Place in _places:
 		assert_false(_view.box_of(place.id).visible, "Nasce escondida, até o terreno do chunk existir.")
 	_view.set_chunk_visible(chunk, true)
-	for place: Place in _drawn_places():
+	for place: Place in _places:
 		assert_eq(_view.box_of(place.id).visible, _chunk_of(place) == chunk, "Caixa de '%s'." % place.id)
 	_view.set_chunk_visible(chunk, false)
 	_view.set_chunk_visible(Vector2i(-5, -5), true)
-	for place: Place in _drawn_places():
+	for place: Place in _places:
 		assert_false(_view.box_of(place.id).visible)
 
 
 func test_a_bad_bridge_builds_nothing_with_a_visible_error_and_setup_twice_does_not_duplicate() -> void:
 	assert_true(_view.setup(_bridge))
-	assert_eq(_view.get_child_count(), _drawn_places().size(), "Nada ficou duplicado.")
+	assert_eq(_view.get_child_count(), _places.size(), "Nada ficou duplicado.")
 	var other: PlaceBoxesView = PlaceBoxesView.new()
 	assert_false(other.setup(null))
 	assert_push_error("PlaceBoxesView.setup: ponte nula")
@@ -104,9 +98,9 @@ func test_the_main_scene_has_one_box_view_with_the_boxes_wired_to_the_terrain_ch
 	var views: Array[Node] = main.find_children("*", "PlaceBoxesView", true, false)
 	assert_eq(views.size(), 1)
 	var scene_view: PlaceBoxesView = views[0] as PlaceBoxesView
-	assert_eq(scene_view.box_count(), _drawn_places().size(), "O GameApp real entregou os locais à ponte.")
+	assert_eq(scene_view.box_count(), _places.size(), "O GameApp real entregou os locais à ponte.")
 	var terrain: TerrainView = main.find_children("*", "TerrainView", true, false)[0] as TerrainView
-	var place: Place = _drawn_places()[0]
+	var place: Place = _places[0]
 	terrain.chunk_loaded.emit(_chunk_of(place))
 	assert_true(scene_view.box_of(place.id).visible, "A cena liga chunk_loaded às caixas.")
 	terrain.chunk_unloaded.emit(_chunk_of(place))

@@ -32,6 +32,25 @@ var _view: TerrainView
 var _reference: Node3D
 
 
+## Ponte que RECUSA a abertura da conta do jogador (LW-105e) e conta as chamadas de abertura e de relato; o resto é a ponte real. O código
+## da recusa difere de propósito do de "sem jogo": o corpo avisa uma vez por código, e um código igual esconderia uma chamada a mais.
+class AccountRefusingBridge:
+	extends SimBridge
+
+	const REFUSED_CODE: String = "TEST_ACCOUNT_REFUSED"
+
+	var open_calls: int = 0
+	var report_calls: int = 0
+
+	func request_open_player_account(_actor_id: int) -> Result:
+		open_calls += 1
+		return Result.failure(REFUSED_CODE, "conta recusada de teste")
+
+	func request_report_position(actor_id: int, position: Vector3, yaw: float) -> Result:
+		report_calls += 1
+		return super(actor_id, position, yaw)
+
+
 func before_all() -> void:
 	await _boost.enable(get_tree())
 	var loaded: TerrainLoader.LoadResult = TerrainLoader.load_dir(BLOCKOUT_DIR)
@@ -168,6 +187,7 @@ func test_a_bridge_without_a_game_leaves_the_body_walking_without_reporting() ->
 	assert_true(body.is_spawned())
 	assert_eq(body.get_actor_id(), IdGenerator.NO_ID, "Sem jogo na simulação o corpo não tem personagem.")
 	assert_push_warning("o personagem não nasceu na simulação")
+	assert_push_warning_count(1, "Sem personagem não há conta a abrir (LW-105e): nenhum aviso a mais.")
 	await _frames(SETTLE_FRAMES)
 	var start: Vector3 = body.global_position
 	Input.action_press(InputActions.MOVE_FORWARD)
@@ -187,3 +207,27 @@ func test_a_refused_report_warns_once_and_does_not_stop_the_body() -> void:
 	assert_gt(body.global_position.x - start.x, 1.0, "Relatos recusados (o mundo trocou) não travam o corpo.")
 	assert_push_warning("relato de posição recusado")
 	assert_push_warning_count(1, "Um aviso por código de falha, não um por relato.")
+
+
+func test_a_refused_account_warns_once_and_the_body_keeps_reporting_its_position() -> void:
+	var refusing: AccountRefusingBridge = AccountRefusingBridge.new(_host, _terrain)
+	var body: PlayerBody = _new_body(refusing)
+	var birth: BridgeReplies.CharacterReply = _stored(body)
+	assert_true(birth.result.ok, birth.result.message)
+	assert_true(birth.position.is_equal_approx(body.global_position), "A conta recusada não impede o relato de nascimento.")
+	assert_eq([refusing.open_calls, refusing.report_calls], [1, 1], "Uma abertura de conta e um relato (o de nascimento).")
+	await _frames(FRAMES_PER_SECOND)
+	assert_eq(refusing.open_calls, 1, "O corpo não tenta a conta de novo a cada relato.")
+	assert_gt(refusing.report_calls, 1, "E segue relatando a posição.")
+	assert_push_warning("a conta do jogador não abriu na economia")
+	assert_push_warning_count(1, "Um aviso só, apesar da recusa e dos relatos que vieram depois.")
+
+
+func test_without_a_character_the_body_stays_quiet_and_never_asks_for_the_account() -> void:
+	var alone: AccountRefusingBridge = AccountRefusingBridge.new(null, _terrain)
+	var body: PlayerBody = _new_body(alone)
+	await _frames(FRAMES_PER_SECOND)
+	assert_eq(body.get_actor_id(), IdGenerator.NO_ID, "Sem jogo o corpo não tem personagem.")
+	assert_eq([alone.open_calls, alone.report_calls], [0, 0], "Sem personagem não há conta a abrir nem posição a relatar.")
+	assert_push_warning("o personagem não nasceu na simulação")
+	assert_push_warning_count(1, "Só o aviso do nascimento: a recusa da conta, de outro código, apareceria como um segundo.")
