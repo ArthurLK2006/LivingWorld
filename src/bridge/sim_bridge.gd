@@ -23,7 +23,7 @@ const CODE_NO_INTERACTION: String = "BRIDGE_NO_INTERACTION"
 const CODE_NO_NPC: String = "BRIDGE_NO_NPC"
 ## O desfecho recebido não é um dos quatro de `BridgeReplies.NpcOutcome` (só acontece com conversão forçada de inteiro).
 const CODE_INVALID_OUTCOME: String = "BRIDGE_INVALID_OUTCOME"
-## Há jogo iniciado, mas ele não tem o módulo da economia (começou sem terreno): as consultas `peek_economy_*` falham com este código (LW-108b).
+## Há jogo iniciado, mas ele não tem o módulo da economia (começou sem terreno): as consultas `peek_economy_*` (LW-108b) e as chamadas do jogador na economia (LW-105) falham com este código.
 const CODE_NO_ECONOMY: String = "BRIDGE_NO_ECONOMY"
 
 var _host: SimulationHostNode
@@ -185,6 +185,41 @@ func peek_character(actor_id: int) -> BridgeReplies.CharacterReply:
 		return BridgeReplies.CharacterReply.new(_missing_character("peek_character"), Vector3.ZERO, 0.0)
 	var query: CharacterQuery = character.peek_character(actor_id)
 	return BridgeReplies.CharacterReply.new(query.result, query.position, query.yaw)
+
+
+## LW-105: abre a conta de dinheiro e o inventário do jogador na economia (o tipo `player` de `owner_kinds.json`: saldo inicial por `mint` `game_start` e capacidade de peso, [HIP]).
+## Idempotente. Só vale para um ator que o `character` conhece (ator desconhecido: o código dele, nada é aberto). A ponte não decide QUANDO: quem guarda o `actor_id` chama.
+func request_open_player_account(actor_id: int) -> Result:
+	var character: CharacterModule = _character()
+	if character == null:
+		return _missing_character("request_open_player_account")
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return _missing_economy("request_open_player_account")
+	return BridgePlayerEconomy.open_account(character, economy, actor_id)
+
+
+## LW-105: o saldo (do `Ledger`), o peso, a capacidade e os bens do jogador, em CÓPIA (`BridgePlayerEconomyReplies.PlayerEconomyReply`). Ator desconhecido ou sem conta aberta: falha tratada.
+func peek_player_economy(actor_id: int) -> BridgePlayerEconomyReplies.PlayerEconomyReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgePlayerEconomyReplies.PlayerEconomyReply.new(_missing_character("peek_player_economy"))
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgePlayerEconomyReplies.PlayerEconomyReply.new(_missing_economy("peek_player_economy"))
+	return BridgePlayerEconomy.view(character, economy, actor_id)
+
+
+## LW-105: a ordem de compra (`buy`) ou de venda (`sell`) do jogador num mercado (`BridgePlayerEconomyReplies.SIDE_BUY` e `SIDE_SELL`), atômica, pela `economy`. Só para um ator que o `character` conhece. A resposta traz o
+## resultado, a quantidade e o total e SEMPRE a chave do texto (a de compra ou de venda, ou a da recusa pelo código). A ponte ainda não confere se o jogador está perto do mercado (a economia não tem posição; a regra será do `world` e a ponte só coordena: LW-105d).
+func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> BridgePlayerEconomyReplies.PlayerTradeReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgePlayerEconomyReplies.PlayerTradeReply.new(_missing_character("request_trade"), 0, 0, side)
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgePlayerEconomyReplies.PlayerTradeReply.new(_missing_economy("request_trade"), 0, 0, side)
+	return BridgePlayerEconomy.trade(character, economy, actor_id, market_id, good_id, quantity, side)
 
 
 ## Intenções de NPC em S0 que a apresentação ainda não cumpriu (LW-070), em CÓPIAS, em ordem crescente de NPC, com o destino em metros e a
