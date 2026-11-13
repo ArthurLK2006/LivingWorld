@@ -1,0 +1,125 @@
+extends SceneTree
+## Diagnóstico de fluxos (SÓ para a cópia exportada dos experimentos; NÃO é código do jogo; fica como .txt para o Godot não importá-lo no projeto): `fluxos.gd -- --days N`.
+## Lê o histórico completo do `Ledger`, que o jogo real desliga: `preparar_copia.sh --historico` troca `EconomyModule.new(false, ...)` por
+## `EconomyModule.new(true, ...)` em `src/app/game_modules.gd` DA CÓPIA. Acessa `_state` do módulo (privado por convenção) por isso mesmo:
+## é só leitura e só de diagnóstico. Saída (CSV por tipo de linha, uma por dia):
+##   F,dia,motivo,de,para,qtd,valor     dinheiro movido no dia, por motivo e par de tipos de dono (mint = criado, burn = destruído)
+##   S,dia,local,receita,vendas,compras,folha,saldo,parado   por local de produção: o que o mercado pagou, o que ele pagou em insumos e manutenção, a folha
+##   G,dia,bem,produzido,gasto,estoque_nos_mercados          bens criados e destruídos NO DIA (produção/estoque inicial e consumo/manutenção) e o estoque dos mercados
+##   N,dia,ofício,vivos,mortos,sem_dinheiro                  NPCs por ofício; sem_dinheiro = vivos com saldo 0
+const KIND_NPC: String = "npc"
+const KIND_SITE: String = "site"
+const KIND_MARKET: String = "market"
+const KIND_OTHER: String = "other"
+
+var _kind_of: Dictionary[int, String] = {}
+var _site_place: Dictionary[int, String] = {}
+var _site_recipe: Dictionary[int, String] = {}
+
+
+func _initialize() -> void:
+	var days: int = 12
+	var arguments: PackedStringArray = OS.get_cmdline_user_args()
+	if arguments.size() == 2 and arguments[0] == "--days":
+		days = arguments[1].to_int()
+	var host: SimulationHostNode = SimulationHostNode.new()
+	var app: GameAppNode = GameAppNode.new()
+	app.bind_host(host)
+	app.start_default_game(host)
+	var settlements: Array[String] = ["test_settlement_a", "test_settlement_b", "test_settlement_c"]
+	for npc_id: int in host.npc.peek_npc_ids():
+		_kind_of[npc_id] = KIND_NPC
+	for settlement_id: String in settlements:
+		_kind_of[host.economy.peek_market_of(settlement_id).market_id] = KIND_MARKET
+		for site: EconomyReplies.SiteQuery in host.economy.peek_sites_of(settlement_id).sites:
+			_kind_of[site.workplace_id] = KIND_SITE
+			_site_place[site.workplace_id] = site.place_id
+			_site_recipe[site.workplace_id] = site.recipe_id
+	var processed: int = 0
+	var last_created: Dictionary[String, int] = {}
+	var last_destroyed: Dictionary[String, int] = {}
+	for day: int in range(1, days + 1):
+		host.runner.run_days(1)
+		var history: Array[Dictionary] = host.economy._state.ledger.peek_history()
+		_print_flows(day, history.slice(processed))
+		processed = history.size()
+		_print_sites(day, host)
+		for row: Dictionary in host.economy.peek_goods_conservation().rows:
+			var good_id: String = str(row["good_id"])
+			var in_markets: int = 0
+			for settlement_id: String in settlements:
+				in_markets += host.economy.peek_stock(host.economy.peek_market_of(settlement_id).market_id, good_id).value if host.economy.peek_stock(host.economy.peek_market_of(settlement_id).market_id, good_id).result.ok else 0
+			print("G,%d,%s,%d,%d,%d" % [day, good_id, int(row["created"]) - int(last_created.get(good_id, 0)), int(row["destroyed"]) - int(last_destroyed.get(good_id, 0)), in_markets])
+			last_created[good_id] = int(row["created"])
+			last_destroyed[good_id] = int(row["destroyed"])
+		_print_npcs(day, host)
+	host.runner.finish()
+	host.free()
+	app.free()
+	quit(0)
+
+
+func _kind(owner_id: int) -> String:
+	return str(_kind_of.get(owner_id, KIND_OTHER))
+
+
+func _print_flows(day: int, entries: Array[Dictionary]) -> void:
+	var sums: Dictionary[String, int] = {}
+	var counts: Dictionary[String, int] = {}
+	for entry: Dictionary in entries:
+		var kind: String = str(entry["kind"])
+		var from_kind: String = "mint" if kind == "mint" else _kind(int(entry["from_id"]))
+		var to_kind: String = "burn" if kind == "burn" else _kind(int(entry["to_id"]))
+		var key: String = "%s,%s,%s" % [str(entry["reason"]), from_kind, to_kind]
+		sums[key] = int(sums.get(key, 0)) + int(entry["amount"])
+		counts[key] = int(counts.get(key, 0)) + 1
+	var keys: Array[String] = []
+	keys.assign(sums.keys())
+	keys.sort()
+	for key: String in keys:
+		print("F,%d,%s,%d,%d" % [day, key, counts[key], sums[key]])
+
+
+func _print_sites(day: int, host: SimulationHostNode) -> void:
+	var rows: Dictionary[int, Array] = {}
+	for entry: Dictionary in host.economy._state.ledger.peek_history():
+		var from_id: int = int(entry["from_id"])
+		var to_id: int = int(entry["to_id"])
+		var reason: String = str(entry["reason"])
+		var amount: int = int(entry["amount"])
+		if _site_place.has(from_id) and reason == "salary":
+			rows[from_id] = rows.get(from_id, [0, 0, 0])
+			rows[from_id][2] = int(rows[from_id][2]) + amount
+		elif _site_place.has(from_id) and reason == "trade":
+			rows[from_id] = rows.get(from_id, [0, 0, 0])
+			rows[from_id][1] = int(rows[from_id][1]) + amount
+		elif _site_place.has(to_id) and reason == "trade":
+			rows[to_id] = rows.get(to_id, [0, 0, 0])
+			rows[to_id][0] = int(rows[to_id][0]) + amount
+	var ids: Array[int] = []
+	ids.assign(_site_place.keys())
+	ids.sort()
+	for site_id: int in ids:
+		var totals: Array = rows.get(site_id, [0, 0, 0])
+		var site: EconomyReplies.SiteQuery = host.economy.peek_site(site_id)
+		print("S,%d,%s,%s,%d,%d,%d,%d,%s" % [day, _site_place[site_id], _site_recipe[site_id], int(totals[0]), int(totals[1]), int(totals[2]), host.economy.peek_balance(site_id).balance, "RUN" if site.running else site.reason])
+
+
+func _print_npcs(day: int, host: SimulationHostNode) -> void:
+	var table: Dictionary[String, Array] = {}
+	for npc_id: int in host.npc.peek_npc_ids():
+		var query: NpcModule.NpcQuery = host.npc.peek_npc(npc_id)
+		var occupation_key: String = query.settlement_id.right(1) + "_" + query.occupation_id
+		var row: Array = table.get(occupation_key, [0, 0, 0])
+		if query.is_alive:
+			row[0] = int(row[0]) + 1
+			if host.economy.peek_balance(npc_id).balance == 0:
+				row[2] = int(row[2]) + 1
+		else:
+			row[1] = int(row[1]) + 1
+		table[occupation_key] = row
+	var names: Array[String] = []
+	names.assign(table.keys())
+	names.sort()
+	for occupation_id: String in names:
+		print("N,%d,%s,%d,%d,%d" % [day, occupation_id, int(table[occupation_id][0]), int(table[occupation_id][1]), int(table[occupation_id][2])])
