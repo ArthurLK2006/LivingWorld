@@ -7,6 +7,7 @@ const WORLD_DIR: String = "res://data/world"
 const GAME_VERSION: String = "0.0.1-test"
 const SEED: int = 105
 const SETTLEMENT: String = "test_settlement_a"
+const MARKET_PLACE_ID: String = "a_market_01"
 const BREAD: String = "bread"
 const WOOD: String = "wood"
 const TOOL: String = "tool"
@@ -14,6 +15,9 @@ const UNKNOWN_ID: int = 999999
 const TOOLS_TOO_MANY: int = 5
 
 var _terrain: TerrainData
+var _places: Array[Place] = []
+## O centro do mercado `a_market_01` (dos locais reais): é onde o jogador negocia, perto o bastante (LW-105d).
+var _market_position: Vector3
 var _setup: EconomySetup
 var _host: SimulationHostNode
 var _bridge: SimBridge
@@ -27,17 +31,24 @@ func before_all() -> void:
 	var loaded: TerrainLoader.LoadResult = TerrainLoader.load_dir(WORLD_DIR)
 	assert_true(loaded.result.ok, loaded.result.message)
 	_terrain = loaded.terrain
+	var settlements: SettlementLoader.LoadResult = SettlementLoader.load_dir(WORLD_DIR, _terrain)
+	assert_true(settlements.result.ok, settlements.result.message)
+	_places = settlements.places
+	for place: Place in _places:
+		if place.id == MARKET_PLACE_ID:
+			_market_position = place.position
 	_setup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR)
 	assert_true(_setup.result.ok, _setup.result.message)
 
 
-## Um jogo só com o personagem e a economia (sem NPCs), com o jogador já nascido e com a conta aberta.
+## Um jogo só com o personagem e a economia (sem NPCs), com o jogador já nascido e com a conta aberta, JUNTO ao mercado `a_market_01` (LW-105d: longe dele toda ordem volta `PLACE_TOO_FAR`; a regra é testada em `test_bridge_market_reach.gd`).
 func before_each() -> void:
 	_host = SimulationHostNode.new()
 	_host.start_new_game(SEED, _terrain, [], null, 0, _setup)
-	_bridge = SimBridge.new(_host, _terrain)
+	_bridge = SimBridge.new(_host, _terrain, _places)
 	_economy = _host.economy
 	_actor_id = _bridge.request_spawn_character().actor_id
+	assert_true(_bridge.request_report_position(_actor_id, _market_position, 0.0).ok, "O jogador começa junto ao mercado.")
 	assert_true(_bridge.request_open_player_account(_actor_id).ok)
 	_market_id = _economy.peek_market_of(SETTLEMENT).market_id
 
@@ -143,6 +154,7 @@ func test_refusals_come_with_the_right_key_and_change_nothing() -> void:
 
 func test_other_refusals_use_the_generic_key() -> void:
 	var unopened: int = _bridge.request_spawn_character().actor_id
+	assert_true(_bridge.request_report_position(unopened, _market_position, 0.0).ok, "Também junto ao mercado: só a conta falta.")
 	var cases: Array = [
 		[_bridge.request_trade(unopened, _market_id, BREAD, 1, BridgePlayerEconomyReplies.SIDE_BUY), EconomyCodes.UNKNOWN_OWNER],
 		[_bridge.request_trade(_actor_id, UNKNOWN_ID, BREAD, 1, BridgePlayerEconomyReplies.SIDE_BUY), EconomyCodes.UNKNOWN_MARKET],
