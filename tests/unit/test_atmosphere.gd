@@ -188,6 +188,23 @@ func test_the_rig_applies_the_bloom_of_the_state_to_the_environment() -> void:
 	assert_false(environment.glow_enabled, "Bloom desligado no recurso: desligado no Environment.")
 
 
+func test_the_rig_applies_the_sun_yaw_and_pitch_of_the_state_outside_the_day() -> void:
+	var config: AmbientConfig = _config().duplicate() as AmbientConfig
+	var rig: AmbientRig = AmbientRig.new()
+	rig.config = config
+	var world_environment: WorldEnvironment = WorldEnvironment.new()
+	var sun: DirectionalLight3D = DirectionalLight3D.new()
+	for node: Node in [rig, world_environment, sun]:
+		autofree(node)
+	var day_yaw: float = DayNightCycle.state_at(config, NOON).sun_yaw_degrees
+	for hour: float in [GOLDEN_HOURS[0], DUSK_HOURS[1], NOON]:
+		var state: DayNightCycle.LightState = DayNightCycle.state_at(config, hour)
+		assert_true(rig.apply_state_to(world_environment, sun, state))
+		assert_almost_eq(sun.rotation_degrees.y, state.sun_yaw_degrees, ELEVATION_TOLERANCE, "O giro do sol do estado (%s h) vai ao nó." % hour)
+		assert_almost_eq(sun.rotation_degrees.x, -state.elevation_degrees, ELEVATION_TOLERANCE, "A elevação do estado (%s h) vai ao nó." % hour)
+	assert_gt(absf(DayNightCycle.state_at(config, GOLDEN_HOURS[0]).sun_yaw_degrees - day_yaw), 100.0, "Sensibilidade: o giro da dourada é bem diferente do giro do dia, então ler o giro do recurso em vez do estado seria pego.")
+
+
 func test_the_resource_loads_validates_and_flags_bad_atmosphere_fields() -> void:
 	var config: AmbientConfig = _config()
 	assert_not_null(config, "O .tres tem de carregar como AmbientConfig.")
