@@ -118,7 +118,7 @@ Decisões **aprovadas** por Arthur:
 | Linguagem | **GDScript tipado** | Todas as variáveis, parâmetros e retornos com tipo (DEC-013) |
 | Plataforma | **PC, com macOS como sistema inicial** | DEC-014 e DEC-015. Outros sistemas: futuro |
 | Modo | **Single-player** | Multiplayer apenas como possibilidade futura (DEC-017, DEC-018) |
-| Visual | **Stylized low-poly** | Fonte de arte: direção híbrida aprovada (DEC-021, 14/11/2026); áudio ainda não definido (DEC-020, DEC-021) |
+| Visual | **Stylized low-poly** | Fonte de arte, modelos e áudio ainda não definida (DEC-020, DEC-021) |
 | Idioma | **Código e identificadores em inglês; documentação, relatórios e interface em português** | DEC-022. O glossário português ↔ identificador está no GDD, Anexo E |
 | Repositório | **GitHub** (já existe) | DEC-089 (aprovada só quanto ao serviço). A visibilidade foi decidida na DEC-114 (04/11/2026): **público, por ora**, reversível |
 

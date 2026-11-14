@@ -1,6 +1,6 @@
 # Manifesto de licenças de arte (Fase 0)
 
-**Status:** PROPOSTA (pesquisa de 13/11/2026, só leitura: nada foi baixado nem adicionado ao repositório). Define a política e lista os candidatos. A DEC-021 (origem da arte) foi **APROVADA por Arthur em 14/11/2026 como direção híbrida** (o áudio segue PENDENTE); a escolha de cada pacote continua sujeita às verificações deste manifesto e ao aceite visual de Arthur. "n/i" = não informado na página.
+**Status:** PROPOSTA (pesquisa de 13/11/2026, só leitura: nada foi baixado nem adicionado ao repositório). Define a política e lista os candidatos. A DEC-021 (origem da arte) segue **PENDENTE**; a DEC-280 não a decide. "n/i" = não informado na página.
 
 ## 1. Política recomendada (não aprovada)
 1. Só entra no repositório asset com licença **CC0** (ou domínio público) confirmada na página oficial do pacote, com URL e data.
