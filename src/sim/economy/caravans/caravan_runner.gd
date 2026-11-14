@@ -1,8 +1,8 @@
 class_name CaravanRunner
 extends RefCounted
-## A caravana por dentro (LW-098d1; docs/modules/economy.md, 9.2 a 9.6 e 9.8): os PLANOS (o `TradePlanner` da 098b sobre os caminhos abertos do `world`), a PARTIDA (a compra do lote, ATÔMICA, e o registro no `CaravanBook`) e os cinco campos derivados de `peek_caravan`.
-## A chegada, a venda e o avanço trecho a trecho são da 098d2; a parada e o desvio, da 098e. Trabalha sobre o `EconomyState` do momento e a porta de rotas do `world` (`WorldModule`, dada pelo construtor da economia, 9.2): sem a porta, sem os parâmetros da caravana ou sem
-## mercados não há caravana (`ECON_NO_ROUTE`). Dinheiro e bens só se movem no `TradeEngine.execute` (nada nasce nem some; o saldo muda só por `trade`) e o registro é a única escrita nova. Não sorteia e não lê o relógio: o minuto vem de quem chama.
+## A caravana por dentro (LW-098d1 e LW-098d2; docs/modules/economy.md, 9.2 a 9.8): os PLANOS (o `TradePlanner` da 098b sobre os caminhos abertos do `world`), a PARTIDA (a compra do lote, ATÔMICA, e o registro no `CaravanBook`), os cinco campos derivados de `peek_caravan` e, na 098d2,
+## o AVANÇO trecho a trecho, a CHEGADA e a venda do lote (o `CaravanArrived`); a parada e o desvio são da 098e. Trabalha sobre o `EconomyState` do momento e a porta de rotas do `world` (`WorldModule`, dada pelo construtor da economia, 9.2): sem a porta, sem os parâmetros da caravana ou sem
+## mercados não há caravana (`ECON_NO_ROUTE`). Dinheiro e bens só se movem no `TradeEngine.execute` (nada nasce nem some; o saldo muda só por `trade`) e o registro é a única escrita. Não sorteia e não lê o relógio: o minuto vem de quem chama.
 
 var _state: EconomyState
 var _world: WorldModule
@@ -35,7 +35,8 @@ func plans(trader_id: int, origin_market_id: int) -> CaravanReplies.PlansQuery:
 ## trecho 0, que começa agora. Falhou em qualquer ponto, nada mudou. NÃO exige lucro (a decisão de partir é do `npc`, 9.2). `now`: o minuto de simulação da partida; devolve o minuto previsto da chegada (a soma dos trechos) e o que o lote custou (o total pago, sem a tarifa que a regra calcula e a Fase 3 não cobra).
 func start(trader_id: int, origin_id: int, destination_id: int, good_id: String, quantity: int, now: int) -> CaravanReplies.StartResult:
 	var legs: Array[RouteCost.Leg] = []
-	var refused: Result = _check_start(trader_id, origin_id, destination_id, good_id, legs)
+	var minutes: Array[int] = []
+	var refused: Result = _check_start(trader_id, origin_id, destination_id, good_id, legs, minutes)
 	if not refused.ok:
 		return CaravanReplies.StartResult.new(refused)
 	var bought: TradeEngine.Outcome = _state.engine.execute(trader_id, origin_id, good_id, quantity, TradeEngine.SIDE_BUY)
@@ -47,13 +48,33 @@ func start(trader_id: int, origin_id: int, destination_id: int, good_id: String,
 	caravan.destination_market_id = destination_id
 	caravan.route_ids.assign(legs.map(func(leg: RouteCost.Leg) -> String: return leg.route_id))
 	caravan.leg_started_at = now
-	caravan.leg_minutes = RouteCost.leg_minutes(legs[0], _params)
+	caravan.leg_minutes = minutes[0]
 	caravan.good_id = good_id
 	caravan.quantity = quantity
 	caravan.cost_paid = bought.total
 	caravan.departed_at = now
 	_state.caravans.add(caravan)
-	return CaravanReplies.StartResult.new(Result.success(), now + RouteCost.path_minutes(legs, _params), bought.total)
+	return CaravanReplies.StartResult.new(Result.success(), now + minutes[1], bought.total)
+
+
+## O AVANÇO e a CHEGADA de UMA caravana no minuto `now` (LW-098d2; 9.4): enquanto o trecho atual já acabou (`now >= leg_started_at + leg_minutes`), o seguinte começa NO MINUTO EXATO em que ele acabou (não em `now`), então o ETA não depende do tamanho do passo e vários trechos cabem num passo só. Ao fim do
+## último trecho a caravana CHEGA: vende o lote (`_arrive`), apaga o registro e devolve o `CaravanArrived`, que quem chama publica (o evento só existe depois da venda e do registro apagado). Devolve `null` se não chegou. Só anda a `travelling` (a parada e o desvio são da 098e); sem a porta de rotas, sem
+## os parâmetros ou com rota que o `world` não conhece, não faz nada (o registro fica como está).
+func advance(trader_id: int, now: int) -> CaravanArrived:
+	var caravan: Caravan = _state.caravans.caravan_of(trader_id)
+	if caravan == null or caravan.state != Caravan.STATE_TRAVELLING or now < caravan.leg_started_at + caravan.leg_minutes or not _is_available():
+		return null
+	var legs: Array[RouteCost.Leg] = _legs_of(caravan.route_ids)
+	if legs.is_empty():
+		return null
+	while now >= caravan.leg_started_at + caravan.leg_minutes:
+		if caravan.leg_index + 1 >= legs.size():
+			return _arrive(caravan)
+		caravan.leg_started_at += caravan.leg_minutes
+		caravan.leg_index += 1
+		caravan.leg_minutes = RouteCost.leg_minutes(legs[caravan.leg_index], _params)
+	_state.caravans.add(caravan)
+	return null
 
 
 ## A linha de `peek_caravan` e de `peek_caravans_on` (cópia) com os CINCO campos derivados do trecho e do relógio (9.3), nenhum salvo: `leg_from_settlement_id` e `leg_to_settlement_id`, `leg_length_m`, `progress_m` (`floor_div(comprimento × min(minutos andados, leg_minutes), leg_minutes)`;
@@ -105,8 +126,9 @@ func _check_trader(trader_id: int) -> Result:
 	return Result.success()
 
 
-## As conferências da partida, na ordem do contrato (9.8): o comerciante, sem caravana, os dois mercados, o caminho aberto (preenche `legs`; origem igual ao destino não tem) e o bem negociado nos dois. As condições da compra ficam com o `TradeEngine.execute`.
-func _check_start(trader_id: int, origin_id: int, destination_id: int, good_id: String, legs: Array[RouteCost.Leg]) -> Result:
+## As conferências da partida, na ordem do contrato (9.8): o comerciante, sem caravana, os dois mercados, o caminho aberto (preenche `legs`; origem igual ao destino não tem) e o bem negociado nos dois. As condições da compra ficam com o `TradeEngine.execute`. `minutes` (saída): os minutos do trecho 0 e os do
+## caminho inteiro, calculados AQUI, antes da compra (a divisão de `RouteCost` nunca acontece depois de mover dinheiro: a atomicidade não depende de dado válido).
+func _check_start(trader_id: int, origin_id: int, destination_id: int, good_id: String, legs: Array[RouteCost.Leg], minutes: Array[int]) -> Result:
 	var checked: Result = _check_trader(trader_id)
 	if not checked.ok:
 		return checked
@@ -121,7 +143,39 @@ func _check_start(trader_id: int, origin_id: int, destination_id: int, good_id: 
 	for market_id: int in [origin_id, destination_id]:
 		if not _state.markets.is_traded(market_id, good_id):
 			return _failure(EconomyCodes.UNKNOWN_GOOD, "o bem '%s' não é negociado no mercado %d" % [good_id, market_id])
+	minutes.assign([RouteCost.leg_minutes(legs[0], _params), RouteCost.path_minutes(legs, _params)])
 	return Result.success()
+
+
+## A venda do lote e o fim da viagem (9.4, "Venda na chegada (Q4)"): UMA ordem `execute` de venda de `q_sell` unidades; o que sobra FICA no inventário do comerciante (a LW-098g o trata). O dinheiro só muda de mãos nessa ordem (nada nasce nem some), o registro some depois dela e o evento leva o total recebido (0 se nada foi vendido).
+func _arrive(caravan: Caravan) -> CaravanArrived:
+	var quantity: int = _sellable_quantity(caravan)
+	var revenue: int = 0
+	if quantity > 0:
+		var sold: TradeEngine.Outcome = _state.engine.execute(caravan.trader_id, caravan.destination_market_id, caravan.good_id, quantity, TradeEngine.SIDE_SELL)
+		revenue = sold.total if sold.result.ok else 0
+	_state.caravans.remove(caravan.trader_id)
+	return CaravanArrived.new(caravan.trader_id, caravan.route_ids[-1], _state.markets.settlement_of(caravan.destination_market_id), revenue, caravan.cost_paid)
+
+
+## `q_sell` (Q4): a maior quantidade, de 0 a `min(lote, inventário do comerciante)`, que o destino aceita (`_market_takes`). Cada condição só piora quando a quantidade cresce (o total da cotação só cresce), então a busca binária é exata.
+func _sellable_quantity(caravan: Caravan) -> int:
+	var low: int = 0
+	var high: int = mini(caravan.quantity, _state.goods.quantity_of(caravan.trader_id, caravan.good_id))
+	while low < high:
+		var middle: int = IntMath.floor_div(low + high + 1, 2)
+		if _market_takes(caravan, middle):
+			low = middle
+		else:
+			high = middle - 1
+	return low
+
+
+## A ordem de venda de `quantity` unidades passaria no `TradeEngine.execute`? As MESMAS conferências dele: a cotação vale (regras, ator aberto, teto de compra do destino), o total não passa do saldo do mercado e a carga cabe nele (capacidade de peso).
+func _market_takes(caravan: Caravan, quantity: int) -> bool:
+	var market_id: int = caravan.destination_market_id
+	var quoted: TradeEngine.Outcome = _state.engine.quote(market_id, caravan.good_id, quantity, TradeEngine.SIDE_SELL, caravan.trader_id)
+	return quoted.result.ok and quoted.total <= _state.ledger.balance_of(market_id) and _state.goods.check_transfer(caravan.trader_id, market_id, caravan.good_id, quantity).ok
 
 
 ## O caminho ABERTO entre os dois mercados como trechos (`peek_path` só passa por rotas abertas); vazio se não há, se a origem é o destino ou se o `world` não conhece uma das rotas.

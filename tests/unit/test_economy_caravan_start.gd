@@ -90,12 +90,13 @@ func _fields(plan: Object) -> Array:
 	return [plan.get("destination_market_id"), plan.get("good_id"), plan.get("quantity"), plan.get("cost"), plan.get("revenue"), plan.get("risk_discount"), plan.get("minutes"), plan.get("net_profit"), plan.get("margin_bp"), plan.get("route_ids")]
 
 
-## O `TradePlanner` da 098b sobre uma CÓPIA do estado do módulo (o save dele recarregado) com os caminhos diretos escritos à mão (A-B e A-C reais).
-func _planner_plans(rig: Rig) -> Array[TradePlanner.Plan]:
+## O `TradePlanner` da 098b sobre uma CÓPIA do estado do módulo (o save dele recarregado) com os caminhos escritos à mão: `paths` (destino -> trechos) ou, sem ele, os diretos (A-B e A-C reais).
+func _planner_plans(rig: Rig, paths: Dictionary[int, Array] = {}) -> Array[TradePlanner.Plan]:
 	var copy: EconomyState = EconomyState.new(rig.definitions, NeutralTradeRules.new(), false)
 	assert_true(EconomyPersistence.load_into(copy, rig.module.serialize()).ok)
 	var planner: TradePlanner = TradePlanner.new(copy.engine, copy.markets, copy.goods, copy.ledger, rig.definitions.caravan_params, rig.definitions.price_params)
-	var paths: Dictionary[int, Array] = {rig.market_b: [RouteCost.Leg.new("route_a_b", 520, 20, 10)], rig.market_c: [RouteCost.Leg.new("route_a_c", 430, 30, 20)]}
+	if paths.is_empty():
+		paths = {rig.market_b: [RouteCost.Leg.new("route_a_b", 520, 20, 10)], rig.market_c: [RouteCost.Leg.new("route_a_c", 430, 30, 20)]}
 	return planner.plan_all(TRADER, rig.market_a, paths)
 
 
@@ -111,6 +112,25 @@ func test_trade_plans_match_the_planner_by_destination_and_change_nothing() -> v
 	assert_eq(plans.plans.map(func(plan: CaravanReplies.PlanQuery) -> Array: return [plan.destination_market_id, plan.minutes, plan.route_ids]), [[rig.market_b, 143, ["route_a_b"] as Array[String]], [rig.market_c, 124, ["route_a_c"] as Array[String]]], "Por destino crescente; 143 e 124 minutos à mão.")
 	assert_eq(rig.module.peek_trade_plans(TRADER, rig.market_a).plans.map(_fields), plans.plans.map(_fields), "A mesma consulta duas vezes dá o mesmo resultado.")
 	assert_eq(rig.module.peek_trade_plans(TRADER, 999).result.code, EconomyCodes.UNKNOWN_MARKET)
+
+
+func test_the_plans_follow_a_detour_around_a_closed_route() -> void:
+	var rig: Rig = _rig()
+	assert_true(rig.routes.request_close_route("route_a_b").ok)
+	var plans: CaravanReplies.PlansQuery = rig.module.peek_trade_plans(TRADER, rig.market_a)
+	assert_true(plans.result.ok, plans.result.message)
+	var around: Array[RouteCost.Leg] = [RouteCost.Leg.new("route_a_c", 430, 30, 20), RouteCost.Leg.new("route_b_c", 340, 25, 15)]
+	var direct: Array[RouteCost.Leg] = [RouteCost.Leg.new("route_a_c", 430, 30, 20)]
+	assert_eq(plans.plans.map(_fields), _planner_plans(rig, {rig.market_b: around, rig.market_c: direct}).map(_fields), "Mesmos números que o planejador da 098b sobre o caminho de DOIS trechos.")
+	assert_eq(plans.plans.map(func(plan: CaravanReplies.PlanQuery) -> Array: return [plan.destination_market_id, plan.minutes, plan.route_ids]), [[rig.market_b, 124 + 96, ["route_a_c", "route_b_c"] as Array[String]], [rig.market_c, 124, ["route_a_c"] as Array[String]]], "A-B fechada: o plano do B passa pelo C (124 + 96 minutos).")
+
+
+func test_a_plan_leads_to_a_start_with_the_planned_cost_and_eta() -> void:
+	var rig: Rig = _rig()
+	var plan: CaravanReplies.PlanQuery = rig.module.peek_trade_plans(TRADER, rig.market_a).plans[0]
+	var started: CaravanReplies.StartResult = rig.module.request_start_caravan(TRADER, rig.market_a, plan.destination_market_id, plan.good_id, plan.quantity)
+	assert_true(started.result.ok, started.result.message)
+	assert_eq([started.cost_paid, started.eta_minute, rig.module.peek_caravan(TRADER).quantity], [plan.cost, START_MINUTE + plan.minutes, plan.quantity], "Partir com o plano: custa o que ele previu (sem tarifa na Fase 3) e chega no minuto que ele previu.")
 
 
 func test_the_start_buys_the_lot_atomically_and_returns_the_eta_and_the_cost() -> void:
@@ -163,6 +183,7 @@ func test_every_failure_changes_nothing_and_has_its_code() -> void:
 		{"label": "sem estoque", "args": [TRADER, rig.market_a, rig.market_c, "ore", 11], "code": EconomyCodes.INSUFFICIENT_STOCK},
 		{"label": "sem capacidade", "args": [TRADER, rig.market_a, rig.market_c, "wood", 25], "code": EconomyCodes.CAPACITY_EXCEEDED},
 		{"label": "quantidade zero", "args": [TRADER, rig.market_a, rig.market_c, "bread", 0], "code": EconomyCodes.BAD_QUANTITY},
+		{"label": "lote acima do máximo por ordem", "args": [TRADER, rig.market_a, rig.market_c, "bread", rig.definitions.price_params.max_order_quantity + 1], "code": EconomyCodes.BAD_QUANTITY},
 		{"label": "bem que não existe", "args": [TRADER, rig.market_a, rig.market_c, "salt", 5], "code": EconomyCodes.UNKNOWN_GOOD},
 		{"label": "mercado que não existe", "args": [TRADER, rig.market_a, 999, "bread", 5], "code": EconomyCodes.UNKNOWN_MARKET},
 		{"label": "origem igual ao destino", "args": [TRADER, rig.market_a, rig.market_a, "bread", 5], "code": EconomyCodes.NO_ROUTE},
@@ -170,11 +191,12 @@ func test_every_failure_changes_nothing_and_has_its_code() -> void:
 		{"label": "dono que não existe", "args": [999, rig.market_a, rig.market_c, "bread", 5], "code": EconomyCodes.UNKNOWN_OWNER},
 	]
 	var before: String = _snapshot(rig)
+	var queued: int = rig.world.context.events.debug_summary()["pending"]
 	for test_case: Dictionary in cases:
 		var args: Array = test_case["args"]
 		var refused: CaravanReplies.StartResult = rig.module.request_start_caravan(args[0], args[1], args[2], args[3], args[4])
 		assert_eq(refused.result.code, test_case["code"], test_case["label"])
-		assert_eq([refused.eta_minute, refused.cost_paid, _snapshot(rig) == before], [0, 0, true], "%s: nada mudou e nada foi devolvido." % test_case["label"])
+		assert_eq([refused.eta_minute, refused.cost_paid, _snapshot(rig) == before, rig.world.context.events.debug_summary()["pending"]], [0, 0, true, queued], "%s: nada mudou, nada foi devolvido e nenhum evento foi publicado." % test_case["label"])
 	assert_true(rig.module.request_start_caravan(TRADER, rig.market_a, rig.market_c, "bread", 5).result.ok)
 	before = _snapshot(rig)
 	assert_eq(rig.module.request_start_caravan(TRADER, rig.market_a, rig.market_b, "bread", 5).result.code, EconomyCodes.CARAVAN_BUSY, "Uma caravana por comerciante.")
