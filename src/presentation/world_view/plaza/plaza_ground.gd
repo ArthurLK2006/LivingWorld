@@ -82,28 +82,36 @@ func _ground_color(point: Vector3, tri_index: int) -> Color:
 	return grass.lerp(dirt, smoothstep(0.35, 0.65, wear))
 
 
-## A mancha de terra batida do jogo (ART-2a): um disco facetado de `radius_m` em torno da origem da raiz (PlazaData.PATCH_RINGS anéis de PlazaData.PATCH_SEGMENTS setores, do centro para fora), cada ponto na altura do provedor mais PlazaData.PATCH_LIFT_M. Não projeta sombra: colada no terreno, só a recebe (evita acne de sombra [HIP], a conferir no jogo). Devolve o nó `PlazaPatch`.
+## A mancha de terra batida do jogo (ART-2a, ART-2c): um disco facetado de `radius_m` em torno da origem da raiz (PlazaData.PATCH_RINGS anéis de PlazaData.PATCH_SEGMENTS setores, do centro para fora), cada ponto na altura do provedor mais PlazaData.PATCH_LIFT_M, com a cor por vértice de `_patch_color` (o PlazaMeshKit só aceita uma cor por triângulo, que deixaria a roda de fatias). Não projeta sombra: colada no terreno, só a recebe (evita acne de sombra [HIP], a conferir no jogo). Devolve o nó `PlazaPatch`.
 func add_patch(radius_m: float) -> MeshInstance3D:
 	assert(radius_m > 0.0, "PlazaGround.add_patch: o raio da mancha deve ser positivo, recebeu %s" % radius_m)
-	var kit: PlazaMeshKit = PlazaMeshKit.new()
-	kit.is_shaded = false
+	var surface: SurfaceTool = SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for ring: int in PlazaData.PATCH_RINGS:
-		var inner: float = radius_m * ring / PlazaData.PATCH_RINGS
-		var outer: float = radius_m * (ring + 1) / PlazaData.PATCH_RINGS
 		for sector: int in PlazaData.PATCH_SEGMENTS:
-			var a: Vector3 = _patch_point(inner, sector)
-			var b: Vector3 = _patch_point(inner, sector + 1)
-			var c: Vector3 = _patch_point(outer, sector + 1)
-			var d: Vector3 = _patch_point(outer, sector)
-			var color: Color = _patch_color(ring, ring * PlazaData.PATCH_SEGMENTS + sector)
-			var below: Vector3 = Vector3(a.x, PlazaData.GROUND_FLOOR_M, a.z)
-			if ring == 0:
-				kit.tri(a, c, d, color, below)
-			else:
-				kit.quad(a, b, c, d, color, below)
-	var patch: MeshInstance3D = attach(kit.finish(ArrayMesh.new(), _materials[&"solid"]), "PlazaPatch", Transform3D.IDENTITY)
+			var inner: Vector2i = Vector2i(ring, sector)
+			var inner_next: Vector2i = Vector2i(ring, sector + 1)
+			var outer: Vector2i = Vector2i(ring + 1, sector)
+			var outer_next: Vector2i = Vector2i(ring + 1, sector + 1)
+			if ring > 0:
+				_patch_tri(surface, radius_m, [inner, outer_next, inner_next])
+			_patch_tri(surface, radius_m, [inner, outer, outer_next])
+	surface.set_material(_materials[&"solid"])
+	var patch: MeshInstance3D = attach(surface.commit(), "PlazaPatch", Transform3D.IDENTITY)
 	patch.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return patch
+
+
+## Triângulo da mancha de normal plana para cima, com a cor de cada vértice; `corners` traz (anel, setor) de cada ponto na ordem horária vista de cima (a face da frente do material).
+func _patch_tri(surface: SurfaceTool, radius_m: float, corners: Array[Vector2i]) -> void:
+	var points: Array[Vector3] = []
+	for corner: Vector2i in corners:
+		points.append(_patch_point(radius_m * corner.x / PlazaData.PATCH_RINGS, corner.y))
+	var normal: Vector3 = (points[2] - points[0]).cross(points[1] - points[0]).normalized()
+	for index: int in points.size():
+		surface.set_normal(normal)
+		surface.set_color(_patch_color(points[index], float(corners[index].x) / PlazaData.PATCH_RINGS))
+		surface.add_vertex(points[index])
 
 
 ## Ponto do disco no raio dado; o setor volta ao zero depois do último, então a costura reaproveita o mesmo vértice.
@@ -114,11 +122,25 @@ func _patch_point(radius_m: float, sector: int) -> Vector3:
 	return Vector3(x, height_at(x, z) + PlazaData.PATCH_LIFT_M, z)
 
 
-## Cor do quadro da mancha: a terra do chão (tom por quadro) e, do centro para fora, cada vez mais grama (PlazaData.PATCH_RIM_GRASS no anel de fora), para a borda se misturar à grama do terreno.
-func _patch_color(ring: int, tile: int) -> Color:
-	var dirt: Color = PlazaData.DIRT.lerp(PlazaData.DIRT_DARK, PlazaMeshKit.unit(tile, PlazaData.Channel.DIRT))
-	var grass: Color = PlazaData.GRASS.lerp(PlazaData.GRASS_DARK, PlazaMeshKit.unit(tile, PlazaData.Channel.GRASS))
-	return dirt.lerp(grass, PlazaData.PATCH_RIM_GRASS * ring / maxi(PlazaData.PATCH_RINGS - 1, 1))
+## Cor do vértice `point`, a `reach` (0 a 1) do raio da mancha, contínua do centro para fora: terra batida escura e compacta no centro, terra seca mais clara até PlazaData.PATCH_DRY_REACH e, a partir de PlazaData.PATCH_FADE_FROM, cada vez mais cor do terreno (PlazaData.PATCH_RIM_COLOR), para a borda se perder no chão. Só depende da posição, então vértices que coincidem (o centro, a costura) têm a mesma cor.
+func _patch_color(point: Vector3, reach: float) -> Color:
+	var tint: float = _patch_noise(point.x, point.z) * PlazaData.PATCH_TINT
+	var dirt: Color = PlazaData.DIRT_DARK.lerp(PlazaData.DIRT, smoothstep(0.0, PlazaData.PATCH_DRY_REACH, reach) + tint)
+	return dirt.lerp(PlazaData.PATCH_RIM_COLOR, PlazaData.PATCH_RIM_GRASS * smoothstep(PlazaData.PATCH_FADE_FROM, 1.0, reach))
+
+
+## Variação de tom em (x, z), de -0,5 a 0,5: ruído de valor (hash de inteiros nos cantos de uma grade de PlazaData.PATCH_NOISE_CELL_M metros, interpolado suave). Baixa frequência e sem relação com a malha de anéis e setores, que se adensa no centro e faria estrias.
+func _patch_noise(x: float, z: float) -> float:
+	var cell: Vector2 = Vector2(x, z) / PlazaData.PATCH_NOISE_CELL_M
+	var base: Vector2i = Vector2i(cell.floor())
+	var along: float = smoothstep(0.0, 1.0, cell.x - base.x)
+	var near: float = lerpf(_patch_lattice(base.x, base.y), _patch_lattice(base.x + 1, base.y), along)
+	var far: float = lerpf(_patch_lattice(base.x, base.y + 1), _patch_lattice(base.x + 1, base.y + 1), along)
+	return lerpf(near, far, smoothstep(0.0, 1.0, cell.y - base.y)) - 0.5
+
+
+func _patch_lattice(cell_x: int, cell_z: int) -> float:
+	return PlazaMeshKit.unit(cell_x * PlazaData.PATCH_NOISE_STRIDE + cell_z, PlazaData.Channel.PATCH)
 
 
 ## As árvores, em anel em volta da praça (as variações de malha se repartem por índice).
