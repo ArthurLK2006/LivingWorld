@@ -2,25 +2,26 @@
 
 Reflete o roadmap oficial ([DEVELOPMENT_ROADMAP.md](../DEVELOPMENT_ROADMAP.md)) e o [ROADMAP_STATUS.md](../ROADMAP_STATUS.md); **não os substitui** (em conflito, valem eles). O Maestro a atualiza a cada PR. Método aprovado por Arthur em 14/11/2026 (Opção A: roadmap integral, sem corte nem antecipação de fase).
 
-**Atualizada em 14/11/2026 · `main` 1cab466, CI verde · proteção do `main` ativa (PR e `check_all` obrigatórios, sem force-push nem exclusão, inclui administradores) · cota semanal em 84%, o teto de agentes é 2.**
+**Atualizada em 14/11/2026 · `main` 4b8fad8 (depois do PR #31) · proteção do `main` ativa (PR e `check_all` obrigatórios, sem force-push nem exclusão, inclui administradores) · cota semanal em 85%, o teto de agentes é 2 · Mandato 1 aprovado em 14/11 (vale quando o PR #34 estiver no `main`): [MANDATO_1.md](MANDATO_1.md).**
 
 ## Regras da fila
 - **Frentes são papéis por tarefa, não sessões:** A caminho crítico · B independentes liberadas · C arte, qualidade e suporte já autorizados. Teto de agentes ativos pela cota: 3 abaixo de 60%, 2 de 60 a 85%, 1 acima de 85%. Não se ocupa frente à toa.
 - Uma tarefa só inicia com: dependências satisfeitas (integradas no `main` com CI verde), escopo e contrato aprovados, arquivos sem conflito (matriz abaixo), worktree próprio e critério de aceite objetivo. Nada de antecipar fase nem decisão obrigatória.
 - Classes de risco (orientação; **não substituem o AGENTS.md**): 1 sem efeito no jogo (CI e conferência) · 2 código num módulo, sem mexer em contrato, save, evento, valor [HIP] ou design (mais revisor independente) · 3 contratos, save, eventos, balanceamento, design, vários módulos (revisor e aceite de Arthur) · 4 irreversível, custo, dependência, arquivo protegido, tag (Arthur antes e depois).
-- Só Arthur aceita (isso é o que conta no ROADMAP_STATUS). **Até a emenda ao AGENTS ser aprovada** ([EMENDA_AGENTS_PROPOSTA.md](EMENDA_AGENTS_PROPOSTA.md)), a próxima tarefa de código só começa com ordem dele; o que ele já autorizou por escrito segue.
+- Só Arthur aceita (isso é o que conta no ROADMAP_STATUS). A emenda ao AGENTS (seção 14.1, Mandato de Execução) foi **aprovada por ele em 14/11 com três ajustes** e está no PR #34; **até ela entrar no `main`**, a próxima tarefa de código só começa com ordem dele. Depois, só as tarefas **nomeadas** no [MANDATO_1.md](MANDATO_1.md) começam sozinhas, nunca antes de contrato e escopo aprovados; integração de classe 3 só com o "APROVADO" dele e de classe 4 só com ordem expressa; antes de integrar, a verificação cobre a combinação com o `main` mais recente (CI sobre base antiga só vale se o `main` não mudou em arquivos ou dependências da tarefa).
 
 ## Em andamento
 | Tarefa | Frente | Classe | Estado | Responsável | Ramo ou PR | Próximo passo |
 |---|---|---|---|---|---|---|
-| ART-3 variantes por mercado (A, B, C) | C | 2 | PR aberto, testes e capturas do jogo real feitos, CI rodando | Maestro | PR #32 | integrar com CI verde; depois ART-5b |
-| LW-107a contrato do quadro de contratos | B | 3 | agente escrevendo os documentos | implementador | `lw-107a-contrato-quadro` | PR em rascunho; contrato aprovado por Arthur |
-| LW-098a contrato do comerciante e da `Caravan` | A | 3 | agente de leitura gerando a especificação | Plan | — | documento, perguntas a Arthur |
-| Pacote de aceite 1 (6 tarefas no `main`) | B | 1 | pronto neste PR | Maestro | este PR | aceite formal de Arthur |
-| Emenda ao AGENTS (mandato de execução) | — | 4 | texto pronto neste PR | Maestro | este PR | aprovação de Arthur |
+| Emenda do AGENTS (14.1) e Mandato 1 | — | 4 | PR aberto; revisão independente e CI rodando | Maestro e revisor | PR #34 | integrar com revisão e CI verdes |
+| ART-5b1 tipos de barraca (B e C) | C, Mandato 1 | 2 | agente implementando | implementador | `arte-5b-tipos-de-barraca` | capturas do jogo real, PR, integrar |
+| LW-107a contrato do quadro de contratos | B | 3 | PR em rascunho, CI verde | Maestro | PR #33 | sua aprovação do texto e 3 decisões |
+| LW-098a contrato do comerciante e da `Caravan` | A | 3 | PR em rascunho | Maestro | PR #35 | sua aprovação do desenho e as respostas Q1 a Q10 |
+| Aceite de LW-093, LW-096, LW-097 e LW-105 | — | — | pacote com os hashes exatos pronto | Maestro | este PR | seu aceite formal |
+| Soak de 30 dias manual com população antiga (100) | C | 1 | corrigir a constante (o script de 7 dias já usa 132) | Maestro | PR próprio | integrar |
 
 ## Aguardando aceite de Arthur (já no `main`)
-LW-093, LW-096, LW-097 (com ressalva) e LW-105 com proposta de aceite; LW-108 depois da conferência na janela; LW-095 **parcial** (não aceitar). Detalhes e evidências: [PACOTE_ACEITE_1.md](PACOTE_ACEITE_1.md). Na Fase 3 o placar oficial é 7 de 30 e iria a 11 (a 12 com a LW-108). Fora da Fase 3, sem ação agora: LW-117 e LW-146 (só documentos) e LW-118, no `main` sem contar.
+LW-093, LW-096, LW-097 (com ressalva) e LW-105 com proposta de aceite; LW-108 depois da conferência na janela; LW-095 **parcial** (não aceitar). Detalhes, evidências e os **hashes exatos** que o aceite valida: [PACOTE_ACEITE_1.md](PACOTE_ACEITE_1.md). Na Fase 3 o placar oficial é 7 de 30 e iria a 11 (a 12 com a LW-108). Fora da Fase 3, sem ação agora: LW-117 e LW-146 (só documentos) e LW-118, no `main` sem contar.
 
 ## Liberadas depois das aprovações indicadas
 | Tarefa | Depende de | Faixa (conflito) |
