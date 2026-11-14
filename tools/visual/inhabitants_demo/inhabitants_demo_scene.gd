@@ -16,7 +16,7 @@ const MICROSECONDS_PER_SECOND: float = 1000000.0
 const MICROSECONDS_PER_MS: float = 1000.0
 const TRIANGLE_VERTICES: float = 3.0
 ## Os seis do alinhamento (id, papel), escolhidos por varredura da faixa de IDs para bater com a descrição: aldeão alto e magro de capuz com cesta, aldeão baixo e redondo de boné com saco, comerciante redondo de chapéu largo e bolsa, comerciante alto de avental e bolsinha, guarda alto de elmo e lança, guarda parrudo de elmo e cajado de guarda.
-const LINEUP: Array = [[424, &"villager"], [479, &"villager"], [576, &"merchant"], [304, &"merchant"], [25, &"guard"], [393, &"guard"]]
+const LINEUP: Array = [[526, &"villager"], [365, &"villager"], [188, &"merchant"], [100, &"merchant"], [100, &"guard"], [114, &"guard"]]
 ## Closes (índice no alinhamento, nome): o aldeão de capuz, o de boné, o comerciante redondo e o guarda parrudo; os três primeiros nomes sem número entram na folha de contato (alinhamento e três closes, 2 x 2).
 const HEROES: Array = [[0, "aldeao"], [1, "aldeao_2"], [2, "comerciante"], [5, "guarda"]]
 const CONTACT_HEROES: Array[String] = ["aldeao", "comerciante", "guarda"]
@@ -122,6 +122,7 @@ func _enter(set_id: String) -> void:
 	if is_village and _village == null:
 		_village = KenneyVillage.new(self, "KenneyVillage")
 		_village.build_village()
+		_village.merge_static()
 		_catalog = KenneyVillage.new(self, "KenneyCatalog", CATALOG_ORIGIN)
 		_catalog_front = _catalog.build_catalog()
 		_catalog.root.visible = false

@@ -23,14 +23,14 @@ const POLE_EPSILON: float = 0.0005
 const BOUNCE: float = 0.7
 const BOUNCE_COLOR: Color = Color("F4DDB0")
 ## Corpo em sino gordo: perfil do manto (altura em fração de H, raio em fração de R): a barra afunila, a barriga é o ponto mais largo e o alto arredonda nos ombros. O pescoço fecha dentro da cabeça. A largura TOTAL do habitante inclui os braços (ARM_REACH_M de cada lado).
-const BELL_PROFILE: Array[Vector2] = [Vector2(0.1, 0.82), Vector2(0.2, 0.95), Vector2(0.31, 1.0), Vector2(0.45, 0.9), Vector2(0.56, 0.68), Vector2(0.635, 0.36)]
+const BELL_PROFILE: Array[Vector2] = [Vector2(0.1, 0.9), Vector2(0.2, 0.97), Vector2(0.31, 1.0), Vector2(0.45, 0.93), Vector2(0.56, 0.78), Vector2(0.635, 0.47)]
 const COAT_HEM: Vector2 = Vector2(0.065, 1.1)
 const NEAR_RINGS: Array[int] = [0, 1, 2, 3, 4, 5]
 const FAR_RINGS: Array[int] = [0, 2, 4, 5]
 const NECK_DEPTH: float = 0.78
 const NECK_MIN_RISE: float = 0.01
 const BODY_DEPTH: float = 0.95
-const ARM_REACH_M: float = 0.075
+const ARM_REACH_M: float = 0.09
 const MIN_RADIUS_M: float = 0.16
 ## Faixas sobre o manto (altura em fração de H, folga sobre o raio dele): cinto, avental e painéis do tabardo. O escudo do tabardo: altura do centro, meia largura (fração de H), levantamento (m) e contorno em meias larguras.
 const BELT_SPANS: Array[Vector2] = [Vector2(0.285, 1.07), Vector2(0.325, 1.06)]
@@ -54,10 +54,13 @@ const SOCK_RADIUS: float = 0.032
 const SOCK_TOP: float = 0.115
 ## Ombros redondos e braços curtos e rombudos: altura do ombro, raio da bola do ombro, raios da manga (ombro, pulso), mão de luva (raios) e onde ela cai (altura; x em fração do raio da barriga, colada nela).
 const SHOULDER_Y: float = 0.585
-const SHOULDER_BALL: float = 0.074
-const SLEEVE_RADII: Vector2 = Vector2(0.066, 0.046)
+const SHOULDER_BALL: float = 0.086
+const SLEEVE_RADII: Vector2 = Vector2(0.078, 0.056)
 const ARM_SIDES: int = 6
-const HAND_RADII: Vector3 = Vector3(0.044, 0.05, 0.04)
+const HAND_RADII: Vector3 = Vector3(0.05, 0.056, 0.045)
+## Polegar da luva: lugar sobre a mão (x para dentro, y para cima, z para a frente, em frações dos raios dela) e tamanho (fração dos raios da mão).
+const THUMB_SPOT: Vector3 = Vector3(0.6, 0.3, -0.75)
+const THUMB_SIZE: Vector3 = Vector3(0.5, 0.6, 0.5)
 const HAND_HEIGHT: float = 0.37
 const HAND_IN_R: float = 0.98
 ## Cabeça: meia altura (fração de H, vezes a escala da ficha), abaixamento do centro (fração da meia altura), proporção dos outros dois raios e anéis da casca.
@@ -75,18 +78,21 @@ const BROW_INNER: Vector2 = Vector2(0.15, 0.32)
 const BROW_OUTER: Vector2 = Vector2(0.58, 0.34)
 const BROW_THICK: float = 0.045
 const NOSE_SPOT: Vector2 = Vector2(0.0, -0.12)
-const NOSE_SIZE: Vector2 = Vector2(0.13, 0.26)
-const MOUTH_CORNER: Vector2 = Vector2(0.19, -0.4)
-const MOUTH_CENTER: Vector2 = Vector2(0.0, -0.46)
-const MOUTH_THICK: float = 0.04
-const CHEEK_SPOT: Vector2 = Vector2(0.58, -0.2)
-const CHEEK_HALF: Vector2 = Vector2(0.21, 0.17)
+const NOSE_SIZE: Vector2 = Vector2(0.17, 0.34)
+const MOUTH_CORNER: Vector2 = Vector2(0.21, -0.435)
+const MOUTH_CENTER: Vector2 = Vector2(0.0, -0.455)
+const MOUTH_THICK: float = 0.03
+const CHEEK_SPOT: Vector2 = Vector2(0.56, -0.2)
+const CHEEK_HALF: Vector2 = Vector2(0.14, 0.12)
+## Bochechas: manchas redondas (8 lados, quase planas) e menores que as de antes.
+const CHEEK_SIDES: int = 8
+const CHEEK_BULGE: float = 1.3
 const PATCH_SIDES: int = 6
 const PATCH_BULGE: float = 1.7
 const FACE_LIFT: float = 0.05
 const FACE_MIN_DEPTH: float = 0.04
 const NOSE_BLUSH: float = 0.25
-const CHEEK_BLUSH: float = 0.5
+const CHEEK_BLUSH: float = 0.45
 const BROW_DARKEN: float = 0.35
 ## Coberturas em casca (fração dos raios da cabeça): deslocamento do centro, escala dos raios, ângulo polar máximo (graus) e largura da faixa de borda (graus; 0 = sem faixa). O capuz de perto é a tigela HOOD_BOWL; esta casca só serve ao capuz de longe.
 const SHELLS: Dictionary[int, Array] = {
@@ -94,12 +100,17 @@ const SHELLS: Dictionary[int, Array] = {
 	InhabitantSpec.HeadCover.HOOD: [Vector3(0.0, 0.06, 0.2), Vector3(1.13, 1.1, 1.1), 126.0, 0.0],
 	InhabitantSpec.HeadCover.CAP: [Vector3(0.0, 0.5, 0.04), Vector3(1.06, 0.72, 1.08), 100.0, 9.0],
 	InhabitantSpec.HeadCover.OPEN_HELM: [Vector3(0.0, 0.45, 0.0), Vector3(1.1, 0.8, 1.12), 96.0, 12.0],
+	InhabitantSpec.HeadCover.HOOD_CAP: [Vector3(0.0, 0.95, 0.38), Vector3(1.0, 0.72, 0.95), 100.0, 0.0],
 }
-## Capuz grosso: tigela aberta para a frente, de revolução em torno de Z (profundidade em fração de rz, raios em x e em y em fração de rx e ry), do aro de dentro (a borda do rosto) e do aro de fora (a face da frente, a faixa grossa) até o fundo; o arco deixa o queixo livre. A gola é o capelo: perfil (altura em fração de H, raio em fração de R) por cima dos ombros, mais largo que eles.
+## Boné sobre o capuz (HOOD_CAP): a entrada de cima é a cúpula do boné (acima do capuz, sem faixa); o capuz leva o tom da roupa mais escuro e o boné a cor da calça, como na referência.
+const CAP_RINGS_NEAR: int = 3
+const HOOD_CAP_DARKEN: float = 0.3
+## Capuz grosso: tigela aberta para a frente, de revolução em torno de Z (profundidade em fração de rz, raios em x e em y em fração de rx e ry), do aro de dentro (a borda do rosto) e do aro de fora (a face da frente, a faixa grossa) até o fundo; o arco deixa o queixo livre. A gola é o capelo, liso e contínuo com o capuz: perfil (altura em fração de H, raio em fração de R) que acompanha o manto uns 8% maior e termina num beiral, sem formar cúpula.
 const HOOD_BOWL: Array[Vector3] = [Vector3(-0.5, 0.9, 0.93), Vector3(-0.34, 1.13, 1.16), Vector3(0.05, 1.24, 1.26), Vector3(0.75, 1.02, 1.06), Vector3(1.3, 0.0, 0.0)]
 const HOOD_ARC: Vector2 = Vector2(-0.87, 4.01)
 const HOOD_RIM_DARKEN: float = 0.2
-const COWL_PROFILE: Array[Vector2] = [Vector2(0.45, 1.14), Vector2(0.53, 1.18), Vector2(0.6, 1.0), Vector2(0.655, 0.58), Vector2(0.69, 0.3)]
+const COWL_PROFILE: Array[Vector2] = [Vector2(0.5, 0.93), Vector2(0.57, 0.8), Vector2(0.63, 0.54), Vector2(0.675, 0.3)]
+const COWL_JITTER: float = 0.015
 const RIM_GROW: float = 1.03
 const HELM_NASAL: Vector3 = Vector3(0.1, 0.36, 0.06)
 const HELM_KNOB: float = 0.1
@@ -111,7 +122,11 @@ const HAT_RISE: float = 0.5
 const HAT_FAR_HEIGHT: float = 0.8
 ## Acessórios (fração de H). Os de silhueta grande também vão no LOD 1. Bolsa: tamanho, lugar (altura; x sobre o raio), giro e fita. Bolsinha. Carga à frente (cesta, saco): altura, saída e meia largura das mãos.
 const FAR_ACCESSORIES: Array[StringName] = [&"basket", &"sack", &"staff", &"spear", &"guard_staff"]
-const SATCHEL_SIZE: Vector3 = Vector3(0.17, 0.13, 0.08)
+const SATCHEL_SIZE: Vector3 = Vector3(0.2, 0.15, 0.085)
+## Aba da bolsa (fração da altura dela), fecho (meia largura e meia altura, fração da bolsa) e saída do fecho (m).
+const FLAP_HEIGHT: float = 0.55
+const CLASP: Vector2 = Vector2(0.13, 0.1)
+const CLASP_LIFT_M: float = 0.004
 const SATCHEL_SPOT: Vector2 = Vector2(0.28, 0.8)
 const SATCHEL_YAW: float = 0.5
 const STRAP_RADII: Vector2 = Vector2(0.028, 0.028)
@@ -245,7 +260,11 @@ func _arms() -> void:
 		var shoulder: Vector3 = Vector3((2.0 * index - 1.0) * _radius_at(y), y, 0.0)
 		_kit.blob(shoulder, Vector3(ball, ball * 0.95, ball), Vector3i(3, 6, index), 0.04, _body_color())
 		_tube(shoulder, _hands[index], SLEEVE_RADII * _h, ARM_SIDES, _body_color())
-		_kit.blob(_hands[index], HAND_RADII * _h, Vector3i(2, 6, 5 + index), 0.05, _spec.skin)
+		var palm: Vector3 = HAND_RADII * _h
+		_kit.blob(_hands[index], palm, Vector3i(2, 6, 5 + index), 0.05, _spec.skin)
+		var inward: float = 1.0 - 2.0 * index
+		var thumb: Vector3 = _hands[index] + Vector3(inward * palm.x * THUMB_SPOT.x, palm.y * THUMB_SPOT.y, palm.z * THUMB_SPOT.z)
+		_kit.blob(thumb, palm * THUMB_SIZE, Vector3i(2, 4, 7 + index), 0.05, _spec.skin)
 
 
 func _cover() -> void:
@@ -256,9 +275,15 @@ func _cover() -> void:
 			_shell(_spec.head_cover, _spec.hair)
 		InhabitantSpec.HeadCover.HOOD:
 			if _is_near:
-				_hood()
+				_hood(_spec.cover_color)
 			else:
 				_shell(_spec.head_cover, _spec.cover_color)
+		InhabitantSpec.HeadCover.HOOD_CAP:
+			if _is_near:
+				_hood(_hood_color())
+			else:
+				_shell(InhabitantSpec.HeadCover.HOOD, _hood_color())
+			_cap_over_hood()
 		InhabitantSpec.HeadCover.OPEN_HELM:
 			_shell(_spec.head_cover, _spec.cover_color)
 			if not _is_near:
@@ -280,8 +305,8 @@ func _shell(cover: int, color: Color) -> void:
 		_lathe(_head_c + offset * _head, _dome(_head * scale * RIM_GROW, polar_deg, 1, polar_deg - rim_deg), _sides, _spec.trim, JITTER)
 
 
-## O capuz de perto: a tigela com o aro grosso (a primeira faixa, mais escura por dentro) em volta do rosto e o capelo sobre os ombros.
-func _hood() -> void:
+## O capuz de perto: a tigela com o aro grosso (a primeira faixa, mais escura por dentro) em volta do rosto e o capelo liso sobre os ombros, que acompanha o manto.
+func _hood(color: Color) -> void:
 	var rim: Array[Vector3] = []
 	var bowl: Array[Vector3] = []
 	for index: int in HOOD_BOWL.size():
@@ -290,11 +315,29 @@ func _hood() -> void:
 			rim.append(ring)
 		if index >= 1:
 			bowl.append(ring)
-	_lathe(_head_c, rim, HOOD_SIDES, _spec.cover_color.darkened(HOOD_RIM_DARKEN), HEAD_JITTER, HOOD_ARC, true)
-	_lathe(_head_c, bowl, HOOD_SIDES, _spec.cover_color, HEAD_JITTER, HOOD_ARC, true)
+	_lathe(_head_c, rim, HOOD_SIDES, color.darkened(HOOD_RIM_DARKEN), HEAD_JITTER, HOOD_ARC, true)
+	_lathe(_head_c, bowl, HOOD_SIDES, color, HEAD_JITTER, HOOD_ARC, true)
 	var cowl: Array[Vector3] = _rings_of(COWL_PROFILE)
 	cowl.append(Vector3(_neck_top(cowl[-1].x) + NECK_MIN_RISE * _h, 0.0, 0.0))
-	_lathe(Vector3.ZERO, cowl, HOOD_SIDES, _spec.cover_color, JITTER)
+	_lathe(Vector3.ZERO, cowl, _sides, color, COWL_JITTER)
+
+
+## O boné sobre o capuz (a combinação da referência de Arthur): cúpula baixa de poucas facetas, acima do capuz e na cor da calça.
+func _cap_over_hood() -> void:
+	var shell: Array = SHELLS[InhabitantSpec.HeadCover.HOOD_CAP]
+	var offset: Vector3 = shell[0]
+	var scale: Vector3 = shell[1]
+	var polar_deg: float = shell[2]
+	_lathe(_head_c + offset * _head, _dome(_head * scale, polar_deg, CAP_RINGS_NEAR if _is_near else SHELL_RINGS_FAR), HOOD_SIDES if _is_near else _sides, _spec.bottom, JITTER)
+
+
+## Com capuz a fita nasce debaixo do beiral do capelo, não do ombro (senão furava o capelo).
+func _is_hooded() -> bool:
+	return _spec.head_cover == InhabitantSpec.HeadCover.HOOD or _spec.head_cover == InhabitantSpec.HeadCover.HOOD_CAP
+
+
+func _hood_color() -> Color:
+	return _spec.top.darkened(HOOD_CAP_DARKEN)
 
 
 func _wide_hat() -> void:
@@ -312,7 +355,7 @@ func _face() -> void:
 	var blush: Color = _spec.skin.lerp(BLUSH, CHEEK_BLUSH)
 	for side: float in [-1.0, 1.0]:
 		_patch(Vector2(side * EYE_SPOT.x, EYE_SPOT.y), EYE_HALF, FACE_DARK)
-		_patch(Vector2(side * CHEEK_SPOT.x, CHEEK_SPOT.y), CHEEK_HALF, blush)
+		_patch(Vector2(side * CHEEK_SPOT.x, CHEEK_SPOT.y), CHEEK_HALF, blush, CHEEK_SIDES, CHEEK_BULGE)
 		_strip(Vector2(side * BROW_INNER.x, BROW_INNER.y), Vector2(side * BROW_OUTER.x, BROW_OUTER.y), BROW_THICK, _spec.hair.darkened(BROW_DARKEN))
 		_strip(Vector2(side * MOUTH_CORNER.x, MOUTH_CORNER.y), MOUTH_CENTER, MOUTH_THICK, MOUTH_COLOR)
 	var nose: Vector3 = _surface_point(NOSE_SPOT, 0.0)
@@ -344,8 +387,15 @@ func _satchel() -> void:
 	var size: Vector3 = SATCHEL_SIZE * _h
 	var bag: Vector3 = _on_body(-_radius_at(y) * SATCHEL_SPOT.y, y, size.z * 0.5)
 	_kit.box(bag, size, WOOD, SATCHEL_YAW)
-	_kit.box(bag + Vector3.UP * size.y * 0.42, Vector3(size.x * 1.04, size.y * 0.22, size.z * 1.1), WOOD_DARK, SATCHEL_YAW)
-	var shoulder_y: float = SHOULDER_Y * _h
+	var flap_size: Vector3 = Vector3(size.x * 1.04, size.y * FLAP_HEIGHT, size.z * 1.14)
+	var flap: Vector3 = bag + Vector3.UP * (size.y - flap_size.y) * 0.5
+	_kit.box(flap, flap_size, WOOD_DARK, SATCHEL_YAW)
+	var front: Vector3 = Vector3.FORWARD.rotated(Vector3.UP, SATCHEL_YAW)
+	var across: Vector3 = Vector3.RIGHT.rotated(Vector3.UP, SATCHEL_YAW) * size.x * CLASP.x
+	var rise: Vector3 = Vector3.UP * size.y * CLASP.y
+	var clasp: Vector3 = flap + Vector3.DOWN * flap_size.y * 0.35 + front * (flap_size.z * 0.5 + CLASP_LIFT_M)
+	_kit.quad(clasp - across - rise, clasp + across - rise, clasp + across + rise, clasp - across + rise, STEEL, bag)
+	var shoulder_y: float = (COWL_PROFILE[0].x if _is_hooded() else SHOULDER_Y) * _h
 	var from: Vector3 = _on_body(_radius_at(shoulder_y) * 0.5, shoulder_y, STRAP_LIFT_M)
 	var to: Vector3 = bag + Vector3.UP * size.y * 0.5
 	var middle: Vector3 = _on_body((from.x + to.x) * 0.5, (from.y + to.y) * 0.5, STRAP_LIFT_M)
@@ -467,11 +517,11 @@ func _surface_point(spot: Vector2, lift: float) -> Vector3:
 
 
 ## Mancha de cor no rosto (olho, bochecha): um leque de PATCH_SIDES triângulos sobre a casca, com o meio mais saliente.
-func _patch(spot: Vector2, half: Vector2, color: Color) -> void:
-	var center: Vector3 = _surface_point(spot, FACE_LIFT * PATCH_BULGE)
-	for side: int in PATCH_SIDES:
-		var first: Vector2 = spot + Vector2(cos(TAU * side / PATCH_SIDES) * half.x, sin(TAU * side / PATCH_SIDES) * half.y)
-		var second: Vector2 = spot + Vector2(cos(TAU * (side + 1) / PATCH_SIDES) * half.x, sin(TAU * (side + 1) / PATCH_SIDES) * half.y)
+func _patch(spot: Vector2, half: Vector2, color: Color, sides: int = PATCH_SIDES, bulge: float = PATCH_BULGE) -> void:
+	var center: Vector3 = _surface_point(spot, FACE_LIFT * bulge)
+	for side: int in sides:
+		var first: Vector2 = spot + Vector2(cos(TAU * side / sides) * half.x, sin(TAU * side / sides) * half.y)
+		var second: Vector2 = spot + Vector2(cos(TAU * (side + 1) / sides) * half.x, sin(TAU * (side + 1) / sides) * half.y)
 		_kit.tri(center, _surface_point(first, FACE_LIFT), _surface_point(second, FACE_LIFT), color, _head_c)
 
 

@@ -30,6 +30,8 @@ const PROPS: Array = [
 ]
 const GRASS_COLOR: Color = Color("629C55")
 const CATALOG_GROUND_COLOR: Color = Color("B9C0A8")
+const GROUND_NAME: String = "Ground"
+const MERGED_NAME: String = "Merged"
 const GROUND_SIZE_M: float = 260.0
 const GROUND_DROP_M: float = -0.03
 ## Catálogo: as 37 peças em quatro fileiras (pequenas, paredes, telhados e acabamentos, grandes), as finas giradas para a face ficar de frente.
@@ -70,6 +72,72 @@ func build_village() -> void:
 		_house(house)
 	for prop: Array in PROPS:
 		place(prop[0], Vector3(prop[1], 0.0, prop[2]) / SCALE, prop[3], Vector3.ONE * float(prop[4]))
+
+
+## ART-9c, chamadas de desenho: junta as peças ESTÁTICAS da vila por material numa malha só (as transformações já aplicadas, com a normal pela inversa transposta), em vez de um nó por peça (e por material de cada peça); o chão fica de fora. Chamar com a vila montada e dentro da árvore.
+func merge_static() -> void:
+	var inverse: Transform3D = root.global_transform.affine_inverse()
+	var batches: Dictionary[String, Dictionary] = {}
+	var originals: Array[Node] = []
+	for child: Node in root.get_children():
+		if child.name != GROUND_NAME:
+			originals.append(child)
+	for original: Node in originals:
+		for mesh_node: Node in original.find_children("*", "MeshInstance3D", true, false):
+			var instance: MeshInstance3D = mesh_node as MeshInstance3D
+			for surface: int in instance.mesh.get_surface_count():
+				_append_surface(batches, instance.get_active_material(surface), instance.mesh.surface_get_arrays(surface), inverse * instance.global_transform)
+	var merged: ArrayMesh = ArrayMesh.new()
+	for key: String in batches:
+		var arrays: Array = []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = batches[key]["vertices"]
+		arrays[Mesh.ARRAY_NORMAL] = batches[key]["normals"]
+		arrays[Mesh.ARRAY_TEX_UV] = batches[key]["uvs"]
+		arrays[Mesh.ARRAY_INDEX] = batches[key]["indices"]
+		merged.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+		merged.surface_set_material(merged.get_surface_count() - 1, batches[key]["material"])
+	var merged_node: MeshInstance3D = MeshInstance3D.new()
+	merged_node.name = MERGED_NAME
+	merged_node.mesh = merged
+	root.add_child(merged_node)
+	for original: Node in originals:
+		root.remove_child(original)
+		original.free()
+
+
+## Soma uma superfície (vértices, normais, UVs e índices) ao lote do seu material, já levada para o espaço de `root` por `to_root`.
+func _append_surface(batches: Dictionary[String, Dictionary], material: Material, arrays: Array, to_root: Transform3D) -> void:
+	var key: String = _material_key(material)
+	if not batches.has(key):
+		batches[key] = {"material": material, "vertices": PackedVector3Array(), "normals": PackedVector3Array(), "uvs": PackedVector2Array(), "indices": PackedInt32Array()}
+	var vertices: PackedVector3Array = batches[key]["vertices"]
+	var normals: PackedVector3Array = batches[key]["normals"]
+	var offset: int = vertices.size()
+	var source_vertices: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+	var source_normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
+	var normal_basis: Basis = to_root.basis.inverse().transposed()
+	for index: int in source_vertices.size():
+		vertices.append(to_root * source_vertices[index])
+		normals.append((normal_basis * source_normals[index]).normalized())
+	var indices: PackedInt32Array = batches[key]["indices"]
+	var source_indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
+	for index: int in source_indices:
+		indices.append(index + offset)
+	var uvs: PackedVector2Array = batches[key]["uvs"]
+	uvs.append_array(arrays[Mesh.ARRAY_TEX_UV])
+	batches[key]["vertices"] = vertices
+	batches[key]["normals"] = normals
+	batches[key]["indices"] = indices
+	batches[key]["uvs"] = uvs
+
+
+## Chave do lote: cada peça da Kenney traz o seu material, mas todos usam a mesma textura de paleta, então se juntam pelo conteúdo (textura, transparência e cor) e não pela instância.
+func _material_key(material: Material) -> String:
+	var standard: BaseMaterial3D = material as BaseMaterial3D
+	if standard == null:
+		return str(material.get_instance_id())
+	return "%d|%d|%s" % [standard.albedo_texture.get_instance_id() if standard.albedo_texture != null else 0, standard.transparency, standard.albedo_color.to_html()]
 
 
 ## As 37 peças em fileira na escala do jogo; devolve o ponto da frente da primeira fileira, onde o habitante de comparação fica.
@@ -170,7 +238,7 @@ func _ground(color: Color) -> void:
 	material.roughness = 1.0
 	plane.material = material
 	var ground: MeshInstance3D = MeshInstance3D.new()
-	ground.name = "Ground"
+	ground.name = GROUND_NAME
 	ground.mesh = plane
 	ground.position.y = GROUND_DROP_M
 	root.add_child(ground)

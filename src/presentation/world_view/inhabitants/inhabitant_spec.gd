@@ -3,25 +3,26 @@ extends RefCounted
 ## Ficha de UM habitante (ART-9, protótipo isolado, só apresentação): dado puro, escolhido por hash de inteiros a partir de (id, papel), sem sorteio da engine, então o mesmo par dá sempre a mesma ficha e a mesma malha. Faixas, tabelas e paletas são [HIP] de arte, a calibrar olhando a cena de demonstração; cada campo tem o seu canal de hash.
 
 enum Garment { TUNIC, LONG_COAT, TABARD }
-enum HeadCover { NONE, HOOD, CAP, WIDE_HAT, OPEN_HELM }
+enum HeadCover { NONE, HOOD, CAP, WIDE_HAT, OPEN_HELM, HOOD_CAP }
 enum Channel { HEIGHT, WIDTH, HEAD, SKIN, HAIR, OUTFIT, TOP, BOTTOM, TRIM, BOOTS, COVER }
 
 const VILLAGER: StringName = &"villager"
 const MERCHANT: StringName = &"merchant"
 const GUARD: StringName = &"guard"
 const ROLES: Array[StringName] = [VILLAGER, MERCHANT, GUARD]
-## Faixas por papel: altura (m) e largura TOTAL, com os braços (m); a escala da cabeça vale para todos.
+## Faixas por papel: altura (m) e largura TOTAL, com os braços (m; ART-9c: mais gordos, o teto do teste é 1,05 m); a escala da cabeça vale para todos.
 const HEIGHT_M: Dictionary[StringName, Vector2] = {VILLAGER: Vector2(1.42, 1.76), MERCHANT: Vector2(1.4, 1.72), GUARD: Vector2(1.72, 1.86)}
-const WIDTH_M: Dictionary[StringName, Vector2] = {VILLAGER: Vector2(0.76, 0.88), MERCHANT: Vector2(0.8, 0.9), GUARD: Vector2(0.76, 0.88)}
+const WIDTH_M: Dictionary[StringName, Vector2] = {VILLAGER: Vector2(0.9, 1.02), MERCHANT: Vector2(0.94, 1.04), GUARD: Vector2(0.84, 0.96)}
 const HEAD_SCALE: Vector2 = Vector2(0.92, 1.1)
 ## Cada tom varia um pouco por habitante (fração de claro ou de escuro), com um canal de hash próprio (canal da cor + deslocamento).
 const TINT_RANGE: float = 0.08
 const TINT_CHANNEL_SHIFT: int = 32
-## Conjuntos de roupa por papel: [roupa, cobertura da cabeça, acessórios...]. Cada um já tem o que define o papel (guarda: elmo e lança ou cajado de guarda; comerciante: bolsa ou bolsinha e avental ou chapéu largo; aldeão: sem elmo nem lança).
+## Conjuntos de roupa por papel: [roupa, cobertura da cabeça, acessórios...]. Cada um já tem o que define o papel (guarda: elmo e lança ou cajado de guarda; comerciante: bolsa ou bolsinha e avental ou chapéu largo; aldeão: sem elmo nem lança; capuz com boné é a combinação da referência de Arthur).
 const OUTFITS: Dictionary[StringName, Array] = {
 	VILLAGER: [
 		[Garment.TUNIC, HeadCover.HOOD, &"basket"], [Garment.TUNIC, HeadCover.CAP, &"sack"], [Garment.TUNIC, HeadCover.HOOD, &"staff", &"satchel"],
 		[Garment.TUNIC, HeadCover.NONE, &"basket"], [Garment.TUNIC, HeadCover.CAP, &"lantern"], [Garment.TUNIC, HeadCover.NONE, &"sack"],
+		[Garment.TUNIC, HeadCover.HOOD_CAP, &"satchel"],
 	],
 	MERCHANT: [
 		[Garment.LONG_COAT, HeadCover.WIDE_HAT, &"satchel"], [Garment.TUNIC, HeadCover.CAP, &"apron", &"coin_pouch"],

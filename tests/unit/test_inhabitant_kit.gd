@@ -11,7 +11,7 @@ const MIN_VARYING_ASPECTS: int = 4
 const MAX_TRIANGLES_NEAR: int = 700
 const MAX_TRIANGLES_FAR: int = 120
 const HEIGHT_RANGE_M: Vector2 = Vector2(1.3, 2.0)
-const MAX_WIDTH_M: float = 0.9
+const MAX_WIDTH_M: float = 1.05
 const TOLERANCE: float = 0.001
 
 
