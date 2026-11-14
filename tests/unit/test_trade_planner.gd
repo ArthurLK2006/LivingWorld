@@ -30,7 +30,7 @@ func _params(time_cost_per_hour: int = 2) -> CaravanParams:
 
 func _good_defs() -> Array[GoodDef]:
 	var defs: Array[GoodDef] = []
-	for row: Array in [["bread", 10, 1], ["anvil", 30, 10], ["twin_a", 10, 1], ["twin_b", 10, 1]]:
+	for row: Array in [["bread", 10, 1], ["anvil", 30, 10], ["twin_a", 10, 1], ["twin_b", 10, 1], ["grain", 20, 1]]:
 		defs.append(GoodDef.new(row[0], "good.%s.name" % row[0], GoodDef.CATEGORY_PROCESSED, row[1], row[2], 0))
 	return defs
 
@@ -48,13 +48,16 @@ func _rig(spec: Dictionary, funds: Dictionary, params: CaravanParams = null, car
 		for good_id: String in spec[market_id]:
 			var row: Array = spec[market_id][good_id]
 			targets.append(MarketTargetDef.new("mt_%d_%s" % [market_id, good_id], "settlement_%d" % market_id, good_id, row[0], row[1], row[2]))
-			assert_true(rig.goods.create(market_id, good_id, row[1], GoodsStore.REASON_GAME_START).ok)
+			var created: Result = rig.goods.create(market_id, good_id, row[1], GoodsStore.REASON_GAME_START)
+			assert_true(created.ok, created.message)
 	assert_true(rig.book.open_owner(TRADER, "merchant").ok)
 	for good_id: String in carried:
-		assert_true(rig.goods.create(TRADER, good_id, carried[good_id], GoodsStore.REASON_GAME_START).ok)
+		var loaded: Result = rig.goods.create(TRADER, good_id, carried[good_id], GoodsStore.REASON_GAME_START)
+		assert_true(loaded.ok, loaded.message)
 	for owner_id: int in funds:
 		if rig.book.has_owner(owner_id):
-			assert_true(rig.ledger.mint(owner_id, funds[owner_id], Ledger.REASON_GAME_START).ok)
+			var minted: Result = rig.ledger.mint(owner_id, funds[owner_id], Ledger.REASON_GAME_START)
+			assert_true(minted.ok, minted.message)
 	var price_params: PriceParams = PriceParams.new(PRICE_RECORD)
 	rig.markets = MarketBook.new(rig.book, rig.goods, _good_defs(), targets, price_params)
 	for market_id: int in spec:
@@ -79,16 +82,17 @@ func _legs(length_m: int = 520, risk: int = 10) -> Array[RouteCost.Leg]:
 
 
 ## O `net(q)` pelas cotações cruas e pela conta de 9.5, sem passar pelo planejador.
-func _net_at(rig: Rig, origin_id: int, destination_id: int, good_id: String, quantity: int, legs: Array[RouteCost.Leg]) -> int:
+func _net_at(rig: Rig, origin_id: int, destination_id: int, good_id: String, quantity: int, legs: Array[RouteCost.Leg], params: CaravanParams = null) -> int:
+	var used: CaravanParams = params if params != null else _params()
 	var bought: TradeEngine.Outcome = rig.engine.quote(origin_id, good_id, quantity, TradeEngine.SIDE_BUY, TRADER)
 	var sold: TradeEngine.Outcome = rig.engine.quote(destination_id, good_id, quantity, TradeEngine.SIDE_SELL, TRADER)
 	var revenue: int = mini(sold.total - sold.tariff, rig.ledger.balance_of(destination_id))
-	var risk: int = RouteCost.risk_discount(revenue, RouteCost.path_risk_points(legs), _params())
-	return revenue - risk - (bought.total + bought.tariff) - RouteCost.time_cost(RouteCost.path_minutes(legs, _params()), _params())
+	var risk: int = RouteCost.risk_discount(revenue, RouteCost.path_risk_points(legs), used)
+	return revenue - risk - (bought.total + bought.tariff) - RouteCost.time_cost(RouteCost.path_minutes(legs, used), used)
 
 
 ## A busca exaustiva: a menor `q` de maior `net` entre 1 e o limite de peso, estoque com reserva, teto do destino, ordem e fundos (com o `net` e o custo dela).
-func _exhaustive(rig: Rig, origin_id: int, destination_id: int, good_id: String, legs: Array[RouteCost.Leg]) -> Dictionary:
+func _exhaustive(rig: Rig, origin_id: int, destination_id: int, good_id: String, legs: Array[RouteCost.Leg], params: CaravanParams = null) -> Dictionary:
 	var reserve: int = PriceMath.ceil_div(rig.markets.target_of(origin_id, good_id) * RESERVE_BP, 10000)
 	var by_stock: int = rig.goods.quantity_of(origin_id, good_id) - reserve
 	var by_cap: int = rig.markets.buy_cap_of(destination_id, good_id) - rig.goods.quantity_of(destination_id, good_id)
@@ -98,7 +102,7 @@ func _exhaustive(rig: Rig, origin_id: int, destination_id: int, good_id: String,
 		var bought: TradeEngine.Outcome = rig.engine.quote(origin_id, good_id, quantity, TradeEngine.SIDE_BUY, TRADER)
 		if bought.total + bought.tariff > rig.ledger.balance_of(TRADER):
 			break
-		var net: int = _net_at(rig, origin_id, destination_id, good_id, quantity, legs)
+		var net: int = _net_at(rig, origin_id, destination_id, good_id, quantity, legs, params)
 		if net > int(best["net"]):
 			best = {"q": quantity, "net": net, "cost": bought.total + bought.tariff}
 	return best
@@ -186,6 +190,27 @@ func test_the_planned_quantity_is_the_exact_optimum_of_an_exhaustive_search() ->
 			assert_eq(plan.net_profit, _net_at(rig, MARKET_A, MARKET_B, "bread", plan.quantity, _legs()), "%s: o net do plano é o da conta independente." % label)
 			assert_eq([plan.quantity, plan.net_profit], [int(best["q"]), int(best["net"])], "%s: a quantidade e o net do plano são os da busca exaustiva." % label)
 	assert_gt(found, 6, "A grade tem vários casos com plano.")
+
+
+func test_a_flat_curve_hides_gain_behind_a_first_unit_of_zero_and_the_scan_still_finds_the_exact_optimum() -> void:
+	var relaxed: CaravanParams = CaravanParams.new({"speed_cm_per_min": 400, "difficulty_slowdown_bp": 50, "risk_bp_per_point": 25, "time_cost_per_hour": 0, "fixed_cost": 0, "min_net_profit": 5, "min_margin_bp": 100, "origin_reserve_bp": RESERVE_BP})
+	var found: int = 0
+	var hidden: int = 0
+	for a_stock: int in [5000, 5400, 5800]:
+		for b_stock: int in range(3800, 4801, 100):
+			var rig: Rig = _rig({MARKET_A: {"grain": [5000, a_stock, 20000]}, MARKET_B: {"grain": [5000, b_stock, 20000]}}, _funds(), relaxed)
+			var plan: TradePlanner.Plan = rig.planner.plan_for(TRADER, MARKET_A, MARKET_B, _legs())
+			var best: Dictionary = _exhaustive(rig, MARKET_A, MARKET_B, "grain", _legs(), relaxed)
+			var label: String = "A=%d B=%d" % [a_stock, b_stock]
+			if plan == null:
+				assert_true(int(best["net"]) < 5 or int(best["net"]) * 10000 < 100 * int(best["cost"]), "%s: sem plano, o ótimo da busca exaustiva (%d) não passa dos limiares." % [label, int(best["net"])])
+				continue
+			found += 1
+			assert_eq([plan.quantity, plan.net_profit], [int(best["q"]), int(best["net"])], "%s: a quantidade e o net do plano são os da busca exaustiva." % label)
+			if _net_at(rig, MARKET_A, MARKET_B, "grain", 1, _legs(), relaxed) <= 0:
+				hidden += 1
+	assert_gt(found, 3, "A grade de curva plana tem vários casos com plano.")
+	assert_gt(hidden, 0, "A grade tem plano com a 1ª unidade em 0 moeda ou menos: a armadilha da saída antecipada.")
 
 
 func test_every_limit_is_respected() -> void:

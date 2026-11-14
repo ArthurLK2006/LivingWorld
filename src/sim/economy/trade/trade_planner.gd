@@ -76,7 +76,8 @@ static func _beats(plan: Plan, other: Plan) -> bool:
 ## O candidato do bem no destino com a quantidade `q*`, ou `null` se não há lote ou ele não passa dos limiares.
 func _candidate(trader_id: int, origin_id: int, destination_id: int, good_id: String, legs: Array[RouteCost.Leg], minutes: int) -> Plan:
 	var risk_points: int = RouteCost.path_risk_points(legs)
-	var quantity: int = _best_quantity(trader_id, origin_id, destination_id, good_id, risk_points, _max_quantity(trader_id, origin_id, destination_id, good_id))
+	var time_cost: int = RouteCost.time_cost(minutes, _params)
+	var quantity: int = _best_quantity(trader_id, origin_id, destination_id, good_id, risk_points, _max_quantity(trader_id, origin_id, destination_id, good_id), _params.min_net_profit + time_cost)
 	if quantity < 1:
 		return null
 	var plan: Plan = Plan.new()
@@ -86,7 +87,7 @@ func _candidate(trader_id: int, origin_id: int, destination_id: int, good_id: St
 	plan.cost = _cost_of(trader_id, origin_id, good_id, quantity)
 	plan.revenue = _revenue_of(trader_id, destination_id, good_id, quantity)
 	plan.risk_discount = RouteCost.risk_discount(plan.revenue, risk_points, _params)
-	plan.time_cost = RouteCost.time_cost(minutes, _params)
+	plan.time_cost = time_cost
 	plan.minutes = minutes
 	plan.net_profit = plan.revenue - plan.risk_discount - plan.cost - plan.time_cost
 	plan.margin_bp = IntMath.floor_div(plan.net_profit * PriceMath.BASIS, plan.cost)
@@ -118,20 +119,21 @@ func _max_quantity(trader_id: int, origin_id: int, destination_id: int, good_id:
 	return low
 
 
-## `q*`: a `q` de maior ganho entre 1 e `q_max` (empate: a menor). Varredura linear exata (no máximo `max_order_quantity` cotações duplas). Se nem a primeira unidade rende, o ganho nunca passa do ruído de 1 moeda do `ceil` do risco, abaixo de qualquer limiar: sai com 2 cotações, sem varrer.
-func _best_quantity(trader_id: int, origin_id: int, destination_id: int, good_id: String, risk_points: int, q_max: int) -> int:
+## `q*`: a `q` de maior ganho entre 1 e `q_max` (empate: a menor). Varredura linear exata (no máximo `max_order_quantity` cotações duplas). Saída antecipada com COTA EXATA: a margem de cada unidade (receita menos custo) só decresce com a quantidade, então nenhuma `q` rende mais que `q_max` vezes a margem da 1ª unidade (o risco só diminui o ganho); se isso não chega a `min_gain` (o limiar de lucro mais o custo de tempo), não há plano e sai com 2 cotações. Passando da cota, varre tudo: uma curva plana pode esconder ganho atrás de uma 1ª unidade de 0 moeda depois do risco (a saída da 1ª versão, por "1ª unidade não rende", perdia esses planos).
+func _best_quantity(trader_id: int, origin_id: int, destination_id: int, good_id: String, risk_points: int, q_max: int, min_gain: int) -> int:
 	if q_max < 1:
 		return 0
-	var best_gain: int = _gain_at(trader_id, origin_id, destination_id, good_id, risk_points, 1)
-	if best_gain <= 0:
+	var first_spread: int = _revenue_of(trader_id, destination_id, good_id, 1) - _cost_of(trader_id, origin_id, good_id, 1)
+	if first_spread * q_max < min_gain:
 		return 0
+	var best_gain: int = _gain_at(trader_id, origin_id, destination_id, good_id, risk_points, 1)
 	var best_quantity: int = 1
 	for quantity: int in range(2, q_max + 1):
 		var gain: int = _gain_at(trader_id, origin_id, destination_id, good_id, risk_points, quantity)
 		if gain > best_gain:
 			best_gain = gain
 			best_quantity = quantity
-	return best_quantity
+	return best_quantity if best_gain > 0 else 0
 
 
 ## `receita − risco − custo` de `quantity` unidades (0 para 0 unidades).

@@ -5,6 +5,7 @@ extends RefCounted
 
 const PARAMS_TABLE: String = "caravan_params"
 const PARAMS_FILE: String = "caravan_params.json"
+## Teto de 1 bilhão nas colunas que o `dados.md` dá como "0 ou mais" (evita estouro de inteiro nas contas; não está no contrato, a LW-098b o acrescentou).
 const MAX_VALUE: int = 1000000000
 const MAX_BP: int = 10000
 const MAX_MARGIN_BP: int = 100000
