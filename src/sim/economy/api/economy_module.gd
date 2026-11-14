@@ -13,6 +13,7 @@ extends SimModule
 ## no `EconomyPersistence` (pasta `support/`); aqui ficam o ciclo de vida do `SimModule`, os comandos, o relógio e o aviso de morte. Cada `peek_*` é uma linha que chama a classe de apoio.
 ## LW-098c: o tipo de dono `merchant` (o `NpcDied` fecha também o dono desse tipo e apaga a caravana dele) e o livro de caravanas (`CaravanBook`), que NASCE VAZIO; a porta ganha `peek_caravan` e `peek_caravans_on` (respostas em `CaravanReplies`).
 ## LW-098d1: a PARTIDA (`request_start_caravan`) e os planos (`peek_trade_plans`), feitos pelo `CaravanRunner`, e a porta de rotas do `world` pelo construtor (parâmetro OPCIONAL, 9.2); sem ela, ou sem os parâmetros da caravana nas definições, não há caravana (`ECON_NO_ROUTE`) e nada muda. O jogo real segue sem comerciante.
+## LW-098d2: a CHEGADA: o `tick` confere as caravanas a cada passo (`EconomyRuntime.check_arrivals`); ao fim do último trecho o `CaravanRunner` vende o lote, apaga o registro e a economia publica o `CaravanArrived` (em `api/`). Sem caravana no livro nada muda.
 
 const CODE_INVALID_SAVE: String = EconomyCodes.INVALID_SAVE
 const KEY_OWNERS: String = EconomyPersistence.KEY_OWNERS
@@ -71,10 +72,11 @@ func on_new_game(_world_seed: int) -> void:
 	EconomyRuntime.open_new_game(_state, _ids)
 
 
-## A cada hora cheia que passa: se ela vira um dia, o fim do dia (mercados, depois locais de produção) vem primeiro; depois a hora de produção. Os eventos saem.
+## A CADA passo, antes das horas cheias: as chegadas das caravanas (LW-098d2; a chegada é por minuto, e com o livro vazio isto sai na hora). Depois, a cada hora cheia que passa: se ela vira um dia, o fim do dia (mercados, depois locais de produção) vem primeiro; depois a hora de produção. Os eventos saem.
 func tick(_elapsed_minutes: int) -> void:
 	if _state.markets == null or _clock == null:
 		return
+	EconomyRuntime.check_arrivals(_state, _world, _events, _clock.total_minutes())
 	var hour: int = _current_hour()
 	while _last_hour < hour:
 		_last_hour += 1
@@ -209,7 +211,7 @@ func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int
 
 
 ## A PARTIDA da caravana (LW-098d1; 9.4 e 9.8), ATÔMICA: compra o lote no mercado de origem (o mesmo `TradeEngine.execute` do `request_trade`) e registra a caravana, ou nada muda. Devolve o minuto previsto da chegada (`eta_minute`) e o que o lote custou (`cost_paid`).
-## NÃO exige lucro (a decisão de partir é do `npc`); a chegada e a venda são da LW-098d2. Falhas: `ECON_NO_ROUTE` (sem caminho aberto, origem igual ao destino, sem a porta de rotas, sem os parâmetros ou sem `setup`), `ECON_CARAVAN_BUSY`, `ECON_TRADER_NOT_ALLOWED` e as do comércio: `ECON_UNKNOWN_OWNER`,
+## NÃO exige lucro (a decisão de partir é do `npc`); a chegada e a venda vêm depois, no `tick` (LW-098d2). Falhas: `ECON_NO_ROUTE` (sem caminho aberto, origem igual ao destino, sem a porta de rotas, sem os parâmetros ou sem `setup`), `ECON_CARAVAN_BUSY`, `ECON_TRADER_NOT_ALLOWED` e as do comércio: `ECON_UNKNOWN_OWNER`,
 ## `ECON_OWNER_CLOSED`, `ECON_UNKNOWN_MARKET`, `ECON_UNKNOWN_GOOD`, `ECON_BAD_QUANTITY`, `ECON_TRADE_BANNED`, `ECON_INSUFFICIENT_STOCK`, `ECON_INSUFFICIENT_FUNDS` e `ECON_CAPACITY_EXCEEDED`.
 func request_start_caravan(trader_id: int, origin_market_id: int, destination_market_id: int, good_id: String, quantity: int) -> CaravanReplies.StartResult:
 	if _clock == null:

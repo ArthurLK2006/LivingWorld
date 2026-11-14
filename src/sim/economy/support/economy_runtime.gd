@@ -1,7 +1,7 @@
 class_name EconomyRuntime
 extends RefCounted
 ## O que a economia faz com o tempo e na abertura do jogo (LW-092f; divisão do `EconomyModule`, sem mudar comportamento): o jogo novo (mercados e locais de produção, com os IDs do `core`), o fim do dia (mercados, depois locais
-## de produção) e a hora de produção, publicando os eventos no `EventBus`. Funções estáticas sobre o `EconomyState`; o relógio (qual hora e qual dia) continua no módulo.
+## de produção), a hora de produção e, a cada passo, as chegadas das caravanas (LW-098d2), publicando os eventos no `EventBus`. Funções estáticas sobre o `EconomyState`; o relógio (qual hora e qual dia) continua no módulo.
 
 
 ## Jogo novo: um mercado por assentamento dos dados, com o saldo inicial do tipo `market` (motivo `game_start`) e o estoque inicial de cada bem; depois um local de produção por linha dos dados. Falha visível (`push_error`) se um dado não couber.
@@ -30,6 +30,18 @@ static func close_day(state: EconomyState, events: EventBus) -> void:
 		events.publish(event)
 	if state.production != null:
 		state.production.end_of_day()
+
+
+## A conferência das CHEGADAS (LW-098d2; 9.4, "Ordem e determinismo"): a CADA passo, antes das horas cheias, por `trader_id` crescente (a chegada é por minuto, não por hora). Cada caravana anda os trechos que já acabaram e, se chegou, vende o lote e o `CaravanArrived` sai (depois da venda e do registro apagado).
+## Livro vazio (o jogo real, até a 098h): sai na hora, sem montar nada e sem mudar o estado nem o hash. `world`: a porta de rotas da economia (pode ser nula: então ninguém anda).
+static func check_arrivals(state: EconomyState, world: WorldModule, events: EventBus, now: int) -> void:
+	if state.caravans.is_pristine():
+		return
+	var runner: CaravanRunner = CaravanRunner.new(state, world)
+	for trader_id: int in state.caravans.trader_ids():
+		var arrived: CaravanArrived = runner.advance(trader_id, now)
+		if arrived != null:
+			events.publish(arrived)
 
 
 ## A hora da folha: primeiro os postos de serviço, pela conta do mercado (passo 0), depois os locais de produção os contratos que venceram (`now` é o minuto atual) e, por fim, as vagas (a conferência de quem falta nos locais de trabalho).
