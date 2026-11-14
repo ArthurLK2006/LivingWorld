@@ -174,14 +174,15 @@ func test_a_missing_or_invalid_params_file_is_one_handled_failure() -> void:
 		assert_eq(GameModules.register(runner, _terrain, [], null, setup).result.code, EconomySetup.CODE_INVALID, "%s: o jogo não monta com a economia inválida." % label)
 
 
-func test_without_a_merchant_the_wiring_changes_no_state_hash() -> void:
+## O que prova (e SÓ isto): com a porta de rotas e sem comerciante, ter ou não os parâmetros nas definições não muda o `state_hash` do `world` em 2 dias, sem NPCs. A prova de que o jogo REAL montado (`GameApp`, com os NPCs de `population.json`) não muda com a ligação foi feita por execução na revisão do PR #58 (30 dias, antes e depois: os 31 `state_hash` iguais).
+func test_with_the_route_port_and_no_merchant_the_caravan_params_change_no_state_hash() -> void:
 	var no_params: EconomySetup = _setup()
 	no_params.definitions.caravan_params = null
 	var wired: Rig = _mount(_setup())
 	var plain: Rig = _mount(no_params)
 	for rig: Rig in [wired, plain]:
 		rig.runner.run_days(2)
-	assert_eq(wired.runner.world.state_hash(), plain.runner.world.state_hash(), "Sem comerciante, a porta e os parâmetros não mexem no `state_hash` (os três hashes do jogo real seguem iguais).")
+	assert_eq(wired.runner.world.state_hash(), plain.runner.world.state_hash(), "Com a porta e sem comerciante, ter ou não os parâmetros nas definições não muda o `state_hash` do `world` inteiro em 2 dias (sem NPCs).")
 	assert_eq(wired.economy.validate(), [] as Array[String])
 
 
