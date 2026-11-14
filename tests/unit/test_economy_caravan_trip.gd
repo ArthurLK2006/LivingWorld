@@ -5,6 +5,7 @@ extends GutTest
 const SEED: int = 98
 const WORLD_DIR: String = "res://data/world"
 const TRADER: int = 100
+const OTHER: int = 101
 const START_MINUTE: int = 1000
 const LOT: int = 20
 const SETTLEMENT_A: String = "test_settlement_a"
@@ -210,3 +211,45 @@ func test_arrival_and_death_in_the_same_step_follow_the_host_order() -> void:
 	assert_eq(order, ["CaravanArrived", "NpcDied"] as Array[String], "No passo a economia anda antes do `npc` (módulos no `tick`) e os eventos saem depois, na ordem de publicação: chega, vende e só então o dono fecha.")
 	assert_gt(rig.arrivals[0].revenue, 0, "A venda aconteceu antes da morte.")
 	assert_eq([rig.module.peek_balance(TRADER).balance, rig.module.request_start_caravan(TRADER, rig.market_a, rig.market_b, "bread", 1).result.code, _conserved(rig)], [300 - started.cost_paid + rig.arrivals[0].revenue, EconomyCodes.OWNER_CLOSED, true], "O lucro ficou na conta, agora fechada (DEC-146), e a soma se mantém.")
+
+
+func test_an_arrival_exactly_at_the_turn_of_the_day_follows_the_contract_order_whatever_the_step() -> void:
+	var idle: Rig = _rig()
+	_until(idle, 1500)
+	var outcomes: Array = []
+	var times: Array[int] = []
+	for cadence: int in [1, 7, 60]:
+		var rig: Rig = _rig(cadence)
+		_until(rig, 1440 - 143)
+		var started: CaravanReplies.StartResult = _depart(rig)
+		var expected: int = rig.module.peek_quote(TRADER, rig.market_b, "bread", LOT, "sell").total
+		assert_eq(started.eta_minute, 1440, "Partiu 143 minutos antes do fim do dia: a chegada cai exatamente na virada.")
+		_until(rig, 1500)
+		assert_eq([rig.arrivals.size(), rig.arrivals[0].revenue], [1, expected], "Passo de %d minutos: a chegada vende pelo preço do dia que acaba (a conferência vem antes do fim do dia do mesmo passo)." % cadence)
+		assert_lt(rig.module.peek_price(rig.market_b, "bread").value, idle.module.peek_price(idle.market_b, "bread").value, "Passo de %d minutos: o lote já estava no estoque quando o dia fechou, então o preço do dia seguinte é menor que o de quem não recebeu." % cadence)
+		outcomes.append([rig.arrivals[0].revenue, rig.module.peek_price(rig.market_b, "bread").value, rig.module.peek_stock(rig.market_b, "bread").value, rig.module.peek_balance(TRADER).balance, _conserved(rig), rig.runner.world.state_hash()])
+		times.append(rig.arrivals[0].time)
+	assert_eq([outcomes[1], outcomes[2]], [outcomes[0], outcomes[0]], "Passos de 1, 7 e 60 minutos: a mesma venda, o mesmo preço do dia seguinte e o mesmo hash do estado.")
+	assert_eq(times, [1440, 1442, 1440] as Array[int], "A chegada é vista no primeiro passo do módulo em que o relógio alcança o ETA.")
+
+
+func test_two_merchants_arriving_at_the_same_market_in_the_same_step_sell_in_trader_id_order() -> void:
+	var outcomes: Array = []
+	for gap: int in [0, 1]:
+		var rig: Rig = _rig()
+		assert_true(rig.module.request_open_owner(OTHER, EconomyModule.KIND_MERCHANT).ok)
+		assert_true(rig.module.request_set_stock(rig.market_b, "bread", 60).ok)
+		var funds: int = rig.module.peek_balance(rig.market_b).balance
+		var arrival_minute: int = 0
+		for trader_id: int in [TRADER, OTHER]:
+			_until(rig, START_MINUTE + (gap if trader_id == OTHER else 0))
+			var started: CaravanReplies.StartResult = rig.module.request_start_caravan(trader_id, rig.market_a, rig.market_b, "bread", 12)
+			assert_true(started.result.ok, started.result.message)
+			arrival_minute = started.eta_minute
+		_until(rig, arrival_minute)
+		assert_eq(rig.arrivals.map(func(arrived: CaravanArrived) -> int: return arrived.trader_id), [TRADER, OTHER], "Os dois `CaravanArrived`, na ordem de `trader_id`.")
+		assert_eq(rig.arrivals[0].time == rig.arrivals[1].time, gap == 0, "Com `gap` 0 os dois chegam no MESMO passo; com 1, em passos seguidos.")
+		assert_eq([rig.module.peek_inventory(TRADER).weight, rig.module.peek_inventory(OTHER).weight, rig.module.peek_stock(rig.market_b, "bread").value], [0, 4, 80], "O primeiro vende os 12 (o estoque do B vai a 72); o segundo, com o estoque já alterado, só cabe até o teto de compra (80): vende 8 e a sobra de 4 fica com ele.")
+		assert_eq([rig.module.peek_balance(rig.market_b).balance, _conserved(rig), rig.module.validate()], [funds - rig.arrivals[0].revenue - rig.arrivals[1].revenue, true, [] as Array[String]], "O mercado pagou só o que cada um vendeu e as duas conservações fecham.")
+		outcomes.append([rig.arrivals[0].revenue, rig.arrivals[1].revenue, rig.module.peek_balance(OTHER).balance])
+	assert_eq(outcomes[0], outcomes[1], "Chegar no mesmo passo dá o mesmo que chegar em passos seguidos, na ordem de `trader_id`: o segundo vende com o estoque e o saldo que o primeiro deixou.")
