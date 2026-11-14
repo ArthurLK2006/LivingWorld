@@ -18,7 +18,7 @@ func test_thirty_days_without_a_player_keep_every_invariant_and_the_run_is_repro
 	print(first.summary())
 	assert_eq(first.problems.size(), 0, str(first.problems))
 	assert_eq(first.minutes, DAYS * SimClock.MINUTES_PER_DAY, "Trinta dias de jogo.")
-	assert_eq(first.min_alive, 100, "Todos vivos o tempo todo.")
+	assert_eq(first.min_alive, NpcLifeCheck.EXPECTED_POPULATION, "Todos vivos o tempo todo.")
 	assert_true(first.max_idle_min <= NpcLifeCheck.MAX_IDLE_MIN, "Maior tempo parado: %d min." % first.max_idle_min)
 	assert_true(first.max_thinks_in_a_step > 0 and first.max_thinks_in_a_step <= THINK_CAP, "Pensamentos por passo no máximo %d (veio %d)." % [THINK_CAP, first.max_thinks_in_a_step])
 	var again: NpcLifeCheck.LifeReport = NpcLifeCheck.run(data, WORLD_SEED, DAYS)
