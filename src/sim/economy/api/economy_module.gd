@@ -11,6 +11,7 @@ extends SimModule
 ## conteúdo quando há estado (sem dono e sem movimento continua `{}`); `goods`, `markets` e `production` só entram quando há bens, mercados ou locais de produção.
 ## LW-092f: o módulo foi dividido sem mudar comportamento: o estado vivo está no `EconomyState`, as consultas no `EconomyQueries`, o jogo novo e o tempo no `EconomyRuntime` e o save, o `validate` e o resumo de depuração
 ## no `EconomyPersistence` (pasta `support/`); aqui ficam o ciclo de vida do `SimModule`, os comandos, o relógio e o aviso de morte. Cada `peek_*` é uma linha que chama a classe de apoio.
+## LW-098c: o tipo de dono `merchant` (o `NpcDied` fecha também o dono desse tipo e apaga a caravana dele) e o livro de caravanas (`CaravanBook`), que NASCE VAZIO e nada o preenche ainda; a porta ganha `peek_caravan` e `peek_caravans_on` (respostas em `CaravanReplies`).
 
 const CODE_INVALID_SAVE: String = EconomyCodes.INVALID_SAVE
 const KEY_OWNERS: String = EconomyPersistence.KEY_OWNERS
@@ -21,6 +22,8 @@ const KEY_PRODUCTION: String = EconomyPersistence.KEY_PRODUCTION
 const NPC_DIED: String = "NpcDied"
 ## Tipo do dono que o `npc` abre (id em `owner_kinds.json`); só para o aviso de morte, que fecha o dono desse tipo.
 const KIND_NPC: String = "npc"
+## Tipo do dono do comerciante (id em `owner_kinds.json`; LW-098c): carrinho de peso 120 e saldo 300 [HIP]. O `NpcDied` o fecha como fecha o `npc`.
+const KIND_MERCHANT: String = CaravanBook.KIND_MERCHANT
 
 var _record_history: bool
 var _definitions: EconomyDefinitions
@@ -248,6 +251,23 @@ func peek_contracts(state_filter: String = "", issuer_id: int = IdGenerator.NO_I
 	return EconomyQueries.peek_contracts(_state, state_filter, issuer_id, place_id)
 
 
+## A caravana do comerciante (LW-098c): `found` falso = parado; `ECON_UNKNOWN_OWNER` se o dono não existe (cópia, 9.8).
+func peek_caravan(trader_id: int) -> CaravanReplies.CaravanQuery:
+	if not _state.book.has_owner(trader_id):
+		return CaravanReplies.CaravanQuery.new(Result.failure(EconomyCodes.UNKNOWN_OWNER, "EconomyModule.peek_caravan: o dono %d não existe." % trader_id))
+	return CaravanReplies.CaravanQuery.new(Result.success(), _state.caravans.caravan_of(trader_id))
+
+
+## As caravanas na estrada (andando, ou paradas no meio do trecho) cujo trecho atual é a rota, por `trader_id` crescente (pedido do `military.md` 7).
+func peek_caravans_on(route_id: String) -> CaravanReplies.CaravansQuery:
+	var rows: Array[CaravanReplies.CaravanQuery] = []
+	for trader_id: int in _state.caravans.trader_ids():
+		var caravan: Caravan = _state.caravans.caravan_of(trader_id)
+		if caravan.is_on_road() and caravan.current_route_id() == route_id:
+			rows.append(CaravanReplies.CaravanQuery.new(Result.success(), caravan))
+	return CaravanReplies.CaravansQuery.new(rows)
+
+
 func peek_balance(owner_id: int) -> EconomyReplies.BalanceQuery:
 	return EconomyQueries.peek_balance(_state, owner_id)
 
@@ -298,7 +318,7 @@ func peek_stock(market_id: int, good_id: String) -> EconomyReplies.ValueQuery:
 	return EconomyQueries.peek_stock(_state, market_id, good_id)
 
 
-## `NpcDied` (DEC-146): fecha o dono do NPC, se ele existe e é do tipo `npc`. NPC que nunca abriu conta não é erro. O evento é lido pelo campo `npc_id`, sem citar a classe do `npc`.
+## `NpcDied` (DEC-146): fecha o dono do NPC, se ele existe e é do tipo `npc` ou `merchant` (LW-098c), e apaga a caravana do comerciante (o saldo e a carga ficam na conta fechada, na soma). NPC que nunca abriu conta não é erro. O evento é lido pelo campo `npc_id`, sem citar a classe do `npc`.
 func _on_npc_died(event: SimEvent) -> void:
 	# Variant: campo cru do evento; o tipo é conferido na linha seguinte.
 	var raw_id: Variant = event.get("npc_id")
@@ -309,7 +329,8 @@ func _on_npc_died(event: SimEvent) -> void:
 		_state.production.remove_worker(owner_id)
 	if _state.posts != null:
 		_state.posts.remove_worker(owner_id)
-	if _state.book.has_owner(owner_id) and _state.book.kind_of(owner_id) == KIND_NPC:
+	_state.caravans.remove(owner_id)
+	if _state.book.has_owner(owner_id) and [KIND_NPC, KIND_MERCHANT].has(_state.book.kind_of(owner_id)):
 		_state.book.close_owner(owner_id)
 
 

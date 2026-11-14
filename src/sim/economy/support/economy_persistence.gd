@@ -11,6 +11,8 @@ const KEY_MARKETS: String = "markets"
 const KEY_PRODUCTION: String = "production"
 const KEY_POSTS: String = ServicePostBook.KEY_POSTS
 const KEY_CONTRACTS: String = ContractBook.KEY_CONTRACTS
+## Só quando há caravana; ao contrário dos outros livros, o valor é a LISTA dos registros por `trader_id` crescente (`CaravanBook.serialize`), não um objeto (9.10).
+const KEY_CARAVANS: String = "caravans"
 
 
 ## Sem dono e sem movimento: bloco vazio (nada entra no hash além da presença do módulo).
@@ -28,18 +30,20 @@ static func serialize(state: EconomyState) -> Dictionary:
 		block[KEY_POSTS] = state.posts.serialize()
 	if not state.contracts.is_pristine():
 		block[KEY_CONTRACTS] = state.contracts.serialize()
+	if not state.caravans.is_pristine():
+		block[KEY_CARAVANS] = state.caravans.serialize()
 	return block
 
 
-## Aceita o bloco vazio ou os campos conhecidos (`owners` e `ledger` sempre; `goods`, `markets` e `production` quando há), tudo conferido antes de trocar o estado; qualquer outra chave é recusada com mensagem clara.
+## Aceita o bloco vazio ou os campos conhecidos (`owners` e `ledger` sempre; `goods`, `markets`, `production`, `posts`, `contracts` e `caravans` quando há), tudo conferido antes de trocar o estado; qualquer outra chave é recusada com mensagem clara.
 static func load_into(target: EconomyState, data: Dictionary) -> Result:
 	var names: PackedStringArray = PackedStringArray()
 	for key: Variant in data.keys():
 		names.append(str(key))
 	names.sort()
 	for name: String in names:
-		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS].has(name):
-			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS])
+		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS, KEY_CARAVANS].has(name):
+			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS, KEY_CARAVANS])
 	# Variant: valores crus do save (JSON); o tipo é conferido na linha seguinte.
 	var raw_owners: Variant = data.get(KEY_OWNERS)
 	var raw_ledger: Variant = data.get(KEY_LEDGER)
@@ -48,8 +52,11 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 	var raw_production: Variant = data.get(KEY_PRODUCTION, {})
 	var raw_posts: Variant = data.get(KEY_POSTS, {})
 	var raw_contracts: Variant = data.get(KEY_CONTRACTS, {})
+	var raw_caravans: Variant = data.get(KEY_CARAVANS, [])
 	if typeof(raw_owners) != TYPE_DICTIONARY or typeof(raw_ledger) != TYPE_DICTIONARY or typeof(raw_goods) != TYPE_DICTIONARY or typeof(raw_markets) != TYPE_DICTIONARY or typeof(raw_production) != TYPE_DICTIONARY or typeof(raw_posts) != TYPE_DICTIONARY or typeof(raw_contracts) != TYPE_DICTIONARY:
 		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s' e '%s' devem ser objetos e estar os dois no bloco 'economy' (e '%s', '%s', '%s', '%s' e '%s', se houver, também objetos)." % [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS])
+	if typeof(raw_caravans) != TYPE_ARRAY:
+		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s', se houver, deve ser uma lista." % KEY_CARAVANS)
 	var market_data: Dictionary = raw_markets
 	var book: OwnerBook = OwnerBook.new()
 	var loaded: Result = book.load_from(raw_owners)
@@ -98,6 +105,12 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 		loaded = contracts.load_from(contracts_data)
 		if not loaded.ok:
 			return loaded
+	var caravans: CaravanBook = CaravanBook.new(book, markets)
+	var caravans_data: Array = raw_caravans
+	if not caravans_data.is_empty():
+		loaded = caravans.load_from(caravans_data)
+		if not loaded.ok:
+			return loaded
 	target.book = book
 	target.ledger = ledger
 	target.goods = goods
@@ -106,6 +119,7 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 	target.production = production
 	target.posts = posts
 	target.contracts = contracts
+	target.caravans = caravans
 	return Result.success()
 
 
@@ -130,6 +144,8 @@ static func validation_problems(state: EconomyState) -> Array[String]:
 			problems.append("[posts] " + problem)
 	for problem: String in state.contracts.validate():
 		problems.append("[contracts] " + problem)
+	for problem: String in state.caravans.validate():
+		problems.append("[caravans] " + problem)
 	return problems
 
 
@@ -147,4 +163,7 @@ static func summary(state: EconomyState) -> Dictionary:
 	# Os postos de serviço (R8-M2; AGENTS 4.15): a chave só aparece quando há postos, porque `test_economy_debug_and_kinds.gd` compara o resumo inteiro em três pontos (sem postos) e nenhum teste existente pode mudar.
 	if state.posts != null and not state.posts.is_pristine():
 		report["service_posts"] = state.posts.post_ids().size()
+	# As caravanas (LW-098c; AGENTS 4.15): a chave só aparece quando há caravana, pelo mesmo motivo dos postos acima (o resumo inteiro é comparado em testes sem elas).
+	if not state.caravans.is_pristine():
+		report["caravans"] = state.caravans.trader_ids().size()
 	return report

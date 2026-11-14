@@ -1,6 +1,6 @@
 class_name EconomyState
 extends RefCounted
-## O estado vivo da economia (LW-092f; divisão do `EconomyModule`, sem mudar comportamento): os livros que ela possui (donos, dinheiro, bens, mercados, locais de produção), o motor de comércio e o que os criou (as definições, a regra
+## O estado vivo da economia (LW-092f; divisão do `EconomyModule`, sem mudar comportamento): os livros que ela possui (donos, dinheiro, bens, mercados, locais de produção, contratos e, desde a LW-098c, caravanas), o motor de comércio e o que os criou (as definições, a regra
 ## de comércio e o modo de teste do `Ledger`). `create` monta tudo vazio; um save que carrega recebe os livros por `EconomyPersistence.load_into`. Só guarda e monta: as regras estão nos livros. `markets`, `engine` e `production`
 ## são `null` quando as definições não têm o que eles precisam (sem constantes de preço, sem receitas).
 
@@ -15,6 +15,7 @@ var engine: TradeEngine
 var production: ProductionBook
 var posts: ServicePostBook
 var contracts: ContractBook
+var caravans: CaravanBook
 
 
 func _init(economy_definitions: EconomyDefinitions, trade_rules: TradeRules, history: bool) -> void:
@@ -34,6 +35,7 @@ static func create(economy_definitions: EconomyDefinitions, trade_rules: TradeRu
 	state.production = new_production_book(economy_definitions, state.book, state.goods, state.markets, state.engine, state.ledger)
 	state.posts = new_post_book(state.book, state.markets, state.ledger)
 	state.contracts = ContractBook.new(state.book, state.ledger, state.goods, state.production, state.posts, state.markets)
+	state.caravans = CaravanBook.new(state.book, state.markets)
 	return state
 
 
