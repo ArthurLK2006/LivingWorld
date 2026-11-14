@@ -4,6 +4,9 @@ extends CanvasLayer
 ## `Control` raiz), escreve os textos (só por chave, `UiText`) e decide quando abrir, fechar, atualizar, comprar e vender. É a ÚNICA que envia pedidos (`request_trade`) e a única que mexe em outros nós: os de `frozen` ficam parados
 ## (`process_mode` desligado) enquanto a tela está aberta e voltam ao valor anterior ao fechar. NÃO tem regra de jogo, não calcula total nem distância: só consultas e `request_trade`, e a recusa é o `text_key` da resposta. O tempo
 ## do mundo continua andando (a tela não pausa nada). Nasce FECHADA; `setup` só uma vez.
+## LW-107e1, parte A (a ESTRUTURA; contrato em "Quadro de contratos (LW-107)"): a tela ganha a aba "Contratos", SÓ LEITURA. Liga o `ContractsLayout` (nós) e escreve por chave os textos dos rótulos e botões; o cabeçalho
+## "Mercado | Contratos" troca a página só por `visible` e, ao abrir, a aba "Mercado" vem escolhida. Aceitar e Entregar existem e ficam SEMPRE desativados (a LW-107e2 liga as regras e o envio dos pedidos); Fechar, na aba, fecha a tela
+## como o do mercado; a linha de dicas fica vazia e escondida. A consulta de contratos (`ContractsViewModel`), as linhas, o detalhe e os estados são da parte B.
 
 ## Valores [HIP]: a camada (acima do HUD) e o intervalo das consultas com a tela aberta (preço, estoque e dinheiro mudam sozinhos).
 const LAYER_INDEX: int = 10
@@ -24,6 +27,14 @@ const KEY_UNAVAILABLE: String = "ui.market.unavailable"
 const KEY_QUANTITY_PREFIX: String = "ui.market.quantity_prefix"
 const KEY_HINTS: String = "ui.market.hints"
 const KEY_GOOD_NAME: String = "good.%s.name"
+## Chaves de texto da aba "Contratos" (LW-107e1, parte A: os rótulos e botões; as do conteúdo das listas são da parte B).
+const KEY_TAB_MARKET: String = "ui.contracts.tab_market"
+const KEY_TAB_CONTRACTS: String = "ui.contracts.tab_contracts"
+const KEY_CONTRACTS_TITLE: String = "ui.contracts.title"
+const KEY_SECTION_OPEN: String = "ui.contracts.section_open"
+const KEY_SECTION_MINE: String = "ui.contracts.section_mine"
+const KEY_ACCEPT: String = "ui.contracts.accept"
+const KEY_DELIVER: String = "ui.contracts.deliver"
 const COLUMN_KEYS: Dictionary[int, String] = {
 	MarketLayout.COLUMN_NAME: "ui.market.column_name",
 	MarketLayout.COLUMN_ASK: "ui.market.column_ask",
@@ -43,6 +54,7 @@ var _frozen: Array[Node] = []
 var _previous_modes: Dictionary[Node, Node.ProcessMode] = {}
 var _layout: MarketLayout = MarketLayout.new()
 var _model: MarketViewModel = MarketViewModel.new()
+var _contracts_layout: ContractsLayout = ContractsLayout.new()
 var _items: Dictionary[String, TreeItem] = {}
 var _refresh_left_s: float = 0.0
 
@@ -81,6 +93,7 @@ func setup(bridge: SimBridge, texts: UiText, actor_id: int, frozen: Array[Node])
 	_layout.buy_button.pressed.connect(buy)
 	_layout.sell_button.pressed.connect(sell)
 	_layout.close_button.pressed.connect(close)
+	_setup_contracts()
 	return true
 
 
@@ -88,8 +101,8 @@ func is_open() -> bool:
 	return visible
 
 
-## Abre a tela sobre o mercado `market_id`: para os nós de `frozen` (guarda o `process_mode` de cada um), mostra, limpa a linha de resultado, refaz as consultas e dá o foco à tabela, com a primeira linha escolhida se nenhuma estava.
-## Já aberta, só troca de mercado e refaz as consultas. Sem `setup`: nada acontece.
+## Abre a tela sobre o mercado `market_id`: para os nós de `frozen` (guarda o `process_mode` de cada um), mostra, escolhe a aba "Mercado", limpa as linhas de resultado, refaz as consultas e dá o foco à tabela, com a primeira linha
+## escolhida se nenhuma estava. Já aberta, só troca de mercado, volta à aba "Mercado" e refaz as consultas. Sem `setup`: nada acontece.
 func open(market_id: int) -> void:
 	if _bridge == null:
 		return
@@ -104,7 +117,9 @@ func open(market_id: int) -> void:
 		visible = true
 		set_process(true)
 	_layout.result.text = ""
+	_contracts_layout.result.text = ""
 	_layout.hints.text = _texts.get_text(KEY_HINTS, {"cancel_key": _key_of(ACTION_CANCEL), "interact_key": _key_of(InputActions.INTERACT)})
+	_show_page(false)
 	refresh()
 	_layout.goods.grab_focus()
 
@@ -212,6 +227,39 @@ func _show_rows(rows: Array[MarketViewModel.Row]) -> void:
 func _clear_rows() -> void:
 	_layout.goods.clear()
 	_items.clear()
+
+
+## A aba "Contratos" (LW-107e1): cria a página irmã da do mercado, escreve os textos, liga os cliques e escolhe a aba "Mercado". Só leitura: Aceitar e Entregar ficam DESATIVADOS (a LW-107e2 liga as regras e o envio dos pedidos). Fechar usa o
+## texto `ui.market.close` e o MESMO `close` do botão do mercado; a linha de dicas fica vazia e ESCONDIDA (a LW-107e2 a preenche, com `hint_accept` e `hint_deliver`, e a mostra).
+func _setup_contracts() -> void:
+	var page: ContractsLayout = _contracts_layout
+	page.build(_layout.column)
+	_layout.market_tab.text = _texts.get_text(KEY_TAB_MARKET)
+	_layout.contracts_tab.text = _texts.get_text(KEY_TAB_CONTRACTS)
+	page.title.text = _texts.get_text(KEY_CONTRACTS_TITLE)
+	page.open_title.text = _texts.get_text(KEY_SECTION_OPEN)
+	page.mine_title.text = _texts.get_text(KEY_SECTION_MINE)
+	page.accept_button.text = _texts.get_text(KEY_ACCEPT)
+	page.deliver_button.text = _texts.get_text(KEY_DELIVER)
+	page.accept_button.disabled = true
+	page.deliver_button.disabled = true
+	page.close_button.text = _texts.get_text(KEY_CLOSE)
+	page.hints.visible = false
+	_layout.market_tab.pressed.connect(_show_page.bind(false))
+	_layout.contracts_tab.pressed.connect(_show_page.bind(true))
+	page.close_button.pressed.connect(close)
+	_show_page(false)
+
+
+## Mostra UMA das duas páginas (a do mercado ou a de contratos), marca a aba escolhida e, com a tela aberta, dá o foco à lista principal da página. Só `visible` muda: nenhum nó muda de pai.
+func _show_page(is_contracts: bool) -> void:
+	for node: Control in _layout.market_page:
+		node.visible = not is_contracts
+	_contracts_layout.page.visible = is_contracts
+	_layout.market_tab.set_pressed_no_signal(not is_contracts)
+	_layout.contracts_tab.set_pressed_no_signal(is_contracts)
+	if visible:
+		(_contracts_layout.open_list if is_contracts else _layout.goods).grab_focus()
 
 
 ## Tecla da ação para a linha de dicas, lida do InputMap (primeira palavra do texto do evento, ex.: "E"), como a `InteractionView` faz com `interact`.
