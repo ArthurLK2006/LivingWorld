@@ -245,6 +245,28 @@ func peek_contract_board(actor_id: int, market_id: int) -> BridgePlayerContracts
 	return BridgePlayerContracts.board(character, economy, _clock().total_minutes(), actor_id, market_id)
 
 
+## LW-107b: o jogador aceita o contrato de entrega (`BridgePlayerContractsReplies.ContractActionReply`, com a chave do texto). A ponte só delega: os passos (ator, contrato, tipo, alcance do mercado pelo `world`, prazo) e a recusa com `BRIDGE_CONTRACT_EXPIRED` estão em `BridgePlayerContracts`; o comando é da `economy`.
+func request_contract_accept(actor_id: int, contract_id: int) -> BridgePlayerContractsReplies.ContractActionReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgePlayerContractsReplies.ContractActionReply.new(_missing_character("request_contract_accept"), contract_id)
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgePlayerContractsReplies.ContractActionReply.new(_missing_economy("request_contract_accept"), contract_id)
+	return BridgePlayerContracts.accept(character, economy, _places, _clock().total_minutes(), actor_id, contract_id)
+
+
+## LW-107b: o jogador entrega o contrato de entrega que aceitou, junto do mercado destino (`BridgePlayerContractsReplies.ContractActionReply`, com a chave do texto). A ponte só delega; os bens, a custódia e o `ContractCompleted` são da `economy`.
+func request_contract_deliver(actor_id: int, contract_id: int) -> BridgePlayerContractsReplies.ContractActionReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgePlayerContractsReplies.ContractActionReply.new(_missing_character("request_contract_deliver"), contract_id)
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgePlayerContractsReplies.ContractActionReply.new(_missing_economy("request_contract_deliver"), contract_id)
+	return BridgePlayerContracts.deliver(character, economy, _places, actor_id, contract_id)
+
+
 ## Intenções de NPC em S0 que a apresentação ainda não cumpriu (LW-070), em CÓPIAS, em ordem crescente de NPC, com o destino em metros e a
 ## altura do terreno. A ponte só repassa: quem decide o que é uma intenção é o `npc`. Sem terreno: BRIDGE_NO_TERRAIN; sem `npc`: BRIDGE_NO_NPC.
 func peek_pending_npc_intents() -> BridgeReplies.NpcIntentsReply:
