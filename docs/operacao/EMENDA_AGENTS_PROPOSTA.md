@@ -20,7 +20,7 @@
 - Seção 14: "salvo o que a 14.1 libera", para a 14 não travar o mandato (conflito apontado pelo revisor).
 - Validade: voltou "suspender" (e "revogar"); "concluídas" explicado como "aceitas por Arthur"; o arquivo do mandato só vale integrado ao `main`.
 - Literalidade: classes 1 e 2 separadas e "PR" e "CI verde" restaurados nas frases de integração.
-- **Consequência do ajuste 2, destacada para Arthur:** atualizar a base exige `merge` do `main` no ramo da tarefa (o 10.6 proíbe `rebase`); ele entrou na lista de Git da 14.1, só para isso. Se ele discordar, é um PR de classe 4 que o retira.
+- **Lacuna apontada pelo revisor, NÃO incluída (decisão de Arthur):** atualizar a base (ajuste 2) exige `merge` do `main` no ramo da tarefa; o 10.2 pede autorização para `merge` e o 10.6 proíbe `rebase`. A 14.1 não o autoriza; se ele quiser, é um PR de classe 4 à parte que acrescenta "`merge` do `main` no ramo da tarefa, só para atualizar a base" à lista de Git.
 - Outras adições, todas restritivas: o mandato fica registrado em `docs/operacao/MANDATO_<n>.md` **e integrado ao `main`** (o arquivo só vale integrado); aditivo escrito também integrado ao `main`; "concluídas" significa "aceitas por Arthur"; "o Maestro para e avisa" quando uma mudança relevante invalida as premissas.
 - MANDATO_1.md: tirada a frase sobre a 107f (a aprovação diz "107b a 107g", lista fechada) e o resumo que podia divergir da 14.1.
 
