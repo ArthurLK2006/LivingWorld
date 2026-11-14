@@ -1,57 +1,35 @@
 class_name InhabitantSpec
 extends RefCounted
-## Ficha de UM habitante (ART-9 e ART-9d, protótipo isolado, só apresentação): dado puro, escolhido por hash de inteiros a partir de (id, papel), sem sorteio da engine, então o mesmo par dá sempre a mesma ficha e a mesma malha. Faixas, tabelas e paletas são [HIP] de arte, a calibrar olhando as capturas; cada campo tem o seu canal de hash. Os campos da ART-9 (altura, cores, roupa, cobertura, acessórios) saem dos mesmos canais de antes, então o mesmo id mantém o mesmo conjunto; os da ART-9d (expressão, barba, tecido, avental, ombreiras, crista, escudo, corpo) usam canais novos, no fim.
+## Ficha de UM habitante (ART-9, 9d e 9e, protótipo isolado, só apresentação): dado puro, escolhido por hash de inteiros a partir de (id, papel), sem sorteio da engine, então o mesmo par dá sempre a mesma ficha e a mesma malha. A MATRIZ de arquétipos (papel x subarquétipo: faixas de morfologia, roupas, equipamento e postura) é um dado legível em InhabitantArchetypes; a morfologia (altura, constituição, anatomia, idade, postura) sai de InhabitantMorph; aqui ficam a ficha, as paletas e o vestir. Cada campo tem o seu canal de hash.
 
-enum Garment { TUNIC, LONG_COAT, TABARD }
-enum HeadCover { NONE, HOOD, CAP, WIDE_HAT, OPEN_HELM, HOOD_CAP }
+enum Garment { TUNIC, LONG_COAT, TABARD, DRESS, SHORT_TUNIC }
+enum HeadCover { NONE, HOOD, CAP, WIDE_HAT, OPEN_HELM, HOOD_CAP, SCARF, STRAW_HAT, BERET, WOOL_CAP }
 enum Mood { GENTLE, CURIOUS, TIRED, SEVERE }
-enum Beard { NONE, SHORT, FULL }
+enum Beard { NONE, SHORT, FULL, MOUSTACHE }
 enum Fabric { PLAIN, STRIPED, PATCHED }
 enum Apron { NONE, SHORT, LONG }
 enum Crest { NONE, RIDGE, PLUME }
-enum Channel { HEIGHT, WIDTH, HEAD, SKIN, HAIR, OUTFIT, TOP, BOTTOM, TRIM, BOOTS, COVER, EXPRESSION, BEARD, FABRIC, APRON, CREST, SHIELD, BELLY, DROOP, LEAN, ALT, COLLAR, BUNDLE }
+enum Age { YOUNG, ADULT, OLD }
+enum Build { LEAN, THIN, AVERAGE, STOCKY, STRONG, HEAVY }
+enum HeadShape { ROUND, LONG, SQUARE, SMALL_CHIN }
+enum Posture { UPRIGHT, STOOPED, LEANING }
+enum Sleeve { LONG, SHORT, ROLLED, PUFFED }
+enum Hair { BALD, CROP, SHORT, LONG, BUN, MESSY }
+enum Waist { LEATHER, SASH, ROPE }
+enum Wrap { NONE, SHAWL, SCARF }
+enum Channel { HEIGHT, WIDTH, HEAD, SKIN, HAIR, OUTFIT, TOP, BOTTOM, TRIM, BOOTS, COVER, EXPRESSION, BEARD, FABRIC, APRON, CREST, SHIELD, BELLY, DROOP, LEAN, ALT, COLLAR, BUNDLE, BUILD, AGE, SHAPE, POSTURE, STOOP, SHOULDER, CHEST, HIP, NECK, LIMBS, LEGS, GIRTH, SLEEVE, HAIRSTYLE, WRAP, WAIST, FEATHER }
 
 const VILLAGER: StringName = &"villager"
 const MERCHANT: StringName = &"merchant"
 const GUARD: StringName = &"guard"
 const ROLES: Array[StringName] = [VILLAGER, MERCHANT, GUARD]
-## Faixas por papel: altura (m) e largura TOTAL, com os braços (m); a escala da cabeça vale para todos. O guarda é o mais alto e de ombros largos (a ombreira some na largura).
-const HEIGHT_M: Dictionary[StringName, Vector2] = {VILLAGER: Vector2(1.42, 1.76), MERCHANT: Vector2(1.4, 1.72), GUARD: Vector2(1.74, 1.86)}
-const WIDTH_M: Dictionary[StringName, Vector2] = {VILLAGER: Vector2(0.9, 1.02), MERCHANT: Vector2(0.94, 1.04), GUARD: Vector2(0.84, 0.96)}
-const HEAD_SCALE: Vector2 = Vector2(0.92, 1.1)
 ## Cada tom varia um pouco por habitante (fração de claro ou de escuro), com um canal de hash próprio (canal da cor + deslocamento).
 const TINT_RANGE: float = 0.08
 const TINT_CHANNEL_SHIFT: int = 32
-## Corpo: a barriga e o ombro caído variam por hash (a barriga multiplica o raio; o ombro caído vai de 0 a 1).
-const BELLY_RANGE: Vector2 = Vector2(0.94, 1.08)
-## Conjuntos de roupa por papel: [roupa, cobertura da cabeça, acessórios...] (a mesma tabela da ART-9: o mesmo id mantém o conjunto). Cada um já tem o que define o papel (guarda: elmo e lança ou cajado de guarda; comerciante: bolsa ou bolsinha e avental ou chapéu largo; aldeão: sem elmo nem lança; capuz com boné é a combinação da referência de Arthur).
-const OUTFITS: Dictionary[StringName, Array] = {
-	VILLAGER: [
-		[Garment.TUNIC, HeadCover.HOOD, &"basket"], [Garment.TUNIC, HeadCover.CAP, &"sack"], [Garment.TUNIC, HeadCover.HOOD, &"staff", &"satchel"],
-		[Garment.TUNIC, HeadCover.NONE, &"basket"], [Garment.TUNIC, HeadCover.CAP, &"lantern"], [Garment.TUNIC, HeadCover.NONE, &"sack"],
-		[Garment.TUNIC, HeadCover.HOOD_CAP, &"satchel"],
-	],
-	MERCHANT: [
-		[Garment.LONG_COAT, HeadCover.WIDE_HAT, &"satchel"], [Garment.TUNIC, HeadCover.CAP, &"apron", &"coin_pouch"],
-		[Garment.LONG_COAT, HeadCover.WIDE_HAT, &"coin_pouch", &"apron"], [Garment.TUNIC, HeadCover.WIDE_HAT, &"satchel", &"coin_pouch"],
-	],
-	GUARD: [[Garment.TABARD, HeadCover.OPEN_HELM, &"spear"], [Garment.TABARD, HeadCover.OPEN_HELM, &"guard_staff"], [Garment.TABARD, HeadCover.OPEN_HELM, &"spear", &"lantern"]],
-}
-## Expressão por papel (o índice sai do hash): aldeão gentil ou curioso, comerciante curioso ou gentil, guarda severo ou cansado.
-const EXPRESSIONS: Dictionary[StringName, Array] = {
-	VILLAGER: [Mood.GENTLE, Mood.CURIOUS, Mood.TIRED, Mood.GENTLE],
-	MERCHANT: [Mood.CURIOUS, Mood.GENTLE, Mood.CURIOUS, Mood.SEVERE],
-	GUARD: [Mood.SEVERE, Mood.TIRED, Mood.SEVERE, Mood.GENTLE],
-}
-## Sorteios por hash (fração de 0 a 1): barba curta e cheia só de aldeões, tecido listrado e remendado, avental curto do aldeão, trouxa do comerciante, crista de pluma do guarda e escudo do guarda de lança.
-const BEARD_SHORT: float = 0.2
-const BEARD_FULL: float = 0.35
-const FABRIC_PATCHED: float = 0.25
-const FABRIC_STRIPED: float = 0.5
-const SHORT_APRON: float = 0.4
-const BUNDLE_CHANCE: float = 0.5
-const PLUME_CHANCE: float = 0.5
-const SHIELD_CHANCE: float = 0.6
+## Chance de pena no chapéu largo e o cabelo branco do idoso (mistura com o branco).
+const FEATHER_CHANCE: float = 0.7
+const WHITE_HAIR: Color = Color("E4E0D8")
+const OLD_WHITE: float = 0.85
 const SKIN_TONES: Array[Color] = [Color("EDBB9A"), Color("E5A783"), Color("D79B72"), Color("C48862"), Color("B27A52"), Color("98653F")]
 const HAIR_TONES: Array[Color] = [Color("3E2B20"), Color("5C3B23"), Color("8A5A2B"), Color("C79A4A"), Color("A8A29A"), Color("7A3B20")]
 const BOOT_TONES: Array[Color] = [Color("5A3C2B"), Color("4A3326"), Color("6A4A34")]
@@ -78,6 +56,8 @@ const PALETTES: Dictionary[StringName, Array] = {
 
 var id: int = 0
 var role: StringName = VILLAGER
+var archetype: int = 0
+var archetype_name: String = ""
 var height_m: float = 0.0
 var width_m: float = 0.0
 var head_scale: float = 1.0
@@ -100,9 +80,31 @@ var apron: int = Apron.NONE
 var crest: int = Crest.NONE
 var has_pauldrons: bool = false
 var has_shield: bool = false
+var halberd: bool = false
+var has_feather: bool = false
+var helm_scale: float = 1.0
+var pauldron_scale: float = 1.0
+var plume_scale: float = 1.0
+var bundle_size: float = 1.0
+var age: int = Age.ADULT
+var build: int = Build.AVERAGE
+var girth: float = 1.0
+var shoulder: float = 1.0
+var chest: float = 1.0
 var belly: float = 1.0
+var hip: float = 1.0
+var neck: float = 1.0
+var limbs: float = 1.0
+var legs: float = 1.0
+var head_shape: int = HeadShape.ROUND
+var posture: int = Posture.UPRIGHT
+var stoop: float = 0.0
 var droop: float = 0.0
 var lean: float = 0.0
+var sleeve: int = Sleeve.LONG
+var hair_style: int = Hair.SHORT
+var waist: int = Waist.LEATHER
+var neck_wrap: int = Wrap.NONE
 
 
 ## A ficha do habitante `inhabitant_id` no papel `role_name` (papel desconhecido vira aldeão). O mesmo par dá sempre a mesma ficha.
@@ -112,17 +114,20 @@ static func for_inhabitant(inhabitant_id: int, role_name: StringName) -> Inhabit
 	var spec: InhabitantSpec = InhabitantSpec.new()
 	spec.id = inhabitant_id
 	spec.role = kind
-	spec.height_m = PlazaMeshKit.between(key, Channel.HEIGHT, HEIGHT_M[kind].x, HEIGHT_M[kind].y)
-	spec.width_m = PlazaMeshKit.between(key, Channel.WIDTH, WIDTH_M[kind].x, WIDTH_M[kind].y)
-	spec.head_scale = PlazaMeshKit.between(key, Channel.HEAD, HEAD_SCALE.x, HEAD_SCALE.y)
-	var outfits: Array = OUTFITS[kind]
+	spec.archetype = InhabitantArchetypes.pick(kind, inhabitant_id)
+	var entry: Dictionary = InhabitantArchetypes.entry(kind, spec.archetype)
+	spec.archetype_name = entry["name"]
+	var outfits: Array = entry["outfits"]
 	var outfit: Array = outfits[_index(outfits.size(), key, Channel.OUTFIT)]
 	spec.garment = outfit[0]
 	spec.head_cover = outfit[1]
 	spec.accessories.assign(outfit.slice(2))
+	InhabitantMorph.apply(spec, entry, key)
 	var palette: Array = PALETTES[kind]
 	spec.skin = _tone(SKIN_TONES, key, Channel.SKIN)
 	spec.hair = _tone(HAIR_TONES, key, Channel.HAIR)
+	if spec.age == Age.OLD:
+		spec.hair = spec.hair.lerp(WHITE_HAIR, OLD_WHITE)
 	spec.boots = _tone(BOOT_TONES, key, Channel.BOOTS)
 	spec.top = _tone(palette[0], key, Channel.TOP)
 	spec.bottom = _tone(palette[1], key, Channel.BOTTOM)
@@ -130,7 +135,7 @@ static func for_inhabitant(inhabitant_id: int, role_name: StringName) -> Inhabit
 	spec.cover_color = _tone(palette[3], key, Channel.COVER)
 	spec.alt = _tone(palette[4], key, Channel.ALT)
 	spec.collar = _tone(palette[5], key, Channel.COLLAR)
-	_dress(spec, kind, key)
+	_dress(spec, entry, kind, key)
 	return spec
 
 
@@ -138,35 +143,37 @@ func has_accessory(kind: StringName) -> bool:
 	return accessories.has(kind)
 
 
-## Os campos da ART-9d (cada um com o seu canal): rosto, tecido, avental, equipamento do guarda, trouxa do comerciante e corpo.
-static func _dress(spec: InhabitantSpec, kind: StringName, key: int) -> void:
-	var expressions: Array = EXPRESSIONS[kind]
-	spec.expression = expressions[_index(expressions.size(), key, Channel.EXPRESSION)]
-	var beard_roll: float = PlazaMeshKit.unit(key, Channel.BEARD)
-	if kind == VILLAGER:
-		spec.beard = Beard.SHORT if beard_roll < BEARD_SHORT else (Beard.FULL if beard_roll < BEARD_FULL else Beard.NONE)
-	var fabric_roll: float = PlazaMeshKit.unit(key, Channel.FABRIC)
-	if kind == VILLAGER:
-		spec.fabric = Fabric.PATCHED if fabric_roll < FABRIC_PATCHED else (Fabric.STRIPED if fabric_roll < FABRIC_STRIPED else Fabric.PLAIN)
-	elif kind == MERCHANT:
-		spec.fabric = Fabric.STRIPED if fabric_roll < FABRIC_STRIPED else Fabric.PLAIN
+## Os campos de vestir (cada um com o seu canal): rosto, barba, cabelo, mangas, tecido, avental, cinto, agasalho, pena, equipamento do guarda e trouxa do mascate.
+static func _dress(spec: InhabitantSpec, entry: Dictionary, kind: StringName, key: int) -> void:
+	spec.expression = _choice(entry["mood"], key, Channel.EXPRESSION)
+	spec.beard = _choice(entry["beard"], key, Channel.BEARD)
+	spec.fabric = _choice(entry["fabric"], key, Channel.FABRIC)
+	spec.sleeve = _choice(entry["sleeves"], key, Channel.SLEEVE)
+	spec.hair_style = _choice(entry["hair"], key, Channel.HAIRSTYLE)
+	spec.waist = _choice(entry["waist"], key, Channel.WAIST)
+	spec.neck_wrap = _choice(entry["wrap"], key, Channel.WRAP)
 	if spec.has_accessory(&"apron"):
 		spec.apron = Apron.LONG
-	elif kind == VILLAGER and PlazaMeshKit.unit(key, Channel.APRON) < SHORT_APRON:
-		spec.apron = Apron.SHORT
-	if kind == MERCHANT and PlazaMeshKit.unit(key, Channel.BUNDLE) < BUNDLE_CHANCE:
-		spec.accessories.append(&"bundle")
+	elif kind == VILLAGER:
+		spec.apron = _choice(entry["apron"], key, Channel.APRON)
+	spec.has_feather = spec.head_cover == HeadCover.WIDE_HAT and PlazaMeshKit.unit(key, Channel.FEATHER) < FEATHER_CHANCE
+	spec.bundle_size = entry.get("load", 1.0)
 	if kind == GUARD:
 		spec.has_pauldrons = true
-		spec.crest = Crest.PLUME if PlazaMeshKit.unit(key, Channel.CREST) < PLUME_CHANCE else Crest.RIDGE
-		spec.has_shield = spec.has_accessory(&"spear") and PlazaMeshKit.unit(key, Channel.SHIELD) < SHIELD_CHANCE
-	spec.belly = PlazaMeshKit.between(key, Channel.BELLY, BELLY_RANGE.x, BELLY_RANGE.y)
-	spec.droop = PlazaMeshKit.unit(key, Channel.DROOP)
-	spec.lean = PlazaMeshKit.between(key, Channel.LEAN, -1.0, 1.0)
+		spec.crest = _choice(entry["crest"], key, Channel.CREST)
+		spec.has_shield = spec.has_accessory(&"spear") and PlazaMeshKit.unit(key, Channel.SHIELD) < float(entry["shield"])
+		spec.halberd = entry["halberd"]
+		spec.helm_scale = entry["helm"]
+		spec.pauldron_scale = entry["pauldron"]
+		spec.plume_scale = entry["plume"]
 
 
 static func _index(size: int, key: int, channel: int) -> int:
 	return mini(int(PlazaMeshKit.unit(key, channel) * size), size - 1)
+
+
+static func _choice(list: Array, key: int, channel: int) -> int:
+	return list[_index(list.size(), key, channel)]
 
 
 ## Um tom da tabela, mais claro ou mais escuro por hash.

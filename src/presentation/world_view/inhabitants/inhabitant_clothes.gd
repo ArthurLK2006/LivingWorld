@@ -2,9 +2,9 @@ class_name InhabitantClothes
 extends RefCounted
 ## Roupa em CAMADAS sobre o tronco (ART-9d, protótipo isolado, só apresentação): gola ou capelo, cinto com fivela, avental (curto do aldeão com bolso; longo do comerciante com peitilho e alças), remendos, tabardo do guarda sobre o gibão com faixa de ouro e emblema, e as ombreiras de aço. Cada camada é uma casca loftada que acompanha o tronco (InhabitantRig.row_at), um pouco maior, com debrum e listras em cor por faceta. O tronco já leva a barra com debrum e as listras (InhabitantBody). LOD 1 leva gola, cinto e ombreiras; LOD 2 nada.
 
-const COWL_LEVELS: Array[float] = [0.47, 0.53, 0.585, 0.63, 0.662]
-const COWL_GROW: float = 1.1
-const COWL_GAP_M: float = 0.012
+const COWL_LEVELS: Array[float] = [0.43, 0.5, 0.56, 0.615, 0.66]
+const COWL_GROW: float = 1.2
+const COWL_GAP_M: float = 0.022
 const HOOD_CAP_DARKEN: float = 0.3
 const COWL_LIGHTEN: float = 0.04
 const COWL_EDGE_DARKEN: float = 0.12
@@ -44,8 +44,8 @@ const EMBLEM_LIFT_M: float = 0.016
 const EMBLEM_INNER: float = 0.55
 const EMBLEM_DARKEN: float = 0.35
 ## Ombreiras: raios (fração de H), levantamento sobre o ombro e polar máximo (graus).
-const PAULDRON: Vector3 = Vector3(0.12, 0.075, 0.115)
-const PAULDRON_LIFT: Vector2 = Vector2(0.025, 0.02)
+const PAULDRON: Vector3 = Vector3(0.14, 0.08, 0.125)
+const PAULDRON_LIFT: Vector2 = Vector2(0.04, 0.02)
 const PAULDRON_DEG: float = 105.0
 
 var _rig: InhabitantRig
@@ -83,15 +83,7 @@ func build() -> void:
 
 ## Casca que acompanha o tronco nas alturas `levels` (fração de H): `grow` vezes o raio mais `gap` (m), com a barra `flare` mais aberta.
 func _shell(levels: Array[float], grow: float, gap: float, color: Color, arc: Vector2 = InhabitantShapes.FULL_ARC, sides: int = 0, tint: Callable = Callable(), flare: float = 0.0) -> void:
-	var rows: Array[Vector4] = []
-	var shifts: PackedVector2Array = PackedVector2Array()
-	for index: int in levels.size():
-		var y: float = levels[index] * _rig.h
-		var row: Vector4 = _rig.row_at(y)
-		var opening: float = 1.0 + flare * (1.0 - float(index) / maxf(levels.size() - 1.0, 1.0))
-		rows.append(Vector4(y, row.y * grow * opening + gap, row.z * grow * opening + gap, row.w))
-		shifts.append(_rig.shift_at(y))
-	_shapes.loft(InhabitantShapes.y_frame(Vector3.ZERO), rows, sides if sides > 0 else _rig.sides, color, 0.0, arc, shifts, tint)
+	_rig.shell(levels, grow, gap, color, arc, sides, tint, flare)
 
 
 func _front_arc(half: float) -> Vector2:
@@ -119,6 +111,8 @@ func _collar() -> void:
 
 func _belt() -> void:
 	var spec: InhabitantSpec = _rig.spec
+	if spec.waist != InhabitantSpec.Waist.LEATHER:
+		return
 	var color: Color = LEATHER
 	if spec.role == InhabitantSpec.MERCHANT:
 		color = spec.trim
@@ -152,7 +146,8 @@ func _belt() -> void:
 
 func _short_apron() -> void:
 	var spec: InhabitantSpec = _rig.spec
-	var levels: Array[float] = [SHORT_APRON.x, (SHORT_APRON.x + SHORT_APRON.y) * 0.5, SHORT_APRON.y]
+	var low: float = maxf(SHORT_APRON.x, _rig.hem_y() / _rig.h + 0.02)
+	var levels: Array[float] = [low, (low + SHORT_APRON.y) * 0.5, SHORT_APRON.y]
 	_shell(levels, APRON_GROW, 0.0, spec.collar, _front_arc(APRON_ARC.x), 6, func(ring: int, _side: int) -> Color: return spec.collar.darkened(0.14) if ring == 0 else spec.collar, 0.05)
 	var y: float = POCKET.y * _rig.h
 	var pocket: float = POCKET.z * _rig.h
@@ -209,11 +204,11 @@ func _tabard() -> void:
 ## Ombreiras de aço (cúpula com a borda de ouro) sobre os ombros: dão ao guarda a silhueta de trapézio.
 func _pauldrons() -> void:
 	var spec: InhabitantSpec = _rig.spec
-	var y: float = InhabitantBody.SHOULDER_Y[spec.role] * _rig.h
+	var y: float = _rig.shoulder_y
 	var steel: Color = spec.cover_color
 	var gold: Color = spec.trim
-	var bands: int = 3 if _rig.is_near else 2
-	var rows: Array[Vector4] = InhabitantShapes.dome(PAULDRON * _rig.h, 0.0, PAULDRON_DEG, bands)
+	var bands: int = 3 if _rig.is_near else (2 if _rig.lod == InhabitantRig.LOD_MID else 1)
+	var rows: Array[Vector4] = InhabitantShapes.dome(PAULDRON * _rig.h * spec.pauldron_scale, 0.0, PAULDRON_DEG, bands)
 	for side: float in [-1.0, 1.0]:
 		var shift: Vector2 = _rig.shift_at(y)
 		var center: Vector3 = Vector3(side * _rig.half_width(y) * InhabitantBody.SHOULDER_IN + shift.x + side * PAULDRON_LIFT.x * _rig.h, y + PAULDRON_LIFT.y * _rig.h, shift.y)

@@ -53,6 +53,7 @@ const CROWD_MIX: Vector2 = Vector2(0.55, 0.85)
 const LOD_NEAR_M: float = 22.0
 const LOD_MID_M: float = 45.0
 const SET_COMPARE: String = "v7"
+const SET_V8: String = "v8"
 const CROWD_CHANNELS: Vector3i = Vector3i(1, 2, 3)
 ## Área da multidão (centro x, centro z, raio x, raio z): o círculo da praça; na vila, uma elipse na rua que deixa as casas livres ao fundo.
 const PLAZA_CROWD_AREA: Vector4 = Vector4(0.0, 0.0, CROWD_RADIUS_M, CROWD_RADIUS_M)
@@ -116,8 +117,8 @@ func _sets_of(arguments: PackedStringArray) -> Array[String]:
 
 ## Mostra o cenário do conjunto (a praça ou a vila, que é montada na primeira vez), com o prefixo dos PNGs, a área da multidão e a altura do chão dele.
 func _enter(set_id: String) -> void:
-	var is_village: bool = set_id == SET_VILLAGE or set_id == SET_COMPARE
-	prefix = "" if set_id == SET_COMPARE else PREFIX_FORMAT % set_id
+	var is_village: bool = set_id == SET_VILLAGE or set_id == SET_COMPARE or set_id == SET_V8
+	prefix = "" if set_id == SET_COMPARE or set_id == SET_V8 else PREFIX_FORMAT % set_id
 	for node: Node in _plaza_nodes:
 		if node is Node3D:
 			(node as Node3D).visible = not is_village
@@ -208,7 +209,9 @@ func _run(out_path: String, sets: Array[String]) -> void:
 			apply_preset(light["preset"])
 			if light["preset"] == 1:
 				sun.rotation_degrees.y = AFTERNOON_SUN_YAW_DEG
-			if set_id == SET_COMPARE:
+			if set_id == SET_V8:
+				await InhabitantsV8Shots.new(self).run(out_path, light["suffix"])
+			elif set_id == SET_COMPARE:
 				await InhabitantsCompareShots.new(self).run(out_path, light["suffix"])
 			elif set_id == SET_VILLAGE:
 				await _shoot_village(out_path, light["suffix"])

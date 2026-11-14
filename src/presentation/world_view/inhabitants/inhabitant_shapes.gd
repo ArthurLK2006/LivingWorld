@@ -13,10 +13,20 @@ const POLE_EPSILON: float = 0.0005
 ## Luz rebatida do chão pintada nos vértices: as faces voltadas para baixo clareiam rumo à areia quente, até a fração BOUNCE.
 const BOUNCE: float = 0.7
 const BOUNCE_COLOR: Color = Color("F4DDB0")
+## Oclusão ambiente barata (como a do PlazaMeshKit): a base das peças escurece e o topo clareia até SHADE_HEIGHT_M. Vértices a menos de 0,5 mm são o mesmo ponto na pele suave.
+const SHADE_AMOUNT: float = 0.28
+const SHADE_HEIGHT_M: float = 3.0
+const WELD_SCALE: float = 2000.0
 
-var kit: PlazaMeshKit = PlazaMeshKit.new()
+## Pele: com `soft` ligado os triângulos desenhados ganham normais SUAVIZADAS (média dos triângulos que dividem o vértice), um híbrido macio na pele e facetado no tecido; desligado, normal plana por triângulo.
+var soft: bool = false
 var _salt: int
 var _serial: int = 0
+var _points: PackedVector3Array = PackedVector3Array()
+var _colors: PackedColorArray = PackedColorArray()
+var _normals: PackedVector3Array = PackedVector3Array()
+var _softness: PackedByteArray = PackedByteArray()
+var _sums: Dictionary[Vector3i, Vector3] = {}
 
 
 func _init(salt: int) -> void:
@@ -52,10 +62,58 @@ static func dome(radii: Vector3, from_deg: float, to_deg: float, bands: int, n: 
 
 ## Triângulo com a normal para fora de `inside` e luz rebatida nas faces voltadas para baixo.
 func tri(a: Vector3, b: Vector3, c: Vector3, color: Color, inside: Vector3) -> void:
-	var normal: Vector3 = (c - a).cross(b - a).normalized()
+	var normal: Vector3 = (c - a).cross(b - a)
+	var second: Vector3 = b
+	var third: Vector3 = c
 	if normal.dot(a - inside) < 0.0:
+		second = c
+		third = b
 		normal = -normal
-	kit.tri(a, b, c, color.lerp(BOUNCE_COLOR, BOUNCE * maxf(-normal.y, 0.0)), inside)
+	var flat: Vector3 = normal.normalized()
+	var lit: Color = color.lerp(BOUNCE_COLOR, BOUNCE * maxf(-flat.y, 0.0))
+	for point: Vector3 in [a, second, third]:
+		_points.append(point)
+		_colors.append(lit.darkened(SHADE_AMOUNT * (1.0 - clampf(point.y / SHADE_HEIGHT_M, 0.0, 1.0))))
+		_normals.append(flat)
+		_softness.append(1 if soft else 0)
+		if soft:
+			var key: Vector3i = _weld_key(point)
+			_sums[key] = _sums.get(key, Vector3.ZERO) + normal
+
+
+## Caixa de tamanho `size` centrada em `center` (12 triângulos), para o bloco de botas de longe.
+func box(center: Vector3, size: Vector3, color: Color) -> void:
+	var half: Vector3 = size * 0.5
+	var corners: Array[Vector3] = []
+	for index: int in 8:
+		corners.append(center + Vector3(half.x if (index & 1) != 0 else -half.x, half.y if (index & 2) != 0 else -half.y, half.z if (index & 4) != 0 else -half.z))
+	for face: int in 6:
+		var quad_corners: PackedInt32Array = PlazaMeshKit.BOX_QUADS.slice(face * 4, face * 4 + 4)
+		quad(corners[quad_corners[0]], corners[quad_corners[1]], corners[quad_corners[2]], corners[quad_corners[3]], color, center)
+
+
+## A malha de tudo o que foi desenhado: UMA superfície com `material`, normais suaves onde `soft` estava ligado e planas no resto.
+func finish(material: Material) -> ArrayMesh:
+	for index: int in _points.size():
+		if _softness[index] == 1:
+			var smooth: Vector3 = _sums[_weld_key(_points[index])].normalized()
+			if smooth != Vector3.ZERO:
+				_normals[index] = smooth
+	var mesh: ArrayMesh = ArrayMesh.new()
+	if _points.is_empty():
+		return mesh
+	var arrays: Array = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = _points
+	arrays[Mesh.ARRAY_NORMAL] = _normals
+	arrays[Mesh.ARRAY_COLOR] = _colors
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.surface_set_material(0, material)
+	return mesh
+
+
+static func _weld_key(point: Vector3) -> Vector3i:
+	return Vector3i(roundi(point.x * WELD_SCALE), roundi(point.y * WELD_SCALE), roundi(point.z * WELD_SCALE))
 
 
 func quad(a: Vector3, b: Vector3, c: Vector3, d: Vector3, color: Color, inside: Vector3) -> void:

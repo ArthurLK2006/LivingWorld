@@ -8,10 +8,10 @@ const CITED: String = "\\bInhabitant[A-Za-z]*\\b"
 const SAMPLE_IDS: int = 40
 const VARIATION_IDS: int = 6
 const MIN_VARYING_ASPECTS: int = 4
-## Tetos [HIP] de triângulos por nível (ART-9d: LOD 0 até cerca de 1.800, LOD 1 até 450 e LOD 2 até 120; a ART-9 tinha 700 e 120 em dois níveis).
-const MAX_TRIANGLES: Array[int] = [1800, 450, 120]
-const HEIGHT_RANGE_M: Vector2 = Vector2(1.3, 2.1)
-const MAX_WIDTH_M: float = 1.4
+## Tetos [HIP] de triângulos por nível (ART-9e: LOD 0 até 2.200, LOD 1 até 520 e LOD 2 até 130; a ART-9d tinha 1.800, 450 e 120). Os números reais saem na linha `triângulos reais` do teste de orçamento.
+const MAX_TRIANGLES: Array[int] = [2200, 520, 130]
+const HEIGHT_RANGE_M: Vector2 = Vector2(1.3, 2.25)
+const MAX_WIDTH_M: float = 1.7
 const MAX_FILE_LINES: int = 330
 const TOLERANCE: float = 0.001
 

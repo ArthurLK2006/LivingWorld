@@ -1,11 +1,13 @@
 class_name InhabitantHead
 extends RefCounted
-## Cabeça e rosto do habitante (ART-9d, protótipo isolado, só apresentação): crânio loftado de queixo redondo, pescoço de pele, orelhas, e o rosto charmoso em geometria colada à casca (olhos ovais de esclera clara, íris escura e brilho minúsculo, pálpebras e sobrancelhas inclinadas pela expressão da ficha, nariz de bulbo arredondado, bochechas de volume suave mais a cor rosada, boca curva em dois pedaços com covinha), cabelo e barba de verdade (só em alguns aldeões, sempre abaixo da boca, para o pescoço do capelo nunca parecer barba). LOD 1 leva só olhos, sobrancelhas e nariz; LOD 2, o crânio.
+## Cabeça e rosto do habitante (ART-9d e 9e, protótipo isolado, só apresentação): crânio loftado na forma da ficha (redonda, comprida, queixo quadrado ou pequeno) com PELE DE NORMAIS SUAVES (a roupa continua facetada), pescoço, orelhas, e o rosto em geometria colada à casca (olhos ovais de esclera clara, íris escura e brilho minúsculo, pálpebras e sobrancelhas inclinadas pela expressão, nariz de bulbo, bochechas de volume suave mais a cor rosada, boca curva em dois pedaços com covinha), as rugas e o cabelo (InhabitantFeatures), barba curta, cheia ou só bigode (sempre abaixo da boca, para o pescoço do capelo nunca parecer barba) e a franja da nuca. LOD 1 leva só olhos, sobrancelhas e nariz; LOD 2, o crânio.
 
 const HEAD_JITTER: float = 0.015
 const NECK_RADII: Vector2 = Vector2(0.38, 0.36)
-const NECK_FROM: float = 0.62
+const NECK_FROM_ABOVE: float = 0.03
 const NECK_TO: float = -0.7
+## Coberturas que deixam a nuca à mostra (com a franja de cabelo).
+const NAPE_COVERS: Array[int] = [InhabitantSpec.HeadCover.NONE, InhabitantSpec.HeadCover.CAP, InhabitantSpec.HeadCover.WIDE_HAT, InhabitantSpec.HeadCover.BERET, InhabitantSpec.HeadCover.STRAW_HAT]
 ## Rosto, em fração dos raios da cabeça (x, y sobre a face): levantamento da primeira camada e de cada camada seguinte (fração de rx), olhos, íris, sobrancelha (x por dentro e por fora), nariz (centro e raios), bochecha, boca (altura, meia largura) e orelha.
 const FACE_LIFT: float = 0.06
 const LAYER_LIFT: float = 0.012
@@ -15,6 +17,7 @@ const EYE_HALF: Vector2 = Vector2(0.17, 0.12)
 const IRIS_HALF: Vector2 = Vector2(0.09, 0.1)
 const BROW_X: Vector2 = Vector2(0.15, 0.6)
 const BROW_ARCH: float = 0.03
+const OLD_BROW: float = 0.02
 const NOSE_SPOT: Vector2 = Vector2(0.0, -0.13)
 const NOSE_RADII: Vector3 = Vector3(0.13, 0.15, 0.15)
 const CHEEK_SPOT: Vector2 = Vector2(0.56, -0.22)
@@ -41,9 +44,7 @@ const NOSE_BLUSH: float = 0.1
 const BROW_DARKEN: float = 0.35
 const LID_DARKEN: float = 0.1
 const DIMPLE_DARKEN: float = 0.3
-## Cabelo (cúpula e nuca), em fração dos raios da cabeça, e barba: alturas dos anéis (fração de ry), folga sobre a cabeça, avanço para a frente e giro (rad) em torno do rosto.
-const HAIR_SHELL: Array[Vector3] = [Vector3(0.0, 0.14, 0.12), Vector3(1.04, 0.95, 1.04)]
-const HAIR_POLAR_DEG: float = 96.0
+## Nuca e barba: alturas dos anéis da barba (fração de ry), folga sobre a cabeça, avanço para a frente e giro (rad) em torno do rosto; bigode (lugar, raios).
 const BEARD_Y: Array[float] = [-0.56, -0.74, -0.92, -1.06]
 const BEARD_SCALE: Array[float] = [1.1, 1.12, 1.1, 0.55]
 const BEARD_FORWARD: Array[float] = [0.0, -0.03, -0.06, -0.1]
@@ -51,6 +52,9 @@ const BEARD_FULL_TIP: float = -1.3
 const BEARD_CLAMP_Y: float = -0.88
 const BEARD_HALF_ARC: float = 1.4
 const BEARD_SIDES: int = 8
+const MOUSTACHE_SPOT: Vector2 = Vector2(0.13, -0.34)
+const MOUSTACHE_RADII: Vector3 = Vector3(0.13, 0.05, 0.08)
+const MOUSTACHE_BIG: float = 1.3
 
 var _rig: InhabitantRig
 var _shapes: InhabitantShapes
@@ -64,27 +68,36 @@ func _init(rig: InhabitantRig) -> void:
 
 
 func build() -> void:
+	_shapes.soft = true
 	_shapes.loft(InhabitantShapes.y_frame(_rig.head_c), _rig.head_rows, _rig.sides, _rig.spec.skin, HEAD_JITTER)
 	if _rig.lod == InhabitantRig.LOD_FAR:
+		_shapes.soft = false
 		return
 	_neck()
 	if _rig.is_near:
 		_ears()
+	_shapes.soft = false
+	var features: InhabitantFeatures = InhabitantFeatures.new(_rig)
+	if _rig.is_near:
 		_face()
+		features.wrinkles()
 		_beard()
 	else:
 		_minimal_face()
 	var cover: int = _rig.spec.head_cover
 	if cover == InhabitantSpec.HeadCover.NONE:
-		_hair()
-	if _rig.is_near and (cover == InhabitantSpec.HeadCover.NONE or cover == InhabitantSpec.HeadCover.CAP or cover == InhabitantSpec.HeadCover.WIDE_HAT):
+		features.hair()
+	if _rig.is_near and NAPE_COVERS.has(cover):
 		_nape()
 
 
 func _neck() -> void:
+	var from_y: float = _rig.shoulder_y + NECK_FROM_ABOVE * _rig.h
+	var shift: Vector2 = _rig.shift_at(from_y)
 	var top: float = _rig.head_c.y + NECK_TO * _rig.head_r.y
-	var shift: Vector2 = _rig.shift_at(NECK_FROM * _rig.h)
-	_shapes.limb(Vector3(shift.x, NECK_FROM * _rig.h, 0.0), Vector3(0.0, top, 0.0), Vector2(NECK_RADII.x, NECK_RADII.y) * _hx * 1.05, Vector2(NECK_RADII.x, NECK_RADII.y) * _hx, 6 if _rig.is_near else 4, _rig.spec.skin, 1)
+	var thick: float = lerpf(0.85, 1.25, clampf((_rig.spec.girth - 0.78) / 0.6, 0.0, 1.0))
+	var radius: Vector2 = NECK_RADII * _hx * thick
+	_shapes.limb(Vector3(shift.x, from_y, shift.y), Vector3(_rig.head_c.x, top, _rig.head_c.z), radius * 1.05, radius, 6 if _rig.is_near else 4, _rig.spec.skin, 1)
 
 
 func _ears() -> void:
@@ -93,12 +106,12 @@ func _ears() -> void:
 		_shapes.ball(_rig.head_c + Vector3(side * head.x * 0.99, -0.06 * head.y, 0.06 * head.z), Vector3(EAR.x * head.x, EAR.y * head.y, EAR.z * head.z), 2, 5, _rig.spec.skin.darkened(0.04), 0.05)
 
 
-## O rosto de perto: olhos, pálpebras, sobrancelhas, bochechas, bolsas sob os olhos (cansado), boca, covinhas e nariz.
+## O rosto de perto: olhos, pálpebras, sobrancelhas, bochechas macias, bolsas sob os olhos (cansado), boca, covinhas e nariz macio.
 func _face() -> void:
 	var expression: Array = EXPRESSIONS[_rig.spec.expression]
 	var brow_in: float = expression[0]
 	var brow_out: float = expression[1]
-	var brow_thick: float = expression[2]
+	var brow_thick: float = float(expression[2]) + (OLD_BROW if _rig.spec.age == InhabitantSpec.Age.OLD else 0.0)
 	var lid: float = expression[3]
 	var smile: float = expression[4]
 	var wide: float = expression[5]
@@ -108,12 +121,15 @@ func _face() -> void:
 		var raise: float = CURIOUS_RAISE if _rig.spec.expression == InhabitantSpec.Mood.CURIOUS and side > 0.0 else 0.0
 		_eye(side, lid, wide)
 		_brow(side, brow_in + raise, brow_out + raise, brow_thick, brow_color)
+		_shapes.soft = true
 		_shapes.ball(_rig.face_point(Vector2(side * CHEEK_SPOT.x, CHEEK_SPOT.y), 0.0), CHEEK_RADII * _hx, 4, 8, skin.lerp(BLUSH, CHEEK_BLUSH), 0.015)
+		_shapes.soft = false
 		if _rig.spec.expression == InhabitantSpec.Mood.TIRED:
 			_oval(Vector2(side * EYE_SPOT.x, EYE_SPOT.y - EYE_HALF.y * 1.5), Vector2(EYE_HALF.x * 0.8, 0.035), skin.darkened(LID_DARKEN), 0, 6)
 		_mouth(side, smile)
-	var nose: Vector3 = _rig.face_point(NOSE_SPOT, 0.02 * _hx)
-	_shapes.ball(nose, NOSE_RADII * _hx, 4, 8, skin.lerp(BLUSH, NOSE_BLUSH), 0.015)
+	_shapes.soft = true
+	_shapes.ball(_rig.face_point(NOSE_SPOT, 0.02 * _hx), NOSE_RADII * _hx, 4, 8, skin.lerp(BLUSH, NOSE_BLUSH), 0.015)
+	_shapes.soft = false
 
 
 ## De longe: olhos escuros, sobrancelhas e o nariz.
@@ -181,28 +197,22 @@ func _mouth(side: float, smile: float) -> void:
 		_oval(Vector2(side * (MOUTH_HALF + 0.045), MOUTH_Y + smile), Vector2(0.035, 0.03), _rig.spec.skin.darkened(DIMPLE_DARKEN), 0, 5)
 
 
-## Cabelo de quem está sem cobertura: cúpula puxada para trás (a testa livre) e, de perto, a nuca.
-func _hair() -> void:
-	var head: Vector3 = _rig.head_r
-	var offset: Vector3 = HAIR_SHELL[0]
-	var scale: Vector3 = HAIR_SHELL[1]
-	var bands: int = 3 if _rig.is_near else 2
-	_shapes.loft(InhabitantShapes.y_frame(_rig.head_c + offset * head), InhabitantShapes.dome(head * scale, 0.0, HAIR_POLAR_DEG, bands), _rig.sides, _rig.spec.hair, HEAD_JITTER)
-
-
-## A nuca e as costeletas de quem não tem capuz nem elmo: um arco de cabelo que dá a volta por trás da cabeça.
+## A nuca e as costeletas de quem não tem capuz nem elmo: um arco de cabelo que dá a volta por trás da cabeça (a franja do careca).
 func _nape() -> void:
 	var head: Vector3 = _rig.head_r
 	var nape: Array[Vector4] = [Vector4(0.1 * head.y, head.x * 1.04, head.z * 1.05, 2.3), Vector4(-0.3 * head.y, head.x * 1.02, head.z * 1.04, 2.3), Vector4(-0.62 * head.y, head.x * 0.8, head.z * 0.9, 2.3)]
 	_shapes.loft(InhabitantShapes.y_frame(_rig.head_c), nape, 8, _rig.spec.hair, HEAD_JITTER, Vector2(InhabitantShapes.BACK_ANGLE - 1.5, InhabitantShapes.BACK_ANGLE + 1.5))
 
 
-## Barba de verdade (curta ou cheia): da curva de baixo da boca ao queixo, nunca sobre a boca; a cheia ganha bigode.
+## Barba de verdade (curta ou cheia, da curva de baixo da boca ao queixo, nunca sobre a boca) ou só o bigode; a cheia ganha bigode.
 func _beard() -> void:
 	var kind: int = _rig.spec.beard
 	if kind == InhabitantSpec.Beard.NONE:
 		return
 	var head: Vector3 = _rig.head_r
+	if kind == InhabitantSpec.Beard.MOUSTACHE:
+		_moustache(MOUSTACHE_BIG)
+		return
 	var rows: Array[Vector4] = []
 	var shifts: PackedVector2Array = PackedVector2Array()
 	for index: int in BEARD_Y.size():
@@ -215,5 +225,9 @@ func _beard() -> void:
 	var front: float = InhabitantShapes.FRONT_ANGLE
 	_shapes.loft(InhabitantShapes.y_frame(_rig.head_c), rows, BEARD_SIDES, _rig.spec.hair, HEAD_JITTER, Vector2(front - BEARD_HALF_ARC, front + BEARD_HALF_ARC), shifts)
 	if kind == InhabitantSpec.Beard.FULL:
-		for side: float in [-1.0, 1.0]:
-			_shapes.ball(_rig.face_point(Vector2(side * 0.13, -0.34), 0.0), Vector3(0.13 * _hx, 0.05 * head.y, 0.08 * _hx), 2, 5, _rig.spec.hair, 0.05)
+		_moustache(1.0)
+
+
+func _moustache(grow: float) -> void:
+	for side: float in [-1.0, 1.0]:
+		_shapes.ball(_rig.face_point(Vector2(side * MOUSTACHE_SPOT.x * grow, MOUSTACHE_SPOT.y), 0.0), Vector3(MOUSTACHE_RADII.x * _hx * grow, MOUSTACHE_RADII.y * _rig.head_r.y * grow, MOUSTACHE_RADII.z * _hx), 2, 5, _rig.spec.hair, 0.05)
