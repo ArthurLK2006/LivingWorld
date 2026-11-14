@@ -2,6 +2,7 @@ class_name PlazaStructures
 extends RefCounted
 ## As peças feitas pela mão do homem na praça: as barracas de pano (5 na praça de hoje), caixotes, barris e sacos, 4 postes com lampião e 3 tochas (corpo emissivo + luz pequena sem sombra), bandeirolas em catenária, a peça central (poço, fonte ou rotunda) e 3 casas. Tudo facetado (cor por vértice, sem textura); a altura de cada peça vem do chão (PlazaGround.spawn).
 ## As luzes pequenas ficam em `lamp_lights` e `torch_lights` para a cena acender e apagar. A ART-3 troca o que muda de uma praça para outra (barracas, adereços, panos, peça central e casas) pela ficha da variante (PlazaVariants.Spec); sem ficha vale a de hoje.
+## A tenda piramidal é a barraca de sempre; os outros arquétipos (ART-5b1: toldo de uma água, mesa com guarda-sol e carroça) são da PlazaStalls, e a ficha escolhe o de cada lugar.
 
 var lamp_lights: Array[OmniLight3D] = []
 var torch_lights: Array[OmniLight3D] = []
@@ -9,12 +10,14 @@ var torch_lights: Array[OmniLight3D] = []
 var _ground: PlazaGround
 var _materials: Dictionary[StringName, Material]
 var _variant: PlazaVariants.Spec
+var _stalls: PlazaStalls
 
 
 func _init(ground: PlazaGround, materials: Dictionary[StringName, Material], variant: PlazaVariants.Spec = null) -> void:
 	_ground = ground
 	_materials = materials
 	_variant = variant if variant != null else PlazaVariants.named(PlazaVariants.DEFAULT)
+	_stalls = PlazaStalls.new(_materials, _variant, _cloth_surfaces)
 
 
 ## As barracas, uma por lugar da variante.
@@ -121,6 +124,14 @@ func _cloth_surfaces(kit: PlazaMeshKit, mesh: ArrayMesh, count: int, add_item: C
 
 func _add_stall(index: int) -> void:
 	var pose: Vector3 = _variant.stalls[index]
+	var mesh: ArrayMesh = _stalls.build(_variant.stall_kind(index), index)
+	if mesh == null:
+		mesh = _tent_mesh(index)
+	_ground.spawn(mesh, "Stall%d" % index, Vector2(pose.x, pose.y), pose.z)
+
+
+## A tenda piramidal de sempre: balcão, 4 postes, toldo de pirâmide e a franja de tiras.
+func _tent_mesh(index: int) -> ArrayMesh:
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
 	var mesh: ArrayMesh = ArrayMesh.new()
 	kit.box(Vector3(0.0, 0.45, 1.0), Vector3(2.8, 0.9, 0.8), PlazaData.WOOD_LIGHT)
@@ -129,7 +140,7 @@ func _add_stall(index: int) -> void:
 	kit.finish(mesh, _materials[&"solid"])
 	kit.frustum(Vector3(0.0, _variant.stall_post_m, 0.0), PlazaData.CANOPY_RADIUS_M, 0.0, PlazaData.CANOPY_RISE_M, 4, _variant.cloth_colors[index % _variant.cloth_colors.size()], PI * 0.25)
 	_cloth_surfaces(kit, mesh, PlazaData.STRIPS_PER_STALL, _add_strip.bind(index))
-	_ground.spawn(mesh, "Stall%d" % index, Vector2(pose.x, pose.y), pose.z)
+	return mesh
 
 
 ## Tira de pano pendurada na borda da frente do toldo (a pirâmide girada 45 graus tem meia largura de 0,7071 do raio).

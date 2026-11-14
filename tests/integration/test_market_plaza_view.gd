@@ -9,9 +9,8 @@ const GAP_TOLERANCE_M: float = 0.02
 ## Orçamento por praça: triângulos e chamadas de desenho estimadas (uma por superfície de malha).
 const MAX_TRIANGLES: int = 70000
 const MAX_DRAW_CALLS: int = 400
-## Orçamento da arte por praça (ART-3), para qualquer variante: triângulos e nós filhos (hoje, a praça A: 2.664 e 43).
-const ART_MAX_TRIANGLES: int = 3000
-const ART_MAX_NODES: int = 50
+## Orçamento da arte por praça, por variante (x = triângulos, y = nós filhos): A é a praça de sempre (hoje 2.808 e 43) e B e C ganharam as barracas novas da ART-5b1 (hoje 2.753 e 37; 2.201 e 34).
+const ART_BUDGETS: Dictionary[StringName, Vector2i] = {&"a": Vector2i(3000, 50), &"b": Vector2i(3400, 55), &"c": Vector2i(3000, 55)}
 ## Vizinhos do encaixe: os locais a menos disto do mercado.
 const NEAR_M: float = 25.0
 ## As bandeirolas ficam numa altura fixa da origem da praça (ART-2a): só casam com os postes se o chão deles está a menos disto da origem.
@@ -260,8 +259,9 @@ func test_no_piece_of_any_variant_leaves_the_footprint_and_each_plaza_keeps_the_
 		for point: Vector3 in points:
 			extent = extent.expand(Vector2(point.x, point.z))
 		assert_true(MarketPlazaView.FOOTPRINT_M.grow(TOLERANCE_M).encloses(extent), "Nenhuma peça da praça de '%s' sai do retângulo de encaixe." % market.id)
-		assert_lte(int(points.size() / 3.0), ART_MAX_TRIANGLES, "Triângulos da praça de '%s'." % market.id)
-		assert_lte(plaza.get_child_count(), ART_MAX_NODES, "Nós da praça de '%s'." % market.id)
+		var budget: Vector2i = ART_BUDGETS[PlazaVariants.BY_MARKET.get(market.id, PlazaVariants.DEFAULT) as StringName]
+		assert_lte(int(points.size() / 3.0), budget.x, "Triângulos da praça de '%s'." % market.id)
+		assert_lte(plaza.get_child_count(), budget.y, "Nós da praça de '%s'." % market.id)
 
 
 func test_no_piece_enters_the_box_of_a_neighbor_and_the_scale_is_the_largest_that_fits() -> void:
