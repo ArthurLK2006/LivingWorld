@@ -1,6 +1,6 @@
 class_name MarketPlazaView
 extends Node3D
-## Praça de mercado artística no jogo (ART-2b): em volta de cada local `market`, a praça procedural facetada (5 barracas com seus adereços, postes de lampião com bandeirolas, tochas, o poço e uma mancha de terra batida) no lugar da caixa branca provisória. Só apresentação: sem colisão, texto nem regra de jogo
+## Praça de mercado artística no jogo (ART-2b): em volta de cada local `market`, a praça procedural facetada (barracas com seus adereços, postes de lampião com bandeirolas, tochas, a peça central e uma mancha de terra batida) no lugar da caixa branca provisória. Cada mercado tem a identidade da variante dele (ART-3: PlazaVariants.for_market, pelo id do local; o id fora da tabela leva a praça de hoje). Só apresentação: sem colisão, texto nem regra de jogo
 ## (o alcance de 3 m do centro, a tecla E e a compra seguem na simulação). Cada praça é um `Node3D` `MarketPlaza_<id do local>` no x e no z do local, com a origem na altura do terreno do centro; cada peça fica na altura do terreno do ponto dela (`peek_height` da ponte), sem chão, vegetação nem casas
 ## (o terreno do jogo é o chão). A praça é montada no `setup` (cerca de 3,5 ms por praça sem janela, medido na ART-2b) e fica escondida até o terreno do chunk do centro dela existir (`set_chunk_visible`, ligado a `chunk_loaded` e `chunk_unloaded` pela cena). A view fica na origem do mundo.
 ## Os mercados ficam nos povoados a 14 m dos vizinhos e a praça cheia (cerca de 24 x 18 m) tocaria as caixas deles: ela leva uma escala uniforme, a maior que a deixa a NEIGHBOR_MARGIN_M de cada caixa vizinha.
@@ -9,7 +9,7 @@ extends Node3D
 const PLAZA_NAME_PREFIX: String = "MarketPlaza_"
 const HALF: float = 0.5
 ## O retângulo (x e z, em metros, no quadro local e na escala 1) que as peças da praça ocupam, medido na ART-2b nos vértices de estruturas e mancha: o canto do toldo das barracas de fora (x), os lampiões do fundo (z positivo) e a mancha de 9 m (z negativo) [HIP].
-## O teste confere que ele cobre as peças com folga de poucos centímetros: se a praça mudar, ele muda junto.
+## O teste confere que ele cobre as peças com folga de poucos centímetros: se a praça mudar, ele muda junto. A praça de hoje (variante A) o preenche; as variantes B e C ficam dentro dele (ART-3), então o encaixe delas é só um pouco conservador.
 const FOOTPRINT_M: Rect2 = Rect2(-11.85, -9.0, 23.7, 18.28)
 ## A menor escala da praça, mesmo que algum vizinho ainda a toque [HIP].
 const MIN_SCALE: float = 0.6
@@ -83,6 +83,7 @@ func _add_plaza(bridge: SimBridge, place: BridgeReplies.PlaceReply, plaza_scale:
 	options.has_vegetation = false
 	options.has_houses = false
 	options.height_provider = _local_height.bind(bridge, plaza)
+	options.variant = PlazaVariants.for_market(place.id)
 	var built: PlazaBuilder.Built = PlazaBuilder.new().build(plaza, options)
 	PlazaGround.new(plaza, built.materials, options.height_provider).add_patch(PlazaData.PLAZA_RADIUS_M)
 	for light: OmniLight3D in built.lamp_lights + built.torch_lights:

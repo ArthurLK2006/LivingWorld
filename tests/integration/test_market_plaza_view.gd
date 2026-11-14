@@ -9,6 +9,9 @@ const GAP_TOLERANCE_M: float = 0.02
 ## Orçamento por praça: triângulos e chamadas de desenho estimadas (uma por superfície de malha).
 const MAX_TRIANGLES: int = 70000
 const MAX_DRAW_CALLS: int = 400
+## Orçamento da arte por praça (ART-3), para qualquer variante: triângulos e nós filhos (hoje, a praça A: 2.664 e 43).
+const ART_MAX_TRIANGLES: int = 3000
+const ART_MAX_NODES: int = 50
 ## Vizinhos do encaixe: os locais a menos disto do mercado.
 const NEAR_M: float = 25.0
 ## As bandeirolas ficam numa altura fixa da origem da praça (ART-2a): só casam com os postes se o chão deles está a menos disto da origem.
@@ -60,10 +63,10 @@ func _chunk_of(place: Place) -> Vector2i:
 	return Vector2i(floori(place.position.x / _chunk_size_m), floori(place.position.z / _chunk_size_m))
 
 
-## Os nós que a praça do jogo tem (sem os adereços, que são 5 por barraca): estruturas, bandeirolas, poço e mancha.
-func _expected_pieces() -> Array[String]:
-	var names: Array[String] = ["Well", "PlazaPatch"]
-	for index: int in PlazaData.STALL_SPOTS.size():
+## Os nós que a praça do jogo tem (sem os adereços, que são os da variante em cada barraca): estruturas, bandeirolas, peça central e mancha. As barracas e a peça central são as da variante do mercado (ART-3).
+func _expected_pieces(spec: PlazaVariants.Spec) -> Array[String]:
+	var names: Array[String] = [PlazaVariants.CENTER_NAMES[spec.center], "PlazaPatch"]
+	for index: int in spec.stalls.size():
 		names.append("Stall%d" % index)
 	for index: int in PlazaData.LAMP_SPOTS.size():
 		names.append_array(["LampPost%d" % index, "Bunting%d" % index])
@@ -94,6 +97,25 @@ func _min_gap(plaza: Node3D, market: Place) -> float:
 			var world: Vector3 = plaza.transform * point
 			worst = minf(worst, maxf(absf(world.x - other.position.x) - half.x, absf(world.z - other.position.z) - half.z))
 	return worst
+
+
+## Folga (m) entre o retângulo de encaixe da praça, na escala dela, e a caixa mais próxima dos locais vizinhos: a escala promete esta medida (a de `_min_gap` sobre os vértices só a iguala se a praça preenche o retângulo, o que as variantes B e C não fazem).
+func _footprint_gap(plaza: Node3D, market: Place) -> float:
+	var worst: float = INF
+	var rect: Rect2 = Rect2(MarketPlazaView.FOOTPRINT_M.position * plaza.scale.x, MarketPlazaView.FOOTPRINT_M.size * plaza.scale.x)
+	for other: Place in _places:
+		if other.kind == Place.KIND_MARKET or other.position.distance_to(market.position) > NEAR_M:
+			continue
+		var half: Vector3 = PlacePalette.SIZES[other.kind] * 0.5
+		var along_x: float = _interval_gap(other.position.x - market.position.x, half.x, rect.position.x, rect.end.x)
+		var along_z: float = _interval_gap(other.position.z - market.position.z, half.z, rect.position.y, rect.end.y)
+		worst = minf(worst, maxf(along_x, along_z))
+	return worst
+
+
+## Distância entre o intervalo [low, high] e o intervalo [center - half, center + half]: negativa se eles se tocam.
+func _interval_gap(center: float, half: float, low: float, high: float) -> float:
+	return maxf(center - half - high, low - center - half)
 
 
 ## Resumo da geometria e da ordem dos nós de todas as praças.
@@ -130,13 +152,14 @@ func test_there_is_one_plaza_per_market_at_its_x_and_z_on_the_terrain_with_the_e
 	assert_gt(_markets.size(), 0, "Os dados têm mercados.")
 	assert_eq(_view.plaza_count(), _markets.size())
 	assert_eq(_view.get_child_count(), _markets.size())
-	var pieces: Array[String] = _expected_pieces()
 	for market: Place in _markets:
+		var spec: PlazaVariants.Spec = PlazaVariants.for_market(market.id)
+		var pieces: Array[String] = _expected_pieces(spec)
 		var plaza: Node3D = _view.plaza_of(market.id)
 		assert_eq(plaza.name, StringName("MarketPlaza_" + market.id))
 		assert_eq(Vector2(plaza.position.x, plaza.position.z), Vector2(market.position.x, market.position.z), "Posição de '%s'." % market.id)
 		assert_almost_eq(plaza.position.y, _bridge.peek_height(market.position.x, market.position.z).height_m, TOLERANCE_M, "A origem da praça fica na altura do terreno do centro.")
-		assert_eq(plaza.get_child_count(), pieces.size() + PlazaData.STALL_SPOTS.size() * PlazaData.PROP_KINDS.size(), "Peças de '%s'." % market.id)
+		assert_eq(plaza.get_child_count(), pieces.size() + spec.stalls.size() * spec.prop_kinds.size(), "Peças de '%s'." % market.id)
 		for piece: String in pieces:
 			assert_true(plaza.has_node(NodePath(piece)), "%s em '%s'." % [piece, market.id])
 		for absent: String in ABSENT_PIECES:
@@ -229,6 +252,18 @@ func test_the_footprint_is_the_extent_of_the_pieces_in_the_plaza_frame() -> void
 	assert_almost_eq(extent.end, MarketPlazaView.FOOTPRINT_M.end, Vector2.ONE * GAP_TOLERANCE_M)
 
 
+func test_no_piece_of_any_variant_leaves_the_footprint_and_each_plaza_keeps_the_art_budget() -> void:
+	for market: Place in _markets:
+		var plaza: Node3D = _view.plaza_of(market.id)
+		var points: PackedVector3Array = _local_points(plaza)
+		var extent: Rect2 = Rect2(Vector2(points[0].x, points[0].z), Vector2.ZERO)
+		for point: Vector3 in points:
+			extent = extent.expand(Vector2(point.x, point.z))
+		assert_true(MarketPlazaView.FOOTPRINT_M.grow(TOLERANCE_M).encloses(extent), "Nenhuma peça da praça de '%s' sai do retângulo de encaixe." % market.id)
+		assert_lte(int(points.size() / 3.0), ART_MAX_TRIANGLES, "Triângulos da praça de '%s'." % market.id)
+		assert_lte(plaza.get_child_count(), ART_MAX_NODES, "Nós da praça de '%s'." % market.id)
+
+
 func test_no_piece_enters_the_box_of_a_neighbor_and_the_scale_is_the_largest_that_fits() -> void:
 	for market: Place in _markets:
 		var plaza: Node3D = _view.plaza_of(market.id)
@@ -237,7 +272,7 @@ func test_no_piece_enters_the_box_of_a_neighbor_and_the_scale_is_the_largest_tha
 		var gap: float = _min_gap(plaza, market)
 		assert_gte(gap, MarketPlazaView.NEIGHBOR_MARGIN_M - TOLERANCE_M, "Folga da praça de '%s' às caixas vizinhas." % market.id)
 		if plaza.scale.x < 1.0:
-			assert_almost_eq(gap, MarketPlazaView.NEIGHBOR_MARGIN_M, GAP_TOLERANCE_M, "A escala não é menor que o necessário.")
+			assert_almost_eq(_footprint_gap(plaza, market), MarketPlazaView.NEIGHBOR_MARGIN_M, GAP_TOLERANCE_M, "A escala não é menor que o necessário: o retângulo de encaixe fica a NEIGHBOR_MARGIN_M da caixa mais próxima.")
 
 
 func test_the_ground_under_every_post_stays_within_the_bunting_tolerance_of_the_plaza_origin() -> void:

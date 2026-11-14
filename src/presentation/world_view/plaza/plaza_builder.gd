@@ -10,13 +10,15 @@ class Built extends RefCounted:
 	var torch_lights: Array[OmniLight3D] = []
 
 
-## O que montar e com que altura (ART-2a). O padrão (tudo, com o relevo da demonstração) é o `build(root)` de sempre. `height_provider(x, z) -> float` dá a altura do chão em coordenadas LOCAIS da raiz da praça (quem monta põe a raiz no mundo e o provedor converte). Interruptores: `has_ground` = o chão; `has_vegetation` = grama, flores, árvores e rochas; `has_structures` = barracas, adereços, postes, bandeirolas e poço; `has_houses` = as casas.
+## O que montar e com que altura (ART-2a). O padrão (tudo, com o relevo da demonstração) é o `build(root)` de sempre. `height_provider(x, z) -> float` dá a altura do chão em coordenadas LOCAIS da raiz da praça (quem monta põe a raiz no mundo e o provedor converte). Interruptores: `has_ground` = o chão; `has_vegetation` = grama, flores, árvores e rochas; `has_structures` = barracas, adereços, postes, bandeirolas e a peça central; `has_houses` = as casas.
+## `variant` (ART-3) é a identidade da praça: a ficha de PlazaVariants (padrão = a praça de hoje, a variante A).
 class Options extends RefCounted:
 	var height_provider: Callable = PlazaGround.ground_height
 	var has_ground: bool = true
 	var has_vegetation: bool = true
 	var has_structures: bool = true
 	var has_houses: bool = true
+	var variant: PlazaVariants.Spec = PlazaVariants.named(PlazaVariants.DEFAULT)
 
 
 ## Cria as partes pedidas em `options` (padrão: todas, como antes) como filhos de `root` e devolve o que a cena precisa guardar. A ordem das chamadas é a ordem dos nós filhos (e dos nomes), então não a troque; desligar uma parte só tira os nós dela.
@@ -25,7 +27,7 @@ func build(root: Node3D, options: Options = null) -> Built:
 	var built: Built = Built.new()
 	built.materials = PlazaMaterials.create()
 	var ground: PlazaGround = PlazaGround.new(root, built.materials, chosen.height_provider)
-	var structures: PlazaStructures = PlazaStructures.new(ground, built.materials)
+	var structures: PlazaStructures = PlazaStructures.new(ground, built.materials, chosen.variant)
 	if chosen.has_ground:
 		ground.add_floor()
 	if chosen.has_structures:
@@ -33,7 +35,7 @@ func build(root: Node3D, options: Options = null) -> Built:
 		structures.add_props()
 		structures.add_lamps()
 		structures.add_torches()
-		structures.add_well()
+		structures.add_center()
 	if chosen.has_houses:
 		structures.add_houses()
 	if chosen.has_vegetation:
