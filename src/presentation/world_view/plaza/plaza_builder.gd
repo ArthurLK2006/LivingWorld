@@ -10,7 +10,7 @@ class Built extends RefCounted:
 	var torch_lights: Array[OmniLight3D] = []
 
 
-## O que montar e com que altura (ART-2a). O padrão (tudo, com o relevo da demonstração) é o `build(root)` de sempre. `height_provider(x, z) -> float` dá a altura do chão em coordenadas LOCAIS da raiz da praça (quem monta põe a raiz no mundo e o provedor converte). Interruptores: `has_ground` = o chão; `has_vegetation` = grama, flores, árvores e rochas; `has_structures` = barracas, adereços, postes, bandeirolas e a peça central; `has_houses` = as casas.
+## O que montar e com que altura (ART-2a). O padrão (tudo, com o relevo da demonstração) é o `build(root)` de sempre. `height_provider(x, z) -> float` dá a altura do chão em coordenadas LOCAIS da raiz da praça (quem monta põe a raiz no mundo e o provedor converte). Interruptores: `has_ground` = o chão; `has_vegetation` = grama, flores, árvores, rochas e arbustos; `has_structures` = barracas, adereços, postes, bandeirolas e a peça central; `has_houses` = as casas.
 ## `variant` (ART-3) é a identidade da praça: a ficha de PlazaVariants (padrão = a praça de hoje, a variante A).
 class Options extends RefCounted:
 	var height_provider: Callable = PlazaGround.ground_height

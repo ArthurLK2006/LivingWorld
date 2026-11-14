@@ -1,6 +1,6 @@
 class_name PlazaVariants
 extends RefCounted
-## ART-3: a identidade de cada praça de mercado como dados. A `MarketPlazaView` escolhe a ficha pelo id do mercado (`for_market`) e a montagem (`PlazaStructures`) a lê: lugar e quantidade das barracas, a altura e o arquétipo de cada uma (ART-5b1: tenda, toldo de uma água, mesa com guarda-sol ou carroça), os adereços, a cor e o material dos panos, a peça central e as cores das casas.
+## ART-3: a identidade de cada praça de mercado como dados. A `MarketPlazaView` escolhe a ficha pelo id do mercado (`for_market`) e a montagem (`PlazaStructures`, `PlazaGround` e `PlazaMaterials`) a lê: lugar e quantidade das barracas, a altura e o arquétipo de cada uma (ART-5b1: tenda, toldo de uma água, mesa com guarda-sol ou carroça), os adereços, a cor e o material dos panos, a peça central e as cores das casas.
 ## Nenhum sorteio novo: a variação de cada peça segue o hash de sempre (PlazaMeshKit.unit). A variante A é a praça de hoje (as constantes de sempre de PlazaData) e a de qualquer id fora da tabela; B (mercado de rua, frio e arrumado) e C (praça rústica e sóbria) trocam os dados [HIP], a calibrar olhando a cena.
 
 enum Center { WELL, FOUNTAIN, ROTUNDA }

@@ -184,6 +184,10 @@ func test_there_is_one_plaza_per_market_at_its_x_and_z_on_the_terrain_with_the_e
 		for planted: String in PLANTED_PIECES:
 			assert_eq(plaza.has_node(NodePath(planted)), spec.plants_in_footprint, "%s em '%s' só se a variante planta dentro do retângulo." % [planted, market.id])
 		assert_eq(plaza.find_children("*", "OmniLight3D", true, false).size(), PlazaData.LAMP_SPOTS.size() + PlazaData.TORCH_SPOTS.size(), "As luzes dos lampiões e das tochas.")
+	var a_plaza: Node3D = _view.plaza_of("a_market_01")
+	assert_not_null(a_plaza, "O mercado A dos dados tem praça.")
+	for planted_piece: String in PLANTED_PIECES:
+		assert_false(a_plaza.has_node(NodePath(planted_piece)), "A praça A segue sem %s (pino literal, não deriva da ficha)." % planted_piece)
 	assert_null(_view.plaza_of("local_que_nao_existe"))
 	assert_eq(_view.find_children("*", "CollisionObject3D", true, false).size(), 0)
 
