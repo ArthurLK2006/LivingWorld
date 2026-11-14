@@ -29,7 +29,7 @@ var interaction: InteractionService
 ## ser vazio: toda interação então dá "ponto desconhecido"). `npc_setup` (LW-067): os dados do `npc` já lidos (NpcSetup); sem ele, ou com
 ## `result` de falha, o `npc` nasce sem definições e sem nenhum NPC (o comportamento dos testes que não precisam de população). Terreno nulo
 ## ou runner já iniciado: falha tratada em `result`, sem módulo nenhum registrado. `economy_setup` (LW-090c): os dados da economia já lidos (EconomySetup); sem ele a `economy` nasce sem definições (sem bens e sem mercados, como a casca), porque o NPC ainda não usa a economia e criar os mercados gastaria os primeiros IDs do `core` (a ligação do jogo é da LW-093); com um EconomySetup de falha, falha tratada em `result`.
-## `world_setup` (LW-097c): as rotas já lidas e o sinal de build de desenvolvimento (WorldSetup); sem ele o `world` nasce sem rotas, mas é registrado (tem o bloco dele no save).
+## `world_setup` (LW-097c): as rotas já lidas e o sinal de build de desenvolvimento (WorldSetup); sem ele o `world` nasce sem rotas, mas é registrado (tem o bloco dele no save). LW-098d3: a `economy` (com `economy_setup`) recebe esse `world` pelo construtor, a porta de rotas da caravana (economy.md, 9.2); sem `world_setup` ele é o `world` vazio e nenhuma caravana acha caminho.
 static func register(runner: SimulationRunner, terrain: TerrainData, points: Array[PointOfInterest] = [], npc_setup: NpcSetup = null, economy_setup: EconomySetup = null, world_setup: WorldSetup = null) -> GameModules:
 	var modules: GameModules = GameModules.new()
 	if terrain == null:
@@ -57,7 +57,7 @@ static func register(runner: SimulationRunner, terrain: TerrainData, points: Arr
 		if not economy_setup.result.ok:
 			modules.result = economy_setup.result
 			return modules
-		economy_module = EconomyModule.new(false, economy_setup.definitions)
+		economy_module = EconomyModule.new(false, economy_setup.definitions, world_module)
 	registered = runner.register_module(ECONOMY_NAME, economy_module)
 	if not registered.ok:
 		modules.result = registered

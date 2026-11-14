@@ -16,7 +16,7 @@ var site_params: SiteParams
 var production_sites: Array[SiteDef] = []
 ## Os postos de serviço (LW-095): locais de trabalho sem receita, com a folha paga pela conta do mercado do povoado.
 var service_posts: Array[PostDef] = []
-## Os parâmetros do comerciante e da caravana (LW-098d1; `caravan_params.json`, lido pelo `CaravanParamsLoader`): OPCIONAIS. Sem eles não há caravana (`ECON_NO_ROUTE`, 9.2); ler o arquivo e pô-lo aqui no jogo real é a fiação do `app` (LW-098d3).
+## Os parâmetros do comerciante e da caravana (LW-098d1; `caravan_params.json`, lido pelo `CaravanParamsLoader`): OPCIONAIS. Sem eles não há caravana (`ECON_NO_ROUTE`, 9.2); o `EconomySetup` lê o arquivo e o põe aqui no jogo montado desde a LW-098d3.
 var caravan_params: CaravanParams
 
 

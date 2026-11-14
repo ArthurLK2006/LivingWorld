@@ -1,7 +1,7 @@
 class_name CaravanParamsLoader
 extends RefCounted
 ## Lê e valida data/economy/caravan_params.json pelo módulo `data` (LW-098b; docs/economy/dados.md): uma linha só, `id` = `caravan_defaults`, oito colunas `INT` com a faixa do `dados.md`. O que o esquema não vê é conferido aqui: uma linha só e o `id` certo. Falha com `ECON_DATA_INVALID`,
-## arquivo, item e campo. Nunca executa nada do arquivo. Não lê outras tabelas (sem referência a bens): o arquivo fica inerte até a LW-098d3 ligá-lo à economia.
+## arquivo, item e campo. Nunca executa nada do arquivo. Não lê outras tabelas (sem referência a bens): o `EconomySetup` o liga à economia no jogo montado desde a LW-098d3.
 
 const PARAMS_TABLE: String = "caravan_params"
 const PARAMS_FILE: String = "caravan_params.json"
