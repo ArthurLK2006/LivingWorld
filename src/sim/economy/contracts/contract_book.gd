@@ -102,8 +102,8 @@ func check_post(kind: String, issuer_id: int, reward: int, deadline: int, now: i
 	return Result.success()
 
 
-## Aceita o contrato: só `open`, um aceitante; o aceitante é um dono aberto e não é o emissor. Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_CONTRACT_IMPOSSIBLE`.
-func accept(contract_id: int, actor_id: int) -> Result:
+## Aceita o contrato: só `open` e DENTRO DO PRAZO (`now < prazo`, a mesma regra do `deliver` e do `work_shift`; a vaga não tem prazo e não passa por aqui), um aceitante; o aceitante é um dono aberto e não é o emissor. `now` é o minuto de simulação (o relógio determinístico). Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_CONTRACT_IMPOSSIBLE` (a vaga, o prazo vencido e o emissor).
+func accept(contract_id: int, actor_id: int, now: int) -> Result:
 	if not _contracts.has(contract_id):
 		return Result.failure(EconomyCodes.UNKNOWN_CONTRACT, "ContractBook.accept: o contrato %d não existe." % contract_id)
 	var state: Dictionary = _contracts[contract_id]
@@ -111,6 +111,8 @@ func accept(contract_id: int, actor_id: int) -> Result:
 		return Result.failure(EconomyCodes.CONTRACT_NOT_OPEN, "ContractBook.accept: o contrato %d está '%s'; esperado '%s'." % [contract_id, state[KEY_STATE], STATE_OPEN])
 	if state[KEY_KIND] == VACANCY:
 		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.accept: a vaga %d é aceita pelo comando das vagas, que atribui o trabalhador." % contract_id)
+	if now >= int(state[KEY_DEADLINE]):
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.accept: o prazo do contrato %d (%d) já passou (agora %d)." % [contract_id, state[KEY_DEADLINE], now])
 	var checked: Result = _book.check_open(actor_id)
 	if not checked.ok:
 		return checked
