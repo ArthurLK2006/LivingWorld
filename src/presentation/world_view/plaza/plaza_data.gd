@@ -84,6 +84,28 @@ const CLOTH_COLORS: Array[Color] = [Color("C04030"), Color("D88030"), Color("D0A
 const WALL_COLORS: Array[Color] = [Color("C8B088"), Color("B89868"), Color("D0C0A0")]
 const ROOF_COLORS: Array[Color] = [Color("503050"), Color("705030"), Color("A04830")]
 const TREE_GREENS: Array[Color] = [Color("587838"), Color("48683A"), Color("688840")]
+## ART-3, variantes da praça (PlazaVariants) [HIP]: o que B (mercado de rua) e C (praça rústica) trocam da praça de hoje, a A. As barracas de B levam (x, z, giro em rad): duas fileiras de frente uma para a outra, com um corredor no meio. As de C são lugares (x, z) de um arco aberto, viradas para o centro como as de A.
+const STALL_POSES_B: Array[Vector3] = [Vector3(-7.5, -3.0, PI * 0.5), Vector3(-7.5, 3.0, PI * 0.5), Vector3(7.5, -3.0, -PI * 0.5), Vector3(7.5, 3.0, -PI * 0.5)]
+const STALL_SPOTS_C: Array[Vector2] = [Vector2(-8.5, -2.5), Vector2(0.0, -6.2), Vector2(8.5, -2.5)]
+## Barracas baixas de C: altura dos postes (A e B usam STALL_POST_M).
+const STALL_POST_C_M: float = 2.0
+## Adereços de cada barraca (como PROP_KINDS): B leva mais barris; C, mais caixotes e sacos que barris.
+const PROP_KINDS_B: Array[int] = [0, 1, 1, 0, 2]
+const PROP_KINDS_C: Array[int] = [0, 2, 0, 2, 0, 1]
+## B: panos em azul, ciano e branco, casas de parede clara e telhado azulado. C: panos em marrom, verde-musgo e creme, casas de telhado de palha.
+const CLOTH_COLORS_B: Array[Color] = [Color("3C6EB4"), Color("78C8E0"), Color("EEF4F8"), Color("2A4E8C"), Color("A8DCEC")]
+const CLOTH_COLORS_C: Array[Color] = [Color("8A6038"), Color("5A6E3A"), Color("DCCCA0"), Color("6E4A2C"), Color("4A5A30")]
+const WALL_COLORS_B: Array[Color] = [Color("D8DEE0"), Color("C8D2D8"), Color("E0E4E2")]
+const ROOF_COLORS_B: Array[Color] = [Color("46628A"), Color("56729A"), Color("3A5478")]
+const WALL_COLORS_C: Array[Color] = [Color("B09C74"), Color("A08C64"), Color("BCA880")]
+const ROOF_COLORS_C: Array[Color] = [Color("B89C5C"), Color("A88A4C"), Color("C8AC6C")]
+## Peças centrais: a fonte de B (anel de pedras, coluna e taça) e a rotunda de C (anel de pedras irregulares em volta de uma pedra alta, sem água).
+const FOUNTAIN_STONES: int = 12
+const FOUNTAIN_RADIUS_M: float = 1.3
+const FOUNTAIN_COLUMN_M: float = 1.5
+const ROTUNDA_STONES: int = 10
+const ROTUNDA_RADIUS_M: float = 1.8
+const ROTUNDA_MENHIR_M: float = 2.3
 const SURFACE_ROUGHNESS: float = 0.85
 const RIM_STRENGTH: float = 0.2
 ## Cada canal é uma sequência independente do hash (PlazaMeshKit.unit). ROCK_RADIUS e TREE_RADIUS vêm logo depois do ângulo: `_ring_spot` usa canal e canal + 1.

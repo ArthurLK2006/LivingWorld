@@ -1,36 +1,40 @@
 class_name PlazaStructures
 extends RefCounted
-## As peças feitas pela mão do homem na praça: 5 barracas de pano, caixotes, barris e sacos, 4 postes com lampião e 3 tochas (corpo emissivo + luz pequena sem sombra), bandeirolas em catenária, poço e 3 casas. Tudo facetado (cor por vértice, sem textura); a altura de cada peça vem do chão (PlazaGround.spawn). As luzes pequenas ficam em `lamp_lights` e `torch_lights` para a cena acender e apagar.
+## As peças feitas pela mão do homem na praça: as barracas de pano (5 na praça de hoje), caixotes, barris e sacos, 4 postes com lampião e 3 tochas (corpo emissivo + luz pequena sem sombra), bandeirolas em catenária, a peça central (poço, fonte ou rotunda) e 3 casas. Tudo facetado (cor por vértice, sem textura); a altura de cada peça vem do chão (PlazaGround.spawn).
+## As luzes pequenas ficam em `lamp_lights` e `torch_lights` para a cena acender e apagar. A ART-3 troca o que muda de uma praça para outra (barracas, adereços, panos, peça central e casas) pela ficha da variante (PlazaVariants.Spec); sem ficha vale a de hoje.
 
 var lamp_lights: Array[OmniLight3D] = []
 var torch_lights: Array[OmniLight3D] = []
 
 var _ground: PlazaGround
 var _materials: Dictionary[StringName, Material]
+var _variant: PlazaVariants.Spec
 
 
-func _init(ground: PlazaGround, materials: Dictionary[StringName, Material]) -> void:
+func _init(ground: PlazaGround, materials: Dictionary[StringName, Material], variant: PlazaVariants.Spec = null) -> void:
 	_ground = ground
 	_materials = materials
+	_variant = variant if variant != null else PlazaVariants.named(PlazaVariants.DEFAULT)
 
 
-## As barracas, uma por lugar de PlazaData.STALL_SPOTS.
+## As barracas, uma por lugar da variante.
 func add_stalls() -> void:
-	for index: int in PlazaData.STALL_SPOTS.size():
+	for index: int in _variant.stalls.size():
 		_add_stall(index)
 
 
-## Os adereços de cada barraca (PlazaData.PROP_KINDS), espalhados na frente dela por hash.
+## Os adereços de cada barraca (os tipos da variante), espalhados na frente dela por hash.
 func add_props() -> void:
 	var meshes: Array[ArrayMesh] = [_crate_mesh(), _barrel_mesh(), _sack_mesh()]
-	for stall: int in PlazaData.STALL_SPOTS.size():
-		var spot: Vector2 = PlazaData.STALL_SPOTS[stall]
-		var frame: Transform3D = Transform3D(Basis(Vector3.UP, atan2(-spot.x, -spot.y)), Vector3(spot.x, 0.0, spot.y))
-		for prop: int in PlazaData.PROP_KINDS.size():
-			var key: int = stall * PlazaData.PROP_KINDS.size() + prop
+	var per_stall: int = _variant.prop_kinds.size()
+	for stall: int in _variant.stalls.size():
+		var pose: Vector3 = _variant.stalls[stall]
+		var frame: Transform3D = Transform3D(Basis(Vector3.UP, pose.z), Vector3(pose.x, 0.0, pose.y))
+		for prop: int in per_stall:
+			var key: int = stall * per_stall + prop
 			var world: Vector3 = frame * Vector3(PlazaMeshKit.between(key, PlazaData.Channel.PROP_X, -2.6, 2.6), 0.0, PlazaMeshKit.between(key, PlazaData.Channel.PROP_Z, 1.9, 3.3))
-			var node_name: String = "%s%d" % [PlazaData.PROP_NAMES[PlazaData.PROP_KINDS[prop]], key]
-			_ground.spawn(meshes[PlazaData.PROP_KINDS[prop]], node_name, Vector2(world.x, world.z), PlazaMeshKit.between(key, PlazaData.Channel.PROP_YAW, 0.0, TAU), PlazaMeshKit.between(key, PlazaData.Channel.PROP_SCALE, 0.7, 1.35))
+			var node_name: String = "%s%d" % [PlazaData.PROP_NAMES[_variant.prop_kinds[prop]], key]
+			_ground.spawn(meshes[_variant.prop_kinds[prop]], node_name, Vector2(world.x, world.z), PlazaMeshKit.between(key, PlazaData.Channel.PROP_YAW, 0.0, TAU), PlazaMeshKit.between(key, PlazaData.Channel.PROP_SCALE, 0.7, 1.35))
 
 
 ## Os postes com lampião, cada um seguido do fio de bandeirolas que o liga ao próximo (a ordem dos nós filhos é essa).
@@ -46,9 +50,27 @@ func add_torches() -> void:
 		_add_post("Torch%d" % index, PlazaData.TORCH_SPOTS[index], PlazaData.TORCH_HEIGHT_M, true)
 
 
-## O poço no centro da praça, com o telhadinho de duas águas.
-func add_well() -> void:
+## A peça central da variante (poço, fonte ou rotunda), no centro da praça.
+func add_center() -> void:
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
+	match _variant.center:
+		PlazaVariants.Center.FOUNTAIN:
+			_fill_fountain(kit)
+		PlazaVariants.Center.ROTUNDA:
+			_fill_rotunda(kit)
+		_:
+			_fill_well(kit)
+	_ground.spawn(kit.finish(ArrayMesh.new(), _materials[&"solid"]), PlazaVariants.CENTER_NAMES[_variant.center], Vector2.ZERO)
+
+
+## As casas ao fundo.
+func add_houses() -> void:
+	for index: int in PlazaData.HOUSE_SPOTS.size():
+		_add_house(index)
+
+
+## O poço, com o telhadinho de duas águas.
+func _fill_well(kit: PlazaMeshKit) -> void:
 	for stone: int in PlazaData.WELL_STONES:
 		var angle: float = TAU * stone / PlazaData.WELL_STONES
 		var tone: Color = PlazaData.STONE.darkened(PlazaMeshKit.unit(stone, PlazaData.Channel.STONE) * 0.25)
@@ -58,36 +80,56 @@ func add_well() -> void:
 		kit.frustum(Vector3(1.15 if side == 0 else -1.15, 0.0, 0.0), 0.09, 0.08, 2.3, 6, PlazaData.WOOD)
 	kit.box(Vector3(0.0, 2.3, 0.0), Vector3(2.5, 0.12, 0.14), PlazaData.WOOD)
 	kit.gable(Vector3(0.0, 2.36, 0.0), Vector3(2.9, 0.7, 1.9), PlazaData.ROOF_COLORS[1])
-	_ground.spawn(kit.finish(ArrayMesh.new(), _materials[&"solid"]), "Well", Vector2.ZERO)
 
 
-## As casas ao fundo.
-func add_houses() -> void:
-	for index: int in PlazaData.HOUSE_SPOTS.size():
-		_add_house(index)
+## A fonte de B: anel de pedras como o do poço, água rasa e uma coluna com taça e um fio de água no alto.
+func _fill_fountain(kit: PlazaMeshKit) -> void:
+	_stone_ring(kit, PlazaData.FOUNTAIN_STONES, PlazaData.FOUNTAIN_RADIUS_M, Vector3(0.66, 0.6, 0.4), 0.0)
+	var cup_top: float = PlazaData.FOUNTAIN_COLUMN_M + 0.22
+	kit.frustum(Vector3(0.0, 0.42, 0.0), PlazaData.FOUNTAIN_RADIUS_M - 0.2, PlazaData.FOUNTAIN_RADIUS_M - 0.2, 0.02, PlazaData.FOUNTAIN_STONES, PlazaData.WATER)
+	kit.frustum(Vector3.ZERO, 0.34, 0.22, PlazaData.FOUNTAIN_COLUMN_M, 8, PlazaData.STONE)
+	kit.frustum(Vector3(0.0, PlazaData.FOUNTAIN_COLUMN_M, 0.0), 0.22, 0.6, 0.25, 8, PlazaData.STONE)
+	kit.frustum(Vector3(0.0, cup_top, 0.0), 0.5, 0.5, 0.02, 8, PlazaData.WATER)
+	kit.frustum(Vector3(0.0, cup_top, 0.0), 0.08, 0.0, 0.55, 6, PlazaData.WATER.lightened(0.35))
 
 
-## Gera as peças de pano em 3 superfícies: pano comum (cor por vértice), acento quente e acento ciano (emissivos). A peça `item` vai para a superfície `item % 3`.
+## A rotunda de C: anel de pedras irregulares sobre uma base baixa, em volta de uma pedra alta e sem água.
+func _fill_rotunda(kit: PlazaMeshKit) -> void:
+	_stone_ring(kit, PlazaData.ROTUNDA_STONES, PlazaData.ROTUNDA_RADIUS_M, Vector3(0.7, 0.75, 0.5), 0.5)
+	kit.frustum(Vector3.ZERO, PlazaData.ROTUNDA_RADIUS_M - 0.3, PlazaData.ROTUNDA_RADIUS_M - 0.4, 0.12, PlazaData.ROTUNDA_STONES, PlazaData.STONE.darkened(0.3))
+	kit.frustum(Vector3(0.0, 0.12, 0.0), 0.5, 0.28, PlazaData.ROTUNDA_MENHIR_M, 5, PlazaData.STONE.lightened(0.06), 0.4)
+
+
+## Anel de `count` pedras (caixas de tamanho `size` viradas para o centro); o tom de cada uma sai do hash e, com `shrink` entre 0 e 1, a altura também (canal STONE).
+func _stone_ring(kit: PlazaMeshKit, count: int, radius: float, size: Vector3, shrink: float) -> void:
+	for stone: int in count:
+		var angle: float = TAU * stone / count
+		var luck: float = PlazaMeshKit.unit(stone, PlazaData.Channel.STONE)
+		var height: float = size.y * (1.0 - shrink * luck)
+		kit.box(Vector3(cos(angle) * radius, height * 0.5, sin(angle) * radius), Vector3(size.x, height, size.z), PlazaData.STONE.darkened(luck * 0.25), -(angle + PI * 0.5))
+
+
+## Gera as peças de pano em uma superfície por material da variante (pano comum e acentos emissivos): a peça `item` vai para a superfície `item % quantidade`.
 func _cloth_surfaces(kit: PlazaMeshKit, mesh: ArrayMesh, count: int, add_item: Callable) -> void:
-	var materials: Array[Material] = [_materials[&"cloth"], _materials[&"accent_warm"], _materials[&"accent_cyan"]]
-	for surface: int in materials.size():
+	var surfaces: int = _variant.cloth_materials.size()
+	for surface: int in surfaces:
 		for item: int in count:
-			if item % materials.size() == surface:
+			if item % surfaces == surface:
 				add_item.call(kit, item)
-		kit.finish(mesh, materials[surface])
+		kit.finish(mesh, _materials[_variant.cloth_materials[surface]])
 
 
 func _add_stall(index: int) -> void:
-	var spot: Vector2 = PlazaData.STALL_SPOTS[index]
+	var pose: Vector3 = _variant.stalls[index]
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
 	var mesh: ArrayMesh = ArrayMesh.new()
 	kit.box(Vector3(0.0, 0.45, 1.0), Vector3(2.8, 0.9, 0.8), PlazaData.WOOD_LIGHT)
 	for post: int in 4:
-		kit.frustum(Vector3(1.5 if post % 2 == 0 else -1.5, 0.0, 1.2 if post < 2 else -1.2), 0.08, 0.07, PlazaData.STALL_POST_M, 6, PlazaData.WOOD)
+		kit.frustum(Vector3(1.5 if post % 2 == 0 else -1.5, 0.0, 1.2 if post < 2 else -1.2), 0.08, 0.07, _variant.stall_post_m, 6, PlazaData.WOOD)
 	kit.finish(mesh, _materials[&"solid"])
-	kit.frustum(Vector3(0.0, PlazaData.STALL_POST_M, 0.0), PlazaData.CANOPY_RADIUS_M, 0.0, PlazaData.CANOPY_RISE_M, 4, PlazaData.CLOTH_COLORS[index % PlazaData.CLOTH_COLORS.size()], PI * 0.25)
+	kit.frustum(Vector3(0.0, _variant.stall_post_m, 0.0), PlazaData.CANOPY_RADIUS_M, 0.0, PlazaData.CANOPY_RISE_M, 4, _variant.cloth_colors[index % _variant.cloth_colors.size()], PI * 0.25)
 	_cloth_surfaces(kit, mesh, PlazaData.STRIPS_PER_STALL, _add_strip.bind(index))
-	_ground.spawn(mesh, "Stall%d" % index, spot, atan2(-spot.x, -spot.y))
+	_ground.spawn(mesh, "Stall%d" % index, Vector2(pose.x, pose.y), pose.z)
 
 
 ## Tira de pano pendurada na borda da frente do toldo (a pirâmide girada 45 graus tem meia largura de 0,7071 do raio).
@@ -96,9 +138,9 @@ func _add_strip(kit: PlazaMeshKit, item: int, index: int) -> void:
 	var width: float = rim * 2.0 / PlazaData.STRIPS_PER_STALL
 	var left: float = -rim + width * item
 	var drop: float = PlazaMeshKit.between(index * PlazaData.STRIPS_PER_STALL + item, PlazaData.Channel.STRIP, 0.5, 1.0)
-	var top_left: Vector3 = Vector3(left, PlazaData.STALL_POST_M, rim)
-	var top_right: Vector3 = Vector3(left + width, PlazaData.STALL_POST_M, rim)
-	kit.tri(top_left, top_right, Vector3(left + width * 0.5, PlazaData.STALL_POST_M - drop, rim), PlazaData.CLOTH_COLORS[(index + item) % PlazaData.CLOTH_COLORS.size()], top_left - Vector3.BACK)
+	var top_left: Vector3 = Vector3(left, _variant.stall_post_m, rim)
+	var top_right: Vector3 = Vector3(left + width, _variant.stall_post_m, rim)
+	kit.tri(top_left, top_right, Vector3(left + width * 0.5, _variant.stall_post_m - drop, rim), _variant.cloth_colors[(index + item) % _variant.cloth_colors.size()], top_left - Vector3.BACK)
 
 
 func _crate_mesh() -> ArrayMesh:
@@ -160,7 +202,7 @@ func _add_flag(kit: PlazaMeshKit, item: int, edge: int) -> void:
 	var left: Vector3 = _string_point(from, to, (item + 0.1) / PlazaData.FLAGS_PER_STRING)
 	var right: Vector3 = _string_point(from, to, (item + 0.9) / PlazaData.FLAGS_PER_STRING)
 	var middle: Vector3 = (left + right) * 0.5
-	kit.tri(left, right, middle + Vector3.DOWN * PlazaData.FLAG_DROP_M, PlazaData.CLOTH_COLORS[(edge + item) % PlazaData.CLOTH_COLORS.size()], middle + Vector3.UP)
+	kit.tri(left, right, middle + Vector3.DOWN * PlazaData.FLAG_DROP_M, _variant.cloth_colors[(edge + item) % _variant.cloth_colors.size()], middle + Vector3.UP)
 
 
 ## Ponto do fio a `along` (0 a 1) do caminho: altura da catenária y = H - a * (cosh(meio / a) - cosh(s / a)), com s medido do centro do vão.
@@ -176,8 +218,8 @@ func _add_house(index: int) -> void:
 	var spec: Vector3 = PlazaData.HOUSE_SPOTS[index]
 	var width: float = PlazaMeshKit.between(index, PlazaData.Channel.HOUSE, 5.5, 7.0)
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
-	kit.box(Vector3(0.0, (PlazaData.HOUSE_WALL_M - PlazaData.HOUSE_FOUNDATION_M) * 0.5, 0.0), Vector3(width, PlazaData.HOUSE_WALL_M + PlazaData.HOUSE_FOUNDATION_M, PlazaData.HOUSE_DEPTH_M), PlazaData.WALL_COLORS[index % PlazaData.WALL_COLORS.size()])
+	kit.box(Vector3(0.0, (PlazaData.HOUSE_WALL_M - PlazaData.HOUSE_FOUNDATION_M) * 0.5, 0.0), Vector3(width, PlazaData.HOUSE_WALL_M + PlazaData.HOUSE_FOUNDATION_M, PlazaData.HOUSE_DEPTH_M), _variant.wall_colors[index % _variant.wall_colors.size()])
 	kit.box(Vector3(0.0, 1.0, PlazaData.HOUSE_DEPTH_M * 0.5 + 0.03), Vector3(1.1, 2.0, 0.12), PlazaData.WOOD)
 	kit.box(Vector3(width * 0.3, PlazaData.HOUSE_WALL_M + 1.0, -0.8), Vector3(0.7, 1.6, 0.7), PlazaData.STONE)
-	kit.gable(Vector3(0.0, PlazaData.HOUSE_WALL_M, 0.0), Vector3(width + 1.2, PlazaData.HOUSE_ROOF_M, PlazaData.HOUSE_DEPTH_M + 1.2), PlazaData.ROOF_COLORS[index % PlazaData.ROOF_COLORS.size()])
+	kit.gable(Vector3(0.0, PlazaData.HOUSE_WALL_M, 0.0), Vector3(width + 1.2, PlazaData.HOUSE_ROOF_M, PlazaData.HOUSE_DEPTH_M + 1.2), _variant.roof_colors[index % _variant.roof_colors.size()])
 	_ground.spawn(kit.finish(ArrayMesh.new(), _materials[&"solid"]), "House%d" % index, Vector2(spec.x, spec.y), spec.z)
