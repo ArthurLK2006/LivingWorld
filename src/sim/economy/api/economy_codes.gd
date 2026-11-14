@@ -28,3 +28,7 @@ const UNKNOWN_CONTRACT: String = "ECON_UNKNOWN_CONTRACT"
 const CONTRACT_NOT_OPEN: String = "ECON_CONTRACT_NOT_OPEN"
 ## "Um trabalho, um pagamento" (DEC-151): o trabalhador já está atribuído ao local de trabalho do turno, que o paga pela folha.
 const WORKER_ALREADY_ASSIGNED: String = "ECON_WORKER_ALREADY_ASSIGNED"
+## Caravana (LW-098d1; 9.8): o comerciante já tem uma; não há caminho aberto (origem igual ao destino, sem a porta de rotas do `world` ou sem os parâmetros da caravana: o MESMO código nos três casos); o dono não é do tipo `merchant` (Q2).
+const CARAVAN_BUSY: String = "ECON_CARAVAN_BUSY"
+const NO_ROUTE: String = "ECON_NO_ROUTE"
+const TRADER_NOT_ALLOWED: String = "ECON_TRADER_NOT_ALLOWED"

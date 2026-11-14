@@ -1,7 +1,7 @@
 class_name CaravanBook
 extends RefCounted
-## O livro de caravanas (LW-098c; docs/modules/economy.md, 9.3, 9.4 e 9.10): um `Caravan` por comerciante em viagem, por `trader_id`; sem registro = parado. NASCE VAZIO e nada o preenche ainda (a partida é da 098d1, a chegada da 098d2, a parada e o desvio da 098e): aqui
-## estão o estado, o save (`serialize` e `load_from`), `remove` (o `NpcDied` do comerciante apaga o registro) e as invariantes (`validate`). Não guarda dinheiro nem bem (`cost_paid` é informação; saldo e carga ficam na conta e no inventário do comerciante, dono do tipo `merchant`),
+## O livro de caravanas (LW-098c; docs/modules/economy.md, 9.3, 9.4 e 9.10): um `Caravan` por comerciante em viagem, por `trader_id`; sem registro = parado. NASCE VAZIO; só a partida (`add`, LW-098d1) o preenche (a chegada é da 098d2, a parada e o desvio da 098e): aqui
+## estão o estado, o save (`serialize` e `load_from`), `add` e `remove` (o `NpcDied` do comerciante apaga o registro) e as invariantes (`validate`). Não guarda dinheiro nem bem (`cost_paid` é informação; saldo e carga ficam na conta e no inventário do comerciante, dono do tipo `merchant`),
 ## então não mexe nas duas conservações. Nunca sorteia nem olha o relógio. O save é a LISTA dos registros por `trader_id` crescente; `load_from` confere só os TIPOS e as invariantes (faixas, dono, mercados) são do `validate`, que o `SimulationRunner` chama logo depois de carregar o save.
 
 ## Id do tipo de dono do comerciante (`owner_kinds.json`).
@@ -29,6 +29,15 @@ func trader_ids() -> Array[int]:
 ## Uma CÓPIA do registro (`null` se o comerciante está parado).
 func caravan_of(trader_id: int) -> Caravan:
 	return _caravans[trader_id].copy() if _caravans.has(trader_id) else null
+
+
+func has_caravan(trader_id: int) -> bool:
+	return _caravans.has(trader_id)
+
+
+## Registra a caravana que PARTIU (LW-098d1; 9.4, primeira linha): guarda uma cópia. Só a partida a chama, DEPOIS de conferir tudo, inclusive que o comerciante não tem registro (`has_caravan`): aqui não há recusa, para a compra do lote nunca ficar sem o registro dela.
+func add(caravan: Caravan) -> void:
+	_caravans[caravan.trader_id] = caravan.copy()
 
 
 ## O registro some (`NpcDied` do comerciante, 9.4): saldo e carga ficam na conta e no inventário fechados, e a soma se mantém (DEC-146).
@@ -63,7 +72,8 @@ func load_from(records: Array) -> Result:
 
 
 ## Invariantes de 9.3, uma frase por problema: o comerciante existe, está aberto e é do tipo `merchant`; `state` válido; `route_ids` não vazia; `leg_index` dentro da lista; `leg_minutes` de 1 ou mais; `elapsed_at_hold` entre 0 e `leg_minutes` e diferente de 0 só em `held`;
-## `quantity` de 1 ou mais; origem diferente do destino, os dois mercados e `good_id` negociado nos dois. (No máximo um registro por comerciante vale pela estrutura do livro. Conferir as rotas contra o `world` fica para a 098d1, que traz a porta de rotas de 9.2.)
+## `quantity` de 1 ou mais; `cost_paid`, `departed_at` e `leg_started_at` de 0 ou mais (LW-098d1: passam a ser usados); origem diferente do destino, os dois mercados e `good_id` negociado nos dois. (No máximo um registro por comerciante vale pela estrutura do livro. As rotas contra o `world` são
+## conferidas pela porta de rotas de 9.2, que o livro não tem: `CaravanRunner.route_problems`.)
 func validate() -> Array[String]:
 	var problems: Array[String] = []
 	for trader_id: int in trader_ids():
@@ -93,6 +103,10 @@ func _problems_of(caravan: Caravan) -> Array[String]:
 		problems.append("'%s' é %d; só '%s' pode ter minutos parados" % [Caravan.KEY_ELAPSED, caravan.elapsed_at_hold, Caravan.STATE_HELD])
 	if caravan.quantity < 1:
 		problems.append("'%s' é %d; esperado 1 ou mais" % [Caravan.KEY_QUANTITY, caravan.quantity])
+	var times_and_cost: Dictionary[String, int] = {Caravan.KEY_COST: caravan.cost_paid, Caravan.KEY_DEPARTED: caravan.departed_at, Caravan.KEY_LEG_STARTED: caravan.leg_started_at}
+	for key: String in times_and_cost:
+		if times_and_cost[key] < 0:
+			problems.append("'%s' é %d; esperado 0 ou mais" % [key, times_and_cost[key]])
 	if caravan.origin_market_id == caravan.destination_market_id:
 		problems.append("a origem e o destino são o mesmo mercado (%d)" % caravan.origin_market_id)
 	for market_id: int in [caravan.origin_market_id, caravan.destination_market_id]:
