@@ -1,8 +1,8 @@
 class_name MarketPlazaView
 extends Node3D
 ## Praça de mercado artística no jogo (ART-2b): em volta de cada local `market`, a praça procedural facetada (barracas com seus adereços, postes de lampião com bandeirolas, tochas, a peça central e uma mancha de terra batida) no lugar da caixa branca provisória. Cada mercado tem a identidade da variante dele (ART-3: PlazaVariants.for_market, pelo id do local; o id fora da tabela leva a praça de hoje). Só apresentação: sem colisão, texto nem regra de jogo
-## (o alcance de 3 m do centro, a tecla E e a compra seguem na simulação). Cada praça é um `Node3D` `MarketPlaza_<id do local>` no x e no z do local, com a origem na altura do terreno do centro; cada peça fica na altura do terreno do ponto dela (`peek_height` da ponte), sem chão, vegetação nem casas
-## (o terreno do jogo é o chão). A praça é montada no `setup` (cerca de 3,5 ms por praça sem janela, medido na ART-2b) e fica escondida até o terreno do chunk do centro dela existir (`set_chunk_visible`, ligado a `chunk_loaded` e `chunk_unloaded` pela cena). A view fica na origem do mundo.
+## (o alcance de 3 m do centro, a tecla E e a compra seguem na simulação). Cada praça é um `Node3D` `MarketPlaza_<id do local>` no x e no z do local, com a origem na altura do terreno do centro; cada peça fica na altura do terreno do ponto dela (`peek_height` da ponte), sem chão nem casas
+## (o terreno do jogo é o chão) e só com a vegetação das variantes que a plantam dentro do retângulo de encaixe (ART-6a: B e C; a A fica sem). A praça é montada no `setup` (cerca de 3,5 ms por praça sem janela, medido na ART-2b) e fica escondida até o terreno do chunk do centro dela existir (`set_chunk_visible`, ligado a `chunk_loaded` e `chunk_unloaded` pela cena). A view fica na origem do mundo.
 ## Os mercados ficam nos povoados a 14 m dos vizinhos e a praça cheia (cerca de 24 x 18 m) tocaria as caixas deles: ela leva uma escala uniforme, a maior que a deixa a NEIGHBOR_MARGIN_M de cada caixa vizinha.
 ## ART-5a: as 7 luzes pequenas de cada praça (lampiões e tochas) acendem e apagam com a hora, pelo fator de `set_lamp_factor`. Contrato: docs/modules/presentation.md.
 
@@ -79,11 +79,11 @@ func _add_plaza(bridge: SimBridge, place: BridgeReplies.PlaceReply, plaza_scale:
 	plaza.scale = Vector3.ONE * plaza_scale
 	plaza.visible = false
 	var options: PlazaBuilder.Options = PlazaBuilder.Options.new()
+	options.variant = PlazaVariants.for_market(place.id)
 	options.has_ground = false
-	options.has_vegetation = false
+	options.has_vegetation = options.variant.plants_in_footprint
 	options.has_houses = false
 	options.height_provider = _local_height.bind(bridge, plaza)
-	options.variant = PlazaVariants.for_market(place.id)
 	var built: PlazaBuilder.Built = PlazaBuilder.new().build(plaza, options)
 	PlazaGround.new(plaza, built.materials, options.height_provider).add_patch(PlazaData.PLAZA_RADIUS_M)
 	for light: OmniLight3D in built.lamp_lights + built.torch_lights:
