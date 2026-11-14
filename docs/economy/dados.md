@@ -53,11 +53,11 @@ Regras: `need_id` e `need_relief` vêm **juntos** ou nenhum; todo bem tem uma re
 
 ## `owner_kinds.json` (LW-089): tipos de dono
 
-Cinco linhas: `npc`, `player`, `site`, `market`, `contract`.
+Seis linhas: `npc`, `player`, `site`, `market`, `contract` e `merchant` (a sexta, do comerciante, entra na LW-098c por decisão de Arthur de 14/11/2026; antes eram cinco).
 
 | Coluna | Tipo | Regra |
 |---|---|---|
-| `id` | `STRING` | um dos cinco tipos |
+| `id` | `STRING` | um dos seis tipos (o sexto, `merchant`: capacidade de peso 120 e saldo inicial 300 [HIP], resposta de Arthur à Q2 em 14/11/2026; `economy.md`, 9.14) |
 | `weight_capacity` | `INT` | 0 ou mais; **0 = sem inventário** (só o `contract`, que é só conta) |
 | `initial_balance` | `INT` | 0 ou mais; vira o `mint` inicial `game_start` ao abrir o dono (contrato, seção 3; para o `npc`, na **LW-093**); [HIP] |
 
@@ -314,13 +314,33 @@ Arthur decidiu o princípio (**nenhum povoado se baste sozinho**) e a criação 
 
 **Teste de dados `test_economy_distribution.gd` (LW-097; o princípio é a DEC-142, aprovada por Arthur em 10/11/2026; a formulação e o nome do teste seguem [PROPOSTA], sem DEC).** Seja `Produzido(P)` o conjunto de bens que os locais de produção do povoado `P` produzem (`production_sites` + `recipe_outputs`) e `Necessário(P)` a união dos insumos das receitas de `P` (`recipe_inputs`), dos bens de manutenção dos locais de `P` (`site_upkeep`) e de `bread`. **`test_no_settlement_is_self_sufficient`:** para todo povoado `P`, `Necessário(P)` **menos** `Produzido(P)` **não é vazio**. **`test_every_needed_good_has_a_producer`:** todo bem de algum `Necessário(P)` é produzido por algum local de algum povoado. Com a distribuição proposta: A depende de `tool`, `fabric` e `bread`; B, de `flour`, `tool` e `plank` (B tece o próprio tecido); C, de `wood`, `plank`, `fabric` e `bread`. O tecido conta como bem necessário porque `site_upkeep` o lista (Q22). O teste lê só tabelas da economia e vem **com os dados do 3º povoado, na LW-097**.
 
+## `caravan_params.json` (LW-098b): parâmetros do comerciante e da caravana [HIP; formato autorizado por Arthur em 14/11/2026]
+
+Uma linha só, `id` = `caravan_defaults` (como `price_defaults` e `site_defaults`; a especificação da LW-098a escrevia `default`). Todas as colunas são `INT`; dinheiro na menor unidade e proporções em pontos-base (`_bp`). São parâmetros de **decisão e de tempo**: nenhum move dinheiro (o comerciante não paga custo de viagem; `economy.md`, 9.6). O esquema é declarado em código, na 098b; a formulação em que cada coluna entra é `economy.md`, 9.3 (tempo do trecho) e 9.5 (planejador). Nasce na 098b; o formato inicial foi **autorizado por Arthur em 14/11/2026** (AGENTS 16.2), limitado ao contrato, com testes de serialização, compatibilidade e determinismo (abaixo).
+
+| Coluna | Tipo | Regra | Partida [HIP] | Para que serve |
+|---|---|---|---|---|
+| `id` | `STRING` | `caravan_defaults` | | a única linha |
+| `speed_cm_per_min` | `INT` | 1 a 100.000 | 400 | velocidade da caravana (4 m por minuto de jogo; a caminhada do NPC é 500 cm por minuto) |
+| `difficulty_slowdown_bp` | `INT` | 0 a 10.000 | 50 | lentidão do trecho por ponto de dificuldade da rota |
+| `risk_bp_per_point` | `INT` | 0 a 10.000 | 25 | desconto de decisão por ponto de risco da rota, sobre a receita (Q3: sem perda real) |
+| `time_cost_per_hour` | `INT` | 0 ou mais | 2 | custo de oportunidade do tempo de viagem (igual ao `time_cost_per_hour` de `npc_params.json`) |
+| `fixed_cost` | `INT` | 0 ou mais | 5 | custo fixo de decisão por viagem |
+| `min_net_profit` | `INT` | 0 ou mais | 20 | lucro mínimo esperado para partir |
+| `min_margin_bp` | `INT` | 0 a 100.000 | 500 | margem mínima do lucro sobre o custo da compra (5%) |
+| `origin_reserve_bp` | `INT` | 0 a 10.000 | 5000 | fração do **alvo** de estoque que o comerciante nunca tira do mercado de origem (Q8) |
+
+Conta de conferência (as rotas reais, com estes [HIP]): o trecho de 520 m com dificuldade 20 leva `ceil_div(52000 × 11000, 400 × 10000)` = **143 minutos**; 430 m e dificuldade 30, **124**; 340 m e dificuldade 25, **96**. O custo de tempo de uma viagem A–B é `ceil_div(143 × 2, 60) + 5` = 10. **Testes de dados (098b):** arquivo real carrega; campo ausente, tipo errado, campo desconhecido, mais de uma linha, `id` diferente de `caravan_defaults` e faixa inválida falham apontando arquivo, item e campo (`ECON_DATA_INVALID`); carregar duas vezes dá o mesmo resultado. **Serialização, compatibilidade e determinismo (exigidos por Arthur em 14/11/2026):** a linha reescrita e relida dá o mesmo objeto; `EconomySetup.from_dir` carrega a pasta real `data/economy/` com o arquivo novo, `check_content_ids` verde e nenhum outro carregador alterado; a mesma entrada dá o mesmo resultado. Textos ao jogador nunca vão nesta tabela.
+
 ## Ofícios novos (dado do `npc`)
 
 `occupations.json` ganha **`miner`** (mineiro) e **`shepherd`** (pastor), cada um com `work_place_kind` `work`, **só em dados** (decisão de Arthur). Entram com a LW-092 ou a LW-097. Cada ofício novo também precisa de **agenda própria** em `routine_blocks.json` (o carregador de rotina rejeita ofício sem agenda): dado, mas escrito pelo `npc` (extensão do `npc.md`). Os nomes são genéricos e provisórios (DEC-100).
 
+**O comerciante em outros arquivos (LW-098c, LW-098f1, LW-098f2 e LW-098h; contrato aprovado por Arthur em 14/11/2026; `economy.md` 9.9 e `npc.md` 14.11).** **Autorizado, limitado a este contrato, com testes de serialização, compatibilidade e determinismo:** (a) `owner_kinds.json` ganha a linha `merchant` (`weight_capacity` 120 e `initial_balance` 300 [HIP]) **na 098c**, no mesmo commit da constante `KIND_MERCHANT` (o `check_content_ids` a exige), com o `test_goods_data.gd` passando de 5 para 6 tipos; (b) **na 098f1**, `occupations.json` ganha `{"id":"merchant","work_place_kind":"market"}` e a coluna opcional `owner_kind` (`STRING`, id de `economy/owner_kinds.json`, conferido pelo verificador de ids como as outras referências entre módulos, D1, por uma linha nova em `REFERENCES` de `tools/check_content_ids.gd`; sem a coluna vale `npc`), com a agenda em `routine_blocks.json` (ainda sem `haul`, que só nasce na 098f2: as horas de trabalho entram como `rest` [HIP]); (c) **na 098f1**, `npc_params.json` ganha dois campos opcionais, ambos `INT` com faixa de 0 a 1.000: `haul_value_percent` (partida 100 [HIP]: um ponto de utilidade por moeda de lucro esperado) e `sell_value_percent` (partida 100 [HIP]: um ponto por moeda do total da cotação de venda da sobra); sem eles o valor vale 0 e o arquivo antigo carrega como hoje; (d) **na 098f2**, `actions.json` ganha a ação `haul` e as horas de trabalho da agenda passam a ela; os ofícios antigos seguem iguais. **Fora do mandato, só na 098h (aprovação específica de Arthur, DEC-175):** `population.json` ganha as linhas do ofício (**dois comerciantes por povoado, seis no total**, `count` 2 em cada, `work_place_id` = o local de mercado: `a_market_01`, `b_market_01`, `c_market_01`); `world/places.json` ganha **as seis casas** (uma por comerciante; o A está com 60 de 60 e o B com 44 de 45, e sem casa vale `NPC_POPULATION_NO_ROOM`; capacidade e posição [HIP]); `market_targets.json` ganha os **preços iniciais diferenciados** (Q7: diferenças de `initial_stock` entre mercados nos bens que o comerciante leva, respeitando `initial_stock` no máximo `target_stock` × `buy_cap_bp` ÷ 10000 e a regra de 30 dias da DEC-176). Tudo isso muda os hashes e **PARA** (DEC-175), e `data/` só se altera onde o texto da tarefa mandar expressamente (AGENTS 12.5). O `check_content_ids` e o `PopulationPlan` podem recusar `merchant` num `work_place_id` de mercado (risco T3, `economy.md` 9.13).
+
 ## O que mais vem dos mesmos arquivos de contrato
 
-`world/routes.json` (LW-097) é dado e contrato do `world`. Parâmetros de contrato (prazos mínimos, teto de recompensa) e de comerciante (LW-096 e LW-098) **não** são modelados aqui: ganham tabela quando o contrato da respectiva tarefa for escrito (AGENTS 5.6, contrato primeiro). As marcas **TEMP** `data/food_stub.json` e `data/income_stub.json` saem nas LW-094 e LW-095. **LW-107a:** os modelos de contrato do postador (bem, quantidade, gatilho, bônus, prazo em horas e máximo de abertos) ganharam a seção `contract_templates.json` acima; prazo mínimo e teto de recompensa seguem sem tabela (o teto prático é a regra anti-exploração (b)).
+`world/routes.json` (LW-097) é dado e contrato do `world`. Parâmetros de contrato (prazos mínimos, teto de recompensa; LW-096) **não** são modelados aqui: ganham tabela quando o contrato da respectiva tarefa for escrito (AGENTS 5.6, contrato primeiro); **os do comerciante (LW-098) estão em `caravan_params.json`, acima (contrato aprovado por Arthur em 14/11/2026)**. As marcas **TEMP** `data/food_stub.json` e `data/income_stub.json` saem nas LW-094 e LW-095. **LW-107a:** os modelos de contrato do postador (bem, quantidade, gatilho, bônus, prazo em horas e máximo de abertos) ganharam a seção `contract_templates.json` acima; prazo mínimo e teto de recompensa seguem sem tabela (o teto prático é a regra anti-exploração (b)).
 
 ## Testes previstos para estes dados (nas tarefas que criam cada tabela)
 

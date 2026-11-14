@@ -225,7 +225,7 @@ Partida: `poor_harvest__start` (`apply_production_modifier`, `grain`, 5000) e `p
 
 Tabelas e linhas que a seção 18 prometeu sem formato. **O dono é a `economy`**; entram com a tarefa que cada uma cita.
 
-- **`owner_kinds.json`** (já existe, com 5 linhas hoje; a do tesouro entra na Fase 4): **linha nova `ground_pile`**, a sétima (LW-156a, `economy.md` 18.2): `weight_capacity` 100000 [HIP] (grande: o monte não é depósito) e `initial_balance` 0. Nenhuma coluna nova.
+- **`owner_kinds.json`** (já existe, com 6 linhas depois da LW-098c, que acrescenta `merchant`; a do tesouro, a sétima, entra na Fase 4): **linha nova `ground_pile`**, a oitava (LW-156a, `economy.md` 18.2): `weight_capacity` 100000 [HIP] (grande: o monte não é depósito) e `initial_balance` 0. Nenhuma coluna nova.
 - **`pile_params.json`** (`id` = `piles`; LW-156a; `INT`, 1 ou mais): `pile_lifetime_hours` **24** (DEC-188) e `max_piles` 20.
 - **`modifier_params.json`** (`id` = `modifiers`; LW-162): `max_modifier_days` (`INT`, 1 ou mais; 30). **O mesmo limite da `politics`** entra como **coluna nova** `max_modifier_days` (30) em `stability_params.json` (seção 5 do `docs/fase-4/dados.md`; [PROPOSTA]): dois donos, dois arquivos.
 - **`forgeable_goods.json`** (LW-148): `id` (`forge_<bem>__<tipo de dono>`), `good_id` (ref `goods`) e `owner_kind_id` (ref `owner_kinds`): **o bem que um tipo de dono pode forjar**. Partida: `forge_metal__player` (`metal`, `player`). **[PROPOSTA]:** uma tabela só diz o bem e quem pode, **sem coluna nova em `owner_kinds.json`** (o contrato, 18.3, não diz como o dado é guardado). O NPC ferreiro seria uma linha nova.
