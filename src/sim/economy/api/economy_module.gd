@@ -39,7 +39,7 @@ var _subscription: int = EventBus.NO_SUBSCRIPTION
 var _route_subscription: int = EventBus.NO_SUBSCRIPTION
 var _rules: TradeRules
 var _state: EconomyState
-## A porta de rotas do `world` (LW-098d1; 9.2): `peek_route` e `peek_path`. Nula nos testes sem `world` e no jogo real até a fiação do `app` (098d3): então não há caravana.
+## A porta de rotas do `world` (LW-098d1; 9.2): `peek_route` e `peek_path`. Nula nos testes sem `world`; no jogo montado o `GameModules` a passa desde a LW-098d3 (sem ela não há caravana).
 var _world: WorldModule
 ## A última hora cheia do relógio já processada (a produção anda por hora; o fim do dia é a hora que vira múltiplo de 24). Não vai no save: o relógio é restaurado pelo `core` antes dos módulos, e a cada passo a hora já processada é a do relógio.
 var _last_hour: int = 0
