@@ -341,6 +341,9 @@ func test_the_lists_show_the_boards_rows_with_their_reward_and_remaining_time_in
 	_select(ids["carried"])
 	assert_true(_tree(OPEN_LIST).get_selected() == null and _tree(MINE_LIST).get_selected() != null, "Uma escolha só, nas duas listas.")
 	assert_eq(_detail_text(), MarketView.FACT_SEPARATOR.join([_p["line"], _p["reward"], _p["left_500"], _p["to_c"], _say("owned", {"owned": 1, "quantity": QUANTITY}), _p["accepted"]]), "O detalhe: bem, recompensa, prazo, destino, \"você tem 1 de 2\" e estado.")
+	assert_true(_is_off(ACCEPT) and _is_off(DELIVER), "Com uma linha aceita e no prazo escolhida, Aceitar e Entregar seguem desativados (aba só de leitura).")
+	_select(ids["fresh_open"])
+	assert_true(_is_off(ACCEPT) and _is_off(DELIVER), "Com uma linha aberta e no prazo escolhida, Aceitar e Entregar seguem desativados (aba só de leitura).")
 
 
 func test_an_empty_board_shows_the_empty_messages_and_the_tab_stays_usable() -> void:
@@ -404,6 +407,7 @@ func test_every_contract_key_exists_and_no_text_of_the_tab_is_a_missing_key() ->
 	var everything: Array[String] = _shown_texts()
 	for contract_id: int in ids.values():
 		_select(contract_id)
+		assert_true(_is_off(ACCEPT) and _is_off(DELIVER), "Nenhuma linha escolhida habilita Aceitar nem Entregar na aba só de leitura.")
 		everything.append(_detail_text())
 	var missing: RegEx = RegEx.create_from_string(KEY_FOR_MISSING_TEXT)
 	assert_gt(everything.size(), 2 * ids.size() + 10, "A varredura enxerga rótulos, botões, linhas das tabelas e os seis detalhes.")
@@ -424,7 +428,7 @@ func test_opening_switching_tabs_refreshing_and_closing_never_change_the_state_h
 	_press(TAB_MARKET)
 	_press(TAB_CONTRACTS)
 	_view.close()
-	assert_eq([_host.runner.world.state_hash(), _bridge.peek_time().total_minutes, _bridge.sent], [hash_before, minutes_before, [] as Array[String]], "Só consultas: o `state_hash` e o relógio ficam como estavam e nenhum pedido sai.")
+	assert_eq([_host.runner.world.state_hash(), _bridge.peek_time().total_minutes, _bridge.sent, _is_off(ACCEPT), _is_off(DELIVER)], [hash_before, minutes_before, [] as Array[String], true, true], "Só consultas: o `state_hash` e o relógio ficam como estavam, nenhum pedido sai e os dois botões seguem desativados.")
 
 
 func test_a_paused_clock_keeps_the_buttons_off_and_a_game_without_account_or_without_game_says_unavailable() -> void:
