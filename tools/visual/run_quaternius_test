@@ -1,0 +1,27 @@
+#!/bin/sh
+# ART-11: grava os PNGs (1600 x 1200) do teste isolado com os pacotes CC0 da Quaternius (scenes/demo/quaternius_test.tscn): personagem como vem, facetado, facetado com paleta, rosto, silhueta, linha de roupas, prova de modularidade e proporções, mais o resumo_godot.txt.
+# ABRE UMA JANELA do Godot por cerca de 1 a 2 minutos (renderiza num SubViewport; a janela é pequena). Não altera o project.godot nem apaga nada. Só o renderer do projeto (gl_compatibility).
+# Uso: tools/visual/run_quaternius_test [pasta-de-saída] [grupos]  (grupos separados por vírgula: ref, rosto_perto, silhueta, lineup_roupas, modularidade_troca, proporcoes; padrão: todos). Variável opcional: GODOT_BIN.
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+out_dir=${1:-}
+if [ -z "$out_dir" ]; then
+    out_dir=$(mktemp -d "${TMPDIR:-/tmp}/lw-quaternius-test.XXXXXX") || exit 1
+fi
+only_arg=""
+if [ -n "${2:-}" ]; then
+    only_arg="--only=$2"
+fi
+mkdir -p "$out_dir" || exit 1
+echo "AVISO: este teste abre uma janela do Godot por cerca de 1 a 2 minutos. Não mexa na janela."
+echo "Saída em: $out_dir"
+if ! "$godot_bin" --path "$project_dir" --rendering-method gl_compatibility --resolution 640x480 --position 0,0 res://scenes/demo/quaternius_test.tscn -- "--out=$out_dir" ${only_arg:+"$only_arg"}; then
+    echo "FALHA: o Godot terminou com erro." >&2
+    exit 1
+fi
+echo "Resumo: $out_dir/resumo_godot.txt"
