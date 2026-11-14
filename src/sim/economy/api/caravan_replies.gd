@@ -4,7 +4,7 @@ extends RefCounted
 
 
 ## `peek_caravan` e cada linha de `peek_caravans_on`: a caravana de um comerciante. `found` falso = parado (sem registro; os outros campos não valem); `result` falha com `ECON_UNKNOWN_OWNER` se o dono não existe. `trader_id` é o dono do registro (as linhas de
-## `peek_caravans_on` precisam dele). Os CINCO campos derivados da rota e do relógio (a geometria do trecho, a posição e o ETA, 9.3) dependem da porta de rotas do `world`, que só nasce na 098d1: até lá ficam vazios ou 0.
+## `peek_caravans_on` precisam dele). Os CINCO campos derivados da rota e do relógio (a geometria do trecho, a posição e o ETA, 9.3) são preenchidos pelo `CaravanRunner` (LW-098d1) quando a economia tem a porta de rotas do `world` e os parâmetros da caravana; sem eles, ou com rota que o `world` não conhece, ficam vazios ou 0.
 class CaravanQuery:
 	extends RefCounted
 
@@ -54,3 +54,58 @@ class CaravansQuery:
 
 	func _init(caravan_rows: Array[CaravanQuery]) -> void:
 		caravans = caravan_rows
+
+
+## Uma linha de `peek_trade_plans` (LW-098d1; 9.8): o melhor plano de um destino, cópia do `TradePlanner.Plan` SEM o `time_cost` (que já está dentro do `net_profit`).
+class PlanQuery:
+	extends RefCounted
+
+	var destination_market_id: int
+	var good_id: String
+	var quantity: int
+	var cost: int
+	var revenue: int
+	var risk_discount: int
+	var minutes: int
+	var net_profit: int
+	var margin_bp: int
+	var route_ids: Array[String] = []
+
+	func _init(plan: TradePlanner.Plan) -> void:
+		destination_market_id = plan.destination_market_id
+		good_id = plan.good_id
+		quantity = plan.quantity
+		cost = plan.cost
+		revenue = plan.revenue
+		risk_discount = plan.risk_discount
+		minutes = plan.minutes
+		net_profit = plan.net_profit
+		margin_bp = plan.margin_bp
+		route_ids.assign(plan.route_ids)
+
+
+## `peek_trade_plans`: os planos por `destination_market_id` crescente (só os que passam dos limiares de 9.5); `result` falha com o código do comerciante, `ECON_UNKNOWN_MARKET` ou `ECON_NO_ROUTE` (então a lista é vazia).
+class PlansQuery:
+	extends RefCounted
+
+	var result: Result
+	var plans: Array[PlanQuery] = []
+
+	func _init(query_result: Result, found: Array[TradePlanner.Plan] = []) -> void:
+		result = query_result
+		for plan: TradePlanner.Plan in found:
+			plans.append(PlanQuery.new(plan))
+
+
+## `request_start_caravan`: o minuto da chegada prevista (`eta_minute`) e o que o lote custou (`cost_paid`); só valem se `result.ok`.
+class StartResult:
+	extends RefCounted
+
+	var result: Result
+	var eta_minute: int
+	var cost_paid: int
+
+	func _init(start_result: Result, arrival_minute: int = 0, paid: int = 0) -> void:
+		result = start_result
+		eta_minute = arrival_minute
+		cost_paid = paid

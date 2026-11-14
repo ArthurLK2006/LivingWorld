@@ -11,7 +11,8 @@ extends SimModule
 ## conteúdo quando há estado (sem dono e sem movimento continua `{}`); `goods`, `markets` e `production` só entram quando há bens, mercados ou locais de produção.
 ## LW-092f: o módulo foi dividido sem mudar comportamento: o estado vivo está no `EconomyState`, as consultas no `EconomyQueries`, o jogo novo e o tempo no `EconomyRuntime` e o save, o `validate` e o resumo de depuração
 ## no `EconomyPersistence` (pasta `support/`); aqui ficam o ciclo de vida do `SimModule`, os comandos, o relógio e o aviso de morte. Cada `peek_*` é uma linha que chama a classe de apoio.
-## LW-098c: o tipo de dono `merchant` (o `NpcDied` fecha também o dono desse tipo e apaga a caravana dele) e o livro de caravanas (`CaravanBook`), que NASCE VAZIO e nada o preenche ainda; a porta ganha `peek_caravan` e `peek_caravans_on` (respostas em `CaravanReplies`).
+## LW-098c: o tipo de dono `merchant` (o `NpcDied` fecha também o dono desse tipo e apaga a caravana dele) e o livro de caravanas (`CaravanBook`), que NASCE VAZIO; a porta ganha `peek_caravan` e `peek_caravans_on` (respostas em `CaravanReplies`).
+## LW-098d1: a PARTIDA (`request_start_caravan`) e os planos (`peek_trade_plans`), feitos pelo `CaravanRunner`, e a porta de rotas do `world` pelo construtor (parâmetro OPCIONAL, 9.2); sem ela, ou sem os parâmetros da caravana nas definições, não há caravana (`ECON_NO_ROUTE`) e nada muda. O jogo real segue sem comerciante.
 
 const CODE_INVALID_SAVE: String = EconomyCodes.INVALID_SAVE
 const KEY_OWNERS: String = EconomyPersistence.KEY_OWNERS
@@ -33,13 +34,16 @@ var _clock: SimClock
 var _subscription: int = EventBus.NO_SUBSCRIPTION
 var _rules: TradeRules
 var _state: EconomyState
+## A porta de rotas do `world` (LW-098d1; 9.2): `peek_route` e `peek_path`. Nula nos testes sem `world` e no jogo real até a fiação do `app` (098d3): então não há caravana.
+var _world: WorldModule
 ## A última hora cheia do relógio já processada (a produção anda por hora; o fim do dia é a hora que vira múltiplo de 24). Não vai no save: o relógio é restaurado pelo `core` antes dos módulos, e a cada passo a hora já processada é a do relógio.
 var _last_hour: int = 0
 
 
-## `record_history`: modo de teste do `Ledger` (guarda cada lançamento). `definitions`: o conteúdo já lido (vazio por padrão: sem bens, sem mercados, qualquer tipo de dono).
-func _init(record_history: bool = false, definitions: EconomyDefinitions = null) -> void:
+## `record_history`: modo de teste do `Ledger` (guarda cada lançamento). `definitions`: o conteúdo já lido (vazio por padrão: sem bens, sem mercados, qualquer tipo de dono). `world_module`: a porta de rotas (LW-098d1; opcional, como o `npc` recebe a economia).
+func _init(record_history: bool = false, definitions: EconomyDefinitions = null, world_module: WorldModule = null) -> void:
 	_record_history = record_history
+	_world = world_module
 	_definitions = definitions if definitions != null else EconomyDefinitions.new()
 	_rules = _definitions.trade_rules if _definitions.trade_rules != null else NeutralTradeRules.new()
 	_state = EconomyState.create(_definitions, _rules, _record_history)
@@ -99,7 +103,10 @@ func on_load(data: Dictionary) -> Result:
 
 
 func validate() -> Array[String]:
-	return EconomyPersistence.validation_problems(_state)
+	var problems: Array[String] = EconomyPersistence.validation_problems(_state)
+	for problem: String in _caravan_runner().route_problems():
+		problems.append("[caravans] " + problem)
+	return problems
 
 
 ## Resumo para o painel de depuração (backlog I4; revisão independente I1): só números e se a conservação do dinheiro e dos bens fecha. Não vai para o save nem para o hash.
@@ -201,6 +208,15 @@ func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int
 	return EconomyReplies.TradeResult.new(outcome.result, outcome.quantity, outcome.total, outcome.tariff)
 
 
+## A PARTIDA da caravana (LW-098d1; 9.4 e 9.8), ATÔMICA: compra o lote no mercado de origem (o mesmo `TradeEngine.execute` do `request_trade`) e registra a caravana, ou nada muda. Devolve o minuto previsto da chegada (`eta_minute`) e o que o lote custou (`cost_paid`).
+## NÃO exige lucro (a decisão de partir é do `npc`); a chegada e a venda são da LW-098d2. Falhas: `ECON_NO_ROUTE` (sem caminho aberto, origem igual ao destino, sem a porta de rotas, sem os parâmetros ou sem `setup`), `ECON_CARAVAN_BUSY`, `ECON_TRADER_NOT_ALLOWED` e as do comércio: `ECON_UNKNOWN_OWNER`,
+## `ECON_OWNER_CLOSED`, `ECON_UNKNOWN_MARKET`, `ECON_UNKNOWN_GOOD`, `ECON_BAD_QUANTITY`, `ECON_TRADE_BANNED`, `ECON_INSUFFICIENT_STOCK`, `ECON_INSUFFICIENT_FUNDS` e `ECON_CAPACITY_EXCEEDED`.
+func request_start_caravan(trader_id: int, origin_market_id: int, destination_market_id: int, good_id: String, quantity: int) -> CaravanReplies.StartResult:
+	if _clock == null:
+		return CaravanReplies.StartResult.new(Result.failure(EconomyCodes.NO_ROUTE, "EconomyModule.request_start_caravan: módulo sem setup (sem relógio); esperado um módulo registrado no World."))
+	return _caravan_runner().start(trader_id, origin_market_id, destination_market_id, good_id, quantity, _clock.total_minutes())
+
+
 ## A mesma conta de `request_trade`, sem executar, PARA O ATOR (as regras de comércio podem depender de quem compra: proibição, tarifa, licença); serve à interface e ao `npc` para decidirem antes de pedir.
 func peek_quote(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> EconomyReplies.QuoteQuery:
 	return EconomyQueries.peek_quote(_state, actor_id, market_id, good_id, quantity, side)
@@ -251,21 +267,31 @@ func peek_contracts(state_filter: String = "", issuer_id: int = IdGenerator.NO_I
 	return EconomyQueries.peek_contracts(_state, state_filter, issuer_id, place_id)
 
 
-## A caravana do comerciante (LW-098c): `found` falso = parado; `ECON_UNKNOWN_OWNER` se o dono não existe (cópia, 9.8).
+## A caravana do comerciante (LW-098c): `found` falso = parado; `ECON_UNKNOWN_OWNER` se o dono não existe (cópia, 9.8). Com a porta de rotas e os parâmetros (LW-098d1), os cinco campos derivados (o trecho, a posição pelo relógio e o ETA, 9.3) vêm preenchidos.
 func peek_caravan(trader_id: int) -> CaravanReplies.CaravanQuery:
 	if not _state.book.has_owner(trader_id):
 		return CaravanReplies.CaravanQuery.new(Result.failure(EconomyCodes.UNKNOWN_OWNER, "EconomyModule.peek_caravan: o dono %d não existe." % trader_id))
-	return CaravanReplies.CaravanQuery.new(Result.success(), _state.caravans.caravan_of(trader_id))
+	var caravan: Caravan = _state.caravans.caravan_of(trader_id)
+	if caravan == null:
+		return CaravanReplies.CaravanQuery.new(Result.success())
+	return _caravan_runner().row_of(caravan, _now())
 
 
 ## As caravanas na estrada (andando, ou paradas no meio do trecho) cujo trecho atual é a rota, por `trader_id` crescente (pedido do `military.md` 7).
 func peek_caravans_on(route_id: String) -> CaravanReplies.CaravansQuery:
+	var runner: CaravanRunner = _caravan_runner()
 	var rows: Array[CaravanReplies.CaravanQuery] = []
 	for trader_id: int in _state.caravans.trader_ids():
 		var caravan: Caravan = _state.caravans.caravan_of(trader_id)
 		if caravan.is_on_road() and caravan.current_route_id() == route_id:
-			rows.append(CaravanReplies.CaravanQuery.new(Result.success(), caravan))
+			rows.append(runner.row_of(caravan, _now()))
 	return CaravanReplies.CaravansQuery.new(rows)
+
+
+## O melhor plano de viagem do comerciante saindo da origem, um por destino com caminho aberto, só os que passam dos limiares de 9.5 e por `destination_market_id` crescente (LW-098d1; 9.8): é a conta do `TradePlanner` (098b) e NÃO muda estado.
+## Falhas: `ECON_NO_ROUTE` (sem a porta de rotas, sem os parâmetros ou sem mercados), `ECON_UNKNOWN_OWNER`, `ECON_OWNER_CLOSED`, `ECON_TRADER_NOT_ALLOWED` (o dono não é `merchant`) e `ECON_UNKNOWN_MARKET`.
+func peek_trade_plans(trader_id: int, origin_market_id: int) -> CaravanReplies.PlansQuery:
+	return _caravan_runner().plans(trader_id, origin_market_id)
 
 
 func peek_balance(owner_id: int) -> EconomyReplies.BalanceQuery:
@@ -356,3 +382,13 @@ func _assign_to_workplace(npc_id: int, work_place_id: String) -> Result:
 
 func _current_hour() -> int:
 	return IntMath.floor_div(_clock.total_minutes(), SimClock.MINUTES_PER_HOUR) if _clock != null else 0
+
+
+## O minuto de simulação de agora (0 sem `setup`).
+func _now() -> int:
+	return _clock.total_minutes() if _clock != null else 0
+
+
+## O executor das caravanas sobre o estado de agora (o `on_load` troca o `_state`, então ele é montado a cada uso; é só referência).
+func _caravan_runner() -> CaravanRunner:
+	return CaravanRunner.new(_state, _world)
