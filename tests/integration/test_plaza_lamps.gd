@@ -94,7 +94,10 @@ func test_the_main_scene_lights_start_right_and_follow_the_light_the_rig_applies
 	rig.set_process(false)
 	var plazas: MarketPlazaView = main.get_node("MarketPlazaView") as MarketPlazaView
 	assert_eq(plazas.plaza_count(), _markets.size())
-	_assert_lights(plazas, true, BASE_ENERGY, "início do jogo, à meia-noite: a cena deu o fator inicial da rig")
+	## A hora do relógio ao entrar na cena depende de quanto o processo já rodou (o GameApp é um só na suíte inteira): sozinho o teste
+	## começa à meia-noite (fator 1), na suíte inteira pode ser outra hora (no CI, 0,98). Vale o fator que a própria rig guardou.
+	var initial: float = rig.lamp_factor()
+	_assert_lights(plazas, initial > MarketPlazaView.LAMP_ON_THRESHOLD, BASE_ENERGY * initial, "início do jogo: a cena deu o fator inicial da rig")
 	assert_true(rig.apply_state(DayNightCycle.state_at(rig.config, NOON)))
 	_assert_lights(plazas, false, 0.0, "meio-dia")
 	assert_true(rig.apply_state(DayNightCycle.state_at(rig.config, MIDNIGHT)))
