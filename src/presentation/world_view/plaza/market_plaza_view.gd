@@ -3,7 +3,8 @@ extends Node3D
 ## Praça de mercado artística no jogo (ART-2b): em volta de cada local `market`, a praça procedural facetada (5 barracas com seus adereços, postes de lampião com bandeirolas, tochas, o poço e uma mancha de terra batida) no lugar da caixa branca provisória. Só apresentação: sem colisão, texto nem regra de jogo
 ## (o alcance de 3 m do centro, a tecla E e a compra seguem na simulação). Cada praça é um `Node3D` `MarketPlaza_<id do local>` no x e no z do local, com a origem na altura do terreno do centro; cada peça fica na altura do terreno do ponto dela (`peek_height` da ponte), sem chão, vegetação nem casas
 ## (o terreno do jogo é o chão). A praça é montada no `setup` (cerca de 3,5 ms por praça sem janela, medido na ART-2b) e fica escondida até o terreno do chunk do centro dela existir (`set_chunk_visible`, ligado a `chunk_loaded` e `chunk_unloaded` pela cena). A view fica na origem do mundo.
-## Os mercados ficam nos povoados a 14 m dos vizinhos e a praça cheia (cerca de 24 x 18 m) tocaria as caixas deles: ela leva uma escala uniforme, a maior que a deixa a NEIGHBOR_MARGIN_M de cada caixa vizinha. Contrato: docs/modules/presentation.md.
+## Os mercados ficam nos povoados a 14 m dos vizinhos e a praça cheia (cerca de 24 x 18 m) tocaria as caixas deles: ela leva uma escala uniforme, a maior que a deixa a NEIGHBOR_MARGIN_M de cada caixa vizinha.
+## ART-5a: as 7 luzes pequenas de cada praça (lampiões e tochas) acendem e apagam com a hora, pelo fator de `set_lamp_factor`. Contrato: docs/modules/presentation.md.
 
 const PLAZA_NAME_PREFIX: String = "MarketPlaza_"
 const HALF: float = 0.5
@@ -14,9 +15,15 @@ const FOOTPRINT_M: Rect2 = Rect2(-11.85, -9.0, 23.7, 18.28)
 const MIN_SCALE: float = 0.6
 ## Folga entre a praça e a caixa de cada local vizinho [HIP].
 const NEIGHBOR_MARGIN_M: float = 0.5
+## Com o fator de luz (0 a 1) neste valor ou abaixo, a luz do lampião ou da tocha fica escondida: luz invisível não custa nada no Compatibility e com tão pouca energia não se enxergaria [HIP].
+const LAMP_ON_THRESHOLD: float = 0.01
 
 var _plazas: Dictionary[String, Node3D] = {}
 var _plazas_by_chunk: Dictionary[Vector2i, Array] = {}
+## As luzes dos lampiões e das tochas de todas as praças (as escondidas também), cada uma com a energia base que a montagem lhe deu.
+var _lights: Dictionary[OmniLight3D, float] = {}
+## O fator de luz (0 a 1) em vigor; as praças montadas depois já nascem com ele. Nasce apagado (0, o dia): quem acompanha a hora o liga por `set_lamp_factor`.
+var _lamp_factor: float = 0.0
 
 
 ## Cria e monta uma praça por mercado. Ponte nula, ponte sem terreno ou consulta que falha: push_error e nada é criado (devolve falso).
@@ -45,6 +52,17 @@ func set_chunk_visible(chunk: Vector2i, shown: bool) -> void:
 		plaza.visible = shown
 
 
+## Acende os lampiões e as tochas de TODAS as praças, também das escondidas (ao aparecerem já estão certas): energia = a base x `factor` (0 a 1, limitado) e a luz fica escondida se o fator não passa de LAMP_ON_THRESHOLD.
+## O mesmo fator de antes não faz nada: a rig repete o estado a cada quadro e, de dia e de noite, o fator não muda.
+func set_lamp_factor(factor: float) -> void:
+	var clamped: float = clampf(factor, 0.0, 1.0)
+	if is_equal_approx(clamped, _lamp_factor):
+		return
+	_lamp_factor = clamped
+	for light: OmniLight3D in _lights:
+		_light_up(light)
+
+
 func plaza_count() -> int:
 	return _plazas.size()
 
@@ -67,11 +85,19 @@ func _add_plaza(bridge: SimBridge, place: BridgeReplies.PlaceReply, plaza_scale:
 	options.height_provider = _local_height.bind(bridge, plaza)
 	var built: PlazaBuilder.Built = PlazaBuilder.new().build(plaza, options)
 	PlazaGround.new(plaza, built.materials, options.height_provider).add_patch(PlazaData.PLAZA_RADIUS_M)
+	for light: OmniLight3D in built.lamp_lights + built.torch_lights:
+		_lights[light] = light.light_energy
+		_light_up(light)
 	add_child(plaza)
 	_plazas[place.id] = plaza
 	if not _plazas_by_chunk.has(chunk):
 		_plazas_by_chunk[chunk] = []
 	_plazas_by_chunk[chunk].append(plaza)
+
+
+func _light_up(light: OmniLight3D) -> void:
+	light.light_energy = _lights[light] * _lamp_factor
+	light.visible = _lamp_factor > LAMP_ON_THRESHOLD
 
 
 ## Altura do terreno no ponto (x, z) do quadro local da praça, no quadro local (a escala da praça vale para a altura também); fora do mapa a peça fica na altura da origem da praça.
@@ -115,3 +141,4 @@ func _clear() -> void:
 		plaza.free()
 	_plazas.clear()
 	_plazas_by_chunk.clear()
+	_lights.clear()

@@ -80,3 +80,4 @@ daylight_from_degrees = -2.0
 daylight_to_degrees = 3.0
 golden_hour_degrees = 9.0
 full_day_degrees = 45.0
+lamp_golden_fraction = 0.4

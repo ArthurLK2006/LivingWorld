@@ -78,7 +78,7 @@ func _ready() -> void:
 
 
 ## As praças dos mercados (ART-2b) no lugar das caixas brancas: criadas em código antes do terreno, como as caixas, e ligadas aos mesmos sinais de chunk; só apresentação.
-## `setup` que falha (a view já registrou o motivo): a view é descartada e as caixas de mercado continuam à vista.
+## `setup` que falha (a view já registrou o motivo): a view é descartada e as caixas de mercado continuam à vista. Se monta, as luzes das praças recebem o fator de luz da rig (o do estado de agora e o de cada estado novo).
 func _setup_market_plazas(bridge: SimBridge) -> void:
 	var plaza_view: MarketPlazaView = MarketPlazaView.new()
 	plaza_view.name = PLAZA_VIEW_NAME
@@ -89,6 +89,14 @@ func _setup_market_plazas(bridge: SimBridge) -> void:
 	_place_view.set_kind_hidden(PlacePalette.KIND_MARKET, true)
 	_terrain_view.chunk_loaded.connect(plaza_view.set_chunk_visible.bind(true))
 	_terrain_view.chunk_unloaded.connect(plaza_view.set_chunk_visible.bind(false))
+	var rig: AmbientRig = $AmbientRig
+	rig.state_applied.connect(_set_plaza_lamps.bind(plaza_view))
+	plaza_view.set_lamp_factor(rig.lamp_factor())
+
+
+## As luzes dos lampiões e das tochas das praças acompanham a hora (ART-5a): cada estado de luz aplicado pela rig traz o fator delas.
+func _set_plaza_lamps(state: DayNightCycle.LightState, plaza_view: MarketPlazaView) -> void:
+	plaza_view.set_lamp_factor(state.lamp_factor)
 
 
 ## A tela de mercado (LW-106e): o jogador e a câmera ficam parados enquanto ela está aberta e a `InteractionView` fica bloqueada (sem aviso e sem a tecla), então só a tela lê o `interact`.

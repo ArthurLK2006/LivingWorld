@@ -3,6 +3,10 @@ extends Node
 ## Aplica o AmbientConfig ao WorldEnvironment e ao Sol (DirectionalLight3D) da cena principal (LW-041) e, com uma
 ## ponte, a luz do dia e da noite pela hora simulada (LW-042). A luz é função da hora (DayNightCycle): nada é guardado,
 ## nada entra em save nem em state_hash. A simulação não sabe de luz; a hora vem SÓ da ponte (peek_time).
+## ART-5a: a cada estado aplicado ele emite `state_applied` (as luzes dos lampiões da praça o seguem) e guarda só o fator dos lampiões do último, para a cena dar o fator inicial.
+
+## Emitido cada vez que um estado de luz é APLICADO com sucesso: a cada quadro com o relógio andando e, parado ou pausado, só quando a hora usada muda. Quem o ouve compara com o que já tem se o custo importar.
+signal state_applied(state: DayNightCycle.LightState)
 
 @export var config: AmbientConfig
 @export var environment_path: NodePath = ^"../Environment"
@@ -20,6 +24,8 @@ var _last_total_minutes: int = -1
 ## Quanto do minuto simulado atual já passou (0 a 1, exclusive), contado pelos quadros; zera a cada virada de minuto.
 var _minute_fraction: float = 0.0
 var _time_failure_reported: bool = false
+## O fator dos lampiões do último estado aplicado (0 de dia enquanto nenhum foi).
+var _lamp_factor: float = 0.0
 
 
 ## Liga a ponte de onde sai a hora. Sem chamar, o `_ready` pede a ponte ao GameApp.
@@ -43,6 +49,11 @@ func _process(delta: float) -> void:
 ## Quanto do minuto simulado atual já passou (0 a 1, exclusive).
 func minute_fraction() -> float:
 	return _minute_fraction
+
+
+## O fator dos lampiões e das tochas (0 a 1, `LightState.lamp_factor`) do último estado aplicado; 0 (dia) se nenhum foi.
+func lamp_factor() -> float:
+	return _lamp_factor
 
 
 ## Lê a hora pela ponte e aplica a luz da curva do dia e da noite. A hora usada é a oficial mais a fração do minuto, que
@@ -106,6 +117,8 @@ func apply_state_to(world_environment: WorldEnvironment, sun: DirectionalLight3D
 		return false
 	_apply_sun(sun, state)
 	_apply_environment(world_environment, state)
+	_lamp_factor = state.lamp_factor
+	state_applied.emit(state)
 	return true
 
 
