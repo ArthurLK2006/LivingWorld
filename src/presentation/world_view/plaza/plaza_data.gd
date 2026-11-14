@@ -153,8 +153,51 @@ const MEND_COLOR_SHIFT: int = 2
 const MEND_KEY_STRIDE: int = 64
 const SURFACE_ROUGHNESS: float = 0.85
 const RIM_STRENGTH: float = 0.2
+## ART-6a, vegetação por variante [HIP] (campos de PlazaVariants.Spec; os padrões são os da praça de hoje, a A, cujo anel de árvores e rochas fica a 10 a 17 m do centro). Forma de árvore: CONES = pilha de cones, medidas (níveis de copa, raio da base, altura de cada nível) como TREE_VARIANTS; ROUND = tronco e copa redonda, medidas (altura do tronco, raio da copa, meia altura da copa). As formas e os verdes da variante se repartem por índice entre as árvores. B e C plantam dentro do FOOTPRINT_M (lugares x, z no quadro local), longe das barracas, dos adereços, dos postes e, as árvores, do fio de bandeirolas (o ponto mais baixo dele fica a 3,6 m do chão; as árvores de B ficam abaixo disso e as de C a mais de 1 m dele).
+enum TreeShape { CONES, ROUND }
+const TREE_SHAPES: Array[int] = [TreeShape.CONES, TreeShape.CONES, TreeShape.CONES]
+const GRASS_SIZE: Vector2 = Vector2(0.7, 1.4)
+const GRASS_COLORS: Array[Color] = [GRASS_LOW, GRASS_HIGH]
+## Metade (x, z) da área onde grama e flores nascem: o chão da demonstração menos meio metro (GROUND_HALF_M - 0,5); B e C ficam dentro do retângulo de encaixe.
+const SCATTER_HALF_M: Vector2 = Vector2(17.5, 17.5)
+const SCATTER_HALF_PLANTED_M: Vector2 = Vector2(11.4, 8.7)
+## Copa redonda (faixas e setores do esferoide, irregularidade e quanto o centro dela desce na altura do tronco, em fração da meia altura) e arbusto (faixas e setores, irregularidade, raio e achatamento).
+const CANOPY_SHAPE: Vector2i = Vector2i(4, 6)
+const CANOPY_JITTER: float = 0.2
+const CANOPY_SINK: float = 0.6
+const BUSH_SHAPE: Vector2i = Vector2i(3, 5)
+const BUSH_JITTER: float = 0.25
+const BUSH_RADII_M: Vector2 = Vector2(0.65, 0.95)
+const BUSH_FLATTEN: float = 0.6
+## B (arrumada): árvores redondas e baixas em duplas nas bordas de fundo e da frente, três rochas pequenas e frias, flores azuis e brancas, grama curta e uniforme de verde fresco.
+const TREE_SHAPES_B: Array[int] = [TreeShape.ROUND, TreeShape.ROUND]
+const TREE_FORMS_B: Array[Vector3] = [Vector3(1.0, 1.0, 0.85), Vector3(1.2, 1.2, 1.0)]
+const TREE_GREENS_B: Array[Color] = [Color("5C9A48"), Color("4C8844")]
+const TREE_SPOTS_B: Array[Vector2] = [Vector2(-8.3, -7.4), Vector2(-5.7, -7.4), Vector2(5.7, -7.4), Vector2(8.3, -7.4), Vector2(-8.3, 7.6), Vector2(-5.7, 7.6), Vector2(5.7, 7.6), Vector2(8.3, 7.6)]
+const ROCK_SPOTS_B: Array[Vector2] = [Vector2(-10.7, 0.0), Vector2(10.7, 0.0), Vector2(0.0, -8.2)]
+const ROCK_SIZE_B: float = 0.6
+const STONE_B: Color = Color("8C94A0")
+const FLOWER_COLORS_B: Array[Color] = [Color("5078D8"), Color("F4F4F0")]
+const FLOWERS_B: int = 200
+const GRASS_COUNT_B: int = 1100
+const GRASS_SIZE_B: Vector2 = Vector2(0.8, 1.0)
+const GRASS_COLORS_B: Array[Color] = [Color("3C6A2C"), Color("6CA040")]
+## C (rústica): coníferas e uma árvore grande e redonda nos lados e na frente (no fundo o fio de bandeirolas e o limite do retângulo não deixam espaço), mais rochas e arbustos, flores raras em ocre, grama mais alta e seca.
+const TREE_SHAPES_C: Array[int] = [TreeShape.CONES, TreeShape.CONES, TreeShape.ROUND]
+const TREE_FORMS_C: Array[Vector3] = [Vector3(5.0, 1.25, 1.5), Vector3(4.0, 1.5, 1.6), Vector3(1.6, 1.7, 1.4)]
+const TREE_GREENS_C: Array[Color] = [Color("2E5038"), Color("3A6240"), Color("5E7E34")]
+const TREE_SPOTS_C: Array[Vector2] = [Vector2(-9.3, 3.8), Vector2(9.0, 3.6), Vector2(-5.8, 6.4), Vector2(6.4, 6.6)]
+const ROCK_SPOTS_C: Array[Vector2] = [Vector2(-5.3, -7.9), Vector2(4.8, -8.0), Vector2(-8.6, -5.7), Vector2(9.0, -6.4), Vector2(-10.5, 1.7), Vector2(10.6, 1.4), Vector2(0.0, 8.3)]
+const ROCK_SIZE_C: float = 0.8
+const STONE_C: Color = Color("9A8C74")
+const BUSH_SPOTS_C: Array[Vector2] = [Vector2(-8.0, 4.6), Vector2(7.6, 4.8), Vector2(-3.6, 8.2), Vector2(3.6, 8.3), Vector2(-10.2, 6.6)]
+const FLOWER_COLORS_C: Array[Color] = [Color("C8962E")]
+const FLOWERS_C: int = 60
+const GRASS_COUNT_C: int = 900
+const GRASS_SIZE_C: Vector2 = Vector2(1.2, 1.9)
+const GRASS_COLORS_C: Array[Color] = [Color("6A6A28"), Color("C0A850")]
 ## Cada canal é uma sequência independente do hash (PlazaMeshKit.unit). ROCK_RADIUS e TREE_RADIUS vêm logo depois do ângulo: `_ring_spot` usa canal e canal + 1. Canal novo vai no fim: pôr no meio muda o hash de todos os seguintes (e a praça de hoje).
-enum Channel { PATCH, DIRT, GRASS, PROP_X, PROP_Z, PROP_YAW, PROP_SCALE, STRIP, HOUSE, STONE, TREE_ANGLE, TREE_RADIUS, TREE_YAW, TREE_SCALE, ROCK_ANGLE, ROCK_RADIUS, ROCK_SIZE, ROCK_YAW, SCATTER_X, SCATTER_Z, SCATTER_ACCEPT, SCATTER_SIZE, SCATTER_YAW, GRAIN, MEND }
+enum Channel { PATCH, DIRT, GRASS, PROP_X, PROP_Z, PROP_YAW, PROP_SCALE, STRIP, HOUSE, STONE, TREE_ANGLE, TREE_RADIUS, TREE_YAW, TREE_SCALE, ROCK_ANGLE, ROCK_RADIUS, ROCK_SIZE, ROCK_YAW, SCATTER_X, SCATTER_Z, SCATTER_ACCEPT, SCATTER_SIZE, SCATTER_YAW, GRAIN, MEND, BUSH_SIZE, BUSH_YAW }
 ## Grama e flores: lâmina de 5 pontos (3 triângulos) e quatro diagonais do chão alternadas.
 const BLADE_POINTS: PackedVector3Array = [Vector3(-0.04, 0.0, 0.0), Vector3(0.04, 0.0, 0.0), Vector3(-0.025, 0.18, 0.0), Vector3(0.025, 0.18, 0.0), Vector3(0.0, 0.38, 0.03)]
 const BLADE_INDICES: PackedInt32Array = [0, 1, 3, 0, 3, 2, 2, 3, 4]

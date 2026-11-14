@@ -1,16 +1,19 @@
 class_name PlazaGround
 extends RefCounted
-## O chão da praça e o que cresce ou repousa nele: relevo suave com caminho de terra (altura e peso do caminho, que também apoiam as peças de PlazaStructures), malha do chão facetada, 12 árvores, rochas, e grama e flores por MultiMesh com vento por shader. Tudo procedural e facetado (cor por vértice, sem textura), variação por hash de inteiros (PlazaMeshKit); formas e lugares são [HIP] a calibrar olhando a cena. A altura de cada peça vem de um provedor `Callable(x, z) -> float` em coordenadas LOCAIS da raiz (ART-2a; sem provedor, o relevo da demonstração, `ground_height`), e `add_patch` faz a mancha de terra batida do jogo.
+## O chão da praça e o que cresce ou repousa nele: relevo suave com caminho de terra (altura e peso do caminho, que também apoiam as peças de PlazaStructures), malha do chão facetada, as árvores, rochas e arbustos da variante (a A tem 12 árvores e 8 rochas em anel), e grama e flores por MultiMesh com vento por shader. Tudo procedural e facetado (cor por vértice, sem textura), variação por hash de inteiros (PlazaMeshKit); formas e lugares são [HIP] a calibrar olhando a cena. A altura de cada peça vem de um provedor `Callable(x, z) -> float` em coordenadas LOCAIS da raiz (ART-2a; sem provedor, o relevo da demonstração, `ground_height`), e `add_patch` faz a mancha de terra batida do jogo.
 
 var _root: Node3D
 var _materials: Dictionary[StringName, Material]
 var _height: Callable
+var _variant: PlazaVariants.Spec
 
 
-func _init(root: Node3D, materials: Dictionary[StringName, Material], height_provider: Callable = Callable()) -> void:
+## `variant` (ART-6a) traz a vegetação da praça: a mistura de árvores, rochas, arbustos, grama e flores; sem ficha vale a de hoje (a A).
+func _init(root: Node3D, materials: Dictionary[StringName, Material], height_provider: Callable = Callable(), variant: PlazaVariants.Spec = null) -> void:
 	_root = root
 	_materials = materials
 	_height = height_provider if height_provider.is_valid() else ground_height
+	_variant = variant if variant != null else PlazaVariants.named(PlazaVariants.DEFAULT)
 
 
 ## Altura do relevo em (x, z): ondas suaves que crescem fora da clareira do poço.
@@ -143,35 +146,71 @@ func _patch_lattice(cell_x: int, cell_z: int) -> float:
 	return PlazaMeshKit.unit(cell_x * PlazaData.PATCH_NOISE_STRIDE + cell_z, PlazaData.Channel.PATCH)
 
 
-## As árvores, em anel em volta da praça (as variações de malha se repartem por índice).
+## As árvores da variante, nos lugares da ficha ou, sem lugares, em anel em volta da praça (as formas se repartem por índice).
 func add_trees() -> void:
 	var meshes: Array[ArrayMesh] = []
-	for variant: int in PlazaData.TREE_VARIANTS.size():
-		meshes.append(_tree_mesh(variant))
-	for index: int in PlazaData.TREE_COUNT:
-		var spot: Vector2 = _ring_spot(index, PlazaData.TREE_COUNT, PlazaData.Channel.TREE_ANGLE, PlazaData.TREE_RADII_M, Vector2(0.0, TAU))
+	for kind: int in _variant.tree_forms.size():
+		meshes.append(_tree_mesh(kind))
+	var count: int = _planted_count(_variant.tree_spots, PlazaData.TREE_COUNT)
+	for index: int in count:
+		var spot: Vector2 = _planted_spot(_variant.tree_spots, index, count, PlazaData.Channel.TREE_ANGLE, PlazaData.TREE_RADII_M, Vector2(0.0, TAU))
 		spawn(meshes[index % meshes.size()], "Tree%d" % index, spot, PlazaMeshKit.between(index, PlazaData.Channel.TREE_YAW, 0.0, TAU), PlazaMeshKit.between(index, PlazaData.Channel.TREE_SCALE, 0.85, 1.15))
 
 
-## Árvore de cones empilhados (tronco + copas que estreitam e clareiam para cima).
-func _tree_mesh(variant: int) -> ArrayMesh:
-	var spec: Vector3 = PlazaData.TREE_VARIANTS[variant]
+## A árvore do tipo `kind` da ficha: de cones empilhados ou redonda.
+func _tree_mesh(kind: int) -> ArrayMesh:
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
-	kit.frustum(Vector3(0.0, -0.3, 0.0), 0.3, 0.2, PlazaData.TRUNK_HEIGHT_M + 0.3, 6, PlazaData.TRUNK)
-	for level: int in int(spec.x):
-		var tone: Color = PlazaData.TREE_GREENS[variant].lightened(0.25 * level / spec.x)
-		kit.frustum(Vector3(0.0, PlazaData.TRUNK_HEIGHT_M * 0.6 + level * spec.z * 0.62, 0.0), spec.y * (1.0 - 0.2 * level), 0.0, spec.z, 7, tone, level * 0.5)
+	if _variant.tree_shapes[kind] == PlazaData.TreeShape.ROUND:
+		_round_tree(kit, _variant.tree_forms[kind], _variant.tree_greens[kind], kind)
+	else:
+		_cone_tree(kit, _variant.tree_forms[kind], _variant.tree_greens[kind])
 	return kit.finish(ArrayMesh.new(), _materials[&"solid"])
 
 
-## As rochas, no arco da frente e das laterais.
+## Árvore de cones empilhados (tronco + copas que estreitam e clareiam para cima).
+func _cone_tree(kit: PlazaMeshKit, spec: Vector3, green: Color) -> void:
+	kit.frustum(Vector3(0.0, -0.3, 0.0), 0.3, 0.2, PlazaData.TRUNK_HEIGHT_M + 0.3, 6, PlazaData.TRUNK)
+	for level: int in int(spec.x):
+		var tone: Color = green.lightened(0.25 * level / spec.x)
+		kit.frustum(Vector3(0.0, PlazaData.TRUNK_HEIGHT_M * 0.6 + level * spec.z * 0.62, 0.0), spec.y * (1.0 - 0.2 * level), 0.0, spec.z, 7, tone, level * 0.5)
+
+
+## Árvore redonda: tronco fino e uma copa de esferoide facetado que começa um pouco dentro dele; `spec` = (altura do tronco, raio da copa, meia altura da copa) e `kind` varia a irregularidade.
+func _round_tree(kit: PlazaMeshKit, spec: Vector3, green: Color, kind: int) -> void:
+	kit.frustum(Vector3(0.0, -0.3, 0.0), 0.26, 0.18, spec.x + 0.3, 6, PlazaData.TRUNK)
+	kit.blob(Vector3(0.0, spec.x + spec.z * PlazaData.CANOPY_SINK, 0.0), Vector3(spec.y, spec.z, spec.y), Vector3i(PlazaData.CANOPY_SHAPE.x, PlazaData.CANOPY_SHAPE.y, kind), PlazaData.CANOPY_JITTER, green)
+
+
+## As rochas da variante, nos lugares da ficha ou, sem lugares, no arco da frente e das laterais.
 func add_rocks() -> void:
-	for index: int in PlazaData.ROCK_COUNT:
+	var count: int = _planted_count(_variant.rock_spots, PlazaData.ROCK_COUNT)
+	for index: int in count:
 		var radii: Vector3 = Vector3(PlazaMeshKit.between(index, PlazaData.Channel.ROCK_SIZE, 0.6, 1.1), PlazaMeshKit.between(index, PlazaData.Channel.ROCK_SIZE + 100, 0.4, 0.8), PlazaMeshKit.between(index, PlazaData.Channel.ROCK_SIZE + 200, 0.5, 0.9))
 		var kit: PlazaMeshKit = PlazaMeshKit.new()
-		kit.blob(Vector3(0.0, radii.y * 0.6, 0.0), radii, Vector3i(4, 6, index), 0.3, PlazaData.STONE.darkened(PlazaMeshKit.unit(index, PlazaData.Channel.STONE) * 0.3))
-		var spot: Vector2 = _ring_spot(index, PlazaData.ROCK_COUNT, PlazaData.Channel.ROCK_ANGLE, PlazaData.ROCK_RADII_M, PlazaData.ROCK_ARC)
-		spawn(kit.finish(ArrayMesh.new(), _materials[&"solid"]), "Rock%d" % index, spot, PlazaMeshKit.between(index, PlazaData.Channel.ROCK_YAW, 0.0, TAU))
+		kit.blob(Vector3(0.0, radii.y * 0.6, 0.0), radii, Vector3i(4, 6, index), 0.3, _variant.rock_color.darkened(PlazaMeshKit.unit(index, PlazaData.Channel.STONE) * 0.3))
+		var spot: Vector2 = _planted_spot(_variant.rock_spots, index, count, PlazaData.Channel.ROCK_ANGLE, PlazaData.ROCK_RADII_M, PlazaData.ROCK_ARC)
+		spawn(kit.finish(ArrayMesh.new(), _materials[&"solid"]), "Rock%d" % index, spot, PlazaMeshKit.between(index, PlazaData.Channel.ROCK_YAW, 0.0, TAU), _variant.rock_size)
+
+
+## Os arbustos (ART-6a, só nos lugares da ficha): esferoide baixo e achatado, de baixo custo, no verde de uma das árvores.
+func add_bushes() -> void:
+	for index: int in _variant.bush_spots.size():
+		var radius: float = PlazaMeshKit.between(index, PlazaData.Channel.BUSH_SIZE, PlazaData.BUSH_RADII_M.x, PlazaData.BUSH_RADII_M.y)
+		var radii: Vector3 = Vector3(radius, radius * PlazaData.BUSH_FLATTEN, radius)
+		var green: Color = _variant.tree_greens[index % _variant.tree_greens.size()].lightened(0.15)
+		var kit: PlazaMeshKit = PlazaMeshKit.new()
+		kit.blob(Vector3(0.0, radii.y * 0.6, 0.0), radii, Vector3i(PlazaData.BUSH_SHAPE.x, PlazaData.BUSH_SHAPE.y, index), PlazaData.BUSH_JITTER, green)
+		spawn(kit.finish(ArrayMesh.new(), _materials[&"solid"]), "Bush%d" % index, _variant.bush_spots[index], PlazaMeshKit.between(index, PlazaData.Channel.BUSH_YAW, 0.0, TAU))
+
+
+## Quantos itens a ficha planta: um por lugar dela ou, sem lugares, `ring_count` (o anel de hoje).
+func _planted_count(spots: Array[Vector2], ring_count: int) -> int:
+	return spots.size() if not spots.is_empty() else ring_count
+
+
+## O lugar do item `index`: o da ficha ou, sem lugares, o do anel de hoje.
+func _planted_spot(spots: Array[Vector2], index: int, count: int, channel: int, radii: Vector2, arc: Vector2) -> Vector2:
+	return spots[index] if not spots.is_empty() else _ring_spot(index, count, channel, radii, arc)
 
 
 ## Ponto de um anel: o item `index` de `count` ocupa a sua fatia do arco (rad) com jitter no ângulo (canal) e no raio (canal + 1).
@@ -180,12 +219,12 @@ func _ring_spot(index: int, count: int, channel: int, radii: Vector2, arc: Vecto
 	return Vector2(cos(angle), sin(angle)) * PlazaMeshKit.between(index, channel + 1, radii.x, radii.y)
 
 
-## Grama (um MultiMesh) e as flores (um MultiMesh por cor), sempre depois de tudo o mais, como na montagem original.
+## Grama (um MultiMesh) e as flores (um MultiMesh por cor), sempre depois de tudo o mais, como na montagem original; as quantidades, o tamanho do tufo e as cores vêm da ficha.
 func add_scatter() -> void:
-	_scatter("Grass", _tuft_mesh(), PlazaData.GRASS_COUNT, 0, &"grass", Vector2(0.7, 1.4))
+	_scatter("Grass", _tuft_mesh(), _variant.grass_count, 0, &"grass", _variant.grass_size)
 	var flower: ArrayMesh = _flower_mesh()
-	for index: int in PlazaData.FLOWER_COLORS.size():
-		_scatter("Flowers%d" % index, flower, PlazaData.FLOWERS_PER_COLOR, (index + 1) * PlazaData.SCATTER_KEY_STRIDE, StringName("flower%d" % index), Vector2(0.8, 1.3))
+	for index: int in _variant.flower_colors.size():
+		_scatter("Flowers%d" % index, flower, _variant.flowers_per_color, (index + 1) * PlazaData.SCATTER_KEY_STRIDE, StringName("flower%d" % index), Vector2(0.8, 1.3))
 
 
 ## Espalha `count` instâncias do `mesh` (MultiMesh, sem sombra) pelo chão, longe do caminho de terra, com giro e tamanho por hash.
@@ -212,10 +251,10 @@ func _scatter(node_name: String, mesh: ArrayMesh, count: int, key_offset: int, m
 ## Sorteia (por hash) até PlazaData.SCATTER_ATTEMPTS posições e fica com a primeira aceita; onde há mais terra, menos chance.
 func _scatter_spot(key: int) -> Vector2:
 	var spot: Vector2 = Vector2.ZERO
-	var extent: float = PlazaData.GROUND_HALF_M - 0.5
+	var extent: Vector2 = _variant.scatter_half_m
 	for attempt: int in PlazaData.SCATTER_ATTEMPTS:
 		var candidate: int = key * PlazaData.SCATTER_ATTEMPTS + attempt
-		spot = Vector2(PlazaMeshKit.between(candidate, PlazaData.Channel.SCATTER_X, -extent, extent), PlazaMeshKit.between(candidate, PlazaData.Channel.SCATTER_Z, -extent, extent))
+		spot = Vector2(PlazaMeshKit.between(candidate, PlazaData.Channel.SCATTER_X, -extent.x, extent.x), PlazaMeshKit.between(candidate, PlazaData.Channel.SCATTER_Z, -extent.y, extent.y))
 		if PlazaMeshKit.unit(candidate, PlazaData.Channel.SCATTER_ACCEPT) > path_weight(spot.x, spot.y):
 			return spot
 	return spot
