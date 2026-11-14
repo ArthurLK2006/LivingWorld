@@ -14,7 +14,7 @@ const LUMA: Vector3 = Vector3(0.2126, 0.7152, 0.0722)
 const NEW_COLORS: Array[Color] = [
 	Color("A87A22"), Color("98441E"), Color("3B5870"), Color("2D465C"), Color("9DB6BC"), Color("6E2A2C"), Color("B89678"),
 	Color("3A332E"), Color("8A8173"), Color("D8D0BC"), Color("98532F"), Color("6E3C25"), Color("B88A6A"), Color("C9B68F"), Color("7C2F2D"),
-	Color("9C3524"), Color("2B5F5B"), Color("B08A4E"), Color("496A2B"), Color("80552F"), Color("5E3820"), Color("2C2622"), Color("6E655A"),
+	Color("8E3B27"), Color("2B5F5B"), Color("B08A4E"), Color("496A2B"), Color("80552F"), Color("5E3820"), Color("2C2622"), Color("6E655A"),
 ]
 
 

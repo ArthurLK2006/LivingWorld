@@ -1,17 +1,18 @@
 extends GutTest
 
-## ART-9, protótipo isolado dos habitantes (sem renderizar): ficha e malha determinísticas, variação por ID, o que define cada papel, orçamento de triângulos, UMA malha e UM material, medidas e isolamento (nada de `src/` fora da pasta dos habitantes os cita; a pasta dos habitantes não sorteia nem lê relógio ou sistema).
+## ART-9 e ART-9d, protótipo isolado dos habitantes (sem renderizar): ficha e malha determinísticas nos três níveis, variação por ID (incluindo os campos novos da 9d), o que define cada papel, orçamento de triângulos por nível (varredura de 40 ids por papel), UMA malha e UM material, medidas, isolamento (nada de `src/` fora da pasta dos habitantes os cita; a pasta não sorteia nem lê relógio ou sistema) e arquivos pequenos (AGENTS 5.2).
 const KIT_DIR: String = "res://src/presentation/world_view/inhabitants"
 const SOURCES_DIR: String = "res://src"
 const FORBIDDEN: String = "\\b(randf|randi|randomize|randf_range|randi_range|randfn|rand_from_seed)\\s*\\(|RandomNumberGenerator|\\.(shuffle|pick_random)\\s*\\(|\\bTime\\.|\\bOS\\."
-const CITED: String = "\\b(InhabitantSpec|InhabitantBuilder|InhabitantView)\\b"
-const SAMPLE_IDS: int = 24
+const CITED: String = "\\bInhabitant[A-Za-z]*\\b"
+const SAMPLE_IDS: int = 40
 const VARIATION_IDS: int = 6
 const MIN_VARYING_ASPECTS: int = 4
-const MAX_TRIANGLES_NEAR: int = 700
-const MAX_TRIANGLES_FAR: int = 120
-const HEIGHT_RANGE_M: Vector2 = Vector2(1.3, 2.0)
-const MAX_WIDTH_M: float = 1.05
+## Tetos [HIP] de triângulos por nível (ART-9d: LOD 0 até cerca de 1.800, LOD 1 até 450 e LOD 2 até 120; a ART-9 tinha 700 e 120 em dois níveis).
+const MAX_TRIANGLES: Array[int] = [1800, 450, 120]
+const HEIGHT_RANGE_M: Vector2 = Vector2(1.3, 2.1)
+const MAX_WIDTH_M: float = 1.4
+const MAX_FILE_LINES: int = 330
 const TOLERANCE: float = 0.001
 
 
@@ -20,7 +21,7 @@ func _spec(id: int, role: StringName) -> InhabitantSpec:
 
 
 func _signature(spec: InhabitantSpec) -> Array:
-	return [spec.height_m, spec.width_m, spec.head_scale, spec.skin, spec.hair, spec.top, spec.bottom, spec.trim, spec.boots, spec.cover_color, spec.garment, spec.head_cover, spec.accessories]
+	return [spec.height_m, spec.width_m, spec.head_scale, spec.skin, spec.hair, spec.top, spec.bottom, spec.trim, spec.boots, spec.cover_color, spec.alt, spec.collar, spec.garment, spec.head_cover, spec.accessories, spec.expression, spec.beard, spec.fabric, spec.apron, spec.crest, spec.has_pauldrons, spec.has_shield, spec.belly, spec.droop, spec.lean]
 
 
 func _vertex_hash(mesh: ArrayMesh) -> int:
@@ -40,9 +41,10 @@ func _scripts(directory: String) -> Array[String]:
 func test_same_id_and_role_give_same_spec_and_same_vertices() -> void:
 	for role: StringName in InhabitantSpec.ROLES:
 		assert_eq(_signature(_spec(7, role)), _signature(_spec(7, role)), "mesma ficha de %s" % role)
-		for lod: int in [InhabitantBuilder.LOD_NEAR, InhabitantBuilder.LOD_FAR]:
+		for lod: int in [InhabitantBuilder.LOD_NEAR, InhabitantBuilder.LOD_MID, InhabitantBuilder.LOD_FAR]:
 			assert_eq(_vertex_hash(InhabitantBuilder.build(_spec(7, role), lod)), _vertex_hash(InhabitantBuilder.build(_spec(7, role), lod)), "mesmos vértices de %s no LOD %d" % [role, lod])
 	assert_ne(_signature(_spec(7, InhabitantSpec.VILLAGER)), _signature(_spec(8, InhabitantSpec.VILLAGER)), "ids diferentes, fichas diferentes")
+	assert_ne(_vertex_hash(InhabitantBuilder.build(_spec(7, InhabitantSpec.GUARD), 0)), _vertex_hash(InhabitantBuilder.build(_spec(8, InhabitantSpec.GUARD), 0)), "ids diferentes, malhas diferentes")
 
 
 func test_unknown_role_falls_back_to_villager() -> void:
@@ -78,30 +80,56 @@ func test_each_role_has_what_defines_it() -> void:
 	assert_gt(spears, 0, "há guardas de lança")
 
 
+## Os campos da 9d: o guarda tem ombreiras e escudo só com lança, as expressões e as cristas aparecem, barba só em aldeão, avental longo só no comerciante que o tem.
+func test_new_spec_fields_follow_the_role_and_vary_by_hash() -> void:
+	var moods: Dictionary = {}
+	var crests: Dictionary = {}
+	var beards: int = 0
+	var shields: int = 0
+	for id: int in range(1, SAMPLE_IDS + 1):
+		var guard: InhabitantSpec = _spec(id, InhabitantSpec.GUARD)
+		assert_true(guard.has_pauldrons, "guarda com ombreiras")
+		assert_ne(guard.crest, InhabitantSpec.Crest.NONE, "guarda com crista ou penacho")
+		assert_false(guard.has_shield and not guard.has_accessory(&"spear"), "escudo só com lança")
+		shields += int(guard.has_shield)
+		crests[guard.crest] = true
+		var villager: InhabitantSpec = _spec(id, InhabitantSpec.VILLAGER)
+		moods[villager.expression] = true
+		beards += int(villager.beard != InhabitantSpec.Beard.NONE)
+		var merchant: InhabitantSpec = _spec(id, InhabitantSpec.MERCHANT)
+		assert_eq(merchant.beard, InhabitantSpec.Beard.NONE, "barba só em aldeão")
+		assert_false(merchant.has_pauldrons or villager.has_pauldrons, "ombreira só no guarda")
+		assert_eq(merchant.apron == InhabitantSpec.Apron.LONG, merchant.has_accessory(&"apron"), "avental longo é o do comerciante que o tem")
+	assert_gte(moods.size(), 3, "expressões de aldeão variam")
+	assert_eq(crests.size(), 2, "crista de fio e penacho aparecem")
+	assert_between(beards, 3, SAMPLE_IDS - 3, "barba em alguns aldeões, não em todos")
+	assert_gt(shields, 0, "há guardas com escudo")
+
+
 func test_budget_single_surface_shared_material_and_dimensions() -> void:
 	var material: Material = PlazaMaterials.create()[&"solid"]
-	var worst_near: int = 0
-	var worst_far: int = 0
+	var worst: Array[int] = [0, 0, 0]
+	var totals: Dictionary = {}
 	for role: StringName in InhabitantSpec.ROLES:
 		for id: int in range(1, SAMPLE_IDS + 1):
 			var spec: InhabitantSpec = _spec(id, role)
-			var near: ArrayMesh = InhabitantBuilder.build(spec, InhabitantBuilder.LOD_NEAR, material)
-			var far: ArrayMesh = InhabitantBuilder.build(spec, InhabitantBuilder.LOD_FAR, material)
-			worst_near = maxi(worst_near, int(near.get_faces().size() / 3.0))
-			worst_far = maxi(worst_far, int(far.get_faces().size() / 3.0))
-			assert_eq(near.get_surface_count(), 1, "UMA malha, uma superfície")
-			assert_same(near.surface_get_material(0), material, "UM material compartilhado")
-			var box: AABB = near.get_aabb()
 			assert_between(spec.height_m, HEIGHT_RANGE_M.x, HEIGHT_RANGE_M.y, "altura da ficha")
-			assert_between(box.size.y, HEIGHT_RANGE_M.x, HEIGHT_RANGE_M.y, "altura da malha (%s %d)" % [role, id])
-			assert_lte(box.size.x, MAX_WIDTH_M + TOLERANCE, "largura da malha (%s %d)" % [role, id])
-			assert_almost_eq(box.position.y, 0.0, TOLERANCE, "pés em y = 0")
-	assert_lte(worst_near, MAX_TRIANGLES_NEAR, "triângulos do LOD 0")
-	assert_lte(worst_far, MAX_TRIANGLES_FAR, "triângulos do LOD 1")
-	gut.p("triângulos reais: LOD 0 até %d, LOD 1 até %d" % [worst_near, worst_far])
+			for lod: int in 3:
+				var mesh: ArrayMesh = InhabitantBuilder.build(spec, lod, material)
+				var triangles: int = int(mesh.get_faces().size() / 3.0)
+				worst[lod] = maxi(worst[lod], triangles)
+				totals[[role, lod]] = maxi(int(totals.get([role, lod], 0)), triangles)
+				assert_eq(mesh.get_surface_count(), 1, "UMA malha, uma superfície (%s %d LOD %d)" % [role, id, lod])
+				assert_same(mesh.surface_get_material(0), material, "UM material compartilhado")
+				assert_lte(triangles, MAX_TRIANGLES[lod], "triângulos do LOD %d (%s %d)" % [lod, role, id])
+				assert_almost_eq(mesh.get_aabb().position.y, 0.0, TOLERANCE, "pés em y = 0")
+				if lod == 0:
+					assert_between(mesh.get_aabb().size.y, HEIGHT_RANGE_M.x, HEIGHT_RANGE_M.y, "altura da malha (%s %d)" % [role, id])
+					assert_lte(mesh.get_aabb().size.x, MAX_WIDTH_M + TOLERANCE, "largura da malha (%s %d)" % [role, id])
+	gut.p("triângulos reais (máximo de %d ids por papel): LOD 0 %d, LOD 1 %d, LOD 2 %d; por papel: %s" % [SAMPLE_IDS, worst[0], worst[1], worst[2], str(totals)])
 
 
-func test_sources_are_deterministic_and_isolated() -> void:
+func test_sources_are_deterministic_isolated_and_small() -> void:
 	var forbidden: RegEx = RegEx.create_from_string(FORBIDDEN)
 	var cited: RegEx = RegEx.create_from_string(CITED)
 	var kit_files: int = 0
@@ -110,6 +138,7 @@ func test_sources_are_deterministic_and_isolated() -> void:
 		if path.begins_with(KIT_DIR):
 			kit_files += 1
 			assert_null(forbidden.search(text), "%s não sorteia nem lê relógio ou sistema" % path)
+			assert_lte(text.count("\n"), MAX_FILE_LINES, "%s tem arquivos pequenos (AGENTS 5.2)" % path)
 		else:
 			assert_null(cited.search(text), "%s não cita os habitantes" % path)
-	assert_gt(kit_files, 0, "arquivos do kit verificados")
+	assert_gte(kit_files, 7, "arquivos do kit verificados (ficha, formas, medidas, corpo, cabeça, roupa, cobertura, acessórios e o orquestrador)")
