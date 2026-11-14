@@ -15,12 +15,13 @@
 2. **A verificação cobre a combinação efetiva com o `main` mais recente:** CI verde sobre base antiga não basta quando o `main` mudou em dependências ou arquivos que a tarefa também toca; sem relação, o CI existente vale e não se repete verificação sem ganho (parágrafo "Verificação antes de integrar").
 3. **Validade:** termina quando as tarefas nomeadas forem concluídas, quando Arthur revogar ou quando uma mudança relevante invalidar as premissas; tarefas novas só por novo mandato ou aditivo escrito (parágrafo "Validade").
 
-## Ajustes de redação feitos na revisão independente (14/11/2026), sem mudar a regra aprovada
-- Ajuste 2 mais fiel às palavras de Arthur: "arquivos compartilhados" (os que a tarefa toca e os que usa) e "base que a verificação cobriu".
+## Diferenças em relação ao texto que Arthur aprovou (14/11/2026), todas restritivas ou esclarecedoras, feitas na revisão independente
+- Ajuste 2 nas palavras de Arthur: "arquivos compartilhados" (os que a tarefa toca e os que usa) e "base que a verificação cobriu".
 - Seção 14: "salvo o que a 14.1 libera", para a 14 não travar o mandato (conflito apontado pelo revisor).
 - Validade: voltou "suspender" (e "revogar"); "concluídas" explicado como "aceitas por Arthur"; o arquivo do mandato só vale integrado ao `main`.
 - Literalidade: classes 1 e 2 separadas e "PR" e "CI verde" restaurados nas frases de integração.
 - **Consequência do ajuste 2, destacada para Arthur:** atualizar a base exige `merge` do `main` no ramo da tarefa (o 10.6 proíbe `rebase`); ele entrou na lista de Git da 14.1, só para isso. Se ele discordar, é um PR de classe 4 que o retira.
+- Outras adições, todas restritivas: o mandato fica registrado em `docs/operacao/MANDATO_<n>.md` **e integrado ao `main`** (o arquivo só vale integrado); aditivo escrito também integrado ao `main`; "concluídas" significa "aceitas por Arthur"; "o Maestro para e avisa" quando uma mudança relevante invalida as premissas.
 - MANDATO_1.md: tirada a frase sobre a 107f (a aprovação diz "107b a 107g", lista fechada) e o resumo que podia divergir da 14.1.
 
 ## Limites e reversão
