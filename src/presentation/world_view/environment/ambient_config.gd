@@ -2,7 +2,7 @@ class_name AmbientConfig
 extends Resource
 ## Configuração visual do ambiente, em UM recurso editável (LW-041, decisão E5 de Arthur; AGENTS 4.4): sol, sombras,
 ## céu, luz ambiente e névoa do DIA, mais as cores da NOITE e os números da curva do dia (LW-042; DEC-059 é PROPOSTA).
-## ART-4: o dia, a HORA DOURADA e o CREPÚSCULO são as predefinições aprovadas da cena demonstrativa (tools/visual/renderer_test), com o bloom.
+## ART-4: o dia, a HORA DOURADA e o CREPÚSCULO são as predefinições aprovadas da cena demonstrativa (tools/visual/renderer_test), com o bloom; ART-4b: e com o tonemap e o ajuste de cor.
 ## TODOS os valores são [HIP]: Arthur ajusta olhando a tela.
 ## Instância editável: assets/environment/ambient_default.tres. Quem aplica: AmbientRig. Contrato: docs/modules/presentation.md.
 
@@ -41,6 +41,20 @@ const RANGES: Dictionary[String, Vector2] = {
 	"dusk_glow_intensity": Vector2(0.0, 8.0),
 	"dusk_glow_hdr_threshold": Vector2(0.0, 8.0),
 	"dusk_glow_bloom": Vector2(0.0, 1.0),
+	# Tonemap e ajuste de cor (ART-4b): as faixas do Inspector da Godot 4.7.2 (confirmadas por experimento), com o contraste alargado de 0,75 a 1,25 para 0,5 a 2 (a calibração pode precisar de folga).
+	"tonemap_white": Vector2(1.0, 16.0),
+	"exposure": Vector2(0.0, 4.0),
+	"brightness": Vector2(0.0, 2.0),
+	"contrast": Vector2(0.5, 2.0),
+	"saturation": Vector2(0.0, 2.0),
+	"golden_exposure": Vector2(0.0, 4.0),
+	"golden_brightness": Vector2(0.0, 2.0),
+	"golden_contrast": Vector2(0.5, 2.0),
+	"golden_saturation": Vector2(0.0, 2.0),
+	"dusk_exposure": Vector2(0.0, 4.0),
+	"dusk_brightness": Vector2(0.0, 2.0),
+	"dusk_contrast": Vector2(0.5, 2.0),
+	"dusk_saturation": Vector2(0.0, 2.0),
 }
 
 @export_group("Sol")
@@ -80,6 +94,18 @@ const RANGES: Dictionary[String, Vector2] = {
 ## Brilho (HDR) a partir do qual um pixel entra no bloom: baixo = mais coisas brilham.
 @export var glow_hdr_threshold: float = 1.1
 @export var glow_bloom: float = 0.03
+@export_group("Tonemap e cor")
+## UM modo de tonemap para o ciclo inteiro, FILMIC: o tonemap comprime os realces (sem ele o dia estoura e fica pastel) e o modo é uma escolha discreta, que não se mistura entre paletas (trocá-lo no meio do dia faria a imagem saltar).
+## FILMIC é o modo do dia e do crepúsculo da cena demonstrativa e o mais suave; a hora dourada usa ACES lá, mas aqui ela fica com o mesmo modo e só o contraste e a saturação dela.
+@export var tonemap_mode: Environment.ToneMapper = Environment.TONE_MAPPER_FILMIC
+## Branco de referência do tonemap: a cena usa 6,0 nas três predefinições, então vale para o ciclo inteiro.
+@export var tonemap_white: float = 6.0
+## Exposição, brilho, contraste e saturação do DIA; a hora dourada e o crepúsculo têm os seus nos grupos deles e a noite herda os do crepúsculo. O padrão é o NEUTRO (1): um recurso novo não muda a imagem;
+## os valores da cena demonstrativa (dia 1,0 / 1,0 / 1,05 / 1,15) estão no .tres e são [HIP] a calibrar olhando o jogo real. Brilho, contraste e saturação todos neutros desligam o ajuste de cor no Environment.
+@export var exposure: float = 1.0
+@export var brightness: float = 1.0
+@export var contrast: float = 1.0
+@export var saturation: float = 1.0
 @export_group("Noite")
 ## Azul-escura e legível, NÃO preta: o ambiente mínimo da noite é a cor e a energia daqui.
 @export var night_sky_top_color: Color = Color(0.02, 0.03, 0.10)
@@ -104,6 +130,11 @@ const RANGES: Dictionary[String, Vector2] = {
 @export var golden_glow_intensity: float = 0.8
 @export var golden_glow_hdr_threshold: float = 0.8
 @export var golden_glow_bloom: float = 0.12
+## Exposição, brilho, contraste e saturação da hora dourada (padrão neutro; os da cena estão no .tres). O modo de tonemap é o do ciclo (`tonemap_mode`).
+@export var golden_exposure: float = 1.0
+@export var golden_brightness: float = 1.0
+@export var golden_contrast: float = 1.0
+@export var golden_saturation: float = 1.0
 @export_group("Crepúsculo")
 ## Predefinição "dusk" da cena demonstrativa; vale exatamente com o sol a `daylight_to_degrees`. À noite o sol (cor, giro) e o bloom herdam esta (a energia do sol é 0).
 @export var dusk_sun_color: Color = Color8(112, 128, 208)
@@ -119,6 +150,11 @@ const RANGES: Dictionary[String, Vector2] = {
 @export var dusk_glow_intensity: float = 1.0
 @export var dusk_glow_hdr_threshold: float = 0.7
 @export var dusk_glow_bloom: float = 0.2
+## Exposição, brilho, contraste e saturação do crepúsculo (padrão neutro; os da cena estão no .tres); a noite herda estes, como o bloom.
+@export var dusk_exposure: float = 1.0
+@export var dusk_brightness: float = 1.0
+@export var dusk_contrast: float = 1.0
+@export var dusk_saturation: float = 1.0
 @export_group("Curva do dia")
 ## Elevação do sol ao meio-dia (12:00); 06:00 e 18:00 ficam no horizonte e 00:00 em menos este valor.
 @export var sun_max_elevation_degrees: float = 60.0
@@ -140,6 +176,8 @@ func validate() -> Array[String]:
 		var limits: Vector2 = RANGES[property_name]
 		if is_nan(value) or value < limits.x or value > limits.y:
 			problems.append("%s = %s fora da faixa %s a %s" % [property_name, str(value), str(limits.x), str(limits.y)])
+	if tonemap_mode < Environment.TONE_MAPPER_LINEAR or tonemap_mode > Environment.TONE_MAPPER_AGX:
+		problems.append("tonemap_mode = %d não é um tonemapper da Godot (%d a %d)" % [tonemap_mode, Environment.TONE_MAPPER_LINEAR, Environment.TONE_MAPPER_AGX])
 	if daylight_from_degrees >= daylight_to_degrees:
 		problems.append("daylight_from_degrees (%s) deve ser menor que daylight_to_degrees (%s)" % [str(daylight_from_degrees), str(daylight_to_degrees)])
 	if daylight_to_degrees >= golden_hour_degrees or golden_hour_degrees >= full_day_degrees:

@@ -1,6 +1,7 @@
 extends GutTest
 ## ART-4: a atmosfera aprovada da cena demonstrativa (RendererPresets.PRESETS: dia, hora dourada e crepúsculo) no ciclo de dia e noite do jogo. A cena é a fonte da verdade: o estado do jogo é comparado
 ## com as predefinições dela, dentro de PRESET_TOLERANCE; a noite, com os números ESCRITOS À MÃO da LW-042. Sem janela.
+## ART-4b (tonemap e ajuste de cor por paleta): os esperados vêm do recurso ou de números de PROVA distintos em cada paleta, nunca da cena, para a calibração dos valores do .tres (olhando o jogo real) não quebrar estes testes.
 const DEFAULT_CONFIG_PATH: String = "res://assets/environment/ambient_default.tres"
 const DAY: int = 0
 const GOLDEN: int = 1
@@ -23,6 +24,24 @@ const MAX_MINUTE_STEP_FOG: float = 0.0001
 const MAX_MINUTE_STEP_GLOW: float = 0.02
 const GAP_HOURS: Array[float] = [6.2, 6.7]
 const CHANGED_BLOOM: float = 2.0
+const GRADE_FIELDS: Array[String] = ["exposure", "brightness", "contrast", "saturation"]
+## Prefixo dos campos de cada paleta no AmbientConfig, na ordem de DAY, GOLDEN e DUSK.
+const PALETTE_PREFIXES: Array[String] = ["", "golden_", "dusk_"]
+## Números de prova, todos distintos (cada campo muda de uma paleta para outra e nenhum se repete): ler o campo ou a paleta errados é pego. Estão nas faixas do recurso.
+const PROBE_GRADES: Dictionary[String, float] = {
+	"exposure": 0.8, "brightness": 0.9, "contrast": 1.3, "saturation": 0.7,
+	"golden_exposure": 1.2, "golden_brightness": 1.4, "golden_contrast": 0.6, "golden_saturation": 1.5,
+	"dusk_exposure": 1.6, "dusk_brightness": 0.5, "dusk_contrast": 1.7, "dusk_saturation": 1.1,
+}
+## Maior mudança aceita entre dois minutos vizinhos em cada número. Pior caso medido nas curvas de prova: exposição 0,026; brilho 0,058; contraste 0,071; saturação 0,026 (no recurso do jogo, no máximo 0,0065).
+## Um degrau entre paletas é bem maior: em meia hora (GAP_HOURS) a prova muda de 0,39 a 1,09.
+const MAX_MINUTE_STEP_GRADE: Dictionary[String, float] = {"exposure": 0.04, "brightness": 0.08, "contrast": 0.1, "saturation": 0.04}
+const PROBE_TONEMAP_WHITE: float = 9.5
+const NEUTRAL: float = 1.0
+const CHANGED_ADJUSTMENT: float = 1.2
+const TOO_HIGH: float = 9.0
+const TOO_LOW: float = -1.0
+const INVALID_TONEMAP_MODE: int = 9
 
 
 func _config() -> AmbientConfig:
@@ -217,3 +236,141 @@ func test_the_resource_loads_validates_and_flags_bad_atmosphere_fields() -> void
 	assert_string_contains(problems, "golden_glow_bloom")
 	assert_string_contains(problems, "dusk_fog_density")
 	assert_string_contains(problems, "golden_hour_degrees")
+
+
+## O recurso do jogo com os 12 números de PROVA no lugar dos dele.
+func _probe_config() -> AmbientConfig:
+	var config: AmbientConfig = _config().duplicate() as AmbientConfig
+	for field: String in PROBE_GRADES:
+		config.set(field, PROBE_GRADES[field])
+	return config
+
+
+func _grade_of(state: DayNightCycle.LightState) -> Array[float]:
+	var grade: Array[float] = [state.exposure, state.brightness, state.contrast, state.saturation]
+	return grade
+
+
+## Os números de prova de uma paleta (DAY, GOLDEN ou DUSK), na ordem de GRADE_FIELDS.
+func _probe_grade(palette: int) -> Array[float]:
+	var grade: Array[float] = []
+	for field: String in GRADE_FIELDS:
+		grade.append(PROBE_GRADES[PALETTE_PREFIXES[palette] + field])
+	return grade
+
+
+func _assert_probe_grade(state: DayNightCycle.LightState, palette: int, label: String) -> void:
+	var actual: Array[float] = _grade_of(state)
+	var expected: Array[float] = _probe_grade(palette)
+	for field: int in range(GRADE_FIELDS.size()):
+		assert_almost_eq(actual[field], expected[field], PRESET_TOLERANCE, "%s: %s" % [label, GRADE_FIELDS[field]])
+
+
+## Maior mudança de cada número entre dois minutos vizinhos ao longo de 24 horas.
+func _worst_grade_steps(config: AmbientConfig) -> Array[float]:
+	var worst: Array[float] = [0.0, 0.0, 0.0, 0.0]
+	var previous: Array[float] = _grade_of(DayNightCycle.state_at(config, 0.0))
+	for minute: int in range(1, MINUTES_PER_DAY + 1):
+		var current: Array[float] = _grade_of(DayNightCycle.state_at(config, float(minute) / DayNightCycle.MINUTES_PER_HOUR))
+		for field: int in range(GRADE_FIELDS.size()):
+			worst[field] = maxf(worst[field], absf(current[field] - previous[field]))
+		previous = current
+	return worst
+
+
+## Aplica a luz de `hour` com `config` a um Environment que já tinha o ajuste de cor `adjustment_before` (ligado ou não); o rig e os nós são liberados no fim do teste.
+func _environment_at(config: AmbientConfig, hour: float, adjustment_before: bool = false) -> Environment:
+	var rig: AmbientRig = AmbientRig.new()
+	rig.config = config
+	var world_environment: WorldEnvironment = WorldEnvironment.new()
+	world_environment.environment = Environment.new()
+	world_environment.environment.adjustment_enabled = adjustment_before
+	var sun: DirectionalLight3D = DirectionalLight3D.new()
+	for node: Node in [rig, world_environment, sun]:
+		autofree(node)
+	assert_true(rig.apply_state_to(world_environment, sun, DayNightCycle.state_at(config, hour)))
+	return world_environment.environment
+
+
+func test_each_anchor_has_the_exposure_and_color_adjustment_of_its_own_palette_and_the_night_the_dusk_ones() -> void:
+	var config: AmbientConfig = _probe_config()
+	_assert_probe_grade(DayNightCycle.state_at(config, NOON), DAY, "meio-dia")
+	for hour: float in GOLDEN_HOURS:
+		_assert_probe_grade(DayNightCycle.state_at(config, hour), GOLDEN, "hora dourada às %s h" % str(hour))
+	for hour: float in DUSK_HOURS:
+		_assert_probe_grade(DayNightCycle.state_at(config, hour), DUSK, "crepúsculo às %s h" % str(hour))
+	for hour: float in NIGHT_HOURS:
+		_assert_probe_grade(DayNightCycle.state_at(config, hour), DUSK, "noite (herda o crepúsculo) às %s h" % str(hour))
+
+
+func test_the_exposure_and_color_adjustments_have_no_jump_between_neighbouring_minutes_over_24_hours() -> void:
+	var probe: AmbientConfig = _probe_config()
+	var game_worst: Array[float] = _worst_grade_steps(_config())
+	var probe_worst: Array[float] = _worst_grade_steps(probe)
+	var gap_start: Array[float] = _grade_of(DayNightCycle.state_at(probe, GAP_HOURS[0]))
+	var gap_end: Array[float] = _grade_of(DayNightCycle.state_at(probe, GAP_HOURS[1]))
+	for field: int in range(GRADE_FIELDS.size()):
+		var limit: float = MAX_MINUTE_STEP_GRADE[GRADE_FIELDS[field]]
+		assert_lt(game_worst[field], limit, "%s do recurso do jogo." % GRADE_FIELDS[field])
+		assert_lt(probe_worst[field], limit, "%s da prova." % GRADE_FIELDS[field])
+		assert_gt(absf(gap_start[field] - gap_end[field]), limit, "Sensibilidade: meia hora de luz muda %s bem mais que um minuto, então a medida enxerga um degrau." % GRADE_FIELDS[field])
+
+
+func test_the_rig_applies_the_tonemap_of_the_resource_and_the_exposure_and_adjustments_of_the_state() -> void:
+	var config: AmbientConfig = _probe_config()
+	config.tonemap_mode = Environment.TONE_MAPPER_ACES
+	config.tonemap_white = PROBE_TONEMAP_WHITE
+	var golden: Environment = _environment_at(config, GOLDEN_HOURS[0])
+	assert_eq(golden.tonemap_mode, Environment.TONE_MAPPER_ACES, "O modo vem do recurso, não de uma paleta.")
+	assert_almost_eq(golden.tonemap_white, PROBE_TONEMAP_WHITE, EXACT_TOLERANCE)
+	var expected: Array[float] = _probe_grade(GOLDEN)
+	assert_almost_eq(golden.tonemap_exposure, expected[0], PRESET_TOLERANCE, "Exposição da hora dourada.")
+	assert_almost_eq(golden.adjustment_brightness, expected[1], PRESET_TOLERANCE, "Brilho da hora dourada.")
+	assert_almost_eq(golden.adjustment_contrast, expected[2], PRESET_TOLERANCE, "Contraste da hora dourada.")
+	assert_almost_eq(golden.adjustment_saturation, expected[3], PRESET_TOLERANCE, "Saturação da hora dourada.")
+	assert_true(golden.adjustment_enabled, "Números fora do neutro ligam o ajuste de cor.")
+
+
+func test_the_game_resource_has_one_filmic_tonemap_for_the_whole_cycle_and_the_color_adjustment_on() -> void:
+	var config: AmbientConfig = _config()
+	for hour: float in [NOON, GOLDEN_HOURS[0], DUSK_HOURS[1], NIGHT_HOURS[0]]:
+		var environment: Environment = _environment_at(config, hour)
+		assert_eq(environment.tonemap_mode, Environment.TONE_MAPPER_FILMIC, "Um só modo (a hora dourada da cena usa ACES), FILMIC, às %s h." % str(hour))
+		assert_almost_eq(environment.tonemap_white, config.tonemap_white, EXACT_TOLERANCE, "Branco do tonemap às %s h." % str(hour))
+		assert_true(environment.adjustment_enabled, "O recurso do jogo traz o ajuste de cor da cena, às %s h." % str(hour))
+
+
+func test_the_color_adjustment_is_enabled_only_when_brightness_contrast_or_saturation_leave_the_neutral() -> void:
+	var config: AmbientConfig = _probe_config()
+	assert_true(_environment_at(config, NOON).adjustment_enabled, "Números fora do neutro ligam o ajuste.")
+	for field: String in PROBE_GRADES:
+		config.set(field, NEUTRAL)
+	var neutral: Environment = _environment_at(config, NOON, true)
+	assert_false(neutral.adjustment_enabled, "Os três neutros desligam o ajuste, mesmo ligado antes.")
+	assert_almost_eq(neutral.tonemap_exposure, NEUTRAL, EXACT_TOLERANCE)
+	for field: String in ["brightness", "contrast", "saturation"]:
+		config.set(field, CHANGED_ADJUSTMENT)
+		assert_true(_environment_at(config, NOON).adjustment_enabled, "Só %s fora do neutro já liga o ajuste." % field)
+		config.set(field, NEUTRAL)
+	config.exposure = CHANGED_ADJUSTMENT
+	var exposed: Environment = _environment_at(config, NOON)
+	assert_almost_eq(exposed.tonemap_exposure, CHANGED_ADJUSTMENT, EXACT_TOLERANCE)
+	assert_false(exposed.adjustment_enabled, "A exposição é do tonemap, não do ajuste: sozinha, não liga o ajuste.")
+
+
+func test_a_new_resource_is_neutral_in_the_color_adjustments_and_the_out_of_range_fields_are_flagged() -> void:
+	var fresh: AmbientConfig = AmbientConfig.new()
+	assert_eq(fresh.validate(), [] as Array[String], "Um recurso novo é válido.")
+	for prefix: String in PALETTE_PREFIXES:
+		for field: String in GRADE_FIELDS:
+			assert_eq(fresh.get(prefix + field), NEUTRAL, "Padrão neutro de %s%s." % [prefix, field])
+	var bad: AmbientConfig = _config().duplicate() as AmbientConfig
+	bad.tonemap_white = TOO_LOW
+	bad.exposure = TOO_HIGH
+	bad.golden_contrast = NAN
+	bad.dusk_saturation = TOO_LOW
+	bad.set("tonemap_mode", INVALID_TONEMAP_MODE)
+	var problems: Array[String] = bad.validate()
+	assert_eq(problems.size(), 5, "Só os cinco campos errados são apontados.")
+	for field: String in ["tonemap_white", "exposure", "golden_contrast", "dusk_saturation", "tonemap_mode"]:
+		assert_string_contains("\n".join(problems), field)

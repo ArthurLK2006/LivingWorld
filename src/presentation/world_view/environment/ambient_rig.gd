@@ -11,6 +11,8 @@ extends Node
 ## [HIP] Segundos reais de um minuto simulado a 1x: o ritmo do relógio (SimClock.DEFAULT_REAL_MS_PER_MINUTE = 1250 ms), copiado
 ## aqui só para a fração do minuto andar na mesma velocidade; a hora oficial continua vindo da ponte.
 const REAL_SECONDS_PER_MINUTE_AT_1X: float = 1.25
+## Brilho, contraste e saturação em 1 não mudam a imagem: com os três assim o ajuste de cor fica desligado no Environment.
+const NEUTRAL_ADJUSTMENT: float = 1.0
 
 var _bridge: SimBridge
 ## Minuto simulado da última luz aplicada.
@@ -84,7 +86,7 @@ func apply_to(world_environment: WorldEnvironment, sun: DirectionalLight3D) -> b
 	return apply_state_to(world_environment, sun, DayNightCycle.day_state(config) if config != null else null)
 
 
-## Aplica um estado de luz da curva (sol, céu, ambiente, névoa e bloom) pelos caminhos da cena.
+## Aplica um estado de luz da curva (sol, céu, ambiente, névoa, bloom, tonemap e ajuste de cor) pelos caminhos da cena.
 func apply_state(state: DayNightCycle.LightState) -> bool:
 	var world_environment: WorldEnvironment = get_node_or_null(environment_path) as WorldEnvironment
 	var sun: DirectionalLight3D = get_node_or_null(sun_path) as DirectionalLight3D
@@ -147,3 +149,16 @@ func _apply_environment(world_environment: WorldEnvironment, state: DayNightCycl
 	environment.glow_intensity = state.glow_intensity
 	environment.glow_hdr_threshold = state.glow_hdr_threshold
 	environment.glow_bloom = state.glow_bloom
+	_apply_color_grade(environment, state)
+
+
+## Tonemap (modo e branco são do recurso, um só para o ciclo) e, da hora, a exposição e o ajuste de cor. O ajuste só liga se brilho, contraste ou saturação saem do neutro.
+func _apply_color_grade(environment: Environment, state: DayNightCycle.LightState) -> void:
+	environment.tonemap_mode = config.tonemap_mode
+	environment.tonemap_white = config.tonemap_white
+	environment.tonemap_exposure = state.exposure
+	var is_neutral: bool = is_equal_approx(state.brightness, NEUTRAL_ADJUSTMENT) and is_equal_approx(state.contrast, NEUTRAL_ADJUSTMENT) and is_equal_approx(state.saturation, NEUTRAL_ADJUSTMENT)
+	environment.adjustment_enabled = not is_neutral
+	environment.adjustment_brightness = state.brightness
+	environment.adjustment_contrast = state.contrast
+	environment.adjustment_saturation = state.saturation

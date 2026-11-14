@@ -55,7 +55,8 @@ static func day_state(config: AmbientConfig) -> LightState:
 
 
 ## Cada campo soma as quatro paletas pelos pesos, na ordem noite, crepúsculo, hora dourada, dia. A noite só tem céu, ambiente e névoa próprios (`night_*`); como o sol dela está apagado (energia 0),
-## ela herda do crepúsculo a cor e o giro do sol e o bloom (nada gira nem muda de cor enquanto a luz some) e do dia a densidade da névoa (a noite de antes). O chão do horizonte do crepúsculo e da hora dourada é o horizonte.
+## ela herda do crepúsculo a cor e o giro do sol, o bloom e o ajuste de cor (exposição, brilho, contraste, saturação; nada gira nem muda de cor enquanto a luz some) e do dia a densidade da névoa (a noite de antes). O chão do horizonte do crepúsculo e da hora dourada é o horizonte.
+## O modo e o branco do tonemap não entram: são um só para o ciclo inteiro e o AmbientRig os lê do recurso.
 static func _blend(config: AmbientConfig, elevation: float, weights: PaletteWeights) -> LightState:
 	var state: LightState = LightState.new()
 	state.elevation_degrees = elevation
@@ -74,6 +75,10 @@ static func _blend(config: AmbientConfig, elevation: float, weights: PaletteWeig
 	state.glow_intensity = _mix(weights, config.dusk_glow_intensity, config.dusk_glow_intensity, config.golden_glow_intensity, config.glow_intensity)
 	state.glow_hdr_threshold = _mix(weights, config.dusk_glow_hdr_threshold, config.dusk_glow_hdr_threshold, config.golden_glow_hdr_threshold, config.glow_hdr_threshold)
 	state.glow_bloom = _mix(weights, config.dusk_glow_bloom, config.dusk_glow_bloom, config.golden_glow_bloom, config.glow_bloom)
+	state.exposure = _mix(weights, config.dusk_exposure, config.dusk_exposure, config.golden_exposure, config.exposure)
+	state.brightness = _mix(weights, config.dusk_brightness, config.dusk_brightness, config.golden_brightness, config.brightness)
+	state.contrast = _mix(weights, config.dusk_contrast, config.dusk_contrast, config.golden_contrast, config.contrast)
+	state.saturation = _mix(weights, config.dusk_saturation, config.dusk_saturation, config.golden_saturation, config.saturation)
 	return state
 
 
@@ -86,7 +91,7 @@ static func _mix_color(weights: PaletteWeights, night: Color, dusk: Color, golde
 	return night * weights.night + dusk * weights.dusk + golden * weights.golden + day * weights.day
 
 
-## Os valores de luz que dependem da hora (sol, céu, ambiente, névoa e bloom). O resto (sombras, névoa e bloom ligados) vem do recurso.
+## Os valores de luz que dependem da hora (sol, céu, ambiente, névoa, bloom, exposição e ajuste de cor). O resto (sombras, névoa e bloom ligados, modo e branco do tonemap) vem do recurso.
 class LightState:
 	extends RefCounted
 
@@ -106,6 +111,11 @@ class LightState:
 	var glow_intensity: float = 0.0
 	var glow_hdr_threshold: float = 0.0
 	var glow_bloom: float = 0.0
+	## Neutros (1) por padrão: um estado montado à mão não escurece nem muda a cor da imagem.
+	var exposure: float = 1.0
+	var brightness: float = 1.0
+	var contrast: float = 1.0
+	var saturation: float = 1.0
 
 
 ## Quanto vale cada uma das quatro paletas numa elevação do sol (a soma é 1).
