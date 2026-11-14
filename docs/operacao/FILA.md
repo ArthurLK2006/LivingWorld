@@ -2,7 +2,8 @@
 
 Reflete o roadmap oficial ([DEVELOPMENT_ROADMAP.md](../DEVELOPMENT_ROADMAP.md)) e o [ROADMAP_STATUS.md](../ROADMAP_STATUS.md); **não os substitui** (em conflito, valem eles). O Maestro a atualiza a cada PR. Método aprovado por Arthur em 14/11/2026 (Opção A: roadmap integral, sem corte nem antecipação de fase).
 
-**Atualizada em 14/11/2026 (tarde) · `main` 4cca312 · proteção do `main` ativa (PR e `check_all` obrigatórios, sem force-push nem exclusão, inclui administradores) · cota semanal em 88%, teto de 2 agentes · Mandato 1 em vigor (seção 14.1 do AGENTS.md integrada em 8af0837): [MANDATO_1.md](MANDATO_1.md).**
+**Atualizada em 14/11/2026 (tarde) · `main` 67e1f4a, CI verde · proteção do `main` ativa (PR e `check_all` obrigatórios, sem force-push nem exclusão, inclui administradores) · cota semanal em 89% (reseta à meia-noite de 15/11), teto de 2 agentes · Mandato 1 em vigor ([MANDATO_1.md](MANDATO_1.md)) · regra 10.11 do AGENTS.md em vigor (verificar o ramo combinado com o `main` mais recente; atualizar por `merge`, nunca `rebase`).**
+
 
 ## Regras da fila
 - **Frentes são papéis por tarefa, não sessões:** A caminho crítico · B independentes liberadas · C arte, qualidade e suporte já autorizados. Teto de agentes ativos pela cota: 3 abaixo de 60%, 2 de 60 a 85%, 1 acima de 85%. Não se ocupa frente à toa.
@@ -13,33 +14,35 @@ Reflete o roadmap oficial ([DEVELOPMENT_ROADMAP.md](../DEVELOPMENT_ROADMAP.md)) 
 ## Em andamento
 | Tarefa | Frente | Classe | Estado | Ramo ou PR | Próximo passo |
 |---|---|---|---|---|---|
-| LW-098a contrato do comerciante e da `Caravan` | A | 3 | aprovado por Arthur; duas revisões independentes feitas; CI rodando | PR #35 | integrar; liberar a 098b |
-| ART-6a vegetação por variante (B e C) | C, Mandato 1 | 2 | revisão estreita e CI rodando | PR #39 | integrar |
-| Pesquisa de leitura na web de kits CC0 de personagens e criaturas | C (DEC-021) | 1 | agente de leitura, sem baixar nada | — | amostras (Kenney Fantasy Town e até 2 de personagem) só com licença e fonte verificadas |
-| Registro dos aceites de LW-093, LW-096, LW-097 e LW-105 | — | 1 | PR de documentos | este PR | integrar |
-| DEC-021 aprovada e nota da DEC-020 | — | 4 | aprovada por Arthur; a preparar | a abrir | revisão independente, CI, integrar |
-| LW-096: aceite com prazo (`ContractBook.accept(..., now)`) | B | 3 | aprovada por Arthur; a implementar | a abrir | PR isolado, revisão, CI, regressão de hashes (PARA se um mudar, DEC-175) |
-| AGENTS.md 10.11 (opção B) | — | 4 | aprovada por Arthur; a preparar | a abrir | revisão independente, CI, integrar |
+| LW-098b2 planejador de lucro (2ª metade da 098b) | A | 2 | duas revisões independentes (achados corrigidos: saída antecipada e folga da tarifa), 403 linhas de código e teste, CI rodando | PR #45 | integrar |
+| LW-107b1 consulta do quadro de contratos (1ª metade da 107b) | B | 2 | **Arthur escolheu dividir a 107b** (sem exceção ao teto do AGENTS 5.2); código e testes já revisados, recortados na fronteira consulta/comandos; cerca de 275 linhas; CI rodando | PR #47 | integrar; libera a 107b2 e a 107d |
+| LW-107b2 aceitar e entregar (2ª metade da 107b) | B | 2 | revisada por inteiro (sem defeito de código); o PR #44 vira só esta parte depois do #47, com o `main` mesclado | PR #44 | atualizar com o `main`, CI, integrar; conferir que o resultado final é o revisado |
+| LW-098c `Caravan`, `CaravanBook`, tipo de dono `merchant` e a chave `caravans` do save | A | **3** (save) | agente implementando; livro nasce vazio, hashes não mudam | ramo `lw-098c-caravan-e-livro` | revisão e CI; **só integra com o "APROVADO" de Arthur**; PARA se um hash mudar; se passar de 450 linhas, divide |
+| ART-9 e ART-9b habitantes e vila de teste com a Kenney (protótipo isolado, procedural) | C | — | duas rodadas de capturas entregues a Arthur (corpo em sino, capuz grosso, bochechas, botas redondas); **ele gostou da direção e ainda não aprovou a aparência** | ramo `art-9-habitantes-prototipo` (sem PR; a dividir quando virar PR) | recolorir a paleta da Kenney, refinar o capelo e a largura; novas capturas para o aceite visual antes de qualquer adoção |
 
 ## Aceites
-LW-093, LW-096, LW-097 (**com a ressalva do estoque provisório de 6.000 de comida do povoado C**) e LW-105 **aceitas por Arthur em 14/11/2026** (Fase 3: 11 de 30, 36,7%; projeto: 98 de 192, 51,0%); registro no ROADMAP_STATUS em PR. **LW-095 pendente** (`IncomeStub` presente; falta `service_posts.json`); **LW-108 aguarda a validação manual dele na janela**. Evidências e hashes: [PACOTE_ACEITE_1.md](PACOTE_ACEITE_1.md).
+LW-093, LW-096, LW-097 (**com a ressalva do estoque provisório de 6.000 de comida do povoado C**) e LW-105 **aceitas por Arthur em 14/11/2026** (Fase 3: 11 de 30, 36,7%; projeto: 98 de 192, 51,0%), registradas no ROADMAP_STATUS (PR #40). **LW-095 pendente** (`IncomeStub` presente; falta `service_posts.json`); **LW-108 aguarda a validação manual dele na janela**. Evidências e hashes: [PACOTE_ACEITE_1.md](PACOTE_ACEITE_1.md).
+
+## Integradas no `main` em 14/11/2026 (pelo Maestro, com o Mandato 1)
+Contratos 107a (#33) e 098a (#35); emenda do AGENTS 14.1 (#34) e regra 10.11 (#41); DEC-021 aprovada (#42); ART-3, ART-5a, ART-5b1 e ART-6a (praças com identidade e vegetação por variante: #29 a #32, #38, #39); correção do prazo do aceite da LW-096 (#43; hashes idênticos, soak `2b0f8a2917c1`); aceites (#40); LW-098b1, parâmetros da caravana e custo de rota (#46).
 
 ## Liberadas pelo Mandato 1 (entram quando houver vaga de agente e sem conflito de faixa)
 | Tarefa | Frente | Observação |
 |---|---|---|
-| **098b** planejador de lucro (arquivos novos, sem estado nem hash) | A | depois do #35; economia (arquivos novos) |
-| **107b** ponte; **107c1** dados do postador; depois 107d, 107e1, 107e2, 107g; **107c2** por último | B | contrato 107a integrado; 107c1 mexe em `EconomyDefinitions` (sequenciar com 098c e 098d1); 107c2 PARA se um hash mudar |
-| 098c a 098g (em sequência, 098d dividida em 098d1, 098d2 e 098d3; 098f em 098f1 e 098f2) | A | **098h fora do mandato**; PARA se um valor aprovado mudar |
-| **LW-107f** trabalho do jogador | B | **obrigatória**, sem contrato, depende de regra de trabalho no `world`; não dada por concluída por antecipação |
+| **107d** `ContractsViewModel`, depois **107e1** (aba de leitura) | B | liberadas quando a 107b1 (#47) entrar; só precisam da consulta |
+| **107e2** (aceitar e entregar na tela) e **107g** (teste do ciclo) | B | depois da 107b2 e da 107e1 |
+| 098d1, 098d2, 098d3, 098e, 098f1, 098f2, 098g (em sequência) | A | depois da 098c (classe 3); **098h fora do mandato**; PARA se um valor aprovado mudar |
+| **107c1** dados do postador; depois **107c2** | B | 107c1 mexe em `EconomyDefinitions` e `EconomySetup` (faixa exclusiva da economia: depois da 098c); 107c2 PARA se um hash mudar |
+| **LW-107f** trabalho do jogador | B | **obrigatória**, sem contrato, depende de regra de trabalho do jogador no `world`; não dada por concluída por antecipação |
 | LW-099 viagem visível; LW-100 fluxo agregado; LW-103 produtores adaptativos | — | fora do mandato; dependem da 098 e de contrato próprio |
 
 ## Trilha de arte (Frente C; usa esta fila)
 DEC-021 aprovada como **direção híbrida** (cenário procedural e modular; personagens e criaturas por kits CC0 quando compatíveis; modelo provisório não é definitivo sem o aceite visual de Arthur; áudio pendente). Tudo é só apresentação: aparência determinística por identificadores, LOD e DEC-119.
-- **ART-6a** vegetação por variante (PR #39). **Avaliar vegetação também na praça A**, preservando a identidade da variante e o desempenho.
-- **Praça B: margem de só 59 triângulos:** antes de aumentar limites, otimizar e reutilizar as malhas existentes.
-- **ART-8** casas: amostra de arquitetura modular, isolada (não substitui as caixas do mundo antes do aceite visual); preserva colisão, navegação e dados da simulação.
-- **ART-9** humano estilizado: pesquisa e amostra isolada (aparência e animações básicas); testa importação, desempenho e compatibilidade visual.
-- Depois do aceite visual: aditivo ao mandato para as implementações completas. Em espera: ART-6b (caminhos e mistura de terreno só visuais), ART-7 (adereços de povoado), ART-10 (carrinho, com a LW-099); Fase 4: ART-11; Fase 5: ART-12 a 14.
+- **Kenney Fantasy Town Kit 2.0** baixado por Arthur e registrado no [manifesto](../arte/MANIFESTO_LICENCAS.md), seção 7 (CC0, 167 modelos, sem personagens). Amostra de 37 peças só nos protótipos, fora do Git.
+- **ART-9 habitantes** (procedurais; a Kenney não traz personagens): fase 1 entregue (6 habitantes, folha de variação, multidão de 132 a 236 fps em depuração); fase 2 em curso. Quando virar PR, dividir (806 linhas de código e teste na fase 1, acima do teto de 450 do AGENTS 5.2).
+- **ART-8 casas**: montagem modular de casas da Kenney (escala 2,5 confirmada: parede de 1 vira 2,5 m e o habitante de 1,72 m cabe nas portas), feita na vila de teste da ART-9b; aceite visual antes de trocar as caixas do mundo. **Paleta:** o pacote traz só a variação A (pastel: telhados roxo e azul, árvores verde-menta), que destoa dos habitantes terrosos e da sua referência; **recolorir a textura de paleta** (uma PNG, CC0 permite) para a do guia é o próximo passo (ART-8b). Peças não mescladas somaram 251 chamadas de desenho na vila: mesclar ou instanciar antes de adotar.
+- **Avaliar vegetação também na praça A** (preservando a identidade e o desempenho) e, na **praça B, margem de só 59 triângulos**: otimizar e reusar malhas antes de subir limites.
+- Em espera: ART-6b (caminhos e mistura de terreno só visuais), ART-7 (adereços de povoado), ART-10 (carrinho, com a LW-099); Fase 4: ART-11; Fase 5: ART-12 a 14.
 
 ## Bloqueio do caminho crítico: LW-094 (FoodStub) e o fim do IncomeStub da LW-095
 **Não removo o `FoodStub` nem introduzo salário artificial** (ordem de Arthur, 14/11/2026). Linha de base ([diagnóstico](../economia/diagnostico-economico-12-11.md), [resultados](../economia/experimentos/resultados-30-dias.md)): com o código que tira o `FoodStub` (ramo `lw-094a-fim-do-foodstub-codigo`) os 132 NPCs morrem até o dia 14; com o `FoodStub` vivem, mas 0 dos 14 locais de produção rodam no dia 30. Causas medidas: o local paga mais folha do que vende; o spread deixa o dinheiro no mercado (89% no dia 30); sem `data/economy/service_posts.json` os 30 guardas e estalajadeiros não têm posto; 52 NPCs trabalham em cadeias sem comprador final. O que sustentou nos cenários exige regra de folha ociosa, que não está autorizada. **Medição de 14/11/2026** (`tools/measure_economy`, 30 dias, `main` 74dd303): 132 vivos pelo `FoodStub`, mas 0 de 14 locais produzindo desde o dia 7 (todos parados por falta de dinheiro), nenhum posto e 82% do dinheiro nos mercados; os 132 vivos não provam economia sustentável.
