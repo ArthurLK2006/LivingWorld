@@ -27,6 +27,7 @@ Uso: só como referência de linguagem. É proibido copiar modelo, personagem, m
 - Orçamento de triângulos por peça [HIP]: casa de 1,5 a 4 mil; barraca de 0,8 a 1,5 mil; adereço de 100 a 600; árvore de 0,4 a 1,2 mil; arbusto de 150 a 400; rocha de 80 a 300.
 - LOD em 3 níveis [HIP]: até 15 m, até 40 m e até 120 m (silhueta simples); sombras até 100 a 150 m.
 - Variação: 2 a 3 variantes por peça; escala, giro e cor determinísticos pelo id do local (nada de aleatório fora do `core`).
+- Personagens humanos: seguem `BRIEF_PERSONAGENS.md` (14/11/2026); as formas "gordas" desta seção valem para construções e adereços.
 - Pegada: toda peça de local declara a pegada (hoje, as caixas do `PlacePalette`; o mercado tem 4 x 4 m) para preservar rotas de NPC e colisão.
 
 ## 5. Materiais e cor
