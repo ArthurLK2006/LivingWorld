@@ -55,6 +55,7 @@ const RANGES: Dictionary[String, Vector2] = {
 	"dusk_brightness": Vector2(0.0, 2.0),
 	"dusk_contrast": Vector2(0.5, 2.0),
 	"dusk_saturation": Vector2(0.0, 2.0),
+	"lamp_golden_fraction": Vector2(0.0, 1.0),
 }
 
 @export_group("Sol")
@@ -166,6 +167,10 @@ const RANGES: Dictionary[String, Vector2] = {
 @export var golden_hour_degrees: float = 9.0
 ## [HIP] Do dia pleno para cima o ar é o do DIA (a cena demonstrativa usa 45 a 60 graus; o sol do jogo chega a `sun_max_elevation_degrees`). Entre `golden_hour_degrees` e ela o ar vai da hora dourada ao dia.
 @export var full_day_degrees: float = 45.0
+@export_group("Lampiões")
+## [HIP] ART-5a: quanto dos lampiões e das tochas da praça já está aceso com a hora dourada pura (0 a 1). O fator de luz deles (`LightState.lamp_factor`) é o peso da noite + o do crepúsculo + esta fração x o da hora dourada (no máximo 1): 0 de dia, 1 no crepúsculo e na noite.
+## Com 0,4 eles começam a acender no pôr do sol, sem estar no máximo antes de o céu escurecer.
+@export var lamp_golden_fraction: float = 0.4
 
 
 ## Campos fora de faixa (vazia se estiver tudo certo).

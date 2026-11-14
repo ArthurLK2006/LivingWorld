@@ -56,11 +56,12 @@ static func day_state(config: AmbientConfig) -> LightState:
 
 ## Cada campo soma as quatro paletas pelos pesos, na ordem noite, crepúsculo, hora dourada, dia. A noite só tem céu, ambiente e névoa próprios (`night_*`); como o sol dela está apagado (energia 0),
 ## ela herda do crepúsculo a cor e o giro do sol, o bloom e o ajuste de cor (exposição, brilho, contraste, saturação; nada gira nem muda de cor enquanto a luz some) e do dia a densidade da névoa (a noite de antes). O chão do horizonte do crepúsculo e da hora dourada é o horizonte.
-## O modo e o branco do tonemap não entram: são um só para o ciclo inteiro e o AmbientRig os lê do recurso.
+## O modo e o branco do tonemap não entram: são um só para o ciclo inteiro e o AmbientRig os lê do recurso. ART-5a: o fator dos lampiões sai dos mesmos pesos (noite + crepúsculo + uma fração do peso da hora dourada, no máximo 1).
 static func _blend(config: AmbientConfig, elevation: float, weights: PaletteWeights) -> LightState:
 	var state: LightState = LightState.new()
 	state.elevation_degrees = elevation
 	state.daylight = 1.0 - weights.night
+	state.lamp_factor = minf(weights.night + weights.dusk + config.lamp_golden_fraction * weights.golden, 1.0)
 	state.sun_energy = _mix(weights, 0.0, config.dusk_sun_energy, config.golden_sun_energy, config.sun_energy)
 	state.sun_color = _mix_color(weights, config.dusk_sun_color, config.dusk_sun_color, config.golden_sun_color, config.sun_color)
 	state.sun_yaw_degrees = _mix(weights, config.dusk_sun_yaw_degrees, config.dusk_sun_yaw_degrees, config.golden_sun_yaw_degrees, config.sun_yaw_degrees)
@@ -97,6 +98,8 @@ class LightState:
 
 	var elevation_degrees: float = 0.0
 	var daylight: float = 0.0
+	## ART-5a: quanto dos lampiões e das tochas está aceso (0 a 1): 0 de dia, sobe pela hora dourada (`lamp_golden_fraction` do peso dela) e vale 1 no crepúsculo e na noite.
+	var lamp_factor: float = 0.0
 	var sun_energy: float = 0.0
 	var sun_color: Color = Color.BLACK
 	var sun_yaw_degrees: float = 0.0
