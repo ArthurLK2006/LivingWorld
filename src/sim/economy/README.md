@@ -49,6 +49,8 @@ Implementado (LW-096, parte a, 11/11/2026): o livro de contratos, em `contracts/
 
 Implementado (LW-096, parte b, 11/11/2026): a porta dos contratos: `request_post_contract`, `request_accept_contract`, `peek_contract`, `peek_contracts` e o evento `ContractOffered` (em `api/`).
 
+Correção da LW-096 (14/11/2026, decisão de Arthur): `request_accept_contract` confere o prazo com o relógio determinístico (`agora >= prazo` é `ECON_CONTRACT_IMPOSSIBLE`, a mesma regra da entrega); a vaga segue sem prazo; sem mudança de estado, save, evento nem hash.
+
 Implementado (LW-096, parte c, 11/11/2026): a conclusão dos contratos: `request_work_shift` (só `labor`; `ECON_WORKER_ALREADY_ASSIGNED` para quem já é atribuído ao local) e `request_deliver_contract`, com o pagamento pela custódia e o `ContractCompleted` (em `api/`).
 
 Implementado (LW-096, parte d, 11/11/2026): o prazo: a cada hora vence o contrato que passou do prazo, devolve a custódia ao emissor e publica `ContractFailed` (em `api/`); emissor morto não recebe de volta.

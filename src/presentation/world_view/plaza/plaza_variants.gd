@@ -1,6 +1,6 @@
 class_name PlazaVariants
 extends RefCounted
-## ART-3: a identidade de cada praça de mercado como dados. A `MarketPlazaView` escolhe a ficha pelo id do mercado (`for_market`) e a montagem (`PlazaStructures`) a lê: lugar e quantidade das barracas, a altura e o arquétipo de cada uma (ART-5b1: tenda, toldo de uma água, mesa com guarda-sol ou carroça), os adereços, a cor e o material dos panos, a peça central e as cores das casas.
+## ART-3: a identidade de cada praça de mercado como dados. A `MarketPlazaView` escolhe a ficha pelo id do mercado (`for_market`) e a montagem (`PlazaStructures`, `PlazaGround` e `PlazaMaterials`) a lê: lugar e quantidade das barracas, a altura e o arquétipo de cada uma (ART-5b1: tenda, toldo de uma água, mesa com guarda-sol ou carroça), os adereços, a cor e o material dos panos, a peça central e as cores das casas.
 ## Nenhum sorteio novo: a variação de cada peça segue o hash de sempre (PlazaMeshKit.unit). A variante A é a praça de hoje (as constantes de sempre de PlazaData) e a de qualquer id fora da tabela; B (mercado de rua, frio e arrumado) e C (praça rústica e sóbria) trocam os dados [HIP], a calibrar olhando a cena.
 
 enum Center { WELL, FOUNTAIN, ROTUNDA }
@@ -26,6 +26,23 @@ class Spec extends RefCounted:
 	var center: PlazaVariants.Center = PlazaVariants.Center.WELL
 	var wall_colors: Array[Color] = PlazaData.WALL_COLORS
 	var roof_colors: Array[Color] = PlazaData.ROOF_COLORS
+	## ART-6a, a vegetação (padrões = os da praça de hoje). Árvores: forma, medidas e verde de cada tipo, repartidos por índice. Lugares (x, z) das árvores, das rochas e dos arbustos: vazios, as árvores e rochas ficam no anel de hoje e não há arbustos. Rochas: escala e cor. Flores: as cores e quantas de cada. Grama: quantidade, tamanho do tufo e cores (base e ponta). `scatter_half_m`: metade da área onde grama e flores nascem.
+	var tree_shapes: Array[int] = PlazaData.TREE_SHAPES
+	var tree_forms: Array[Vector3] = PlazaData.TREE_VARIANTS
+	var tree_greens: Array[Color] = PlazaData.TREE_GREENS
+	var tree_spots: Array[Vector2] = []
+	var rock_spots: Array[Vector2] = []
+	var rock_size: float = 1.0
+	var rock_color: Color = PlazaData.STONE
+	var bush_spots: Array[Vector2] = []
+	var flower_colors: Array[Color] = PlazaData.FLOWER_COLORS
+	var flowers_per_color: int = PlazaData.FLOWERS_PER_COLOR
+	var grass_count: int = PlazaData.GRASS_COUNT
+	var grass_size: Vector2 = PlazaData.GRASS_SIZE
+	var grass_colors: Array[Color] = PlazaData.GRASS_COLORS
+	var scatter_half_m: Vector2 = PlazaData.SCATTER_HALF_M
+	## Verdadeiro se a vegetação cabe no FOOTPRINT_M: a praça do jogo a leva. A A traz a da demonstração (o anel de 10 a 17 m) e fica sem.
+	var plants_in_footprint: bool = false
 
 
 	## O arquétipo da barraca `index` (um de PlazaData.StallKind).
@@ -51,6 +68,7 @@ static func named(variant_id: StringName) -> Spec:
 			spec.center = Center.FOUNTAIN
 			spec.wall_colors = PlazaData.WALL_COLORS_B
 			spec.roof_colors = PlazaData.ROOF_COLORS_B
+			_plant_b(spec)
 		&"c":
 			spec.stalls = facing_center(PlazaData.STALL_SPOTS_C)
 			spec.stall_post_m = PlazaData.STALL_POST_C_M
@@ -61,7 +79,45 @@ static func named(variant_id: StringName) -> Spec:
 			spec.center = Center.ROTUNDA
 			spec.wall_colors = PlazaData.WALL_COLORS_C
 			spec.roof_colors = PlazaData.ROOF_COLORS_C
+			_plant_c(spec)
 	return spec
+
+
+## B, arrumada (ART-6a): árvores redondas e baixas em duplas, poucas rochas, flores azuis e brancas, grama curta e uniforme.
+static func _plant_b(spec: Spec) -> void:
+	spec.plants_in_footprint = true
+	spec.tree_shapes = PlazaData.TREE_SHAPES_B
+	spec.tree_forms = PlazaData.TREE_FORMS_B
+	spec.tree_greens = PlazaData.TREE_GREENS_B
+	spec.tree_spots = PlazaData.TREE_SPOTS_B
+	spec.rock_spots = PlazaData.ROCK_SPOTS_B
+	spec.rock_size = PlazaData.ROCK_SIZE_B
+	spec.rock_color = PlazaData.STONE_B
+	spec.flower_colors = PlazaData.FLOWER_COLORS_B
+	spec.flowers_per_color = PlazaData.FLOWERS_B
+	spec.grass_count = PlazaData.GRASS_COUNT_B
+	spec.grass_size = PlazaData.GRASS_SIZE_B
+	spec.grass_colors = PlazaData.GRASS_COLORS_B
+	spec.scatter_half_m = PlazaData.SCATTER_HALF_PLANTED_M
+
+
+## C, rústica (ART-6a): coníferas e árvore grande, mais rochas e arbustos, flores raras em ocre, grama alta e seca.
+static func _plant_c(spec: Spec) -> void:
+	spec.plants_in_footprint = true
+	spec.tree_shapes = PlazaData.TREE_SHAPES_C
+	spec.tree_forms = PlazaData.TREE_FORMS_C
+	spec.tree_greens = PlazaData.TREE_GREENS_C
+	spec.tree_spots = PlazaData.TREE_SPOTS_C
+	spec.rock_spots = PlazaData.ROCK_SPOTS_C
+	spec.rock_size = PlazaData.ROCK_SIZE_C
+	spec.rock_color = PlazaData.STONE_C
+	spec.bush_spots = PlazaData.BUSH_SPOTS_C
+	spec.flower_colors = PlazaData.FLOWER_COLORS_C
+	spec.flowers_per_color = PlazaData.FLOWERS_C
+	spec.grass_count = PlazaData.GRASS_COUNT_C
+	spec.grass_size = PlazaData.GRASS_SIZE_C
+	spec.grass_colors = PlazaData.GRASS_COLORS_C
+	spec.scatter_half_m = PlazaData.SCATTER_HALF_PLANTED_M
 
 
 ## Barracas nos lugares `spots` (x, z), todas viradas para o centro da praça: (x, z, giro em rad).
