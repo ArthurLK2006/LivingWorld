@@ -1,6 +1,6 @@
 # Operação com o Maestro — Living World
 
-**Status:** configuração mínima aprovada como direção por Arthur em 12/11/2026 (chat); classes de risco e autonomia seguem como proposta. Até ele aprovar a política de autonomia, o `AGENTS.md` vale inteiro; em conflito, vale o `AGENTS.md`. Este documento descreve o fluxo e não o substitui.
+**Status:** configuração mínima aprovada como direção por Arthur em 12/11/2026 (chat). Em 14/11/2026 ele aprovou o método de execução otimizada: fila dinâmica ([FILA.md](FILA.md)), frentes A, B e C, as quatro classes de risco **como orientação** e a proteção do `main` (aplicada). A autonomia por mandato depende da emenda ao `AGENTS.md` ([proposta](EMENDA_AGENTS_PROPOSTA.md), não aplicada); até lá o `AGENTS.md` vale inteiro e, em conflito, vale o `AGENTS.md`. Este documento descreve o fluxo e não o substitui.
 
 ## 1. Modelo
 Uma única conversa com Arthur: o **Maestro** (Sonnet). Ele aciona agentes internos conforme a complexidade e nunca usa o `main` como área de trabalho.
@@ -24,7 +24,7 @@ Eficiência: tarefa trivial = o Maestro faz e confere de forma objetiva, sem age
 6. Com CI verde e revisão feita, o Maestro apresenta o resultado a Arthur; o merge só ocorre com a aprovação dele.
 7. No fim de cada etapa, todo branch ativo está publicado e o registro de retomada está atualizado.
 
-## 3. Classes de risco (proposta; aguarda a aprovação de Arthur)
+## 3. Classes de risco (orientação operacional aprovada por Arthur em 14/11/2026; não substituem o `AGENTS.md`, não autorizam mexer em arquivo protegido, contrato ou decisão sem a aprovação exigida)
 | Classe | O que é | Revisão |
 |---|---|---|
 | 1 | sem efeito no jogo: docs, testes novos, ferramentas, CI | CI e conferência objetiva do Maestro |
@@ -32,7 +32,7 @@ Eficiência: tarefa trivial = o Maestro faz e confere de forma objetiva, sem age
 | 3 | médio ou alto: contratos, save, eventos, balanceamento, design, mais de um módulo | revisor e aprovação de Arthur (Opus só se for análise arquitetural) |
 | 4 | irreversível, custo, dependência, `AGENTS.md`, `DECISIONS.md` ou arquivo protegido | aprovação de Arthur antes e depois |
 
-A autonomia do Maestro nas classes 1 e 2 só vale depois da proteção do `main` e das regras aprovadas por Arthur.
+A autonomia do Maestro nas classes 1 e 2 (merge sem nova ordem) só vale depois da emenda ao `AGENTS.md` aprovada por Arthur; a proteção do `main` já está ativa (14/11/2026).
 
 ## 4. Relatório a Arthur e contexto
 Resumo curto: concluído; verificações e resultados; pendente; decisões que dependem dele; próxima ação. O relatório completo (AGENTS.md, seção 15) e as evidências ficam no PR. A conversa do Maestro continua e usa a compactação do Claude Code quando o contexto cresce; o que importa vive no GitHub.
@@ -51,7 +51,7 @@ Não vão ao Git, por desenho: `.godot/`, `export_presets.cfg`, `addons/terrain_
 ## 7. Propostas ainda não aplicadas (cada uma pede autorização de Arthur)
 - **Acompanhamento por GitHub Issues:** uma issue fixa "RETOMADA" (tarefas ativas, branches e PRs, decisões pendentes de Arthur, próximo passo, data) e uma issue por tarefa **ativa** (critérios, dependências, branch/PR e evidência do CI), fechada ao integrar. Nenhuma issue para o roadmap futuro, que continua em `docs/`. Rótulos mínimos: `ativa`, `aguarda-arthur`, `bloqueada`, `classe-1` a `classe-4`. O repositório é público: tudo fica visível.
 - **`.worktrees/` fora do Git:** (a) já vale: adicionar sempre por caminho (AGENTS.md 10.4), nunca `git add -A`, `git add .` nem `commit -a` no checkout principal, e trabalhar só em worktrees; (b) definitiva: a linha `.worktrees/` no `.gitignore` (arquivo protegido, precisa de autorização); (c) rede de segurança: passo no CI que falha se `.worktrees/` ou entradas de submódulo (modo 160000) entrarem no Git.
-- **Proteção do `main`:** só depois de coordenar a transição dos pushes diretos das sessões A, B e C: PR obrigatório, `check_all` obrigatório, sem force-push nem exclusão do `main`.
+- **Proteção do `main`: APLICADA em 14/11/2026** (autorizada por Arthur com as condições: efetiva, sem custo, sem travar o fluxo): PR obrigatório (0 aprovações, Arthur é a única conta), verificação `check_all` obrigatória (app GitHub Actions, sem exigir a base atualizada), sem force-push, sem exclusão do `main`, vale também para administradores. Para desfazer: `gh api -X DELETE repos/ArthurLK2006/LivingWorld/branches/main/protection`.
 - **Substituir as sessões A, B e C** (não encerrar antes): uma tarefa real feita de ponta a ponta pelo fluxo (PR, CI, revisão, aprovação) sem regressão; o trabalho em andamento delas integrado, estacionado com registro ou classificado; registro de retomada testado (uma sessão nova reproduz o estado só pelo GitHub); proteção do `main` acordada; cota dentro do limite; aprovação de Arthur.
 
 ## 8. Limitações conhecidas (12/11/2026)
