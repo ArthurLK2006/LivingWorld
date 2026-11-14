@@ -1,5 +1,5 @@
 extends GutTest
-## LW-089: os dados dos bens e dos tipos de dono (data/economy/goods.json e owner_kinds.json) e o `GoodsLoader` (docs/economy/dados.md). Aqui: o arquivo real (10 bens, 5 tipos, textos por chave), um bem novo só por dado
+## LW-089: os dados dos bens e dos tipos de dono (data/economy/goods.json e owner_kinds.json) e o `GoodsLoader` (docs/economy/dados.md). Aqui: o arquivo real (10 bens, 6 tipos, textos por chave), um bem novo só por dado
 ## (como o ofício da LW-093b) e o dado inválido, que falha apontando arquivo, item e campo. Valores esperados escritos à mão; os [HIP] dos dados reais (valor e peso) só são conferidos quanto à faixa.
 
 const DATA_DIR: String = "res://data/economy"
@@ -7,7 +7,7 @@ const TEXT_FILE: String = "res://data/text/pt_br.json"
 const GOODS_FILE: String = "goods.json"
 const KINDS_FILE: String = "owner_kinds.json"
 const GOOD_IDS: Array[String] = ["grain", "flour", "bread", "wood", "plank", "ore", "metal", "tool", "wool", "fabric"]
-const KIND_IDS: Array[String] = ["npc", "player", "site", "market", "contract"]
+const KIND_IDS: Array[String] = ["npc", "player", "site", "market", "contract", "merchant"]
 
 
 func _tables() -> Dictionary[String, Array]:
@@ -36,7 +36,7 @@ func _row(tables: Dictionary[String, Array], table_id: String, row_id: String) -
 	return {}
 
 
-func test_the_real_data_loads_the_ten_goods_and_the_five_owner_kinds() -> void:
+func test_the_real_data_loads_the_ten_goods_and_the_six_owner_kinds() -> void:
 	var loaded: GoodsLoader.LoadResult = GoodsLoader.load_dir(DATA_DIR)
 	assert_true(loaded.result.ok, loaded.result.message)
 	var good_ids: Array[String] = []
