@@ -1,7 +1,7 @@
 class_name CaravanRunner
 extends RefCounted
 ## A caravana por dentro (LW-098d1 e LW-098d2; docs/modules/economy.md, 9.2 a 9.8): os PLANOS (o `TradePlanner` da 098b sobre os caminhos abertos do `world`), a PARTIDA (a compra do lote, ATÔMICA, e o registro no `CaravanBook`), os cinco campos derivados de `peek_caravan` e, na 098d2,
-## o AVANÇO trecho a trecho, a CHEGADA e a venda do lote (o `CaravanArrived`); a parada e o desvio são da 098e. Trabalha sobre o `EconomyState` do momento e a porta de rotas do `world` (`WorldModule`, dada pelo construtor da economia, 9.2): sem a porta, sem os parâmetros da caravana ou sem
+## o AVANÇO trecho a trecho, a CHEGADA e a venda do lote (o `CaravanArrived`); na 098e, a PARADA, a RETOMADA e o DESVIO por `RouteStateChanged` (o registro é a única escrita, sem formato novo). Trabalha sobre o `EconomyState` do momento e a porta de rotas do `world` (`WorldModule`, dada pelo construtor da economia, 9.2): sem a porta, sem os parâmetros da caravana ou sem
 ## mercados não há caravana (`ECON_NO_ROUTE`). Dinheiro e bens só se movem no `TradeEngine.execute` (nada nasce nem some; o saldo muda só por `trade`) e o registro é a única escrita. Não sorteia e não lê o relógio: o minuto vem de quem chama.
 
 var _state: EconomyState
@@ -58,8 +58,9 @@ func start(trader_id: int, origin_id: int, destination_id: int, good_id: String,
 
 
 ## O AVANÇO e a CHEGADA de UMA caravana no minuto `now` (LW-098d2; 9.4): enquanto o trecho atual já acabou (`now >= leg_started_at + leg_minutes`), o seguinte começa NO MINUTO EXATO em que ele acabou (não em `now`), então o ETA não depende do tamanho do passo e vários trechos cabem num passo só. Ao fim do
-## último trecho a caravana CHEGA: vende o lote (`_arrive`), apaga o registro e devolve o `CaravanArrived`, que quem chama publica (o evento só existe depois da venda e do registro apagado). Devolve `null` se não chegou. Só anda a `travelling` (a parada e o desvio são da 098e); sem a porta de rotas, sem
-## os parâmetros ou com rota que o `world` não conhece, não faz nada (o registro fica como está).
+## último trecho a caravana CHEGA: vende o lote (`_arrive`), apaga o registro e devolve o `CaravanArrived`, que quem chama publica (o evento só existe depois da venda e do registro apagado). Devolve `null` se não chegou. Só anda a `travelling`; sem a porta de rotas, sem os parâmetros ou com rota que o `world`
+## não conhece, não faz nada (o registro fica como está). LW-098e, o DESVIO num povoado (9.4, Q5): se a rota do trecho que ia começar está FECHADA agora, o caminho é refeito a partir do povoado (`_replan`) e o trecho novo começa no mesmo minuto exato; sem caminho, a caravana fica `held` nesse povoado (a
+## representação está em `_replan`).
 func advance(trader_id: int, now: int) -> CaravanArrived:
 	var caravan: Caravan = _state.caravans.caravan_of(trader_id)
 	if caravan == null or caravan.state != Caravan.STATE_TRAVELLING or now < caravan.leg_started_at + caravan.leg_minutes or not _is_available():
@@ -72,9 +73,29 @@ func advance(trader_id: int, now: int) -> CaravanArrived:
 			return _arrive(caravan)
 		caravan.leg_started_at += caravan.leg_minutes
 		caravan.leg_index += 1
+		if _world.peek_route(caravan.current_route_id()).state == WorldModule.STATE_CLOSED:
+			var detour: Array[RouteCost.Leg] = _replan(caravan)
+			if detour.is_empty():
+				caravan.state = Caravan.STATE_HELD
+			else:
+				legs = detour
 		caravan.leg_minutes = RouteCost.leg_minutes(legs[caravan.leg_index], _params)
+		if caravan.state == Caravan.STATE_HELD:
+			break
 	_state.caravans.add(caravan)
 	return null
+
+
+## `RouteStateChanged` (LW-098e; 9.4 e 9.7: a economia só OUVE), por `trader_id` crescente e sem sorteio: `closed` segura a caravana que anda na rota do trecho atual (`_hold`; com 0 minutos andados, num povoado, desvia na hora) e `open` retoma a parada no meio da estrada que estava nessa rota e refaz o caminho da parada num povoado (`_resume`). Rota que o `world` não conhece,
+## `new_state` que não é `open` nem `closed` e comerciante sem caravana: nada muda. `now`: o minuto em que o evento é tratado (a entrega do `EventBus`, depois dos `tick` do passo).
+func route_state_changed(route_id: String, new_state: String, now: int) -> void:
+	if not _is_available() or not [WorldModule.STATE_OPEN, WorldModule.STATE_CLOSED].has(new_state) or not _world.peek_route(route_id).result.ok:
+		return
+	for trader_id: int in _state.caravans.trader_ids():
+		var caravan: Caravan = _state.caravans.caravan_of(trader_id)
+		var changed: bool = _hold(caravan, route_id, now) if new_state == WorldModule.STATE_CLOSED else _resume(caravan, route_id, now)
+		if changed:
+			_state.caravans.add(caravan)
 
 
 ## A linha de `peek_caravan` e de `peek_caravans_on` (cópia) com os CINCO campos derivados do trecho e do relógio (9.3), nenhum salvo: `leg_from_settlement_id` e `leg_to_settlement_id`, `leg_length_m`, `progress_m` (`floor_div(comprimento × min(minutos andados, leg_minutes), leg_minutes)`;
@@ -176,6 +197,57 @@ func _market_takes(caravan: Caravan, quantity: int) -> bool:
 	var market_id: int = caravan.destination_market_id
 	var quoted: TradeEngine.Outcome = _state.engine.quote(market_id, caravan.good_id, quantity, TradeEngine.SIDE_SELL, caravan.trader_id)
 	return quoted.result.ok and quoted.total <= _state.ledger.balance_of(market_id) and _state.goods.check_transfer(caravan.trader_id, market_id, caravan.good_id, quantity).ok
+
+
+## A PARADA (9.4, `closed`): a caravana que ANDA na rota do trecho atual vira `held` e guarda os minutos já andados do trecho (`elapsed_at_hold`, no máximo `leg_minutes`: a posição de 9.3 sai dele); o inventário e o saldo ficam como estão (nenhuma venda, nenhum evento). Outra rota (já andada, de trecho futuro ou
+## sem relação) não muda nada: o desvio de trecho futuro acontece no fim do trecho (`advance`). EXCEÇÃO (Q5): com 0 minutos andados a caravana está NUM POVOADO (o trecho começou agora: na partida ou no passo em que o anterior acabou), então o desvio é tentado NA HORA, pelo mesmo `_replan` do fim de trecho (o trecho novo
+## começa em `leg_started_at`, que não muda); sem caminho ela fica `held` ali. Assim o resultado não depende de o fechamento ter sido entregue um minuto antes ou no mesmo passo. Com minutos andados nada desvia: parada no meio da estrada espera a rota reabrir. Devolve se mudou o registro.
+func _hold(caravan: Caravan, route_id: String, now: int) -> bool:
+	if caravan.state != Caravan.STATE_TRAVELLING or caravan.current_route_id() != route_id:
+		return false
+	var elapsed: int = clampi(now - caravan.leg_started_at, 0, caravan.leg_minutes)
+	if elapsed == 0 and not _replan(caravan).is_empty():
+		return true
+	caravan.state = Caravan.STATE_HELD
+	caravan.elapsed_at_hold = elapsed
+	return true
+
+
+## A RETOMADA (9.4, `open`). Parada NO MEIO da estrada (`elapsed_at_hold` > 0): só a reabertura da rota do trecho atual a retoma, com `leg_started_at = agora − elapsed_at_hold` (o ETA se desloca pelo tempo parado); ela não volta nem desvia no meio. Parada NUM POVOADO (`elapsed_at_hold` 0): CADA rota que reabre refaz o
+## caminho (`_replan`); com caminho segue (o trecho novo começa agora), sem caminho continua `held`. Devolve se mudou o registro.
+func _resume(caravan: Caravan, route_id: String, now: int) -> bool:
+	if caravan.state != Caravan.STATE_HELD:
+		return false
+	if caravan.elapsed_at_hold > 0:
+		if caravan.current_route_id() != route_id:
+			return false
+		caravan.leg_started_at = now - caravan.elapsed_at_hold
+		caravan.elapsed_at_hold = 0
+	else:
+		if _replan(caravan).is_empty():
+			return false
+		caravan.leg_started_at = now
+	caravan.state = Caravan.STATE_TRAVELLING
+	return true
+
+
+## O DESVIO num povoado (9.4, "Parada no meio da estrada (Q5)"): `peek_path` do povoado onde a caravana está (o que `leg_index` aponta, derivado da origem por `_settlement_at`) ao povoado do destino, pelas rotas abertas de AGORA. Com caminho, REESCREVE `route_ids` (as rotas de 0 até `leg_index − 1`, as já andadas, ficam; o
+## resto é o caminho novo) e devolve os trechos do caminho inteiro; `leg_index` já é o primeiro trecho novo e `leg_minutes` passa a ser o dele, enquanto `leg_started_at` é de quem chama (o fim do trecho anterior no `advance` e em `_hold`; agora, em `_resume`). Sem caminho devolve vazio e não muda nada. REPRESENTAÇÃO da parada num povoado: `held`, `elapsed_at_hold` 0 e `leg_index` no trecho que ela
+## ainda NÃO andou (o bloqueado), assim `leg_from_settlement_id` é o povoado da parada, `progress_m` 0 e `peek_caravans_on` não a conta.
+func _replan(caravan: Caravan) -> Array[RouteCost.Leg]:
+	if _legs_of(caravan.route_ids).is_empty():
+		return []
+	var path: RouteService.PathQuery = _world.peek_path(_settlement_at(caravan, caravan.leg_index), _state.markets.settlement_of(caravan.destination_market_id))
+	if not path.result.ok or path.route_ids.is_empty():
+		return []
+	var rewritten: Array[String] = caravan.route_ids.slice(0, caravan.leg_index)
+	rewritten.append_array(path.route_ids)
+	var legs: Array[RouteCost.Leg] = _legs_of(rewritten)
+	if legs.is_empty():
+		return []
+	caravan.route_ids = rewritten
+	caravan.leg_minutes = RouteCost.leg_minutes(legs[caravan.leg_index], _params)
+	return legs
 
 
 ## O caminho ABERTO entre os dois mercados como trechos (`peek_path` só passa por rotas abertas); vazio se não há, se a origem é o destino ou se o `world` não conhece uma das rotas.
