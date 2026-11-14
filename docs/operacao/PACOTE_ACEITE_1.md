@@ -27,5 +27,23 @@ Preparado em 14/11/2026 sobre o `main` 1cab466 (CI verde). **Nenhuma tarefa foi 
 ## B. Parcial
 **LW-095, salários e fim do `IncomeStub`.** *Em linguagem de jogador:* cada local de produção paga salário por hora a cada trabalhador, tudo ou nada; o local sem saldo para sem demitir; guardas e estalajadeiros seriam pagos pelo mercado. *Evidência:* 4 de 5 critérios com teste, mas só com dados em memória (`test_site_payroll`, `test_wage_income`, `test_wage_payer_atomic`, `test_service_posts`; 45 testes). **Critério 1 falha:** o `IncomeStub` ainda existe (a marca `TEMP-LW-066` está em 12 arquivos e o `test_income_stub` a exige) e **não existe `data/economy/service_posts.json`**. **Proposta: não aceitar agora**; fecha junto do fim do `IncomeStub`, que depende de a economia se sustentar (veja o bloqueio em [FILA.md](FILA.md)).
 
+## Hashes exatos que o aceite valida (lidos no `main` 1dbee79, em 14/11/2026)
+Nenhum valor é regravado: são os que já estão no `main` e que o CI confere a cada execução.
+- **Oráculo da divisão do `npc`** (`tests/integration/test_npc_split_oracle.gd`, tabela `EXPECTED`, SHA-256 completo; o teste falha se um deles mudar):
+  - `intents` `28802dfa9d06e0320247f9c3bae14bba887a78bccfacb0803a5ca8d18dd936d6`
+  - `alarm` `916683019e46cf83bad1c75127c5370d7bb1403a8107a0def7956617f3832bd7`
+  - `resumed` `a2b476e37a0c5462173369c3ee89c93170b2e18d1fdc3a3815e53e14607e62ff`
+  - `switches` `b4c379eaad55b668e299a969761aad1191213f95292d3b2c6a0447ed95890dcd`
+  - `talk` `a96d78a9a82fde4b81225e97d0c0778ed6c1525b03af5c3909789302986e2e8f`
+  - `save` `5c885dbc09eea1495b195c8d03e737d0317003015ec3d02e6ed4019b3af558c9`
+  - `demote` `c5b515175b726d328fbe5b481c0474f08cfdbe8e0d6c251cc4b46c342c569895`
+  - `starved` `d2533a12fd058d0eb1a41ce42b001782b8f9285f41bc7d68dac2fb6bc01502a6`
+  - `real_game` `48857919c5ffce261b0bcfff4e933785adcd5085b6d63cb2f0802e0f81e5e1b4`
+- **Soak de 30 dias da vida dos NPCs** (`tests/soak/run_npc_life_30d`, fora do `check_all`): hash `2b0f8a2917c1` (prefixo de 12 caracteres que o script imprime), **igual nas 3 execuções**, 132 vivos no mínimo, maior tempo parado 0 min, 0 problemas. Os mercados de A e B ficam **sem comida em 81% e 87% do tempo** (35.068 e 37.728 de 43.200 min) e o de C em 5,7% (2.450 min): os 132 vivem do `FoodStub`.
+- **`tools/run_sim --days 30 --seed 1`:** `732907967efdba5f718687a0bbafbfe102ac51cabc9d15a7f0119a9e64ebc4d7`, **igual ao de 03/11/2026** (não registra módulo: não muda).
+- **De onde vêm os valores do oráculo** (cabeçalho do próprio teste): marco 1, bloco vazio `economy` no save (aprovado por você em 11/11); marco 2, frente A (LW-093 a LW-096a; por exemplo `intents` `8670b52b8ff6` e `real_game` `76a65b9cfc8a`, em 12 caracteres); marco 3, soma das causas da LW-097 (regra do `FoodStub` do povoado C e comida no save do `npc`; `world` como módulo registrado, com bloco no save; população real de 132 NPCs aprovada por você em 11/11; junção com o `main` por autorização antecipada de 11/11, com o estoque de comida do C de 3.000 para 6.000 [HIP]).
+- **Ressalva da LW-097 a registrar, como você pediu:** o estoque inicial de comida do povoado C é **6.000 [HIP], provisório** (era 3.000; autorizado em 12/11) para o soak de 30 dias fechar sem mortes; adia, não resolve, a falta estrutural de comida (bloqueio da LW-094, [FILA.md](FILA.md)).
+- **Frase de aceite sugerida:** "APROVADO LW-093, LW-096, LW-097 (com a ressalva do estoque provisório do povoado C) e LW-105, validando os hashes da seção 'Hashes exatos'". A LW-095 segue pendente e a LW-108 espera a sua conferência na janela.
+
 ## Como aceitar
 Se concordar: "APROVADO LW-093, LW-096, LW-097 (com a ressalva) e LW-105" leva a Fase 3 de 7 para 11 de 30; "APROVADO LW-108" depois da conferência leva a 12. Com o aceite, o Maestro atualiza o ROADMAP_STATUS. Aceitar a LW-093 e a LW-096 aprova os valores de hash do marco 2, e a LW-097, os do marco 3 (DEC-175): nenhum valor é regravado, são os que já estão no `main`. Fora da Fase 3, sem ação agora: LW-117 e LW-146 (só documentos) e LW-118 estão no `main` e não contam ainda.
