@@ -252,7 +252,7 @@ Um módulo **só importa módulos de camada menor ou igual**, e **apenas a porta
 ## 10. CONTROLE DE VERSÕES (GIT)
 
 1. **Leitura é livre:** `git status`, `diff`, `log`, `show`, `branch --list`.
-2. **Precisa de autorização explícita no prompt da tarefa:** criar ramo, `add`, `commit`, `merge`, `rebase`, `tag`, `stash`, `checkout`/`restore` que descartem alterações, e **qualquer `push`**. Sem menção = **não autorizado**.
+2. **Precisa de autorização explícita no prompt da tarefa:** criar ramo, `add`, `commit`, `merge`, `rebase`, `tag`, `stash`, `checkout`/`restore` que descartem alterações, e **qualquer `push`**. Sem menção = **não autorizado**. **Exceção (10.11):** o `merge` do `main` no ramo da tarefa, **só para atualizar a base**, vale como autorizado quando a tarefa tem autorização de commit; isso **não** autoriza `rebase`, `push --force` nem mudança fora do escopo da tarefa, e não dispensa o CI nem a revisão.
 3. **Commit e push são autorizações separadas.** Autorizar commit **não** autoriza push. Cada autorização vale **só para a tarefa atual** (ou para as tarefas nomeadas de um Mandato de Execução vigente, 14.1).
 4. **Autorizado a commitar?** Um commit por tarefa, no ramo `lw-NNN-descricao-curta`, mensagem `LW-NNN: resumo em português`. Adicione **só os arquivos da tarefa** (liste-os). Revise `git diff --staged` antes.
 5. **Sem autorização:** deixe as alterações no diretório de trabalho, sem commitar, e informe no relatório a **mensagem de commit sugerida** e a lista de arquivos.
@@ -261,6 +261,7 @@ Um módulo **só importa módulos de camada menor ou igual**, e **apenas a porta
 8. Ramo principal **sempre verde**. Não trabalhe direto nele.
 9. Árvore de trabalho com alterações que **não** são suas? **PARE** e pergunte antes de seguir.
 10. O repositório do projeto já existe no GitHub (DEC-089): não o recrie. A visibilidade é decisão do dono; sem autorização expressa, nada é enviado.
+11. **Integração no `main` só com o estado efetivo verificado.** O CI obrigatório e a revisão que a classe de risco exige têm de cobrir o estado que de fato entrará no `main`: o ramo combinado com o `main` mais recente. Um CI verde sobre base obsoleta **não basta** quando o `main` mudou, depois da base que aquela verificação cobriu, em dependências da tarefa ou em arquivos compartilhados (os que ela toca e os que ela usa): então o ramo é atualizado com o `main` (`merge`, nunca `rebase`) e a verificação roda de novo. **Não se atualiza o ramo, nem se repete verificação, quando ele já contém o `main` atual ou quando o `main` mudou só em arquivos e módulos sem relação com a tarefa.** Nada disto dispensa o CI obrigatório, a revisão proporcional ao risco, a proteção do `main` nem as autorizações de integração.
 
 ---
 
@@ -350,7 +351,7 @@ Arthur pode conceder, **por escrito**, um **Mandato de Execução**: uma lista *
 
 O mandato **não dispensa nenhuma autorização obrigatória** e **não aprova antecipadamente a integração de tarefas de classe 3 ou 4**. Em especial, nunca dispensa: (a) a aprovação de Arthur para **design**, contratos novos ou alterados, decisões (`DECISIONS.md`), arquitetura, formato de dados ou de save e eventos catalogados; (b) a autorização para **custos**, ferramentas, dependências, serviços e rede; (c) a autorização para **arquivos protegidos** (12.5) e para este arquivo; (d) os **portões** de fase e o **aceite formal** das tarefas, que são de Arthur; (e) as paradas do 16.2 e a regra dos hashes de referência (DEC-175); (f) a revisão independente e o CI verde que a classe de risco exige; (g) as proibições do 10.6.
 
-**Verificação antes de integrar.** A verificação exigida (CI e, conforme a classe, revisão) tem de cobrir a **combinação efetiva com o `main` mais recente**. Um CI verde sobre base antiga **não basta** quando o `main` mudou, depois da base que aquela verificação cobriu, em dependências da tarefa ou em arquivos compartilhados (os que ela toca e os que ela usa): então a base é atualizada e a verificação roda de novo. Se o `main` mudou só em arquivos e módulos sem relação com a tarefa, o CI existente vale e **não se repete verificação que não agregue segurança**.
+**Verificação antes de integrar.** Vale a regra geral do 10.11.
 
 **Git e integração.** Para as tarefas do mandato valem as autorizações de Git do 10.2 e do 10.3: ramo e worktree da tarefa, `add` por caminho, `commit`, `push` do ramo da tarefa e PR. O **merge** no `main` segue a classe de risco: **classe 1** (sem efeito no jogo): o Maestro integra com PR e CI verde na base atualizada; **classe 2** (código dentro de um módulo, coberto por testes, sem mexer em contrato, save, evento, valor [HIP] ou design): o Maestro integra com PR, CI verde na base atualizada e revisão independente sem achado importante; **classe 3** (contratos, save, eventos, balanceamento, design, vários módulos): **só depois do "APROVADO" de Arthur**, em lote se ele quiser; **classe 4** (irreversível, custo, dependência, arquivo protegido, tag): **só com ordem expressa dele**, antes e depois. A classe é do Maestro e, na dúvida, sobe.
 
