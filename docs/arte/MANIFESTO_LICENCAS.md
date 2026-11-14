@@ -1,8 +1,8 @@
 # Manifesto de licenças de arte (Fase 0)
 
-**Status:** PROPOSTA (pesquisa de 13/11/2026, só leitura: nada foi baixado nem adicionado ao repositório). Define a política e lista os candidatos. A DEC-021 (origem da arte) segue **PENDENTE**; a DEC-280 não a decide. "n/i" = não informado na página.
+**Status:** PROPOSTA (pesquisa de 13/11/2026, só leitura: nada foi baixado nem adicionado ao repositório). Define a política e lista os candidatos. A DEC-021 (origem da arte) foi **APROVADA por Arthur em 14/11/2026 como direção híbrida** (o áudio segue PENDENTE); a escolha de cada pacote continua sujeita às verificações deste manifesto e ao aceite visual de Arthur. **Registro de pacotes baixados: seção 7.** "n/i" = não informado na página.
 
-## 1. Política recomendada (não aprovada)
+## 1. Política (recomendada em 13/11/2026; o núcleo foi adotado pela DEC-021 em 14/11/2026: só CC0 confirmado na página oficial, registro de origem, tamanho, licença e hash, sem bibliotecas inteiras, serviços pagos, cadastro nem IA 3D de terceiros, e só os downloads autorizados; os demais itens seguem como recomendação)
 1. Só entra no repositório asset com licença **CC0** (ou domínio público) confirmada na página oficial do pacote, com URL e data.
 2. Cada pacote usado ganha uma linha de registro: nome, autor, URL, licença e onde foi declarada, edição (Free ou Standard), data do download, tamanho, hash SHA-256 do zip, formatos, peças usadas e modificações (script de normalização).
 3. Versões pagas (Pro, Extra, Source) ficam fora: a regra é custo zero. Só as versões gratuitas.
@@ -45,3 +45,10 @@ Ordem sugerida pela pesquisa: 1, 3, 2. As combinações 1 e 3 dependem de as bar
 
 ## 6. Próximo passo (depende de Arthur)
 Para decidir pela aparência, falta **baixar uma amostra pequena de cada candidato e ver o render**. Proposta mínima, só versões grátis: Kenney Fantasy Town Kit 2.0 (cerca de 4 MB), KayKit Medieval Hexagon Free (33 MB) e Quaternius Fantasy Props MegaKit Standard (tamanho n/i, estimado abaixo de 100 MB). Cada download será informado antes (pacote, fonte, licença e tamanho) e registrado aqui com hash.
+
+## 7. Registro de pacotes baixados (DEC-021: origem, tamanho, licença e hash por pacote, e só as peças usadas)
+| Pacote | Autor e origem | Licença | Baixado | Zip | Conteúdo | Peças usadas |
+|---|---|---|---|---|---|---|
+| **Fantasy Town Kit 2.0** | Kenney, `kenney.nl/assets/fantasy-town-kit` (página oficial) | **CC0 1.0** (`License.txt` do pacote: "Creative Commons Zero"; a página diz "Creative Commons CC0"); crédito opcional | por Arthur, em 14/11/2026 (arquivo `kenney_fantasy-town-kit_2.0.zip`) | 3.854.691 bytes; SHA-256 `1a7530c09f4d2fa2cdee259876f089334f8b1f27fa86a0c4f54ef86cdd8676ef` | 167 modelos em GLB (e os mesmos em FBX e 335 arquivos OBJ), uma textura de paleta (`variation-a.png`, 11 KB), cerca de 26 mil triângulos no total (média de 157 por peça), módulos de 1 unidade, **sem personagens**; categorias: paredes 63, telhados 26, escadas 13, fonte 10, rua 9, sebes 6, pinheiros 5, barracas 5, cercas 4, pedras 3, carroças 2, estandartes 2, lampião 1, moinhos | **amostra de 37 modelos GLB** (paredes de madeira e de pedra, telhados, chaminé, barracas, carroça, estandartes, lampião, fonte, cerca, sebe, pinheiros, pedras, calçamento, tábuas) só nos protótipos ART-8 e ART-9, **fora do Git** até o aceite visual de Arthur |
+
+Escala: na escala humana do jogo (habitante de 1,7 m) o fator de uso é **2,5** (confirmado na ART-9b). **Textura:** os GLB referenciam `Textures/colormap.png`, mas o pacote traz só `variation-a.png` (a variação A, pastel); nos protótipos ela foi copiada com o nome `colormap.png`. A paleta padrão das prévias (telhados vermelho e verde-azulado) **não** vem no zip. O zip original não vai para o Git (política 7).
