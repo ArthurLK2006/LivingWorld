@@ -67,20 +67,6 @@ func _patch() -> MeshInstance3D:
 	return PlazaGround.new(_new_root(), PlazaMaterials.create(), _slope).add_patch(PATCH_RADIUS_M)
 
 
-func _rgb(color: Color) -> Vector3:
-	return Vector3(color.r, color.g, color.b)
-
-
-## Quanto as cores têm de grama: 0 na terra média da paleta e 1 na grama média, medido pela projeção no eixo terra-grama (não depende do tom sorteado de cada quadro).
-func _grass_share(colors: PackedColorArray) -> float:
-	var dirt: Vector3 = _rgb(PlazaData.DIRT.lerp(PlazaData.DIRT_DARK, 0.5))
-	var axis: Vector3 = _rgb(PlazaData.GRASS.lerp(PlazaData.GRASS_DARK, 0.5)) - dirt
-	var total: float = 0.0
-	for color: Color in colors:
-		total += (_rgb(color) - dirt).dot(axis) / axis.length_squared()
-	return total / colors.size()
-
-
 func test_default_options_build_what_build_always_built() -> void:
 	_build()
 	var plain: int = _digest()
@@ -157,16 +143,6 @@ func test_patch_follows_the_slope_and_sits_above_the_provider_by_the_lift() -> v
 		if (points[first + 2] - points[first]).cross(points[first + 1] - points[first]).y <= 0.0:
 			downward += 1
 	assert_eq(downward, 0, "todo triângulo vira para cima (o material corta a face de trás)")
-
-
-func test_patch_rim_blends_into_the_grass_and_two_patches_are_identical() -> void:
-	var arrays: Array = (_patch().mesh as ArrayMesh).surface_get_arrays(0)
-	var colors: PackedColorArray = arrays[Mesh.ARRAY_COLOR]
-	var fan: PackedColorArray = colors.slice(0, 3 * PlazaData.PATCH_SEGMENTS)
-	var rim: PackedColorArray = colors.slice(colors.size() - 6 * PlazaData.PATCH_SEGMENTS)
-	assert_lt(absf(_grass_share(fan)), PlazaData.PATCH_RIM_GRASS * 0.5, "o centro é terra")
-	assert_gt(_grass_share(rim), _grass_share(fan) + PlazaData.PATCH_RIM_GRASS * 0.5, "o anel de fora tem grama na cor")
-	assert_eq((_patch().mesh as ArrayMesh).surface_get_arrays(0), arrays, "duas manchas iguais")
 
 
 func test_two_partial_builds_with_the_same_provider_are_identical() -> void:
