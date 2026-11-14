@@ -55,11 +55,18 @@ const PATH_HALF_WIDTH_M: float = 1.6
 const PATH_EDGE_M: float = 1.8
 const PLAZA_RADIUS_M: float = 9.0
 const GROUND_FLOOR_M: float = -50.0
-## Mancha de terra batida do jogo (ART-2a): disco de PATCH_RINGS anéis de PATCH_SEGMENTS setores, PATCH_LIFT_M [HIP] acima do terreno para não brigar com ele; o anel de fora leva PATCH_RIM_GRASS (0 a 1) de grama na cor, para a borda se perder na grama.
+## Mancha de terra batida do jogo (ART-2a, ART-2c): disco de PATCH_RINGS anéis de PATCH_SEGMENTS setores, PATCH_LIFT_M [HIP] acima do terreno para não brigar com ele. A cor é por vértice e contínua do centro para fora (sem fatias nem anéis de cor lisa): terra batida escura no centro, terra seca mais clara até PATCH_DRY_REACH do raio e, a partir de PATCH_FADE_FROM do raio, cada vez mais cor do terreno (PATCH_RIM_COLOR, com PATCH_RIM_GRASS de 0 a 1 no vértice de fora) para a borda se perder no chão. O tom varia pouco no espaço: ruído de valor de células de PATCH_NOISE_CELL_M metros (PATCH_NOISE_STRIDE indexa a célula por um inteiro só) e amplitude PATCH_TINT, em fração do intervalo entre os dois tons de terra. Alcances em fração do raio; tudo [HIP] a calibrar olhando a cena.
 const PATCH_SEGMENTS: int = 24
-const PATCH_RINGS: int = 3
+const PATCH_RINGS: int = 6
 const PATCH_LIFT_M: float = 0.04
-const PATCH_RIM_GRASS: float = 0.7
+const PATCH_DRY_REACH: float = 0.5
+const PATCH_FADE_FROM: float = 0.45
+const PATCH_RIM_GRASS: float = 1.0
+const PATCH_TINT: float = 0.5
+const PATCH_NOISE_CELL_M: float = 3.0
+const PATCH_NOISE_STRIDE: int = 1009
+## Cor do terreno do jogo em volta da mancha: igual a TerrainPalette.GRASS_COLOR (o teste confere), copiada aqui para a praça não depender do terreno. A grama da praça (GRASS, oliva) não serve: a borda ficaria amarelada contra o verde do terreno.
+const PATCH_RIM_COLOR: Color = Color(0.36, 0.58, 0.30)
 ## A grama some onde o chão é caminho de terra: a partir deste desgaste ela vai encolhendo.
 const SCATTER_FADE_FROM: float = 0.4
 ## Paleta do guia visual (docs/arte/GUIA_VISUAL.md): ocre #B09050, marrons #907030 e #705030, oliva #909030, emissivos #FFB347, #FF9A3C e #3FE0E0.
