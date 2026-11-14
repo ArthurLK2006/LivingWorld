@@ -1,0 +1,31 @@
+# Pacote de aceite 1 — tarefas da Fase 3 já no `main` e ainda não aceitas
+
+Preparado em 14/11/2026 sobre o `main` 1cab466 (CI verde). **Nenhuma tarefa foi marcada como aceita e o ROADMAP_STATUS não foi alterado:** o aceite formal é de Arthur. A cobertura foi levantada por leitura dos nomes de testes (o CI verde do `main` mostra que passam; nada foi reexecutado além dele). A LW-097, critério 2, foi conferida à mão: o levantamento automático a marcou como parcial por engano.
+
+| Grupo | Tarefa | Proposta |
+|---|---|---|
+| A. Concluída e verificada | LW-096 contratos (com 096a e os consertos 096h a 096n) | aceitar |
+| A. Concluída e verificada | LW-105 jogador na economia | aceitar |
+| A. Concluída e verificada | LW-093 NPCs no mercado | aceitar |
+| D. Com ressalva | LW-097 rotas e terceiro povoado | aceitar com a ressalva abaixo |
+| C. Validação manual pendente | LW-108 painel de depuração econômico | aceitar depois da sua conferência na janela |
+| B. Parcialmente implementada | LW-095 salários e fim do `IncomeStub` | **não aceitar agora** |
+
+## A. Concluídas e verificadas
+**LW-096, contratos.** *Em linguagem de jogador:* alguém publica uma encomenda e guarda o pagamento; quem cumpre recebe; se o prazo vence, o dinheiro volta a quem publicou. Há também vagas de emprego nos locais de trabalho: um NPC sem emprego aceita a vaga aberta por uma morte e só troca de vaga se o ganho compensar. *Evidência:* 8 de 8 critérios com teste (cerca de 55 testes): recompensa retida e paga (`test_contract_book`, `test_contract_completion`), prazo vencido devolve ao emissor (`test_contract_expiry`, `test_contract_dead_issuer_custody`), contrato impossível recusado (`test_contract_book`), conservação do dinheiro, vaga sem custódia (`test_contract_vacancies`), NPC sem emprego aceita a vaga, histerese, local sem saldo para sem demitir (`test_npc_vacancy`). **Proposta: aceitar.**
+
+**LW-105, jogador na economia.** *Em linguagem de jogador:* o jogador tem conta e inventário, compra e vende no mercado, o peso limita a carga e tudo sobrevive a salvar e carregar. *Evidência:* 4 de 4 critérios (48 testes): compra e venda, peso exatamente no limite e o seguinte recusado, saldo e inventário no save (`test_bridge_player_trade`, `test_bridge_player_account`, `test_bridge_market_reach`, `test_bridge_market_in_reach`, `test_market_reach`). Você exercitou na janela em 13/11 (conta, compra e venda). Nota: não há asserção própria de que o saldo vem do `Ledger`; ela é garantida pela regra F do `tools/check_architecture` (só o `Ledger` escreve saldo). **Proposta: aceitar.**
+
+**LW-093, NPCs no mercado.** *Em linguagem de jogador:* NPC com fome e dinheiro compra comida no mercado e come; sem dinheiro não compra; o local de produção vende ao mercado; o dinheiro inicial só nasce com motivo registrado. *Evidência:* critérios 1, 2 e 5 com teste direto (`test_npc_buys_food`, `test_npc_buy_decision`, `test_economy_start_money_and_consume`); o 3 pelo teste da venda do produto (`test_production`; o termo "excedente" não tem teste próprio); o 4 pela regra F do `check_architecture` (dentro do `check_all`) e pelos testes de conservação (`test_trade`, `test_ledger`). 23 testes; o marco 2 de hash fechou na LW-096a. **Proposta: aceitar.**
+
+## D. Com ressalva
+**LW-097, rotas e terceiro povoado (C).** *Em linguagem de jogador:* existe um terceiro povoado com estradas entre os três, e cada mercado começa com estoque para 30 dias do que importa; fechar uma estrada muda o caminho (comando só de desenvolvimento). *Evidência:* 5 de 5 critérios: caminho mais curto (`test_routes`); rota fechada muda o caminho e, sem rota, dá "sem caminho" (`test_world_module`); referência quebrada apontada com arquivo, item e campo (`test_routes`); 30 dias com o estoque inicial (`test_initial_stock_covers_30_days`); distribuição (`test_economy_distribution`: nenhum povoado se basta, todo bem necessário tem produtor). Hashes do marco 3 aprovados por você em 12/11. **Ressalva:** o estoque inicial de comida do C está em 6.000 [HIP] (era 3.000; autorizado por você em 12/11) para o soak de 30 dias fechar sem mortes. Isso adia, não resolve, a falta estrutural de comida (veja o bloqueio da LW-094 em [FILA.md](FILA.md)). **Proposta: aceitar com essa ressalva registrada.**
+
+## C. Validação manual pendente
+**LW-108, painel de depuração econômico (só leitura).** *Em linguagem de jogador:* um painel que só aparece em build de desenvolvimento (Shift+Tab) e mostra preços, estoques, produção e se o dinheiro está conservado, sem mudar nada. *Evidência:* só leitura provado por varredura e espião (`test_economy_debug_panel`: exercitar o painel não muda nada no jogo); veredito de conservação verde e vermelho (`test_economy_inspector_model`); 26 testes de modelo, painel e integração; "os números batem com as consultas" tem teste parcial. **Falta a sua conferência na janela (exigida pelo roadmap), em 3 passos:** (1) F5 no Godot; (2) Shift+Tab abre o painel: veja o veredito de conservação; (3) anote preço e estoque do pão no mercado de A, ande até ele, aperte E e compare com a tela do mercado: devem ser iguais. **Proposta: aceitar depois dessa conferência.**
+
+## B. Parcial
+**LW-095, salários e fim do `IncomeStub`.** *Em linguagem de jogador:* cada local de produção paga salário por hora a cada trabalhador, tudo ou nada; o local sem saldo para sem demitir; guardas e estalajadeiros seriam pagos pelo mercado. *Evidência:* 4 de 5 critérios com teste, mas só com dados em memória (`test_site_payroll`, `test_wage_income`, `test_wage_payer_atomic`, `test_service_posts`; 45 testes). **Critério 1 falha:** o `IncomeStub` ainda existe (a marca `TEMP-LW-066` está em 12 arquivos e o `test_income_stub` a exige) e **não existe `data/economy/service_posts.json`**. **Proposta: não aceitar agora**; fecha junto do fim do `IncomeStub`, que depende de a economia se sustentar (veja o bloqueio em [FILA.md](FILA.md)).
+
+## Como aceitar
+Se concordar: "APROVADO LW-093, LW-096, LW-097 (com a ressalva) e LW-105" leva a Fase 3 de 7 para 11 de 30; "APROVADO LW-108" depois da conferência leva a 12. Com o aceite, o Maestro atualiza o ROADMAP_STATUS. Fora da Fase 3, sem ação agora: LW-117 e LW-146 (só documentos) e LW-118 estão no `main` e não contam ainda.
