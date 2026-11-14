@@ -8,6 +8,8 @@ extends RefCounted
 
 ## O custo de uma ordem que não pode ser cotada (bem banido pelas regras, dono fechado): tão alto que nenhum saldo o paga e nenhuma venda o compensa.
 const UNPRICED: int = 1 << 40
+## Folga da cota quando há tarifa: a tarifa é `ceil` por ORDEM, então a 1ª unidade paga até 1 moeda a mais em cada ponta que o lote (2 moedas na margem).
+const TARIFF_SLACK: int = 2
 
 var _engine: TradeEngine
 var _markets: MarketBook
@@ -119,12 +121,13 @@ func _max_quantity(trader_id: int, origin_id: int, destination_id: int, good_id:
 	return low
 
 
-## `q*`: a `q` de maior ganho entre 1 e `q_max` (empate: a menor). Varredura linear exata (no máximo `max_order_quantity` cotações duplas). Saída antecipada com COTA EXATA: a margem de cada unidade (receita menos custo) só decresce com a quantidade, então nenhuma `q` rende mais que `q_max` vezes a margem da 1ª unidade (o risco só diminui o ganho); se isso não chega a `min_gain` (o limiar de lucro mais o custo de tempo), não há plano e sai com 2 cotações. Passando da cota, varre tudo: uma curva plana pode esconder ganho atrás de uma 1ª unidade de 0 moeda depois do risco (a saída da 1ª versão, por "1ª unidade não rende", perdia esses planos).
+## `q*`: a `q` de maior ganho entre 1 e `q_max` (empate: a menor). Varredura linear exata (no máximo `max_order_quantity` cotações duplas). Saída antecipada com COTA EXATA: a margem de cada unidade (receita menos custo) só decresce com a quantidade, então nenhuma `q` rende mais que `q_max` vezes a margem da 1ª unidade (o risco só diminui o ganho; com tarifa, que é `ceil` por ordem, a cota ganha a folga `TARIFF_SLACK`); se isso não chega a `min_gain` (o limiar de lucro mais o custo de tempo), não há plano e sai com 2 cotações. Passando da cota, varre tudo: uma curva plana pode esconder ganho atrás de uma 1ª unidade de 0 moeda depois do risco (a saída da 1ª versão, por "1ª unidade não rende", perdia esses planos).
 func _best_quantity(trader_id: int, origin_id: int, destination_id: int, good_id: String, risk_points: int, q_max: int, min_gain: int) -> int:
 	if q_max < 1:
 		return 0
 	var first_spread: int = _revenue_of(trader_id, destination_id, good_id, 1) - _cost_of(trader_id, origin_id, good_id, 1)
-	if first_spread * q_max < min_gain:
+	var slack: int = TARIFF_SLACK if _is_taxed(trader_id, origin_id, destination_id, good_id) else 0
+	if (first_spread + slack) * q_max < min_gain:
 		return 0
 	var best_gain: int = _gain_at(trader_id, origin_id, destination_id, good_id, risk_points, 1)
 	var best_quantity: int = 1
@@ -134,6 +137,13 @@ func _best_quantity(trader_id: int, origin_id: int, destination_id: int, good_id
 			best_gain = gain
 			best_quantity = quantity
 	return best_quantity if best_gain > 0 else 0
+
+
+## Há tarifa na cotação de 1 unidade (compra na origem ou venda no destino)? Com a regra neutra da Fase 3, nunca.
+func _is_taxed(trader_id: int, origin_id: int, destination_id: int, good_id: String) -> bool:
+	var bought: TradeEngine.Outcome = _engine.quote(origin_id, good_id, 1, TradeEngine.SIDE_BUY, trader_id)
+	var sold: TradeEngine.Outcome = _engine.quote(destination_id, good_id, 1, TradeEngine.SIDE_SELL, trader_id)
+	return bought.tariff > 0 or sold.tariff > 0
 
 
 ## `receita − risco − custo` de `quantity` unidades (0 para 0 unidades).

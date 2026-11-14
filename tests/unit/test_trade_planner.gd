@@ -13,6 +13,21 @@ const NO_NET: int = -1000000000
 const PRICE_RECORD: Dictionary = {"min_factor_bp": 5000, "max_factor_bp": 30000, "smoothing_bp": 2000, "spread_bp": 1000, "significant_change_bp": 1000, "max_order_quantity": 50, "history_days": 7, "shortage_threshold_bp": 3000, "shortage_days": 10}
 
 
+## Regra de comércio de teste: a mesma tarifa em pontos-base em todo bem, mercado e ator (a tarifa real é da Fase 4).
+class FlatTariffRules:
+	extends TradeRules
+
+	var tariff_basis_points: int
+
+
+	func _init(basis_points: int) -> void:
+		tariff_basis_points = basis_points
+
+
+	func peek_terms(_good_id: String, _market_id: int, _actor_id: int) -> TradeTerms:
+		return TradeTerms.new(false, tariff_basis_points, false)
+
+
 class Rig:
 	extends RefCounted
 
@@ -36,7 +51,7 @@ func _good_defs() -> Array[GoodDef]:
 
 
 ## `spec`: mercado -> bem -> [alvo, estoque, teto em pontos-base]; `funds`: dono -> saldo; `carried`: bem -> quantidade que o comerciante já leva (reduz o peso livre).
-func _rig(spec: Dictionary, funds: Dictionary, params: CaravanParams = null, carried: Dictionary = {}) -> Rig:
+func _rig(spec: Dictionary, funds: Dictionary, params: CaravanParams = null, carried: Dictionary = {}, rules: TradeRules = null) -> Rig:
 	var rig: Rig = Rig.new()
 	rig.book = OwnerBook.new()
 	rig.ledger = Ledger.new(rig.book)
@@ -62,7 +77,7 @@ func _rig(spec: Dictionary, funds: Dictionary, params: CaravanParams = null, car
 	rig.markets = MarketBook.new(rig.book, rig.goods, _good_defs(), targets, price_params)
 	for market_id: int in spec:
 		rig.markets.register_market("settlement_%d" % market_id, market_id)
-	rig.engine = TradeEngine.new(rig.book, rig.ledger, rig.goods, rig.markets, NeutralTradeRules.new(), price_params)
+	rig.engine = TradeEngine.new(rig.book, rig.ledger, rig.goods, rig.markets, rules if rules != null else NeutralTradeRules.new(), price_params)
 	rig.planner = TradePlanner.new(rig.engine, rig.markets, rig.goods, rig.ledger, params if params != null else _params(), price_params)
 	return rig
 
@@ -211,6 +226,31 @@ func test_a_flat_curve_hides_gain_behind_a_first_unit_of_zero_and_the_scan_still
 				hidden += 1
 	assert_gt(found, 3, "A grade de curva plana tem vários casos com plano.")
 	assert_gt(hidden, 0, "A grade tem plano com a 1ª unidade em 0 moeda ou menos: a armadilha da saída antecipada.")
+
+
+func test_with_a_tariff_charged_per_order_the_bound_still_keeps_every_plan_of_the_exhaustive_search() -> void:
+	var relaxed: CaravanParams = CaravanParams.new({"speed_cm_per_min": 400, "difficulty_slowdown_bp": 50, "risk_bp_per_point": 25, "time_cost_per_hour": 0, "fixed_cost": 0, "min_net_profit": 5, "min_margin_bp": 100, "origin_reserve_bp": RESERVE_BP})
+	var found: int = 0
+	var taxed_trap: int = 0
+	for tariff_bp: int in [100, 500]:
+		for a_stock: int in [5000, 5400, 5800]:
+			for b_stock: int in range(3800, 4801, 50):
+				var rig: Rig = _rig({MARKET_A: {"grain": [5000, a_stock, 20000]}, MARKET_B: {"grain": [5000, b_stock, 20000]}}, _funds(), relaxed, {}, FlatTariffRules.new(tariff_bp))
+				var plan: TradePlanner.Plan = rig.planner.plan_for(TRADER, MARKET_A, MARKET_B, _legs())
+				var best: Dictionary = _exhaustive(rig, MARKET_A, MARKET_B, "grain", _legs(), relaxed)
+				var label: String = "tarifa %d A=%d B=%d" % [tariff_bp, a_stock, b_stock]
+				var passes: bool = int(best["net"]) >= 5 and int(best["net"]) * 10000 >= 100 * int(best["cost"])
+				if plan == null:
+					assert_false(passes, "%s: sem plano só se o ótimo da busca exaustiva (%d) não passa dos limiares." % [label, int(best["net"])])
+					continue
+				found += 1
+				assert_eq([plan.quantity, plan.net_profit], [int(best["q"]), int(best["net"])], "%s: a quantidade e o net do plano são os da busca exaustiva." % label)
+				var bought: TradeEngine.Outcome = rig.engine.quote(MARKET_A, "grain", 1, TradeEngine.SIDE_BUY, TRADER)
+				var sold: TradeEngine.Outcome = rig.engine.quote(MARKET_B, "grain", 1, TradeEngine.SIDE_SELL, TRADER)
+				if (sold.total - sold.tariff - (bought.total + bought.tariff)) * MAX_ORDER < 5:
+					taxed_trap += 1
+	assert_gt(found, 6, "A grade com tarifa tem vários casos com plano.")
+	assert_gt(taxed_trap, 0, "A grade tem plano com a margem da 1ª unidade abaixo da média por causa do ceil da tarifa: a armadilha da cota sem folga.")
 
 
 func test_every_limit_is_respected() -> void:
