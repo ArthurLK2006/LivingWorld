@@ -113,10 +113,48 @@ const FOUNTAIN_COLUMN_M: float = 1.5
 const ROTUNDA_STONES: int = 10
 const ROTUNDA_RADIUS_M: float = 1.8
 const ROTUNDA_MENHIR_M: float = 2.3
+## ART-5b1, arquétipos de barraca [HIP]: a ficha da variante escolhe um por lugar (PlazaVariants.Spec.stall_kinds). TENT é a tenda piramidal de sempre; LEAN_TO, o toldo de uma água sobre um balcão comprido, de frente aberta; PARASOL, a mesa baixa sob um guarda-sol redondo; CART, a carroça de feira (caixa, duas rodas e um arco de lona).
+enum StallKind { TENT, LEAN_TO, PARASOL, CART }
+## B: dois toldos de uma água de frente um para o outro (os lugares de z negativo) e duas mesas com guarda-sol. C: uma carroça, um toldo e uma tenda.
+const STALL_KINDS_B: Array[int] = [StallKind.LEAN_TO, StallKind.PARASOL, StallKind.LEAN_TO, StallKind.PARASOL]
+const STALL_KINDS_C: Array[int] = [StallKind.CART, StallKind.LEAN_TO, StallKind.TENT]
+## Toldo de uma água: altura dos postes de trás (em z = -LEAN_TO_HALF_DEPTH_M) e da frente (em z positivo), metade da profundidade e da largura entre os postes, quanto o teto passa deles, faixas de pano do teto e o balcão (tamanho e z do centro).
+const LEAN_TO_BACK_M: float = 2.8
+const LEAN_TO_FRONT_M: float = 2.0
+const LEAN_TO_HALF_DEPTH_M: float = 1.3
+const LEAN_TO_HALF_WIDTH_M: float = 1.85
+const LEAN_TO_OVERHANG_M: float = 0.35
+const LEAN_TO_STRIPES: int = 6
+const LEAN_TO_COUNTER_M: Vector3 = Vector3(3.4, 0.9, 0.7)
+const LEAN_TO_COUNTER_Z_M: float = 0.65
+## Mesa com guarda-sol: raio, altura da borda e quanto o centro sobe (cone achatado de PARASOL_SIDES lados) e o tampo da mesa (tamanho e altura do centro).
+const PARASOL_RADIUS_M: float = 2.2
+const PARASOL_HEIGHT_M: float = 2.5
+const PARASOL_RISE_M: float = 0.4
+const PARASOL_SIDES: int = 8
+const PARASOL_TABLE_M: Vector3 = Vector3(2.0, 0.1, 1.0)
+const PARASOL_TABLE_Y_M: float = 0.78
+## Carroça de feira: a caixa (tamanho; ela fica sobre o eixo, à altura do raio da roda), a roda de cilindro (raio, lados e espessura) e o arco de lona (altura sobre a caixa, faixas ao longo e segmentos de cada arco).
+const CART_BED_M: Vector3 = Vector3(2.8, 0.55, 1.4)
+const CART_WHEEL_M: float = 0.7
+const CART_WHEEL_SIDES: int = 8
+const CART_WHEEL_THICKNESS_M: float = 0.12
+const CART_ARCH_RISE_M: float = 0.95
+const CART_ARCH_BANDS: int = 4
+const CART_ARCH_SEGMENTS: int = 6
+## Materiais por vértice das barracas novas [HIP]. Veio da madeira: tábuas lado a lado em cada face do balcão, mesa e caixa, as ímpares GRAIN_STEP mais escuras e o hash mexe até GRAIN_JITTER em cada uma. Remendos do pano: a chance de cada tira ter um, o tamanho do triângulo (fração da tira), quanto ele fica à frente dela e quantas posições da paleta adiante vai a cor dele. MEND_KEY_STRIDE separa as chaves de hash das tiras de cada barraca (cada uma tem menos que isto).
+const GRAIN_BOARDS: int = 6
+const GRAIN_STEP: float = 0.12
+const GRAIN_JITTER: float = 0.08
+const MEND_CHANCE: float = 0.25
+const MEND_SHRINK: float = 0.5
+const MEND_LIFT_M: float = 0.015
+const MEND_COLOR_SHIFT: int = 2
+const MEND_KEY_STRIDE: int = 64
 const SURFACE_ROUGHNESS: float = 0.85
 const RIM_STRENGTH: float = 0.2
-## Cada canal é uma sequência independente do hash (PlazaMeshKit.unit). ROCK_RADIUS e TREE_RADIUS vêm logo depois do ângulo: `_ring_spot` usa canal e canal + 1.
-enum Channel { PATCH, DIRT, GRASS, PROP_X, PROP_Z, PROP_YAW, PROP_SCALE, STRIP, HOUSE, STONE, TREE_ANGLE, TREE_RADIUS, TREE_YAW, TREE_SCALE, ROCK_ANGLE, ROCK_RADIUS, ROCK_SIZE, ROCK_YAW, SCATTER_X, SCATTER_Z, SCATTER_ACCEPT, SCATTER_SIZE, SCATTER_YAW }
+## Cada canal é uma sequência independente do hash (PlazaMeshKit.unit). ROCK_RADIUS e TREE_RADIUS vêm logo depois do ângulo: `_ring_spot` usa canal e canal + 1. Canal novo vai no fim: pôr no meio muda o hash de todos os seguintes (e a praça de hoje).
+enum Channel { PATCH, DIRT, GRASS, PROP_X, PROP_Z, PROP_YAW, PROP_SCALE, STRIP, HOUSE, STONE, TREE_ANGLE, TREE_RADIUS, TREE_YAW, TREE_SCALE, ROCK_ANGLE, ROCK_RADIUS, ROCK_SIZE, ROCK_YAW, SCATTER_X, SCATTER_Z, SCATTER_ACCEPT, SCATTER_SIZE, SCATTER_YAW, GRAIN, MEND }
 ## Grama e flores: lâmina de 5 pontos (3 triângulos) e quatro diagonais do chão alternadas.
 const BLADE_POINTS: PackedVector3Array = [Vector3(-0.04, 0.0, 0.0), Vector3(0.04, 0.0, 0.0), Vector3(-0.025, 0.18, 0.0), Vector3(0.025, 0.18, 0.0), Vector3(0.0, 0.38, 0.03)]
 const BLADE_INDICES: PackedInt32Array = [0, 1, 3, 0, 3, 2, 2, 3, 4]

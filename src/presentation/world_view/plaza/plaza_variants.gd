@@ -1,6 +1,6 @@
 class_name PlazaVariants
 extends RefCounted
-## ART-3: a identidade de cada praça de mercado como dados. A `MarketPlazaView` escolhe a ficha pelo id do mercado (`for_market`) e a montagem (`PlazaStructures`) a lê: lugar e quantidade das barracas e a altura delas, os adereços, a cor e o material dos panos, a peça central e as cores das casas.
+## ART-3: a identidade de cada praça de mercado como dados. A `MarketPlazaView` escolhe a ficha pelo id do mercado (`for_market`) e a montagem (`PlazaStructures`) a lê: lugar e quantidade das barracas, a altura e o arquétipo de cada uma (ART-5b1: tenda, toldo de uma água, mesa com guarda-sol ou carroça), os adereços, a cor e o material dos panos, a peça central e as cores das casas.
 ## Nenhum sorteio novo: a variação de cada peça segue o hash de sempre (PlazaMeshKit.unit). A variante A é a praça de hoje (as constantes de sempre de PlazaData) e a de qualquer id fora da tabela; B (mercado de rua, frio e arrumado) e C (praça rústica e sóbria) trocam os dados [HIP], a calibrar olhando a cena.
 
 enum Center { WELL, FOUNTAIN, ROTUNDA }
@@ -17,6 +17,8 @@ class Spec extends RefCounted:
 	## Barracas: (x, z, giro em rad).
 	var stalls: Array[Vector3] = PlazaVariants.facing_center(PlazaData.STALL_SPOTS)
 	var stall_post_m: float = PlazaData.STALL_POST_M
+	## O arquétipo de cada barraca (PlazaData.StallKind), na ordem de `stalls`; a que fica sem entrada é a tenda piramidal de hoje. A altura dos postes (`stall_post_m`) vale só para as tendas.
+	var stall_kinds: Array[int] = []
 	var prop_kinds: Array[int] = PlazaData.PROP_KINDS
 	var cloth_colors: Array[Color] = PlazaData.CLOTH_COLORS
 	## Materiais dos panos (toldo, tiras e bandeirolas): a peça `item` vai para a superfície `item % tamanho`. O primeiro leva a cor por vértice (e o toldo); os outros são acentos emissivos.
@@ -24,6 +26,11 @@ class Spec extends RefCounted:
 	var center: PlazaVariants.Center = PlazaVariants.Center.WELL
 	var wall_colors: Array[Color] = PlazaData.WALL_COLORS
 	var roof_colors: Array[Color] = PlazaData.ROOF_COLORS
+
+
+	## O arquétipo da barraca `index` (um de PlazaData.StallKind).
+	func stall_kind(index: int) -> int:
+		return stall_kinds[index] if index < stall_kinds.size() else PlazaData.StallKind.TENT
 
 
 ## A ficha do mercado `market_id`; id fora da tabela dá a de hoje.
@@ -37,6 +44,7 @@ static func named(variant_id: StringName) -> Spec:
 	match variant_id:
 		&"b":
 			spec.stalls = PlazaData.STALL_POSES_B
+			spec.stall_kinds = PlazaData.STALL_KINDS_B
 			spec.prop_kinds = PlazaData.PROP_KINDS_B
 			spec.cloth_colors = PlazaData.CLOTH_COLORS_B
 			spec.cloth_materials = [&"cloth", &"accent_cyan"]
@@ -46,6 +54,7 @@ static func named(variant_id: StringName) -> Spec:
 		&"c":
 			spec.stalls = facing_center(PlazaData.STALL_SPOTS_C)
 			spec.stall_post_m = PlazaData.STALL_POST_C_M
+			spec.stall_kinds = PlazaData.STALL_KINDS_C
 			spec.prop_kinds = PlazaData.PROP_KINDS_C
 			spec.cloth_colors = PlazaData.CLOTH_COLORS_C
 			spec.cloth_materials = [&"cloth"]
