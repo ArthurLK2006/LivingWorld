@@ -76,6 +76,24 @@ func test_an_open_contract_expires_in_the_hour_after_its_deadline_and_the_custod
 	world.teardown()
 
 
+func test_accept_through_the_api_is_refused_from_the_deadline_minute_even_before_the_hourly_expiry_runs() -> void:
+	var parts: Array = _world()
+	var world: World = parts[0]
+	var economy: EconomyModule = parts[1]
+	var deadline: int = MINUTES_PER_HOUR + 30
+	var early: int = _labor(economy, deadline)
+	var late: int = _labor(economy, deadline, WORKER)
+	_run_minutes(world, deadline - 1)
+	assert_true(economy.request_accept_contract(early, DESTINATION).ok, "Um minuto antes do prazo ainda se aceita.")
+	_run_minutes(world, 1)
+	assert_eq(world.context.clock.total_minutes(), deadline)
+	assert_eq(economy.peek_contract(late).state, "open", "A economia só vence o contrato na hora cheia seguinte.")
+	assert_eq(economy.request_accept_contract(late, DESTINATION).code, EconomyCodes.CONTRACT_IMPOSSIBLE, "No minuto do prazo já não se aceita, mesmo ainda `open`.")
+	assert_eq([economy.peek_contract(late).state, economy.peek_balance(late).balance], ["open", REWARD], "A recusa não muda o contrato nem a custódia.")
+	assert_true(economy.peek_conservation().ok)
+	world.teardown()
+
+
 func test_an_accepted_contract_also_expires_and_the_unpaid_work_pays_nothing() -> void:
 	var parts: Array = _world()
 	var world: World = parts[0]

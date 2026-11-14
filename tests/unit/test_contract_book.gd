@@ -109,20 +109,31 @@ func test_an_impossible_or_unfunded_contract_is_refused_and_nothing_changes() ->
 func test_only_an_open_contract_is_accepted_and_by_one_open_owner_that_is_not_the_issuer() -> void:
 	var rig: Rig = _rig()
 	assert_true(rig.contracts.post(CONTRACT, "labor", ISSUER, REWARD, DEADLINE, NOW, _labor()).ok)
-	assert_eq(rig.contracts.accept(999, WORKER).code, EconomyCodes.UNKNOWN_CONTRACT)
-	assert_eq(rig.contracts.accept(CONTRACT, 999).code, EconomyCodes.UNKNOWN_OWNER)
-	assert_eq(rig.contracts.accept(CONTRACT, ISSUER).code, EconomyCodes.CONTRACT_IMPOSSIBLE, "O emissor não aceita o próprio contrato.")
+	assert_eq(rig.contracts.accept(999, WORKER, NOW).code, EconomyCodes.UNKNOWN_CONTRACT)
+	assert_eq(rig.contracts.accept(CONTRACT, 999, NOW).code, EconomyCodes.UNKNOWN_OWNER)
+	assert_eq(rig.contracts.accept(CONTRACT, ISSUER, NOW).code, EconomyCodes.CONTRACT_IMPOSSIBLE, "O emissor não aceita o próprio contrato.")
 	assert_eq(rig.contracts.state_of(CONTRACT)["state"], "open", "As recusas não mudam o contrato.")
-	assert_true(rig.contracts.accept(CONTRACT, WORKER).ok)
+	assert_true(rig.contracts.accept(CONTRACT, WORKER, NOW).ok)
 	var state: Dictionary = rig.contracts.state_of(CONTRACT)
 	assert_eq([state["state"], state["acceptor_id"]], ["accepted", WORKER])
-	assert_eq(rig.contracts.accept(CONTRACT, DESTINATION).code, EconomyCodes.CONTRACT_NOT_OPEN, "Um aceitante só.")
+	assert_eq(rig.contracts.accept(CONTRACT, DESTINATION, NOW).code, EconomyCodes.CONTRACT_NOT_OPEN, "Um aceitante só.")
 	assert_eq(rig.ledger.balance_of(CONTRACT), REWARD, "A custódia segue inteira depois de aceito.")
 	assert_true(rig.book.close_owner(DESTINATION).ok)
 	var other: Rig = _rig()
 	assert_true(other.contracts.post(CONTRACT, "labor", ISSUER, REWARD, DEADLINE, NOW, _labor()).ok)
 	assert_true(other.book.close_owner(WORKER).ok)
-	assert_eq(other.contracts.accept(CONTRACT, WORKER).code, EconomyCodes.OWNER_CLOSED, "Aceitante fechado (morreu).")
+	assert_eq(other.contracts.accept(CONTRACT, WORKER, NOW).code, EconomyCodes.OWNER_CLOSED, "Aceitante fechado (morreu).")
+
+
+func test_accept_is_refused_from_the_deadline_on_with_the_rule_of_deliver_and_a_refusal_changes_nothing() -> void:
+	var rig: Rig = _rig()
+	assert_true(rig.contracts.post(CONTRACT, "labor", ISSUER, REWARD, DEADLINE, NOW, _labor()).ok)
+	assert_eq(rig.contracts.accept(CONTRACT, WORKER, DEADLINE).code, EconomyCodes.CONTRACT_IMPOSSIBLE, "No minuto do prazo já não se aceita (agora >= prazo, como no deliver).")
+	assert_eq(rig.contracts.accept(CONTRACT, WORKER, DEADLINE + 500).code, EconomyCodes.CONTRACT_IMPOSSIBLE, "Nem depois.")
+	var state: Dictionary = rig.contracts.state_of(CONTRACT)
+	assert_eq([state["state"], state["acceptor_id"]], ["open", IdGenerator.NO_ID], "A recusa não muda o contrato.")
+	assert_eq(rig.ledger.balance_of(CONTRACT), REWARD, "A custódia segue inteira.")
+	assert_true(rig.contracts.accept(CONTRACT, WORKER, DEADLINE - 1).ok, "Um minuto antes do prazo ainda se aceita.")
 
 
 func test_the_save_round_trips_and_a_bad_block_is_refused_without_changing_the_book() -> void:
@@ -130,7 +141,7 @@ func test_the_save_round_trips_and_a_bad_block_is_refused_without_changing_the_b
 	assert_true(rig.contracts.is_pristine())
 	assert_true(rig.contracts.post(CONTRACT, "labor", ISSUER, REWARD, DEADLINE, NOW, _labor()).ok)
 	assert_true(rig.contracts.post(CONTRACT + 1, "delivery", ISSUER, 10, DEADLINE, NOW, _delivery()).ok)
-	assert_true(rig.contracts.accept(CONTRACT + 1, WORKER).ok)
+	assert_true(rig.contracts.accept(CONTRACT + 1, WORKER, NOW).ok)
 	assert_false(rig.contracts.is_pristine())
 	var saved: Dictionary = rig.contracts.serialize()
 	var parsed: Variant = JSON.parse_string(JSON.stringify(saved))

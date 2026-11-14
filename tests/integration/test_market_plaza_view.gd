@@ -9,13 +9,15 @@ const GAP_TOLERANCE_M: float = 0.02
 ## Orçamento por praça: triângulos e chamadas de desenho estimadas (uma por superfície de malha).
 const MAX_TRIANGLES: int = 70000
 const MAX_DRAW_CALLS: int = 400
-## Orçamento da arte por praça, por variante (x = triângulos, y = nós filhos): A é a praça de sempre (hoje 2.808 e 43) e B e C ganharam as barracas novas da ART-5b1 (hoje 2.753 e 37; 2.201 e 34).
+## Orçamento da arte por praça, por variante (x = triângulos, y = nós filhos): A é a praça de sempre (hoje 2.808 e 43) e B e C ganharam as barracas novas da ART-5b1 e a vegetação da ART-6a (hoje 3.341 e 51; 2.881 e 52).
 const ART_BUDGETS: Dictionary[StringName, Vector2i] = {&"a": Vector2i(3000, 50), &"b": Vector2i(3400, 55), &"c": Vector2i(3000, 55)}
 ## Vizinhos do encaixe: os locais a menos disto do mercado.
 const NEAR_M: float = 25.0
 ## As bandeirolas ficam numa altura fixa da origem da praça (ART-2a): só casam com os postes se o chão deles está a menos disto da origem.
 const MAX_POST_RISE_M: float = 0.3
-const ABSENT_PIECES: Array[String] = ["Ground", "Tree0", "Rock0", "House0", "Grass", "Flowers0"]
+const ABSENT_PIECES: Array[String] = ["Ground", "House0"]
+## A vegetação só existe nas variantes que plantam dentro do retângulo de encaixe (ART-6a: B e C); a A fica sem, o terreno do jogo é o chão dela.
+const PLANTED_PIECES: Array[String] = ["Tree0", "Rock0", "Grass", "Flowers0"]
 ## Terreno inclinado sintético: 32 x 24 células de 2 m, o chão sobe 20 cm a cada nó em x (10 cm por metro); o mercado em x = 32 e uma casa 12 m a leste.
 const SLOPE_CELLS: Vector2i = Vector2i(32, 24)
 const CELL_CM: int = 200
@@ -71,6 +73,22 @@ func _expected_pieces(spec: PlazaVariants.Spec) -> Array[String]:
 		names.append_array(["LampPost%d" % index, "Bunting%d" % index])
 	for index: int in PlazaData.TORCH_SPOTS.size():
 		names.append("Torch%d" % index)
+	if spec.plants_in_footprint:
+		names.append_array(_planting_names(spec))
+	return names
+
+
+## Os nós da vegetação da variante (ART-6a): a grama, uma árvore, uma rocha e um arbusto por lugar da ficha e uma flor por cor.
+func _planting_names(spec: PlazaVariants.Spec) -> Array[String]:
+	var names: Array[String] = ["Grass"]
+	for index: int in spec.tree_spots.size():
+		names.append("Tree%d" % index)
+	for index: int in spec.rock_spots.size():
+		names.append("Rock%d" % index)
+	for index: int in spec.bush_spots.size():
+		names.append("Bush%d" % index)
+	for index: int in spec.flower_colors.size():
+		names.append("Flowers%d" % index)
 	return names
 
 
@@ -163,7 +181,13 @@ func test_there_is_one_plaza_per_market_at_its_x_and_z_on_the_terrain_with_the_e
 			assert_true(plaza.has_node(NodePath(piece)), "%s em '%s'." % [piece, market.id])
 		for absent: String in ABSENT_PIECES:
 			assert_false(plaza.has_node(NodePath(absent)), "Sem %s: o terreno do jogo é o chão." % absent)
+		for planted: String in PLANTED_PIECES:
+			assert_eq(plaza.has_node(NodePath(planted)), spec.plants_in_footprint, "%s em '%s' só se a variante planta dentro do retângulo." % [planted, market.id])
 		assert_eq(plaza.find_children("*", "OmniLight3D", true, false).size(), PlazaData.LAMP_SPOTS.size() + PlazaData.TORCH_SPOTS.size(), "As luzes dos lampiões e das tochas.")
+	var a_plaza: Node3D = _view.plaza_of("a_market_01")
+	assert_not_null(a_plaza, "O mercado A dos dados tem praça.")
+	for planted_piece: String in PLANTED_PIECES:
+		assert_false(a_plaza.has_node(NodePath(planted_piece)), "A praça A segue sem %s (pino literal, não deriva da ficha)." % planted_piece)
 	assert_null(_view.plaza_of("local_que_nao_existe"))
 	assert_eq(_view.find_children("*", "CollisionObject3D", true, false).size(), 0)
 

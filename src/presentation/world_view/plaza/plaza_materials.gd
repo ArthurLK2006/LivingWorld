@@ -28,8 +28,9 @@ void fragment() {
 """
 
 
-## Cria os materiais por nome, na ordem de sempre: sólido e pano (cor por vértice), os quatro emissivos (lampião, chama e os dois acentos), a grama e uma flor por cor. O Shader de vento é um só, compartilhado pelos quatro materiais de vento.
-static func create() -> Dictionary[StringName, Material]:
+## Cria os materiais por nome, na ordem de sempre: sólido e pano (cor por vértice), os quatro emissivos (lampião, chama e os dois acentos), a grama e uma flor por cor. O Shader de vento é um só, compartilhado pelos materiais de vento. A grama e as flores levam as cores da ficha da variante (ART-6a; sem ficha, as da praça de hoje).
+static func create(variant: PlazaVariants.Spec = null) -> Dictionary[StringName, Material]:
+	var plan: PlazaVariants.Spec = variant if variant != null else PlazaVariants.named(PlazaVariants.DEFAULT)
 	var wind_shader: Shader = Shader.new()
 	wind_shader.code = WIND_SHADER
 	var materials: Dictionary[StringName, Material] = {}
@@ -43,9 +44,9 @@ static func create() -> Dictionary[StringName, Material]:
 		var emissive: StandardMaterial3D = materials[key] as StandardMaterial3D
 		emissive.emission_enabled = true
 		emissive.emission = emissive.albedo_color
-	materials[&"grass"] = _wind(wind_shader, PlazaData.GRASS_LOW, PlazaData.GRASS_HIGH, Color.BLACK)
-	for index: int in PlazaData.FLOWER_COLORS.size():
-		materials[StringName("flower%d" % index)] = _wind(wind_shader, PlazaData.FLOWER_STEM, PlazaData.FLOWER_STEM, PlazaData.FLOWER_COLORS[index])
+	materials[&"grass"] = _wind(wind_shader, plan.grass_colors[0], plan.grass_colors[1], Color.BLACK)
+	for index: int in plan.flower_colors.size():
+		materials[StringName("flower%d" % index)] = _wind(wind_shader, PlazaData.FLOWER_STEM, PlazaData.FLOWER_STEM, plan.flower_colors[index])
 	return materials
 
 
