@@ -32,5 +32,5 @@
 ## 3. Impacto e limites
 - **Muda:** só dispensa uma nova ordem a cada tarefa **listada no mandato**. Nenhuma outra regra do `AGENTS.md` muda; as regras 0.1 a 0.12, a seção 10.6 (nunca force-push, `reset --hard`, apagar ramos ou tags etc.), a 12 (protegidos e remoções) e a 16.2 (PARE e pergunte) seguem inteiras.
 - **Não muda:** quem aceita (Arthur), os portões, a proteção do `main` (PR e `check_all` obrigatórios, inclui administradores), o custo zero.
-- **Mandato 1 proposto, depois da emenda:** ART-5b e ART-6 (arte na direção aprovada) e, **a partir da aprovação do contrato correspondente**, as tarefas 107b a 107g e a LW-098 em diante. A aprovação do contrato continua sendo dele.
+- **Mandato 1 proposto, depois da emenda (lista fechada):** (a) arte na direção aprovada: ART-5b e ART-6; (b) LW-107b a 107g, **só depois de ele aprovar o contrato 107a**; (c) LW-098b a 098g, **só depois de ele aprovar o contrato 098a e responder às perguntas de design**. Ficam FORA: a 098h (dados e hash: PARA e pede a aprovação dele), a LW-094, a LW-095 (fim do `IncomeStub`), a LW-100 e a LW-103 (sem contrato aprovado) e qualquer tarefa que mude um hash já aprovado. A aprovação de cada contrato continua sendo dele.
 - **Reversão:** um PR de classe 4 restaura os cinco trechos do item 1; ou Arthur revoga o mandato por mensagem.
