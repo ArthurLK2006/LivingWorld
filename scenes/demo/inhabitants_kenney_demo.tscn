@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tools/visual/inhabitants_demo/inhabitants_demo_scene.gd" id="1_scene"]
+
+[node name="InhabitantsKenneyDemo" type="Node3D"]
+script = ExtResource("1_scene")
+start_in_village = true

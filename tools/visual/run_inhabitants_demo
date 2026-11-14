@@ -1,0 +1,28 @@
+#!/bin/sh
+# ART-9: grava os PNGs (1280 x 720) e o resumo.txt (fps, pior quadro, chamadas de desenho e primitivos) da demonstração isolada dos habitantes, scenes/demo/inhabitants_demo.tscn, em modo automático
+# (meio-dia e fim de tarde): alinhamento dos seis, closes, folhas de variação e as multidões de 132 com a câmera isométrica e a estratégica do jogo. Só o renderer do projeto (gl_compatibility).
+# ABRE UMA JANELA do Godot por cerca de 1 a 2 minutos. Não altera o project.godot nem apaga nada. Uso: tools/visual/run_inhabitants_demo [pasta-de-saída] [praca|kenney]  (padrão: uma pasta nova sob $TMPDIR).
+# O segundo argumento escolhe o conjunto (praca, kenney); sem ele, os dois, na mesma janela. Variável opcional: GODOT_BIN (padrão: /Applications/Godot 2.app/Contents/MacOS/Godot).
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+out_dir=${1:-}
+if [ -z "$out_dir" ]; then
+    out_dir=$(mktemp -d "${TMPDIR:-/tmp}/lw-inhabitants-demo.XXXXXX") || exit 1
+fi
+set_arg=""
+if [ -n "${2:-}" ]; then
+    set_arg="--set=$2"
+fi
+mkdir -p "$out_dir" || exit 1
+echo "AVISO: esta demonstração abre uma janela do Godot por cerca de 1 a 2 minutos. Não mexa na janela."
+echo "Saída em: $out_dir"
+if ! "$godot_bin" --path "$project_dir" --rendering-method gl_compatibility --resolution 1280x720 --position 0,0 res://scenes/demo/inhabitants_demo.tscn -- --auto "--out=$out_dir" ${set_arg:+"$set_arg"}; then
+    echo "FALHA: o Godot terminou com erro." >&2
+    exit 1
+fi
+echo "Resumo: $out_dir/resumo.txt"
