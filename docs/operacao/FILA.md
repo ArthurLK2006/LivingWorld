@@ -13,7 +13,7 @@ Reflete o roadmap oficial ([DEVELOPMENT_ROADMAP.md](../DEVELOPMENT_ROADMAP.md)) 
 ## Em andamento
 | Tarefa | Frente | Classe | Estado | Responsável | Ramo ou PR | Próximo passo |
 |---|---|---|---|---|---|---|
-| ART-3 variantes por mercado (A, B, C) | C | 2 | testes e capturas feitos; junta com o `main` | Maestro | `arte-3-variantes-por-mercado` | recapturar, abrir PR, CI, integrar |
+| ART-3 variantes por mercado (A, B, C) | C | 2 | PR aberto, testes e capturas do jogo real feitos, CI rodando | Maestro | PR #32 | integrar com CI verde; depois ART-5b |
 | LW-107a contrato do quadro de contratos | B | 3 | agente escrevendo os documentos | implementador | `lw-107a-contrato-quadro` | PR em rascunho; contrato aprovado por Arthur |
 | LW-098a contrato do comerciante e da `Caravan` | A | 3 | agente de leitura gerando a especificação | Plan | — | documento, perguntas a Arthur |
 | Pacote de aceite 1 (6 tarefas no `main`) | B | 1 | pronto neste PR | Maestro | este PR | aceite formal de Arthur |
@@ -39,4 +39,4 @@ LW-093, LW-096, LW-097 (com ressalva) e LW-105 com proposta de aceite; LW-108 de
 economia (`src/sim/economy/**`, bloco de save, hora da produção) e **hash** (oráculo, soak de 30 dias) são exclusivos, uma tarefa por vez · npc (`src/sim/npc/**`) · world (`src/sim/world/**`, `data/world/`) · bridge (`src/bridge/**`) · presentation (`src/presentation/**`) · contratos em documentos (`docs/modules/*.md`, `docs/economy/dados.md`: PRs em sequência) · arte (`src/presentation/world_view/plaza/**`).
 
 ## Higiene (nada é apagado sem autorização específica)
-115 worktrees, 102 em ramos já integrados ao `main`, 7 destacados; 8 ramos remotos sem integração (`lw-093-npcs-no-mercado`, `lw-094a-fim-do-foodstub-codigo`, `lw-117-prevoo-fase-4`, `mac-snapshot`, `piloto-ci`, `status-a`, `status-b`, `status-c`). Gerar a lista: `git worktree list` e `git branch -r --no-merged origin/main`. Limpeza só com ordem de Arthur.
+116 worktrees fora o principal: **97 integrados e sem alteração local** (candidatos à limpeza), **4 integrados mas com 1 alteração local cada** (`lote-1` a `lote-4`: olhar antes de qualquer limpeza), 8 em ramos ainda não integrados (os 2 desta fila, `arte-f0-componentes`, `lw-117`, `piloto-ci`, `status-a`, `status-b`, `status-c`) e 7 destacados. Ramos remotos sem integração: `lw-093-npcs-no-mercado`, `lw-094a-fim-do-foodstub-codigo`, `lw-117-prevoo-fase-4`, `mac-snapshot`, `piloto-ci`, `status-a`, `status-b`, `status-c`. Gerar a lista: `git worktree list` e `git branch -r --no-merged origin/main`. **Nada é apagado: a limpeza só com ordem específica de Arthur.**
