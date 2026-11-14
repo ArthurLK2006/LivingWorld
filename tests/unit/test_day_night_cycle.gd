@@ -1,6 +1,7 @@
 extends GutTest
 ## LW-042: ciclo de dia e noite. Os valores esperados estão ESCRITOS À MÃO (não recalculam a fórmula do código):
-## elevação = 60 x sin(TAU x (h - 6) / 24); energia = energia do dia x smoothstep(-2, 12, elevação).
+## elevação = 60 x sin(TAU x (h - 6) / 24); luz do dia = smoothstep(-2, 3, elevação); energia do sol = a da paleta (crepúsculo, hora dourada ou dia) x a luz do dia.
+## ART-4 mudou de propósito a luz do dia (era smoothstep(-2, 12, elevação): o crepúsculo da cena demonstrativa vale a 3 graus) e a energia do horizonte (era a do dia, agora a do crepúsculo).
 const DEFAULT_CONFIG_PATH: String = "res://assets/environment/ambient_default.tres"
 const ELEVATION_TOLERANCE: float = 0.01
 const ENERGY_TOLERANCE: float = 0.0005
@@ -8,8 +9,12 @@ const COLOR_TOLERANCE: float = 0.00001
 ## Elevação máxima da tabela [HIP] e as horas que a conferem.
 const MAX_ELEVATION: float = 60.0
 const MINUTE_STEP_HOURS: float = 0.25
-## smoothstep(-2, 12, 0) = 0,055394 (t = 2/14); energia às 06:00 = 0,42 x 0,055394 = 0,023265.
-const SMOOTHSTEP_AT_HORIZON: float = 0.055394
+## smoothstep(-2, 3, 0) = 0,352 (t = 2/5); energia às 06:00 = crepúsculo (0,5) x 0,352 = 0,176.
+const SMOOTHSTEP_AT_HORIZON: float = 0.352
+## O sol passa pelos 9 graus da hora dourada às 06:34 e às 17:25 (escrito à mão). A energia da dourada (1,7) é maior que a do dia (1,15), de propósito: de manhã sobe até a dourada e desce até a do dia; à tarde sobe do dia
+## até a dourada e desce até o horizonte. Nas amostras de 15 em 15 minutos, 06:45 e 17:15 são as últimas que ainda sobem em relação à anterior.
+const MORNING_LAST_RISING_SAMPLE_HOUR: float = 6.75
+const EVENING_LAST_RISING_SAMPLE_HOUR: float = 17.25
 const MINUTES_TO_SIX: int = 360
 const PAUSED_REAL_SECONDS: float = 10.0
 ## A noite é azul-escura e legível: o horizonte do céu não é preto nem claro.
@@ -68,11 +73,12 @@ func test_elevation_follows_the_table_at_the_key_hours() -> void:
 	assert_almost_eq(DayNightCycle.fractional_hour(23, 59), 23.98333, ELEVATION_TOLERANCE)
 
 
+## ART-4: o máximo do dia agora é a hora dourada (o nome do teste ficou); ao meio-dia vale a energia do dia e às 06:00 a do crepúsculo.
 func test_sun_energy_is_zero_at_midnight_maximum_at_noon_and_small_at_sunrise() -> void:
 	var config: AmbientConfig = _config()
 	assert_eq(_state(0.0).sun_energy, 0.0, "À meia-noite o sol não ilumina.")
 	assert_eq(_state(12.0).sun_energy, config.sun_energy, "Ao meio-dia a energia é a do dia.")
-	assert_almost_eq(_state(6.0).sun_energy, config.sun_energy * SMOOTHSTEP_AT_HORIZON, ENERGY_TOLERANCE, "06:00: 0,42 x 0,055394.")
+	assert_almost_eq(_state(6.0).sun_energy, config.dusk_sun_energy * SMOOTHSTEP_AT_HORIZON, ENERGY_TOLERANCE, "06:00: 0,5 x 0,352.")
 	assert_almost_eq(_state(6.0).daylight, SMOOTHSTEP_AT_HORIZON, COLOR_TOLERANCE)
 	assert_almost_eq(_state(18.0).sun_energy, _state(6.0).sun_energy, COLOR_TOLERANCE, "A curva é simétrica em torno do meio-dia.")
 
@@ -84,13 +90,19 @@ func test_the_light_rises_from_six_to_noon_and_falls_from_noon_to_six_pm() -> vo
 		hour += MINUTE_STEP_HOURS
 		var current: DayNightCycle.LightState = _state(hour)
 		assert_gt(current.elevation_degrees, previous.elevation_degrees, "Subida estrita da elevação às %s h." % str(hour))
-		assert_gte(current.sun_energy, previous.sun_energy, "A energia não cai na subida às %s h." % str(hour))
+		if hour <= MORNING_LAST_RISING_SAMPLE_HOUR:
+			assert_gte(current.sun_energy, previous.sun_energy, "A energia não cai na subida até a hora dourada, às %s h." % str(hour))
+		else:
+			assert_lte(current.sun_energy, previous.sun_energy, "Depois da hora dourada a energia só desce até a do dia, às %s h." % str(hour))
 		previous = current
 	while hour < 18.0:
 		hour += MINUTE_STEP_HOURS
 		var current: DayNightCycle.LightState = _state(hour)
 		assert_lt(current.elevation_degrees, previous.elevation_degrees, "Descida estrita da elevação às %s h." % str(hour))
-		assert_lte(current.sun_energy, previous.sun_energy, "A energia não sobe na descida às %s h." % str(hour))
+		if hour <= EVENING_LAST_RISING_SAMPLE_HOUR:
+			assert_gte(current.sun_energy, previous.sun_energy, "Do dia até a hora dourada a energia não cai, às %s h." % str(hour))
+		else:
+			assert_lte(current.sun_energy, previous.sun_energy, "Depois da hora dourada a energia não sobe na descida às %s h." % str(hour))
 		previous = current
 
 
@@ -130,7 +142,7 @@ func test_advancing_360_simulated_minutes_brings_the_light_to_the_table_value() 
 	_host.runner.run_steps(MINUTES_TO_SIX)
 	assert_true(rig.refresh())
 	assert_almost_eq(sun.rotation_degrees.x, 0.0, ELEVATION_TOLERANCE, "06:00: sol no horizonte (rotação x = 0).")
-	assert_almost_eq(sun.light_energy, _config().sun_energy * SMOOTHSTEP_AT_HORIZON, ENERGY_TOLERANCE)
+	assert_almost_eq(sun.light_energy, _config().dusk_sun_energy * SMOOTHSTEP_AT_HORIZON, ENERGY_TOLERANCE)
 	_host.runner.run_steps(MINUTES_TO_SIX)
 	assert_true(rig.refresh())
 	assert_almost_eq(sun.rotation_degrees.x, -60.0, ELEVATION_TOLERANCE, "12:00: rotação x = -60.")

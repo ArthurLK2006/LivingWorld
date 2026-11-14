@@ -41,6 +41,7 @@ func _free_all(nodes: Array[Node]) -> void:
 
 func _assert_applied(config: AmbientConfig, world_environment: WorldEnvironment, sun: DirectionalLight3D) -> void:
 	_assert_fixed_parts(config, world_environment, sun)
+	assert_eq(sun.light_color, config.sun_color)
 	assert_almost_eq(sun.light_energy, config.sun_energy, FLOAT_TOLERANCE)
 	assert_true(sun.rotation_degrees.is_equal_approx(Vector3(-config.sun_elevation_degrees, config.sun_yaw_degrees, 0.0)), "Rotação do sol: x = -inclinação, y = giro.")
 	var sky: ProceduralSkyMaterial = world_environment.environment.sky.sky_material as ProceduralSkyMaterial
@@ -53,9 +54,8 @@ func _assert_applied(config: AmbientConfig, world_environment: WorldEnvironment,
 	assert_eq(world_environment.environment.fog_light_color, config.fog_color)
 
 
-## Valores que NÃO dependem da hora (a partir da LW-042 a luz e as cores são função da hora simulada).
+## Valores que NÃO dependem da hora (a partir da LW-042 a luz e as cores são função da hora simulada; a partir da ART-4 a cor do sol também: a do dia fica em `_assert_applied`).
 func _assert_fixed_parts(config: AmbientConfig, world_environment: WorldEnvironment, sun: DirectionalLight3D) -> void:
-	assert_eq(sun.light_color, config.sun_color)
 	assert_eq(sun.shadow_enabled, config.shadows_enabled)
 	assert_eq(sun.directional_shadow_mode, config.shadow_mode)
 	assert_almost_eq(sun.directional_shadow_max_distance, config.shadow_max_distance_m, FLOAT_TOLERANCE)
@@ -155,6 +155,7 @@ func test_the_main_scene_has_one_environment_and_one_shadowed_sun_with_the_resou
 	# O jogo nasce à meia-noite (LW-042): a luz é a da noite, com o sol bem abaixo do horizonte.
 	var sky: ProceduralSkyMaterial = world_environment.environment.sky.sky_material as ProceduralSkyMaterial
 	assert_eq(sun.light_energy, 0.0)
+	assert_eq(sun.light_color, rig.config.dusk_sun_color, "Sol apagado: a cor dele à noite é a do crepúsculo (ART-4).")
 	assert_eq(sky.sky_top_color, rig.config.night_sky_top_color)
 	assert_eq(world_environment.environment.ambient_light_color, rig.config.night_ambient_color)
 	assert_eq(world_environment.environment.fog_light_color, rig.config.night_fog_color)
