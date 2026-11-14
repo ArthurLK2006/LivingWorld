@@ -293,6 +293,16 @@ func test_can_deliver_is_true_only_for_my_accepted_contract_to_this_market_with_
 	assert_false(_row(ids["carried"]).can_deliver, "O contrato que não é meu não se entrega, mesmo `accepted`, no destino e com os bens.")
 
 
+func test_can_deliver_turns_false_exactly_at_the_deadline() -> void:
+	var contract_id: int = _post(_market_a, _market_b, SHORT_MINUTES)
+	_accept(contract_id)
+	_give(BREAD, QUANTITY)
+	_host.runner.run_steps(SHORT_MINUTES - 1)
+	assert_eq(_deliverable(_market_b), [contract_id] as Array[int], "Um minuto antes do prazo, aceito, no destino e com os bens: entrega.")
+	_host.runner.step_once()
+	assert_eq(_deliverable(_market_b), [] as Array[int], "No minuto do prazo a dica de entrega apaga (`is_overdue`).")
+
+
 func test_the_destination_settlement_comes_from_the_markets_and_is_empty_when_the_destination_is_not_a_market() -> void:
 	var to_b: int = _post(_market_a, _market_b, LONG_MINUTES)
 	var to_c: int = _post(_market_a, _market_c, LONG_MINUTES)
