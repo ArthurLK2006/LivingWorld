@@ -3,7 +3,7 @@ extends RefCounted
 ## Fluxo de decisão do NPC e fila de pensamento (LW-063; contrato em docs/modules/npc.md, seção 5, e arquitetura 9.7), em modo S1 (sem
 ## corpo). A cada passo, `run_step` deixa pensar só quem chegou no seu `next_think_time`, no máximo `max_thinks_per_step` por passo (o mais
 ## antigo primeiro, empate pelo menor id; o excedente espera). Cada NPC que pensa: (1) leva as necessidades até agora; (2) termina a ação se
-## o tempo dela acabou (e, se uma necessidade LETAL ficou em nível crítico além do limite, o NPC MORRE e nada mais acontece, LW-081); (3) monta as candidatas: com necessidade URGENTE (nível 2 ou mais) as ações que a aliviam, senão (ou se nenhuma
+## o tempo dela acabou (e, se uma necessidade LETAL ficou em nível crítico além do limite, o NPC MORRE e nada mais acontece, LW-081; vivo e em TRÂNSITO, com caravana na economia, LW-098f2, o NPC só chega até aqui: não escolhe nada, só reagenda o pensamento); (3) monta as candidatas: com necessidade URGENTE (nível 2 ou mais) as ações que a aliviam, senão (ou se nenhuma
 ## delas pode começar) a ação da ROTINA da hora, mais a ação em andamento (que ganha o bônus de inércia); só entra quem tem local e pode
 ## começar (pré-condições); (4) pontua com o
 ## UtilityScorer; (5) ordena (pontos, depois id da ação, depois id do local), toma até `decision_top_k` dentro de `decision_margin` pontos

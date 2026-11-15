@@ -1,8 +1,8 @@
 extends GutTest
 ## LW-098f2 (docs/modules/economy.md 9.12 e 9.13; docs/modules/npc.md 14.11): a ação `haul`, a decisão e o emprego do comerciante no `npc`, sem nenhum comerciante no jogo real (população em memória, como a LW-093b). O jogo é MONTADO como o real
 ## (`GameModules`, dados de `res://data`, rotas e economia reais, build de desenvolvimento) e SEM população: quem nasce é o comerciante que o teste cria. Cenário de lucro: pão barato no A (120) e caro no B (15), como nas tarefas da economia; sem ele
-## os preços nascem iguais (dia 0, nenhum par dá lucro). Cobre: o dado (`haul` e a agenda; serialização, compatibilidade e determinismo); só viaja com lucro e fica parado sem diferença; o valor da `haul` é só o `net_profit`; T1 (a viagem
-## não é ação do runner e o NPC em trânsito não pensa); T2 (fora de casa); `haul` nunca é candidata a quem não é comerciante; a partida que a economia recusa falha por regra; o ofício `market` não aceita vaga de produção e o NPC em trânsito
+## os preços nascem iguais (dia 0, nenhum par dá lucro). Cobre: o dado (`haul` e a agenda; serialização, compatibilidade e determinismo); só viaja com lucro e fica parado sem diferença; o valor da `haul` é só o `net_profit` do MELHOR plano (mesmo quando não é o primeiro da lista; o `total` do rastro o soma); T1 (a viagem
+## não é ação do runner e o NPC em trânsito não pensa, mas a morte vale); T2 (fora de casa); `haul` nunca é candidata a quem não é comerciante; a partida que a economia recusa falha por regra; o ofício `market` não aceita vaga de produção e o NPC em trânsito
 ## também não; determinismo. Dos números [HIP] só se fixam os de contrato (conta 300, 100%); o resto sai da economia (o plano é a fonte da verdade).
 
 const DATA_DIR: String = "res://data"
@@ -11,6 +11,7 @@ const BLOCKS_FILE: String = "routine_blocks.json"
 const SEED: int = 98
 const SETTLEMENT_A: String = "test_settlement_a"
 const SETTLEMENT_B: String = "test_settlement_b"
+const SETTLEMENT_C: String = "test_settlement_c"
 const MARKET_A: String = "a_market_01"
 const MARKET_B: String = "b_market_01"
 const HOME_A: String = "a_home_01"
@@ -59,8 +60,8 @@ func after_each() -> void:
 
 # ---------------------------------------------------------------------------------------------------- montagem
 
-## O jogo como o real, sem população. `spread`: o cenário de lucro (pão 120 no A e 15 no B); falso = preços iguais. `percent`: o `haul_value_percent` (-1 = o dos dados). `routine`: a tabela de rotina (nulo = a real).
-func _rig(start_minute: int, spread: bool = true, percent: int = -1, routine: RoutineTable = null) -> Rig:
+## O jogo como o real, sem população. `spread`: o cenário de lucro (pão 120 no A e 15 no B); falso = preços iguais. `percent`: o `haul_value_percent` (-1 = o dos dados). `routine`: a tabela de rotina (nulo = a real). `starving`: a fome já nasce crítica e letal em 2 h (a real leva dias; a viagem dura 143 min).
+func _rig(start_minute: int, spread: bool = true, percent: int = -1, routine: RoutineTable = null, starving: bool = false) -> Rig:
 	var setup: NpcSetup = NpcSetup.from_dir(DATA_DIR, _places, true)
 	assert_true(setup.result.ok, setup.result.message)
 	setup.definitions.population = null
@@ -68,6 +69,10 @@ func _rig(start_minute: int, spread: bool = true, percent: int = -1, routine: Ro
 		setup.definitions.params.haul_value_percent = percent
 	if routine != null:
 		setup.routine = routine
+	if starving:
+		setup.need_defs[HUNGER].start_value = 95
+		setup.need_defs[HUNGER].weaken_after_hours = 1
+		setup.need_defs[HUNGER].lethal_after_hours = 2
 	var rig: Rig = Rig.new()
 	rig.runner = SimulationRunner.new(SEED, start_minute)
 	_runners.append(rig.runner)
@@ -84,9 +89,12 @@ func _rig(start_minute: int, spread: bool = true, percent: int = -1, routine: Ro
 	return rig
 
 
-func _set_bread(rig: Rig, in_a: int, in_b: int) -> void:
+## `in_c` negativo = o mercado do C fica como está.
+func _set_bread(rig: Rig, in_a: int, in_b: int, in_c: int = -1) -> void:
 	assert_true(rig.economy.request_set_stock(rig.market_a, BREAD, in_a).ok)
 	assert_true(rig.economy.request_set_stock(rig.market_b, BREAD, in_b).ok)
+	if in_c >= 0:
+		assert_true(rig.economy.request_set_stock(rig.economy.peek_market_of(SETTLEMENT_C).market_id, BREAD, in_c).ok)
 
 
 ## Cria um NPC no local dado, com a casa no A (`work_place_id` vazio = sem emprego). Devolve o ID.
@@ -238,6 +246,24 @@ func test_the_merchant_departs_with_the_best_plan_and_the_value_of_haul_is_only_
 		assert_eq([rig.economy.peek_balance(merchant).balance, _conserved(rig)], [300 - plan.cost, true], "O dinheiro sai só pela compra do lote (conta de comerciante: 300).")
 
 
+## A economia lista os planos por destino crescente (B, depois C) e aqui o melhor é o SEGUNDO (pão caro no C): quem pegasse o primeiro da lista valeria e partiria errado. O `total` do rastro é o que a escolha usa (compete com a inércia e com `rest`): tem de somar o valor da `haul`.
+func test_the_best_plan_is_the_one_of_highest_net_profit_even_when_it_is_not_the_first_of_the_list() -> void:
+	var rig: Rig = _rig(EVENING, false, 50)
+	_set_bread(rig, 120, 20, 60)
+	var merchant: int = _spawn(rig, MERCHANT, SETTLEMENT_A, MARKET_A, MARKET_A)
+	var plans: Array[CaravanReplies.PlanQuery] = rig.economy.peek_trade_plans(merchant, rig.market_a).plans
+	assert_eq(plans.size(), 2, "Há plano para o B e para o C.")
+	assert_lt(plans[0].net_profit, plans[1].net_profit, "O melhor plano (o do C) NÃO é o primeiro da lista.")
+	assert_true(rig.npc.request_set_traced(merchant, true).ok)
+	assert_true(_run_until(rig, _doing.bind(rig, merchant, HAUL), 40))
+	var record: DecisionTracer.DecisionRecord = rig.npc.explain_decision(merchant).records.back()
+	var candidate: DecisionTracer.CandidateRecord = record.candidates.filter(func(row: DecisionTracer.CandidateRecord) -> bool: return row.action_id == HAUL)[0]
+	assert_eq(candidate.benefit, IntMath.floor_div(plans[1].net_profit * 50, 100), "O valor da `haul` é o `net_profit` do MELHOR plano vezes 50%, não o do primeiro da lista.")
+	assert_eq(candidate.total, candidate.benefit + candidate.personality - candidate.time_cost - candidate.distance_cost - candidate.risk_cost + candidate.inertia_bonus + candidate.routine_bonus, "O `total` que a escolha usa soma o valor da `haul`, não só o `benefit` do rastro.")
+	assert_true(_run_until(rig, _departed.bind(rig, merchant), 20))
+	assert_eq(rig.economy.peek_caravan(merchant).destination_market_id, plans[1].destination_market_id, "Parte para o destino do melhor plano (o C).")
+
+
 func test_a_value_of_zero_makes_haul_no_candidate_and_the_merchant_stays_put() -> void:
 	var rig: Rig = _rig(MORNING, true, 0)
 	var merchant: int = _spawn(rig, MERCHANT, SETTLEMENT_A, MARKET_A, MARKET_A)
@@ -292,6 +318,17 @@ func test_t1_the_trip_is_no_runner_action_and_the_merchant_in_transit_does_not_t
 	assert_eq([_departed(rig, merchant), rig.arrivals.size()], [false, 1], "No minuto do ETA a economia encerra a caravana.")
 	assert_true(_run_until(rig, func() -> bool: return not _doing(rig, merchant, ""), 20), "Livre da viagem, o comerciante volta a pensar (a agenda das 19h).")
 	assert_true(_conserved(rig))
+
+
+## A morte vale em trânsito: o `think` leva as necessidades e a checagem letal ANTES de pular o NPC em viagem. Cenário mínimo: a fome nasce crítica e letal em 2 h e a caravana parte pela economia antes do 1º pensamento (que vê a fome crítica); o comerciante tem de morrer 2 h depois, antes do ETA (143 min).
+func test_a_starving_merchant_in_transit_still_dies_before_the_trip_ends() -> void:
+	var rig: Rig = _rig(EVENING, false, -1, null, true)
+	var merchant: int = _spawn(rig, MERCHANT, SETTLEMENT_A, MARKET_A, MARKET_A)
+	var started: CaravanReplies.StartResult = rig.economy.request_start_caravan(merchant, rig.market_a, rig.market_b, BREAD, 1)
+	assert_true(started.result.ok, started.result.message)
+	var died: bool = _run_until(rig, func() -> bool: return not rig.npc.peek_npc(merchant).is_alive, started.eta_minute - _now(rig) - 1)
+	assert_true(died, "Em trânsito o pensador ainda leva as necessidades e faz a checagem letal (só depois pula): a fome crítica há 2 h mata antes do ETA.")
+	assert_eq([rig.npc.peek_npc(merchant).death_cause, rig.arrivals.size(), _conserved(rig)], ["hunger", 0, true], "Morreu de fome com a caravana ainda na estrada (nada chegou) e a conservação da economia segue valendo.")
 
 
 func test_t2_away_from_home_the_merchant_rests_where_it_is_and_heads_home_to_eat_from_its_own_cargo() -> void:
