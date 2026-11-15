@@ -1,5 +1,5 @@
 extends GutTest
-## ART-12, entrega 4a1: o CharacterAssembler (as peças) com os ativos REAIS e o catálogo real (sem janela). Homem e mulher, Peasant e Ranger montam sobre UM esqueleto de 65 ossos com toda malha ligada a ele; origem nos pés e escala pela ficha; a troca de peça em tempo de execução mantém o esqueleto e os 65 ossos; falhas devolvem falso sem erro e sem deixar nada; nenhum nó órfão. As animações e os pés (idle e walk) ficam na entrega 4a2.
+## ART-12, entrega 4a: o CharacterAssembler com os ativos REAIS e o catálogo real (sem janela). Homem e mulher, Peasant e Ranger montam sobre UM esqueleto de 65 ossos com toda malha ligada a ele; origem nos pés e escala pela ficha; idle e walk tocam em laço e a pose muda; os pés não afundam (osso do pé em coordenadas globais); a troca de peça em tempo de execução mantém esqueleto e animação; falhas devolvem falso sem erro e sem deixar nada; nenhum nó órfão. O tempo avança por `AnimationPlayer.advance`, sem esperar quadros.
 
 const BONES: int = 65
 const OUTFITS: String = "res://assets/characters/quaternius/outfits/"
@@ -15,6 +15,8 @@ const MALE_PEASANT_BEARD: Array = ["male_a", "peasant_m", "buzzed", "brow_regula
 const PEASANT_MESHES: int = 8
 const RANGER_MESHES: int = 13
 const FOOT_TOLERANCE_M: float = 0.02
+const CYCLE_SAMPLES: int = 40
+const CYCLE_STEP_S: float = 0.0625
 
 var _catalog: CharacterCatalog
 
@@ -43,6 +45,20 @@ func _built(combo: Array, permille: int = 1000) -> CharacterAssembler:
 	return assembler
 
 
+func _player(assembler: CharacterAssembler) -> AnimationPlayer:
+	return assembler.find_children("*", "AnimationPlayer", true, false)[0] as AnimationPlayer
+
+
+func _at(skeleton: Skeleton3D, bone_name: String) -> Vector3:
+	skeleton.force_update_all_bone_transforms()
+	return skeleton.get_bone_global_pose(skeleton.find_bone(bone_name)).origin
+
+
+## Altura do osso sobre a que ele tem no repouso, em que a sola está no chão.
+func _lift(skeleton: Skeleton3D, bone_name: String) -> float:
+	return _at(skeleton, bone_name).y - skeleton.get_bone_global_rest(skeleton.find_bone(bone_name)).origin.y
+
+
 func _bounds(assembler: CharacterAssembler) -> AABB:
 	var meshes: Array[MeshInstance3D] = CharacterSceneLoader.meshes_of(assembler)
 	var box: AABB = meshes[0].global_transform * meshes[0].mesh.get_aabb()
@@ -62,6 +78,8 @@ func test_four_looks_share_one_65_bone_skeleton_with_every_mesh_bound_to_it() ->
 		assert_eq(meshes.size(), PEASANT_MESHES if String(combo[1]).begins_with("peasant") else RANGER_MESHES, "malhas: " + str(combo[1]))
 		for mesh: MeshInstance3D in meshes:
 			assert_true(mesh.get_parent() == skeleton and mesh.get_node(mesh.skeleton) == skeleton and mesh.skin != null, "malha ligada ao esqueleto e com pele: " + str(mesh.name))
+		assert_false(assembler.is_playing(), "montar não começa a tocar sozinho")
+		assert_eq(assembler.current_clip(), "")
 
 
 func test_the_shared_skeleton_has_the_rest_pose_of_the_outfit_not_of_the_male_base_head() -> void:
@@ -86,12 +104,64 @@ func test_origin_is_at_the_feet_and_scale_permille_scales_the_height_proportiona
 	assert_eq(_built(MALE_PEASANT, 0).scale, Vector3.ONE, "escala inválida na ficha cai na neutra")
 
 
-func test_swapping_a_part_at_runtime_keeps_the_skeleton_and_the_bones() -> void:
+func test_idle_and_walk_play_in_a_loop_and_the_pose_changes_between_two_instants() -> void:
 	var assembler: CharacterAssembler = _built(MALE_PEASANT)
 	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(assembler)
+	var player: AnimationPlayer = _player(assembler)
+	for clip: String in ["idle", "walk"]:
+		assert_true(assembler.play(clip), clip)
+		assert_true(assembler.is_playing())
+		assert_eq(assembler.current_clip(), clip)
+		assert_ne(player.get_animation(clip).loop_mode, Animation.LOOP_NONE, clip + " em laço")
+		player.advance(0.01)
+		var start: float = player.current_animation_position
+		assert_true(assembler.play(clip))
+		assert_eq(player.current_animation_position, start, clip + ": tocar de novo o mesmo clipe não reinicia")
+		var hand_start: Vector3 = _at(skeleton, "hand_l")
+		player.advance(0.6)
+		assert_gt(player.current_animation_position, start, clip + ": a posição da animação avança")
+		assert_gt(_at(skeleton, "hand_l").distance_to(hand_start), 0.01, clip + ": a pose muda")
+		player.advance(player.get_animation(clip).length)
+		assert_true(assembler.is_playing(), clip + ": passou do fim e continua tocando")
+	assert_false(assembler.play("no_such_clip"), "chave desconhecida")
+	assert_eq(assembler.current_clip(), "walk", "e a animação atual não muda")
+
+
+func test_feet_stay_within_2_cm_of_the_ground_in_idle_and_never_sink_in_walk_for_both_genders() -> void:
+	for combo: Array in [MALE_PEASANT, FEMALE_PEASANT]:
+		var assembler: CharacterAssembler = _built(combo)
+		var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(assembler)
+		var player: AnimationPlayer = _player(assembler)
+		assembler.play("idle")
+		for sample: int in CYCLE_SAMPLES:
+			player.advance(CYCLE_STEP_S)
+			for foot: String in ["foot_l", "foot_r"]:
+				assert_lt(absf(_lift(skeleton, foot)), FOOT_TOLERANCE_M, "%s idle %s (amostra %d)" % [combo[1], foot, sample])
+		assembler.play("walk")
+		var highest: float = 0.0
+		for sample: int in CYCLE_SAMPLES:
+			player.advance(CYCLE_STEP_S)
+			var left: float = _lift(skeleton, "foot_l")
+			var right: float = _lift(skeleton, "foot_r")
+			assert_gt(minf(left, right), -FOOT_TOLERANCE_M, "%s walk: o pé mais baixo afunda (amostra %d)" % [combo[1], sample])
+			highest = maxf(highest, maxf(left, right))
+		assert_gt(highest, 0.1, combo[1] + ": no passo o pé sai do chão")
+
+
+func test_swapping_a_part_at_runtime_keeps_the_skeleton_the_bones_and_the_animation() -> void:
+	var assembler: CharacterAssembler = _built(MALE_PEASANT)
+	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(assembler)
+	var player: AnimationPlayer = _player(assembler)
+	assembler.play("walk")
+	player.advance(0.3)
+	var before: float = player.current_animation_position
 	assert_true(assembler.swap_part(CharacterAssembler.SLOT_TORSO, OUTFITS + "Male_Ranger_Body_Arms.glb"))
 	assert_same(CharacterSceneLoader.skeleton_of(assembler), skeleton, "o esqueleto é o mesmo")
+	assert_same(_player(assembler), player, "o AnimationPlayer é o mesmo")
 	assert_eq(skeleton.get_bone_count(), BONES)
+	assert_eq([assembler.is_playing(), assembler.current_clip(), player.current_animation_position], [true, "walk", before], "a troca não reinicia a animação")
+	player.advance(0.1)
+	assert_gt(player.current_animation_position, before, "e ela segue andando")
 	var meshes: Array[MeshInstance3D] = CharacterSceneLoader.meshes_of(assembler)
 	assert_eq(meshes.size(), PEASANT_MESHES, "mesmo número de malhas")
 	for mesh: MeshInstance3D in meshes:
@@ -125,6 +195,7 @@ func test_incomplete_requests_fail_with_false_and_leave_nothing_behind() -> void
 	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(assembler)
 	assert_false(assembler.build(_look(MALE_PEASANT), missing_file), "remontagem que falha")
 	assert_same(CharacterSceneLoader.skeleton_of(assembler), skeleton, "mantém o personagem anterior")
+	assert_true(assembler.play("idle"))
 
 
 func test_a_beard_in_the_look_is_one_more_mesh_and_needs_a_beard_for_the_gender_of_the_body() -> void:
@@ -133,6 +204,16 @@ func test_a_beard_in_the_look_is_one_more_mesh_and_needs_a_beard_for_the_gender_
 	assert_false(assembler.build(_look(FEMALE_PEASANT + ["beard_01"]), _catalog), "não há barba para o gênero do corpo")
 	assert_false(assembler.build(_look(MALE_PEASANT + ["no_such_beard"]), _catalog), "barba fora do catálogo")
 	assert_eq(assembler.get_child_count(), 0, "nada pela metade")
+
+
+func test_the_eyebrow_comes_from_the_gender_of_the_body_and_falls_back_to_all_when_the_catalog_has_none_for_it() -> void:
+	var assembler: CharacterAssembler = add_child_autofree(CharacterAssembler.new())
+	assert_false(assembler.build(_look(["male_a", "peasant_m", "buzzed", "brow_female"]), _catalog), "sobrancelha de mulher no homem")
+	assert_false(assembler.build(_look(["female_a", "peasant_f", "long", "brow_regular"]), _catalog), "sobrancelha de homem na mulher")
+	var text: String = FileAccess.get_file_as_string(CharacterCatalog.DEFAULT_PATH).replace("\"id\": \"brow_regular\", \"gender\": \"male\"", "\"id\": \"brow_regular\", \"gender\": \"female\"")
+	var no_male_brow: CharacterCatalog = CharacterCatalog.from_json(text, "teste", func(_path: String) -> bool: return true).catalog
+	assert_true(no_male_brow.is_ready() and no_male_brow.eyebrows_for("male").is_empty(), "catálogo válido, sem sobrancelha de homem")
+	assert_true(assembler.build(_look(MALE_PEASANT), no_male_brow), "sem sobrancelha para o gênero vale qualquer uma (a regra da ficha)")
 
 
 func test_a_failure_after_the_parts_load_keeps_the_previous_character_and_leaks_no_scene() -> void:
@@ -144,11 +225,13 @@ func test_a_failure_after_the_parts_load_keeps_the_previous_character_and_leaks_
 	var variants: Dictionary[String, String] = {
 		"ossos do catálogo diferentes dos do esqueleto": text.replace("\"skeleton_bones\": 65", "\"skeleton_bones\": 64"),
 		"tronco que existe mas não serve ao esqueleto": text.replace(OUTFITS + "Male_Peasant_Body_Arms.glb", ANIMATIONS),
+		"tronco que é uma cena sem esqueleto": text.replace(OUTFITS + "Male_Peasant_Body_Arms.glb", "res://tests/unit/support/no_skeleton.tscn"),
 		"peça que falta no meio do carregamento": text.replace(OUTFITS + "Male_Peasant_Legs.glb", OUTFITS + "Missing_Legs.glb"),
 	}
 	for reason: String in variants:
 		assert_ne(variants[reason], text, "a troca de texto vale: " + reason)
 		var broken: CharacterCatalog = CharacterCatalog.from_json(variants[reason], "teste", func(_path: String) -> bool: return true).catalog
+		assert_true(broken.is_ready(), "catálogo válido: " + reason)
 		assert_false(assembler.build(_look(MALE_PEASANT), broken), reason)
 		assert_same(CharacterSceneLoader.skeleton_of(assembler), skeleton, "mantém o personagem anterior: " + reason)
 	assert_eq(int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), orphans_before, "nenhuma cena carregada vaza")
