@@ -1,6 +1,6 @@
 class_name CharacterAppearance
 extends RefCounted
-## A ficha de aparência de UM NPC (ART-12, entrega 3; só dados, sem Node nem visual): função PURA do `npc_id` e das tabelas do catálogo e das paletas, por hash de inteiros, sem sorteio, sem relógio e sem ordem de carga. O mesmo `npc_id` dá a mesma ficha a cada carregamento e em cada máquina. Profissão e facção não entram (a consulta de corpos só traz id e posição). Contrato: docs/modules/presentation.md.
+## A ficha de aparência de UM NPC (ART-12, entrega 3; só dados, sem Node nem visual): função PURA do `npc_id` e das tabelas do catálogo e das paletas, por hash de inteiros, sem sorteio, sem relógio e sem ordem de carga. O mesmo `npc_id` dá a mesma ficha a cada carregamento e em cada máquina. Profissão e facção não entram (a consulta de corpos só traz id e posição). A barba é uma camada à parte do cabelo (`beard_id`, vazio = sem barba): só para homens e só se o catálogo tiver barbas; a sobrancelha sai das compatíveis com o gênero. Contrato: docs/modules/presentation.md.
 ## A ORDEM e o TAMANHO das tabelas são entrada: a escolha é por índice e o tamanho entra no módulo, então reordenar, inserir ou até acrescentar no fim muda as fichas de parte dos NPCs (medido: uma roupa feminina nova no fim muda a roupa de 53 das 62 mulheres); mude as tabelas só de propósito.
 ## O hash: `mix32` mistura 32 bits (xorshift e multiplicação, duas rodadas) e MASCARA para 32 bits depois de cada passo. Os multiplicadores são ímpares de 31 bits, então o produto de um valor de 32 bits cabe em 63 bits e o resultado nunca depende de estouro de inteiro. Cada campo usa o hash com o PRÓPRIO SAL (`hash_field`: o sal entra entre as duas misturas), então os campos não se correlacionam.
 
@@ -9,7 +9,7 @@ const MIX_MULTIPLIER_A: int = 0x21F0AAAD
 const MIX_MULTIPLIER_B: int = 0x735A2D97
 const MIX_SHIFT_A: int = 16
 const MIX_SHIFT_B: int = 15
-## Um sal por campo: os oito primeiros múltiplos de 0x9E3779B9 (razão áurea) módulo 2^32.
+## Um sal por campo: os nove primeiros múltiplos de 0x9E3779B9 (razão áurea) módulo 2^32 (o nono, 0x8FF34781, é o da barba).
 const SALT_BODY: int = 0x9E3779B9
 const SALT_OUTFIT: int = 0x3C6EF372
 const SALT_HAIR: int = 0xDAA66D2B
@@ -18,6 +18,10 @@ const SALT_CLOTH: int = 0x1715609D
 const SALT_SKIN: int = 0xB54CDA56
 const SALT_HAIR_TONE: int = 0x5384540F
 const SALT_SCALE: int = 0xF1BBCDC8
+const SALT_BEARD: int = 0x8FF34781
+## Fração dos homens com barba, em milésimos [HIP]: cerca de 1 em 3.
+const BEARD_PERMILLE: int = 350
+const PERMILLE_BASE: int = 1000
 ## Escala pequena do corpo, em milésimos [HIP].
 const SCALE_MIN_PERMILLE: int = 960
 const SCALE_MAX_PERMILLE: int = 1040
@@ -28,6 +32,7 @@ var body_id: String = ""
 var gender: String = ""
 var outfit_id: String = ""
 var hair_id: String = ""
+var beard_id: String = ""
 var eyebrow_id: String = ""
 var cloth_palette_index: int = 0
 var skin_index: int = 0
@@ -46,7 +51,8 @@ static func of(target_id: int, catalog: CharacterCatalog, palettes: CharacterPal
 	sheet.gender = body["gender"]
 	sheet.outfit_id = _choose(catalog.outfits_for(sheet.gender), target_id, SALT_OUTFIT)["id"]
 	sheet.hair_id = _choose(catalog.hair_for(sheet.gender), target_id, SALT_HAIR)["id"]
-	sheet.eyebrow_id = _choose(catalog.eyebrows(), target_id, SALT_EYEBROW)["id"]
+	sheet.beard_id = _beard_for(sheet.gender, target_id, catalog)
+	sheet.eyebrow_id = _eyebrow_for(sheet.gender, target_id, catalog)
 	sheet.cloth_palette_index = pick(target_id, SALT_CLOTH, palettes.count(CharacterPalettes.CLOTH))
 	sheet.skin_index = pick(target_id, SALT_SKIN, palettes.count(CharacterPalettes.SKIN))
 	sheet.hair_tone_index = pick(target_id, SALT_HAIR_TONE, palettes.count(CharacterPalettes.HAIR))
@@ -82,8 +88,27 @@ func is_resolved() -> bool:
 
 ## Texto estável da APARÊNCIA (sem o `npc_id`: dois NPCs de aparência igual têm o mesmo texto), para os testes.
 func fingerprint() -> String:
-	return "%s|%s|%s|%s|%d|%d|%d|%d" % [body_id, outfit_id, hair_id, eyebrow_id, cloth_palette_index, skin_index, hair_tone_index, scale_permille]
+	return "%s|%s|%s|%s|%s|%d|%d|%d|%d" % [body_id, outfit_id, hair_id, beard_id, eyebrow_id, cloth_palette_index, skin_index, hair_tone_index, scale_permille]
 
 
 static func _choose(options: Array[Dictionary], target_id: int, salt: int) -> Dictionary:
 	return options[pick(target_id, salt, options.size())]
+
+
+## A barba ("" = sem barba): só homem, só se o catálogo tiver barbas e só em BEARD_PERMILLE milésimos dos homens. A escolha entre as barbas faz o hash do sorteio de novo (com o mesmo valor, o resto por 1000 e o resto pelo número de barbas ficariam atados).
+static func _beard_for(body_gender: String, target_id: int, catalog: CharacterCatalog) -> String:
+	if body_gender != CharacterCatalog.MALE:
+		return ""
+	var beards: Array[Dictionary] = catalog.beards_for(body_gender)
+	var roll: int = hash_field(target_id, SALT_BEARD)
+	if beards.is_empty() or roll % PERMILLE_BASE >= BEARD_PERMILLE:
+		return ""
+	return _choose(beards, roll, SALT_BEARD)["id"]
+
+
+## A sobrancelha compatível com o gênero; se o catálogo não tiver nenhuma, cai em todas (a ficha nunca fica sem sobrancelha).
+static func _eyebrow_for(body_gender: String, target_id: int, catalog: CharacterCatalog) -> String:
+	var options: Array[Dictionary] = catalog.eyebrows_for(body_gender)
+	if options.is_empty():
+		options = catalog.eyebrows()
+	return _choose(options, target_id, SALT_EYEBROW)["id"]
