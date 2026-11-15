@@ -82,6 +82,12 @@ static func _compatible(table: Array[Dictionary], gender: String) -> Array[Dicti
 	return found
 
 
+## O rótulo da linha de roupa nos erros: o `id` quando é texto não vazio; senão "outfits[i]" (como o `identify` do leitor).
+static func _row_label(row: Dictionary, index: int) -> String:
+	var id: Variant = row.get("id")
+	return String(id) if typeof(id) == TYPE_STRING and not String(id).is_empty() else "outfits[%d]" % index
+
+
 func _read(reader: CharacterDataReader, root: Dictionary) -> void:
 	reader.whole(root, "version", "", SUPPORTED_VERSION, SUPPORTED_VERSION)
 	skeleton_bones = reader.whole(root, "skeleton_bones", "", 1, MAX_BONES)
@@ -89,8 +95,9 @@ func _read(reader: CharacterDataReader, root: Dictionary) -> void:
 	_outfits = _table(reader, root, "outfits", BODY_GENDERS, PackedStringArray())
 	_hair = _table(reader, root, "hair", HAIR_GENDERS, SCENE_PATHS)
 	_eyebrows = _table(reader, root, "eyebrows", PackedStringArray(), SCENE_PATHS)
-	for outfit: Dictionary in _outfits:
-		var item: String = str(outfit.get("id", ""))
+	for index: int in _outfits.size():
+		var outfit: Dictionary = _outfits[index]
+		var item: String = _row_label(outfit, index)
 		var parts: Dictionary = reader.object(outfit, "parts", item)
 		for part: String in OUTFIT_PARTS:
 			reader.resource(parts, part, item)

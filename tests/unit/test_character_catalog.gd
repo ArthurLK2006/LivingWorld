@@ -110,3 +110,11 @@ func test_the_existence_check_can_be_injected() -> void:
 	assert_true(CharacterCatalog.from_json(text, LABEL, func(_path: String) -> bool: return true).result.ok)
 	var fixture_text: String = FileAccess.get_file_as_string(FIXTURE)
 	assert_false(CharacterCatalog.from_json(fixture_text, LABEL, func(_path: String) -> bool: return false).result.ok)
+
+
+func test_unknown_fields_are_ignored_and_a_bad_outfit_id_is_labelled_by_its_position() -> void:
+	for path: Array in [["future_field"], ["outfits", 0, "extra_note"], ["animations", "idle", "note"]]:
+		assert_true(CharacterCatalog.from_json(_text_with(path, "x"), LABEL).result.ok, "campo desconhecido é ignorado: " + str(path))
+	var loaded: CharacterCatalog.LoadResult = CharacterCatalog.from_json(_text_with(["outfits", 0, "id"], 7), LABEL)
+	assert_false(loaded.result.ok, "id numérico")
+	assert_string_contains(loaded.result.message, "outfits[0]")
