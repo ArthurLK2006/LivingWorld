@@ -1,6 +1,6 @@
 # Guia visual do Living World
 
-**Status:** PROPOSTA de trabalho (Fase 0 de arte, 13/11/2026), baseada na decisão de Arthur de 13/11/2026 (DEC-280). Não altera código nem o `project.godot`. Valores marcados **[HIP]** são hipóteses a calibrar na cena demonstrativa; não são requisitos. **Atualização de 15/11/2026 (aprovada por Arthur):** a `DIRETRIZ_ARTE_GLOBAL.md` refina este guia (low poly maduro e facetado no jogo inteiro; paleta sóbria, com identidade própria por cultura, região e facção); onde houver diferença, vale a diretriz.
+**Status:** PROPOSTA de trabalho (Fase 0 de arte, 13/11/2026), baseada na decisão de Arthur de 13/11/2026 (DEC-280). Não altera código nem o `project.godot`. Valores marcados **[HIP]** são hipóteses a calibrar na cena demonstrativa; não são requisitos. **Atualização de 15/11/2026 (aprovada por Arthur):** a `DIRETRIZ_ARTE_GLOBAL.md` refina este guia (low poly maduro e facetado no jogo inteiro; cor com intenção artística e identidade própria por cultura, região, facção e bioma); onde houver diferença, vale a diretriz.
 
 ## 1. Direção em uma frase
 Fantasia medieval 3D estilizada: modelos low-poly facetados e ricos em detalhes, materiais de aparência artística (não fotográfica), cidades e mercados elaborados, vegetação volumosa, luz quente e atmosférica, cores equilibradas e coerência entre as câmeras próxima, isométrica e estratégica.
@@ -17,7 +17,7 @@ Uso: só como referência de linguagem. É proibido copiar modelo, personagem, m
 ## 3. Princípios
 1. Riqueza = densidade de adereços pequenos + paleta disciplinada + luz forte com sombra suave e colorida + emissivos como focos. Não é mais polígonos.
 2. Silhueta primeiro: a peça tem de ser lida a 40 m e recompensar o olhar a 4 m.
-3. Uma cor dominante e um acento por cena; saturação média de 0,35 a 0,45 [HIP] (a diretriz global pede paleta mais sóbria nas grandes superfícies: valor a calibrar na demonstração).
+3. Uma cor dominante e um acento por cena; saturação média de 0,35 a 0,45 [HIP] (a diretriz pede cor com intenção artística: mercados coloridos, vegetação vibrante e paleta própria por região; a sobriedade é escolha por região; veredito de Arthur sobre a D1, 15/11/2026).
 4. Chão aberto nos caminhos, detalhe concentrado nos focos (poço, barracas, portas).
 5. Tudo reproduzível por script e com licença registrada.
 
