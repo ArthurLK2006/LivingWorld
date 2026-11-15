@@ -2,6 +2,7 @@ class_name EconomySetup
 extends RefCounted
 ## LW-090c: monta, a partir dos arquivos de `data/economy/`, TUDO o que o `EconomyModule` recebe pelo construtor (bens, tipos de dono, alvos de mercado, constantes de preço e produção), no mesmo padrão do `NpcSetup`: sem global e
 ## sem autoload, e qualquer arquivo ausente ou inválido vira UMA falha tratada (`result`, `ECONOMY_SETUP_INVALID`) com o assunto e a mensagem do carregador (arquivo, item e campo). Nunca lança erro nem escreve no log.
+## LW-098d3: lê também `caravan_params.json` (os parâmetros do comerciante) e os põe nas definições; a porta de rotas do `world`, quem a entrega à economia é o `GameModules`.
 
 const CODE_INVALID: String = "ECONOMY_SETUP_INVALID"
 const DEFAULT_DIR: String = "res://data/economy"
@@ -26,10 +27,13 @@ static func from_dir(data_dir: String = DEFAULT_DIR, is_development_build: bool 
 	var posts: PostLoader.LoadResult = PostLoader.load_dir(data_dir)
 	if not posts.result.ok:
 		return setup._fail("postos de serviço", posts.result)
+	var caravan: CaravanParamsLoader.LoadResult = CaravanParamsLoader.load_dir(data_dir)
+	if not caravan.result.ok:
+		return setup._fail("parâmetros do comerciante", caravan.result)
 	var conflict: String = place_conflict(production.sites, posts.posts)
 	if not conflict.is_empty():
 		return setup._fail("locais de trabalho", Result.failure(EconomyCodes.DATA_INVALID, conflict))
-	setup.definitions = EconomyDefinitions.new(goods.goods, goods.kinds, markets.targets, markets.params, is_development_build, null, production.recipes, production.params, production.sites, posts.posts)
+	setup.definitions = EconomyDefinitions.new(goods.goods, goods.kinds, markets.targets, markets.params, is_development_build, null, production.recipes, production.params, production.sites, posts.posts, caravan.params)
 	return setup
 
 

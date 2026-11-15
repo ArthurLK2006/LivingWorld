@@ -1,6 +1,6 @@
 class_name CaravanBook
 extends RefCounted
-## O livro de caravanas (LW-098c; docs/modules/economy.md, 9.3, 9.4 e 9.10): um `Caravan` por comerciante em viagem, por `trader_id`; sem registro = parado. NASCE VAZIO; a partida (`add`, LW-098d1) o preenche e a chegada (LW-098d2) o atualiza a cada trecho e o apaga no fim (a parada e o desvio são da 098e): aqui
+## O livro de caravanas (LW-098c; docs/modules/economy.md, 9.3, 9.4 e 9.10): um `Caravan` por comerciante em viagem, por `trader_id`; sem registro = parado. NASCE VAZIO; a partida (`add`, LW-098d1) o preenche e a chegada (LW-098d2) o atualiza a cada trecho e o apaga no fim (a parada, a retomada e o desvio da LW-098e também o atualizam, pelo `add`: não há `update`): aqui
 ## estão o estado, o save (`serialize` e `load_from`), `add` e `remove` (o `NpcDied` do comerciante apaga o registro) e as invariantes (`validate`). Não guarda dinheiro nem bem (`cost_paid` é informação; saldo e carga ficam na conta e no inventário do comerciante, dono do tipo `merchant`),
 ## então não mexe nas duas conservações. Nunca sorteia nem olha o relógio. O save é a LISTA dos registros por `trader_id` crescente; `load_from` confere só os TIPOS e as invariantes (faixas, dono, mercados) são do `validate`, que o `SimulationRunner` chama logo depois de carregar o save.
 

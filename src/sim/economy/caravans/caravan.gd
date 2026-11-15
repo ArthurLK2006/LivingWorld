@@ -2,8 +2,8 @@ class_name Caravan
 extends RefCounted
 ## O registro de um comerciante em viagem (LW-098c; docs/modules/economy.md, 9.3 e 9.4): UM por comerciante, chave = `trader_id` (o `owner_id` do dono do tipo `merchant`; sem ID novo), sem registro = parado. Guarda só o que a viagem tem de seu: o estado
 ## (`travelling` ou `held`), os mercados de origem e de destino, as rotas do caminho e o trecho atual (`leg_index`, `leg_started_at`, `leg_minutes`, `elapsed_at_hold`), o bem e o lote planejados (`good_id`, `quantity`), o que o lote custou (`cost_paid`: informação, fora
-## da soma) e a saída (`departed_at`). A CARGA é o inventário do próprio comerciante (não é copiada para cá) e a posição é DERIVADA do relógio (não é salva). Tempo em minutos de simulação. Os campos são só dado: as regras (partida, chegada, parada e desvio) são das
-## tarefas 098d e 098e, e as invariantes estão em `CaravanBook.validate`.
+## da soma) e a saída (`departed_at`). A CARGA é o inventário do próprio comerciante (não é copiada para cá) e a posição é DERIVADA do relógio (não é salva). Tempo em minutos de simulação. Os campos são só dado: as regras (partida, chegada, parada, retomada e desvio) estão no
+## `CaravanRunner` (LW-098d e LW-098e; a parada num povoado é `held` com `elapsed_at_hold` 0 e `leg_index` no trecho ainda não andado), e as invariantes estão em `CaravanBook.validate`.
 
 const STATE_TRAVELLING: String = "travelling"
 const STATE_HELD: String = "held"

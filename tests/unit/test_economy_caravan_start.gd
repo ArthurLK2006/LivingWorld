@@ -42,8 +42,8 @@ func _rig(with_port: bool = true, with_params: bool = true, dropped_target: Stri
 	assert_true(setup.result.ok, setup.result.message)
 	rig.definitions = setup.definitions
 	rig.definitions.market_targets.assign(rig.definitions.market_targets.filter(func(target: MarketTargetDef) -> bool: return target.id != dropped_target))
-	if with_params:
-		rig.definitions.caravan_params = CaravanParamsLoader.load_dir(EconomySetup.DEFAULT_DIR).params
+	if not with_params:
+		rig.definitions.caravan_params = null  # o `EconomySetup` já traz os parâmetros reais (LW-098d3)
 	rig.routes = WorldModule.new(_routes, true)
 	rig.module = EconomyModule.new(false, rig.definitions, rig.routes if with_port else null)
 	rig.clock = SimClock.new()

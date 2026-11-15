@@ -5,6 +5,9 @@ extends RefCounted
 ## resultado e a de dicas, e os entrega por CAMPOS nomeados e tipados. NÃO escreve texto (rótulos, botões e títulos de coluna ficam vazios: quem escreve é a tela), NÃO lê a ponte, NÃO tem regra de jogo e NÃO
 ## define estilo: só aponta o papel de cada nó por `theme_type_variation`, com os nomes do `MarketTheme`; o `Theme` é posto pela `MarketView` no `Control` raiz. A ordem de Tab é a ordem de criação:
 ## tabela, quantidade, Comprar, Vender, Fechar (a tabela receber o foco ao abrir é decisão da tela).
+## LW-107e1: a coluna ganha o cabeçalho de abas "Mercado | Contratos" (dois botões de alternância, o primeiro filho da coluna) e `market_page` lista os nós da página do mercado (todos os outros filhos da coluna), para a tela trocar
+## de página só por `visible`, sem mudar o pai de nenhum nó; a página de contratos se pendura na `column` como irmã. Os botões do cabeçalho ficam FORA do ciclo de Tab que a LW-106 definiu (o `focus_next` do Fechar aponta
+## para a tabela): o foco ao abrir e o ciclo da página do mercado seguem os de sempre, e o cabeçalho se alcança com Shift+Tab ou com o mouse.
 
 ## Colunas da tabela dos bens (a tela escreve os títulos e preenche as linhas).
 const COLUMN_NAME: int = 0
@@ -24,6 +27,10 @@ const NAME_COLUMN_RATIO: int = 3
 const NUMBER_COLUMN_RATIO: int = 1
 
 var panel: PanelContainer
+var column: VBoxContainer
+var market_tab: Button
+var contracts_tab: Button
+var market_page: Array[Control] = []
 var title: Label
 var funds: Label
 var weight: Label
@@ -47,7 +54,7 @@ func build(parent: Control) -> void:
 	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	var margin: Node = _add(panel, MarginContainer.new(), "MarketMargin")
-	var column: Node = _add(margin, VBoxContainer.new(), "MarketColumn")
+	column = _add(margin, VBoxContainer.new(), "MarketColumn") as VBoxContainer
 	title = _label(column, "MarketTitle", MarketTheme.TITLE)
 	var status_row: Node = _add(column, HBoxContainer.new(), "MarketStatusRow")
 	funds = _label(status_row, "MarketFunds", MarketTheme.STATUS)
@@ -74,6 +81,12 @@ func build(parent: Control) -> void:
 	hints = _label(column, "MarketHints", MarketTheme.HINT)
 	for line: Label in [result, hints]:
 		line.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	market_page.assign(column.get_children())
+	var tabs: Node = _add(column, HBoxContainer.new(), "MarketTabs")
+	market_tab = _tab(tabs, "MarketTabMarket")
+	contracts_tab = _tab(tabs, "MarketTabContracts")
+	column.move_child(tabs, 0)
+	close_button.focus_next = close_button.get_path_to(goods)
 
 
 ## Dá o nome fixo ao nó, pendura-o no pai e o devolve.
@@ -93,4 +106,11 @@ static func _label(parent: Node, node_name: String, role: StringName) -> Label:
 static func _button(parent: Node, node_name: String) -> Button:
 	var button: Button = _add(parent, Button.new(), node_name) as Button
 	button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	return button
+
+
+## Botão do cabeçalho de abas: de alternância, para a aba escolhida aparecer apertada (a tela marca qual).
+static func _tab(parent: Node, node_name: String) -> Button:
+	var button: Button = _button(parent, node_name)
+	button.toggle_mode = true
 	return button

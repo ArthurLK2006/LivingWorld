@@ -14,6 +14,7 @@ extends SimModule
 ## LW-098c: o tipo de dono `merchant` (o `NpcDied` fecha também o dono desse tipo e apaga a caravana dele) e o livro de caravanas (`CaravanBook`), que NASCE VAZIO; a porta ganha `peek_caravan` e `peek_caravans_on` (respostas em `CaravanReplies`).
 ## LW-098d1: a PARTIDA (`request_start_caravan`) e os planos (`peek_trade_plans`), feitos pelo `CaravanRunner`, e a porta de rotas do `world` pelo construtor (parâmetro OPCIONAL, 9.2); sem ela, ou sem os parâmetros da caravana nas definições, não há caravana (`ECON_NO_ROUTE`) e nada muda. O jogo real segue sem comerciante.
 ## LW-098d2: a CHEGADA: o `tick` confere as caravanas a cada passo (`EconomyRuntime.check_arrivals`); ao fim do último trecho o `CaravanRunner` vende o lote, apaga o registro e a economia publica o `CaravanArrived` (em `api/`). Sem caravana no livro nada muda.
+## LW-098e: a economia OUVE `RouteStateChanged` pelo NOME do evento (como o `NpcDied`; não publica evento novo): rota fechada sob a caravana a segura (`held`), rota reaberta a retoma e o fim de trecho com a rota seguinte fechada desvia (`CaravanRunner`). Sem caravana no livro nada muda.
 
 const CODE_INVALID_SAVE: String = EconomyCodes.INVALID_SAVE
 const KEY_OWNERS: String = EconomyPersistence.KEY_OWNERS
@@ -22,6 +23,8 @@ const KEY_GOODS: String = EconomyPersistence.KEY_GOODS
 const KEY_MARKETS: String = EconomyPersistence.KEY_MARKETS
 const KEY_PRODUCTION: String = EconomyPersistence.KEY_PRODUCTION
 const NPC_DIED: String = "NpcDied"
+## O evento do `world` que a economia ouve (LW-098e), pelo NOME, lido pelos campos `route_id` e `new_state` (9.2).
+const ROUTE_STATE_CHANGED: String = "RouteStateChanged"
 ## Tipo do dono que o `npc` abre (id em `owner_kinds.json`); só para o aviso de morte, que fecha o dono desse tipo.
 const KIND_NPC: String = "npc"
 ## Tipo do dono do comerciante (id em `owner_kinds.json`; LW-098c): carrinho de peso 120 e saldo 300 [HIP]. O `NpcDied` o fecha como fecha o `npc`.
@@ -33,9 +36,10 @@ var _events: EventBus
 var _ids: IdGenerator
 var _clock: SimClock
 var _subscription: int = EventBus.NO_SUBSCRIPTION
+var _route_subscription: int = EventBus.NO_SUBSCRIPTION
 var _rules: TradeRules
 var _state: EconomyState
-## A porta de rotas do `world` (LW-098d1; 9.2): `peek_route` e `peek_path`. Nula nos testes sem `world` e no jogo real até a fiação do `app` (098d3): então não há caravana.
+## A porta de rotas do `world` (LW-098d1; 9.2): `peek_route` e `peek_path`. Nula nos testes sem `world`; no jogo montado o `GameModules` a passa desde a LW-098d3 (sem ela não há caravana).
 var _world: WorldModule
 ## A última hora cheia do relógio já processada (a produção anda por hora; o fim do dia é a hora que vira múltiplo de 24). Não vai no save: o relógio é restaurado pelo `core` antes dos módulos, e a cada passo a hora já processada é a do relógio.
 var _last_hour: int = 0
@@ -58,12 +62,16 @@ func setup(ctx: SimContext) -> void:
 
 func post_setup() -> void:
 	_subscription = _events.subscribe(NPC_DIED, _on_npc_died)
+	_route_subscription = _events.subscribe(ROUTE_STATE_CHANGED, _on_route_state_changed)
 
 
 func teardown() -> void:
-	if _events != null and _subscription != EventBus.NO_SUBSCRIPTION:
-		_events.unsubscribe(_subscription)
+	if _events != null:
+		for subscription: int in [_subscription, _route_subscription]:
+			if subscription != EventBus.NO_SUBSCRIPTION:
+				_events.unsubscribe(subscription)
 	_subscription = EventBus.NO_SUBSCRIPTION
+	_route_subscription = EventBus.NO_SUBSCRIPTION
 
 
 ## Jogo novo: um mercado por assentamento dos dados, com o saldo inicial do tipo `market` (motivo `game_start`) e o estoque inicial de cada bem. Falha visível (`push_error`) se um dado não couber.
@@ -360,6 +368,18 @@ func _on_npc_died(event: SimEvent) -> void:
 	_state.caravans.remove(owner_id)
 	if _state.book.has_owner(owner_id) and [KIND_NPC, KIND_MERCHANT].has(_state.book.kind_of(owner_id)):
 		_state.book.close_owner(owner_id)
+
+
+## `RouteStateChanged` (LW-098e; 9.7): a rota fechou ou reabriu; o `CaravanRunner` segura, retoma ou refaz o caminho das caravanas, em ordem de `trader_id`. Os campos são lidos pelo nome, sem citar a classe do `world`; carga de outro tipo é ignorada e, com o livro vazio, sai logo.
+func _on_route_state_changed(event: SimEvent) -> void:
+	# Variant: campos crus do evento; o tipo é conferido na linha seguinte.
+	var raw_route: Variant = event.get("route_id")
+	var raw_state: Variant = event.get("new_state")
+	if typeof(raw_route) != TYPE_STRING or typeof(raw_state) != TYPE_STRING or _state.caravans.is_pristine():
+		return
+	var route_id: String = raw_route
+	var new_state: String = raw_state
+	_caravan_runner().route_state_changed(route_id, new_state, _now())
 
 
 ## Publica o `ContractCompleted` se o comando concluiu o contrato e devolve o resultado dele.
