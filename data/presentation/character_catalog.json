@@ -1,0 +1,60 @@
+{
+	"version": 1,
+	"skeleton_bones": 65,
+	"bodies": [
+		{"id": "male_a", "gender": "male", "head_scene": "res://assets/characters/quaternius/base/Superhero_Male_Head.glb"},
+		{"id": "female_a", "gender": "female", "head_scene": "res://assets/characters/quaternius/base/Superhero_Female_Head.glb"}
+	],
+	"outfits": [
+		{"id": "peasant_m", "gender": "male", "parts": {
+			"torso_arms": "res://assets/characters/quaternius/outfits/Male_Peasant_Body_Arms.glb",
+			"legs": "res://assets/characters/quaternius/outfits/Male_Peasant_Legs.glb",
+			"boots": "res://assets/characters/quaternius/outfits/Male_Peasant_Feet.glb",
+			"extras": []}},
+		{"id": "peasant_f", "gender": "female", "parts": {
+			"torso_arms": "res://assets/characters/quaternius/outfits/Female_Peasant_Body_Arms.glb",
+			"legs": "res://assets/characters/quaternius/outfits/Female_Peasant_Legs.glb",
+			"boots": "res://assets/characters/quaternius/outfits/Female_Peasant_Feet.glb",
+			"extras": []}},
+		{"id": "ranger_m", "gender": "male", "parts": {
+			"torso_arms": "res://assets/characters/quaternius/outfits/Male_Ranger_Body_Arms.glb",
+			"legs": "res://assets/characters/quaternius/outfits/Male_Ranger_Legs.glb",
+			"boots": "res://assets/characters/quaternius/outfits/Male_Ranger_Feet_Boots.glb",
+			"extras": [
+				"res://assets/characters/quaternius/outfits/Male_Ranger_Head_Hood.glb",
+				"res://assets/characters/quaternius/outfits/Male_Ranger_Acc_Pauldron.glb",
+				"res://assets/characters/quaternius/outfits/Male_Ranger_Arms_Bracer.glb",
+				"res://assets/characters/quaternius/outfits/Male_Ranger_Body_Belt_1.glb",
+				"res://assets/characters/quaternius/outfits/Male_Ranger_Body_Belt_2.glb"]}},
+		{"id": "ranger_f", "gender": "female", "parts": {
+			"torso_arms": "res://assets/characters/quaternius/outfits/Female_Ranger_Body_Arms.glb",
+			"legs": "res://assets/characters/quaternius/outfits/Female_Ranger_Legs.glb",
+			"boots": "res://assets/characters/quaternius/outfits/Female_Ranger_Feet.glb",
+			"extras": [
+				"res://assets/characters/quaternius/outfits/Female_Ranger_Head_Hood.glb",
+				"res://assets/characters/quaternius/outfits/Female_Ranger_Acc_Pauldrons.glb",
+				"res://assets/characters/quaternius/outfits/Female_Ranger_Arms_Bracer.glb",
+				"res://assets/characters/quaternius/outfits/Female_Ranger_Body_Belt_1.glb",
+				"res://assets/characters/quaternius/outfits/Female_Ranger_Body_Belt_2.glb"]}}
+	],
+	"hair": [
+		{"id": "buzzed", "gender": "male", "scene": "res://assets/characters/quaternius/hair/Hair_Buzzed.glb"},
+		{"id": "simple_parted", "gender": "male", "scene": "res://assets/characters/quaternius/hair/Hair_SimpleParted.glb"},
+		{"id": "beard", "gender": "male", "scene": "res://assets/characters/quaternius/hair/Hair_Beard.glb"},
+		{"id": "buzzed_female", "gender": "female", "scene": "res://assets/characters/quaternius/hair/Hair_BuzzedFemale.glb"},
+		{"id": "buns", "gender": "female", "scene": "res://assets/characters/quaternius/hair/Hair_Buns.glb"},
+		{"id": "long", "gender": "female", "scene": "res://assets/characters/quaternius/hair/Hair_Long.glb"}
+	],
+	"eyebrows": [
+		{"id": "brow_regular", "scene": "res://assets/characters/quaternius/hair/Eyebrows_Regular.glb"},
+		{"id": "brow_female", "scene": "res://assets/characters/quaternius/hair/Eyebrows_Female.glb"}
+	],
+	"animations": {
+		"idle": {"path": "res://assets/characters/quaternius/animations/UAL1_Standard_Subset.glb", "name": "Idle"},
+		"walk": {"path": "res://assets/characters/quaternius/animations/UAL1_Standard_Subset.glb", "name": "Walk"},
+		"jog": {"path": "res://assets/characters/quaternius/animations/UAL1_Standard_Subset.glb", "name": "Jog_Fwd"},
+		"talk": {"path": "res://assets/characters/quaternius/animations/UAL1_Standard_Subset.glb", "name": "Idle_Talking"},
+		"interact": {"path": "res://assets/characters/quaternius/animations/UAL1_Standard_Subset.glb", "name": "Interact"},
+		"pick_up": {"path": "res://assets/characters/quaternius/animations/UAL1_Standard_Subset.glb", "name": "PickUp_Table"}
+	}
+}
