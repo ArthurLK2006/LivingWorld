@@ -86,4 +86,4 @@ Cada peça é aprovada vista nas três.
 - Fora do plano: reforma do cenário atual, personagens e montarias animados, troca definitiva de renderer.
 
 ## 13. Renderers
-A comparação está em `COMPARACAO_RENDERERS.md`. Nenhuma troca definitiva de renderer está autorizada; o projeto segue em Compatibility.
+A comparação está em `COMPARACAO_RENDERERS.md`. O renderer oficial é o **Mobile** (aprovado por Arthur em 15/11/2026; PR #63; reversão para o Compatibility documentada em `COMPARACAO_RENDERERS.md`); Windows e Linux só serão declarados suportados depois de validados.

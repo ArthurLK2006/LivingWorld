@@ -54,6 +54,13 @@ func peek_work_place_kind(occupation_id: String) -> String:
 	return _occupations[occupation_id].work_place_kind
 
 
+## Tipo de dono da conta de quem tem o ofício, um id de `economy/owner_kinds.json` (LW-098f1): o `owner_kind` do ofício, ou `npc` se ele não traz a coluna ("" se o ofício não existe).
+func peek_owner_kind(occupation_id: String) -> String:
+	if not _occupations.has(occupation_id):
+		return ""
+	return _occupations[occupation_id].owner_kind
+
+
 ## A ação da rotina do ofício na hora (0 a 23, a de SimClock.hour_of_day()). Ofício desconhecido, hora fora de 0 a 23 ou hora sem ação
 ## devolvem falha tratada.
 func peek_action(occupation_id: String, hour: int) -> RoutineQuery:
@@ -67,16 +74,18 @@ func peek_action(occupation_id: String, hour: int) -> RoutineQuery:
 	return RoutineQuery.new(Result.success(), action_id)
 
 
-## Ofício (data/occupations.json): `work_place_kind` é o tipo de local de trabalho (um do vocabulário de `Place.KINDS`).
+## Ofício (data/occupations.json): `work_place_kind` é o tipo de local de trabalho (um do vocabulário de `Place.KINDS`); `owner_kind` (coluna opcional, LW-098f1) é o tipo de dono da conta do NPC na economia (sem a coluna vale `npc`).
 class OccupationDef:
 	extends RefCounted
 
 	var id: String
 	var work_place_kind: String
+	var owner_kind: String
 
-	func _init(occupation_id: String, occupation_work_place_kind: String) -> void:
+	func _init(occupation_id: String, occupation_work_place_kind: String, occupation_owner_kind: String = EconomyModule.KIND_NPC) -> void:
 		id = occupation_id
 		work_place_kind = occupation_work_place_kind
+		owner_kind = occupation_owner_kind
 
 
 ## Bloco da agenda (data/routine_blocks.json): do `from_hour` (0 a 23) até `to_hour` (1 a 24, exclusivo) o ofício faz `action_id`.

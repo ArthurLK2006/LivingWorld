@@ -2,9 +2,9 @@ class_name ContractsPage
 extends RefCounted
 ## A PÁGINA da aba "Contratos" da tela de mercado (LW-107e2a: extraída da `MarketView` sem mudar comportamento, texto, tecla nem ponte; contrato em docs/modules/presentation.md, "Quadro de contratos (LW-107)"): cria os nós (`ContractsLayout`) sob a
 ## coluna do painel, liga o `ContractsViewModel` (dados), escreve os textos só por chave (`UiText`), preenche as duas listas e o detalhe e refaz a consulta quando a `MarketView` manda (`refresh`, no ritmo de 1 s da tela), PRESERVANDO a escolha (por
-## `contract_id`) e o foco. NÃO abre nem fecha a tela, NÃO troca de aba e NÃO conhece o relógio: a `MarketView` decide e a página só lhe PEDE o fechamento (`close_requested`). SÓ LEITURA por enquanto: Aceitar e Entregar ficam SEMPRE desativados e nada além
-## das consultas vai à ponte; a LW-107e2 os liga em `_update_actions`, o ÚNICO lugar que decide os botões; quem ENVIA os pedidos (`request_contract_accept` e `request_contract_deliver`) é a `MarketView`, por sinal da página (o contrato diz que ela é a única que envia). A divisão em "Disponíveis" e "Meus contratos" e o estado mostrado
-## (`display_state`) são do modelo: a página só os escreve.
+## `contract_id`) e o foco. NÃO abre nem fecha a tela, NÃO troca de aba e NÃO lê o relógio: a `MarketView` decide, lhe diz se está pausado (`refresh`) e a página só lhe PEDE o fechamento (`close_requested`). LW-107e2b: Aceitar e Entregar são ligados em `_update_actions`, o ÚNICO lugar que
+## decide os botões e as dicas; a página NÃO envia pedido nenhum à ponte (só consulta): quem ENVIA `request_contract_accept` e `request_contract_deliver` é a `MarketView`, ouvindo os sinais `accept_requested` e `deliver_requested` da página (o contrato diz que ela é a única que envia), e a resposta volta
+## por `show_reply`. A divisão em "Disponíveis" e "Meus contratos" e o estado mostrado (`display_state`) são do modelo: a página só os escreve.
 
 ## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed` e `expired`).
 const KEY_CONTRACTS_TITLE: String = "ui.contracts.title"
@@ -23,6 +23,11 @@ const KEY_ACCEPT: String = "ui.contracts.accept"
 const KEY_DELIVER: String = "ui.contracts.deliver"
 const KEY_CONTRACTS_UNAVAILABLE: String = "ui.contracts.unavailable"
 const KEY_CLOSE: String = "ui.market.close"
+## A dica de uso de cada estado mostrado em que ainda há o que fazer (a regra está em `_update_actions`).
+const KEY_HINTS: Dictionary[String, String] = {
+	ContractsViewModel.STATE_OPEN: "ui.contracts.hint_accept",
+	ContractsViewModel.STATE_ACCEPTED: "ui.contracts.hint_deliver",
+}
 const KEY_GOOD_NAME: String = "good.%s.name"
 const KEY_SETTLEMENT_NAME: String = "settlement.%s.name"
 ## Separador das informações do detalhe da linha escolhida (como na linha de dicas do mercado).
@@ -30,18 +35,22 @@ const FACT_SEPARATOR: String = " · "
 
 ## Sai quando o botão "Fechar" da página é apertado; quem fecha a tela é a `MarketView`.
 signal close_requested
+## Saem quando Aceitar ou Entregar é apertado COM o botão ativo, trazendo o contrato escolhido; quem ENVIA o pedido é a `MarketView`, nunca a página.
+signal accept_requested(contract_id: int)
+signal deliver_requested(contract_id: int)
 
 var _bridge: SimBridge
 var _texts: UiText
 var _actor_id: int = IdGenerator.NO_ID
+var _is_paused: bool = false
 var _layout: ContractsLayout = ContractsLayout.new()
 var _model: ContractsViewModel = ContractsViewModel.new()
 var _contract_rows: Dictionary[int, ContractsViewModel.Row] = {}
 var _chosen_contract: int = IdGenerator.NO_ID
 
 
-## Cria os nós da página sob `parent` (a coluna do painel do mercado, onde ela é IRMÃ da página do mercado e nasce ESCONDIDA), escreve os textos e liga os cliques. Chamar uma vez. Fechar usa o texto `ui.market.close`; a linha de dicas fica vazia e
-## ESCONDIDA (a LW-107e2 a preenche, com `hint_accept` e `hint_deliver`, e a mostra).
+## Cria os nós da página sob `parent` (a coluna do painel do mercado, onde ela é IRMÃ da página do mercado e nasce ESCONDIDA), escreve os textos e liga os cliques. Chamar uma vez. Fechar usa o texto `ui.market.close`; a linha de dicas nasce vazia e
+## ESCONDIDA (`_update_actions` a preenche, com `hint_accept` e `hint_deliver`, e a mostra).
 func setup(bridge: SimBridge, texts: UiText, actor_id: int, parent: Control) -> void:
 	_bridge = bridge
 	_texts = texts
@@ -53,7 +62,8 @@ func setup(bridge: SimBridge, texts: UiText, actor_id: int, parent: Control) -> 
 	_layout.accept_button.text = _texts.get_text(KEY_ACCEPT)
 	_layout.deliver_button.text = _texts.get_text(KEY_DELIVER)
 	_layout.close_button.text = _texts.get_text(KEY_CLOSE)
-	_layout.hints.visible = false
+	_layout.accept_button.pressed.connect(_notify.bind(accept_requested, _layout.accept_button))
+	_layout.deliver_button.pressed.connect(_notify.bind(deliver_requested, _layout.deliver_button))
 	_layout.close_button.pressed.connect(close_requested.emit)
 	_layout.open_list.item_selected.connect(_choose.bind(_layout.open_list))
 	_layout.mine_list.item_selected.connect(_choose.bind(_layout.mine_list))
@@ -76,8 +86,9 @@ func main_list() -> Tree:
 
 
 ## Refaz a consulta de contratos do mercado `market_id` e as duas listas, PRESERVANDO a escolha (por `contract_id`; uma só nas duas listas; sem escolha válida, a primeira linha) e o foco. Falhou (sem jogo ou sem conta): listas vazias, sem
-## número da leitura anterior, e `ui.contracts.unavailable` na linha de resultado da aba. Aceitar e Entregar seguem desativados.
-func refresh(market_id: int) -> void:
+## número da leitura anterior, e `ui.contracts.unavailable` na linha de resultado da aba; Aceitar e Entregar ficam desativados (sem linha escolhida). `is_paused` é o relógio pausado, lido pela `MarketView` como faz para Comprar e Vender: pausado, os dois ficam desativados.
+func refresh(market_id: int, is_paused: bool) -> void:
+	_is_paused = is_paused
 	var is_valid: bool = _model.refresh(_bridge, _actor_id, market_id)
 	var open_rows: Array[ContractsViewModel.Row] = _model.available()
 	var mine_rows: Array[ContractsViewModel.Row] = _model.mine()
@@ -98,11 +109,29 @@ func refresh(market_id: int) -> void:
 	_update_actions()
 
 
-## LW-107e2: o ÚNICO lugar que decide Aceitar e Entregar; os pedidos (`request_contract_accept` e `request_contract_deliver`) são ENVIADOS pela `MarketView`, a partir de sinais da página (o contrato diz que ela é a única que envia). Hoje os dois ficam SEMPRE desativados e nada vai à ponte além
-## das consultas. É chamado no `setup`, depois de cada leitura (`refresh`) e de cada escolha (`_choose`), os momentos em que a linha escolhida e o estado dos botões mudam; a LW-107e2 acrescenta o relógio pausado, que a `MarketView` já lê para Comprar e Vender.
+## Escreve a resposta de um pedido na linha de resultado: o texto da `text_key` que a ponte devolveu, com a recompensa no `{reward}` das frases de sucesso (`economy.contract.accepted` e `delivered`; nas recusas ela é 0 e a frase não a usa). SÓ escreve: quem envia o pedido é a `MarketView`.
+func show_reply(reply: BridgePlayerContractsReplies.ContractActionReply) -> void:
+	_layout.result.text = _texts.get_text(reply.text_key, {"reward": reply.reward})
+
+
+## LW-107e2b: o ÚNICO lugar que decide Aceitar, Entregar e as dicas; os pedidos (`request_contract_accept` e `request_contract_deliver`) são ENVIADOS pela `MarketView`, a partir dos sinais da página (o contrato diz que ela é a única que envia). **Aceitar** só com a linha escolhida em "Disponíveis"
+## com `display_state` `open` (não vencida: a linha "Vencido" não se aceita) e o relógio andando. **Entregar** só com a linha escolhida em "Meus contratos" com `can_deliver` (a dica do modelo: a ponte e a economia decidem) e o relógio andando. Relógio pausado, sem linha, linha vencida, `completed` ou `expired`:
+## os dois desativados. **Dicas:** a linha de dicas mostra `hint_accept` com uma linha `open` escolhida e `hint_deliver` com uma `accepted` escolhida (ambas no prazo: o estado mostrado, não o da ponte), a regra do que ainda há a fazer naquela linha, e fica vazia e escondida nas demais (sem linha, `completed`, "Vencido").
+## É chamado no `setup`, depois de cada leitura (`refresh`) e de cada escolha (`_choose`), os momentos em que a linha escolhida e o relógio mudam.
 func _update_actions() -> void:
-	_layout.accept_button.disabled = true
-	_layout.deliver_button.disabled = true
+	var row: ContractsViewModel.Row = _contract_rows.get(_chosen_contract) as ContractsViewModel.Row
+	var shown_state: String = row.display_state if row != null else ""
+	var hint_key: String = KEY_HINTS.get(shown_state, "")
+	_layout.accept_button.disabled = _is_paused or shown_state != ContractsViewModel.STATE_OPEN
+	_layout.deliver_button.disabled = _is_paused or row == null or not row.can_deliver
+	_layout.hints.text = _texts.get_text(hint_key) if not hint_key.is_empty() else ""
+	_layout.hints.visible = not hint_key.is_empty()
+
+
+## O clique de um botão vira o aviso `requested` com o contrato ESCOLHIDO, só se o botão está ativo (a regra é de `_update_actions`; o clique de verdade nem chega num botão desativado, mas o sinal `pressed` pode ser emitido à mão).
+func _notify(requested: Signal, button: Button) -> void:
+	if not button.disabled:
+		requested.emit(_chosen_contract)
 
 
 ## Refaz uma lista: uma linha por contrato (o `contract_id` fica no metadado da primeira coluna) e a escolhida volta a ser escolhida; lista vazia mostra a mensagem da chave, numa linha que não se escolhe. [LIM] Refazer a lista reinicia a rolagem (aceito: a escolha e

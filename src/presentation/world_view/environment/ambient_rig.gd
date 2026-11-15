@@ -9,6 +9,8 @@ extends Node
 signal state_applied(state: DayNightCycle.LightState)
 
 @export var config: AmbientConfig
+## Ajustes de luz por renderer (M1): vale o primeiro cujo `renderer` é o método de renderização em uso; nenhum serve = a luz sai como o `config` a define (o caso do Compatibility).
+@export var calibrations: Array[RendererCalibration] = []
 @export var environment_path: NodePath = ^"../Environment"
 @export var sun_path: NodePath = ^"../Sun"
 
@@ -18,7 +20,12 @@ const REAL_SECONDS_PER_MINUTE_AT_1X: float = 1.25
 ## Brilho, contraste e saturação em 1 não mudam a imagem: com os três assim o ajuste de cor fica desligado no Environment.
 const NEUTRAL_ADJUSTMENT: float = 1.0
 
+## Método de renderização que escolhe o ajuste; vazio = o do motor (`RenderingServer.get_current_rendering_method()`). Os testes o fixam.
+var rendering_method: String = ""
+
 var _bridge: SimBridge
+## O ajuste em vigor no `apply_state_to` atual (neutro se nenhum vale).
+var _calibration: RendererCalibration = RendererCalibration.new()
 ## Minuto simulado da última luz aplicada.
 var _last_total_minutes: int = -1
 ## Quanto do minuto simulado atual já passou (0 a 1, exclusive), contado pelos quadros; zera a cada virada de minuto.
@@ -115,6 +122,8 @@ func apply_state_to(world_environment: WorldEnvironment, sun: DirectionalLight3D
 	if not problems.is_empty():
 		push_error("AmbientRig: AmbientConfig inválido: %s." % "; ".join(problems))
 		return false
+	if not _choose_calibration():
+		return false
 	_apply_sun(sun, state)
 	_apply_environment(world_environment, state)
 	_lamp_factor = state.lamp_factor
@@ -122,9 +131,24 @@ func apply_state_to(world_environment: WorldEnvironment, sun: DirectionalLight3D
 	return true
 
 
+## O ajuste do renderer em uso (nenhum serve = neutro). Falso, depois de push_error, se o ajuste escolhido tem campo fora de faixa.
+func _choose_calibration() -> bool:
+	var method: String = rendering_method if not rendering_method.is_empty() else RenderingServer.get_current_rendering_method()
+	_calibration = RendererCalibration.new()
+	for entry: RendererCalibration in calibrations:
+		if entry != null and entry.renderer == method:
+			var problems: Array[String] = entry.validate()
+			if not problems.is_empty():
+				push_error("AmbientRig: RendererCalibration inválido (%s): %s." % [method, "; ".join(problems)])
+				return false
+			_calibration = entry
+			break
+	return true
+
+
 func _apply_sun(sun: DirectionalLight3D, state: DayNightCycle.LightState) -> void:
 	sun.light_color = state.sun_color
-	sun.light_energy = state.sun_energy
+	sun.light_energy = state.sun_energy * _calibration.sun_energy_scale
 	sun.rotation_degrees = Vector3(-state.elevation_degrees, state.sun_yaw_degrees, 0.0)
 	sun.shadow_enabled = config.shadows_enabled
 	sun.directional_shadow_mode = config.shadow_mode
@@ -153,15 +177,15 @@ func _apply_environment(world_environment: WorldEnvironment, state: DayNightCycl
 	sky_material.ground_bottom_color = state.ground_bottom_color
 	environment.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	environment.ambient_light_color = state.ambient_color
-	environment.ambient_light_energy = state.ambient_energy
+	environment.ambient_light_energy = state.ambient_energy * _calibration.ambient_energy_scale
 	environment.fog_enabled = config.fog_enabled
 	environment.fog_light_color = state.fog_color
 	environment.fog_density = state.fog_density
 	environment.fog_sky_affect = config.fog_sky_affect
 	environment.glow_enabled = config.glow_enabled
-	environment.glow_intensity = state.glow_intensity
-	environment.glow_hdr_threshold = state.glow_hdr_threshold
-	environment.glow_bloom = state.glow_bloom
+	environment.glow_intensity = state.glow_intensity * _calibration.glow_intensity_scale
+	environment.glow_hdr_threshold = state.glow_hdr_threshold * _calibration.glow_threshold_scale
+	environment.glow_bloom = state.glow_bloom * _calibration.glow_bloom_scale
 	_apply_color_grade(environment, state)
 
 
@@ -169,9 +193,10 @@ func _apply_environment(world_environment: WorldEnvironment, state: DayNightCycl
 func _apply_color_grade(environment: Environment, state: DayNightCycle.LightState) -> void:
 	environment.tonemap_mode = config.tonemap_mode
 	environment.tonemap_white = config.tonemap_white
-	environment.tonemap_exposure = state.exposure
-	var is_neutral: bool = is_equal_approx(state.brightness, NEUTRAL_ADJUSTMENT) and is_equal_approx(state.contrast, NEUTRAL_ADJUSTMENT) and is_equal_approx(state.saturation, NEUTRAL_ADJUSTMENT)
+	environment.tonemap_exposure = state.exposure * _calibration.exposure_scale
+	var saturation: float = state.saturation * _calibration.saturation_scale
+	var is_neutral: bool = is_equal_approx(state.brightness, NEUTRAL_ADJUSTMENT) and is_equal_approx(state.contrast, NEUTRAL_ADJUSTMENT) and is_equal_approx(saturation, NEUTRAL_ADJUSTMENT)
 	environment.adjustment_enabled = not is_neutral
 	environment.adjustment_brightness = state.brightness
 	environment.adjustment_contrast = state.contrast
-	environment.adjustment_saturation = state.saturation
+	environment.adjustment_saturation = saturation

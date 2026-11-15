@@ -1,8 +1,9 @@
 class_name RoutineLoader
 extends RefCounted
 ## Lê e valida os ofícios e a agenda (LW-061; contrato em docs/modules/npc.md, seção 4) pelo módulo `data`: data/occupations.json (`id`,
-## `work_place_kind`) e data/routine_blocks.json (`id`, `occupation_id`, `from_hour` de 0 a 23, `to_hour` de 1 a 24 exclusivo,
-## `action_id`). Para conferir as ações da agenda, lê JUNTO o catálogo de ações (o `data` só confere referência entre tabelas da mesma
+## `work_place_kind` e a coluna OPCIONAL `owner_kind`, o tipo de dono da conta do NPC; sem ela vale `npc`, e o id é conferido contra
+## `economy/owner_kinds.json` pelo `check_content_ids`, LW-098f1) e data/routine_blocks.json (`id`, `occupation_id`, `from_hour` de 0 a 23,
+## `to_hour` de 1 a 24 exclusivo, `action_id`). Para conferir as ações da agenda, lê JUNTO o catálogo de ações (o `data` só confere referência entre tabelas da mesma
 ## leitura) e reaproveita a conferência dele. Cada ofício cobre EXATAMENTE as 24 horas, sem lacuna nem sobreposição; ofício ou ação
 ## inexistente é rejeitado; qualquer problema vira falha com arquivo, item e campo. Nunca carrega recurso nem executa nada do arquivo.
 
@@ -17,6 +18,7 @@ static func build_schemas() -> Array[DataSchema]:
 	var schemas: Array[DataSchema] = ActionCatalogLoader.build_schemas()
 	var occupations: DataSchema = DataSchema.new(OCCUPATIONS_TABLE, "occupations.json")
 	occupations.add_field("work_place_kind", DataSchema.FieldType.STRING)
+	occupations.add_field("owner_kind", DataSchema.FieldType.STRING, false)
 	schemas.append(occupations)
 	var blocks: DataSchema = DataSchema.new(ROUTINE_TABLE, "routine_blocks.json")
 	blocks.add_field("occupation_id", DataSchema.FieldType.STRING).set_ref(OCCUPATIONS_TABLE)
@@ -54,7 +56,7 @@ static func _finish(bundle: DataBundle) -> LoadResult:
 	return LoadResult.new(Result.success(), _build(bundle))
 
 
-## `work_place_kind` precisa ser um tipo do vocabulário de locais do `world`.
+## `work_place_kind` precisa ser um tipo do vocabulário de locais do `world`; `owner_kind`, se presente, não pode ser vazio (conta de tipo vazio escaparia da conferência de tipos da economia; o id em si é conferido pelo `check_content_ids`).
 static func _check_occupations(bundle: DataBundle) -> void:
 	if not bundle.tables.has(OCCUPATIONS_TABLE):
 		return
@@ -63,6 +65,9 @@ static func _check_occupations(bundle: DataBundle) -> void:
 		var kind: Variant = record.get("work_place_kind")
 		if typeof(kind) == TYPE_STRING and not Place.KINDS.has(str(kind)):
 			bundle.add_issue(file_path, str(record.get("id", "")), "work_place_kind", "tipo de local '%s' inexistente; esperado um de: %s" % [kind, ", ".join(Place.KINDS)])
+		var owner_kind: Variant = record.get("owner_kind")
+		if typeof(owner_kind) == TYPE_STRING and str(owner_kind).strip_edges().is_empty():
+			bundle.add_issue(file_path, str(record.get("id", "")), "owner_kind", "tipo de dono vazio; esperado o id de um tipo de economy/owner_kinds.json (ou sem a coluna, que vale '%s')" % EconomyModule.KIND_NPC)
 
 
 ## Cada bloco com início antes do fim e, por ofício, a agenda sem lacuna e sem sobreposição, de 0 a 24.
@@ -117,7 +122,7 @@ static func _check_coverage(bundle: DataBundle, file_path: String, occupation_id
 static func _build(bundle: DataBundle) -> RoutineTable:
 	var occupations: Array[RoutineTable.OccupationDef] = []
 	for record: Dictionary in bundle.tables[OCCUPATIONS_TABLE]:
-		occupations.append(RoutineTable.OccupationDef.new(str(record["id"]), str(record["work_place_kind"])))
+		occupations.append(RoutineTable.OccupationDef.new(str(record["id"]), str(record["work_place_kind"]), str(record.get("owner_kind", EconomyModule.KIND_NPC))))
 	var blocks: Array[RoutineTable.RoutineBlock] = []
 	for record: Dictionary in bundle.tables[ROUTINE_TABLE]:
 		blocks.append(RoutineTable.RoutineBlock.new(str(record["id"]), str(record["occupation_id"]), record["from_hour"], record["to_hour"], str(record["action_id"])))

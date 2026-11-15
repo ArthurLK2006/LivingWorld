@@ -3,7 +3,7 @@
 **Status:** ferramenta de desenvolvimento para o aceite visual da arte (praça de mercado, atmosfera). Feita e testada SEM janela; a primeira captura de verdade precisa de janela e da autorização de Arthur. Não altera o jogo nem o `project.godot`.
 
 ## O que é
-Abre o JOGO REAL (`scenes/main.tscn`, Compatibility, 1280 x 720), põe o jogador num local, força a hora do dia e a câmera, espera 30 quadros de acomodação e mede 180, e grava um PNG e as medidas da captura (fps médio, pior quadro, chamadas de desenho, primitivos, objetos, memória de vídeo, saturação e brilho médios), como a demonstração de renderizadores.
+Abre o JOGO REAL (`scenes/main.tscn`, no renderer do `project.godot`, ou no da variável `RENDERER=gl_compatibility|mobile|forward_plus`; 1280 x 720), põe o jogador num local, força a hora do dia e a câmera, espera 30 quadros de acomodação e mede 180, e grava um PNG e as medidas da captura (fps médio, pior quadro, chamadas de desenho, primitivos, objetos, memória de vídeo, saturação e brilho médios), como a demonstração de renderizadores.
 
 ## Comando (abre uma janela do Godot por cerca de 1 a 3 minutos com os padrões; não mexa nela)
 `tools/visual/run_game_capture [pasta-de-saída] [opções]` (sem pasta: uma nova sob `$TMPDIR`). Opções, separadas por vírgula:
