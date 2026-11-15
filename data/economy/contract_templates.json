@@ -1,5 +1,1 @@
-[
-	{"id": "bread_standing", "kind": "delivery", "good_id": "bread", "quantity": 5, "trigger": "standing", "reward_margin_bp": 500, "deadline_hours": 48, "max_open": 1},
-	{"id": "flour_shortage", "kind": "delivery", "good_id": "flour", "quantity": 10, "trigger": "shortage", "reward_margin_bp": 2500, "deadline_hours": 48, "max_open": 1},
-	{"id": "grain_shortage", "kind": "delivery", "good_id": "grain", "quantity": 10, "trigger": "shortage", "reward_margin_bp": 2500, "deadline_hours": 48, "max_open": 1}
-]
+[]
