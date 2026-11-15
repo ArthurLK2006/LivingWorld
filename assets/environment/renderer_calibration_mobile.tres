@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="RendererCalibration" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/presentation/world_view/environment/renderer_calibration.gd" id="1_cal"]
+
+[resource]
+script = ExtResource("1_cal")
+renderer = "mobile"
+sun_energy_scale = 2.6
+ambient_energy_scale = 1.2
