@@ -1,6 +1,6 @@
 # Brief visual de personagens do Living World
 
-**Status:** APROVADO por Arthur (direção em 14/11/2026; texto atualizado e aceito em 15/11/2026, junto com a `DIRETRIZ_ARTE_GLOBAL.md`, com a base Quaternius). Documento de arte: não altera código, dado, `project.godot` nem arquivo protegido. Valores marcados **[HIP]** são hipóteses a calibrar no protótipo; não são requisitos.
+**Status:** APROVADO por Arthur (direção em 14/11/2026; texto atualizado em 15/11/2026 e aprovado junto com o PR #54, que traz também a `DIRETRIZ_ARTE_GLOBAL.md`). Documento de arte: não altera código, dado, `project.godot` nem arquivo protegido. Valores marcados **[HIP]** são hipóteses a calibrar no protótipo; não são requisitos.
 
 ## 1. O que este brief faz
 - Define a direção visual dos **personagens humanos** (habitantes, guardas, comerciantes, aldeões e, depois, o jogador).
@@ -13,9 +13,9 @@
 ## 3. As quatro referências (prioritárias; enviadas por Arthur em 14/11/2026)
 As imagens são de terceiros: **não entram no repositório** (ele é público) e servem só como referência de linguagem, nunca para copiar modelo, personagem ou arte de outros (DEC-280). Em palavras:
 1. Ninja ou monge encapuzado e mascarado, modelo colorido e malha cinza lado a lado: torso atlético, capuz alto, máscara (só os olhos), faixa cruzada, bandagens, luvas sem dedos, calça bufante. Cerca de 1,5 a 2,5 mil triângulos (estimativa visual).
-2. Guerreiro barbudo em T-pose, frente e costas: cerca de 7,5 cabeças, rosto natural e sério, peitoral, ombreiras, correias cruzadas com fivela, cinto com fivela hexagonal, saiote de couro com franjas, joelheiras em losango, botas de cano dobrado, machados curtos. Cerca de 3 a 4 mil triângulos.
-3. Espadachim de armadura azul-petróleo (a referência que Arthur indicou em 15/11/2026 como a identidade visual de todo o jogo): tronco largo, ombreiras enormes de placas escalonadas, túnica em tiras, tiracolo, bolsa de aba, grevas escalonadas, espada gigante, rosto anguloso com pintura de guerra. Cerca de 6 a 10 mil triângulos (referência de elite, não de multidão).
-4. Maga: chapéu cônico, casaco longo vincado com padrão, cajado torcido e angular com anel e hexágono emissivo. Cerca de 3 mil triângulos; proporção mais esguia e paleta mais saturada que as outras (aproveitar o tratamento de pano e de adereço, não a saturação).
+2. Guerreiro barbudo em T-pose, frente e costas: cerca de 7,5 cabeças, rosto natural e sério, peitoral, ombreiras, correias cruzadas com fivela, cinto com fivela hexagonal, saiote de couro com franjas, joelheiras em losango, botas de cano dobrado, machados curtos. Cerca de 3 a 4 mil triângulos (estimativa visual).
+3. Espadachim de armadura azul-petróleo (a referência que Arthur indicou em 15/11/2026 como a identidade visual de todo o jogo): tronco largo, ombreiras enormes de placas escalonadas, túnica em tiras, tiracolo, bolsa de aba, grevas escalonadas, espada gigante, rosto anguloso com pintura de guerra. Cerca de 6 a 10 mil triângulos (estimativa visual; referência de elite, não de multidão).
+4. Maga: chapéu cônico, casaco longo vincado com padrão, cajado torcido e angular com anel e hexágono emissivo. Cerca de 3 mil triângulos (estimativa visual); proporção mais esguia e paleta mais saturada que as outras (aproveitar o tratamento de pano e de adereço, não a saturação).
 
 | Aspecto | Leitura comum |
 |---|---|
@@ -45,7 +45,7 @@ As imagens são de terceiros: **não entram no repositório** (ele é público) 
 ## 6. Critério de aceite
 - **Principal: a aparência.** Arthur decide pelo olhar se o personagem realmente se aproxima das referências, sem copiar modelos protegidos. Métricas geométricas ou quantitativas **não substituem** essa avaliação.
 - Obrigatórios, porém insuficientes: DEC-119, determinismo, isolamento (nada em `sim`, `bridge` ou `app`), licenças registradas, testes verdes.
-- Cada personagem é entregue com: frente, costas e perspectiva; comparação de proporções com as referências; rosto de perto; silhueta; materiais e equipamentos de perto; as duas camadas (perto e longe) lado a lado, com o custo medido de cada uma.
+- Cada personagem é entregue com: frente, costas e perspectiva; comparação de proporções com as referências (feita só localmente: as imagens de terceiros não vão ao repositório nem ao PR, que são públicos); rosto de perto; silhueta; materiais e equipamentos de perto; as duas camadas (perto e longe) lado a lado, com o custo medido de cada uma.
 
 ## 7. Processo
 1. Este brief e a `DIRETRIZ_ARTE_GLOBAL.md` aceitos por Arthur.
@@ -53,6 +53,8 @@ As imagens são de terceiros: **não entram no repositório** (ele é público) 
 3. Aceite visual de Arthur.
 4. Só com o aceite: o comerciante e o aldeão.
 5. Só com o aceite desses: variação (corpos, idades, constituições, ofícios), LOD e multidão em série, e adoção no mundo em fatias de até 450 linhas, cada uma com contrato e aceite visual.
+
+Estas são as etapas do personagem; elas se encaixam nas etapas 2 e 6 da `DIRETRIZ_ARTE_GLOBAL.md` (seção 6), e a D1 cobre as etapas 2 a 5 dela.
 
 Já pronto no repositório e independente do visual final: ativos CC0 com manifesto, catálogo de peças, aparência determinística por NPC e paletas; em curso: montador de peças e barba opcional. **Suspensos até o aceite da D1:** o shader de paleta de pano e a integração visível dos personagens animados no mundo.
 
