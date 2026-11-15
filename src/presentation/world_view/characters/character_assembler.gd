@@ -1,6 +1,6 @@
 class_name CharacterAssembler
 extends Node3D
-## Monta UM personagem animado a partir de uma ficha de aparência e do catálogo (ART-12, entrega 4a1: as peças, sem animação; só apresentação): um Skeleton3D compartilhado e uma MeshInstance3D por malha de cada peça (cabeça do corpo com olhos, roupa, cabelo, barba opcional, sobrancelha), todas ligadas ao MESMO esqueleto, cada uma com a própria pele (que liga por NOME de osso). Monta QUALQUER conjunto de peças que compartilhe o esqueleto do catálogo: o visual vem só dos caminhos do catálogo e da ficha. Origem NOS PÉS; `scale_permille` vira escala uniforme. Falha (peça ausente, ficha vazia) devolve falso, sem exceção e sem log, e não deixa nada pela metade. A animação (retarget e AnimationPlayer) vem na entrega 4a2; sem shader, paleta, normais planas nem LOD (entregas 4b e seguintes). Contrato: docs/modules/presentation.md.
+## Monta UM personagem animado a partir de uma ficha de aparência e do catálogo (ART-12, entrega 4a; só apresentação): um Skeleton3D compartilhado e uma MeshInstance3D por malha de cada peça (cabeça do corpo com olhos, roupa, cabelo, barba opcional, sobrancelha), todas ligadas ao MESMO esqueleto, cada uma com a própria pele (que liga por NOME de osso). Monta QUALQUER conjunto de peças que compartilhe o esqueleto do catálogo: o visual vem só dos caminhos do catálogo e da ficha. Origem NOS PÉS; `scale_permille` vira escala uniforme. Falha (peça ou animação ausente, ficha vazia) devolve falso, sem exceção e sem log, e não deixa nada pela metade. Sem shader, paleta, normais planas nem LOD (entregas 4b e seguintes). Contrato: docs/modules/presentation.md.
 ## O esqueleto vem da PRIMEIRA peça do plano (o tronco da roupa), não da cabeça: a cabeça-base masculina da Quaternius tem braços e pernas ligeiramente diferentes (até 3,4 cm e 13° nos polegares, medido nos ativos), mas os ossos da cabeça e do pescoço são iguais, então ela se encaixa no esqueleto das roupas.
 
 const SLOT_TORSO: String = "torso_arms"
@@ -15,6 +15,7 @@ const SLOT_EXTRA_PREFIX: String = "extra_"
 const PERMILLE: float = 1000.0
 
 var _skeleton: Skeleton3D = null
+var _player: AnimationPlayer = null
 var _slots: Dictionary[String, Array] = {}
 
 
@@ -25,7 +26,8 @@ func build(appearance: CharacterAppearance, catalog: CharacterCatalog) -> bool:
 	if scenes.is_empty():
 		return false
 	var donor: Skeleton3D = CharacterSceneLoader.skeleton_of(scenes[plan.keys()[0]])
-	if donor == null or donor.get_bone_count() != catalog.skeleton_bones or not _all_fit(scenes, donor):
+	var library: AnimationLibrary = CharacterRetarget.library_for(donor, catalog.animations()) if donor != null else null
+	if library == null or donor.get_bone_count() != catalog.skeleton_bones or not _all_fit(scenes, donor):
 		_free_all(scenes)
 		return false
 	clear()
@@ -34,14 +36,18 @@ func build(appearance: CharacterAppearance, catalog: CharacterCatalog) -> bool:
 		_mount(slot, CharacterSceneLoader.meshes_of(scenes[slot]))
 	donor.get_parent().remove_child(donor)
 	donor.owner = null
+	donor.name = CharacterRetarget.SKELETON_NODE
 	add_child(donor)
 	_free_all(scenes)
+	_player = AnimationPlayer.new()
+	add_child(_player)
+	_player.add_animation_library("", library)
 	var permille: int = appearance.scale_permille if appearance.scale_permille > 0 else CharacterAppearance.NEUTRAL_SCALE_PERMILLE
 	scale = Vector3.ONE * (float(permille) / PERMILLE)
 	return true
 
 
-## Troca a peça de um encaixe sem recriar o esqueleto; caminho vazio tira a peça. Peça que não existe ou não serve ao esqueleto devolve falso e deixa a atual no lugar.
+## Troca a peça de um encaixe sem recriar o esqueleto nem mexer na animação; caminho vazio tira a peça. Peça que não existe ou não serve ao esqueleto devolve falso e deixa a atual no lugar.
 func swap_part(slot: String, scene_path: String) -> bool:
 	if _skeleton == null:
 		return false
@@ -59,16 +65,35 @@ func swap_part(slot: String, scene_path: String) -> bool:
 	return fits
 
 
-## Desmonta o personagem (esqueleto e malhas), sem deixar nó órfão.
+## Toca o clipe de chave `clip` do catálogo ("idle", "walk", ...) em laço; pedir de novo o clipe que já toca não o reinicia (comportamento do AnimationPlayer, coberto pelo teste). Falso se não há personagem montado ou a chave não existe.
+func play(clip: String) -> bool:
+	if _player == null or not _player.has_animation(clip):
+		return false
+	_player.play(clip)
+	return true
+
+
+func is_playing() -> bool:
+	return _player != null and _player.is_playing()
+
+
+## A chave do último clipe iniciado ("" se nenhum).
+func current_clip() -> String:
+	return String(_player.assigned_animation) if _player != null else ""
+
+
+## Desmonta o personagem (esqueleto, malhas e animações), sem deixar nó órfão.
 func clear() -> void:
-	if _skeleton != null:
-		remove_child(_skeleton)
-		_skeleton.free()
+	for node: Node in [_player, _skeleton]:
+		if node != null:
+			remove_child(node)
+			node.free()
 	_slots.clear()
+	_player = null
 	_skeleton = null
 
 
-## Encaixe -> caminho da cena, com o tronco da roupa primeiro (dele vem o esqueleto). Vazio se a ficha ou uma peça não existe no catálogo; cabelo, barba e sobrancelha vazios na ficha significam "sem a peça"; cada um sai da lista do catálogo para o gênero do corpo.
+## Encaixe -> caminho da cena, com o tronco da roupa primeiro (dele vem o esqueleto). Vazio se a ficha ou uma peça não existe no catálogo; cabelo, barba e sobrancelha vazios na ficha significam "sem a peça"; cada um sai da lista do catálogo para o gênero do corpo (a sobrancelha cai em todas se o catálogo não tem nenhuma para o gênero, como a ficha).
 static func _plan(appearance: CharacterAppearance, catalog: CharacterCatalog) -> Dictionary[String, String]:
 	var plan: Dictionary[String, String] = {}
 	if appearance == null or catalog == null or not appearance.is_resolved() or not catalog.is_ready():
@@ -86,10 +111,16 @@ static func _plan(appearance: CharacterAppearance, catalog: CharacterCatalog) ->
 	plan[SLOT_HEAD] = body["head_scene"]
 	var is_complete: bool = _add_optional(plan, SLOT_HAIR, catalog.hair_for(gender), appearance.hair_id)
 	is_complete = is_complete and _add_optional(plan, SLOT_BEARD, catalog.beards_for(gender), appearance.beard_id)
-	is_complete = is_complete and _add_optional(plan, SLOT_EYEBROW, catalog.eyebrows_for(gender), appearance.eyebrow_id)
+	is_complete = is_complete and _add_optional(plan, SLOT_EYEBROW, _eyebrows_of(catalog, gender), appearance.eyebrow_id)
 	if not is_complete:
 		plan.clear()
 	return plan
+
+
+## As sobrancelhas do gênero do corpo; se o catálogo não tem nenhuma para ele, todas (a mesma regra da ficha, `CharacterAppearance`).
+static func _eyebrows_of(catalog: CharacterCatalog, gender: String) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = catalog.eyebrows_for(gender)
+	return rows if not rows.is_empty() else catalog.eyebrows()
 
 
 static func _row(rows: Array[Dictionary], id: String) -> Dictionary:
