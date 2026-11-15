@@ -128,3 +128,15 @@ func test_the_main_scene_carries_the_mobile_calibration() -> void:
 	assert_eq(rig.calibrations.size(), 1)
 	assert_eq(rig.calibrations[0].resource_path, MOBILE_PATH)
 	main.free()
+
+
+func test_with_no_name_forced_the_rig_uses_the_name_the_engine_reports() -> void:
+	var matching: RendererCalibration = _mobile().duplicate() as RendererCalibration
+	matching.renderer = RenderingServer.get_current_rendering_method()
+	var other: RendererCalibration = _mobile().duplicate() as RendererCalibration
+	other.renderer = "nenhum_renderer"
+	var with_match: Array[Node] = _applied("", [matching])
+	var without_match: Array[Node] = _applied("", [other])
+	assert_almost_eq((with_match[1] as DirectionalLight3D).light_energy, (without_match[1] as DirectionalLight3D).light_energy * SUN_SCALE, TOLERANCE * 10.0, "O ajuste cujo nome é o do motor vale; o de outro nome deixa a luz neutra.")
+	for node: Node in with_match + without_match:
+		node.free()
