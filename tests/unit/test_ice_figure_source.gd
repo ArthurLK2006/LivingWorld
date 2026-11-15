@@ -4,6 +4,8 @@ extends GutTest
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")
 const NORMAL_TOLERANCE: float = 0.001
 const QUAD_VERTICES: int = 4
+## 17 passa o limite de 16 elementos em que o Godot ordena por inserção (estável): só acima dele a falta de desempate aparece.
+const EQUAL_ISLANDS: int = 17
 
 
 ## Uma superfície com um quad (4 vértices, 2 triângulos, normais para +Z) com o canto em cada origem.
@@ -35,10 +37,25 @@ func test_weld_by_position_joins_islands_and_orders_by_size() -> void:
 
 
 func test_equal_sized_islands_order_is_total_and_repeatable() -> void:
-	var surfs: Array[Source.Surf] = _surfs(PackedVector3Array([Vector3(8.0, 0.0, 0.0), Vector3.ZERO, Vector3(4.0, 0.0, 0.0)]))
+	var origins: PackedVector3Array = PackedVector3Array()
+	var expected: PackedInt32Array = PackedInt32Array()
+	for island: int in EQUAL_ISLANDS:
+		origins.append(Vector3(island * 4.0, 0.0, 0.0))
+		expected.append_array(PackedInt32Array([island, island, island, island]))
+	var surfs: Array[Source.Surf] = _surfs(origins)
 	var first: Source.IslandSet = Source.islands(surfs)
-	assert_eq(first.of_vertex, PackedInt32Array([0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2]), "empate: o menor vértice vem primeiro")
+	assert_eq(first.of_vertex, expected, "empate: o menor vértice vem primeiro, também com mais de 16 ilhas iguais")
 	assert_eq(Source.islands(surfs).of_vertex, first.of_vertex)
+
+
+func test_without_surfaces_there_are_no_islands_and_validation_fails_with_the_remedy() -> void:
+	var surfs: Array[Source.Surf] = []
+	var found: Source.IslandSet = Source.islands(surfs)
+	assert_eq([found.list.size(), found.of_vertex.size()], [0, 0])
+	var errors: PackedStringArray = Source.validate(surfs, found)
+	assert_eq(errors.size(), 1)
+	assert_string_contains(errors[0], "não foi importado")
+	assert_string_contains(errors[0], "--import")
 
 
 func test_validate_names_each_unexpected_count() -> void:
