@@ -4,6 +4,9 @@ extends RefCounted
 ## As luzes pequenas ficam em `lamp_lights` e `torch_lights` para a cena acender e apagar. A ART-3 troca o que muda de uma praça para outra (barracas, adereços, panos, peça central e casas) pela ficha da variante (PlazaVariants.Spec); sem ficha vale a de hoje.
 ## A tenda piramidal é a barraca de sempre; os outros arquétipos (ART-5b1: toldo de uma água, mesa com guarda-sol e carroça) são da PlazaStalls, e a ficha escolhe o de cada lugar.
 
+## D1: em quantos trechos a nova linguagem desenha o fio das bandeirolas.
+const ROPE_SEGMENTS: int = 7
+
 var lamp_lights: Array[OmniLight3D] = []
 var torch_lights: Array[OmniLight3D] = []
 
@@ -11,6 +14,8 @@ var _ground: PlazaGround
 var _materials: Dictionary[StringName, Material]
 var _variant: PlazaVariants.Spec
 var _stalls: PlazaStalls
+## D1: as peças da nova linguagem (nulo quando a ficha da variante não traz estilo).
+var _crafted: PlazaCrafted = null
 
 
 func _init(ground: PlazaGround, materials: Dictionary[StringName, Material], variant: PlazaVariants.Spec = null) -> void:
@@ -18,6 +23,8 @@ func _init(ground: PlazaGround, materials: Dictionary[StringName, Material], var
 	_materials = materials
 	_variant = variant if variant != null else PlazaVariants.named(PlazaVariants.DEFAULT)
 	_stalls = PlazaStalls.new(_materials, _variant, _cloth_surfaces)
+	if _variant.style != null:
+		_crafted = PlazaCrafted.new(_materials, _variant.style, _variant.cloth_colors)
 
 
 ## As barracas, uma por lugar da variante.
@@ -74,6 +81,9 @@ func add_houses() -> void:
 
 ## O poço, com o telhadinho de duas águas.
 func _fill_well(kit: PlazaMeshKit) -> void:
+	if _crafted != null:
+		_crafted.well(kit)
+		return
 	for stone: int in PlazaData.WELL_STONES:
 		var angle: float = TAU * stone / PlazaData.WELL_STONES
 		var tone: Color = PlazaData.STONE.darkened(PlazaMeshKit.unit(stone, PlazaData.Channel.STONE) * 0.25)
@@ -124,7 +134,7 @@ func _cloth_surfaces(kit: PlazaMeshKit, mesh: ArrayMesh, count: int, add_item: C
 
 func _add_stall(index: int) -> void:
 	var pose: Vector3 = _variant.stalls[index]
-	var mesh: ArrayMesh = _stalls.build(_variant.stall_kind(index), index)
+	var mesh: ArrayMesh = _crafted.stall(index) if _crafted != null else _stalls.build(_variant.stall_kind(index), index)
 	if mesh == null:
 		mesh = _tent_mesh(index)
 	_ground.spawn(mesh, "Stall%d" % index, Vector2(pose.x, pose.y), pose.z)
@@ -155,6 +165,8 @@ func _add_strip(kit: PlazaMeshKit, item: int, index: int) -> void:
 
 
 func _crate_mesh() -> ArrayMesh:
+	if _crafted != null:
+		return _crafted.crate()
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
 	kit.box(Vector3(0.0, 0.35, 0.0), Vector3(0.8, 0.7, 0.8), PlazaData.WOOD_LIGHT)
 	kit.box(Vector3(0.0, 0.7, 0.0), Vector3(0.88, 0.08, 0.88), PlazaData.WOOD)
@@ -162,6 +174,8 @@ func _crate_mesh() -> ArrayMesh:
 
 
 func _barrel_mesh() -> ArrayMesh:
+	if _crafted != null:
+		return _crafted.barrel()
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
 	kit.frustum(Vector3.ZERO, 0.3, 0.38, 0.4, 8, PlazaData.WOOD_LIGHT)
 	kit.frustum(Vector3(0.0, 0.4, 0.0), 0.38, 0.3, 0.4, 8, PlazaData.WOOD_LIGHT)
@@ -170,6 +184,8 @@ func _barrel_mesh() -> ArrayMesh:
 
 
 func _sack_mesh() -> ArrayMesh:
+	if _crafted != null:
+		return _crafted.sack()
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
 	kit.blob(Vector3(0.0, 0.26, 0.0), Vector3(0.34, 0.26, 0.26), Vector3i(4, 7, 1), 0.1, PlazaData.SACK)
 	kit.frustum(Vector3(0.0, 0.48, 0.0), 0.1, 0.05, 0.14, 5, PlazaData.SACK.darkened(0.2))
@@ -180,9 +196,12 @@ func _sack_mesh() -> ArrayMesh:
 func _add_post(node_name: String, spot: Vector2, height: float, is_torch: bool) -> void:
 	var kit: PlazaMeshKit = PlazaMeshKit.new()
 	var mesh: ArrayMesh = ArrayMesh.new()
-	kit.frustum(Vector3.ZERO, 0.11, 0.07, height, 6, PlazaData.WOOD)
-	if not is_torch:
-		kit.frustum(Vector3(0.0, height + 0.45, 0.0), 0.32, 0.0, 0.25, 6, PlazaData.WOOD)
+	if _crafted != null:
+		_crafted.post(kit, height, is_torch)
+	else:
+		kit.frustum(Vector3.ZERO, 0.11, 0.07, height, 6, PlazaData.WOOD)
+		if not is_torch:
+			kit.frustum(Vector3(0.0, height + 0.45, 0.0), 0.32, 0.0, 0.25, 6, PlazaData.WOOD)
 	kit.finish(mesh, _materials[&"solid"])
 	if is_torch:
 		kit.frustum(Vector3(0.0, height, 0.0), 0.14, 0.0, 0.42, 5, PlazaData.TORCH_COLOR, 0.0, false)
@@ -204,6 +223,8 @@ func _add_post(node_name: String, spot: Vector2, height: float, is_torch: bool) 
 func _add_bunting(edge: int) -> void:
 	var mesh: ArrayMesh = ArrayMesh.new()
 	_cloth_surfaces(PlazaMeshKit.new(), mesh, PlazaData.FLAGS_PER_STRING, _add_flag.bind(edge))
+	if _crafted != null:
+		_crafted.rope(mesh, _string_points(edge))
 	_ground.attach(mesh, "Bunting%d" % edge, Transform3D.IDENTITY)
 
 
@@ -213,7 +234,21 @@ func _add_flag(kit: PlazaMeshKit, item: int, edge: int) -> void:
 	var left: Vector3 = _string_point(from, to, (item + 0.1) / PlazaData.FLAGS_PER_STRING)
 	var right: Vector3 = _string_point(from, to, (item + 0.9) / PlazaData.FLAGS_PER_STRING)
 	var middle: Vector3 = (left + right) * 0.5
-	kit.tri(left, right, middle + Vector3.DOWN * PlazaData.FLAG_DROP_M, _variant.cloth_colors[(edge + item) % _variant.cloth_colors.size()], middle + Vector3.UP)
+	var color: Color = _variant.cloth_colors[(edge + item) % _variant.cloth_colors.size()]
+	if _crafted != null:
+		_crafted.flag(kit, left, right, PlazaData.FLAG_DROP_M, color)
+	else:
+		kit.tri(left, right, middle + Vector3.DOWN * PlazaData.FLAG_DROP_M, color, middle + Vector3.UP)
+
+
+## Os pontos do fio (catenária) entre o poste `edge` e o seguinte, de ponta a ponta, para a nova linguagem desenhar o fio.
+func _string_points(edge: int) -> Array[Vector3]:
+	var from: Vector2 = PlazaData.LAMP_SPOTS[edge]
+	var to: Vector2 = PlazaData.LAMP_SPOTS[(edge + 1) % PlazaData.LAMP_SPOTS.size()]
+	var points: Array[Vector3] = []
+	for step: int in ROPE_SEGMENTS + 1:
+		points.append(_string_point(from, to, float(step) / ROPE_SEGMENTS))
+	return points
 
 
 ## Ponto do fio a `along` (0 a 1) do caminho: altura da catenária y = H - a * (cosh(meio / a) - cosh(s / a)), com s medido do centro do vão.

@@ -80,8 +80,8 @@ func _ground_point(x: float, z: float) -> Vector3:
 func _ground_color(point: Vector3, tri_index: int) -> Color:
 	var patch: float = 0.5 + 0.5 * sin(point.x * 0.37 + 1.1) * sin(point.z * 0.29 + 2.3)
 	var wear: float = path_weight(point.x, point.z) + (patch - 0.5) * 0.7 + (PlazaMeshKit.unit(tri_index, PlazaData.Channel.PATCH) - 0.5) * 0.3
-	var dirt: Color = PlazaData.DIRT.lerp(PlazaData.DIRT_DARK, PlazaMeshKit.unit(tri_index, PlazaData.Channel.DIRT) * 0.7)
-	var grass: Color = PlazaData.GRASS.lerp(PlazaData.GRASS_DARK, PlazaMeshKit.unit(tri_index, PlazaData.Channel.GRASS))
+	var dirt: Color = _variant.ground_dirt[0].lerp(_variant.ground_dirt[1], PlazaMeshKit.unit(tri_index, PlazaData.Channel.DIRT) * 0.7)
+	var grass: Color = _variant.ground_greens[0].lerp(_variant.ground_greens[1], PlazaMeshKit.unit(tri_index, PlazaData.Channel.GRASS))
 	return grass.lerp(dirt, smoothstep(0.35, 0.65, wear))
 
 

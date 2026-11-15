@@ -1,6 +1,6 @@
 #!/bin/sh
 # LW-093a: prova que o verificador de ids de conteúdo passa com os dados certos e falha, apontando o arquivo e o id, quando um id citado some ou é trocado (constante do
-# código e cada coluna que cita o id de outro módulo: need_id, occupation_id, settlement_id, place_id, work_place_id e workers_wanted), e que volta a passar ao consertar.
+# código e cada coluna que cita o id de outro módulo: need_id, occupation_id, owner_kind (LW-098f1), settlement_id, place_id, work_place_id e workers_wanted), e que volta a passar ao consertar.
 set -eu
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/lw093a.XXXXXX")
@@ -45,6 +45,8 @@ edit economy/goods.json 's/"need_id": "hunger"/"need_id": "ghost_need"/'
 expect_invalid 'need_id que não existe' 'economy/goods.json' "campo 'need_id'" 'ghost_need'
 edit economy/recipes.json 's/"occupation_id": "farmer"/"occupation_id": "ghost_job"/'
 expect_invalid 'occupation_id que não existe' 'economy/recipes.json' "campo 'occupation_id'" 'ghost_job'
+edit occupations.json 's/"owner_kind": "merchant"/"owner_kind": "ghost_kind"/'
+expect_invalid 'owner_kind do ofício que não existe' 'occupations.json' "item 'merchant'" "campo 'owner_kind'" 'ghost_kind'
 sites "$(site ghost_town a_work_01 4)"
 expect_invalid 'settlement_id que não existe' 'economy/production_sites.json' "campo 'settlement_id'" 'ghost_town'
 sites "$(site test_settlement_a ghost_place 4)"
@@ -74,4 +76,4 @@ expect_invalid 'tabela ausente' 'data/economy/goods.json: arquivo ausente'
 printf 'const KEY_ACTION_ID: String = "action_id"\nconst CODE_UNKNOWN_MEMORY_KIND: String = "NPC_UNKNOWN_MEMORY_KIND"\n' > "$tree/src/sim/npc/keys.gd"
 printf 'const KIND_HOME: String = "home"\n' > "$tree/src/sim/world/place.gd"
 expect_valid 'nomes que não são ids de conteúdo'
-echo 'LW-093a: 4 casos válidos e 14 quebras detectadas.'
+echo 'LW-093a e LW-098f1: 4 casos válidos e 15 quebras detectadas.'

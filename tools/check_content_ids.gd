@@ -1,7 +1,7 @@
 extends SceneTree
 ## LW-093a (DEC-137): o verificador de ids de conteúdo. (1) Cada id de conteúdo escrito como CONSTANTE no código (`FLEE_ACTION_ID = "flee"`, `HELP_MEMORY_KIND`, `KIND_SITE`...) existe na tabela de `data/` que é dona dele; um id
 ## trocado ou removido em `data/` deixa de quebrar o código sem aviso. (2) Cada coluna que as tabelas da economia (e o `population.json`) usam para citar o id de OUTRO módulo existe na tabela do dono (`need_id`, `occupation_id`,
-## `settlement_id`, `place_id`, `work_place_id`; a economia não importa o `npc` nem o `world`, então o esquema dela deixa essas colunas como texto livre, D1); e cada local de produção ocupa um local `work` do próprio povoado, sem
+## `settlement_id`, `place_id`, `work_place_id`, e o `owner_kind` do ofício do comerciante contra os tipos de dono da economia; a economia não importa o `npc` nem o `world`, então o esquema dela deixa essas colunas como texto livre, D1); e cada local de produção ocupa um local `work` do próprio povoado, sem
 ## repetir, com `workers_wanted` até a capacidade do local. Nenhum comportamento de jogo muda: só lê. Uso: tools/check_content_ids [raiz-do-projeto]. Código 0 (tudo existe) ou 1 (problemas, cada um com o arquivo e o id).
 
 const ID_FIELD: String = "id"
@@ -13,7 +13,7 @@ const CONSTANT_RULES: Array[Dictionary] = [
 	{"name": "^(?!KEY_|CODE_)[A-Z0-9_]+_MEMORY_KIND$", "table": "memory_kinds.json", "scope": ""},
 	{"name": "^KIND_", "table": "economy/owner_kinds.json", "scope": "src/sim/economy/"},
 ]
-## Colunas que citam o id de outro módulo: `file` (em `data/`), `column`, tabela dona. Coluna ausente na linha é pulada (`need_id` só existe nos bens de comida; `work_place_id` entra com a LW-097).
+## Colunas que citam o id de outro módulo: `file` (em `data/`), `column`, tabela dona. Coluna ausente na linha é pulada (`need_id` só existe nos bens de comida; `work_place_id` entra com a LW-097; `owner_kind` só existe no ofício do comerciante, LW-098f1).
 const REFERENCES: Array[Dictionary] = [
 	{"file": "economy/goods.json", "column": "need_id", "owner": "needs.json"},
 	{"file": "economy/recipes.json", "column": "occupation_id", "owner": "occupations.json"},
@@ -21,6 +21,7 @@ const REFERENCES: Array[Dictionary] = [
 	{"file": "economy/production_sites.json", "column": "settlement_id", "owner": "world/settlements.json"},
 	{"file": "economy/production_sites.json", "column": "place_id", "owner": "world/places.json"},
 	{"file": "population.json", "column": "work_place_id", "owner": "world/places.json"},
+	{"file": "occupations.json", "column": "owner_kind", "owner": "economy/owner_kinds.json"},
 ]
 const SITES_FILE: String = "economy/production_sites.json"
 const PLACES_FILE: String = "world/places.json"

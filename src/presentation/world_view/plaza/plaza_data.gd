@@ -106,6 +106,16 @@ const WALL_COLORS_B: Array[Color] = [Color("D8DEE0"), Color("C8D2D8"), Color("E0
 const ROOF_COLORS_B: Array[Color] = [Color("46628A"), Color("56729A"), Color("3A5478")]
 const WALL_COLORS_C: Array[Color] = [Color("B09C74"), Color("A08C64"), Color("BCA880")]
 const ROOF_COLORS_C: Array[Color] = [Color("B89C5C"), Color("A88A4C"), Color("C8AC6C")]
+## D1 (estudo isolado, nada entra no jogo), a variante D "norte sóbrio" [HIP]: a planta da A com as grandes superfícies dessaturadas (saturação de 0,09 a 0,32, o guia pede 0,35 a 0,45) e cor viva só em um acento ocre: petróleo e ardósia verde-acinzentada, couro marrom-vinho, creme e carvão. Terra e verde do terreno vêm em pares (claro e escuro).
+const CLOTH_COLORS_D: Array[Color] = [Color("445C61"), Color("D1C6AE"), Color("5C3E39"), Color("314247"), Color("CC9941")]
+const WALL_COLORS_D: Array[Color] = [Color("B8AE9C"), Color("8E9E9A"), Color("998D81")]
+const ROOF_COLORS_D: Array[Color] = [Color("393E42"), Color("36484C"), Color("523A37")]
+const GROUND_DIRT_D: Array[Color] = [Color("8F7F6D"), Color("66574A")]
+const GROUND_GREENS_D: Array[Color] = [Color("576B4D"), Color("3B4C36")]
+const GRASS_COLORS_D: Array[Color] = [Color("283824"), Color("72855D")]
+const FLOWER_COLORS_D: Array[Color] = [Color("E6DDC3"), Color("CCA24E"), Color("8FAFBF")]
+const TREE_GREENS_D: Array[Color] = [Color("364C41"), Color("425C4B"), Color("4B6650")]
+const STONE_D: Color = Color("808C88")
 ## Peças centrais: a fonte de B (anel de pedras, coluna e taça) e a rotunda de C (anel de pedras irregulares em volta de uma pedra alta, sem água).
 const FOUNTAIN_STONES: int = 12
 const FOUNTAIN_RADIUS_M: float = 1.3

@@ -63,6 +63,11 @@ var talk_limit: int = 0
 var buy_units: int = 0
 ## Quanto do preço da compra desconta do valor de `buy`, em percentagem do total pago (100 = cada moeda tira um ponto de alívio); 0 = o preço não pesa.
 var buy_price_percent: int = 0
+# Comerciante (LW-098f1).
+## Pontos de utilidade da `haul` por moeda de lucro esperado do melhor plano, em percentagem (100 = um ponto por moeda); 0 = a `haul` não tem valor. Só o `net_profit` entra: o tempo e o risco da viagem já estão nele.
+var haul_value_percent: int = 0
+## Pontos de utilidade da `sell` por moeda do total da cotação de venda da sobra de carga, em percentagem (100 = um ponto por moeda); 0 = a `sell` do comerciante não tem valor.
+var sell_value_percent: int = 0
 
 
 ## Peso do nível de urgência (0 a 3); nível fora disso usa o do crítico.
