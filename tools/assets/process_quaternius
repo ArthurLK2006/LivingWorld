@@ -1,0 +1,22 @@
+#!/bin/sh
+# Regenera assets/characters/quaternius/ (subconjunto processado e CC0 da Quaternius) a partir dos três zips originais, SEM rede.
+# Uso: tools/assets/process_quaternius <fantasy.zip> <ubc.zip> <ual.zip> [pasta_de_saida (res://... ou absoluta)]
+# Os zips são conferidos pelo SHA-256 registrado em docs/arte/MANIFESTO_LICENCAS.md. Depois, rode `godot --headless --path . --import`
+# (cria o cache em .godot/, que não é versionado). Programas usados: só o Godot (GODOT_BIN, ou o caminho padrão do macOS).
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+if [ "$#" -lt 3 ]; then
+    echo "uso: tools/assets/process_quaternius <fantasy.zip> <ubc.zip> <ual.zip> [pasta_de_saida]" >&2
+    exit 2
+fi
+# O Godot roda dentro da pasta do projeto: os três zips precisam de caminho absoluto.
+fantasy=$(CDPATH= cd -- "$(dirname -- "$1")" && printf '%s/%s' "$(pwd)" "$(basename -- "$1")")
+ubc=$(CDPATH= cd -- "$(dirname -- "$2")" && printf '%s/%s' "$(pwd)" "$(basename -- "$2")")
+ual=$(CDPATH= cd -- "$(dirname -- "$3")" && printf '%s/%s' "$(pwd)" "$(basename -- "$3")")
+shift 3
+exec "$godot_bin" --headless --path "$project_dir" -s res://tools/assets/process_quaternius.gd -- "$fantasy" "$ubc" "$ual" "$@"

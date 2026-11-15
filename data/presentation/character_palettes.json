@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "cloth": [
+    {"id": "slate", "hue_deg": 170, "sat_permille": 900, "val_permille": 880, "sat_add_permille": 120, "leather_val_permille": 900},
+    {"id": "petrol", "hue_deg": 150, "sat_permille": 900, "val_permille": 800, "sat_add_permille": 180, "leather_val_permille": 900},
+    {"id": "wine", "hue_deg": -50, "sat_permille": 950, "val_permille": 780, "sat_add_permille": 200, "leather_val_permille": 950},
+    {"id": "sand", "hue_deg": 0, "sat_permille": 1000, "val_permille": 1000, "sat_add_permille": 0, "leather_val_permille": 1000},
+    {"id": "ochre", "hue_deg": 4, "sat_permille": 1000, "val_permille": 920, "sat_add_permille": 220, "leather_val_permille": 1000},
+    {"id": "moss", "hue_deg": 60, "sat_permille": 900, "val_permille": 800, "sat_add_permille": 150, "leather_val_permille": 900},
+    {"id": "rust", "hue_deg": -20, "sat_permille": 1000, "val_permille": 880, "sat_add_permille": 250, "leather_val_permille": 1000},
+    {"id": "gray", "hue_deg": 0, "sat_permille": 150, "val_permille": 880, "sat_add_permille": 0, "leather_val_permille": 900}
+  ],
+  "skin": [
+    {"id": "fair", "r_permille": 1000, "g_permille": 1000, "b_permille": 1000},
+    {"id": "rose", "r_permille": 850, "g_permille": 750, "b_permille": 700},
+    {"id": "light", "r_permille": 920, "g_permille": 800, "b_permille": 700},
+    {"id": "warm", "r_permille": 1000, "g_permille": 900, "b_permille": 850},
+    {"id": "tan", "r_permille": 720, "g_permille": 580, "b_permille": 480},
+    {"id": "brown", "r_permille": 580, "g_permille": 440, "b_permille": 350}
+  ],
+  "hair": [
+    {"id": "natural", "r_permille": 1000, "g_permille": 1000, "b_permille": 1000},
+    {"id": "chestnut", "r_permille": 550, "g_permille": 450, "b_permille": 400},
+    {"id": "black", "r_permille": 350, "g_permille": 350, "b_permille": 370},
+    {"id": "auburn", "r_permille": 1700, "g_permille": 850, "b_permille": 550},
+    {"id": "blond", "r_permille": 1900, "g_permille": 1600, "b_permille": 1000},
+    {"id": "silver", "r_permille": 1500, "g_permille": 1500, "b_permille": 1600}
+  ]
+}
