@@ -9,6 +9,8 @@ const MALE_PEASANT: Array = ["male_a", "peasant_m", "buzzed", "brow_regular"]
 const FEMALE_PEASANT: Array = ["female_a", "peasant_f", "long", "brow_female"]
 const MALE_RANGER: Array = ["male_a", "ranger_m", "simple_parted", "brow_regular"]
 const FEMALE_RANGER: Array = ["female_a", "ranger_f", "buns", "brow_female"]
+## Mais o id da barba (quinto item, opcional).
+const MALE_PEASANT_BEARD: Array = ["male_a", "peasant_m", "buzzed", "brow_regular", "beard_01"]
 ## Malhas esperadas: Peasant = rosto, olhos, tronco, braços, calça, botas, cabelo e sobrancelha; Ranger = Peasant + capuz, ombreira, braçadeira e 2 cintos.
 const PEASANT_MESHES: int = 8
 const RANGER_MESHES: int = 13
@@ -30,6 +32,7 @@ func _look(combo: Array, permille: int = 1000) -> CharacterAppearance:
 	look.outfit_id = combo[1]
 	look.hair_id = combo[2]
 	look.eyebrow_id = combo[3]
+	look.beard_id = String(combo[4]) if combo.size() > 4 else ""
 	look.scale_permille = permille
 	return look
 
@@ -78,6 +81,8 @@ func test_origin_is_at_the_feet_and_scale_permille_scales_the_height_proportiona
 		tops.append(box.end.y)
 	assert_almost_eq(tops[0] / tops[1], 0.96, 0.001, "960 milésimos")
 	assert_almost_eq(tops[2] / tops[1], 1.04, 0.001, "1040 milésimos")
+	assert_true(_built(MALE_PEASANT, 960).scale.is_equal_approx(Vector3.ONE * 0.96), "a escala é uniforme (960 milésimos)")
+	assert_true(_built(MALE_PEASANT, 1040).scale.is_equal_approx(Vector3.ONE * 1.04), "a escala é uniforme (1040 milésimos)")
 	assert_eq(_built(MALE_PEASANT, 0).scale, Vector3.ONE, "escala inválida na ficha cai na neutra")
 
 
@@ -120,6 +125,33 @@ func test_incomplete_requests_fail_with_false_and_leave_nothing_behind() -> void
 	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(assembler)
 	assert_false(assembler.build(_look(MALE_PEASANT), missing_file), "remontagem que falha")
 	assert_same(CharacterSceneLoader.skeleton_of(assembler), skeleton, "mantém o personagem anterior")
+
+
+func test_a_beard_in_the_look_is_one_more_mesh_and_needs_a_beard_for_the_gender_of_the_body() -> void:
+	assert_eq(CharacterSceneLoader.meshes_of(_built(MALE_PEASANT_BEARD)).size(), PEASANT_MESHES + 1, "a barba é mais uma malha no mesmo esqueleto")
+	var assembler: CharacterAssembler = add_child_autofree(CharacterAssembler.new())
+	assert_false(assembler.build(_look(FEMALE_PEASANT + ["beard_01"]), _catalog), "não há barba para o gênero do corpo")
+	assert_false(assembler.build(_look(MALE_PEASANT + ["no_such_beard"]), _catalog), "barba fora do catálogo")
+	assert_eq(assembler.get_child_count(), 0, "nada pela metade")
+
+
+func test_a_failure_after_the_parts_load_keeps_the_previous_character_and_leaks_no_scene() -> void:
+	var assembler: CharacterAssembler = add_child_autofree(CharacterAssembler.new())
+	assert_true(assembler.build(_look(MALE_PEASANT), _catalog))
+	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(assembler)
+	var orphans_before: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+	var text: String = FileAccess.get_file_as_string(CharacterCatalog.DEFAULT_PATH)
+	var variants: Dictionary[String, String] = {
+		"ossos do catálogo diferentes dos do esqueleto": text.replace("\"skeleton_bones\": 65", "\"skeleton_bones\": 64"),
+		"tronco que existe mas não serve ao esqueleto": text.replace(OUTFITS + "Male_Peasant_Body_Arms.glb", ANIMATIONS),
+		"peça que falta no meio do carregamento": text.replace(OUTFITS + "Male_Peasant_Legs.glb", OUTFITS + "Missing_Legs.glb"),
+	}
+	for reason: String in variants:
+		assert_ne(variants[reason], text, "a troca de texto vale: " + reason)
+		var broken: CharacterCatalog = CharacterCatalog.from_json(variants[reason], "teste", func(_path: String) -> bool: return true).catalog
+		assert_false(assembler.build(_look(MALE_PEASANT), broken), reason)
+		assert_same(CharacterSceneLoader.skeleton_of(assembler), skeleton, "mantém o personagem anterior: " + reason)
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), orphans_before, "nenhuma cena carregada vaza")
 
 
 func test_every_path_frees_everything_and_leaves_no_orphan_nodes() -> void:

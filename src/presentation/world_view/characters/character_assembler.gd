@@ -1,6 +1,6 @@
 class_name CharacterAssembler
 extends Node3D
-## Monta UM personagem animado a partir de uma ficha de aparência e do catálogo (ART-12, entrega 4a1: as peças, sem animação; só apresentação): um Skeleton3D compartilhado e uma MeshInstance3D por malha de cada peça (cabeça do corpo com olhos, roupa, cabelo, sobrancelha), todas ligadas ao MESMO esqueleto, cada uma com a própria pele (que liga por NOME de osso). Monta QUALQUER conjunto de peças que compartilhe o esqueleto do catálogo: o visual vem só dos caminhos do catálogo e da ficha. Origem NOS PÉS; `scale_permille` vira escala uniforme. Falha (peça ausente, ficha vazia) devolve falso, sem exceção e sem log, e não deixa nada pela metade. A animação (retarget e AnimationPlayer) vem na entrega 4a2; sem shader, paleta, normais planas nem LOD (entregas 4b e seguintes). Contrato: docs/modules/presentation.md.
+## Monta UM personagem animado a partir de uma ficha de aparência e do catálogo (ART-12, entrega 4a1: as peças, sem animação; só apresentação): um Skeleton3D compartilhado e uma MeshInstance3D por malha de cada peça (cabeça do corpo com olhos, roupa, cabelo, barba opcional, sobrancelha), todas ligadas ao MESMO esqueleto, cada uma com a própria pele (que liga por NOME de osso). Monta QUALQUER conjunto de peças que compartilhe o esqueleto do catálogo: o visual vem só dos caminhos do catálogo e da ficha. Origem NOS PÉS; `scale_permille` vira escala uniforme. Falha (peça ausente, ficha vazia) devolve falso, sem exceção e sem log, e não deixa nada pela metade. A animação (retarget e AnimationPlayer) vem na entrega 4a2; sem shader, paleta, normais planas nem LOD (entregas 4b e seguintes). Contrato: docs/modules/presentation.md.
 ## O esqueleto vem da PRIMEIRA peça do plano (o tronco da roupa), não da cabeça: a cabeça-base masculina da Quaternius tem braços e pernas ligeiramente diferentes (até 3,4 cm e 13° nos polegares, medido nos ativos), mas os ossos da cabeça e do pescoço são iguais, então ela se encaixa no esqueleto das roupas.
 
 const SLOT_TORSO: String = "torso_arms"
@@ -8,6 +8,7 @@ const SLOT_LEGS: String = "legs"
 const SLOT_BOOTS: String = "boots"
 const SLOT_HEAD: String = "head"
 const SLOT_HAIR: String = "hair"
+const SLOT_BEARD: String = "beard"
 const SLOT_EYEBROW: String = "eyebrow"
 ## Cada peça extra da roupa ocupa um encaixe "extra_<posição na lista do catálogo>".
 const SLOT_EXTRA_PREFIX: String = "extra_"
@@ -67,7 +68,7 @@ func clear() -> void:
 	_skeleton = null
 
 
-## Encaixe -> caminho da cena, com o tronco da roupa primeiro (dele vem o esqueleto). Vazio se a ficha ou uma peça não existe no catálogo; cabelo e sobrancelha vazios na ficha significam "sem a peça".
+## Encaixe -> caminho da cena, com o tronco da roupa primeiro (dele vem o esqueleto). Vazio se a ficha ou uma peça não existe no catálogo; cabelo, barba e sobrancelha vazios na ficha significam "sem a peça"; cada um sai da lista do catálogo para o gênero do corpo.
 static func _plan(appearance: CharacterAppearance, catalog: CharacterCatalog) -> Dictionary[String, String]:
 	var plan: Dictionary[String, String] = {}
 	if appearance == null or catalog == null or not appearance.is_resolved() or not catalog.is_ready():
@@ -83,7 +84,10 @@ static func _plan(appearance: CharacterAppearance, catalog: CharacterCatalog) ->
 	for index: int in extras.size():
 		plan[SLOT_EXTRA_PREFIX + str(index)] = extras[index]
 	plan[SLOT_HEAD] = body["head_scene"]
-	if not _add_optional(plan, SLOT_HAIR, catalog.hair_for(gender), appearance.hair_id) or not _add_optional(plan, SLOT_EYEBROW, catalog.eyebrows(), appearance.eyebrow_id):
+	var is_complete: bool = _add_optional(plan, SLOT_HAIR, catalog.hair_for(gender), appearance.hair_id)
+	is_complete = is_complete and _add_optional(plan, SLOT_BEARD, catalog.beards_for(gender), appearance.beard_id)
+	is_complete = is_complete and _add_optional(plan, SLOT_EYEBROW, catalog.eyebrows_for(gender), appearance.eyebrow_id)
+	if not is_complete:
 		plan.clear()
 	return plan
 
