@@ -4,7 +4,9 @@ extends GutTest
 ## falha apontando arquivo, item e campo, com tabelas em memória (nada é gravado em disco).
 
 const DATA_DIR: String = "res://data"
-const OCCUPATION_IDS: Array[String] = ["farmer", "lumberjack", "artisan", "guard", "innkeeper", "miner", "shepherd"]
+const OCCUPATION_IDS: Array[String] = ["farmer", "lumberjack", "artisan", "guard", "innkeeper", "miner", "shepherd", "merchant"]
+## O comerciante (LW-098f1) não trabalha nem dorme em casa: a agenda dele tem `rest` à noite e (da 098f2 em diante) `haul` no lugar do trabalho; os outros ofícios seguem com `work`, `eat` e `sleep`.
+const MERCHANT_ESSENTIALS: Array[String] = ["eat", "rest"]
 const OCCUPATIONS_FILE: String = "occupations.json"
 const BLOCKS_FILE: String = "routine_blocks.json"
 const ISSUE_CODE: String = "ROUTINE_DATA_INVALID"
@@ -141,7 +143,7 @@ func test_the_table_keeps_the_occupation_order_and_the_work_place_kind() -> void
 
 # ---------------------------------------------------------------------------------------------------- arquivos reais
 
-func test_the_real_files_load_seven_occupations_that_cover_the_24_hours_with_known_actions() -> void:
+func test_the_real_files_load_eight_occupations_that_cover_the_24_hours_with_known_actions() -> void:
 	var loaded: RoutineLoader.LoadResult = RoutineLoader.load_dir()
 	assert_true(loaded.result.ok, loaded.result.message)
 	var catalog: ActionCatalogLoader.LoadResult = ActionCatalogLoader.load_dir()
@@ -158,7 +160,10 @@ func test_the_real_files_load_seven_occupations_that_cover_the_24_hours_with_kno
 			assert_true(action_ids.has(query.action_id), "%s na hora %d: a ação '%s' existe no catálogo." % [occupation_id, hour, query.action_id])
 			if not seen.has(query.action_id):
 				seen.append(query.action_id)
-		for essential: String in ["work", "eat", "sleep"]:
+		var essentials: Array[String] = ["work", "eat", "sleep"]
+		if occupation_id == "merchant":
+			essentials = MERCHANT_ESSENTIALS
+		for essential: String in essentials:
 			assert_true(seen.has(essential), "%s: a agenda tem '%s'." % [occupation_id, essential])
 
 
