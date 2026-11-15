@@ -1,5 +1,5 @@
 extends GutTest
-## ART-12, entrega 6a: as opções do CharacterRetarget (pose de referência, trava de chão e amortecimento) com a UAL real e esqueletos SINTÉTICOS derivados do corpo masculino do repositório (nenhum ativo de terceiros, nada de art_samples/). Tudo desligado: trilhas idênticas às do retarget sem opções (idle e walk, dois corpos). Pose de referência: um destino com bind diferente do repouso reproduz o bind no quadro 0 do idle (posição e rotação dos 65 ossos), os outros quadros andam pelo delta da UAL em relação a esse quadro, e sem o clipe de referência a biblioteca é null. Trava de chão: com a perna 25% mais curta o pé mais baixo afunda sem a opção e fica a no máximo 1 cm da referência com ela, no idle e no walk, com e sem pose de referência. Amortecimento: fator 0 = osso parado, 1 = igual a sem amortecer, 0,4 = 40% do ângulo. Determinismo.
+## ART-12, entrega 6a: as opções do CharacterRetarget (pose de referência, trava de chão e amortecimento) com a UAL real e esqueletos SINTÉTICOS derivados do corpo masculino do repositório (nenhum ativo de terceiros, nada de art_samples/). Tudo desligado: trilhas idênticas às do retarget sem opções (idle e walk, dois corpos). Pose de referência: um destino com bind diferente do repouso reproduz o bind no quadro 0 do idle (posição e rotação dos 65 ossos), os outros quadros andam pelo delta da UAL em relação a esse quadro, e sem o clipe de referência a biblioteca é null. Trava de chão: com a perna 25% mais curta o pé mais baixo afunda sem a opção e fica a no máximo 1 cm da referência com ela, no idle e no walk, com e sem pose de referência. Amortecimento: fator 0 = osso parado, 1 = igual a sem amortecer, 0,4 = 40% do ângulo, fora de 0 a 1 é limitado. A chave de referência escolhe o clipe. Clipe sem trilha da pélvis: a trava a cria. Esqueleto sem ossos de pé: a trava não muda nada. Determinismo.
 
 const ANIMATIONS: String = "res://assets/characters/quaternius/animations/UAL1_Standard_Subset.glb"
 const BODIES: Array = [["male_a", "peasant_m"], ["female_a", "peasant_f"]]
@@ -27,6 +27,9 @@ const IDLE_TIME: float = 1.0
 const MIN_THIGH_SWING: float = 0.3
 ## [HIP] o afundamento mínimo que o retarget SEM a trava mostra com a perna 25% mais curta (medido: idle 0,42 cm, walk 3,87 cm).
 const SINK_M: Dictionary[String, float] = {"idle": 0.003, "walk": 0.01}
+const PELVIS_POSITION: NodePath = ^"Skeleton3D:pelvis"
+## [HIP] com o walk como referência, o idle fica a pelo menos 0,1 (parte vetorial) do bind no quadro 0 (medido: 0,50).
+const MIN_REFERENCE_GAP: float = 0.1
 
 var _catalog: CharacterCatalog = CharacterCatalog.from_file().catalog
 
@@ -123,6 +126,40 @@ func _gaps(skeleton: Skeleton3D, clip: Animation, reference: Dictionary[String, 
 	return gaps
 
 
+## (posição, rotação): o maior desvio dos ossos de `bind` no quadro 0 de `clip`, aplicado a `target`.
+func _bind_error(target: Skeleton3D, clip: Animation, bind: Dictionary[String, Transform3D]) -> Vector2:
+	_pose(target, clip, 0.0)
+	var worst: Vector2 = Vector2.ZERO
+	for bone_name: String in bind:
+		var pose: Transform3D = target.get_bone_global_pose(target.find_bone(bone_name))
+		worst.x = maxf(worst.x, pose.origin.distance_to(bind[bone_name].origin))
+		worst.y = maxf(worst.y, _distance(pose.basis.get_rotation_quaternion(), bind[bone_name].basis.get_rotation_quaternion()))
+	return worst
+
+
+func _without_positions(clip: Animation) -> Animation:
+	var copy: Animation = clip.duplicate() as Animation
+	for track: int in range(copy.get_track_count() - 1, -1, -1):
+		if copy.track_get_type(track) == Animation.TYPE_POSITION_3D:
+			copy.remove_track(track)
+	return copy
+
+
+## Um esqueleto sem os ossos que a trava de chão mede (tornozelo, base e ponta dos dedos), o resto igual a `source`.
+func _without_feet(source: Skeleton3D) -> Skeleton3D:
+	var clone: Skeleton3D = add_child_autofree(Skeleton3D.new())
+	for bone: int in source.get_bone_count():
+		if not CharacterRetarget.GROUND_BONES.has(source.get_bone_name(bone)):
+			clone.add_bone(source.get_bone_name(bone))
+	for bone: int in clone.get_bone_count():
+		var original: int = source.find_bone(clone.get_bone_name(bone))
+		var parent: int = source.get_bone_parent(original)
+		clone.set_bone_parent(bone, -1 if parent < 0 else clone.find_bone(source.get_bone_name(parent)))
+		clone.set_bone_rest(bone, source.get_bone_rest(original))
+	clone.reset_bone_poses()
+	return clone
+
+
 func _same_clip(a: Animation, b: Animation) -> bool:
 	if a.length != b.length or a.loop_mode != b.loop_mode or a.get_track_count() != b.get_track_count():
 		return false
@@ -183,15 +220,9 @@ func test_a_reference_pose_makes_frame_zero_of_the_idle_the_bind_pose_and_moves_
 	assert_gt(options.bind_pose["upperarm_l"].basis.get_rotation_quaternion().angle_to(target.get_bone_global_rest(target.find_bone("upperarm_l")).basis.get_rotation_quaternion()), MIN_BIND_TURN, "o bind difere do repouso")
 	var library: AnimationLibrary = CharacterRetarget.library_for(target, _catalog.animations(), options)
 	assert_not_null(library)
-	_pose(target, library.get_animation("idle"), 0.0)
-	var worst_position: float = 0.0
-	var worst_rotation: float = 0.0
-	for bone_name: String in options.bind_pose:
-		var pose: Transform3D = target.get_bone_global_pose(target.find_bone(bone_name))
-		worst_position = maxf(worst_position, pose.origin.distance_to(options.bind_pose[bone_name].origin))
-		worst_rotation = maxf(worst_rotation, _distance(pose.basis.get_rotation_quaternion(), options.bind_pose[bone_name].basis.get_rotation_quaternion()))
-	assert_lt(worst_position, POSITION_TOLERANCE_M, "quadro 0 do idle: ossos na posição do bind")
-	assert_lt(worst_rotation, ROTATION_TOLERANCE, "quadro 0 do idle: ossos na rotação do bind")
+	var offset: Vector2 = _bind_error(target, library.get_animation("idle"), options.bind_pose)
+	assert_lt(offset.x, POSITION_TOLERANCE_M, "quadro 0 do idle: ossos na posição do bind")
+	assert_lt(offset.y, ROTATION_TOLERANCE, "quadro 0 do idle: ossos na rotação do bind")
 	for move: Array in MOVES:
 		var check: Vector2 = _delta_check(scene, target, library, options.bind_pose, move[0], move[1])
 		assert_lt(check.x, ROTATION_TOLERANCE, "%s: delta mundial = o da UAL em relação ao quadro 0 do idle, sobre o bind" % move[0])
@@ -259,3 +290,46 @@ func test_the_same_options_give_the_same_tracks_twice() -> void:
 	assert_eq(first.get_animation_list().size(), _catalog.animations().size(), "todos os clipes do catálogo")
 	for key: StringName in first.get_animation_list():
 		assert_true(_same_clip(first.get_animation(key), second.get_animation(key)), "%s: duas execuções, mesmas trilhas" % key)
+
+
+func test_a_damping_factor_outside_zero_to_one_is_limited() -> void:
+	var scene: Node = _ual()
+	var ual: Skeleton3D = CharacterSceneLoader.skeleton_of(scene)
+	var target: Skeleton3D = _body("male_a", "peasant_m")
+	var walk: Animation = _source_clip(scene, "walk")
+	assert_true(_same_clip(_damped(ual, target, walk, 1.5), _damped(ual, target, walk, 1.0)), "fator 1,5 vale 1")
+	assert_true(_same_clip(_damped(ual, target, walk, -0.5), _damped(ual, target, walk, 0.0)), "fator -0,5 vale 0")
+
+
+func test_the_reference_key_picks_the_clip_whose_frame_zero_is_the_bind_pose() -> void:
+	var target: Skeleton3D = _clone(_body("male_a", "peasant_m"), 1.0)
+	var options: CharacterRetarget.Options = CharacterRetarget.Options.new()
+	options.bind_pose = _bind(target)
+	options.reference_key = "walk"
+	var library: AnimationLibrary = CharacterRetarget.library_for(target, _catalog.animations(), options)
+	assert_lt(_bind_error(target, library.get_animation("walk"), options.bind_pose).y, ROTATION_TOLERANCE, "o quadro 0 do walk é o bind")
+	assert_gt(_bind_error(target, library.get_animation("idle"), options.bind_pose).y, MIN_REFERENCE_GAP, "o do idle deixa de ser")
+
+
+func test_the_ground_lock_makes_the_pelvis_track_a_clip_without_one_lacks() -> void:
+	var scene: Node = _ual()
+	var ual: Skeleton3D = CharacterSceneLoader.skeleton_of(scene)
+	var target: Skeleton3D = _clone(_body("male_a", "peasant_m"), LEG_SCALE)
+	var rotations: Animation = _without_positions(_source_clip(scene, "walk"))
+	var options: CharacterRetarget.Options = CharacterRetarget.Options.new()
+	options.ground_lock = true
+	assert_eq(CharacterRetarget.new(ual, target).retarget(rotations).find_track(PELVIS_POSITION, Animation.TYPE_POSITION_3D), -1, "sem a trava, nenhuma trilha de translação da pélvis")
+	var locked: Animation = CharacterRetarget.new(ual, target, options).retarget(rotations)
+	assert_gte(locked.find_track(PELVIS_POSITION, Animation.TYPE_POSITION_3D), 0, "com a trava, a trilha nasce")
+	var gaps: Array[float] = _gaps(target, locked, _rest(target))
+	assert_lt(maxf(gaps.max(), -gaps.min()), GROUND_TOLERANCE_M, "e segura o pé mais baixo")
+
+
+func test_the_ground_lock_does_nothing_for_a_skeleton_without_foot_bones() -> void:
+	var scene: Node = _ual()
+	var ual: Skeleton3D = CharacterSceneLoader.skeleton_of(scene)
+	var target: Skeleton3D = _without_feet(_body("male_a", "peasant_m"))
+	var options: CharacterRetarget.Options = CharacterRetarget.Options.new()
+	options.ground_lock = true
+	var walk: Animation = _source_clip(scene, "walk")
+	assert_true(_same_clip(CharacterRetarget.new(ual, target, options).retarget(walk), CharacterRetarget.new(ual, target).retarget(walk)), "sem ossos de pé a trava não muda nada")
