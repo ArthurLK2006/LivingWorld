@@ -191,6 +191,19 @@ func test_a_reward_above_the_ask_of_the_lot_is_not_posted_and_follows_the_price_
 	baseline[0].teardown()
 
 
+## A BORDA da regra (b) no mercado A, no estoque-alvo (`ask` 11, lote 5): margem de 1000 pontos = recompensa 55 = `ask` vezes o lote, posta; 1001 = 56, um a mais, não posta (a regra recusa só o que PASSA do `ask`).
+func test_a_reward_equal_to_the_ask_of_the_lot_is_posted_and_one_more_is_not() -> void:
+	var posted: Array = []
+	for margin_bp: int in [1000, 1001]:
+		var parts: Array = _world([_bread_standing(margin_bp)])
+		var world: World = parts[0]
+		var economy: EconomyModule = parts[1]
+		_run_hours(world, 1)
+		posted.append(_contracts(economy, "", economy.peek_market_of(SETTLEMENT_A).market_id).size())
+		world.teardown()
+	assert_eq(posted, [1, 0], "Recompensa igual ao `ask` do lote: um contrato; um a mais: nenhum.")
+
+
 func test_same_seed_gives_the_same_contracts_and_money_and_goods_stay_conserved() -> void:
 	var first: Array = _world([_bread_standing(), _grain_shortage()])
 	var second: Array = _world([_bread_standing(), _grain_shortage()])
