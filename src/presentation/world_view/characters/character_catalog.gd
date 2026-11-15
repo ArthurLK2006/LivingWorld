@@ -1,6 +1,6 @@
 class_name CharacterCatalog
 extends RefCounted
-## O catálogo de peças e animações dos personagens do mundo (ART-12, entrega 3; só apresentação), lido de data/presentation/character_catalog.json e VALIDADO ao carregar: versão, ids únicos, gêneros aceitos, todo caminho res:// existente, animações idle e walk presentes e, para cada gênero de corpo, ao menos uma roupa e um cabelo compatível. Qualquer problema vira UMA falha tratada com arquivo, item e campo (nunca lança erro nem escreve no log) e o catálogo devolvido fica vazio. Só dados simples: nada do arquivo é executado. Contrato: docs/modules/presentation.md.
+## O catálogo de peças e animações dos personagens do mundo (ART-12, entrega 3; só apresentação), lido de data/presentation/character_catalog.json e VALIDADO ao carregar: versão, ids únicos, gêneros aceitos, todo caminho res:// existente, animações idle e walk presentes e, para cada gênero de corpo, ao menos uma roupa e um cabelo compatível. A tabela `beards` (barba, uma camada que se soma ao cabelo) é OPCIONAL (ausente ou vazia = sem barba, sem erro) e o `gender` das sobrancelhas também (ausente = qualquer um). Qualquer problema vira UMA falha tratada com arquivo, item e campo (nunca lança erro nem escreve no log) e o catálogo devolvido fica vazio. Só dados simples: nada do arquivo é executado. Contrato: docs/modules/presentation.md.
 
 const DEFAULT_PATH: String = "res://data/presentation/character_catalog.json"
 const CODE_INVALID: String = "CHARACTER_CATALOG_INVALID"
@@ -21,6 +21,7 @@ var skeleton_bones: int = 0
 var _bodies: Array[Dictionary] = []
 var _outfits: Array[Dictionary] = []
 var _hair: Array[Dictionary] = []
+var _beards: Array[Dictionary] = []
 var _eyebrows: Array[Dictionary] = []
 var _animations: Dictionary = {}
 
@@ -57,8 +58,19 @@ func hair_for(gender: String) -> Array[Dictionary]:
 	return _compatible(_hair, gender)
 
 
+## Barbas do gênero do corpo ou de gênero "any"; vazia se o catálogo não tem a tabela `beards`. Quem monta decide se o corpo usa barba.
+func beards_for(gender: String) -> Array[Dictionary]:
+	return _compatible(_beards, gender)
+
+
+## Todas as sobrancelhas, de qualquer gênero.
 func eyebrows() -> Array[Dictionary]:
 	return _eyebrows.duplicate(true)
+
+
+## Sobrancelhas do gênero do corpo ou sem gênero (sem `gender` = qualquer um).
+func eyebrows_for(gender: String) -> Array[Dictionary]:
+	return _compatible(_eyebrows, gender)
 
 
 func animations() -> Dictionary:
@@ -77,7 +89,8 @@ static func _finish(reader: CharacterDataReader, root: Dictionary) -> LoadResult
 static func _compatible(table: Array[Dictionary], gender: String) -> Array[Dictionary]:
 	var found: Array[Dictionary] = []
 	for row: Dictionary in table:
-		if row["gender"] == gender or row["gender"] == ANY_GENDER:
+		var row_gender: String = row.get("gender", ANY_GENDER)
+		if row_gender == gender or row_gender == ANY_GENDER:
 			found.append(row.duplicate(true))
 	return found
 
@@ -94,7 +107,8 @@ func _read(reader: CharacterDataReader, root: Dictionary) -> void:
 	_bodies = _table(reader, root, "bodies", BODY_GENDERS, HEAD_PATHS)
 	_outfits = _table(reader, root, "outfits", BODY_GENDERS, PackedStringArray())
 	_hair = _table(reader, root, "hair", HAIR_GENDERS, SCENE_PATHS)
-	_eyebrows = _table(reader, root, "eyebrows", PackedStringArray(), SCENE_PATHS)
+	_beards = _optional_table(reader, root, "beards", HAIR_GENDERS, SCENE_PATHS)
+	_eyebrows = _table(reader, root, "eyebrows", BODY_GENDERS, SCENE_PATHS, false)
 	for index: int in _outfits.size():
 		var outfit: Dictionary = _outfits[index]
 		var item: String = _row_label(outfit, index)
@@ -114,17 +128,26 @@ func _read(reader: CharacterDataReader, root: Dictionary) -> void:
 		_check_coverage(reader)
 
 
-## Uma tabela: linhas com id único, gênero entre os aceitos (se a tabela tem gênero) e os campos de caminho existentes.
-func _table(reader: CharacterDataReader, root: Dictionary, table: String, genders: PackedStringArray, path_fields: PackedStringArray) -> Array[Dictionary]:
+## Uma tabela: linhas com id único, gênero entre os aceitos (se a tabela tem gênero; com `gender_required` falso o campo pode faltar, e então vale "qualquer um") e os campos de caminho existentes.
+func _table(reader: CharacterDataReader, root: Dictionary, table: String, genders: PackedStringArray, path_fields: PackedStringArray, gender_required: bool = true) -> Array[Dictionary]:
 	var found: Array[Dictionary] = reader.rows(root, table, "")
 	var seen: Dictionary = {}
 	for index: int in found.size():
 		var item: String = reader.identify(found[index], table, index, seen)
-		if not genders.is_empty():
+		if not genders.is_empty() and (gender_required or found[index].has("gender")):
 			reader.choice(found[index], "gender", item, genders)
 		for field: String in path_fields:
 			reader.resource(found[index], field, item)
 	return found
+
+
+## Tabela OPCIONAL: ausente ou vazia = nenhuma linha e nenhum erro (arquivo antigo, sem a tabela, continua válido); presente, é validada como as outras (lista de tipo errado e linha ruim falham).
+func _optional_table(reader: CharacterDataReader, root: Dictionary, table: String, genders: PackedStringArray, path_fields: PackedStringArray) -> Array[Dictionary]:
+	var declared: Variant = root.get(table)  # Variant: fronteira com o JSON, conferido logo abaixo
+	if declared == null or (typeof(declared) == TYPE_ARRAY and (declared as Array).is_empty()):
+		var none: Array[Dictionary] = []
+		return none
+	return _table(reader, root, table, genders, path_fields)
 
 
 ## Todo corpo precisa ter roupa e cabelo do próprio gênero, senão a escolha da aparência não teria o que escolher.

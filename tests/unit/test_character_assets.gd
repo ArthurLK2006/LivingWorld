@@ -8,8 +8,8 @@ const ASSETS: String = "res://assets/characters/quaternius"
 const MANIFEST: String = "res://docs/arte/MANIFESTO_LICENCAS.md"
 const MAX_BYTES: int = 20 * 1024 * 1024
 const BONES: int = 65
-const GENDERS: Dictionary = {"bodies": ["male", "female"], "outfits": ["male", "female"], "hair": ["male", "female", "any"]}
-const SCENE_KEY: Dictionary = {"bodies": "head_scene", "hair": "scene", "eyebrows": "scene"}
+const GENDERS: Dictionary = {"bodies": ["male", "female"], "outfits": ["male", "female"], "hair": ["male", "female", "any"], "beards": ["male", "female", "any"], "eyebrows": ["male", "female"]}
+const SCENE_KEY: Dictionary = {"bodies": "head_scene", "hair": "scene", "beards": "scene", "eyebrows": "scene"}
 const REQUIRED_ANIMATIONS: Array[String] = ["idle", "walk"]
 
 
@@ -49,14 +49,14 @@ func _instance(path: String) -> Node:
 	return scene.instantiate() if scene != null else Node.new()
 
 
-const EXPECTED_COUNTS: Dictionary = {"bodies": 2, "outfits": 4, "hair": 6, "eyebrows": 2}
+const EXPECTED_COUNTS: Dictionary = {"bodies": 2, "outfits": 4, "hair": 5, "beards": 1, "eyebrows": 2}
 
 
 func test_catalog_follows_the_schema() -> void:
 	var c: Dictionary = _catalog()
 	assert_eq(int(c.get("version", 0)), 1, "version")
 	assert_eq(int(c.get("skeleton_bones", 0)), BONES, "skeleton_bones")
-	for group: String in ["bodies", "outfits", "hair", "eyebrows"]:
+	for group: String in ["bodies", "outfits", "hair", "beards", "eyebrows"]:
 		var entries: Array = c.get(group, [])
 		var ids: Dictionary = {}
 		assert_eq(entries.size(), EXPECTED_COUNTS[group], group + ": quantidade de itens do catálogo desta entrega")
