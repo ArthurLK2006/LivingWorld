@@ -43,6 +43,11 @@ class Spec extends RefCounted:
 	var scatter_half_m: Vector2 = PlazaData.SCATTER_HALF_M
 	## Verdadeiro se a vegetação cabe no FOOTPRINT_M: a praça do jogo a leva. A A traz a da demonstração (o anel de 10 a 17 m) e fica sem.
 	var plants_in_footprint: bool = false
+	## D1: as cores do chão da demonstração (terra e verde, cada par é claro e escuro). Os padrões são os de hoje.
+	var ground_dirt: Array[Color] = [PlazaData.DIRT, PlazaData.DIRT_DARK]
+	var ground_greens: Array[Color] = [PlazaData.GRASS, PlazaData.GRASS_DARK]
+	## D1: a ficha de estilo da nova linguagem (PlazaStyle); nula = a linguagem de sempre.
+	var style: PlazaStyle = null
 
 
 	## O arquétipo da barraca `index` (um de PlazaData.StallKind).
@@ -80,7 +85,24 @@ static func named(variant_id: StringName) -> Spec:
 			spec.wall_colors = PlazaData.WALL_COLORS_C
 			spec.roof_colors = PlazaData.ROOF_COLORS_C
 			_plant_c(spec)
+		&"d":
+			_north(spec)
 	return spec
+
+
+## D (D1, estudo isolado): a planta da A com a paleta "norte sóbrio" [HIP]: panos só de cor por vértice (sem os acentos emissivos), terra e verde dessaturados, coníferas frias e flores raras com um acento ocre.
+static func _north(spec: Spec) -> void:
+	spec.cloth_colors = PlazaData.CLOTH_COLORS_D
+	spec.cloth_materials = [&"cloth"]
+	spec.wall_colors = PlazaData.WALL_COLORS_D
+	spec.roof_colors = PlazaData.ROOF_COLORS_D
+	spec.tree_greens = PlazaData.TREE_GREENS_D
+	spec.rock_color = PlazaData.STONE_D
+	spec.flower_colors = PlazaData.FLOWER_COLORS_D
+	spec.grass_colors = PlazaData.GRASS_COLORS_D
+	spec.ground_dirt = PlazaData.GROUND_DIRT_D
+	spec.ground_greens = PlazaData.GROUND_GREENS_D
+	spec.style = PlazaStyle.new()
 
 
 ## B, arrumada (ART-6a): árvores redondas e baixas em duplas, poucas rochas, flores azuis e brancas, grama curta e uniforme.

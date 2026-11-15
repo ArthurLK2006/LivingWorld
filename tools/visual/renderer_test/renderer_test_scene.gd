@@ -29,6 +29,8 @@ var rendering_method: String = ""
 var supported: Dictionary[StringName, bool] = {}
 var switches: Dictionary[StringName, bool] = {&"bloom": true, &"ssao": true, &"fog": true, &"dof": true}
 var built: PlazaBuilder.Built
+## D1 (estudo isolado): as opções da praça, postas por quem cria a cena por código antes de a pôr na árvore; nulas = a praça de sempre.
+var options: PlazaBuilder.Options = null
 var sun: DirectionalLight3D
 var environment: Environment
 var camera: Camera3D
@@ -43,7 +45,7 @@ func _ready() -> void:
 	supported = RendererPresets.supported_effects(rendering_method)
 	_register_support(arguments.has(ARG_FORCE_EFFECTS))
 	_build_rig()
-	built = PlazaBuilder.new().build(self)
+	built = PlazaBuilder.new().build(self, options)
 	apply_preset(0)
 	if RendererAutoRun.is_requested(arguments):
 		await RendererAutoRun.new().run(self, RendererAutoRun.out_dir(arguments))
