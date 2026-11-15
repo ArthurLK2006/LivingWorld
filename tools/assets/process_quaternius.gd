@@ -72,7 +72,7 @@ func _init() -> void:
 	_open(zips[2], UAL_FILE, "animations")
 	_write("animations/UAL1_Standard_Subset.glb", _extract(PackedStringArray(), ANIMATIONS, ""))
 	for entry: Array in LICENSES:
-		_write(String(entry[2]), (zips[int(entry[0])] as ZIPReader).read_file(String(entry[1])))
+		_write(String(entry[2]), (zips[int(entry[0])] as ZIPReader).read_file(String(entry[1])).get_string_from_utf8().replace("\r\n", "\n").to_utf8_buffer())  # fins de linha em LF, como o .gitattributes guarda
 	print("process_quaternius: %d arquivos escritos em %s" % [_written, _out])
 	quit(1 if _failed else 0)
 

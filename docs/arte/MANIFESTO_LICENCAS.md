@@ -68,7 +68,7 @@ Autorização de Arthur (14/11/2026): incluir no Git o subconjunto PROCESSADO (c
 - Animações (1 arquivo, `animations/UAL1_Standard_Subset.glb`): 6 das 43, da versão sem movimento de raiz (quem move o NPC é a simulação): `Idle_Loop` e `Walk_Loop` (o mínimo: ações `wait` e `go_to_place`), `Jog_Fwd_Loop` (pressa e `flee`), `Idle_Talking_Loop` (`talk` e `talk_player`), `PickUp_Table` (`buy` e `sell`) e `Interact` (`work`). O Godot as importa como `Idle`, `Walk`, `Jog_Fwd`, `Idle_Talking` (repetem) e `PickUp_Table`, `Interact` (não repetem). Ficaram de fora: combate, magia, arma de fogo, natação, direção, pulo, rolamento, agachar, sentar, dança, morte, T-pose e `Fixing_Kneeling` (5,2 s, cerca de 0,45 MB e sem ação de NPC que a use hoje), a versão `_RM` (repetida) e a malha-manequim do arquivo (só o esqueleto é necessário).
 
 **Transformações (todas em `tools/assets/process_quaternius`; só o Godot, sem ferramenta externa).**
-1. Texturas: 4096 e 2048 px viram 1024 px (filtro Lanczos do `Image.resize`); os olhos (256 px) ficam como estão. Formato **WebP SEM perdas**, e não PNG: os mesmos pixels e 3,6 MB a menos (13,66 MB contra 17,27 MB em PNG de 1024 px). O Godot lê WebP direto (os glTF apontam para o arquivo por caminho relativo, `textures/...`); um visualizador de glTF que não conheça WebP não mostraria as texturas, o que não afeta o jogo. O canal alfa, todo opaco nos mapas de normal, foi descartado. Cada textura existe UMA vez por pasta, compartilhada pelas peças (os originais a repetem em várias pastas).
+1. Texturas: 4096 e 2048 px viram 1024 px (filtro Lanczos do `Image.resize`); os olhos (256 px) ficam como estão. Formato **WebP SEM perdas**, e não PNG: os mesmos pixels e 3,6 MB a menos (13,66 MB contra 17,27 MB em PNG de 1024 px). O Godot lê WebP direto (os glTF apontam para o arquivo por caminho relativo, `textures/...`); um visualizador de glTF que não conheça WebP não mostraria as texturas, o que não afeta o jogo. O canal alfa, todo opaco nos mapas de normal, foi descartado. Cada textura existe UMA vez por pasta, compartilhada pelas peças (os originais a repetem em várias pastas). As três licenças (`License_*.txt`) tiveram os fins de linha convertidos de CRLF para LF, como o `.gitattributes` (`* text=auto eol=lf`) as guarda: o SHA-256 do manifesto é o do arquivo versionado.
 2. Modelos: cada peça virou um GLB com o esqueleto de 65 ossos inteiro (nomes de ossos, nós, malhas e materiais inalterados) e só as malhas da peça, com os dados copiados byte a byte para buffers novos e compactos. As camadas de UV e de cor sem uso (`TEXCOORD_1` a `4` e `COLOR_1` a `3`) foram removidas: os materiais só usam `TEXCOORD_0` (`COLOR_0` foi mantida).
 3. Cabeça: ficam os triângulos cujos 3 vértices têm como osso de maior peso `Head` ou `neck_01` (a regra do protótipo da ART-12); vértices e índices recompactados, `min` e `max` de `POSITION` recalculados.
 4. Animações: dados das trilhas copiados sem alteração; ficam só o esqueleto, o `skin` e as 6 animações.
@@ -81,9 +81,9 @@ Autorização de Arthur (14/11/2026): incluir no Git o subconjunto PROCESSADO (c
 
 | Arquivo (em `assets/characters/quaternius/`) | Bytes | SHA-256 |
 |---|---|---|
-| `License_Fantasy_Standard.txt` | 728 | `2202cc2f608c4210790b112e5f121bc2e7f8dced7b5b1c7f4be6203461bdebbb` |
-| `License_UAL.txt` | 332 | `6d01f55c6e4c49a2c9963e147e561945ae2c83958c8ca667d90a6bffdbfac061` |
-| `License_UBC_Standard.txt` | 806 | `0f4beaf0fe360a7732e58bbe3dbf60a2422367fbea60cb9ea4add968f383268e` |
+| `License_Fantasy_Standard.txt` | 708 | `9eddea33ca29a6d3918a2a6fa62e0441e6ecc4626c73a18d752e2a35ae4bb22f` |
+| `License_UAL.txt` | 320 | `d77329b05c4c206e76c83285ecdd1e5f2b3df2350ec80657ebdb5a706a0fc0de` |
+| `License_UBC_Standard.txt` | 784 | `e08f717c3cfd999f4b44f2be4522b11a3ac3c0e5b6364b3a8788d25d4c90ff94` |
 | `README.md` | 1539 | `2fe55ab3cbe26859e956b4a0261cee67d13f397eb87b8df73ca591e5dd39d2c9` |
 | `animations/UAL1_Standard_Subset.glb` | 1111172 | `f2d72a837477931922f74c32e40af62588eddda415a90cf2fa06646ae0dad7f3` |
 | `base/Superhero_Female_Head.glb` | 171040 | `ae3fd5c00632f1753fd1f9903e30d069836a9ff356f0f789033f0d35a8b7f6d5` |
