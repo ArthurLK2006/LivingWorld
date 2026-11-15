@@ -39,7 +39,7 @@ func test_provenance_text_has_credit_license_hashes_and_every_change() -> void:
 	built.image = Image.create(8, 8, false, Image.FORMAT_RGB8)
 	built.colors = PackedInt32Array([1, 2, 3])
 	var text: String = Writer.provenance("aaaa", "bbbb", built, 1.44)
-	for expected: String in [Writer.CREDIT, Writer.AUTHOR_URL, Writer.WORK_URL, Writer.LICENSE_URL, "aaaa", "bbbb", "3 cores", "fator 1.2500 para 1.80 m"]:
+	for expected: String in [Writer.CREDIT, Writer.TITLE, Writer.AUTHOR_URL, Writer.WORK_URL, Writer.LICENSE_URL, "aaaa", "bbbb", "3 cores", "fator 1.2500 para 1.80 m"]:
 		assert_string_contains(text, expected)
 	for change: String in Writer.CHANGES:
 		assert_string_contains(text, change)
@@ -122,5 +122,16 @@ func test_saved_palette_materials_json_and_provenance_agree() -> void:
 	assert_eq(data["palette"]["sha256"], FileAccess.get_sha256(_path(Writer.PALETTE_FILE)))
 	assert_eq(data["source"]["sha256"], FileAccess.get_sha256(Source.SOURCE_PATH))
 	var provenance: String = FileAccess.get_file_as_string(_path(Writer.PROVENANCE_FILE))
-	for expected: String in [Writer.CREDIT, data["palette"]["sha256"], data["source"]["sha256"]]:
+	for expected: String in [Writer.CREDIT, Writer.TITLE, data["palette"]["sha256"], data["source"]["sha256"]]:
 		assert_string_contains(provenance, expected)
+
+
+func test_credit_constants_are_the_ones_the_original_file_carries() -> void:
+	if _assets_missing():
+		return
+	var state: GLTFState = GLTFState.new()
+	assert_eq(GLTFDocument.new().append_from_file(Source.SOURCE_PATH, state), OK)
+	var extras: Dictionary = state.json["asset"]["extras"]
+	assert_eq([extras["title"], extras["source"]], [Writer.TITLE, Writer.WORK_URL], "título como fornecido e fonte")
+	assert_string_contains(extras["author"], Writer.AUTHOR_URL)
+	assert_string_contains(extras["license"], Writer.LICENSE_URL)

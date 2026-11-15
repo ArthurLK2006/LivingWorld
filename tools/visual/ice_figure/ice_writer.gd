@@ -1,5 +1,5 @@
 extends RefCounted
-## Gravação da versão PREPARADA do Ice Warrior (ferramenta de arte). Tudo vai para art_samples/ice_figure/, FORA do Git, enquanto Arthur avalia; nada em assets/. Grava: `ice_figure.scn` (raiz, `Skeleton3D` com os 65 ossos no repouso em T e a pose de bind, e um `MeshInstance3D` com a malha de 2 superfícies, a `Skin` com os binds e os materiais com a paleta própria em filtro NEAREST), `ice_palette.png`, `ice_figure.json` (altura, fator para 1,80 m, os 65 ossos, a pose de bind de cada osso, o clipe de referência e os SHA-256) e `PROVENIENCIA.txt` (origem da paleta, crédito CC BY 4.0 e a lista das mudanças).
+## Gravação da versão PREPARADA do Ice Warrior (ferramenta de arte). Tudo vai para art_samples/ice_figure/, FORA do Git, enquanto Arthur avalia; nada em assets/. Grava: `ice_figure.scn` (raiz, `Skeleton3D` com os 65 ossos no repouso em T e a pose de bind, e um `MeshInstance3D` com a malha de 2 superfícies, a `Skin` com os binds e os materiais com a paleta própria em filtro NEAREST), `ice_palette.png`, `ice_figure.json` (altura, fator para 1,80 m, os 65 ossos, a pose de bind de cada osso, o clipe de referência e os SHA-256) e `PROVENIENCIA.txt` (título como fornecido, origem da paleta, crédito CC BY 4.0 e a lista das mudanças).
 ## O esqueleto do `Rig` passa a pertencer à cena gravada e é LIBERADO aqui: não use o `Rig` depois de gravar.
 ## A pose gravada dos ossos é a de bind (a figura estática é a malha original); o REPOUSO (rest) é o T que o `CharacterRetarget` lê.
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")
@@ -21,11 +21,13 @@ const AUTHOR_URL: String = "https://sketchfab.com/HaydzBooter"
 const WORK_URL: String = "https://sketchfab.com/3d-models/icewarrior-lowpoly-character-6ab111d17c6a40ecbda2b782de7f6dad"
 const LICENSE_URL: String = "http://creativecommons.org/licenses/by/4.0/"
 const CREDIT: String = "Ice Warrior: HaydzBooter, CC BY 4.0, com alterações"
+const TITLE: String = "IceWarrior - Lowpoly character"
 const CHANGES: PackedStringArray = [
 	"esqueleto de 65 ossos (mesmos nomes e hierarquia da UAL) e pesos de pele por regra; a malha NÃO foi editada (mesmas posições e índices; as normais só passam pela codificação de 16 bits do Godot, desvio de até 1,24e-4)",
 	"paleta própria, gerada por script a partir das cores por face do original, no lugar da textura de 1024 px",
 	"espada separada em equipamento próprio: prevista na entrega 6d, AINDA NÃO feita (nesta versão a espada é a ilha original, rígida na mão direita)",
 	"escala para o corpo de 1,80 m (o fator está em ice_figure.json; a cena gravada fica na escala do arquivo)",
+	"escala e posição embutidas nos vértices: a transformação dos nós do arquivo importado (escala 0,1104 = 0,01 de cm para m vezes 11,04 do nó Cube_001, mais a rotação e a posição dos nós) é aplicada aos vértices, e a malha desce 5,44 mm na vertical para os pés ficarem em y = 0; a escala é uniforme, as proporções não mudam",
 ]
 
 
@@ -61,18 +63,19 @@ static func transform_numbers(transform: Transform3D) -> Array[float]:
 	return numbers
 
 
-## O texto de proveniência: origem da paleta (método, script e SHA-256), crédito e licença CC BY 4.0, SHA-256 do original e a lista das mudanças.
+## O texto de proveniência: título como fornecido (TITLE, o `extras.title` do GLB), origem da paleta (método, script e SHA-256), crédito e licença CC BY 4.0, SHA-256 do original e a lista das mudanças.
 static func provenance(source_sha: String, palette_sha: String, built: Palette.Built, height_m: float) -> String:
 	var lines: PackedStringArray = PackedStringArray([
 		"Ice Warrior, versão preparada. FORA do Git: avaliação técnica e visual privada (15/11/2026); não redistribuir nem publicar sem aceite expresso.",
 		CREDIT,
+		"Título: %s (como fornecido no original)" % TITLE,
 		"Autor: HaydzBooter (%s)" % AUTHOR_URL,
 		"Obra original: %s" % WORK_URL,
 		"Licença: CC BY 4.0 (%s)" % LICENSE_URL,
 		"SHA-256 do original (IceWarrior.glb): %s" % source_sha,
 		"",
 		"ORIGEM DA PALETA (ice_palette.png, SHA-256 %s):" % palette_sha,
-		"- método: cada cor é a cor sólida de uma face do original, amostrada no centro da UV da face (média das UVs dos vértices da face); a imagem original só foi lida para obter essas cores e NÃO é usada na versão preparada",
+		"- método: cada cor é a cor amostrada no centro da UV de cada face do original (média das UVs dos vértices da face); a imagem original varia dentro de algumas faces e a fidelidade total foi medida por render; a imagem original só foi lida para obter essas cores e NÃO é usada na versão preparada",
 		"- grade de células de %d px, uma por cor única (%d cores, imagem de %d px), em ordem crescente de cor; as UVs de cada face apontam para o centro da célula da sua cor; filtro NEAREST" % [Palette.CELL_PX, built.colors.size(), built.image.get_width()],
 		"- script: tools/visual/ice_figure/ice_palette.gd, chamado por tools/visual/ice_figure/ice_prepare.gd (determinístico: a mesma fonte dá o mesmo arquivo)",
 		"- escala: altura do corpo %.4f m na malha; fator %.4f para %.2f m" % [height_m, BODY_M / height_m, BODY_M],

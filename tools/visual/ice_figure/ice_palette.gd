@@ -1,5 +1,5 @@
 extends RefCounted
-## Paleta PRÓPRIA do Ice Warrior (ferramenta de arte, fora do jogo). Origem documentada: cada cor da paleta é a cor sólida de uma FACE do original, amostrada no centro da UV da face; a imagem original só é lida para obter essas cores e NÃO é usada na versão preparada.
+## Paleta PRÓPRIA do Ice Warrior (ferramenta de arte, fora do jogo). Origem documentada: cada cor da paleta é a cor amostrada no centro da UV de uma FACE do original (a imagem original varia dentro de algumas faces; a fidelidade total foi medida por render, em ice_fidelity.gd); a imagem original só é lida para obter essas cores e NÃO é usada na versão preparada.
 ## Face = triângulos que compartilham vértices dentro de uma superfície (o quad de duas pontas, o triângulo solto, o leque); o centro da UV é a média das UVs dos vértices distintos da face. A paleta é uma grade de células quadradas de CELL_PX px, uma célula por cor única, em ordem crescente de cor; as UVs de cada face passam para o CENTRO da célula da sua cor (filtro NEAREST, sem mipmaps: nada sangra entre células).
 ## Se as cores únicas passam da grade (MAX_SIDE_CELLS x MAX_SIDE_CELLS), cores a menos de FUSE_BELOW níveis em cada canal fundem-se na mais baixa do grupo (guloso em ordem crescente: determinístico).
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")

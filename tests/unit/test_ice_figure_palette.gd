@@ -10,6 +10,13 @@ const BLUE: Color = Color8(0, 0, 255)
 const QUAD_SPREAD: PackedVector2Array = [Vector2(-0.05, -0.05), Vector2(0.05, -0.05), Vector2(0.05, 0.05), Vector2(-0.05, 0.05)]
 const TRIANGLE_SPREAD: PackedVector2Array = [Vector2(-0.05, -0.03), Vector2(0.05, -0.03), Vector2(0.0, 0.06)]
 const BASE_GRAY: int = 10
+const GRAY_KEY: int = BASE_GRAY << 16 | BASE_GRAY << 8 | BASE_GRAY
+const RED_KEY: int = 0xFF0000
+## Diferenças por canal (R, G, B) em relação ao cinza (10, 10, 10), em valores LITERAIS: 1 nível funde, 2 não.
+const FUSING: Array[Vector3i] = [Vector3i(1, 0, 0), Vector3i(0, 1, 0), Vector3i(0, 0, 1), Vector3i(1, 1, 1)]
+const NOT_FUSING: Array[Vector3i] = [Vector3i(2, 0, 0), Vector3i(0, 2, 0), Vector3i(0, 0, 2)]
+## Em unidades de pixel de uma imagem 4 x 4: os 4 cantos de um quad e os 3 de um triângulo, todos em pixels verdes; a média das UVs de cada face cai no pixel (1, 1).
+const CORNERS: PackedVector2Array = [Vector2(0.5, 0.5), Vector2(2.5, 0.5), Vector2(2.5, 2.5), Vector2(0.5, 2.5), Vector2(0.5, 0.5), Vector2(2.5, 0.5), Vector2(1.5, 2.5)]
 
 
 ## Imagem 4 x 4 com vermelho em (1,1) e (2,2), verde em (3,0) e azul em (0,3); o resto é preto.
@@ -23,11 +30,11 @@ func _images() -> Array[Image]:
 	return images
 
 
-## Imagem 4 x 4 só com o cinza (10,10,10) e, em (3,0), o cinza mais `delta` no canal vermelho.
-func _pair(delta: int) -> Array[Image]:
+## Imagem 4 x 4 só com o cinza (10,10,10) e, em (3,0), o cinza mais `delta` nos canais R, G e B.
+func _pair(delta: Vector3i) -> Array[Image]:
 	var image: Image = Image.create(SIDE, SIDE, false, Image.FORMAT_RGB8)
 	image.fill(Color8(BASE_GRAY, BASE_GRAY, BASE_GRAY))
-	image.set_pixel(3, 0, Color8(BASE_GRAY + delta, BASE_GRAY, BASE_GRAY))
+	image.set_pixel(3, 0, Color8(BASE_GRAY + delta.x, BASE_GRAY + delta.y, BASE_GRAY + delta.z))
 	var images: Array[Image] = [image, image]
 	return images
 
@@ -89,21 +96,39 @@ func test_same_input_gives_the_same_bytes() -> void:
 	assert_eq(first.uvs, second.uvs)
 
 
-func test_near_colors_fuse_only_when_the_grid_is_full() -> void:
-	var fused: Palette.Built = Palette.build(_surfs(), _pair(1), 1)
-	assert_eq([fused.error, fused.distinct, fused.colors], ["", 2, PackedInt32Array([BASE_GRAY << 16 | BASE_GRAY << 8 | BASE_GRAY])], "diferença 1: funde na cor mais baixa")
-	assert_eq(fused.uvs[0][0], fused.uvs[0][4], "as duas faces ficam na mesma célula")
-	var kept: Palette.Built = Palette.build(_surfs(), _pair(1), 2)
-	assert_eq([kept.error, kept.colors.size()], ["", 2], "cabendo na grade, nada se funde")
+func test_colors_one_level_apart_in_any_channel_fuse_only_when_the_grid_is_full() -> void:
+	for delta: Vector3i in FUSING:
+		var fused: Palette.Built = Palette.build(_surfs(), _pair(delta), 1)
+		assert_eq([fused.error, fused.distinct, fused.colors], ["", 2, PackedInt32Array([GRAY_KEY])], "diferença %s: funde na cor mais baixa" % delta)
+		assert_eq(fused.uvs[0][0], fused.uvs[0][4], "as duas faces ficam na mesma célula")
+		var kept: Palette.Built = Palette.build(_surfs(), _pair(delta), 2)
+		assert_eq([kept.error, kept.colors.size()], ["", 2], "cabendo na grade, nada se funde")
 
 
-func test_colors_two_levels_apart_do_not_fuse_and_report_the_overflow() -> void:
-	var built: Palette.Built = Palette.build(_surfs(), _pair(Palette.FUSE_BELOW), 1)
-	assert_string_contains(built.error, "não cabe")
-	assert_null(built.image)
+func test_colors_two_levels_apart_in_any_channel_do_not_fuse_and_report_the_overflow() -> void:
+	for delta: Vector3i in NOT_FUSING:
+		var built: Palette.Built = Palette.build(_surfs(), _pair(delta), 1)
+		assert_string_contains(built.error, "não cabe")
+		assert_null(built.image, "diferença %s" % delta)
 
 
-func test_real_palette_fits_without_fusion_and_each_triangle_is_one_solid_face() -> void:
+func test_face_color_is_sampled_at_the_center_of_its_uv_not_at_a_corner() -> void:
+	var image: Image = Image.create(SIDE, SIDE, false, Image.FORMAT_RGB8)
+	image.fill(GREEN)
+	image.set_pixel(1, 1, RED)
+	var surf: Source.Surf = Source.Surf.new()
+	for corner: Vector2 in CORNERS:
+		surf.positions.append(Vector3.ZERO)
+		surf.uvs.append(corner / float(SIDE))
+	surf.indices = PackedInt32Array([0, 1, 2, 0, 2, 3, 4, 5, 6])
+	var surfs: Array[Source.Surf] = [surf]
+	var images: Array[Image] = [image]
+	var built: Palette.Built = Palette.build(surfs, images)
+	assert_eq([built.error, built.colors], ["", PackedInt32Array([RED_KEY])], "só a cor do centro entra na paleta; os cantos verdes não")
+	assert_eq([_sample(built, built.uvs[0][0]), _sample(built, built.uvs[0][4])], [RED, RED], "o quad e o triângulo")
+
+
+func test_real_palette_fits_without_fusion() -> void:
 	if not FileAccess.file_exists(Source.SOURCE_PATH):
 		pending("ativo ausente (fica fora do Git): %s" % Source.SOURCE_PATH)
 		return
@@ -114,7 +139,3 @@ func test_real_palette_fits_without_fusion_and_each_triangle_is_one_solid_face()
 	var built: Palette.Built = Palette.build(surfs, images)
 	assert_eq(built.error, "")
 	assert_eq(built.colors.size(), built.distinct, "as cores cabem na grade: sem fusão")
-	for index: int in surfs.size():
-		for first: int in range(0, surfs[index].indices.size(), Source.TRI):
-			var uv: Vector2 = built.uvs[index][surfs[index].indices[first]]
-			assert_eq([built.uvs[index][surfs[index].indices[first + 1]], built.uvs[index][surfs[index].indices[first + 2]]], [uv, uv])

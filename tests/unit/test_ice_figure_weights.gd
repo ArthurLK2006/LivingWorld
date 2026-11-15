@@ -1,5 +1,5 @@
 extends GutTest
-## ART-12, entrega 6c-ii: os pesos do Ice Warrior (papéis por ilha, conferência da tabela, pesos suaves com rampa na perna) com geometria SINTÉTICA e a tabela real de papéis; o caso com o arquivo real PULA se o ativo (fora do Git) não existir.
+## ART-12, entrega 6c-ii: os pesos do Ice Warrior (papéis por ilha, conferência da tabela, pesos suaves com rampa na perna) e a `Skin` (binds nomeados, inverso da pose de bind) com geometria SINTÉTICA e a tabela real de papéis; o caso com o arquivo real (soma 1 e lado do x médio ponderado de cada osso, igual ao do nome e ao do próprio osso) PULA se o ativo (fora do Git) não existir.
 
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")
 const Skel = preload("res://tools/visual/ice_figure/ice_skeleton.gd")
@@ -118,9 +118,38 @@ func test_real_asset_matches_the_role_table_and_weights_sum_to_one() -> void:
 	var out: Weights.Assigned = Weights.assign(surfs, Source.islands(surfs), _rig, _table)
 	assert_eq(out.errors, PackedStringArray(), "a tabela bate com as ilhas da fonte")
 	assert_eq([out.roles.size(), out.roles[3]], [Source.EXPECTED_ISLANDS, "hand_r"], "a ilha 3 é a espada, rígida na mão direita")
+	var mass: Dictionary[int, float] = {}
+	var moment: Dictionary[int, float] = {}
 	for index: int in surfs.size():
 		for vertex: int in surfs[index].positions.size():
 			var total: float = 0.0
 			for slot: int in Weights.SLOTS:
-				total += out.weights[index][vertex * Weights.SLOTS + slot]
+				var bone: int = out.bones[index][vertex * Weights.SLOTS + slot]
+				var weight: float = out.weights[index][vertex * Weights.SLOTS + slot]
+				total += weight
+				mass[bone] = mass.get(bone, 0.0) + weight
+				moment[bone] = moment.get(bone, 0.0) + weight * surfs[index].positions[vertex].x
 			assert_almost_eq(total, 1.0, SUM_TOLERANCE)
+	for bone: int in mass:
+		var side: String = Skel.side_suffix(_rig.skeleton.get_bone_name(bone))
+		if side.is_empty() or mass[bone] <= 0.0:
+			continue
+		var mean_x: float = moment[bone] / mass[bone]
+		assert_gt(mean_x * (1.0 if side == Skel.LEFT else -1.0), 0.0, "x médio ponderado de %s do lado do nome" % _rig.skeleton.get_bone_name(bone))
+		assert_gt(mean_x * _rig.bind[bone].origin.x, 0.0, "%s e a malha que ele move ficam do mesmo lado" % _rig.skeleton.get_bone_name(bone))
+
+
+func test_skin_has_one_named_inverse_bind_per_bone_in_bone_order() -> void:
+	var rig: Skel.Rig = Skel.Rig.new()
+	rig.skeleton = Skeleton3D.new()
+	var names: PackedStringArray = PackedStringArray(["root", "arm", "hand"])
+	for bone_name: String in names:
+		rig.skeleton.add_bone(bone_name)
+		rig.bind.append(Transform3D(Basis(Vector3.UP, 0.4 * rig.bind.size()), Vector3(1.0 + rig.bind.size(), 2.0, -0.5)))
+	var skin: Skin = Weights.skin_of(rig)
+	assert_eq(skin.get_bind_count(), names.size())
+	for bone: int in names.size():
+		assert_eq(skin.get_bind_name(bone), names[bone])
+		assert_true(skin.get_bind_pose(bone).is_equal_approx(rig.bind[bone].affine_inverse()), "inverso da pose de bind")
+		assert_false(skin.get_bind_pose(bone).is_equal_approx(rig.bind[bone]), "não a própria pose")
+	rig.skeleton.free()
