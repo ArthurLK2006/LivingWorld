@@ -49,6 +49,9 @@ func _instance(path: String) -> Node:
 	return scene.instantiate() if scene != null else Node.new()
 
 
+const EXPECTED_COUNTS: Dictionary = {"bodies": 2, "outfits": 4, "hair": 6, "eyebrows": 2}
+
+
 func test_catalog_follows_the_schema() -> void:
 	var c: Dictionary = _catalog()
 	assert_eq(int(c.get("version", 0)), 1, "version")
@@ -56,7 +59,7 @@ func test_catalog_follows_the_schema() -> void:
 	for group: String in ["bodies", "outfits", "hair", "eyebrows"]:
 		var entries: Array = c.get(group, [])
 		var ids: Dictionary = {}
-		assert_gt(entries.size(), 1, group + ": deveria ter ao menos dois itens")
+		assert_eq(entries.size(), EXPECTED_COUNTS[group], group + ": quantidade de itens do catálogo desta entrega")
 		for e: Dictionary in entries:
 			assert_true(e.get("id") is String and not ids.has(e["id"]), group + ": id ausente ou repetido")
 			ids[e["id"]] = true
@@ -76,7 +79,7 @@ func test_catalog_follows_the_schema() -> void:
 
 func test_every_catalog_path_loads_with_the_65_bone_skeleton_and_imported_textures() -> void:
 	var paths: PackedStringArray = _paths(_catalog())
-	assert_gt(paths.size(), 30, "poucos caminhos no catálogo")
+	assert_eq(paths.size(), 38, "o catálogo desta entrega tem 38 caminhos de peça e de animação (acrescentar ou tirar peça é decisão registrada no manifesto)")
 	for path: String in paths:
 		assert_true(ResourceLoader.exists(path), "não existe em res://: " + path)
 		var root: Node = _instance(path)
