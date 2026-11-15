@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "skeleton_bones": 65,
+  "bodies": [
+    {"id": "male_a", "gender": "male", "head_scene": "res://scenes/main.tscn"},
+    {"id": "female_a", "gender": "female", "head_scene": "res://scenes/main.tscn"}
+  ],
+  "outfits": [
+    {"id": "peasant_m", "gender": "male", "parts": {"torso_arms": "res://scenes/main.tscn", "legs": "res://scenes/main.tscn", "boots": "res://scenes/main.tscn", "extras": []}},
+    {"id": "ranger_m", "gender": "male", "parts": {"torso_arms": "res://scenes/main.tscn", "legs": "res://scenes/main.tscn", "boots": "res://scenes/main.tscn", "extras": ["res://assets/environment/ambient_default.tres"]}},
+    {"id": "smith_m", "gender": "male", "parts": {"torso_arms": "res://scenes/main.tscn", "legs": "res://scenes/main.tscn", "boots": "res://scenes/main.tscn", "extras": []}},
+    {"id": "peasant_f", "gender": "female", "parts": {"torso_arms": "res://scenes/main.tscn", "legs": "res://scenes/main.tscn", "boots": "res://scenes/main.tscn", "extras": []}},
+    {"id": "ranger_f", "gender": "female", "parts": {"torso_arms": "res://scenes/main.tscn", "legs": "res://scenes/main.tscn", "boots": "res://scenes/main.tscn", "extras": ["res://assets/environment/ambient_default.tres"]}},
+    {"id": "smith_f", "gender": "female", "parts": {"torso_arms": "res://scenes/main.tscn", "legs": "res://scenes/main.tscn", "boots": "res://scenes/main.tscn", "extras": []}}
+  ],
+  "hair": [
+    {"id": "hair_m1", "gender": "male", "scene": "res://scenes/main.tscn"},
+    {"id": "hair_m2", "gender": "male", "scene": "res://scenes/main.tscn"},
+    {"id": "hair_f1", "gender": "female", "scene": "res://scenes/main.tscn"},
+    {"id": "hair_f2", "gender": "female", "scene": "res://scenes/main.tscn"},
+    {"id": "hair_any", "gender": "any", "scene": "res://scenes/main.tscn"}
+  ],
+  "eyebrows": [
+    {"id": "brow_01", "scene": "res://scenes/main.tscn"},
+    {"id": "brow_02", "scene": "res://scenes/main.tscn"},
+    {"id": "brow_03", "scene": "res://scenes/main.tscn"}
+  ],
+  "animations": {
+    "idle": {"path": "res://scenes/main.tscn", "name": "Idle"},
+    "walk": {"path": "res://scenes/main.tscn", "name": "Walk"}
+  }
+}

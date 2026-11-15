@@ -118,6 +118,8 @@ func test_the_run_finds_the_parts_places_the_player_forces_the_light_and_frames_
 	add_child_autofree(main)
 	var run: GameCaptureRun = GameCaptureRun.new()
 	assert_eq(run.bind(main), "", "as peças do jogo foram achadas")
+	var rig: AmbientRig = main.get_node("AmbientRig") as AmbientRig
+	rig.rendering_method = "gl_compatibility"  # o teste é da luz forçada, não do ajuste do renderer (o do Mobile: test_renderer_calibration.gd)
 	var markets: Dictionary[String, Vector2] = run.market_positions()
 	assert_true(markets.has(MARKET_ID), "o mercado padrão está nos locais da ponte")
 	assert_true(await run.go_to(markets[MARKET_ID]), "o mundo monta em volta do mercado")
@@ -127,7 +129,6 @@ func test_the_run_finds_the_parts_places_the_player_forces_the_light_and_frames_
 	assert_true(run.stage(NOON, "strategic"))
 	for frame: int in range(SETTLE_FRAMES):
 		await get_tree().process_frame
-	var rig: AmbientRig = main.get_node("AmbientRig") as AmbientRig
 	var sun: DirectionalLight3D = main.get_node("Sun") as DirectionalLight3D
 	assert_almost_eq(sun.light_energy, DayNightCycle.state_at(rig.config, NOON).sun_energy, TOLERANCE, "a luz do meio-dia fica, embora o jogo nasça à meia-noite: o relógio do rig está desligado")
 	var camera: ThirdPersonCamera = main.get_node("Camera") as ThirdPersonCamera

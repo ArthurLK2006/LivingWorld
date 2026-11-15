@@ -5,6 +5,7 @@
 [ext_resource type="Script" path="res://src/presentation/world_view/terrain/terrain_view.gd" id="3_terrain"]
 [ext_resource type="Script" path="res://src/presentation/world_view/environment/ambient_rig.gd" id="4_rig"]
 [ext_resource type="Resource" path="res://assets/environment/ambient_default.tres" id="5_ambient"]
+[ext_resource type="Resource" path="res://assets/environment/renderer_calibration_mobile.tres" id="5b_calibration"]
 [ext_resource type="Script" path="res://src/presentation/world_view/decoration/decoration_view.gd" id="6_decoration"]
 [ext_resource type="Script" path="res://src/presentation/player/player_body.gd" id="7_player"]
 [ext_resource type="Script" path="res://src/presentation/camera/third_person_camera.gd" id="8_camera"]
@@ -21,6 +22,7 @@ shadow_enabled = true
 [node name="AmbientRig" type="Node" parent="."]
 script = ExtResource("4_rig")
 config = ExtResource("5_ambient")
+calibrations = [ExtResource("5b_calibration")]
 
 [node name="TerrainView" type="Node3D" parent="."]
 script = ExtResource("3_terrain")
