@@ -1,11 +1,12 @@
 extends GutTest
-## ART-12, entrega 6c-ii: o esqueleto do Ice Warrior (os 65 ossos, a hierarquia e o repouso em T do male_a; articulações medidas no arranjo de bind) e a tabela de articulações. Não precisa do ativo: só usa o corpo male_a do repositório.
+## ART-12, entrega 6c-ii: o esqueleto do Ice Warrior (os 65 ossos, a hierarquia e o repouso em T do male_a; articulações medidas no arranjo de bind, lado esquerdo em +X) e a tabela de articulações. Não precisa do ativo: só usa o corpo male_a do repositório.
 
 const Skel = preload("res://tools/visual/ice_figure/ice_skeleton.gd")
 const BONES: int = 65
 const TOLERANCE: float = 0.00001
 const HEAD_TIP_M: float = 0.21
 const MIN_MEASURED_BONES: int = 14
+const SIDED_BONES: int = 58
 
 var _rig: Skel.Rig
 var _male: Skeleton3D
@@ -57,6 +58,20 @@ func test_bind_origins_are_the_measured_landmarks_and_the_right_side_mirrors() -
 					measured += 1
 					assert_lt(_rig.origin(bone_name).distance_to(names[bone_name]), TOLERANCE, bone_name)
 	assert_gt(measured, MIN_MEASURED_BONES)
+
+
+## Independe do conteúdo do JSON: o lado vem só do nome (`_l` em +X, `_r` em -X, como no male_a do jogo), então trocar o sinal do x de uma articulação na tabela reprova aqui.
+func test_left_bones_sit_at_positive_x_and_right_bones_at_negative_x_like_in_the_male_body() -> void:
+	var sided: int = 0
+	for bone: int in BONES:
+		var side: String = Skel.side_suffix(_rig.skeleton.get_bone_name(bone))
+		if side.is_empty():
+			continue
+		sided += 1
+		var direction: float = 1.0 if side == Skel.LEFT else -1.0
+		assert_gt(_rig.bind[bone].origin.x * direction, 0.0, "%s no arranjo de bind" % _rig.skeleton.get_bone_name(bone))
+		assert_gt(_male.get_bone_global_rest(bone).origin.x * direction, 0.0, "%s no male_a do jogo" % _rig.skeleton.get_bone_name(bone))
+	assert_eq(sided, SIDED_BONES)
 
 
 func test_rest_offsets_compose_to_the_bind_origins_and_locals_rebuild_the_bind() -> void:
