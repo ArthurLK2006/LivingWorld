@@ -40,14 +40,16 @@
 	"hair": [
 		{"id": "buzzed", "gender": "male", "scene": "res://assets/characters/quaternius/hair/Hair_Buzzed.glb"},
 		{"id": "simple_parted", "gender": "male", "scene": "res://assets/characters/quaternius/hair/Hair_SimpleParted.glb"},
-		{"id": "beard", "gender": "male", "scene": "res://assets/characters/quaternius/hair/Hair_Beard.glb"},
 		{"id": "buzzed_female", "gender": "female", "scene": "res://assets/characters/quaternius/hair/Hair_BuzzedFemale.glb"},
 		{"id": "buns", "gender": "female", "scene": "res://assets/characters/quaternius/hair/Hair_Buns.glb"},
 		{"id": "long", "gender": "female", "scene": "res://assets/characters/quaternius/hair/Hair_Long.glb"}
 	],
+	"beards": [
+		{"id": "beard_01", "gender": "male", "scene": "res://assets/characters/quaternius/hair/Hair_Beard.glb"}
+	],
 	"eyebrows": [
-		{"id": "brow_regular", "scene": "res://assets/characters/quaternius/hair/Eyebrows_Regular.glb"},
-		{"id": "brow_female", "scene": "res://assets/characters/quaternius/hair/Eyebrows_Female.glb"}
+		{"id": "brow_regular", "gender": "male", "scene": "res://assets/characters/quaternius/hair/Eyebrows_Regular.glb"},
+		{"id": "brow_female", "gender": "female", "scene": "res://assets/characters/quaternius/hair/Eyebrows_Female.glb"}
 	],
 	"animations": {
 		"idle": {"path": "res://assets/characters/quaternius/animations/UAL1_Standard_Subset.glb", "name": "Idle"},

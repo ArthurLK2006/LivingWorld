@@ -20,9 +20,14 @@
     {"id": "hair_f2", "gender": "female", "scene": "res://scenes/main.tscn"},
     {"id": "hair_any", "gender": "any", "scene": "res://scenes/main.tscn"}
   ],
+  "beards": [
+    {"id": "beard_01", "gender": "male", "scene": "res://scenes/main.tscn"},
+    {"id": "beard_02", "gender": "male", "scene": "res://scenes/main.tscn"},
+    {"id": "beard_any", "gender": "any", "scene": "res://scenes/main.tscn"}
+  ],
   "eyebrows": [
-    {"id": "brow_01", "scene": "res://scenes/main.tscn"},
-    {"id": "brow_02", "scene": "res://scenes/main.tscn"},
+    {"id": "brow_01", "gender": "male", "scene": "res://scenes/main.tscn"},
+    {"id": "brow_02", "gender": "female", "scene": "res://scenes/main.tscn"},
     {"id": "brow_03", "scene": "res://scenes/main.tscn"}
   ],
   "animations": {
