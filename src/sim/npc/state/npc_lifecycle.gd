@@ -54,15 +54,18 @@ func create(spec: NpcSpec) -> NpcModule.CreateResult:
 	var created: NpcState = NpcState.from_spec(npc_id, spec, _ctx.clock.total_minutes(), _start_needs())
 	created.next_think_time = _first_think_time(npc_id, _ctx.clock.total_minutes())
 	_npcs[npc_id] = created
-	_open_account(npc_id, spec.work_place_id)
+	_open_account(npc_id, spec.work_place_id, spec.occupation_id)
 	return NpcModule.CreateResult.new(Result.success(), npc_id)
 
 
-## A conta do NPC na economia (LW-093; DEC-145): `request_open_owner(npc_id, "npc", work_place_id)`, que também atribui o NPC ao local de produção do `work_place_id`, se houver. Sem economia não há conta. Falha visível (`push_error`), sem desfazer a criação.
-func _open_account(npc_id: int, work_place_id: String) -> void:
+## A conta do NPC na economia (LW-093; DEC-145): `request_open_owner(npc_id, tipo, work_place_id)`, que também atribui o NPC ao local de produção do `work_place_id`, se houver (só o tipo `npc`). O tipo é o `owner_kind` do ofício (LW-098f1: `merchant` para o comerciante); sem ofício, sem tabela de rotina ou sem a coluna, `npc`. Sem economia não há conta. Falha visível (`push_error`), sem desfazer a criação.
+func _open_account(npc_id: int, work_place_id: String, occupation_id: String) -> void:
 	if _economy == null:
 		return
-	var opened: Result = _economy.request_open_owner(npc_id, EconomyModule.KIND_NPC, work_place_id)
+	var kind: String = EconomyModule.KIND_NPC
+	if _routine != null and _routine.has_occupation(occupation_id):
+		kind = _routine.peek_owner_kind(occupation_id)
+	var opened: Result = _economy.request_open_owner(npc_id, kind, work_place_id)
 	if not opened.ok:
 		push_error("NpcLifecycle.create: a conta do NPC %d não abriu na economia: %s" % [npc_id, opened.message])
 
