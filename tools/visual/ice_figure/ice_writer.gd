@@ -25,10 +25,10 @@ const LICENSE_URL: String = "http://creativecommons.org/licenses/by/4.0/"
 const CREDIT: String = "Ice Warrior: HaydzBooter, CC BY 4.0, com alterações"
 const TITLE: String = "IceWarrior - Lowpoly character"
 const CHANGES: PackedStringArray = [
-	"esqueleto de 65 ossos (mesmos nomes e hierarquia da UAL) e pesos de pele por regra; a malha NÃO foi editada (mesmas posições e índices; as normais só passam pela codificação de 16 bits do Godot, desvio de até 1,24e-4)",
+	"esqueleto de 65 ossos (mesmos nomes e hierarquia da UAL) e pesos de pele por regra; a malha NÃO foi editada (mesmas posições e índices; as normais só passam pela codificação de 16 bits do Godot, desvio de até 2,0e-4 contra o GLB original, 1,2e-4 contra a fonte já importada pelo Godot)",
 	"paleta própria, gerada por script a partir das cores por face do original, no lugar da textura de 1024 px",
 	"espada separada: a ilha da espada (ilha 3 do original, 456 triângulos) é uma malha PRÓPRIA de 1 superfície, filha de um BoneAttachment3D ligado ao osso da mão direita (hand_r), com a transformação local igual ao inverso da pose de bind da mão: na pose de bind ela fica exatamente onde estava e a geometria não muda (as posições e os índices do corpo e da espada, juntos, são os da fonte); a espada segue a mão como corpo rígido",
-	"pesos do casaco por lado: a ilha do casaco (ilha 1) pesa na coxa do próprio lado (a esquerda segue a coxa esquerda e a direita, a direita), com uma rampa linear de 25 cm em torno do plano do meio, e a aba da frente à direita (ilha 18) pesa só na coxa direita; só os pesos mudam, a malha não",
+	"pesos do casaco por lado: a ilha do casaco (ilha 1) pesa PREDOMINANTEMENTE na coxa do próprio lado (a esquerda segue a coxa esquerda e a direita, a direita), com uma rampa linear de 25 cm de cada lado do plano do meio (a 10 cm do meio cerca de 30% do peso ainda segue a outra coxa, e na borda do casaco cerca de 8%), e a aba da frente à direita (ilha 18) pesa só na coxa direita; só os pesos mudam, a malha não",
 	"escala para o corpo de 1,80 m (o fator está em ice_figure.json; a cena gravada fica na escala do arquivo)",
 	"escala e posição embutidas nos vértices: a transformação dos nós do arquivo importado (escala 0,1104 = 0,01 de cm para m vezes 11,04 do nó Cube_001, mais a rotação e a posição dos nós) é aplicada aos vértices, e a malha desce 5,44 mm na vertical para os pés ficarem em y = 0; a escala é uniforme, as proporções não mudam",
 ]
