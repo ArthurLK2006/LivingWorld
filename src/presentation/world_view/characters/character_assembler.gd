@@ -1,6 +1,6 @@
 class_name CharacterAssembler
 extends Node3D
-## Monta UM personagem animado a partir de uma ficha de aparência e do catálogo (ART-12, entrega 4a; só apresentação): um Skeleton3D compartilhado e uma MeshInstance3D por malha de cada peça (cabeça do corpo com olhos, roupa, cabelo, barba opcional, sobrancelha), todas ligadas ao MESMO esqueleto, cada uma com a própria pele (que liga por NOME de osso). Monta QUALQUER conjunto de peças que compartilhe o esqueleto do catálogo: o visual vem só dos caminhos do catálogo e da ficha. Origem NOS PÉS; `scale_permille` vira escala uniforme. Falha (peça ou animação ausente, ficha vazia) devolve falso, sem exceção e sem log, e não deixa nada pela metade. Sem shader, paleta, normais planas nem LOD (entregas 4b e seguintes). Contrato: docs/modules/presentation.md.
+## Monta UM personagem animado a partir de uma ficha de aparência e do catálogo (ART-12, entrega 4a; só apresentação): um Skeleton3D compartilhado e uma MeshInstance3D por malha de cada peça (cabeça do corpo com olhos, roupa, cabelo, barba opcional, sobrancelha), todas ligadas ao MESMO esqueleto, cada uma com a própria pele (que liga por NOME de osso). Monta QUALQUER conjunto de peças que compartilhe o esqueleto do catálogo: o visual vem só dos caminhos do catálogo e da ficha. Origem NOS PÉS; `scale_permille` vira escala uniforme. Falha (peça ou animação ausente, ficha vazia) devolve falso, sem exceção e sem log, e não deixa nada pela metade. A paleta (4b) não é daqui: o `CharacterPainter` pinta as malhas montadas e deixa uma chamada em `set_paint`, que o montador repete a cada peça montada ou trocada depois. Sem normais planas nem LOD (entregas seguintes). Contrato: docs/modules/presentation.md.
 ## O esqueleto vem da PRIMEIRA peça do plano (o tronco da roupa), não da cabeça: a cabeça-base masculina da Quaternius tem braços e pernas ligeiramente diferentes (até 3,4 cm e 13° nos polegares, medido nos ativos), mas os ossos da cabeça e do pescoço são iguais, então ela se encaixa no esqueleto das roupas.
 
 const SLOT_TORSO: String = "torso_arms"
@@ -17,6 +17,8 @@ const PERMILLE: float = 1000.0
 var _skeleton: Skeleton3D = null
 var _player: AnimationPlayer = null
 var _slots: Dictionary[String, Array] = {}
+## A pintura da ficha (recebe as malhas recém-montadas); vazia = o visual original das peças. Dura até o próximo `clear()` ou montagem.
+var _paint: Callable = Callable()
 
 
 ## Monta o personagem sob este nó. O conteúdo anterior só é trocado se TUDO der certo.
@@ -91,6 +93,12 @@ func clear() -> void:
 	_slots.clear()
 	_player = null
 	_skeleton = null
+	_paint = Callable()
+
+
+## Guarda a pintura (uma chamada que recebe `Array[MeshInstance3D]`) para as peças montadas ou trocadas daqui em diante; chamada vazia a tira. Não pinta o que já está montado (isso é do `CharacterPainter.apply`).
+func set_paint(paint: Callable) -> void:
+	_paint = paint
 
 
 ## Encaixe -> caminho da cena, com o tronco da roupa primeiro (dele vem o esqueleto). Vazio se a ficha ou uma peça não existe no catálogo; cabelo, barba e sobrancelha vazios na ficha significam "sem a peça"; cada um sai da lista do catálogo para o gênero do corpo (a sobrancelha cai em todas se o catálogo não tem nenhuma para o gênero, como a ficha).
@@ -174,6 +182,8 @@ func _mount(slot: String, meshes: Array[MeshInstance3D]) -> void:
 		_skeleton.add_child(mesh)
 		mesh.skeleton = NodePath("..")
 	_slots[slot] = meshes
+	if _paint.is_valid():
+		_paint.call(meshes)
 
 
 func _free_slot(slot: String) -> void:
