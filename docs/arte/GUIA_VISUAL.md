@@ -1,6 +1,6 @@
 # Guia visual do Living World
 
-**Status:** PROPOSTA de trabalho (Fase 0 de arte, 13/11/2026), baseada na decisão de Arthur de 13/11/2026 (DEC-280). Não altera código nem o `project.godot`. Valores marcados **[HIP]** são hipóteses a calibrar na cena demonstrativa; não são requisitos. **Atualização de 15/11/2026 (proposta):** a `DIRETRIZ_ARTE_GLOBAL.md` refina este guia (low poly maduro e facetado no jogo inteiro; paleta sóbria); onde houver diferença, vale a diretriz depois do aceite de Arthur.
+**Status:** PROPOSTA de trabalho (Fase 0 de arte, 13/11/2026), baseada na decisão de Arthur de 13/11/2026 (DEC-280). Não altera código nem o `project.godot`. Valores marcados **[HIP]** são hipóteses a calibrar na cena demonstrativa; não são requisitos. **Atualização de 15/11/2026 (aprovada por Arthur):** a `DIRETRIZ_ARTE_GLOBAL.md` refina este guia (low poly maduro e facetado no jogo inteiro; paleta sóbria, com identidade própria por cultura, região e facção); onde houver diferença, vale a diretriz.
 
 ## 1. Direção em uma frase
 Fantasia medieval 3D estilizada: modelos low-poly facetados e ricos em detalhes, materiais de aparência artística (não fotográfica), cidades e mercados elaborados, vegetação volumosa, luz quente e atmosférica, cores equilibradas e coerência entre as câmeras próxima, isométrica e estratégica.

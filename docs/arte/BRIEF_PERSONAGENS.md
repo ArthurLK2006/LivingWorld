@@ -1,6 +1,6 @@
 # Brief visual de personagens do Living World
 
-**Status:** PROPOSTA para o aceite de Arthur (14/11/2026; atualizada em 15/11/2026 com a base Quaternius e a `DIRETRIZ_ARTE_GLOBAL.md`). Documento de arte: não altera código, dado, `project.godot` nem arquivo protegido. Valores marcados **[HIP]** são hipóteses a calibrar no protótipo; não são requisitos.
+**Status:** APROVADO por Arthur (direção em 14/11/2026; texto atualizado e aceito em 15/11/2026, junto com a `DIRETRIZ_ARTE_GLOBAL.md`, com a base Quaternius). Documento de arte: não altera código, dado, `project.godot` nem arquivo protegido. Valores marcados **[HIP]** são hipóteses a calibrar no protótipo; não são requisitos.
 
 ## 1. O que este brief faz
 - Define a direção visual dos **personagens humanos** (habitantes, guardas, comerciantes, aldeões e, depois, o jogador).
@@ -8,7 +8,7 @@
 - **Segue a `DIRETRIZ_ARTE_GLOBAL.md` (15/11/2026)**, que estende a mesma linguagem ao mundo inteiro (construções, adereços, vegetação, rochas, caminhos, criaturas); aqui ficam só as regras de personagem.
 
 ## 2. Direção em uma frase
-**Mature Stylized Low Poly Fantasy:** humanos de fantasia medieval em low poly facetado e maduro, de anatomia estilizada e convincente, silhueta forte e traje elaborado. Nada de aparência infantil, chibi ou de brinquedo.
+**Mature Stylized Low Poly Fantasy:** humanos de fantasia medieval em low poly facetado e maduro, de anatomia estilizada e convincente, silhueta forte e traje elaborado. Nada de aparência infantil, chibi ou de brinquedo. A referência é linguagem, não molde: culturas, regiões e facções têm variedade e identidade próprias dentro do mesmo estilo (`DIRETRIZ_ARTE_GLOBAL.md`, seção 1).
 
 ## 3. As quatro referências (prioritárias; enviadas por Arthur em 14/11/2026)
 As imagens são de terceiros: **não entram no repositório** (ele é público) e servem só como referência de linguagem, nunca para copiar modelo, personagem ou arte de outros (DEC-280). Em palavras:
