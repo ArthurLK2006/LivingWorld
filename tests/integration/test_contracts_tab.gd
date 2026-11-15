@@ -1,9 +1,9 @@
 extends GutTest
-## LW-107e1 (critérios C7 e C8): a aba "Contratos" da `MarketView` (src/presentation/ui/market/market_view.gd; contrato em docs/modules/presentation.md, "Quadro de contratos (LW-107)"), SÓ LEITURA, sem janela, com o jogo REAL (`res://data`),
+## LW-107e1 (critérios C7 e C8): a aba "Contratos" da `MarketView` (src/presentation/ui/market/market_view.gd; contrato em docs/modules/presentation.md, "Quadro de contratos (LW-107)"), sem janela, com o jogo REAL (`res://data`),
 ## a ponte real e os textos reais (`data/text/pt_br.json`), montados como em `test_market_view.gd` e `test_contracts_view_model.gd`: o jogador junto ao mercado A, com a conta aberta, os contratos postados DIRETO na economia (o jogador não
 ## posta) e o relógio andando pelo `runner` do jogo. Confere: o cabeçalho "Mercado | Contratos" troca a página só por `visible` e toda abertura começa na aba "Mercado"; as listas mostram as linhas da consulta, com a recompensa e o prazo
 ## restante (dias, horas e minutos); o quadro vazio mostra `ui.contracts.empty` e a aba segue utilizável; a linha de prazo passado (`open`, `accepted` ou `expired` da economia) mostra "Vencido" no lugar do prazo, e a `completed` de prazo
-## passado só o estado; nenhum texto é `[chave]`; Aceitar e Entregar ficam SEMPRE desativados e nada além das consultas vai à ponte; relógio pausado, jogo sem conta e sem jogo dizem "indisponível" sem quebrar; e abrir, trocar de aba, atualizar
+## passado só o estado; nenhum texto é `[chave]`; sem apertar nada, nada além das consultas vai à ponte, e as regras de Aceitar e Entregar (LW-107e2b) estão em `test_contracts_actions.gd`; relógio pausado, jogo sem conta e sem jogo dizem "indisponível" sem quebrar; e abrir, trocar de aba, atualizar
 ## e fechar não mudam o `state_hash`. Os nós da tela são achados pelos nomes fixos dos layouts: a tela não os expõe.
 
 const WORLD_DIR: String = "res://data/world"
@@ -58,7 +58,7 @@ var _view: MarketView
 var _p: Dictionary[String, String] = {}
 
 
-## Ponte que ANOTA todo pedido (a aba só lê: nenhum pode sair) e repassa à de verdade.
+## Ponte que ANOTA todo pedido (sem apertar Aceitar ou Entregar, nenhum pode sair) e repassa à de verdade.
 class SpyBridge:
 	extends SimBridge
 
@@ -316,7 +316,7 @@ func test_the_contracts_page_has_a_close_button_like_the_markets_and_its_hints_l
 	watch_signals(_view)
 	_open_contracts()
 	var hints: Label = _node("ContractsHints") as Label
-	assert_eq([(_node(CLOSE) as Button).text, hints.text, hints.visible], [_text("ui.market.close"), "", false], "Fechar reaproveita `ui.market.close`; a linha de dicas da LW-107e2 existe, vazia e escondida.")
+	assert_eq([(_node(CLOSE) as Button).text, hints.text, hints.visible], [_text("ui.market.close"), "", false], "Fechar reaproveita `ui.market.close`; a linha de dicas existe, vazia e escondida com o quadro vazio (a LW-107e2b a mostra com uma linha aberta ou aceita escolhida).")
 	_press(CLOSE)
 	assert_false(_view.is_open(), "O clique fecha a tela, como o botão do mercado.")
 	_view.open(_market_a)
@@ -341,9 +341,9 @@ func test_the_lists_show_the_boards_rows_with_their_reward_and_remaining_time_in
 	_select(ids["carried"])
 	assert_true(_tree(OPEN_LIST).get_selected() == null and _tree(MINE_LIST).get_selected() != null, "Uma escolha só, nas duas listas.")
 	assert_eq(_detail_text(), MarketView.FACT_SEPARATOR.join([_p["line"], _p["reward"], _p["left_500"], _p["to_c"], _say("owned", {"owned": 1, "quantity": QUANTITY}), _p["accepted"]]), "O detalhe: bem, recompensa, prazo, destino, \"você tem 1 de 2\" e estado.")
-	assert_true(_is_off(ACCEPT) and _is_off(DELIVER), "Com uma linha aceita e no prazo escolhida, Aceitar e Entregar seguem desativados (aba só de leitura).")
+	assert_true(_is_off(ACCEPT) and _is_off(DELIVER), "Com uma linha aceita e no prazo escolhida, mas com o destino em C e só 1 de 2 no inventário, Aceitar e Entregar seguem desativados.")
 	_select(ids["fresh_open"])
-	assert_true(_is_off(ACCEPT) and _is_off(DELIVER), "Com uma linha aberta e no prazo escolhida, Aceitar e Entregar seguem desativados (aba só de leitura).")
+	assert_eq([_is_off(ACCEPT), _is_off(DELIVER)], [false, true], "Com uma linha aberta e no prazo escolhida, só Aceitar fica ativo (LW-107e2b); Entregar segue desativado.")
 
 
 func test_an_empty_board_shows_the_empty_messages_and_the_tab_stays_usable() -> void:
@@ -407,7 +407,7 @@ func test_every_contract_key_exists_and_no_text_of_the_tab_is_a_missing_key() ->
 	var everything: Array[String] = _shown_texts()
 	for contract_id: int in ids.values():
 		_select(contract_id)
-		assert_true(_is_off(ACCEPT) and _is_off(DELIVER), "Nenhuma linha escolhida habilita Aceitar nem Entregar na aba só de leitura.")
+		assert_eq([_is_off(ACCEPT), _is_off(DELIVER)], [contract_id != ids["fresh_open"], true], "Só a linha aberta e no prazo habilita Aceitar; Entregar segue desativado (nenhum contrato do quadro é entregável aqui).")
 		everything.append(_detail_text())
 	var missing: RegEx = RegEx.create_from_string(KEY_FOR_MISSING_TEXT)
 	assert_gt(everything.size(), 2 * ids.size() + 10, "A varredura enxerga rótulos, botões, linhas das tabelas e os seis detalhes.")

@@ -5,9 +5,10 @@ extends RefCounted
 
 ## Efeitos que dependem do renderer. `volumetric` não tem tecla: acompanha a névoa.
 const EFFECTS: Array[StringName] = [&"bloom", &"ssao", &"fog", &"dof", &"volumetric"]
-## [HIP] O que cada método de renderização aceita. O que o Compatibility aceita na 4.7.2 será CONFIRMADO em janela; método desconhecido (inclusive o do modo sem janela) não liga nada.
+## O que cada método de renderização aceita. Confirmado em janela na 4.7.2 (ART-12b e 12c): o Mobile liga bloom, névoa de profundidade e profundidade de campo e IGNORA oclusão ambiente e névoa volumétrica; o Compatibility, bloom e névoa; método desconhecido (inclusive o do modo sem janela) não liga nada.
 const SUPPORTED: Dictionary[String, Array] = {
 	"forward_plus": [&"bloom", &"ssao", &"fog", &"dof", &"volumetric"],
+	"mobile": [&"bloom", &"fog", &"dof"],
 	"gl_compatibility": [&"bloom", &"fog"],
 }
 ## Ponto olhado pelas três câmeras (a do jogo olha 1,5 m acima dos pés do alvo; third_person_camera.gd) e vistas que a imitam: distância de 4 a 40 m e ângulo para baixo de 10 a 75 graus
