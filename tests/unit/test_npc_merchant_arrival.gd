@@ -344,7 +344,7 @@ func test_the_body_leaves_s0_before_the_merchant_changes_place() -> void:
 	var eta: int = _depart(rig, merchant, WOOL, 5)
 	assert_true(_arrived_by(rig, eta))
 	var now: NpcModule.NpcQuery = rig.npc.peek_npc(merchant)
-	assert_eq([rig.npc.peek_level_of(merchant), now.settlement_id, now.place_id], [NpcLod.LEVEL_S1, SETTLEMENT_B, MARKET_B], "O corpo saiu de S0 antes da mudança (senão o relato dele devolveria a posição velha) e a posição nova ficou.")
+	assert_eq([rig.npc.peek_level_of(merchant), now.settlement_id, now.place_id, now.x_cm, now.z_cm], [NpcLod.LEVEL_S1, SETTLEMENT_B, MARKET_B, roundi(_places.peek_place(MARKET_B).place.position.x * TerrainData.CM_PER_METER), roundi(_places.peek_place(MARKET_B).place.position.z * TerrainData.CM_PER_METER)], "O corpo saiu de S0 antes da mudança (senão o relato dele devolveria a posição velha) e a posição nova (inclusive x e z) ficou.")
 
 
 func test_the_arrival_never_writes_needs_itself_and_income_has_one_writer_outside_the_actions() -> void:
