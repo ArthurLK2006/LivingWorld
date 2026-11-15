@@ -72,9 +72,11 @@ func _kind(mesh: MeshInstance3D, surface: int) -> String:
 	return CLASS_OF.get(mesh.mesh.surface_get_material(surface).resource_name, "")
 
 
-func _cloth_values(index: int) -> Array:
+## Os valores do pano da paleta; `hue_locked` é o Ranger (sem giro de matiz).
+func _cloth_values(index: int, hue_locked: bool = false) -> Array:
 	var row: Dictionary = _palettes.entry("cloth", index)
-	return [Vector4(row["hue_deg"] / 360.0, row["sat_permille"] / 1000.0, row["val_permille"] / 1000.0, row["sat_add_permille"] / 1000.0), row["leather_val_permille"] / 1000.0]
+	var hue: float = 0.0 if hue_locked else row["hue_deg"] / 360.0
+	return [Vector4(hue, row["sat_permille"] / 1000.0, row["val_permille"] / 1000.0, row["sat_add_permille"] / 1000.0), row["leather_val_permille"] / 1000.0]
 
 
 func _tint_value(kind: String, index: int) -> Vector3:
@@ -97,7 +99,7 @@ func _snapshot(assembler: CharacterAssembler) -> Dictionary:
 func test_every_mesh_gets_the_values_of_the_palettes_in_the_look_and_keeps_the_original_textures() -> void:
 	for combo: Array in [MALE_RANGER, FEMALE_RANGER]:
 		var look: CharacterAppearance = _look(combo, 2, 4, 3) if combo == MALE_RANGER else _look(combo, 7, 5, 5)
-		var cloth: Array = _cloth_values(look.cloth_palette_index)
+		var cloth: Array = _cloth_values(look.cloth_palette_index, true)
 		var painted: int = 0
 		for mesh: MeshInstance3D in CharacterSceneLoader.meshes_of(_painted(look)):
 			for surface: int in mesh.mesh.get_surface_count():
@@ -144,10 +146,25 @@ func test_other_looks_give_other_values_and_the_same_look_gives_the_same_values(
 
 
 func test_the_neutral_palettes_leave_the_instance_uniforms_neutral() -> void:
-	var neutral: Dictionary = _snapshot(_painted(_look(MALE_RANGER, _index_of("cloth", "sand"), _index_of("skin", "fair"), _index_of("hair", "natural"))))
+	var neutral: Dictionary = _snapshot(_painted(_look(MALE_RANGER, _index_of("cloth", "sand"), _index_of("skin", "base"), _index_of("hair", "natural"))))
 	assert_eq(neutral["Male_Ranger_Legs"][0], Vector4(0.0, 1.0, 1.0, 0.0), "pano neutro: sem giro de matiz, escalas 1 e sem saturação somada")
 	assert_eq(neutral["Male_Ranger_Legs"][1], 1.0, "e o couro sem mudança de valor")
 	assert_true(neutral["SuperHero_Male"][3].is_equal_approx(Vector3.ONE) and neutral["Hair_SimpleParted"][3].is_equal_approx(Vector3.ONE), "pele e cabelo neutros multiplicam por 1")
+
+
+func test_the_ranger_keeps_its_hue_and_the_peasant_still_turns_it() -> void:
+	var slate: int = _index_of("cloth", "slate")
+	var row: Dictionary = _palettes.entry("cloth", slate)
+	assert_ne(row["hue_deg"], 0, "a paleta do teste gira o matiz")
+	var ranger: Dictionary = _snapshot(_painted(_look(MALE_RANGER, slate, 0, 0)))
+	var peasant: Dictionary = _snapshot(_painted(_look(MALE_PEASANT, slate, 0, 0)))
+	for mesh_name: String in CLOTH_MESHES:
+		var pal: Vector4 = ranger[mesh_name][0]
+		assert_eq(pal.x, 0.0, "o Ranger não gira o matiz: " + mesh_name)
+		assert_true(is_equal_approx(pal.y, row["sat_permille"] / 1000.0) and is_equal_approx(pal.z, row["val_permille"] / 1000.0) and is_equal_approx(pal.w, row["sat_add_permille"] / 1000.0), "mas muda saturação, valor e saturação somada: " + mesh_name)
+	var peasant_pal: Vector4 = peasant["Male_Peasant_Legs"][0]
+	assert_almost_eq(peasant_pal.x, row["hue_deg"] / 360.0, 0.0001, "o Peasant gira o matiz da tabela")
+	assert_eq(_snapshot(_painted(_look(MALE_RANGER, slate, 0, 0))), ranger, "e a trava não depende da ordem nem do estado")
 
 
 func test_eyes_leather_and_metal_pieces_do_not_get_the_cloth_shift() -> void:
@@ -208,7 +225,7 @@ func test_failures_return_false_without_error_and_change_nothing() -> void:
 func test_a_part_swapped_at_runtime_gets_the_palette_and_a_new_build_drops_it() -> void:
 	var look: CharacterAppearance = _look(MALE_PEASANT, 2, 4, 3)
 	var assembler: CharacterAssembler = _painted(look)
-	var cloth: Array = _cloth_values(2)
+	var cloth: Array = _cloth_values(2, true)
 	assert_true(assembler.swap_part(CharacterAssembler.SLOT_LEGS, OUTFITS + "Male_Ranger_Legs.glb"))
 	var legs: MeshInstance3D = _mesh(assembler, "Male_Ranger_Legs")
 	assert_true(legs.get_surface_override_material(0) is ShaderMaterial and legs.get_instance_shader_parameter(&"pal").is_equal_approx(cloth[0]), "as calças novas já vêm com a paleta")

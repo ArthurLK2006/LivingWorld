@@ -11,9 +11,9 @@
     {"id": "gray", "hue_deg": 0, "sat_permille": 150, "val_permille": 880, "sat_add_permille": 0, "leather_val_permille": 900}
   ],
   "skin": [
-    {"id": "fair", "r_permille": 1000, "g_permille": 1000, "b_permille": 1000},
-    {"id": "rose", "r_permille": 850, "g_permille": 750, "b_permille": 700},
-    {"id": "light", "r_permille": 920, "g_permille": 800, "b_permille": 700},
+    {"id": "base", "r_permille": 1000, "g_permille": 1000, "b_permille": 1000},
+    {"id": "copper", "r_permille": 850, "g_permille": 750, "b_permille": 700},
+    {"id": "amber", "r_permille": 920, "g_permille": 800, "b_permille": 700},
     {"id": "warm", "r_permille": 1000, "g_permille": 900, "b_permille": 850},
     {"id": "tan", "r_permille": 720, "g_permille": 580, "b_permille": 480},
     {"id": "brown", "r_permille": 580, "g_permille": 440, "b_permille": 350}

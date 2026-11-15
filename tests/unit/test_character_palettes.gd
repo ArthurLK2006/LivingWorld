@@ -24,7 +24,7 @@ const BAD_CASES: Array = [
 	[["cloth", 0, "sat_add_permille"], 12.5, "slate", "sat_add_permille"],
 	[["cloth", 1, "id"], "slate", "slate", "id"],
 	[["cloth", 2, "val_permille"], ERASE, "wine", "val_permille"],
-	[["skin", 0, "r_permille"], -5, "fair", "r_permille"],
+	[["skin", 0, "r_permille"], -5, "base", "r_permille"],
 	[["hair", 3, "b_permille"], 2001, "auburn", "b_permille"],
 ]
 

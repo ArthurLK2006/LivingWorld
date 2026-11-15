@@ -1,7 +1,7 @@
 class_name CharacterPainter
 extends RefCounted
 ## Pinta um personagem montado com a paleta da ficha (ART-12, entrega 4b; só apresentação): o pano, a pele e o cabelo (a barba e a sobrancelha seguem o cabelo). O material de cada superfície é UM `ShaderMaterial` compartilhado, derivado do material ORIGINAL da peça (mesma textura pintada, mesmo normal map, mesma rugosidade e metal) e guardado por classe e por conjunto de texturas; a cor vem dos `instance uniform` de cada malha. Então pintar mais um personagem não cria material nenhum, e pintar de novo (um NPC novo no mesmo visual) só troca dois ou três valores por malha. A classe vem do NOME do material original (convenção da Quaternius, tabela `MATERIAL_CLASSES`); os olhos e todo material desconhecido ficam como estão. A paleta fica guardada no montador e vale também para a peça trocada depois (`CharacterAssembler.swap_part`), até o próximo `clear()` ou montagem. O pintor precisa viver enquanto o montador for usado (o montador só guarda uma chamada para ele). Contrato: docs/modules/presentation.md.
-## Paleta neutra (o `sand` do pano, `fair` e `natural`) deixa os valores neutros e o visual igual ao original. Os valores seguem as tabelas de `CharacterPalettes`: graus viram voltas e milésimos viram decimais aqui, e o multiplicador de pele e cabelo vai para o espaço linear (como o `albedo_color` do material faria; o `instance uniform` não converte um vetor).
+## Paleta neutra (o `sand` do pano, `base` e `natural`) deixa os valores neutros e o visual igual ao original. Os valores seguem as tabelas de `CharacterPalettes`: graus viram voltas e milésimos viram decimais aqui, e o multiplicador de pele e cabelo vai para o espaço linear (como o `albedo_color` do material faria; o `instance uniform` não converte um vetor). Dois limites conhecidos da base provisória da Quaternius, isolados aqui (ajuste pedido por Arthur em 15/11/2026): o giro de matiz da tabela do pano foi calibrado no Peasant (cáqui) e NÃO vale no Ranger (base verde, onde o mesmo giro dá roxo e índigo), que só muda saturação e valor (`HUE_LOCKED`); e a pele multiplica a textura da Quaternius, que é a mais escura do pacote, então a tabela de pele só escurece e não há tons claros (`base` é o original).
 
 const CLOTH: String = CharacterPalettes.CLOTH
 const SKIN: String = CharacterPalettes.SKIN
@@ -13,6 +13,8 @@ const TINT: StringName = &"tint"
 const LEATHER_PIECE: StringName = &"leather_piece"
 ## Peças inteiras de couro e metal (uma destas palavras no nome da malha): o pano não muda de cor nelas. Medido na ART-12 4b: as botas do Peasant são marrom ESCURO, igual ao colete e à calça, e nenhuma máscara por cor as separa.
 const LEATHER_PIECES: PackedStringArray = ["Feet", "Belt", "Bracer", "Pauldron"]
+## Roupas (prefixo do nome do material original) onde o giro de matiz da tabela não vale: o Ranger, de base verde, só muda saturação e valor. Medido na ART-12 4b: slate dava roxo e petrol, índigo.
+const HUE_LOCKED: PackedStringArray = ["MI_Ranger"]
 const DEGREES_PER_TURN: float = 360.0
 const PERMILLE: float = 1000.0
 ## Prefixo do nome do material original -> classe.
@@ -80,8 +82,13 @@ func _paint(meshes: Array[MeshInstance3D], look: Dictionary[String, Dictionary])
 				continue
 			mesh.set_surface_override_material(surface, _shared_material(kind, original))
 			var values: Dictionary = look[kind]
+			var locked: bool = kind == CLOTH and _is_hue_locked(original)
 			for uniform_name: StringName in values:
-				mesh.set_instance_shader_parameter(uniform_name, values[uniform_name])
+				var value: Variant = values[uniform_name]
+				if locked and uniform_name == PAL:
+					var shift: Vector4 = value
+					value = Vector4(0.0, shift.y, shift.z, shift.w)
+				mesh.set_instance_shader_parameter(uniform_name, value)
 			if kind == CLOTH:
 				mesh.set_instance_shader_parameter(LEATHER_PIECE, 1.0 if _is_leather_piece(mesh) else 0.0)
 
@@ -89,6 +96,13 @@ func _paint(meshes: Array[MeshInstance3D], look: Dictionary[String, Dictionary])
 static func _is_leather_piece(mesh: MeshInstance3D) -> bool:
 	for word: String in LEATHER_PIECES:
 		if String(mesh.name).contains(word):
+			return true
+	return false
+
+
+static func _is_hue_locked(material: BaseMaterial3D) -> bool:
+	for prefix: String in HUE_LOCKED:
+		if material.resource_name.begins_with(prefix):
 			return true
 	return false
 
