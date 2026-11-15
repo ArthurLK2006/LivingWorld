@@ -22,14 +22,16 @@ var _npcs: Dictionary[int, NpcState]
 var _economy: EconomyModule
 var _places: SettlementService
 var _params: NpcParams
+var _routine: RoutineTable
 
 
-## `places` e `params` podem ser nulos (módulo sem definições): então a distância não pesa.
-func _init(npcs: Dictionary[int, NpcState], economy: EconomyModule, places: SettlementService, params: NpcParams) -> void:
+## `places` e `params` podem ser nulos (módulo sem definições): então a distância não pesa. `routine` também (LW-098f2): sem ela o ofício não filtra a vaga.
+func _init(npcs: Dictionary[int, NpcState], economy: EconomyModule, places: SettlementService, params: NpcParams, routine: RoutineTable = null) -> void:
 	_npcs = npcs
 	_economy = economy
 	_places = places
 	_params = params
+	_routine = routine
 
 
 ## Reação ao `ContractOffered`: só a vaga interessa.
@@ -46,9 +48,10 @@ func consider(contract_id: int) -> void:
 		return
 	var best_id: int = IdGenerator.NO_ID
 	var best_margin: int = 0
+	var place_kind: String = _place_kind(vacancy.place_id)
 	for npc_id: int in _sorted_ids():
 		var state: NpcState = _npcs[npc_id]
-		if not state.is_alive or state.settlement_id != vacancy.settlement_id:
+		if not state.is_alive or state.settlement_id != vacancy.settlement_id or not _can_take(state, place_kind):
 			continue
 		var candidate: int = _utility(state, vacancy.place_id, vacancy.wage_per_hour, vacancy.occupation_id)
 		var current: Employment = _current_employment(state)
@@ -61,6 +64,23 @@ func consider(contract_id: int) -> void:
 		return
 	if _economy.request_accept_contract(contract_id, best_id).ok:
 		_npcs[best_id].work_place_id = vacancy.place_id
+
+
+## O NPC pode pegar uma vaga num local deste tipo (LW-098f2; npc.md, 14.11)? Não, se está em viagem (o comerciante em trânsito não pensa nem aceita vaga) ou se o ofício dele trabalha em OUTRO tipo de local (o comerciante, de `market`, não pega vaga
+## de produção, que é de local `work`). Sem tabela de rotina, ou com ofício que ela não conhece (o desempregado, sem ofício), o ofício não filtra.
+func _can_take(state: NpcState, place_kind: String) -> bool:
+	if _economy.peek_caravan(state.npc_id).found:
+		return false
+	var work_kind: String = "" if _routine == null else _routine.peek_work_place_kind(state.occupation_id)
+	return work_kind.is_empty() or place_kind.is_empty() or work_kind == place_kind
+
+
+## O tipo do local (`work` para o local de produção e o posto); vazio se não há `world` ou ele não conhece o local.
+func _place_kind(place_id: String) -> String:
+	if _places == null:
+		return ""
+	var found: SettlementService.PlaceQuery = _places.peek_place(place_id)
+	return found.place.kind if found.result.ok else ""
 
 
 ## A utilidade de trabalhar no local `place_id` com salário `wage_per_hour` e ofício esperado `occupation_id` para o NPC (inteiro; pode ser negativa).

@@ -26,6 +26,11 @@ func has_goods(_npc_id: int) -> bool:
 	return false
 
 
+## LW-098f2: o comerciante tem plano de viagem com lucro esperado no mercado do povoado onde está (`peek_trade_plans` não vem vazio)? É a condição da ação `haul` (npc.md, 14.11); quem decide se `haul` é candidata é o pensador. Sem quem responda, não.
+func has_trade_plan(_npc_id: int) -> bool:
+	return false
+
+
 ## LW-093 (R6-I1): a necessidade que a conclusão da ação vai aliviar pela economia ('' = nenhuma), SEM mudar nada. O `ActionRunner` confere que ela existe nas definições ANTES de chamar `complete_action`, para a economia nunca
 ## comprar, consumir ou vender por uma ação que depois falharia (troca atômica, npc.md 14.2). O padrão não alivia nenhuma.
 func completion_need_id(_npc_id: int, _action_id: String) -> String:

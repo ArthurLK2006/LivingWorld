@@ -3,7 +3,7 @@ extends RefCounted
 ## Fluxo de decisão do NPC e fila de pensamento (LW-063; contrato em docs/modules/npc.md, seção 5, e arquitetura 9.7), em modo S1 (sem
 ## corpo). A cada passo, `run_step` deixa pensar só quem chegou no seu `next_think_time`, no máximo `max_thinks_per_step` por passo (o mais
 ## antigo primeiro, empate pelo menor id; o excedente espera). Cada NPC que pensa: (1) leva as necessidades até agora; (2) termina a ação se
-## o tempo dela acabou (e, se uma necessidade LETAL ficou em nível crítico além do limite, o NPC MORRE e nada mais acontece, LW-081); (3) monta as candidatas: com necessidade URGENTE (nível 2 ou mais) as ações que a aliviam, senão (ou se nenhuma
+## o tempo dela acabou (e, se uma necessidade LETAL ficou em nível crítico além do limite, o NPC MORRE e nada mais acontece, LW-081; vivo e em TRÂNSITO, com caravana na economia, LW-098f2, o NPC só chega até aqui: não escolhe nada, só reagenda o pensamento); (3) monta as candidatas: com necessidade URGENTE (nível 2 ou mais) as ações que a aliviam, senão (ou se nenhuma
 ## delas pode começar) a ação da ROTINA da hora, mais a ação em andamento (que ganha o bônus de inércia); só entra quem tem local e pode
 ## começar (pré-condições); (4) pontua com o
 ## UtilityScorer; (5) ordena (pontos, depois id da ação, depois id do local), toma até `decision_top_k` dentro de `decision_margin` pontos
@@ -97,7 +97,7 @@ func react_to_alarm(npc_id: int, alarm: Alarm, now: int) -> void:
 	if not _states.has(npc_id):
 		return
 	var state: NpcState = _states[npc_id]
-	if not state.is_alive:
+	if not state.is_alive or _provider.in_transit(npc_id):
 		return
 	var radius_cm: int = _params.alarm_radius_m * CM_PER_METER_INT
 	var delta_x: int = state.x_cm - alarm.x_cm
@@ -129,6 +129,10 @@ func think(npc_id: int, now: int, alarm: Alarm = null) -> void:
 	var lethal_cause: String = NeedMath.lethal_cause(state, _need_defs, now)
 	if not lethal_cause.is_empty() and _kill_npc.is_valid():
 		_kill_npc.call(npc_id, lethal_cause, now)
+		return
+	# O comerciante em viagem (caravana na economia) não escolhe nada: as necessidades e a morte acima valem, a posição lógica fica onde está e ele volta a pensar quando a economia encerrar a caravana (098f2, npc.md 14.11).
+	if _provider.in_transit(npc_id):
+		schedule(state, now)
 		return
 	var running: bool = progress.outcome == ActionRunner.Outcome.RUNNING
 	_provider.subject = state
@@ -257,10 +261,23 @@ func _candidate_for(state: NpcState, action: ActionDef, now: int, running: bool,
 	var scoring_action: ActionDef = _for_scoring(state, action)
 	if scoring_action == null:
 		return null
+	var haul_value: int = _haul_value(state, action)
+	if action.id == MerchantTrade.HAUL_ACTION_ID and haul_value <= 0:
+		return null
 	var scored: UtilityScorer.ScoreBreakdown = _scorer.score(state, scoring_action, distance_cm, is_current, action.id == routine_action)
 	if not scored.result.ok:
 		return null
+	scored.benefit += haul_value
+	scored.total += haul_value
 	return Candidate.new(action, place_id, scored.total, is_current, scored, needs_place)
+
+
+## `haul` não tem efeito na tabela: o benefício dela é DERIVADO do lucro esperado (098f2, npc.md 14.11), só o `net_profit` do melhor plano, que já traz o tempo e o risco da viagem. 0 para as outras ações e para quem não tem plano: `haul`
+## sem valor não é candidata e o comerciante fica parado.
+func _haul_value(state: NpcState, action: ActionDef) -> int:
+	if action.id != MerchantTrade.HAUL_ACTION_ID or not _provider.has_trade_plan(state.npc_id):
+		return 0
+	return _provider.haul_value(state.npc_id)
 
 
 ## Candidatas da reação a um alarme (LW-076): `flee` (o PlaceChooser a leva para casa) e `help` (o local mais próximo do ponto do alarme)
@@ -446,13 +463,15 @@ class ConditionProvider:
 	var _food: ActionConditionProvider
 	var _income: IncomeStub
 	var _trade: NpcTrade
+	var _merchant: MerchantTrade
 
-	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, income: IncomeStub = null, trade: NpcTrade = null) -> void:
+	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, income: IncomeStub = null, trade: NpcTrade = null, merchant: MerchantTrade = null) -> void:
 		_places = places
 		_occupancy = occupancy
 		_food = food
 		_income = income
 		_trade = trade
+		_merchant = merchant
 
 	func has_food(settlement_id: String) -> bool:
 		return _food != null and _food.has_food(settlement_id)
@@ -467,6 +486,17 @@ class ConditionProvider:
 	func has_goods(npc_id: int) -> bool:
 		return _trade != null and _trade.has_goods(npc_id)
 
+	## O comerciante tem plano de viagem com lucro esperado agora (098f2)? Sem economia, não.
+	func has_trade_plan(npc_id: int) -> bool:
+		return _merchant != null and _merchant.has_trade_plan(npc_id)
+
+	## O valor derivado de `haul` (só o `net_profit` do melhor plano; 0 = não há viagem que valha) e se o NPC está em viagem (098f2).
+	func haul_value(npc_id: int) -> int:
+		return 0 if _merchant == null else _merchant.haul_value(npc_id)
+
+	func in_transit(npc_id: int) -> bool:
+		return _merchant != null and _merchant.in_transit(npc_id)
+
 	## O valor derivado de `buy` para o NPC (0 = não há compra que valha).
 	func buy_value(npc_id: int) -> int:
 		return 0 if _trade == null else _trade.buy_value(npc_id)
@@ -477,6 +507,8 @@ class ConditionProvider:
 
 	## A ação completa do NPC na economia (comprar, comer do inventário, vender); sem economia nada.
 	func complete_action(npc_id: int, action_id: String) -> ActionConditionProvider.Completion:
+		if _merchant != null and action_id == MerchantTrade.HAUL_ACTION_ID:
+			return _merchant.complete(npc_id)
 		if _trade == null:
 			return ActionConditionProvider.Completion.new()
 		return _trade.complete(npc_id, action_id)
