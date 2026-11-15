@@ -1,6 +1,6 @@
 # Guia visual do Living World
 
-**Status:** PROPOSTA de trabalho (Fase 0 de arte, 13/11/2026), baseada na decisão de Arthur de 13/11/2026 (DEC-280). Não altera código nem o `project.godot`. Valores marcados **[HIP]** são hipóteses a calibrar na cena demonstrativa; não são requisitos.
+**Status:** PROPOSTA de trabalho (Fase 0 de arte, 13/11/2026), baseada na decisão de Arthur de 13/11/2026 (DEC-280). Não altera código nem o `project.godot`. Valores marcados **[HIP]** são hipóteses a calibrar na cena demonstrativa; não são requisitos. **Atualização de 15/11/2026 (proposta):** a `DIRETRIZ_ARTE_GLOBAL.md` refina este guia (low poly maduro e facetado no jogo inteiro; paleta sóbria); onde houver diferença, vale a diretriz depois do aceite de Arthur.
 
 ## 1. Direção em uma frase
 Fantasia medieval 3D estilizada: modelos low-poly facetados e ricos em detalhes, materiais de aparência artística (não fotográfica), cidades e mercados elaborados, vegetação volumosa, luz quente e atmosférica, cores equilibradas e coerência entre as câmeras próxima, isométrica e estratégica.
@@ -17,21 +17,21 @@ Uso: só como referência de linguagem. É proibido copiar modelo, personagem, m
 ## 3. Princípios
 1. Riqueza = densidade de adereços pequenos + paleta disciplinada + luz forte com sombra suave e colorida + emissivos como focos. Não é mais polígonos.
 2. Silhueta primeiro: a peça tem de ser lida a 40 m e recompensar o olhar a 4 m.
-3. Uma cor dominante e um acento por cena; saturação média de 0,35 a 0,45 [HIP].
+3. Uma cor dominante e um acento por cena; saturação média de 0,35 a 0,45 [HIP] (a diretriz global pede paleta mais sóbria nas grandes superfícies: valor a calibrar na demonstração).
 4. Chão aberto nos caminhos, detalhe concentrado nos focos (poço, barracas, portas).
 5. Tudo reproduzível por script e com licença registrada.
 
 ## 4. Modelagem
-- Facetado (normais planas), formas robustas ("gordas"), quinas expostas com chanfro pequeno, beirais e toldos exagerados.
+- Facetado (normais planas), formas robustas e angulares (a leitura "gorda" da referência do Albion cede à diretriz global: planos retos, sem arredondar), quinas expostas com chanfro pequeno, beirais e toldos exagerados.
 - Módulo de 1 m (parede de 4 m, piso de 3 m); pivô na base; escala em metros; um arquivo glTF/GLB por peça; nomes em `snake_case`.
 - Orçamento de triângulos por peça [HIP]: casa de 1,5 a 4 mil; barraca de 0,8 a 1,5 mil; adereço de 100 a 600; árvore de 0,4 a 1,2 mil; arbusto de 150 a 400; rocha de 80 a 300.
 - LOD em 3 níveis [HIP]: até 15 m, até 40 m e até 120 m (silhueta simples); sombras até 100 a 150 m.
 - Variação: 2 a 3 variantes por peça; escala, giro e cor determinísticos pelo id do local (nada de aleatório fora do `core`).
-- Personagens humanos: seguem `BRIEF_PERSONAGENS.md` (14/11/2026); as formas "gordas" desta seção valem para construções e adereços.
+- Personagens humanos: seguem `BRIEF_PERSONAGENS.md` (14/11/2026, atualizado em 15/11/2026) e a `DIRETRIZ_ARTE_GLOBAL.md`.
 - Pegada: toda peça de local declara a pegada (hoje, as caixas do `PlacePalette`; o mercado tem 4 x 4 m) para preservar rotas de NPC e colisão.
 
 ## 5. Materiais e cor
-- Sem textura fotográfica: cor por vértice ou paleta/atlas por kit; no máximo cerca de 12 materiais compartilhados por cena.
+- Sem textura fotográfica: cor por vértice, paleta/atlas por kit ou textura estilizada quando a aparência e a medição a justificarem; no máximo cerca de 12 materiais compartilhados por cena.
 - Rugosidade de 0,7 a 0,95; metal só em detalhes; realce de borda (rim) sutil.
 - Oclusão ambiente nos vértices (escurece base e junções); gradiente vertical suave (mais claro no topo).
 - Emissivos (lampião, tocha, janela, cristal) sempre pequenos; com bloom quando o renderer suportar.
