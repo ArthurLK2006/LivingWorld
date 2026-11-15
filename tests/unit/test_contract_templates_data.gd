@@ -121,6 +121,7 @@ func test_each_rule_and_each_range_fails_pointing_at_file_item_and_field() -> vo
 		["quantidade 0", [_row({"quantity": 0})], "quantity"],
 		["lote de 61 pães mais pesado que o jogador", [_row({"quantity": 61})], "quantity"],
 		["lote de 31 de farinha mais pesado que o jogador", [_row({"good_id": "flour", "quantity": 31})], "quantity"],
+		["quantidade acima do teto técnico (a conta do lote estouraria o inteiro)", [_row({"good_id": "flour", "quantity": 4611686018427387905})], "quantity"],
 		["prazo 0", [_row({"deadline_hours": 0})], "deadline_hours"],
 		["prazo 169", [_row({"deadline_hours": 169})], "deadline_hours"],
 		["máximo de abertos 0", [_row({"max_open": 0})], "max_open"],
