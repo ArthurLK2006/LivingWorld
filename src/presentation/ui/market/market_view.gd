@@ -4,9 +4,9 @@ extends CanvasLayer
 ## `Control` raiz), escreve os textos (só por chave, `UiText`) e decide quando abrir, fechar, atualizar, comprar e vender. É a ÚNICA que envia pedidos (`request_trade`) e a única que mexe em outros nós: os de `frozen` ficam parados
 ## (`process_mode` desligado) enquanto a tela está aberta e voltam ao valor anterior ao fechar. NÃO tem regra de jogo, não calcula total nem distância: só consultas e `request_trade`, e a recusa é o `text_key` da resposta. O tempo
 ## do mundo continua andando (a tela não pausa nada). Nasce FECHADA; `setup` só uma vez.
-## LW-107e1 e LW-107e2a (contrato em "Quadro de contratos (LW-107)"): a tela tem a aba "Contratos", SÓ LEITURA, e a página dela é do `ContractsPage` (dados, nós, textos, listas, detalhe e escolha). Aqui ficam o cabeçalho "Mercado | Contratos", que troca a
-## página só por `visible` (ao abrir, a aba "Mercado" vem escolhida), e as chamadas da página: `open` ao abrir e `refresh` no MESMO ritmo da tela (junto do `refresh`, esteja a aba escolhida ou não). Aceitar e Entregar existem e ficam SEMPRE desativados:
-## a LW-107e2 liga as regras dos botões na página e o envio dos pedidos aqui, na `MarketView`, por sinais da página (nada além das consultas vai à ponte). Fechar, na aba, fecha a tela como o do mercado: a página só o pede (`close_requested`).
+## LW-107e1, e2a e e2b (contrato em "Quadro de contratos (LW-107)"): a tela tem a aba "Contratos" e a página dela é do `ContractsPage` (dados, nós, textos, listas, detalhe, escolha e as regras dos botões Aceitar e Entregar). Aqui ficam o cabeçalho "Mercado | Contratos", que troca a
+## página só por `visible` (ao abrir, a aba "Mercado" vem escolhida), e as chamadas da página: `open` ao abrir e `refresh` no MESMO ritmo da tela (junto do `refresh`, esteja a aba escolhida ou não, com a pausa do relógio). A `MarketView` é também a ÚNICA que ENVIA `request_contract_accept` e
+## `request_contract_deliver` (`_send_contract`, ligado aos sinais `accept_requested` e `deliver_requested` da página; relógio pausado ou tela fechada: não envia nada): mostra a resposta pela página (`show_reply`) e refaz as consultas. Fechar, na aba, fecha a tela como o do mercado: a página só o pede (`close_requested`).
 
 ## Valores [HIP]: a camada (acima do HUD) e o intervalo das consultas com a tela aberta (preço, estoque e dinheiro mudam sozinhos).
 const LAYER_INDEX: int = 10
@@ -135,7 +135,7 @@ func close() -> void:
 
 
 ## Refaz as consultas (modelo, textos e linhas), PRESERVANDO a escolha (por `good_id`) e o foco: as linhas são atualizadas no lugar. Falhou (sem jogo ou sem conta): sem linhas, com `ui.market.unavailable` na linha de resultado.
-## Comprar e Vender só ficam ativos com a tela válida e o relógio andando. Refaz também a consulta de contratos da aba (LW-107e1), no mesmo ritmo, esteja ela escolhida ou não.
+## Comprar e Vender só ficam ativos com a tela válida e o relógio andando. Refaz também a consulta de contratos da aba (LW-107e1), no mesmo ritmo, esteja ela escolhida ou não, e lhe diz se o relógio está pausado (Aceitar e Entregar, LW-107e2b).
 func refresh() -> void:
 	if _bridge == null:
 		return
@@ -150,9 +150,10 @@ func refresh() -> void:
 		_layout.weight.text = ""
 		_clear_rows()
 		_layout.result.text = _texts.get_text(KEY_UNAVAILABLE)
-	_layout.buy_button.disabled = not is_valid or _is_game_paused()
+	var is_paused: bool = _is_game_paused()
+	_layout.buy_button.disabled = not is_valid or is_paused
 	_layout.sell_button.disabled = _layout.buy_button.disabled
-	_contracts.refresh(_market_id)
+	_contracts.refresh(_market_id, is_paused)
 
 
 ## Pede a COMPRA do bem escolhido, na quantidade do campo. Sem bem escolhido, tela inválida, relógio pausado ou tela fechada: não envia nada.
@@ -228,7 +229,7 @@ func _clear_rows() -> void:
 
 
 ## A aba "Contratos" (LW-107e1): liga a página (`ContractsPage`: cria os nós sob a coluna do painel, irmã da do mercado, e escreve os textos dela), escreve o texto das duas abas do cabeçalho, liga os cliques das abas e o pedido de fechar da página
-## (o MESMO `close` do botão do mercado) e escolhe a aba "Mercado". Só leitura: Aceitar e Entregar ficam DESATIVADOS na página (a LW-107e2 liga as regras dos botões lá e o envio dos pedidos na `MarketView`, por sinais da página).
+## (o MESMO `close` do botão do mercado), liga os avisos de Aceitar e Entregar da página ao envio (`_send_contract`; as regras dos botões são da página) e escolhe a aba "Mercado".
 func _setup_contracts() -> void:
 	_contracts.setup(_bridge, _texts, _actor_id, _layout.column)
 	_layout.market_tab.text = _texts.get_text(KEY_TAB_MARKET)
@@ -236,7 +237,18 @@ func _setup_contracts() -> void:
 	_layout.market_tab.pressed.connect(_show_page.bind(false))
 	_layout.contracts_tab.pressed.connect(_show_page.bind(true))
 	_contracts.close_requested.connect(close)
+	_contracts.accept_requested.connect(_send_contract.bind(false))
+	_contracts.deliver_requested.connect(_send_contract.bind(true))
 	_show_page(false)
+
+
+## Envia o pedido de ACEITAR (`is_delivery` falso) ou ENTREGAR o contrato `contract_id` (a `MarketView` é a única que envia), mostra a resposta na página (o texto da `text_key` e, no sucesso, a recompensa) e refaz as consultas. Tela fechada ou relógio pausado: não envia nada.
+func _send_contract(contract_id: int, is_delivery: bool) -> void:
+	if not visible or _is_game_paused():
+		return
+	var reply: BridgePlayerContractsReplies.ContractActionReply = _bridge.request_contract_deliver(_actor_id, contract_id) if is_delivery else _bridge.request_contract_accept(_actor_id, contract_id)
+	_contracts.show_reply(reply)
+	refresh()
 
 
 ## Mostra UMA das duas páginas (a do mercado ou a de contratos), marca a aba escolhida e, com a tela aberta, dá o foco à lista principal da página. Só `visible` muda: nenhum nó muda de pai.
