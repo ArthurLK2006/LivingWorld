@@ -25,12 +25,17 @@ func on_wages_paid(event: SimEvent, now: int) -> void:
 	var paid: WagesPaid = event as WagesPaid
 	if paid == null or _economy == null:
 		return
-	var relief: int = paid.amount_each * RELIEF_PER_COIN
 	for worker_id: int in _workers_of(paid.workplace_id):
 		var state: NpcState = _npcs.get(worker_id)
-		if state == null or not state.is_alive or not NeedMath.settle(state, _need_defs, now).ok:
-			continue
-		NeedMath.add_pressure(state, _need_defs, NEED_ID, -relief)
+		relieve_coins(state, paid.amount_each, now)
+
+
+## Alivia `income` de UM NPC em `coins` moedas (`RELIEF_PER_COIN` pontos por moeda): o salário do `WagesPaid` e, desde a LW-098g, o lucro realizado de uma viagem (`MerchantArrival`). É o escritor de `income` do `npc` fora das ações: um só
+## lugar para a conta. NPC nulo, morto ou sem como levar as necessidades até `now`: não faz nada.
+func relieve_coins(state: NpcState, coins: int, now: int) -> void:
+	if state == null or not state.is_alive or not NeedMath.settle(state, _need_defs, now).ok:
+		return
+	NeedMath.add_pressure(state, _need_defs, NEED_ID, -(coins * RELIEF_PER_COIN))
 
 
 ## Os trabalhadores do local de trabalho (o `site_id` ou o `post_id`), em ordem crescente; lista vazia se nenhum dos dois existe.

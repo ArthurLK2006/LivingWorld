@@ -3,7 +3,7 @@ extends RefCounted
 ## O NPC no mercado (LW-093; docs/modules/npc.md, 14.2, 14.3 e 14.6): o que o `npc` faz com a porta da economia (`economy/api`, DEC-132) para comprar comida, comer do inventário e vender. O `npc` NUNCA altera saldo nem estoque:
 ## só pede `request_trade` e `request_consume`, que a economia valida e aplica de uma vez ou não aplica. Tudo aqui é inteiro e sem sorteio. As regras (PROPOSTAS, números em `data/npc_params.json`): o NPC compra a COMIDA que mais alivia a
 ## fome por moeda no mercado do povoado dele, até `buy_units` unidades, as que o saldo e o estoque deixam; come do inventário a comida de menor `good_id`, e o alívio vem do bem (a tabela de efeitos de `eat` fala de 60; o que o
-## bem alivia a mais ou a menos entra como efeito extra); vende ao mercado o que tem no inventário (o primeiro bem, por id, que o mercado negocia).
+## bem alivia a mais ou a menos entra como efeito extra); vende ao mercado o que tem no inventário (o primeiro bem, por id, que o mercado negocia). LW-098g: `sell` tem valor DERIVADO só para o comerciante (o total da cotação da sobra que o mercado aceita).
 
 ## Escalas das contas inteiras (não são valores de jogo): a porcentagem tem base 100 e o alívio por moeda é medido em milésimos (base 1000), para a divisão inteira não perder precisão.
 const PERCENT_SCALE: int = 100
@@ -21,14 +21,19 @@ var _economy: EconomyModule
 var _states: Dictionary[int, NpcState]
 var _buy_units: int
 var _price_percent: int
+var _sell_percent: int
+var _routine: RoutineTable
 
 
-## `buy_units`: o teto de unidades de uma compra (`npc_params.json`); 0 = o NPC não compra. `price_percent`: quanto do preço pago desconta do valor de `buy` (100 = um ponto de alívio por moeda).
-func _init(economy: EconomyModule, states: Dictionary[int, NpcState], buy_units: int, price_percent: int = 0) -> void:
+## `buy_units`: o teto de unidades de uma compra (`npc_params.json`); 0 = o NPC não compra. `price_percent`: quanto do preço pago desconta do valor de `buy` (100 = um ponto de alívio por moeda). `sell_percent` (LW-098g): pontos de utilidade por
+## moeda do total vendido (`sell_value_percent`; 100 = um ponto por moeda; 0 = a `sell` não vale nada). `routine`: a tabela de ofícios, para saber quem é comerciante (sem ela, ninguém é).
+func _init(economy: EconomyModule, states: Dictionary[int, NpcState], buy_units: int, price_percent: int = 0, sell_percent: int = 0, routine: RoutineTable = null) -> void:
 	_economy = economy
 	_states = states
 	_buy_units = buy_units
 	_price_percent = price_percent
+	_sell_percent = sell_percent
+	_routine = routine
 
 
 ## A melhor compra de comida do NPC agora (`FoodPlan.is_empty()` se não há): a comida do mercado do povoado dele que mais alivia por moeda, na quantidade que o saldo e o estoque deixam.
@@ -69,6 +74,47 @@ func has_food(npc_id: int) -> bool:
 ## O NPC tem algum bem no inventário?
 func has_goods(npc_id: int) -> bool:
 	return _economy.peek_inventory(npc_id).rows.size() > 0
+
+
+## O NPC é comerciante, isto é, o ofício dele abre conta do tipo `merchant` (LW-098f1)? Só ele vende (DEC-168): o NPC comum compra comida para si e não a devolve ao mercado. Sem tabela de rotina, ninguém é.
+func is_merchant(npc_id: int) -> bool:
+	return _routine != null and _states.has(npc_id) and _routine.peek_owner_kind(_states[npc_id].occupation_id) == EconomyModule.KIND_MERCHANT
+
+
+## A melhor venda do comerciante agora (`SalePlan.is_empty()` se não há; LW-098g): do inventário dele, o primeiro bem (por id) que NÃO é comida, que o mercado do povoado negocia e ACEITA, na maior quantidade aceita. A comida fica de fora: é a refeição dele
+## (`eat` come do inventário, `consumed`, e o T2 da 098f2 o exige), então a sobra de comida não se vende e a `sell` nunca compete com a refeição. "Aceita" é o que o `execute` da economia confere: a cotação vale (regras e teto de compra), o total cabe no saldo
+## do mercado e o peso cabe nele; a cotação sozinha não confere os dois últimos, e sem eles uma venda que a economia recusaria teria valor e o comerciante a repetiria sem fim (npc.md, 14.11: "destino cheio ou sem fundos").
+func plan_sale(npc_id: int) -> SalePlan:
+	var plan: SalePlan = SalePlan.new()
+	var rows: Array[Dictionary] = _sellable_rows(npc_id)
+	var market: EconomyReplies.MarketQuery = null if rows.is_empty() else _economy.peek_market_of(_states[npc_id].settlement_id)
+	if market == null or not market.result.ok:
+		return plan
+	var funds: int = _economy.peek_balance(market.market_id).balance
+	var room: EconomyReplies.InventoryQuery = _economy.peek_inventory(market.market_id)
+	for row: Dictionary in rows:
+		var good_id: String = str(row["good_id"])
+		if not _traded_in(market, good_id):
+			continue
+		var unit_weight: int = _economy.peek_good(good_id).weight
+		var units: int = int(row["quantity"])
+		while units > 0:
+			var quote: EconomyReplies.QuoteQuery = _economy.peek_quote(npc_id, market.market_id, good_id, units, SELL_SIDE)
+			if quote.result.ok and quote.total <= funds and room.weight + units * unit_weight <= room.capacity:
+				plan.market_id = market.market_id
+				plan.good_id = good_id
+				plan.units = units
+				plan.total = quote.total
+				return plan
+			units -= 1
+	return plan
+
+
+## O valor DERIVADO de `sell` (LW-098g; DEC-168): o total da cotação do que o mercado aceita da sobra do comerciante vezes `sell_percent` / 100 (npc.md, 14.11); 0 se o NPC não é comerciante ou se não há venda que o mercado aceite (a sobra fica com ele).
+func sell_value(npc_id: int) -> int:
+	if not is_merchant(npc_id):
+		return 0
+	return IntMath.floor_div(plan_sale(npc_id).total * _sell_percent, PERCENT_SCALE)
 
 
 ## O que a economia faz quando a ação COMPLETA (ver `ActionConditionProvider.complete_action`): `buy` compra a comida planejada, `eat` consome uma unidade de comida do inventário e devolve o alívio do bem, `sell` vende ao mercado o
@@ -119,6 +165,8 @@ func _complete_eat(npc_id: int) -> ActionConditionProvider.Completion:
 func _complete_sell(npc_id: int) -> ActionConditionProvider.Completion:
 	if not _states.has(npc_id):
 		return ActionConditionProvider.Completion.failed("o NPC %d não existe" % npc_id)
+	if is_merchant(npc_id):
+		return _complete_merchant_sale(npc_id)
 	var market: EconomyReplies.MarketQuery = _economy.peek_market_of(_states[npc_id].settlement_id)
 	if not market.result.ok:
 		return ActionConditionProvider.Completion.failed("o povoado do NPC %d não tem mercado" % npc_id)
@@ -135,15 +183,45 @@ func _complete_sell(npc_id: int) -> ActionConditionProvider.Completion:
 	return ActionConditionProvider.Completion.failed("o mercado não comprou nada do NPC %d" % npc_id)
 
 
+## A conclusão da `sell` do COMERCIANTE (LW-098g): vende o que `plan_sale` planeja agora (a conta é refeita: o mercado pode ter mudado desde a decisão), o mesmo do valor que o pensador viu, e nunca a comida dele. A economia confere de novo (troca
+## atômica); sem venda que ela aceite, ou com a recusa, é falha por regra: nada muda e o comerciante fica livre.
+func _complete_merchant_sale(npc_id: int) -> ActionConditionProvider.Completion:
+	var plan: SalePlan = plan_sale(npc_id)
+	if plan.is_empty():
+		return ActionConditionProvider.Completion.failed("o mercado não comprou nada da sobra do comerciante %d" % npc_id)
+	var sold: EconomyReplies.TradeResult = _economy.request_trade(npc_id, plan.market_id, plan.good_id, plan.units, SELL_SIDE)
+	if not sold.result.ok:
+		return ActionConditionProvider.Completion.failed("a venda de %d de '%s' falhou: %s" % [plan.units, plan.good_id, sold.result.message])
+	return ActionConditionProvider.Completion.new()
+
+
 ## A linha do inventário do NPC com a comida de menor `good_id` (vazio se não há).
 func _food_row(npc_id: int) -> Dictionary:
-	var food_ids: Array[String] = []
-	for good: EconomyReplies.GoodQuery in _economy.peek_goods_for_need(FOOD_NEED_ID).goods:
-		food_ids.append(good.good_id)
+	var food_ids: Array[String] = _food_ids()
 	for row: Dictionary in _economy.peek_inventory(npc_id).rows:
 		if food_ids.has(str(row["good_id"])) and int(row["quantity"]) > 0:
 			return row
 	return {}
+
+
+## Os ids dos bens que são comida (aliviam a fome), em ordem.
+func _food_ids() -> Array[String]:
+	var food_ids: Array[String] = []
+	for good: EconomyReplies.GoodQuery in _economy.peek_goods_for_need(FOOD_NEED_ID).goods:
+		food_ids.append(good.good_id)
+	return food_ids
+
+
+## As linhas do inventário do NPC que a `sell` do comerciante pode vender: tudo o que não é comida, por id (vazio se o NPC não existe).
+func _sellable_rows(npc_id: int) -> Array[Dictionary]:
+	var rows: Array[Dictionary] = []
+	if not _states.has(npc_id):
+		return rows
+	var food_ids: Array[String] = _food_ids()
+	for row: Dictionary in _economy.peek_inventory(npc_id).rows:
+		if not food_ids.has(str(row["good_id"])) and int(row["quantity"]) > 0:
+			rows.append(row)
+	return rows
 
 
 func _stock_of(market: EconomyReplies.MarketQuery, good_id: String) -> int:
@@ -158,6 +236,19 @@ func _traded_in(market: EconomyReplies.MarketQuery, good_id: String) -> bool:
 		if row["good_id"] == good_id:
 			return true
 	return false
+
+
+## A melhor venda: o bem, a quantidade e o total da cotação. Vazia = nada a vender que o mercado aceite.
+class SalePlan:
+	extends RefCounted
+
+	var market_id: int = IdGenerator.NO_ID
+	var good_id: String = ""
+	var units: int = 0
+	var total: int = 0
+
+	func is_empty() -> bool:
+		return units < 1
 
 
 ## A melhor compra de comida: o mercado, o bem, a quantidade, o total e o alívio por moeda (em milésimos, para comparar sem divisão). Vazia = nada a comprar.

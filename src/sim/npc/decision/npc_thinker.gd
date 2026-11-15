@@ -167,8 +167,8 @@ func _routine_action_id(state: NpcState, now: int) -> String:
 ## trabalho do agricultor que repõe a comida). A ação em andamento entra sempre, para a inércia poder mantê-la.
 func _candidates(state: NpcState, now: int, running: bool, routine_action: String) -> Array[Candidate]:
 	var found: Array[Candidate] = _scored(_relieving_actions(state), state, now, running, routine_action, DecisionTracer.REASON_URGENT_NEED)
-	if found.is_empty() and _action_by_id.has(routine_action):
-		found = _scored([_action_by_id[routine_action]], state, now, running, routine_action, DecisionTracer.REASON_ROUTINE)
+	if found.is_empty():
+		found = _scored(_free_time_actions(state, routine_action), state, now, running, routine_action, DecisionTracer.REASON_ROUTINE)
 	if running and _action_by_id.has(state.action_id) and not _has_candidate(found, state.action_id):
 		var current: Candidate = _candidate_for(state, _action_by_id[state.action_id], now, running, routine_action)
 		if current != null:
@@ -215,9 +215,21 @@ func _relieving_actions(state: NpcState) -> Array[ActionDef]:
 	return relieving
 
 
-## `buy` não tem efeito na tabela: o valor dela é DERIVADO do alívio da comida que o NPC pode comprar (LW-093, Q19). Alivia a fome se ela está urgente e a compra vale a pena.
+## As ações do tempo livre, sem necessidade urgente a aliviar: a da rotina da hora e, para o comerciante com bem no inventário, `sell` (LW-098g; DEC-168: só o que ele tem no inventário), que compete com a rotina pelo valor derivado (`_sell_value`). Antes de
+## consultar o mercado confere o barato: ser comerciante e ter bem (`has_goods`), então o NPC comum nunca pensa em vender.
+func _free_time_actions(state: NpcState, routine_action: String) -> Array[ActionDef]:
+	var actions: Array[ActionDef] = []
+	if _action_by_id.has(routine_action):
+		actions.append(_action_by_id[routine_action])
+	if routine_action != NpcTrade.SELL_ACTION_ID and _action_by_id.has(NpcTrade.SELL_ACTION_ID) and _provider.is_merchant(state.npc_id) and _provider.has_goods(state.npc_id):
+		actions.append(_action_by_id[NpcTrade.SELL_ACTION_ID])
+	return actions
+
+
+## `buy` não tem efeito na tabela: o valor dela é DERIVADO do alívio da comida que o NPC pode comprar (LW-093, Q19). Alivia a fome se ela está urgente e dá para comprar comida (`can_buy_food`: dinheiro e comida à venda); se o preço come o alívio todo, `_for_scoring`
+## a descarta.
 func _buy_relieves(state: NpcState, action: ActionDef, urgent_ids: Array[String]) -> bool:
-	return action.id == NpcTrade.BUY_ACTION_ID and urgent_ids.has(NpcTrade.FOOD_NEED_ID) and _provider.buy_value(state.npc_id) > 0
+	return action.id == NpcTrade.BUY_ACTION_ID and urgent_ids.has(NpcTrade.FOOD_NEED_ID) and _provider.can_buy_food(state.npc_id)
 
 
 ## A ação como o pontuador a vê: `buy` ganha um efeito derivado (o valor da compra sobre a fome), sem tocar na do catálogo; as outras, como são. `null` se `buy` não vale nada agora.
@@ -261,14 +273,14 @@ func _candidate_for(state: NpcState, action: ActionDef, now: int, running: bool,
 	var scoring_action: ActionDef = _for_scoring(state, action)
 	if scoring_action == null:
 		return null
-	var haul_value: int = _haul_value(state, action)
-	if action.id == MerchantTrade.HAUL_ACTION_ID and haul_value <= 0:
+	var derived_value: int = _haul_value(state, action) + _sell_value(state, action)
+	if (action.id == MerchantTrade.HAUL_ACTION_ID or action.id == NpcTrade.SELL_ACTION_ID) and derived_value <= 0:
 		return null
 	var scored: UtilityScorer.ScoreBreakdown = _scorer.score(state, scoring_action, distance_cm, is_current, action.id == routine_action)
 	if not scored.result.ok:
 		return null
-	scored.benefit += haul_value
-	scored.total += haul_value
+	scored.benefit += derived_value
+	scored.total += derived_value
 	return Candidate.new(action, place_id, scored.total, is_current, scored, needs_place)
 
 
@@ -278,6 +290,12 @@ func _haul_value(state: NpcState, action: ActionDef) -> int:
 	if action.id != MerchantTrade.HAUL_ACTION_ID or not _provider.has_trade_plan(state.npc_id):
 		return 0
 	return _provider.haul_value(state.npc_id)
+
+
+## `sell` também não tem efeito na tabela: o benefício dela é DERIVADO do que o mercado paga pela sobra do comerciante (098g, npc.md 14.11): o total da cotação vezes `sell_value_percent`. 0 para as outras ações e quando o mercado não aceita nada
+## (destino cheio ou sem fundos): `sell` sem valor não é candidata, e a sobra fica com ele até o mercado poder comprá-la.
+func _sell_value(state: NpcState, action: ActionDef) -> int:
+	return _provider.sell_value(state.npc_id) if action.id == NpcTrade.SELL_ACTION_ID else 0
 
 
 ## Candidatas da reação a um alarme (LW-076): `flee` (o PlaceChooser a leva para casa) e `help` (o local mais próximo do ponto do alarme)
@@ -485,6 +503,14 @@ class ConditionProvider:
 
 	func has_goods(npc_id: int) -> bool:
 		return _trade != null and _trade.has_goods(npc_id)
+
+	## O NPC é comerciante, o único que vende (DEC-168)? Sem economia, não (098g).
+	func is_merchant(npc_id: int) -> bool:
+		return _trade != null and _trade.is_merchant(npc_id)
+
+	## O valor derivado de `sell` (0 = não é comerciante, ou não há venda que o mercado aceite).
+	func sell_value(npc_id: int) -> int:
+		return 0 if _trade == null else _trade.sell_value(npc_id)
 
 	## O comerciante tem plano de viagem com lucro esperado agora (098f2)? Sem economia, não.
 	func has_trade_plan(npc_id: int) -> bool:
