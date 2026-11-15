@@ -1,6 +1,6 @@
 class_name CharacterFigure
 extends RefCounted
-## Figura de malha inteira (ART-12, entrega 6b; só apresentação): `build(catalog, id)` instancia a figura gravada (cena com um Node3D na raiz, o `Skeleton3D` de 65 ossos com os nomes da UAL como filho direto, e as `MeshInstance3D` com malha e `Skin`; SEM `AnimationPlayer`: o `build` monta o dele e rejeita a cena que já tenha um) e monta nela um `AnimationPlayer` com `idle` e `walk` (em laço, PARADO) pelo MESMO `CharacterRetarget` do montador, com as opções da entrega 6a vindas dos metadados: pose de bind, clipe de referência e trava de chão LIGADA. Só idle e walk, numa ÚNICA chamada de `library_for` com os clipes do catálogo FILTRADOS e as opções já inteiras (a trava vale para todos os clipes da chamada e o jog tem fase aérea). Devolve a raiz pronta: escala uniforme para o corpo de `body_m`, origem nos pés, sem girar (a cena gravada já nasce de frente para +Z). Qualquer falha (figura fora do catálogo, cena ou JSON ausente ou inválido, cena com `AnimationPlayer`, esqueleto sem os ossos do catálogo, malha sem `Skin`, pose de bind incompleta ou degenerada, retarget que falha) devolve null e deixa o motivo legível em `failure`, sem exceção e sem log PRÓPRIO: o chamador volta ao montador ou à cápsula (entrega 4 do contrato). O `CharacterAssembler` não muda. Contrato: docs/modules/presentation.md.
+## Figura de malha inteira (ART-12, entrega 6b; só apresentação): `build(catalog, id)` instancia a figura gravada (cena com um Node3D na raiz, o `Skeleton3D` de 65 ossos com os nomes da UAL como filho direto, e as `MeshInstance3D` com malha e `Skin`, mais o equipamento da 6d, uma malha sem pele filha de um `BoneAttachment3D` do esqueleto; SEM `AnimationPlayer`: o `build` monta o dele e rejeita a cena que já tenha um) e monta nela um `AnimationPlayer` com `idle` e `walk` (em laço, PARADO) pelo MESMO `CharacterRetarget` do montador, com as opções da entrega 6a vindas dos metadados: pose de bind, clipe de referência e trava de chão LIGADA. Só idle e walk, numa ÚNICA chamada de `library_for` com os clipes do catálogo FILTRADOS e as opções já inteiras (a trava vale para todos os clipes da chamada e o jog tem fase aérea). Devolve a raiz pronta: escala uniforme para o corpo de `body_m`, origem nos pés, sem girar (a cena gravada já nasce de frente para +Z). Qualquer falha (figura fora do catálogo, cena ou JSON ausente ou inválido, cena com `AnimationPlayer`, esqueleto sem os ossos do catálogo, malha sem `Skin`, pose de bind incompleta ou degenerada, retarget que falha) devolve null e deixa o motivo legível em `failure`, sem exceção e sem log PRÓPRIO: o chamador volta ao montador ou à cápsula (entrega 4 do contrato). O `CharacterAssembler` não muda. Contrato: docs/modules/presentation.md.
 ## CARREGADORES (opcionais): `new(scene_loader, text_reader)` trocam a leitura da cena e a do JSON, para os testes não tocarem o disco nem `user://` (AGENTS 4.16 e 9.4). `scene_loader(path: String) -> Node` devolve uma instância NOVA da cena, ou null se ela não existe (padrão: `CharacterSceneLoader.instantiate`, que NÃO é filtrado: se a cena existe mas está corrompida, o MOTOR registra erro de carga no log e o `build` só devolve null com o motivo); `text_reader(path: String) -> String` devolve o texto do JSON, ou "" se ele não existe (padrão: o arquivo do disco). Os caminhos vêm do catálogo, que só aceita `res://` sem `..`.
 ## METADADOS (o JSON do caminho `meta`, gravado pela ferramenta da entrega 6c): `version` (1), `reference_clip` (a chave do clipe cujo quadro 0 é a pose da malha: `idle`), `body_m` (altura do corpo no jogo, m), `height_m` (altura da malha no arquivo, m; a escala é `body_m / height_m`) e `bind_pose` (osso -> 12 números FINITOS, os eixos x, y e z e a origem da transformação MUNDIAL do osso na pose da malha, em metros do arquivo, pés em y = 0; cada eixo com comprimento acima de `MIN_AXIS_LENGTH`), com todos os ossos do esqueleto. O resto (`figure`, `credit`, `bones`, `palette`, `source`, hashes...) é proveniência e o `build` ignora.
 
@@ -86,9 +86,25 @@ static func _scene_problem(root: Node3D, skeleton: Skeleton3D, catalog: Characte
 		return "a cena já tem um AnimationPlayer: a figura gravada não tem player, o build monta o dele"
 	if skeleton == null or skeleton.get_bone_count() != catalog.skeleton_bones or root.get_node_or_null(NodePath(CharacterRetarget.SKELETON_NODE)) != skeleton:
 		return "a cena não tem um '%s' filho da raiz com os %d ossos do catálogo" % [CharacterRetarget.SKELETON_NODE, catalog.skeleton_bones]
-	if not CharacterSceneLoader.fits(root, skeleton):
+	if not _fits(root, skeleton):
 		return "a malha da cena não tem Skin que sirva ao esqueleto"
 	return ""
+
+
+## A figura serve ao esqueleto: ao menos uma malha com pele, toda malha com pele cita só ossos dele, e malha SEM pele só como equipamento (a espada da 6d): filha de um `BoneAttachment3D` filho do esqueleto, ligado a um osso dele. Como `CharacterSceneLoader.fits`, que o montador usa e não muda, mas aceitando o equipamento.
+static func _fits(root: Node, skeleton: Skeleton3D) -> bool:
+	var skinned: int = 0
+	for mesh: MeshInstance3D in CharacterSceneLoader.meshes_of(root):
+		var holder: BoneAttachment3D = mesh.get_parent() as BoneAttachment3D
+		if mesh.skin == null:
+			if holder == null or holder.get_parent() != skeleton or skeleton.find_bone(holder.bone_name) < 0:
+				return false
+			continue
+		skinned += 1
+		for bind: int in mesh.skin.get_bind_count():
+			if skeleton.find_bone(mesh.skin.get_bind_name(bind)) < 0:
+				return false
+	return skinned > 0
 
 
 ## Lê o texto JSON dos metadados (`text`, do arquivo `path`; "" = o arquivo não existe): as opções do retarget e a escala; só um problema (já escrito) se o arquivo falta, não é JSON de objeto ou um campo está errado.

@@ -4,6 +4,7 @@ extends GutTest
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")
 const Palette = preload("res://tools/visual/ice_figure/ice_palette.gd")
 const Writer = preload("res://tools/visual/ice_figure/ice_writer.gd")
+const Weights = preload("res://tools/visual/ice_figure/ice_weights.gd")
 const BONES: int = 65
 const SLOTS: int = 4
 const POSE_NUMBERS: int = 12
@@ -30,6 +31,16 @@ func _figure() -> Node3D:
 	return add_child_autofree((load(_path(Writer.SCENE_FILE)) as PackedScene).instantiate())
 
 
+## A fonte SEM a espada, que na 6d é outra malha: o corpo gravado tem estas posições e estes índices (test_ice_figure_sword prova que corpo e espada juntos são a fonte).
+func _body_of_source() -> Array[Source.Surf]:
+	var surfs: Array[Source.Surf] = Source.load_surfaces()
+	var swords: PackedInt32Array = PackedInt32Array()
+	for row: Dictionary in Weights.load_table()["roles"]:
+		if row["role"] == "sword":
+			swords.append(int(row["island"]))
+	return Source.subset(surfs, Source.islands(surfs), swords, false).surfs
+
+
 func _json() -> Dictionary:
 	return JSON.parse_string(FileAccess.get_file_as_string(_path(Writer.DATA_FILE)))
 
@@ -53,7 +64,7 @@ func test_pose_numbers_are_the_three_axes_then_the_origin() -> void:
 func test_saved_geometry_is_identical_to_the_source_and_weights_are_valid() -> void:
 	if _assets_missing():
 		return
-	var surfs: Array[Source.Surf] = Source.load_surfaces()
+	var surfs: Array[Source.Surf] = _body_of_source()
 	var holder: MeshInstance3D = _figure().find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
 	assert_eq(holder.mesh.get_surface_count(), surfs.size(), "2 superfícies")
 	var worst_normal: float = 0.0
@@ -77,7 +88,7 @@ func test_saved_geometry_is_identical_to_the_source_and_weights_are_valid() -> v
 func test_saved_skin_skeleton_and_pose_reproduce_the_original_mesh() -> void:
 	if _assets_missing():
 		return
-	var surfs: Array[Source.Surf] = Source.load_surfaces()
+	var surfs: Array[Source.Surf] = _body_of_source()
 	var skeleton: Skeleton3D = _figure().find_children("*", "Skeleton3D", true, false)[0] as Skeleton3D
 	var holder: MeshInstance3D = skeleton.find_children("*", "MeshInstance3D", true, false)[0] as MeshInstance3D
 	assert_eq([skeleton.get_bone_count(), holder.skin.get_bind_count()], [BONES, BONES])

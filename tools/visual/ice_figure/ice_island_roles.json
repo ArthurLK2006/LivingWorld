@@ -3,10 +3,11 @@
 	"source": {"file": "IceWarrior.glb", "sha256": "531dc9e8cea43781385c3490823b20e3de3114b659a027700792c0409a380add"},
 	"center_tolerance_cm": 0.5,
 	"aliases": {"sword": "hand_r"},
+	"equipment": ["sword"],
 	"sets": {
 		"body": ["pelvis", "spine_01", "spine_02", "spine_03", "neck_01", "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r", "lowerarm_l", "lowerarm_r", "hand_l", "hand_r"],
 		"torso": ["pelvis", "spine_01", "spine_02", "spine_03", "neck_01"],
-		"skirt": ["pelvis", "spine_01", "thigh_l", "thigh_r"],
+		"skirt": ["pelvis", "spine_01", "thigh@"],
 		"leg": ["pelvis", "thigh@", "calf@", "foot@"],
 		"knee": ["thigh@", "calf@"],
 		"auto": ["pelvis", "spine_01", "spine_02", "spine_03", "neck_01", "Head", "clavicle_l", "clavicle_r", "upperarm_l", "upperarm_r", "lowerarm_l", "lowerarm_r", "hand_l", "hand_r", "thigh_l", "thigh_r", "calf_l", "calf_r", "foot_l", "foot_r"]

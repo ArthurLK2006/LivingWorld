@@ -29,6 +29,11 @@ const MIN_BIND_TURN: float = 0.5
 const MAX_REASON_CHARS: int = 400
 ## O osso cuja pose de bind os casos de falha estragam (uma base zerada ou singular, ausente, com 11 ou 13 números ou com infinito) e a base zerada.
 const BROKEN_BONE: String = "calf_l"
+## O equipamento da 6d (a espada: malha SEM pele filha de um `BoneAttachment3D` do esqueleto, ligado a este osso) e as três formas de montá-lo: presa (a certa), solta (a malha sem pele direto no esqueleto) e na raiz (o `BoneAttachment3D` fora do esqueleto).
+const GEAR_BONE: String = "hand_r"
+const GEAR_ATTACHED: String = "presa"
+const GEAR_LOOSE: String = "solta"
+const GEAR_ON_ROOT: String = "na_raiz"
 const ZERO_BASIS_POSE: Array = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3]
 const SINGULAR_BASIS_POSE: Array = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.1, 0.2, 0.3]
 ## O `stringify` escreve o infinito como 1e99999, que o motor lê com aviso ("Exponent too high"): o caso "infinito" grava o texto "infinito" no lugar do número e o troca por este literal, que passa do maior real (1,8e308) e vira infinito sem aviso.
@@ -130,7 +135,7 @@ func _skin(bind: Dictionary[String, Transform3D]) -> Skin:
 	return skin
 
 
-func _pack(skeleton: Skeleton3D, mesh: ArrayMesh, skin: Skin, with_player: bool) -> PackedScene:
+func _pack(skeleton: Skeleton3D, mesh: ArrayMesh, skin: Skin, with_player: bool, gear: String = "") -> PackedScene:
 	var root: Node3D = Node3D.new()
 	var holder: MeshInstance3D = MeshInstance3D.new()
 	holder.mesh = mesh
@@ -144,6 +149,18 @@ func _pack(skeleton: Skeleton3D, mesh: ArrayMesh, skin: Skin, with_player: bool)
 		var player: AnimationPlayer = AnimationPlayer.new()
 		root.add_child(player)
 		player.owner = root
+	if not gear.is_empty():
+		var equipment: MeshInstance3D = MeshInstance3D.new()
+		equipment.mesh = BoxMesh.new()
+		if gear == GEAR_LOOSE:
+			skeleton.add_child(equipment)
+		else:
+			var carrier: BoneAttachment3D = BoneAttachment3D.new()
+			carrier.bone_name = GEAR_BONE
+			(root if gear == GEAR_ON_ROOT else skeleton).add_child(carrier)
+			carrier.owner = root
+			carrier.add_child(equipment)
+		equipment.owner = root
 	var packed: PackedScene = PackedScene.new()
 	packed.pack(root)
 	root.free()
@@ -161,7 +178,7 @@ func _meta_of(bind: Dictionary[String, Transform3D], mesh: ArrayMesh) -> Diction
 	return {"version": 1, "figure": "sintetica", "credit": "teste", "reference_clip": "idle", "body_m": BODY_M, "height_m": mesh.get_aabb().end.y, "bind_pose": poses, "triangles": 2}
 
 
-## Registra a figura sintética `figure_name` em memória (a cena e o JSON) e devolve a linha do catálogo. `variant`: `legs` (fator da perna), `turned` (bind diferente do T), `bones` (quantos ossos), `skeleton` (nome do nó do esqueleto), `skinned` (com Skin), `player` (com AnimationPlayer) e `meta` (campos que trocam os do JSON).
+## Registra a figura sintética `figure_name` em memória (a cena e o JSON) e devolve a linha do catálogo. `variant`: `legs` (fator da perna), `turned` (bind diferente do T), `bones` (quantos ossos), `skeleton` (nome do nó do esqueleto), `skinned` (com Skin), `player` (com AnimationPlayer), `gear` (o equipamento da 6d: presa, solta ou na_raiz) e `meta` (campos que trocam os do JSON).
 func _write(figure_name: String, variant: Dictionary = {}) -> Dictionary:
 	var skeleton: Skeleton3D = _clone(variant.get("legs", 1.0), variant.get("bones", BONES))
 	skeleton.name = variant.get("skeleton", skeleton.name)
@@ -174,7 +191,7 @@ func _write(figure_name: String, variant: Dictionary = {}) -> Dictionary:
 	var meta: Dictionary = _meta_of(bind, mesh)
 	meta.merge(variant.get("meta", {}), true)
 	var row: Dictionary = {"id": figure_name, "scene": DIR + figure_name + ".scn", "meta": DIR + figure_name + ".json"}
-	_scenes[row["scene"]] = _pack(skeleton, mesh, _skin(bind) if variant.get("skinned", true) else null, variant.get("player", false))
+	_scenes[row["scene"]] = _pack(skeleton, mesh, _skin(bind) if variant.get("skinned", true) else null, variant.get("player", false), variant.get("gear", ""))
 	_texts[row["meta"]] = JSON.stringify(meta)
 	return row
 
@@ -341,6 +358,15 @@ func test_every_failure_returns_null_with_a_short_readable_reason_and_leaks_noth
 	add_child_autofree(empty.build(catalog, GOOD_ID))
 	assert_eq(empty.failure, "", "um build que dá certo limpa o motivo da falha anterior")
 	assert_no_new_orphans()
+
+
+func test_the_equipment_is_accepted_only_as_a_skinless_mesh_on_a_bone_attachment_of_the_skeleton() -> void:
+	var catalog: CharacterCatalog = _catalog([_write("espada_presa", {"gear": GEAR_ATTACHED}), _write("espada_solta", {"gear": GEAR_LOOSE}), _write("espada_na_raiz", {"gear": GEAR_ON_ROOT})])
+	assert_eq(_built(catalog, "espada_presa").find_children("*", "BoneAttachment3D", true, false).size(), 1, "a espada vem junto")
+	for id: String in ["espada_solta", "espada_na_raiz"]:
+		var figure: CharacterFigure = _figure()
+		assert_null(figure.build(catalog, id), id)
+		assert_string_contains(figure.failure, "Skin")
 
 
 func test_the_default_loaders_only_read_repository_files() -> void:
