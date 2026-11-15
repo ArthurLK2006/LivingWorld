@@ -3,7 +3,7 @@ extends RefCounted
 ## A PÁGINA da aba "Contratos" da tela de mercado (LW-107e2a: extraída da `MarketView` sem mudar comportamento, texto, tecla nem ponte; contrato em docs/modules/presentation.md, "Quadro de contratos (LW-107)"): cria os nós (`ContractsLayout`) sob a
 ## coluna do painel, liga o `ContractsViewModel` (dados), escreve os textos só por chave (`UiText`), preenche as duas listas e o detalhe e refaz a consulta quando a `MarketView` manda (`refresh`, no ritmo de 1 s da tela), PRESERVANDO a escolha (por
 ## `contract_id`) e o foco. NÃO abre nem fecha a tela, NÃO troca de aba e NÃO conhece o relógio: a `MarketView` decide e a página só lhe PEDE o fechamento (`close_requested`). SÓ LEITURA por enquanto: Aceitar e Entregar ficam SEMPRE desativados e nada além
-## das consultas vai à ponte; a LW-107e2 os liga em `_update_actions`, o ÚNICO lugar que decide os botões e envia os pedidos (`request_contract_accept` e `request_contract_deliver`). A divisão em "Disponíveis" e "Meus contratos" e o estado mostrado
+## das consultas vai à ponte; a LW-107e2 os liga em `_update_actions`, o ÚNICO lugar que decide os botões; quem ENVIA os pedidos (`request_contract_accept` e `request_contract_deliver`) é a `MarketView`, por sinal da página (o contrato diz que ela é a única que envia). A divisão em "Disponíveis" e "Meus contratos" e o estado mostrado
 ## (`display_state`) são do modelo: a página só os escreve.
 
 ## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed` e `expired`).
@@ -98,7 +98,7 @@ func refresh(market_id: int) -> void:
 	_update_actions()
 
 
-## LW-107e2: o ÚNICO lugar que decide Aceitar e Entregar e, depois, envia os pedidos (`request_contract_accept` e `request_contract_deliver`, com a ponte e o jogador que o `setup` guardou). Hoje os dois ficam SEMPRE desativados e nada vai à ponte além
+## LW-107e2: o ÚNICO lugar que decide Aceitar e Entregar; os pedidos (`request_contract_accept` e `request_contract_deliver`) são ENVIADOS pela `MarketView`, a partir de sinais da página (o contrato diz que ela é a única que envia). Hoje os dois ficam SEMPRE desativados e nada vai à ponte além
 ## das consultas. É chamado no `setup`, depois de cada leitura (`refresh`) e de cada escolha (`_choose`), os momentos em que a linha escolhida e o estado dos botões mudam; a LW-107e2 acrescenta o relógio pausado, que a `MarketView` já lê para Comprar e Vender.
 func _update_actions() -> void:
 	_layout.accept_button.disabled = true

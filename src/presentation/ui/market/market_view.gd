@@ -6,7 +6,7 @@ extends CanvasLayer
 ## do mundo continua andando (a tela não pausa nada). Nasce FECHADA; `setup` só uma vez.
 ## LW-107e1 e LW-107e2a (contrato em "Quadro de contratos (LW-107)"): a tela tem a aba "Contratos", SÓ LEITURA, e a página dela é do `ContractsPage` (dados, nós, textos, listas, detalhe e escolha). Aqui ficam o cabeçalho "Mercado | Contratos", que troca a
 ## página só por `visible` (ao abrir, a aba "Mercado" vem escolhida), e as chamadas da página: `open` ao abrir e `refresh` no MESMO ritmo da tela (junto do `refresh`, esteja a aba escolhida ou não). Aceitar e Entregar existem e ficam SEMPRE desativados:
-## a LW-107e2 liga as regras e o envio dos pedidos na página (nada além das consultas vai à ponte). Fechar, na aba, fecha a tela como o do mercado: a página só o pede (`close_requested`).
+## a LW-107e2 liga as regras dos botões na página e o envio dos pedidos aqui, na `MarketView`, por sinais da página (nada além das consultas vai à ponte). Fechar, na aba, fecha a tela como o do mercado: a página só o pede (`close_requested`).
 
 ## Valores [HIP]: a camada (acima do HUD) e o intervalo das consultas com a tela aberta (preço, estoque e dinheiro mudam sozinhos).
 const LAYER_INDEX: int = 10
@@ -228,7 +228,7 @@ func _clear_rows() -> void:
 
 
 ## A aba "Contratos" (LW-107e1): liga a página (`ContractsPage`: cria os nós sob a coluna do painel, irmã da do mercado, e escreve os textos dela), escreve o texto das duas abas do cabeçalho, liga os cliques das abas e o pedido de fechar da página
-## (o MESMO `close` do botão do mercado) e escolhe a aba "Mercado". Só leitura: Aceitar e Entregar ficam DESATIVADOS na página (a LW-107e2 liga as regras e o envio dos pedidos lá).
+## (o MESMO `close` do botão do mercado) e escolhe a aba "Mercado". Só leitura: Aceitar e Entregar ficam DESATIVADOS na página (a LW-107e2 liga as regras dos botões lá e o envio dos pedidos na `MarketView`, por sinais da página).
 func _setup_contracts() -> void:
 	_contracts.setup(_bridge, _texts, _actor_id, _layout.column)
 	_layout.market_tab.text = _texts.get_text(KEY_TAB_MARKET)
