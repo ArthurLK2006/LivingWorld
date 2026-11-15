@@ -1,10 +1,11 @@
 extends GutTest
-## ART-12, entrega 6b (1): a tabela OPCIONAL `figures` do CharacterCatalog (só dados, sem Node, sem janela e sem ativo de terceiros: os caminhos das figuras NÃO precisam existir). Ausente ou vazia (no catálogo REAL e no fixture) = nenhuma figura e nada muda; uma tabela válida responde `figures()` e `figure(id)` com cópias; arquivo inexistente NÃO é falha do catálogo (o ativo não está no Git: quem não o tem não perde o catálogo); cada erro (id repetido, campo desconhecido ou ausente, tipo errado, prefixo de caminho, lista que não é lista, linha que não é objeto) vira UMA falha tratada com arquivo, item e campo, e o catálogo da falha é vazio.
+## ART-12, entrega 6b (1): a tabela OPCIONAL `figures` do CharacterCatalog (só dados, sem Node, sem janela e sem ativo de terceiros: os caminhos das figuras NÃO precisam existir). Ausente ou vazia (no catálogo REAL e no fixture) = nenhuma figura e nada muda; uma tabela válida responde `figures()` e `figure(id)` com cópias; arquivo inexistente NÃO é falha do catálogo (o ativo não está no Git: quem não o tem não perde o catálogo); os caminhos são SÓ `res://` e sem segmento `..` (nem com `\`): `user://` e a saída do projeto falham, e um nome com pontos (`b..c`) continua valendo; cada erro (id repetido, campo desconhecido ou ausente, tipo errado, prefixo de caminho, lista que não é lista, linha que não é objeto) vira UMA falha tratada com arquivo, item e campo, e o catálogo da falha é vazio.
 
 const FIXTURE: String = "res://tests/unit/support/character_catalog_ok.json"
 const LABEL: String = "catalogo_de_teste.json"
 const SCENE: String = "res://figuras_de_teste/figura.scn"
-const META: String = "user://pasta_que_nao_existe/figura.json"
+const META: String = "res://figuras_de_teste/figura.json"
+const DOTTED: String = "res://figuras_de_teste/v1..2/figura.json"
 const ROW: Dictionary = {"id": "ice", "scene": SCENE, "meta": META}
 ## Cada caso: [valor de `figures`, item esperado na falha, campo esperado].
 const BAD_CASES: Array = [
@@ -18,6 +19,11 @@ const BAD_CASES: Array = [
 	[[{"id": "ice", "scene": "", "meta": META}], "ice", "scene"],
 	[[{"id": "ice", "scene": "figura.scn", "meta": META}], "ice", "scene"],
 	[[{"id": "ice", "scene": SCENE, "meta": "http://exemplo.org/figura.json"}], "ice", "meta"],
+	[[{"id": "ice", "scene": "user://figura.scn", "meta": META}], "ice", "scene"],
+	[[{"id": "ice", "scene": SCENE, "meta": "user://figura.json"}], "ice", "meta"],
+	[[{"id": "ice", "scene": "res://../figura.scn", "meta": META}], "ice", "scene"],
+	[[{"id": "ice", "scene": SCENE, "meta": "res://figuras_de_teste/../../figura.json"}], "ice", "meta"],
+	[[{"id": "ice", "scene": SCENE, "meta": "res://figuras_de_teste\\..\\..\\figura.json"}], "ice", "meta"],
 	[7, "", "figures"],
 	[["ice"], "figures[0]", ""],
 ]
@@ -41,7 +47,7 @@ func test_the_real_catalog_and_the_fixture_have_no_figures_and_stay_valid() -> v
 
 
 func test_a_valid_table_is_read_in_order_and_the_queries_return_copies() -> void:
-	var other: Dictionary = {"id": "other", "scene": META, "meta": SCENE}
+	var other: Dictionary = {"id": "other", "scene": META, "meta": DOTTED}
 	var loaded: CharacterCatalog.LoadResult = CharacterCatalog.from_json(_text_with([ROW, other]), LABEL)
 	assert_true(loaded.result.ok, loaded.result.message)
 	assert_true(loaded.catalog.is_ready())

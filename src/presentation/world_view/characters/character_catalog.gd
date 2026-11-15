@@ -1,6 +1,6 @@
 class_name CharacterCatalog
 extends RefCounted
-## O catálogo de peças e animações dos personagens do mundo (ART-12, entrega 3; só apresentação), lido de data/presentation/character_catalog.json e VALIDADO ao carregar: versão, ids únicos, gêneros aceitos, todo caminho res:// existente, animações idle e walk presentes e, para cada gênero de corpo, ao menos uma roupa e um cabelo compatível. A tabela `beards` (barba, uma camada que se soma ao cabelo) é OPCIONAL (ausente ou vazia = sem barba, sem erro) e o `gender` das sobrancelhas também (ausente = qualquer um). A tabela `figures` (figuras de malha inteira, entrega 6b: `id`, `scene` e `meta`, caminhos `res://` ou `user://`) também é OPCIONAL, mas é mais estrita (campo desconhecido falha); a EXISTÊNCIA dos arquivos dela NÃO é conferida aqui (nem pelo `exists` injetável): o ativo não está no Git, e quem não o tem (o CI, outro computador) não pode perder o catálogo inteiro por isso; quem a usa, o `CharacterFigure`, devolve o motivo e o chamador volta ao montador. Qualquer problema vira UMA falha tratada com arquivo, item e campo (nunca lança erro nem escreve no log) e o catálogo devolvido fica vazio. Só dados simples: nada do arquivo é executado. Contrato: docs/modules/presentation.md.
+## O catálogo de peças e animações dos personagens do mundo (ART-12, entrega 3; só apresentação), lido de data/presentation/character_catalog.json e VALIDADO ao carregar: versão, ids únicos, gêneros aceitos, todo caminho res:// existente, animações idle e walk presentes e, para cada gênero de corpo, ao menos uma roupa e um cabelo compatível. A tabela `beards` (barba, uma camada que se soma ao cabelo) é OPCIONAL (ausente ou vazia = sem barba, sem erro) e o `gender` das sobrancelhas também (ausente = qualquer um). A tabela `figures` (figuras de malha inteira, entrega 6b: `id`, `scene` e `meta`) também é OPCIONAL, mas é mais estrita (campo desconhecido falha) e seus caminhos só podem ser `res://` e sem segmento `..` (como os de `beards`; `user://` NUNCA: o AGENTS 4.16 proíbe carregar cena de pasta do usuário e o `CharacterFigure` instancia a cena, com o script que ela tiver); a EXISTÊNCIA dos arquivos dela NÃO é conferida aqui (nem pelo `exists` injetável): o ativo não está no Git, e quem não o tem (o CI, outro computador) não pode perder o catálogo inteiro por isso; quem a usa, o `CharacterFigure`, devolve o motivo e o chamador volta ao montador. Qualquer problema vira UMA falha tratada com arquivo, item e campo (nunca lança erro nem escreve no log) e o catálogo devolvido fica vazio. Só dados simples: nada do arquivo é executado. Contrato: docs/modules/presentation.md.
 
 const DEFAULT_PATH: String = "res://data/presentation/character_catalog.json"
 const CODE_INVALID: String = "CHARACTER_CATALOG_INVALID"
@@ -19,7 +19,7 @@ const REQUIRED_CLIPS: PackedStringArray = ["idle", "walk"]
 const FIGURE_TABLE: String = "figures"
 const FIGURE_PATHS: PackedStringArray = ["scene", "meta"]
 const FIGURE_FIELDS: PackedStringArray = ["id", "scene", "meta"]
-const FIGURE_PREFIXES: PackedStringArray = ["res://", "user://"]
+const PARENT_SEGMENT: String = ".."
 
 var skeleton_bones: int = 0
 var _bodies: Array[Dictionary] = []
@@ -169,7 +169,7 @@ func _optional_table(reader: CharacterDataReader, root: Dictionary, table: Strin
 	return _table(reader, root, table, genders, path_fields)
 
 
-## Tabela OPCIONAL `figures` (ausente ou vazia = nenhuma figura, sem erro): cada linha tem `id` único, `scene` e `meta` (texto com prefixo res:// ou user://) e nenhum outro campo. Só a FORMA é conferida: o arquivo pode não existir (ver o cabeçalho).
+## Tabela OPCIONAL `figures` (ausente ou vazia = nenhuma figura, sem erro): cada linha tem `id` único, `scene` e `meta` (caminho res:// sem segmento `..`) e nenhum outro campo. Só a FORMA é conferida: o arquivo pode não existir (ver o cabeçalho).
 func _read_figures(reader: CharacterDataReader, root: Dictionary) -> void:
 	var declared: Variant = root.get(FIGURE_TABLE)  # Variant: fronteira com o JSON, conferido logo abaixo
 	if declared == null or (typeof(declared) == TYPE_ARRAY and (declared as Array).is_empty()):
@@ -183,8 +183,13 @@ func _read_figures(reader: CharacterDataReader, root: Dictionary) -> void:
 				reader.fail(item, field, "campo desconhecido na tabela '%s'" % FIGURE_TABLE)
 		for field: String in FIGURE_PATHS:
 			var path: String = reader.text(_figures[index], field, item)
-			if not path.is_empty() and not Array(FIGURE_PREFIXES).any(path.begins_with):
-				reader.fail(item, field, "o caminho '%s' deve começar com %s" % [path, " ou ".join(FIGURE_PREFIXES)])
+			if not path.is_empty() and not _stays_in_project(path):
+				reader.fail(item, field, "o caminho '%s' deve começar com %s e não pode ter o segmento '%s'" % [path, CharacterDataReader.RES_PREFIX, PARENT_SEGMENT])
+
+
+## O caminho é res:// e nunca sobe de pasta: nenhum segmento `..`, nem escrito com `\` (o Godot a trata como `/` ao resolver o caminho).
+static func _stays_in_project(path: String) -> bool:
+	return path.begins_with(CharacterDataReader.RES_PREFIX) and not path.replace("\\", "/").split("/").has(PARENT_SEGMENT)
 
 
 ## Todo corpo precisa ter roupa e cabelo do próprio gênero, senão a escolha da aparência não teria o que escolher.

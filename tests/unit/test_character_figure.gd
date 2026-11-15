@@ -1,7 +1,8 @@
 extends GutTest
-## ART-12, entrega 6b (2): o CharacterFigure com uma figura SINTÉTICA (nenhum ativo de terceiros): esqueleto = clone do corpo masculino do repositório (pernas 25% mais curtas e pose de bind diferente do T), malha = dois triângulos com Skin, cena e JSON de metadados gravados em user:// (nunca no repositório). `build` devolve a raiz com os 65 ossos, escala para 1,80 m, pés em y = 0, sem girar, com o AnimationPlayer só com idle e walk, em laço e PARADO; as opções do retarget vêm dos metadados (o quadro 0 do idle reproduz o bind; o pé mais baixo fica a 1 cm do bind no idle e no walk); `build` repetido e `duplicate()` animam igual; cada falha (figura fora do catálogo, cena ou metadados ausentes, JSON quebrado, campo inválido, 64 ossos, sem Skin, clipe de referência fora de idle e walk) devolve null com o motivo e sem vazar nó.
+## ART-12, entrega 6b (2): o CharacterFigure com uma figura SINTÉTICA (nenhum ativo de terceiros): esqueleto = clone do corpo masculino do repositório, ENCOLHIDO a cerca de 1,44 m como o do Ice Warrior (o fator de escala até 1,80 m é 1,25 e não 1,00: escala ausente ou invertida não passa), pernas 25% mais curtas e pose de bind diferente do T; malha = dois triângulos com Skin. A cena (PackedScene) e o JSON de metadados existem só em MEMÓRIA e entram pelos carregadores injetáveis do `CharacterFigure`, com caminhos de mentira `res://figuras_de_teste/...`: nada toca o disco nem `user://` (AGENTS 4.16 e 9.4), então rodadas simultâneas não colidem. `build` devolve a raiz com os 65 ossos, escala para 1,80 m, pés em y = 0, sem girar, com o AnimationPlayer só com idle e walk, em laço e PARADO; as opções do retarget vêm dos metadados (o quadro 0 do idle reproduz o bind; o pé mais baixo fica a 1 cm do bind no idle e no walk); `build` repetido e `duplicate()` animam igual; cada falha (figura fora do catálogo, cena ausente (o carregador devolve null, sem erro do motor) ou com AnimationPlayer próprio, metadados ausentes, JSON quebrado, campo inválido, 64 ossos, sem Skin, osso da pose de bind ausente, zerado, não finito ou com 11 números, clipe de referência fora de idle e walk) devolve null com o motivo curto e sem vazar nó; os carregadores PADRÃO só leem arquivos do repositório.
 
-const DIR: String = "user://figuras_de_teste/"
+const DIR: String = "res://figuras_de_teste/"
+const REAL_JSON: String = "res://tests/unit/support/character_catalog_ok.json"
 const ID: String = "figura"
 const GOOD_ID: String = "boa"
 const BODY_M: float = 1.8
@@ -11,28 +12,54 @@ const SHORT_TURNED: Dictionary = {"legs": 0.75, "turned": true}
 const LEG_BONES: PackedStringArray = ["calf_l", "calf_r", "foot_l", "foot_r"]
 const BIND_AXIS: Vector3 = Vector3(0.3, 0.5, 0.8)
 const BIND_TURNS: Dictionary[String, float] = {"upperarm_l": 1.1, "upperarm_r": -0.9, "thigh_l": 0.25, "thigh_r": -0.25, "spine_02": 0.2}
+## [HIP] O esqueleto sintético, de 1,6 m na cabeça, é multiplicado por isto para a malha ter cerca de 1,44 m (a do Ice Warrior), e o fator de escala mínimo que a figura precisa ter (o do Ice é 1,25).
+const SHRINK: float = 0.775
+const MIN_SCALE: float = 1.2
 ## Os ossos que a malha sintética segue (um triângulo em cada; o índice na pele é a posição aqui) e o tamanho do triângulo.
 const SKINNED_BONES: PackedStringArray = ["pelvis", "Head"]
 const TRIANGLE_M: float = 0.2
 const TRIANGLE_VERTICES: int = 3
 const SAMPLES_PER_SECOND: float = 30.0
 const WALK_TIME: float = 0.4
-## [HIP] 0,01 cm (posição e altura), 1 cm (pé a partir do bind), 0,0001 (parte vetorial do quaternion) e o giro mínimo (rad) do bind sintético em relação ao T.
+## [HIP] 0,01 cm (posição e altura), 1 cm (pé a partir do bind), 0,0001 (parte vetorial do quaternion), o giro mínimo (rad) do bind sintético em relação ao T e o maior motivo de falha (caracteres).
 const SIZE_TOLERANCE_M: float = 0.0001
 const GROUND_TOLERANCE_M: float = 0.01
 const ROTATION_TOLERANCE: float = 0.0001
 const MIN_BIND_TURN: float = 0.5
+const MAX_REASON_CHARS: int = 400
+## O osso cuja pose de bind os casos de falha estragam (uma base zerada, ausente, com 11 números ou com infinito) e a base zerada.
+const BROKEN_BONE: String = "calf_l"
+const ZERO_BASIS_POSE: Array = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3]
+## O `stringify` escreve o infinito como 1e99999, que o motor lê com aviso ("Exponent too high"): o caso "infinito" grava o texto "infinito" no lugar do número e o troca por este literal, que passa do maior real (1,8e308) e vira infinito sem aviso.
+const INFINITE_LITERAL: String = "1e309"
 ## Cada caso de falha: [id da figura, trecho esperado do motivo].
 const FAILURES: Array = [
 	["nao_existe", "não está no catálogo"], ["sem_cena", "não existe"], ["sem_meta", "arquivo não encontrado"], ["quebrado", "JSON inválido"],
-	["sem_osso", "ossos do catálogo"], ["armadura", "filho da raiz"], ["sem_skin", "Skin"], ["versao", "version"], ["altura", "height_m"], ["sem_bind", "bind_pose"], ["jog", "retarget falhou"],
+	["sem_osso", "ossos do catálogo"], ["armadura", "filho da raiz"], ["sem_skin", "Skin"], ["com_player", "AnimationPlayer"], ["versao", "version"], ["altura", "height_m"],
+	["sem_bind", "inválida: 65"], ["osso_zerado", BROKEN_BONE], ["osso_faltando", BROKEN_BONE], ["onze_numeros", BROKEN_BONE], ["infinito", BROKEN_BONE], ["jog", "retarget falhou"],
 ]
 
+## Os "arquivos" da figura, só em memória: caminho -> cena empacotada e caminho -> texto dos metadados.
+var _scenes: Dictionary[String, PackedScene] = {}
+var _texts: Dictionary[String, String] = {}
 
-func after_all() -> void:
-	for file: String in DirAccess.get_files_at(DIR):
-		DirAccess.remove_absolute(DIR + file)
-	DirAccess.remove_absolute(DIR)
+
+func before_each() -> void:
+	_scenes.clear()
+	_texts.clear()
+
+
+## Os carregadores injetados no CharacterFigure: o caminho que não está na memória não existe (null e "").
+func _load_scene(path: String) -> Node:
+	return _scenes[path].instantiate() if _scenes.has(path) else null
+
+
+func _read_text(path: String) -> String:
+	return _texts[path] if _texts.has(path) else ""
+
+
+func _figure() -> CharacterFigure:
+	return CharacterFigure.new(_load_scene, _read_text)
 
 
 func _catalog(rows: Array) -> CharacterCatalog:
@@ -52,7 +79,7 @@ func _male_skeleton() -> Skeleton3D:
 	return CharacterSceneLoader.skeleton_of(assembler)
 
 
-## O clone do esqueleto masculino com os primeiros `bones` ossos e a perna (panturrilha e pé) multiplicada por `leg_scale`; solto (sem pai), com o nome da cena gravada.
+## O clone do esqueleto masculino com os primeiros `bones` ossos, encolhido por SHRINK e com a perna (panturrilha e pé) multiplicada por `leg_scale`; solto (sem pai), com o nome da cena gravada.
 func _clone(leg_scale: float, bones: int) -> Skeleton3D:
 	var source: Skeleton3D = _male_skeleton()
 	var clone: Skeleton3D = Skeleton3D.new()
@@ -62,7 +89,7 @@ func _clone(leg_scale: float, bones: int) -> Skeleton3D:
 	for bone: int in bones:
 		var rest: Transform3D = source.get_bone_rest(bone)
 		clone.set_bone_parent(bone, source.get_bone_parent(bone))
-		clone.set_bone_rest(bone, Transform3D(rest.basis, rest.origin * (leg_scale if LEG_BONES.has(clone.get_bone_name(bone)) else 1.0)))
+		clone.set_bone_rest(bone, Transform3D(rest.basis, rest.origin * SHRINK * (leg_scale if LEG_BONES.has(clone.get_bone_name(bone)) else 1.0)))
 	clone.reset_bone_poses()
 	return clone
 
@@ -102,7 +129,7 @@ func _skin(bind: Dictionary[String, Transform3D]) -> Skin:
 	return skin
 
 
-func _pack(skeleton: Skeleton3D, mesh: ArrayMesh, skin: Skin) -> PackedScene:
+func _pack(skeleton: Skeleton3D, mesh: ArrayMesh, skin: Skin, with_player: bool) -> PackedScene:
 	var root: Node3D = Node3D.new()
 	var holder: MeshInstance3D = MeshInstance3D.new()
 	holder.mesh = mesh
@@ -112,6 +139,10 @@ func _pack(skeleton: Skeleton3D, mesh: ArrayMesh, skin: Skin) -> PackedScene:
 	holder.skeleton = NodePath("..")
 	skeleton.owner = root
 	holder.owner = root
+	if with_player:
+		var player: AnimationPlayer = AnimationPlayer.new()
+		root.add_child(player)
+		player.owner = root
 	var packed: PackedScene = PackedScene.new()
 	packed.pack(root)
 	root.free()
@@ -129,13 +160,7 @@ func _meta_of(bind: Dictionary[String, Transform3D], mesh: ArrayMesh) -> Diction
 	return {"version": 1, "figure": "sintetica", "credit": "teste", "reference_clip": "idle", "body_m": BODY_M, "height_m": mesh.get_aabb().end.y, "bind_pose": poses, "triangles": 2}
 
 
-func _save(path: String, text: String) -> void:
-	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
-	assert_not_null(file, "abriu " + path)
-	file.store_string(text)
-
-
-## Grava a figura sintética `figure_name` em DIR (cena e JSON) e devolve a linha do catálogo. `variant`: `legs` (fator da perna), `turned` (bind diferente do T), `bones` (quantos ossos), `skeleton` (nome do nó do esqueleto), `skinned` (com Skin) e `meta` (campos que trocam os do JSON).
+## Registra a figura sintética `figure_name` em memória (a cena e o JSON) e devolve a linha do catálogo. `variant`: `legs` (fator da perna), `turned` (bind diferente do T), `bones` (quantos ossos), `skeleton` (nome do nó do esqueleto), `skinned` (com Skin), `player` (com AnimationPlayer) e `meta` (campos que trocam os do JSON).
 func _write(figure_name: String, variant: Dictionary = {}) -> Dictionary:
 	var skeleton: Skeleton3D = _clone(variant.get("legs", 1.0), variant.get("bones", BONES))
 	skeleton.name = variant.get("skeleton", skeleton.name)
@@ -147,15 +172,23 @@ func _write(figure_name: String, variant: Dictionary = {}) -> Dictionary:
 	var mesh: ArrayMesh = _mesh(bind)
 	var meta: Dictionary = _meta_of(bind, mesh)
 	meta.merge(variant.get("meta", {}), true)
-	DirAccess.make_dir_recursive_absolute(DIR)
 	var row: Dictionary = {"id": figure_name, "scene": DIR + figure_name + ".scn", "meta": DIR + figure_name + ".json"}
-	assert_eq(ResourceSaver.save(_pack(skeleton, mesh, _skin(bind) if variant.get("skinned", true) else null), row["scene"]), OK, "gravou a cena " + figure_name)
-	_save(row["meta"], JSON.stringify(meta))
+	_scenes[row["scene"]] = _pack(skeleton, mesh, _skin(bind) if variant.get("skinned", true) else null, variant.get("player", false))
+	_texts[row["meta"]] = JSON.stringify(meta)
+	return row
+
+
+## A figura boa `figure_name` com a pose de bind estragada por `edit`, que recebe o osso -> 12 números dos metadados.
+func _broken_poses(figure_name: String, edit: Callable) -> Dictionary:
+	var row: Dictionary = _write(figure_name)
+	var meta: Dictionary = JSON.parse_string(_texts[row["meta"]])
+	edit.call(meta["bind_pose"])
+	_texts[row["meta"]] = JSON.stringify(meta)
 	return row
 
 
 func _built(catalog: CharacterCatalog, id: String) -> Node3D:
-	var figure: CharacterFigure = CharacterFigure.new()
+	var figure: CharacterFigure = _figure()
 	var root: Node3D = figure.build(catalog, id)
 	assert_not_null(root, "build(%s): %s" % [id, figure.failure])
 	return add_child_autofree(root)
@@ -215,7 +248,7 @@ func _played(root: Node3D, key: String, time: float) -> Dictionary[String, Trans
 
 func test_build_returns_the_scaled_figure_with_idle_and_walk_in_loop_and_not_playing() -> void:
 	var catalog: CharacterCatalog = _catalog([_write(ID, SHORT_TURNED)])
-	var figure: CharacterFigure = CharacterFigure.new()
+	var figure: CharacterFigure = _figure()
 	var root: Node3D = add_child_autofree(figure.build(catalog, ID))
 	assert_eq(figure.failure, "")
 	assert_eq(CharacterSceneLoader.skeleton_of(root).get_bone_count(), BONES)
@@ -228,6 +261,7 @@ func test_build_returns_the_scaled_figure_with_idle_and_walk_in_loop_and_not_pla
 	assert_false(player.is_playing(), "a figura nasce parada")
 	assert_eq(root.scale.x, root.scale.y, "escala uniforme")
 	assert_eq(root.scale.y, root.scale.z, "escala uniforme")
+	assert_gt(root.scale.y, MIN_SCALE, "o fator da figura sintética (como o do Ice, 1,25) não é 1: escala ausente ou invertida não passa")
 	assert_true(root.basis.orthonormalized().is_equal_approx(Basis.IDENTITY), "sem girar: a cena gravada já olha para +Z")
 	var world: AABB = root.transform * CharacterSceneLoader.meshes_of(root)[0].get_aabb()
 	assert_almost_eq(world.size.y, BODY_M, SIZE_TOLERANCE_M, "altura do corpo 1,80 m")
@@ -270,9 +304,9 @@ func test_build_is_deterministic_and_a_duplicate_animates_the_same() -> void:
 	assert_eq(copy.scale, first.scale, "o duplicate mantém a escala")
 
 
-func test_every_failure_returns_null_with_a_readable_reason_and_leaks_nothing() -> void:
+func test_every_failure_returns_null_with_a_short_readable_reason_and_leaks_nothing() -> void:
 	var good: Dictionary = _write(GOOD_ID)
-	_save(DIR + "quebrado.json", "{ isso nao e json")
+	_texts[DIR + "quebrado.json"] = "{ isso nao e json"
 	var catalog: CharacterCatalog = _catalog([
 		good,
 		{"id": "sem_cena", "scene": DIR + "ausente.scn", "meta": good["meta"]},
@@ -281,19 +315,48 @@ func test_every_failure_returns_null_with_a_readable_reason_and_leaks_nothing() 
 		_write("sem_osso", {"bones": BONES - 1}),
 		_write("armadura", {"skeleton": "Armature"}),
 		_write("sem_skin", {"skinned": false}),
+		_write("com_player", {"player": true}),
 		_write("versao", {"meta": {"version": 2}}),
 		_write("altura", {"meta": {"height_m": 0.0}}),
 		_write("sem_bind", {"meta": {"bind_pose": {}}}),
+		_broken_poses("osso_zerado", func(poses: Dictionary) -> void: poses[BROKEN_BONE] = ZERO_BASIS_POSE),
+		_broken_poses("osso_faltando", func(poses: Dictionary) -> void: poses.erase(BROKEN_BONE)),
+		_broken_poses("onze_numeros", func(poses: Dictionary) -> void: poses[BROKEN_BONE].pop_back()),
+		_broken_poses("infinito", func(poses: Dictionary) -> void: poses[BROKEN_BONE][0] = "infinito"),
 		_write("jog", {"meta": {"reference_clip": "jog"}}),
 	])
+	_texts[DIR + "infinito.json"] = _texts[DIR + "infinito.json"].replace("\"infinito\"", INFINITE_LITERAL)
 	_built(catalog, GOOD_ID)
 	for spec: Array in FAILURES:
-		var figure: CharacterFigure = CharacterFigure.new()
+		var figure: CharacterFigure = _figure()
 		assert_null(figure.build(catalog, spec[0]), spec[0])
 		assert_string_contains(figure.failure, spec[1])
-	var empty: CharacterFigure = CharacterFigure.new()
+		assert_lt(figure.failure.length(), MAX_REASON_CHARS, spec[0] + ": o motivo é curto")
+	var empty: CharacterFigure = _figure()
 	assert_null(empty.build(null, ID), "sem catálogo")
 	assert_false(empty.failure.is_empty())
 	add_child_autofree(empty.build(catalog, GOOD_ID))
 	assert_eq(empty.failure, "", "um build que dá certo limpa o motivo da falha anterior")
+	assert_no_new_orphans()
+
+
+func test_the_default_loaders_only_read_repository_files() -> void:
+	var good: Dictionary = _write(GOOD_ID)
+	var real_hair: String = CharacterCatalog.from_file().catalog.hair_for("male")[0]["scene"]
+	var catalog: CharacterCatalog = _catalog([
+		{"id": "cena_real", "scene": real_hair, "meta": REAL_JSON},
+		{"id": "cena_ausente", "scene": DIR + "ausente.scn", "meta": REAL_JSON},
+		{"id": "meta_real", "scene": good["scene"], "meta": REAL_JSON},
+		{"id": "meta_ausente", "scene": good["scene"], "meta": DIR + "ausente.json"},
+	])
+	var default_loaders: CharacterFigure = CharacterFigure.new()
+	assert_null(default_loaders.build(catalog, "cena_real"))
+	assert_string_contains(default_loaders.failure, "filho da raiz", "o carregador padrão leu a cena real do repositório")
+	assert_null(default_loaders.build(catalog, "cena_ausente"))
+	assert_string_contains(default_loaders.failure, "não existe")
+	var default_text: CharacterFigure = CharacterFigure.new(_load_scene)
+	assert_null(default_text.build(catalog, "meta_real"))
+	assert_string_contains(default_text.failure, "reference_clip", "o leitor padrão leu o JSON real do repositório (e ele não é metadado de figura)")
+	assert_null(default_text.build(catalog, "meta_ausente"))
+	assert_string_contains(default_text.failure, "arquivo não encontrado")
 	assert_no_new_orphans()
