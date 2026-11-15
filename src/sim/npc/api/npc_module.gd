@@ -115,7 +115,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_runtime = NpcDecisionRuntime.new(_npcs, _bodies, intents, _notables, _lifecycle, _tracer, _definitions, _need_defs, _defs_problem, _routine, economy)
 	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action, NpcImpasse.DEFAULT_LIMIT_MIN, intents.has_pending, _bodies.release_body)
 	_wage_income = null if economy == null else WageIncome.new(_npcs, _need_defs, economy)
-	_employment = null if economy == null else NpcEmployment.new(_npcs, economy, _definitions.places if _definitions != null else null, _definitions.params if _definitions != null else null)
+	_employment = null if economy == null else NpcEmployment.new(_npcs, economy, _definitions.places if _definitions != null else null, _definitions.params if _definitions != null else null, _routine)
 	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
 
 

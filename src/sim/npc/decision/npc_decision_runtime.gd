@@ -168,7 +168,8 @@ func _build_decision_runtime() -> String:
 			return "IncomeStub (TEMP-LW-066): %s" % income_problem
 	var occupancy: PlaceOccupancy = PlaceOccupancy.new(_npcs)
 	var trade: NpcTrade = null if _economy == null else NpcTrade.new(_economy, _npcs, _definitions.params.buy_units, _definitions.params.buy_price_percent)
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food, _definitions.income, trade)
+	var merchant: MerchantTrade = null if _economy == null else MerchantTrade.new(_economy, _npcs, _definitions.params.haul_value_percent)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food, _definitions.income, trade, merchant)
 	# LW-070b: o runner do jogo respeita o corpo (ver EmbodiedActionRunner); quem tem Intent pendente é o quadro de Intents que diz.
 	var runner: ActionRunner = EmbodiedActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min, _intents.has_pending)
 	if not runner.peek_problem().is_empty():
