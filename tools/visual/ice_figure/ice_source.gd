@@ -1,6 +1,6 @@
 extends RefCounted
 ## Fonte do Ice Warrior para a ferramenta de preparo (ferramenta de arte, fora do jogo): lê as superfícies do GLB importado já em espaço mundial e em metros (o importador aplica a escala 0,01 da raiz do FBX e a 11,04 do `Cube_001`; os pés ficam em y = 0) e calcula as ilhas conexas. A geometria NUNCA é alterada: só é lida e, mais adiante, reescrita igual.
-## Os vértices do GLB só são compartilhados dentro de uma face (normais planas), então as ilhas saem de uma soldagem por POSIÇÃO (tolerância WELD_M) e união-busca. A ordem das ilhas é total (mais triângulos primeiro; empate pelo menor vértice), para o índice da ilha não depender da estabilidade da ordenação.
+## Os vértices do GLB só são compartilhados dentro de uma face (normais planas), então as ilhas saem de uma soldagem por POSIÇÃO NA GRADE (cada posição é arredondada para a grade de WELD_M e vértices na mesma célula se soldam; NÃO é uma tolerância de distância: dois pontos a menos de WELD_M podem cair em células vizinhas e ficar separados) e união-busca. A ordem das ilhas é total (mais triângulos primeiro; empate pelo menor vértice), para o índice da ilha não depender da estabilidade da ordenação.
 
 const SOURCE_PATH: String = "res://art_samples/novos_modelos/ice_warrior/IceWarrior.glb"
 const WELD_M: float = 0.0001
@@ -110,9 +110,9 @@ static func load_surfaces(path: String = SOURCE_PATH) -> Array[Surf]:
 	return surfs
 
 
-## As ilhas conexas (soldagem por posição com tolerância WELD_M) e o centroide de cada uma, ponderado pela área.
+## As ilhas conexas (soldagem por posição arredondada para a grade de WELD_M, não por distância) e o centroide de cada uma, ponderado pela área; sem superfícies, nenhuma ilha.
 static func islands(surfs: Array[Surf]) -> IslandSet:
-	var total: int = surfs[-1].offset + surfs[-1].positions.size()
+	var total: int = 0 if surfs.is_empty() else surfs[-1].offset + surfs[-1].positions.size()
 	var dsu: Dsu = Dsu.new(total)
 	var cell: Dictionary[Vector3i, int] = {}
 	for surf: Surf in surfs:
@@ -128,8 +128,10 @@ static func islands(surfs: Array[Surf]) -> IslandSet:
 	return _collect(surfs, dsu, total)
 
 
-## Confere a fonte contra o esperado; devolve as mensagens de falha (vazio = é a fonte esperada).
+## Confere a fonte contra o esperado; devolve as mensagens de falha (vazio = é a fonte esperada). Sem superfícies (original presente mas não importado) é uma falha só, com o remédio.
 static func validate(surfs: Array[Surf], found: IslandSet, surfaces: int = EXPECTED_SURFACES, triangles: int = EXPECTED_TRIANGLES, island_count: int = EXPECTED_ISLANDS) -> PackedStringArray:
+	if surfs.is_empty():
+		return PackedStringArray(["nenhuma superfície lida de %s: o original ainda não foi importado nesta máquina (rode godot --headless --path <projeto> --import e tente de novo) ou uma transformação dele espelha a malha" % SOURCE_PATH])
 	var errors: PackedStringArray = PackedStringArray()
 	var tris: int = 0
 	for surf: Surf in surfs:

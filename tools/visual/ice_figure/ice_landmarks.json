@@ -1,0 +1,10 @@
+{
+	"version": 1,
+	"unit": "cm",
+	"space": "malha do arquivo (pés em y = 0); lado esquerdo do personagem em +X; o direito é o espelho em X",
+	"hand_scale": 0.55,
+	"head_tip_cm": 21.0,
+	"center": {"root": [0.0, 0.0, 0.0], "pelvis": [0.0, 70.0, -1.0], "spine_01": [0.0, 80.0, -0.5], "spine_02": [0.0, 91.0, 0.0], "spine_03": [0.0, 102.0, 0.0], "neck_01": [0.0, 115.0, -0.5], "Head": [0.0, 123.0, 0.5]},
+	"side": {"clavicle": [3.5, 111.0, 1.5], "upperarm": [20.5, 107.0, -1.0], "lowerarm": [27.0, 94.5, -0.5], "hand": [30.5, 77.0, 0.0], "tip": [32.0, 68.0, 0.5], "thigh": [8.0, 67.5, -1.2], "calf": [14.0, 36.0, -1.0], "foot": [18.5, 9.0, -4.5], "ball": [19.2, 2.8, 4.5], "ball_leaf": [19.4, 2.0, 10.0]},
+	"axis_child": {"pelvis": "spine_01", "spine_01": "spine_02", "spine_02": "spine_03", "spine_03": "neck_01", "neck_01": "Head", "clavicle": "upperarm", "upperarm": "lowerarm", "lowerarm": "hand", "hand": "tip", "thigh": "calf", "calf": "foot", "foot": "ball", "ball": "ball_leaf"}
+}

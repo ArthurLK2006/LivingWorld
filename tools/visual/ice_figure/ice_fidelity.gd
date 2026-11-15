@@ -29,7 +29,7 @@ class Stat:
 	var bottom: int = 0
 
 	func mean() -> float:
-		return sum / maxf(pixels * 3.0, 1.0)
+		return sum / maxf(pixels * float(CHANNELS), 1.0)
 
 
 func _initialize() -> void:
