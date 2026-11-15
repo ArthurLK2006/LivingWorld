@@ -1,7 +1,7 @@
 extends SceneTree
 ## Medidor dos critérios objetivos da figura do Ice Warrior (ferramenta de arte, entrega 6d; SEM janela). Monta a figura REAL pelo `CharacterFigure` (um catálogo de teste em memória, sem arquivo, com `figures` apontando para a cena e o JSON gravados por `ice_prepare.gd`), toca idle e walk e mede, em FRAMES quadros espaçados do ciclo, cada critério do contrato "Figura inteira" (docs/modules/presentation.md). Imprime a tabela e a grava em `medidas_6d.txt` ao lado da figura (fora do Git). Espera UM quadro depois de pôr a figura na árvore (antes dele o `Skeleton3D` não atualiza as poses globais). PULA, com código 0, se a figura preparada não existe (o ativo fica fora do Git); termina com 1 se algum critério falha.
 ## godot --headless --path <projeto> -s res://tools/visual/ice_figure/ice_measure.gd [-- --dir=res://art_samples/ice_figure]
-## (a) PÉS: o ponto mais baixo da malha dos pés (vértices com peso de pé de pelo menos FOOT_WEIGHT; pele em CPU) contra o chão (y = 0), no idle e no walk. (b) ESTICAMENTO: por triângulo, a maior aresta posada sobre a maior aresta no bind, a maior das FRAMES poses do walk (o critério do `ice_selftest.gd` da prova de movimento), e o mesmo nas zonas de ombro, cotovelo, quadril e pescoço (triângulos a menos de JOINT_RADIUS_M da articulação, no bind). (c) LÂMINA x COXA: o eixo da espada (da base à ponta; `Metrics.blade_ends`) contra a cápsula de cada coxa (o segmento do osso da coxa ao do joelho, raio THIGH_RADIUS_M na escala do jogo, 1,80 m); o quadro conta se a distância entre os segmentos é menor que o raio. O raio é [HIP], perto da mediana medida (0,102 m no jogo) da distância dos vértices das calças ao eixo da coxa. (d) SUPERFÍCIES: as das malhas com pele (o corpo) e as da malha sem pele (a espada). (e) DETERMINISMO: `build` repetido e `duplicate()` dão as mesmas poses no `AnimationPlayer`, e a amostragem direta das trilhas (a que (a) a (c) usam) dá a pose do player.
+## (a) PÉS: o ponto mais baixo da malha dos pés (vértices com peso de pé de pelo menos FOOT_WEIGHT; pele em CPU) contra o chão (y = 0), no idle e no walk. (b) ESTICAMENTO: por triângulo, a maior aresta posada sobre a maior aresta no bind, a maior das FRAMES poses do walk (o critério do `ice_selftest.gd` da prova de movimento), e o mesmo nas zonas de ombro, cotovelo, quadril e pescoço (triângulos a menos de JOINT_RADIUS_M da articulação, no bind). (c) LÂMINA x COXA: o eixo da espada (da base à ponta; `Metrics.blade_ends`) contra a cápsula de cada coxa (o segmento do osso da coxa ao do joelho, raio THIGH_RADIUS_M na escala do jogo, 1,80 m); o quadro conta se algum VÉRTICE da lâmina chega a menos que o raio do eixo da coxa (a tabela mostra também a distância do eixo da lâmina, mais otimista). O raio é [HIP], perto da mediana medida (0,102 m no jogo) da distância dos vértices das calças ao eixo da coxa. (d) SUPERFÍCIES: as das malhas com pele (o corpo) e as da malha sem pele (a espada). (e) DETERMINISMO: `build` repetido e `duplicate()` dão as mesmas poses no `AnimationPlayer`, e a amostragem direta das trilhas (a que (a) a (c) usam) dá a pose do player.
 const Metrics = preload("res://tools/visual/ice_figure/ice_metrics.gd")
 const Writer = preload("res://tools/visual/ice_figure/ice_writer.gd")
 const FIGURE_ID: String = "ice"
@@ -14,6 +14,9 @@ const FOOT_WEIGHT: float = 0.9
 const MAX_FOOT_GAP_M: float = 0.01
 const MAX_STRETCH: float = 1.5
 const JOINT_RADIUS_M: float = 0.12
+## O raio ampliado das zonas: os triângulos mais esticados ficam FORA do raio de 12 cm (a revisão mediu 13,5 cm da articulação mais próxima), então a tabela mostra também o máximo com este raio.
+const WIDE_JOINT_RADIUS_M: float = 0.2
+const WALK: String = "walk"
 ## Cada zona: o nome e os ossos da articulação (uma lista de listas: o Godot 4.7 esvazia os valores de um Dictionary constante tipado com PackedStringArray).
 const JOINTS: Array = [["ombro", "upperarm_l", "upperarm_r"], ["cotovelo", "lowerarm_l", "lowerarm_r"], ["quadril", "thigh_l", "thigh_r"], ["pescoço", "neck_01"]]
 const THIGH_RADIUS_M: float = 0.1
@@ -28,13 +31,15 @@ const CM: float = 100.0
 var _failed: bool = false
 
 
-## Uma superfície com pele: o que as medidas reaproveitam a cada quadro. `feet` marca os vértices da malha dos pés; `zone` diz, por triângulo, a zona de articulação (índice em JOINTS) ou -1; `worst` guarda o maior esticamento do triângulo no walk.
+## Uma superfície com pele: o que as medidas reaproveitam a cada quadro. `feet` marca os vértices da malha dos pés; `zone` e `wide_zone` dizem, por triângulo, a zona de articulação (índice em JOINTS) com o raio de 12 e o de 20 cm, ou -1; `gap` é a distância do triângulo à articulação mais próxima; `worst` guarda o maior esticamento do triângulo no walk.
 class Part:
 	extends RefCounted
 	var skin: Skin
 	var arrays: Array
 	var feet: PackedByteArray = PackedByteArray()
 	var zone: PackedInt32Array = PackedInt32Array()
+	var wide_zone: PackedInt32Array = PackedInt32Array()
+	var gap: PackedFloat32Array = PackedFloat32Array()
 	var worst: PackedFloat32Array = PackedFloat32Array()
 
 
@@ -102,7 +107,7 @@ func _skin(figure: Node3D) -> PackedStringArray:
 			for part: Part in parts:
 				var posed: PackedVector3Array = Metrics.skinned(skeleton, part.skin, part.arrays)
 				low = minf(low, Metrics.lowest(posed, part.feet))
-				if key == CLIPS[-1]:
+				if key == WALK:
 					var ratios: PackedFloat32Array = Metrics.stretch(part.arrays[Mesh.ARRAY_VERTEX], posed, part.arrays[Mesh.ARRAY_INDEX])
 					for tri: int in ratios.size():
 						part.worst[tri] = maxf(part.worst[tri], ratios[tri])
@@ -113,6 +118,8 @@ func _skin(figure: Node3D) -> PackedStringArray:
 		lines.append(_line("(a) pés, ponto mais baixo da malha dos pés, %s" % key, "afunda até %.1f cm, flutua até %.1f cm" % [sink[key] * CM, float_up[key] * CM], "no máximo %.0f cm do chão" % (MAX_FOOT_GAP_M * CM), maxf(sink[key], float_up[key]) <= MAX_FOOT_GAP_M))
 	var over: int = 0
 	var top: float = 0.0
+	var wide_top: float = 0.0
+	var nearest_over: float = INF
 	var zones: PackedFloat32Array = PackedFloat32Array()
 	zones.resize(JOINTS.size())
 	var members: PackedInt32Array = PackedInt32Array()
@@ -121,16 +128,19 @@ func _skin(figure: Node3D) -> PackedStringArray:
 		for tri: int in part.worst.size():
 			over += 1 if part.worst[tri] > MAX_STRETCH else 0
 			top = maxf(top, part.worst[tri])
+			nearest_over = minf(nearest_over, part.gap[tri]) if part.worst[tri] > MAX_STRETCH else nearest_over
+			wide_top = maxf(wide_top, part.worst[tri]) if part.wide_zone[tri] >= 0 else wide_top
 			if part.zone[tri] >= 0:
 				zones[part.zone[tri]] = maxf(zones[part.zone[tri]], part.worst[tri])
 				members[part.zone[tri]] += 1
-	lines.append(_line("(b) triângulos esticados no walk", "%d acima de %.1fx, o máximo %.2fx" % [over, MAX_STRETCH, top], "nenhum acima de %.1fx" % MAX_STRETCH, over == 0))
+	lines.append(_line("(b) triângulos esticados no walk", "%d acima de %.1fx, o máximo %.2fx (o mais próximo de uma articulação: %s)" % [over, MAX_STRETCH, top, "%.1f cm no arquivo" % (nearest_over * CM) if over > 0 else "n/d"], "nenhum acima de %.1fx" % MAX_STRETCH, over == 0))
 	var names: PackedStringArray = PackedStringArray()
 	var zone_top: float = 0.0
 	for index: int in zones.size():
 		names.append("%s %.2fx (%d triângulos)" % [JOINTS[index][0], zones[index], members[index]])
 		zone_top = maxf(zone_top, zones[index])
 	lines.append(_line("(b) esticamento máximo por zona (raio %.0f cm no arquivo)" % (JOINT_RADIUS_M * CM), ", ".join(names), "até %.1fx" % MAX_STRETCH, zone_top <= MAX_STRETCH))
+	lines.append(_line("(b) esticamento máximo nas zonas ampliadas (raio %.0f cm no arquivo)" % (WIDE_JOINT_RADIUS_M * CM), "%.2fx" % wide_top, "até %.1fx" % MAX_STRETCH, wide_top <= MAX_STRETCH))
 	return lines
 
 
@@ -163,11 +173,17 @@ func _parts(figure: Node3D, skeleton: Skeleton3D) -> Array[Part]:
 			for first: int in range(0, indices.size(), Metrics.TRI):
 				var center: Vector3 = (vertices[indices[first]] + vertices[indices[first + 1]] + vertices[indices[first + 2]]) / float(Metrics.TRI)
 				var found: int = -1
+				var wide: int = -1
+				var gap: float = INF
 				for zone: int in centers.size():
 					for origin: Vector3 in centers[zone]:
-						if center.distance_to(origin) < JOINT_RADIUS_M:
-							found = zone
+						var distance: float = center.distance_to(origin)
+						gap = minf(gap, distance)
+						found = zone if distance < JOINT_RADIUS_M else found
+						wide = zone if distance < WIDE_JOINT_RADIUS_M else wide
 				part.zone.append(found)
+				part.wide_zone.append(wide)
+				part.gap.append(gap)
 				part.worst.append(0.0)
 			parts.append(part)
 	return parts
@@ -186,19 +202,24 @@ func _blade(figure: Node3D) -> PackedStringArray:
 	var walk: Animation = (figure.find_children("*", "AnimationPlayer", true, false)[0] as AnimationPlayer).get_animation("walk")
 	var crossing: int = 0
 	var closest: float = INF
+	var closest_vertex: float = INF
 	var lowest_tip: float = INF
 	for frame: int in FRAMES:
 		Metrics.pose_at(skeleton, walk, walk.length * frame / FRAMES)
 		var carried: Transform3D = skeleton.get_bone_global_pose(hand) * holder.transform
 		var nearest: float = INF
+		var nearest_vertex: float = INF
 		for side: String in SIDES:
 			var hip: Vector3 = skeleton.get_bone_global_pose(skeleton.find_bone("thigh" + side)).origin
 			var knee: Vector3 = skeleton.get_bone_global_pose(skeleton.find_bone("calf" + side)).origin
 			nearest = minf(nearest, Metrics.segment_distance(carried * ends[0], carried * ends[1], hip, knee) * figure.scale.y)
+			for point: Vector3 in points:
+				nearest_vertex = minf(nearest_vertex, Metrics.segment_distance(carried * point, carried * point, hip, knee) * figure.scale.y)
 		closest = minf(closest, nearest)
+		closest_vertex = minf(closest_vertex, nearest_vertex)
 		lowest_tip = minf(lowest_tip, (carried * ends[1]).y * figure.scale.y)
-		crossing += 1 if nearest < THIGH_RADIUS_M else 0
-	return PackedStringArray([_line("(c) lâmina x coxa (raio %.0f cm), quadros do walk com cruzamento" % (THIGH_RADIUS_M * CM), "%d de %d (menor distância %.1f cm; a ponta da espada chega a %.1f cm do chão)" % [crossing, FRAMES, closest * CM, lowest_tip * CM], "no máximo %d" % MAX_CROSSING_FRAMES, crossing <= MAX_CROSSING_FRAMES)])
+		crossing += 1 if nearest_vertex < THIGH_RADIUS_M else 0
+	return PackedStringArray([_line("(c) lâmina x coxa (raio %.0f cm), quadros do walk com cruzamento" % (THIGH_RADIUS_M * CM), "%d de %d (menor distância de qualquer vértice da lâmina ao eixo da coxa %.1f cm, do eixo da lâmina %.1f cm; a ponta da espada chega a %.1f cm do chão)" % [crossing, FRAMES, closest_vertex * CM, closest * CM, lowest_tip * CM], "no máximo %d" % MAX_CROSSING_FRAMES, crossing <= MAX_CROSSING_FRAMES)])
 
 
 ## (d): superfícies do corpo (malhas com pele) e da espada (malha sem pele).
