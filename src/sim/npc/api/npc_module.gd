@@ -30,6 +30,8 @@ const ALARM_EVENT_TYPE: String = "AlarmRaised"
 const WAGES_PAID_EVENT_TYPE: String = "WagesPaid"
 ## A oferta de contrato da economia (LW-096a): o `npc` só reage à vaga.
 const CONTRACT_OFFERED_EVENT_TYPE: String = "ContractOffered"
+## A chegada da caravana do comerciante (LW-098g): o `npc` realoca e libera o NPC e alivia `income` pelo lucro.
+const CARAVAN_ARRIVED_EVENT_TYPE: String = "CaravanArrived"
 const MAX_ALARM_SEVERITY: int = 10
 const CODE_INVALID_ALARM: String = "NPC_INVALID_ALARM"
 ## Comandos que só existem em build de desenvolvimento (a flag vem em `Definitions.is_development_build`).
@@ -97,6 +99,8 @@ var _impasse: NpcImpasse
 var _wage_income: WageIncome
 ## A vaga de emprego que a economia oferece (LW-096a): o NPC a pontua e aceita. Só existe com economia. Criado no construtor; não é salvo.
 var _employment: NpcEmployment
+## A chegada do comerciante (LW-098g): realoca, libera e alivia `income` pelo lucro. Só existe com economia. Criada no construtor; não é salva.
+var _arrival: MerchantArrival
 
 
 ## `need_defs`: uma definição por posição, na ordem de `order` (como NeedLoader as entrega). Vazio = sem necessidades configuradas.
@@ -116,6 +120,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_impasse = NpcImpasse.new(_npcs, _definitions.places if _definitions != null else null, _bodies.is_embodied, _runtime.cancel_action, NpcImpasse.DEFAULT_LIMIT_MIN, intents.has_pending, _bodies.release_body)
 	_wage_income = null if economy == null else WageIncome.new(_npcs, _need_defs, economy)
 	_employment = null if economy == null else NpcEmployment.new(_npcs, economy, _definitions.places if _definitions != null else null, _definitions.params if _definitions != null else null, _routine)
+	_arrival = null if economy == null else MerchantArrival.new(_npcs, _definitions.places if _definitions != null else null, _wage_income, _runtime.cancel_action, _bodies.is_embodied, _bodies.release_body)
 	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
 
 
@@ -219,6 +224,8 @@ func post_setup() -> void:
 			_ctx.events.subscribe(WAGES_PAID_EVENT_TYPE, on_wages_paid)
 		if _employment != null:
 			_ctx.events.subscribe(CONTRACT_OFFERED_EVENT_TYPE, on_contract_offered)
+		if _arrival != null:
+			_ctx.events.subscribe(CARAVAN_ARRIVED_EVENT_TYPE, on_caravan_arrived)
 
 
 ## Faz soar um alarme no ponto (centímetros) com a gravidade dada (1 a MAX_ALARM_SEVERITY): publica `AlarmRaised` (LW-076). SÓ em build de
@@ -253,6 +260,12 @@ func on_wages_paid(event: SimEvent) -> void:
 func on_contract_offered(event: SimEvent) -> void:
 	if _employment != null:
 		_employment.on_contract_offered(event)
+
+
+## Reação ao evento `CaravanArrived` (LW-098g): o comerciante é realocado no povoado do destino, liberado e tem `income` aliviada pelo lucro realizado da viagem. Sem economia o módulo nem ouve o evento.
+func on_caravan_arrived(event: SimEvent) -> void:
+	if _arrival != null and _ctx != null:
+		_arrival.on_caravan_arrived(event, _ctx.clock.total_minutes())
 
 
 ## Marca ou desmarca o NPC para o rastro de decisão (LW-064). SÓ em build de desenvolvimento (`Definitions.is_development_build`); fora dele,
