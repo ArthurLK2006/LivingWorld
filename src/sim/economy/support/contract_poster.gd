@@ -4,7 +4,8 @@ extends RefCounted
 ## `delivery` cujo emissor e destino são o mercado, quando o gatilho vale (`shortage`: a escassez declarada no mercado; `standing`: sempre), há espaço (`max_open` em `open` ou `accepted`) e a proteção contra exploração permite: a recompensa NÃO passa do `ask`
 ## de hoje do bem naquele mercado vezes a quantidade (regra (b): comprar no emissor e entregar no mesmo mercado nunca dá lucro NA HORA DE POSTAR). Funções estáticas sobre o `EconomyState`, sem sorteio e sem estado próprio: o "já existe" sai do
 ## `ContractBook`, que já é salvo. O contrato já postado não é cancelado quando o gatilho deixa de valer. Recusa do livro (por exemplo, mercado sem fundos) ou regra (b) violada: não posta, NÃO gasta ID e tenta de novo na hora seguinte, em silêncio.
-## O aceite não ganha restrição nova. Sem modelo (o padrão do jogo) sai na hora, sem tocar em nada.
+## O aceite não ganha restrição nova. O prazo conta do INÍCIO da hora cheia da publicação (`agora - agora % 60`), não do minuto em que o evento horário é processado (60, 63 ou 60 com passos de 1, 7 ou 60 minutos): o prazo e o hash do mundo
+## ficam iguais com qualquer passo (decisão de Arthur de 15/11/2026). Sem modelo (o padrão do jogo, por ora) sai na hora, sem tocar em nada.
 
 
 ## A conferência da hora (`now` é o minuto de simulação): depois das vagas, um contrato vencido nesta hora já abriu espaço para o próximo.
@@ -49,7 +50,8 @@ static func _post_if_due(state: EconomyState, ids: IdGenerator, events: EventBus
 	var reward: int = _reward_of(state, template)
 	if reward > state.markets.ask_of(market_id, good_id) * template.quantity:
 		return
-	var deadline: int = now + template.deadline_hours * SimClock.MINUTES_PER_HOUR
+	var hour_start: int = now - now % SimClock.MINUTES_PER_HOUR
+	var deadline: int = hour_start + template.deadline_hours * SimClock.MINUTES_PER_HOUR
 	var objective: Dictionary = {ContractBook.KEY_GOOD: good_id, ContractBook.KEY_QUANTITY: template.quantity, ContractBook.KEY_DESTINATION: market_id}
 	if not state.contracts.check_post(ContractBook.DELIVERY, market_id, reward, deadline, now, objective).ok:
 		return
