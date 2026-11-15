@@ -32,7 +32,7 @@ static func from_json(content: String, label: String) -> LoadResult:
 
 ## Carregadas com sucesso (todas as tabelas preenchidas); as paletas da falha são vazias.
 func is_ready() -> bool:
-	return count(CLOTH) > 0
+	return count(CLOTH) > 0 and count(SKIN) > 0 and count(HAIR) > 0
 
 
 ## Quantas entradas a tabela (CLOTH, SKIN ou HAIR) tem.

@@ -1,7 +1,7 @@
 class_name CharacterAppearance
 extends RefCounted
 ## A ficha de aparência de UM NPC (ART-12, entrega 3; só dados, sem Node nem visual): função PURA do `npc_id` e das tabelas do catálogo e das paletas, por hash de inteiros, sem sorteio, sem relógio e sem ordem de carga. O mesmo `npc_id` dá a mesma ficha a cada carregamento e em cada máquina. Profissão e facção não entram (a consulta de corpos só traz id e posição). Contrato: docs/modules/presentation.md.
-## A ORDEM das tabelas é entrada: a escolha é por índice, então reordenar ou inserir no meio de uma tabela muda as fichas; acrescente só no fim.
+## A ORDEM e o TAMANHO das tabelas são entrada: a escolha é por índice e o tamanho entra no módulo, então reordenar, inserir ou até acrescentar no fim muda as fichas de parte dos NPCs (medido: uma roupa feminina nova no fim muda a roupa de 53 das 62 mulheres); mude as tabelas só de propósito.
 ## O hash: `mix32` mistura 32 bits (xorshift e multiplicação, duas rodadas) e MASCARA para 32 bits depois de cada passo. Os multiplicadores são ímpares de 31 bits, então o produto de um valor de 32 bits cabe em 63 bits e o resultado nunca depende de estouro de inteiro. Cada campo usa o hash com o PRÓPRIO SAL (`hash_field`: o sal entra entre as duas misturas), então os campos não se correlacionam.
 
 const MASK_32: int = 0xFFFFFFFF
@@ -39,7 +39,7 @@ var scale_permille: int = NEUTRAL_SCALE_PERMILLE
 static func of(target_id: int, catalog: CharacterCatalog, palettes: CharacterPalettes) -> CharacterAppearance:
 	var sheet: CharacterAppearance = CharacterAppearance.new()
 	sheet.npc_id = target_id
-	if not catalog.is_ready() or not palettes.is_ready():
+	if catalog == null or palettes == null or not catalog.is_ready() or not palettes.is_ready():
 		return sheet
 	var body: Dictionary = _choose(catalog.bodies(), target_id, SALT_BODY)
 	sheet.body_id = body["id"]

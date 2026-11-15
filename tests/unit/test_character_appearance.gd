@@ -21,7 +21,9 @@ const GOLDEN_LOOKS: Dictionary = {
 	2147483647: "female_a|ranger_f|hair_any|brow_03|2|1|5|1038",
 	-1: "male_a|peasant_m|hair_m1|brow_02|7|3|3|989",
 }
-const FORBIDDEN_WORDS: PackedStringArray = ["randf", "randi", "randomize", "Time", "OS", "print", "Node", "Node3D"]
+const FORBIDDEN_WORDS: PackedStringArray = ["randf", "randi", "randomize", "Time", "OS", "print", "printerr", "push_error", "push_warning", "assert", "Node", "Node3D"]
+## Só os arquivos de DADOS da pasta: a entrega 4 põe nela o montador e o visual (Node3D), que não entram nesta varredura.
+const DATA_FILES: PackedStringArray = ["character_appearance.gd", "character_catalog.gd", "character_palettes.gd", "character_data_reader.gd"]
 
 var _catalog: CharacterCatalog
 var _palettes: CharacterPalettes
@@ -147,9 +149,7 @@ func test_the_characters_folder_is_pure_and_does_not_cite_sim_types() -> void:
 			sim_classes[str(entry["class"])] = true
 	assert_gt(sim_classes.size(), 0, "o índice de classes globais precisa estar carregado")
 	var violations: PackedStringArray = []
-	for file: String in DirAccess.get_files_at(CHARACTERS_DIR):
-		if not file.ends_with(".gd"):
-			continue
+	for file: String in DATA_FILES:
 		var words: Dictionary = _code_words(CHARACTERS_DIR.path_join(file))
 		for word: String in FORBIDDEN_WORDS:
 			if words.has(word):
@@ -160,3 +160,9 @@ func test_the_characters_folder_is_pure_and_does_not_cite_sim_types() -> void:
 		if file == APPEARANCE_FILE and words.has("float"):
 			violations.append("%s usa float (o hash e a escolha são só de inteiros)" % file)
 	assert_eq(violations, PackedStringArray(), "\n".join(violations))
+
+
+func test_missing_tables_give_an_empty_sheet_without_error() -> void:
+	assert_false(CharacterAppearance.of(7, null, _palettes).is_resolved(), "sem catálogo")
+	assert_false(CharacterAppearance.of(7, _catalog, null).is_resolved(), "sem paletas")
+	assert_eq(CharacterAppearance.of(7, null, null).npc_id, 7, "o id fica na ficha vazia")
