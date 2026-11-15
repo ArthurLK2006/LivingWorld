@@ -1,8 +1,8 @@
 class_name MarketView
 extends CanvasLayer
 ## A ORQUESTRAÇÃO da tela de mercado do jogador (LW-106d2; contrato em docs/modules/presentation.md, "Interface de mercado (LW-106)"): liga o `MarketViewModel` (dados), o `MarketLayout` (nós) e o `MarketTheme` (estilo, posto SÓ no
-## `Control` raiz), escreve os textos (só por chave, `UiText`) e decide quando abrir, fechar, atualizar, comprar e vender. É a ÚNICA que envia pedidos (`request_trade`) e a única que mexe em outros nós: os de `frozen` ficam parados
-## (`process_mode` desligado) enquanto a tela está aberta e voltam ao valor anterior ao fechar. NÃO tem regra de jogo, não calcula total nem distância: só consultas e `request_trade`, e a recusa é o `text_key` da resposta. O tempo
+## `Control` raiz), escreve os textos (só por chave, `UiText`) e decide quando abrir, fechar, atualizar, comprar e vender. É a ÚNICA que envia pedidos (`request_trade` e, desde a LW-107e2b, `request_contract_accept` e `request_contract_deliver`) e a única que mexe em outros nós: os de `frozen` ficam parados
+## (`process_mode` desligado) enquanto a tela está aberta e voltam ao valor anterior ao fechar. NÃO tem regra de jogo, não calcula total nem distância: só consultas e esses pedidos, e a recusa é o `text_key` da resposta. O tempo
 ## do mundo continua andando (a tela não pausa nada). Nasce FECHADA; `setup` só uma vez.
 ## LW-107e1, e2a e e2b (contrato em "Quadro de contratos (LW-107)"): a tela tem a aba "Contratos" e a página dela é do `ContractsPage` (dados, nós, textos, listas, detalhe, escolha e as regras dos botões Aceitar e Entregar). Aqui ficam o cabeçalho "Mercado | Contratos", que troca a
 ## página só por `visible` (ao abrir, a aba "Mercado" vem escolhida), e as chamadas da página: `open` ao abrir e `refresh` no MESMO ritmo da tela (junto do `refresh`, esteja a aba escolhida ou não, com a pausa do relógio). A `MarketView` é também a ÚNICA que ENVIA `request_contract_accept` e

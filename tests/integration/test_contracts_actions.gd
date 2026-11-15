@@ -314,6 +314,16 @@ func test_the_buttons_and_the_hints_follow_the_chosen_row_and_only_an_open_row_i
 		assert_eq([_is_off(ACCEPT), _is_off(DELIVER), _hints()], expected[contract_name], "Botões e dicas da linha '%s'." % contract_name)
 
 
+func test_pressing_a_disabled_button_with_the_clock_running_sends_nothing() -> void:
+	var ids: Dictionary[String, int] = _build_board()
+	_open_contracts()
+	_select(ids["late_open"])
+	assert_true(_is_off(ACCEPT) and _is_off(DELIVER), "Linha aberta e vencida, relógio andando: os dois botões desativados.")
+	_press(ACCEPT)
+	_press(DELIVER)
+	assert_eq([_bridge.sent, _state_of(ids["late_open"])], [[] as Array[String], ContractBook.STATE_OPEN], "O sinal de um botão desativado não leva pedido à ponte e o contrato segue aberto.")
+
+
 func test_accept_sends_the_request_shows_the_reply_with_the_reward_and_moves_the_row_to_my_contracts_keeping_the_choice_and_the_focus() -> void:
 	var contract_id: int = _post(_market_a, _market_b, LONG_MINUTES)
 	var hash_before: String = _host.runner.world.state_hash()
