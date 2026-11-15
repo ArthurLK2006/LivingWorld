@@ -11,6 +11,7 @@ const POSE_VECTORS: int = 4
 const POSE_NUMBERS: int = POSE_VECTORS * VECTOR_SIZE
 ## [HIP] O menor comprimento de um eixo da base de uma pose de bind (nas reais vale 1): abaixo disso a base é degenerada e o motor registra erro ao orientá-la.
 const MIN_AXIS_LENGTH: float = 0.001
+const MIN_DETERMINANT: float = 0.000001
 ## [HIP] Quantos ossos o motivo de uma pose de bind inválida nomeia (o resto entra só na contagem).
 const LISTED_BONES: int = 5
 
@@ -130,11 +131,11 @@ static func _bind_pose(reader: CharacterDataReader, meta: Dictionary, skeleton: 
 		else:
 			invalid.append(bone_name)
 	if not invalid.is_empty():
-		reader.fail("", "bind_pose", "ossos com pose de bind inválida: %d (esperados %d números finitos e eixos da base com comprimento acima de %s); os primeiros: %s" % [invalid.size(), POSE_NUMBERS, MIN_AXIS_LENGTH, ", ".join(invalid.slice(0, LISTED_BONES))])
+		reader.fail("", "bind_pose", "ossos com pose de bind inválida: %d (esperados %d números finitos e eixos da base com comprimento acima de %s e independentes); os primeiros: %s" % [invalid.size(), POSE_NUMBERS, MIN_AXIS_LENGTH, ", ".join(invalid.slice(0, LISTED_BONES))])
 	return bind
 
 
-## Os 12 números de uma pose: uma lista com 12 reais finitos e os três eixos da base com comprimento acima de `MIN_AXIS_LENGTH`. `value` é Variant porque vem do JSON; o tipo é conferido aqui.
+## Os 12 números de uma pose: uma lista com 12 reais finitos e os três eixos da base com comprimento acima de `MIN_AXIS_LENGTH` e independentes (determinante acima de `MIN_DETERMINANT`: uma base singular faria o motor registrar erro). `value` é Variant porque vem do JSON; o tipo é conferido aqui.
 static func _is_pose(value: Variant) -> bool:
 	if typeof(value) != TYPE_ARRAY or (value as Array).size() != POSE_NUMBERS:
 		return false
@@ -145,7 +146,7 @@ static func _is_pose(value: Variant) -> bool:
 	for axis: Vector3 in [basis.x, basis.y, basis.z]:
 		if axis.length() <= MIN_AXIS_LENGTH:
 			return false
-	return true
+	return absf(basis.determinant()) > MIN_DETERMINANT
 
 
 ## Os 12 números (eixos x, y, z e origem) viram a transformação.

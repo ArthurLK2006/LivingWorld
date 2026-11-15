@@ -27,16 +27,17 @@ const GROUND_TOLERANCE_M: float = 0.01
 const ROTATION_TOLERANCE: float = 0.0001
 const MIN_BIND_TURN: float = 0.5
 const MAX_REASON_CHARS: int = 400
-## O osso cuja pose de bind os casos de falha estragam (uma base zerada, ausente, com 11 números ou com infinito) e a base zerada.
+## O osso cuja pose de bind os casos de falha estragam (uma base zerada ou singular, ausente, com 11 ou 13 números ou com infinito) e a base zerada.
 const BROKEN_BONE: String = "calf_l"
 const ZERO_BASIS_POSE: Array = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3]
+const SINGULAR_BASIS_POSE: Array = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.1, 0.2, 0.3]
 ## O `stringify` escreve o infinito como 1e99999, que o motor lê com aviso ("Exponent too high"): o caso "infinito" grava o texto "infinito" no lugar do número e o troca por este literal, que passa do maior real (1,8e308) e vira infinito sem aviso.
 const INFINITE_LITERAL: String = "1e309"
 ## Cada caso de falha: [id da figura, trecho esperado do motivo].
 const FAILURES: Array = [
 	["nao_existe", "não está no catálogo"], ["sem_cena", "não existe"], ["sem_meta", "arquivo não encontrado"], ["quebrado", "JSON inválido"],
 	["sem_osso", "ossos do catálogo"], ["armadura", "filho da raiz"], ["sem_skin", "Skin"], ["com_player", "AnimationPlayer"], ["versao", "version"], ["altura", "height_m"],
-	["sem_bind", "inválida: 65"], ["osso_zerado", BROKEN_BONE], ["osso_faltando", BROKEN_BONE], ["onze_numeros", BROKEN_BONE], ["infinito", BROKEN_BONE], ["jog", "retarget falhou"],
+	["sem_bind", "inválida: 65"], ["osso_zerado", BROKEN_BONE], ["osso_faltando", BROKEN_BONE], ["onze_numeros", BROKEN_BONE], ["treze_numeros", BROKEN_BONE], ["base_singular", BROKEN_BONE], ["infinito", BROKEN_BONE], ["jog", "retarget falhou"],
 ]
 
 ## Os "arquivos" da figura, só em memória: caminho -> cena empacotada e caminho -> texto dos metadados.
@@ -322,6 +323,8 @@ func test_every_failure_returns_null_with_a_short_readable_reason_and_leaks_noth
 		_broken_poses("osso_zerado", func(poses: Dictionary) -> void: poses[BROKEN_BONE] = ZERO_BASIS_POSE),
 		_broken_poses("osso_faltando", func(poses: Dictionary) -> void: poses.erase(BROKEN_BONE)),
 		_broken_poses("onze_numeros", func(poses: Dictionary) -> void: poses[BROKEN_BONE].pop_back()),
+		_broken_poses("treze_numeros", func(poses: Dictionary) -> void: poses[BROKEN_BONE].append(0.0)),
+		_broken_poses("base_singular", func(poses: Dictionary) -> void: poses[BROKEN_BONE] = SINGULAR_BASIS_POSE),
 		_broken_poses("infinito", func(poses: Dictionary) -> void: poses[BROKEN_BONE][0] = "infinito"),
 		_write("jog", {"meta": {"reference_clip": "jog"}}),
 	])
