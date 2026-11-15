@@ -84,6 +84,7 @@ func _paint(meshes: Array[MeshInstance3D], look: Dictionary[String, Dictionary])
 			var values: Dictionary = look[kind]
 			var locked: bool = kind == CLOTH and _is_hue_locked(original)
 			for uniform_name: StringName in values:
+				# Variant: o valor do uniform é Vector4, float ou Vector3 conforme o nome (a fronteira do set_instance_shader_parameter).
 				var value: Variant = values[uniform_name]
 				if locked and uniform_name == PAL:
 					var shift: Vector4 = value

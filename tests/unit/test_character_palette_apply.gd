@@ -11,6 +11,9 @@ const CLASS_OF: Dictionary = {"MI_Peasant": "cloth", "MI_Ranger": "cloth", "MI_S
 const LEATHER_MESHES: PackedStringArray = ["Male_Ranger_Feet_Boots", "Male_Ranger_Body_Belt_1", "Male_Ranger_Body_Belt_2", "Male_Ranger_Arms_Bracer", "Male_Ranger_Acc_Pauldron"]
 const CLOTH_MESHES: PackedStringArray = ["Male_Ranger_Body", "Male_Ranger_Legs", "Male_Ranger_Head_Hood"]
 const LOOKS_COUNT: int = 12
+## O prefixo das propriedades de `instance uniform` que o Godot lista em cada malha (só as que o sombreador do material declara) e os nomes que o pintor escreve.
+const INSTANCE_PREFIX: String = "instance_shader_parameters/"
+const WRITTEN_UNIFORMS: Array[StringName] = [&"pal", &"leather_val", &"leather_piece", &"tint"]
 
 var _catalog: CharacterCatalog
 var _palettes: CharacterPalettes
@@ -122,6 +125,22 @@ func test_every_mesh_gets_the_values_of_the_palettes_in_the_look_and_keeps_the_o
 					var index: int = look.skin_index if kind == "skin" else look.hair_tone_index
 					assert_true(mesh.get_instance_shader_parameter(&"tint").is_equal_approx(_tint_value(kind, index)), "tint de %s: %s" % [kind, label])
 		assert_gt(painted, 0, "pintou alguma superfície: " + combo[1])
+
+
+func test_every_instance_uniform_the_painter_writes_is_declared_by_the_shader() -> void:
+	var checked: int = 0
+	for combo: Array in [MALE_RANGER, MALE_PEASANT]:
+		for mesh: MeshInstance3D in CharacterSceneLoader.meshes_of(_painted(_look(combo, 2, 4, 3))):
+			var declared: Dictionary = {}
+			for property: Dictionary in mesh.get_property_list():
+				var property_name: String = property["name"]
+				if property_name.begins_with(INSTANCE_PREFIX):
+					declared[property_name.trim_prefix(INSTANCE_PREFIX)] = true
+			for uniform_name: StringName in WRITTEN_UNIFORMS:
+				if mesh.get_instance_shader_parameter(uniform_name) != null:
+					assert_true(declared.has(String(uniform_name)), "o sombreador declara o que o pintor escreve: %s em %s" % [uniform_name, mesh.name])
+					checked += 1
+	assert_gt(checked, 20, "conferiu os valores de várias malhas")
 
 
 func test_other_looks_give_other_values_and_the_same_look_gives_the_same_values() -> void:
