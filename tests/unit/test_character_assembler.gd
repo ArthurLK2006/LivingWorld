@@ -49,6 +49,11 @@ func _player(assembler: CharacterAssembler) -> AnimationPlayer:
 	return assembler.find_children("*", "AnimationPlayer", true, false)[0] as AnimationPlayer
 
 
+## O que o montador responde a [play("idle"), is_playing(), current_clip()].
+func _answers(assembler: CharacterAssembler) -> Array:
+	return [assembler.play("idle"), assembler.is_playing(), assembler.current_clip()]
+
+
 func _at(skeleton: Skeleton3D, bone_name: String) -> Vector3:
 	skeleton.force_update_all_bone_transforms()
 	return skeleton.get_bone_global_pose(skeleton.find_bone(bone_name)).origin
@@ -182,6 +187,7 @@ func test_incomplete_requests_fail_with_false_and_leave_nothing_behind() -> void
 	var unknown_outfit: Array = [MALE_PEASANT[0], "no_such_outfit", MALE_PEASANT[2], MALE_PEASANT[3]]
 	var unknown_hair: Array = [MALE_PEASANT[0], MALE_PEASANT[1], "no_such_hair", MALE_PEASANT[3]]
 	var unknown_eyebrow: Array = [MALE_PEASANT[0], MALE_PEASANT[1], MALE_PEASANT[2], "no_such_brow"]
+	assert_eq(_answers(assembler), [false, false, ""], "antes de montar nada toca")
 	assert_false(assembler.build(CharacterAppearance.new(), _catalog), "ficha vazia")
 	assert_false(assembler.build(null, _catalog), "sem ficha")
 	assert_false(assembler.build(_look(MALE_PEASANT), null), "sem catálogo")
@@ -220,9 +226,13 @@ func test_a_failure_after_the_parts_load_keeps_the_previous_character_and_leaks_
 	var assembler: CharacterAssembler = add_child_autofree(CharacterAssembler.new())
 	assert_true(assembler.build(_look(MALE_PEASANT), _catalog))
 	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(assembler)
+	assert_true(assembler.play("walk"))
+	var children: int = assembler.get_child_count()
 	var orphans_before: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 	var text: String = FileAccess.get_file_as_string(CharacterCatalog.DEFAULT_PATH)
 	var variants: Dictionary[String, String] = {
+		"arquivo das animações ausente": text.replace(ANIMATIONS, "res://assets/characters/quaternius/animations/Missing.glb"),
+		"animação ausente no arquivo": text.replace("\"name\": \"Walk\"", "\"name\": \"Walk_Missing\""),
 		"ossos do catálogo diferentes dos do esqueleto": text.replace("\"skeleton_bones\": 65", "\"skeleton_bones\": 64"),
 		"tronco que existe mas não serve ao esqueleto": text.replace(OUTFITS + "Male_Peasant_Body_Arms.glb", ANIMATIONS),
 		"tronco que é uma cena sem esqueleto": text.replace(OUTFITS + "Male_Peasant_Body_Arms.glb", "res://tests/unit/support/no_skeleton.tscn"),
@@ -234,6 +244,7 @@ func test_a_failure_after_the_parts_load_keeps_the_previous_character_and_leaks_
 		assert_true(broken.is_ready(), "catálogo válido: " + reason)
 		assert_false(assembler.build(_look(MALE_PEASANT), broken), reason)
 		assert_same(CharacterSceneLoader.skeleton_of(assembler), skeleton, "mantém o personagem anterior: " + reason)
+		assert_eq([assembler.get_child_count(), assembler.is_playing(), assembler.current_clip()], [children, true, "walk"], "mesmos filhos e a animação segue tocando: " + reason)
 	assert_eq(int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), orphans_before, "nenhuma cena carregada vaza")
 
 
@@ -245,8 +256,10 @@ func test_every_path_frees_everything_and_leaves_no_orphan_nodes() -> void:
 	assert_true(loose.swap_part(CharacterAssembler.SLOT_BOOTS, OUTFITS + "Female_Ranger_Feet.glb"))
 	assert_false(loose.swap_part(CharacterAssembler.SLOT_BOOTS, ANIMATIONS))
 	assert_false(loose.build(CharacterAppearance.new(), _catalog))
+	assert_true(loose.play("walk"))
 	loose.clear()
 	assert_eq(loose.get_child_count(), 0, "clear() desmonta tudo")
+	assert_eq(_answers(loose), [false, false, ""], "depois do clear() nada toca")
 	assert_true(loose.build(_look(MALE_RANGER), _catalog))
 	loose.free()
 	assert_eq(int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), orphans_before, "free() não deixa órfão")
