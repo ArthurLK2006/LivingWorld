@@ -1,5 +1,5 @@
 extends GutTest
-## ART-12, entrega 6h: a referência simétrica das pernas. `CharacterRetarget.Options.symmetric_reference` e o campo OPCIONAL de mesmo nome dos metadados do `CharacterFigure`, com a UAL real e o corpo masculino do repositório (nenhum ativo de terceiros, nada de art_samples/); a figura é sintética (o esqueleto do corpo masculino e um triângulo com Skin) e existe só em MEMÓRIA, pelos carregadores injetáveis, com caminhos de mentira: nada toca o disco nem `user://` (AGENTS 4.16 e 9.4). O DEFEITO: com a pose de referência, o quadro 0 do `Idle` da UAL (coxa esquerda a 23 graus e direita a -9) desloca de forma diferente as duas pernas de um destino simétrico e o walk fica manco. SEM a opção a coxa média esquerda e direita do walk difere em muitos graus; COM ela as duas ficam quase iguais (de 25 graus de diferença a 2), a média das duas é a de antes (o peso é 1/2), a amplitude de cada coxa não muda e as médias laterais ficam espelhadas e as mesmas opções dão as mesmas trilhas; o reflexo x -> -x leva o giro de um vetor ao giro do vetor refletido; num par SINTÉTICO (repouso espelhado, flexões de 30 e -10 graus, abduções de 20 e -20) a referência simetrizada mantém a abdução de cada lado e tem a flexão média de 10 graus. Partes sem par `_l` e `_r`, sem a pose de bind ou lista vazia: trilhas IDÊNTICAS às de antes. Na figura o campo é lido, validado (lista de textos, até o limite, cada um com o par de ossos no esqueleto) e muda o walk como no retarget; ausente ou vazio dá a mesma figura; inválido dá null com o campo no motivo curto. A ferramenta `ice_prepare` só grava o campo com `--symmetric` e a proveniência só ganha a linha de mudança nesse caso.
+## ART-12, entrega 6h: a referência simétrica das pernas. `CharacterRetarget.Options.symmetric_reference` e o campo OPCIONAL de mesmo nome dos metadados do `CharacterFigure`, com a UAL real e o corpo masculino do repositório (nenhum ativo de terceiros, nada de art_samples/); a figura é sintética (o esqueleto do corpo masculino e um triângulo com Skin) e existe só em MEMÓRIA, pelos carregadores injetáveis, com caminhos de mentira: nada toca o disco nem `user://` (AGENTS 4.16 e 9.4). O DEFEITO: com a pose de referência, o quadro 0 do `Idle` da UAL (coxa esquerda a 23 graus e direita a -9) desloca de forma diferente as duas pernas de um destino simétrico e o walk fica manco. SEM a opção a coxa média esquerda e direita do walk difere em muitos graus; COM ela as duas ficam quase iguais (de 25 graus de diferença a 2), a média das duas é a de antes (o peso é 1/2), a amplitude de cada coxa não muda, as médias laterais ficam espelhadas e a canela (do joelho ao tornozelo) também fica simétrica, com a amplitude de antes e as mesmas opções dão as mesmas trilhas; o reflexo x -> -x leva o giro de um vetor ao giro do vetor refletido; num caso SINTÉTICO de quatro pares (thigh, calf, foot e ball, com repouso espelhado e deltas assimétricos DIFERENTES entre si) cada parte listada recebe a sua própria média (a flexão média e a abdução do lado mantida), as não listadas ficam como eram e uma parte sem par no começo da lista não impede as válidas depois dela. Partes sem par `_l` e `_r`, sem a pose de bind ou lista vazia: trilhas IDÊNTICAS às de antes. Na figura o campo é lido, validado (lista de textos, até o limite, cada um com o par de ossos no esqueleto) e muda o walk como no retarget; ausente ou vazio dá a mesma figura; inválido dá null com o campo no motivo curto. A ferramenta `ice_prepare` só grava o campo com `--symmetric` e a proveniência só ganha a linha de mudança nesse caso.
 
 const Writer = preload("res://tools/visual/ice_figure/ice_writer.gd")
 const Palette = preload("res://tools/visual/ice_figure/ice_palette.gd")
@@ -13,7 +13,7 @@ const DIR: String = "res://figuras_de_teste/"
 const ID: String = "figura"
 const BODY_M: float = 1.8
 const MAX_REASON_CHARS: int = 400
-## [HIP] Os limites, em graus. Medido no corpo masculino: a coxa média esquerda e a direita do walk diferem 25 graus sem a opção (-3,4 e 21,6) e 2,1 com ela (10,2 e 8,1; o que resta é a assimetria da própria animação da UAL, cuja coxa direita balança 69 graus e a esquerda 58); a média das duas coxas não muda (9,1 antes e depois), a amplitude muda 0,2 e a soma das médias laterais (-12,3 e 11,9) fica a 0,4 de zero.
+## [HIP] Os limites, em graus. Medido no corpo masculino: a coxa média esquerda e a direita do walk diferem 25 graus sem a opção (-3,4 e 21,6) e 2,1 com ela (10,2 e 8,1; o que resta é a assimetria da própria animação da UAL, cuja coxa direita balança 69 graus e a esquerda 58); a média das duas coxas não muda (9,1 antes e depois), a amplitude muda 0,2 e a soma das médias laterais (-12,3 e 11,9) fica a 0,4 de zero. A canela (do joelho ao tornozelo) difere 11,8 graus sem a opção (-30,4 e -18,7) e 2,1 com ela (-23,3 e -25,4), com a amplitude de 74 graus nos dois lados antes e depois.
 const MIN_DEFECT_DEG: float = 10.0
 const SYMMETRY_TOLERANCE_DEG: float = 3.0
 const MEAN_TOLERANCE_DEG: float = 0.5
@@ -22,10 +22,10 @@ const LATERAL_TOLERANCE_DEG: float = 1.0
 ## [HIP] A tolerância do reflexo (comprimento do vetor) e da coxa média da figura contra a do retarget (graus).
 const REFLECTION_TOLERANCE: float = 0.00001
 const FIGURE_TOLERANCE_DEG: float = 0.1
-## O caso SINTÉTICO dos componentes laterais (em graus): o par `thigh_l` e `thigh_r`, sem pai, com repouso espelhado (giro em z de 10 graus, um para cada lado) e, no quadro 0 da referência, abdução (giro em z) de 20 graus no esquerdo e a ESPELHADA (-20) no direito, flexão (giro em x) de 30 graus no esquerdo e -10 no direito. A média das flexões é 10; o erro de um reflexo que falta na média é uma abdução que some (de 20 a 0).
+## O caso SINTÉTICO das quatro partes (em graus): por parte, [flexão (giro em x) do esquerdo, flexão do direito, abdução (giro em z) do esquerdo]; o direito leva a abdução ESPELHADA (a oposta). Os ossos nascem sem pai, com repouso espelhado (giro em z de 10 graus, um para cada lado), e cada parte tem uma flexão média (10, 5, -15 e 25) e uma abdução (20, 12, -8 e 30) diferentes das outras. O erro de um reflexo que falta na média é uma abdução que some; o de uma parte pulada, ou do laço que para, é a referência que fica como era.
 const REST_SPREAD_DEG: float = 10.0
-const ABDUCTION_DEG: float = 20.0
-const FLEXION_DEG: Dictionary[String, float] = {"l": 30.0, "r": -10.0}
+const SYNTHETIC: Dictionary = {"thigh": [30.0, -10.0, 20.0], "calf": [-25.0, 35.0, 12.0], "foot": [15.0, -45.0, -8.0], "ball": [50.0, 0.0, 30.0]}
+const SIGNS: Dictionary[String, float] = {"l": 1.0, "r": -1.0}
 const ROTATION_TOLERANCE: float = 0.00001
 
 var _catalog: CharacterCatalog = CharacterCatalog.from_file().catalog
@@ -85,18 +85,28 @@ func _pose(skeleton: Skeleton3D, clip: Animation, time: float) -> void:
 	skeleton.force_update_all_bone_transforms()
 
 
-## Por lado ("l" e "r") e por quadro a 30 por segundo de `clip`, o ângulo (graus) da coxa até a canela: no plano sagital (0 = vertical para baixo, positivo para a frente) e no frontal (positivo para o +x); devolve {lado: [média sagital, média frontal, amplitude sagital]}.
+## O ângulo (graus) do segmento de `top` a `bottom`: no plano sagital (0 = vertical para baixo, positivo para a frente) ou, com `lateral`, no frontal (positivo para o +x).
+func _angle(top: Vector3, bottom: Vector3, lateral: bool = false) -> float:
+	var segment: Vector3 = bottom - top
+	return rad_to_deg(atan2(segment.x if lateral else segment.z, -segment.y))
+
+
+## Por lado ("l" e "r") e por quadro a 30 por segundo de `clip`, os ângulos da coxa (do quadril ao joelho) e da canela (do joelho ao tornozelo); devolve {lado: [coxa: média sagital, média frontal e amplitude sagital; canela: média sagital e amplitude sagital]}.
 func _gait(skeleton: Skeleton3D, clip: Animation) -> Dictionary:
 	var gait: Dictionary = {}
-	for side: String in ["l", "r"]:
-		var sagittal: Array[float] = []
-		var frontal: Array[float] = []
+	for side: String in SIGNS:
+		var thigh: Array[float] = []
+		var lateral: Array[float] = []
+		var shin: Array[float] = []
 		for step: int in int(ceil(clip.length * SAMPLES_PER_SECOND)) + 1:
 			_pose(skeleton, clip, minf(step / SAMPLES_PER_SECOND, clip.length))
-			var leg: Vector3 = skeleton.get_bone_global_pose(skeleton.find_bone("calf_" + side)).origin - skeleton.get_bone_global_pose(skeleton.find_bone("thigh_" + side)).origin
-			sagittal.append(rad_to_deg(atan2(leg.z, -leg.y)))
-			frontal.append(rad_to_deg(atan2(leg.x, -leg.y)))
-		gait[side] = [_mean(sagittal), _mean(frontal), sagittal.max() - sagittal.min()]
+			var hip: Vector3 = skeleton.get_bone_global_pose(skeleton.find_bone("thigh_" + side)).origin
+			var knee: Vector3 = skeleton.get_bone_global_pose(skeleton.find_bone("calf_" + side)).origin
+			var ankle: Vector3 = skeleton.get_bone_global_pose(skeleton.find_bone("foot_" + side)).origin
+			thigh.append(_angle(hip, knee))
+			lateral.append(_angle(hip, knee, true))
+			shin.append(_angle(knee, ankle))
+		gait[side] = [_mean(thigh), _mean(lateral), thigh.max() - thigh.min(), _mean(shin), shin.max() - shin.min()]
 	return gait
 
 
@@ -172,17 +182,59 @@ func _walk_of(root: Node3D) -> Animation:
 	return (root.find_children("*", "AnimationPlayer", true, false)[0] as AnimationPlayer).get_animation("walk")
 
 
-func test_the_option_makes_the_walk_thighs_symmetric_without_changing_their_swing() -> void:
+## O delta do quadro 0 de um osso do caso SINTÉTICO (a rotação mundial que ele acrescenta ao repouso): a abdução (giro em z, de sinal oposto no direito) e depois a flexão (giro em x), a de cada lado ou, com `averaged`, a média das duas.
+func _delta(part: String, side: String, averaged: bool) -> Quaternion:
+	var angles: Array = SYNTHETIC[part]
+	var flexion: float = (angles[0] + angles[1]) / 2.0 if averaged else angles[0 if side == "l" else 1]
+	return Quaternion(Vector3.BACK, deg_to_rad(SIGNS[side] * angles[2])) * Quaternion(Vector3.RIGHT, deg_to_rad(flexion))
+
+
+## Monta o caso SINTÉTICO (os ossos `<parte>_l` e `<parte>_r` de SYNTHETIC, sem pai, com o repouso espelhado e o quadro 0 da referência com o delta de cada lado), retargeta um clipe vazio (o repouso) com `parts` simetrizadas e devolve, por osso, a referência que ficou: o inverso da saída (um osso no repouso sai como o inverso do delta da referência).
+func _references(parts: PackedStringArray) -> Dictionary[String, Quaternion]:
+	var skeleton: Skeleton3D = add_child_autofree(Skeleton3D.new())
+	var reference: Animation = Animation.new()
+	var options: CharacterRetarget.Options = CharacterRetarget.Options.new()
+	options.symmetric_reference = parts
+	for part: String in SYNTHETIC:
+		for side: String in SIGNS:
+			var bone_name: String = "%s_%s" % [part, side]
+			var rest: Quaternion = Quaternion(Vector3.BACK, deg_to_rad(SIGNS[side] * REST_SPREAD_DEG))
+			skeleton.add_bone(bone_name)
+			skeleton.set_bone_rest(skeleton.find_bone(bone_name), Transform3D(Basis(rest), Vector3.ZERO))
+			var track: int = reference.add_track(Animation.TYPE_ROTATION_3D)
+			reference.track_set_path(track, NodePath("Skeleton3D:" + bone_name))
+			reference.rotation_track_insert_key(track, 0.0, _delta(part, side, false) * rest)
+			options.bind_pose[bone_name] = Transform3D.IDENTITY
+	var rested: Animation = CharacterRetarget.new(skeleton, skeleton, options, reference).retarget(Animation.new())
+	var references: Dictionary[String, Quaternion] = {}
+	for bone_name: String in options.bind_pose:
+		references[bone_name] = rested.rotation_track_interpolate(rested.find_track(NodePath("Skeleton3D:" + bone_name), Animation.TYPE_ROTATION_3D), 0.0).inverse()
+	return references
+
+
+## Confere o caso SINTÉTICO com `listed` simetrizadas: cada osso de uma parte da lista fica com a referência média (a flexão média e a abdução do lado mantida) e os outros, com a de antes.
+func _assert_references(listed: PackedStringArray) -> void:
+	var references: Dictionary[String, Quaternion] = _references(listed)
+	for part: String in SYNTHETIC:
+		for side: String in SIGNS:
+			assert_lt(_apart(references["%s_%s" % [part, side]], _delta(part, side, listed.has(part))), ROTATION_TOLERANCE, "%s_%s com a lista %s: %s" % [part, side, listed, "a média" if listed.has(part) else "a de antes"])
+
+
+func test_the_option_makes_the_walk_thighs_and_shins_symmetric_without_changing_their_swing() -> void:
 	var skeleton: Skeleton3D = _male_skeleton()
 	var bind: Dictionary[String, Transform3D] = _rest(skeleton)
 	var plain: Dictionary = _gait(skeleton, _library(skeleton, _options(PackedStringArray(), bind)).get_animation("walk"))
 	var fixed: Dictionary = _gait(skeleton, _library(skeleton, _options(PackedStringArray(PARTS), bind)).get_animation("walk"))
 	assert_gt(absf(plain["l"][0] - plain["r"][0]), MIN_DEFECT_DEG, "sem a opção, a coxa média esquerda %.1f e a direita %.1f graus (o defeito)" % [plain["l"][0], plain["r"][0]])
 	assert_lt(absf(fixed["l"][0] - fixed["r"][0]), SYMMETRY_TOLERANCE_DEG, "com a opção, a coxa média esquerda %.1f e a direita %.1f graus" % [fixed["l"][0], fixed["r"][0]])
+	assert_gt(absf(plain["l"][3] - plain["r"][3]), MIN_DEFECT_DEG, "sem a opção, a canela média esquerda %.1f e a direita %.1f graus (o defeito)" % [plain["l"][3], plain["r"][3]])
+	assert_lt(absf(fixed["l"][3] - fixed["r"][3]), SYMMETRY_TOLERANCE_DEG, "com a opção, a canela média esquerda %.1f e a direita %.1f graus" % [fixed["l"][3], fixed["r"][3]])
+	assert_lt(absf(fixed["l"][4] - fixed["r"][4]), SWING_TOLERANCE_DEG, "com a opção, a amplitude da canela esquerda %.1f e da direita %.1f graus" % [fixed["l"][4], fixed["r"][4]])
 	assert_almost_eq((fixed["l"][0] + fixed["r"][0]) / 2.0, (plain["l"][0] + plain["r"][0]) / 2.0, MEAN_TOLERANCE_DEG, "a média das duas coxas não muda: a referência comum é a média das de antes")
 	assert_lt(absf(fixed["l"][1] + fixed["r"][1]), LATERAL_TOLERANCE_DEG, "a simetria lateral: %.1f e %.1f graus" % [fixed["l"][1], fixed["r"][1]])
-	for side: String in ["l", "r"]:
+	for side: String in SIGNS:
 		assert_almost_eq(float(fixed[side][2]), float(plain[side][2]), SWING_TOLERANCE_DEG, side + ": a amplitude da coxa não muda")
+		assert_almost_eq(float(fixed[side][4]), float(plain[side][4]), SWING_TOLERANCE_DEG, side + ": a amplitude da canela não muda")
 	for key: String in CLIPS:
 		assert_eq(_keys(_library(skeleton, _options(PackedStringArray(PARTS), bind)).get_animation(key)), _keys(_library(skeleton, _options(PackedStringArray(PARTS), bind)).get_animation(key)), key + ": as mesmas opções, as mesmas trilhas")
 
@@ -194,25 +246,13 @@ func test_the_reflection_turns_a_rotation_into_the_rotation_of_the_reflected_vec
 	assert_lt((CharacterRetarget._mirrored(turn) * Vector3(-vector.x, vector.y, vector.z) - Vector3(-turned.x, turned.y, turned.z)).length(), REFLECTION_TOLERANCE)
 
 
-func test_the_symmetrized_reference_keeps_the_lateral_components_and_averages_the_flexion() -> void:
-	var skeleton: Skeleton3D = add_child_autofree(Skeleton3D.new())
-	var reference: Animation = Animation.new()
-	var options: CharacterRetarget.Options = CharacterRetarget.Options.new()
-	options.symmetric_reference = PackedStringArray(["thigh"])
-	var signs: Dictionary[String, float] = {"l": 1.0, "r": -1.0}
-	for side: String in signs:
-		var rest: Quaternion = Quaternion(Vector3.BACK, deg_to_rad(signs[side] * REST_SPREAD_DEG))
-		skeleton.add_bone("thigh_" + side)
-		skeleton.set_bone_rest(skeleton.find_bone("thigh_" + side), Transform3D(Basis(rest), Vector3.ZERO))
-		var track: int = reference.add_track(Animation.TYPE_ROTATION_3D)
-		reference.track_set_path(track, NodePath("Skeleton3D:thigh_" + side))
-		reference.rotation_track_insert_key(track, 0.0, Quaternion(Vector3.BACK, deg_to_rad(signs[side] * ABDUCTION_DEG)) * Quaternion(Vector3.RIGHT, deg_to_rad(FLEXION_DEG[side])) * rest)
-		options.bind_pose["thigh_" + side] = Transform3D.IDENTITY
-	var rested: Animation = CharacterRetarget.new(skeleton, skeleton, options, reference).retarget(Animation.new())
-	for side: String in signs:
-		var expected: Quaternion = Quaternion(Vector3.BACK, deg_to_rad(signs[side] * ABDUCTION_DEG)) * Quaternion(Vector3.RIGHT, deg_to_rad((FLEXION_DEG["l"] + FLEXION_DEG["r"]) / 2.0))
-		var track: int = rested.find_track(NodePath("Skeleton3D:thigh_" + side), Animation.TYPE_ROTATION_3D)
-		assert_lt(_apart(rested.rotation_track_interpolate(track, 0.0).inverse(), expected), ROTATION_TOLERANCE, side + ": a referência simetrizada mantém a abdução do lado e tem a flexão média")
+func test_every_listed_part_gets_its_own_mean_keeping_the_lateral_components_and_the_others_stay() -> void:
+	_assert_references(PackedStringArray(PARTS))
+	_assert_references(PackedStringArray(["calf", "ball"]))
+
+
+func test_a_part_without_a_pair_does_not_stop_the_valid_parts_after_it() -> void:
+	_assert_references(PackedStringArray(["nao_existe", "thigh", "calf"]))
 
 
 func test_an_ineffective_option_leaves_the_tracks_as_they_were() -> void:
@@ -235,8 +275,10 @@ func test_the_figure_reads_the_field_and_changes_the_walk_like_the_retarget() ->
 	var direct: Dictionary = _gait(skeleton, _library(skeleton, _options(PackedStringArray(PARTS), _rest(skeleton))).get_animation("walk"))
 	assert_gt(absf(plain["l"][0] - plain["r"][0]), MIN_DEFECT_DEG, "sem o campo a figura tem o defeito: %.1f e %.1f graus" % [plain["l"][0], plain["r"][0]])
 	assert_lt(absf(fixed["l"][0] - fixed["r"][0]), SYMMETRY_TOLERANCE_DEG, "com o campo, a coxa média esquerda %.1f e a direita %.1f graus" % [fixed["l"][0], fixed["r"][0]])
-	for side: String in ["l", "r"]:
-		assert_almost_eq(float(fixed[side][0]), float(direct[side][0]), FIGURE_TOLERANCE_DEG, side + ": a figura anda como o retarget com as mesmas opções")
+	assert_lt(absf(fixed["l"][3] - fixed["r"][3]), SYMMETRY_TOLERANCE_DEG, "com o campo, a canela média esquerda %.1f e a direita %.1f graus" % [fixed["l"][3], fixed["r"][3]])
+	for side: String in SIGNS:
+		for index: int in [0, 3]:
+			assert_almost_eq(float(fixed[side][index]), float(direct[side][index]), FIGURE_TOLERANCE_DEG, "%s: a figura anda como o retarget com as mesmas opções (coxa e canela)" % side)
 
 
 func test_an_absent_or_empty_field_builds_the_same_figure_and_repeated_parts_change_nothing() -> void:
