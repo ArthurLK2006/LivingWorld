@@ -1,14 +1,15 @@
 class_name CharacterFigureSource
 extends RefCounted
-## A fonte das figuras inteiras do mundo (ART-12, 7b-2; só apresentação): prepara UMA vez, antes do laço do jogo, a figura de cada id distinto da área (`CharacterArea.figure_ids`, no máximo 1 [HIP]) com `CharacterFigure.build` (a primeira carga de arquivo levou 545 ms e não pode cair num quadro) e guarda o protótipo FORA da árvore; `make(figure_id)` entrega uma instância NOVA (`duplicate`) a cada entrada em S0, e os protótipos são liberados quando a fonte morre (o corpo é dono só da cópia). Figura que o `build` recusa, ou falta de catálogo, não lança erro: o id entra em `failures` (id -> motivo curto) e `make` devolve null (o NPC segue cápsula). Área vazia = fonte vazia, sem tocar em disco nem em catálogo. O catálogo vem de `load_catalog`: o LOCAL `LOCAL_CATALOG_PATH` (FORA do Git, o mesmo formato do padrão com a lista `figures`; o padrão não a tem, e a linha do Ice Warrior exige caminhos res:// que só existem onde há o ativo) no lugar do padrão, se existir. `builder(figure_id) -> Node3D` troca a montagem (os testes injetam uma figura sintética, sem disco). Contrato: docs/modules/presentation.md.
+## A fonte das figuras inteiras do mundo (ART-12, 7b-2; só apresentação): prepara UMA vez, antes do laço do jogo, a figura de cada id da área (`CharacterArea.figure_ids`, no máximo 1 [HIP]) com `CharacterFigure.build` (a primeira carga de arquivo levou 545 ms e não pode cair num quadro), EMPACOTA a figura montada (`PackedScene.pack`) e libera a montada (nada fica órfão); `make(figure_id)` entrega uma instância NOVA (`instantiate`) a cada entrada em S0 (o corpo é dono só da cópia). Empacotar, e não `duplicate` da figura montada, porque o `duplicate` do `BoneAttachment3D` (a espada da 6d) emite um aviso do motor por cópia (`set_bone_idx`) e o GUT o trata como erro; as cópias COMPARTILHAM a biblioteca de animação, a malha e a pele, e cada uma leva o seu `AnimationPlayer`, o seu esqueleto e as suas propriedades e metadados (o `locomotion`). Figura que o `build` recusa, ou falta de catálogo, não lança erro: o id entra em `failures` (id -> motivo curto) e `make` devolve null (o NPC segue cápsula). Área vazia = fonte vazia, sem tocar em disco nem em catálogo. O catálogo vem de `load_catalog`: o LOCAL `LOCAL_CATALOG_PATH` (FORA do Git, o mesmo formato do padrão com a lista `figures`; o padrão não a tem, e a linha do Ice Warrior exige caminhos res:// que só existem onde há o ativo) no lugar do padrão, se existir. `builder(figure_id) -> Node3D` troca a montagem (os testes injetam uma figura sintética, sem disco). Quem a entrega a uma view tem de saber que `make` (um `Callable` de método) NÃO segura esta fonte: ver `NpcBodiesView`. Contrato: docs/modules/presentation.md.
 
 const LOCAL_CATALOG_PATH: String = "res://art_samples/character_catalog.json"
 const NO_CATALOG_REASON: String = "não há catálogo de figuras para ler"
 const BUILDER_FAILED_REASON: String = "o construtor não devolveu a figura"
+const PACK_FAILED_REASON: String = "a figura montada não pôde ser empacotada"
 
 ## id da figura -> o motivo curto de ela não ter sido preparada.
 var failures: Dictionary[String, String] = {}
-var _prototypes: Dictionary[String, Node3D] = {}
+var _packed: Dictionary[String, PackedScene] = {}
 
 
 ## Prepara a figura de cada id da `area`. Sem `builder`, a montagem é a real (`CharacterFigure.build` com o `catalog`).
@@ -33,26 +34,27 @@ static func load_catalog(text_reader: Callable = Callable(), exists: Callable = 
 	return CharacterCatalog.from_json(content, LOCAL_CATALOG_PATH, exists)
 
 
-## Uma instância NOVA e solta da figura `figure_id` (quem a recebe é dono dela), ou null se o id não tem protótipo (a montagem falhou ou ele não está na área).
+## Uma instância NOVA e solta da figura `figure_id` (quem a recebe é dono dela), ou null se o id não tem figura preparada (a montagem falhou ou ele não está na área).
 func make(figure_id: String) -> Node3D:
-	var prototype: Node3D = _prototypes.get(figure_id) as Node3D
-	return prototype.duplicate() as Node3D if prototype != null else null
+	var packed: PackedScene = _packed.get(figure_id) as PackedScene
+	return packed.instantiate() as Node3D if packed != null else null
 
 
+## Monta a figura, empacota e libera a montada. O `pack` só leva os nós cujo dono é a raiz, e os que o `build` acrescenta (o `AnimationPlayer`, a espada) chegam sem dono: todos os descendentes passam a ser da raiz antes de empacotar.
 func _prepare_one(catalog: CharacterCatalog, figure_id: String, builder: Callable) -> void:
 	var assembler: CharacterFigure = CharacterFigure.new()
 	var figure: Node3D = builder.call(figure_id) as Node3D if builder.is_valid() else assembler.build(catalog, figure_id)
-	if figure != null:
-		_prototypes[figure_id] = figure
-	else:
+	if figure == null:
 		failures[figure_id] = assembler.failure if not assembler.failure.is_empty() else BUILDER_FAILED_REASON
-
-
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE:
-		for prototype: Node3D in _prototypes.values():
-			if is_instance_valid(prototype):
-				prototype.free()
+		return
+	for node: Node in figure.find_children("*", "", true, false):
+		node.owner = figure
+	var packed: PackedScene = PackedScene.new()
+	if packed.pack(figure) == OK:
+		_packed[figure_id] = packed
+	else:
+		failures[figure_id] = PACK_FAILED_REASON
+	figure.free()
 
 
 ## O texto do arquivo do disco; "" se ele não existe.

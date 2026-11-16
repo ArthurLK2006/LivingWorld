@@ -1,11 +1,13 @@
 extends GutTest
-## ART-12, 7b-2: a fonte das figuras (`CharacterFigureSource`) com figura SINTÉTICA em memória, sem disco de ativo: o protótipo é preparado UMA vez e `make` entrega instâncias distintas e soltas (o metadado de velocidades e o `AnimationPlayer` sobrevivem ao `duplicate`); área vazia não toca o construtor; id desconhecido, figura recusada e catálogo ausente dão null com o motivo em `failures`; os protótipos são liberados com a fonte; o catálogo LOCAL opcional vale no lugar do padrão (local inválido = falha, sem cair no padrão em silêncio); a área lista seus ids de figura distintos.
+## ART-12, 7b-2: a fonte das figuras (`CharacterFigureSource`) com figura SINTÉTICA em memória, sem disco de ativo: a figura é preparada UMA vez (empacotada, e a montada liberada) e `make` entrega instâncias distintas e soltas (o metadado de velocidades, o `AnimationPlayer` e os descendentes fundos sobrevivem ao empacotar); área vazia não toca o construtor; id desconhecido, figura recusada e catálogo ausente dão null com o motivo em `failures`; nem o preparo nem as cópias deixam nó órfão; o catálogo LOCAL opcional vale no lugar do padrão (local inválido = falha, sem cair no padrão em silêncio); a área lista seus ids de figura.
 
 const FIGURE_ID: String = "synthetic"
+const DEEP_NAME: String = "Deep"
 const SPEEDS: Dictionary = {"walk": 0.73, "jog": 4.1}
 const CLIPS: PackedStringArray = ["idle", "walk", "jog"]
 const AREA_JSON: String = '{"version": 1, "entries": [{"npc_id": 7, "figure": "synthetic"}]}'
 const NO_ENTRIES_JSON: String = '{"version": 1, "entries": []}'
+const COPIES: int = 20
 
 var _built: Array[String] = []
 var _asked: Array[String] = []
@@ -19,11 +21,15 @@ func before_each() -> void:
 	_local_text = ""
 
 
-## A figura sintética: o metadado de velocidades e um `AnimationPlayer` com os clipes, como o `build` real os entrega.
+## A figura sintética: o metadado de velocidades, um descendente fundo com malha e um `AnimationPlayer` com os clipes, como o `build` real os entrega (sem dono, como o `build` acrescenta).
 func _builder(figure_id: String) -> Node3D:
 	_built.append(figure_id)
 	var figure: Node3D = Node3D.new()
 	figure.set_meta(CharacterFigure.LOCOMOTION_META, SPEEDS.duplicate())
+	var deep: Node3D = Node3D.new()
+	deep.name = DEEP_NAME
+	figure.add_child(deep)
+	deep.add_child(MeshInstance3D.new())
 	var library: AnimationLibrary = AnimationLibrary.new()
 	for clip: String in CLIPS:
 		library.add_animation(StringName(clip), Animation.new())
@@ -61,7 +67,7 @@ func _local_json() -> String:
 	return JSON.stringify(data)
 
 
-func test_the_prototype_is_prepared_once_and_make_delivers_distinct_loose_copies_that_keep_the_speeds_and_the_clips() -> void:
+func test_the_figure_is_prepared_once_and_make_delivers_distinct_loose_copies_that_keep_the_speeds_the_clips_and_the_deep_nodes() -> void:
 	var source: CharacterFigureSource = CharacterFigureSource.prepare(_area(AREA_JSON), _catalog(), _builder)
 	assert_eq([_built.size(), source.failures.is_empty()], [1, true], "O construtor roda UMA vez, no preparo.")
 	var first: Node3D = autofree(source.make(FIGURE_ID))
@@ -70,15 +76,16 @@ func test_the_prototype_is_prepared_once_and_make_delivers_distinct_loose_copies
 	assert_null(first.get_parent(), "A cópia chega solta.")
 	assert_eq(_built.size(), 1, "O `make` não monta de novo.")
 	var speeds: Dictionary[String, float] = CharacterFigure.locomotion_of(first)
-	assert_eq([speeds.get("walk"), speeds.get("jog")], [0.73, 4.1], "O metadado de velocidades sobrevive ao `duplicate`.")
+	assert_eq([speeds.get("walk"), speeds.get("jog")], [0.73, 4.1], "O metadado de velocidades sobrevive ao empacotar.")
 	var player: AnimationPlayer = first.find_children("*", "AnimationPlayer", false, false)[0] as AnimationPlayer
 	for clip: String in CLIPS:
-		assert_true(player.has_animation(StringName(clip)), "O clipe %s sobrevive ao `duplicate`." % clip)
+		assert_true(player.has_animation(StringName(clip)), "O clipe %s sobrevive ao empacotar." % clip)
+	assert_eq([first.get_node(DEEP_NAME).get_child_count(), first.find_children("*", "MeshInstance3D", true, false).size()], [1, 1], "Os descendentes fundos sobrevivem ao empacotar.")
 
 
 func test_an_unknown_id_a_refused_figure_and_a_missing_catalog_give_null_with_the_reason() -> void:
 	var source: CharacterFigureSource = CharacterFigureSource.prepare(_area(AREA_JSON), _catalog(), _builder)
-	assert_null(source.make("outra"), "Id fora da área: sem protótipo.")
+	assert_null(source.make("outra"), "Id fora da área: sem figura.")
 	var refused: CharacterFigureSource = CharacterFigureSource.prepare(_area(AREA_JSON), _catalog(), _refuse)
 	assert_eq([refused.make(FIGURE_ID), refused.failures.get(FIGURE_ID)], [null, CharacterFigureSource.BUILDER_FAILED_REASON], "Construtor que recusa: cápsula e o motivo.")
 	var real: CharacterFigureSource = CharacterFigureSource.prepare(_area(AREA_JSON), _catalog())
@@ -95,12 +102,13 @@ func test_an_empty_or_null_area_builds_nothing_and_touches_neither_the_builder_n
 		assert_eq([source.failures.is_empty(), source.make(FIGURE_ID), _built.size()], [true, null, 0], "Fonte vazia, sem falha.")
 
 
-func test_the_prototypes_are_freed_with_the_source() -> void:
+func test_neither_the_preparation_nor_the_copies_leave_an_orphan_node() -> void:
 	var before: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 	var source: CharacterFigureSource = CharacterFigureSource.prepare(_area(AREA_JSON), _catalog(), _builder)
-	source.make(FIGURE_ID).free()
-	source = null
-	assert_eq(int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), before, "Nenhum nó órfão fica para trás.")
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), before, "Preparado, a figura montada foi liberada: nenhum nó órfão.")
+	for _copy: int in COPIES:
+		source.make(FIGURE_ID).free()
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), before, "As cópias liberadas não deixam nó órfão.")
 
 
 func test_the_local_catalog_replaces_the_default_and_an_invalid_one_is_a_failure_not_a_fallback() -> void:
@@ -114,5 +122,5 @@ func test_the_local_catalog_replaces_the_default_and_an_invalid_one_is_a_failure
 	assert_eq([broken.result.code, broken.catalog.is_ready()], [CharacterCatalog.CODE_INVALID, false], "Local inválido = falha tratada, sem cair no padrão.")
 
 
-func test_the_area_lists_its_distinct_figure_ids() -> void:
+func test_the_area_lists_its_figure_ids() -> void:
 	assert_eq([Array(_area(AREA_JSON).figure_ids()), _area(NO_ENTRIES_JSON).figure_ids().size()], [[FIGURE_ID], 0], "Os ids da área, e nenhum na vazia.")

@@ -54,14 +54,9 @@ func is_empty() -> bool:
 	return _figures.is_empty()
 
 
-## Os ids de figura DISTINTOS da área, em ordem alfabética (a fonte da figura, 7b-2, prepara cada um UMA vez).
+## Os ids de figura da área (a fonte da figura, 7b-2, prepara cada um UMA vez). Com `MAX_ENTRIES` = 1 não há id repetido nem ordem a manter.
 func figure_ids() -> PackedStringArray:
-	var ids: PackedStringArray = []
-	for figure: String in _figures.values():
-		if not ids.has(figure):
-			ids.append(figure)
-	ids.sort()
-	return ids
+	return PackedStringArray(_figures.values())
 
 
 ## Confere o objeto raiz e guarda as entradas; os problemas vão para `reader`.

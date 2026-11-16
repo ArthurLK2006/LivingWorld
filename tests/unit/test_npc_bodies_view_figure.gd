@@ -136,6 +136,15 @@ func test_a_factory_that_returns_null_leaves_the_capsule_and_warns_once_per_npc(
 	assert_push_warning_count(1, "UM aviso por NPC: nem um por quadro nem um por reentrada.")
 
 
+func test_a_new_setup_forgets_the_npcs_already_warned() -> void:
+	_delivers = false
+	_start()
+	assert_true(_view.setup(_bridge, _terrain, CharacterArea.from_files([CharacterArea.DEFAULT_PATH], _area_text), _factory))
+	_tick(A_M)
+	assert_eq(_calls, 2, "O NPC entrou de novo, e a fábrica foi tentada de novo.")
+	assert_push_warning_count(2, "Um `setup` novo esquece quem já foi avisado: o NPC é avisado outra vez.")
+
+
 func test_an_empty_area_leaves_every_body_a_capsule_and_never_calls_the_factory() -> void:
 	_start(false, true)
 	assert_eq([_calls, _figured()], [0, 0], "Área vazia: a fábrica nunca roda.")

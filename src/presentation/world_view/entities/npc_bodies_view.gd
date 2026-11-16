@@ -17,6 +17,8 @@ var _is_active: bool = false
 ## A área das figuras (null = nenhuma: vazia ou sem fábrica), a fábrica e os NPCs cuja figura falhou e já foram avisados.
 var _area: CharacterArea
 var _figure_factory: Callable
+## O DONO da fábrica: um `Callable` de método de um `RefCounted` (a `source.make` da cena) NÃO segura o objeto, e a fonte, local na cena, morreria ao fim do preparo com a fábrica já inválida. Quem a segura é esta view, até o próximo `setup`.
+var _figure_owner: RefCounted
 var _warned_npcs: Dictionary[int, bool] = {}
 
 
@@ -40,6 +42,7 @@ func setup(bridge: SimBridge, terrain: TerrainView, area: CharacterArea = null, 
 	_pool = NpcViewPool.new(self)
 	_area = area if area != null and not area.is_empty() and figure_factory.is_valid() else null
 	_figure_factory = figure_factory
+	_figure_owner = figure_factory.get_object() as RefCounted
 	_is_active = true
 	return true
 
@@ -138,4 +141,5 @@ func _clear() -> void:
 	_pool = null
 	_area = null
 	_figure_factory = Callable()
+	_figure_owner = null
 	_warned_npcs.clear()
