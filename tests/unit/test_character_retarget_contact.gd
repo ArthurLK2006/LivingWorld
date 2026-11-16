@@ -1,5 +1,5 @@
 extends GutTest
-## ART-12, entrega 6e (i): a opção `ground_points` do CharacterRetarget (os contatos da trava de chão, por figura), com a UAL real e o corpo masculino do repositório (nenhum ativo de terceiros, nada de art_samples/). Cada pé ganha dois pontos de SOLA, 10 cm à frente e 10 cm atrás da origem do osso, no chão no repouso ou 2 cm acima dele (a sola fica abaixo da origem do osso). Com a opção, o ponto de sola mais baixo fica no chão (y = 0, o chão de referência, e não a altura do ponto no repouso) a até 1 cm em todo quadro do idle e do walk e as mesmas opções dão as mesmas trilhas duas vezes; sem ela, com a mesma trava pelos ossos do pé, a sola afunda no walk. `ground_points` vazio dá as mesmas trilhas das opções sem o campo, e sem a trava de chão os pontos não mudam nada.
+## ART-12, entrega 6e (i): a opção `ground_points` do CharacterRetarget (os contatos da trava de chão, por figura), com a UAL real e o corpo masculino do repositório (nenhum ativo de terceiros, nada de art_samples/). Cada pé ganha dois pontos de SOLA, 10 cm à frente e 10 cm atrás da origem do osso, no chão no repouso ou 2 cm acima dele (a sola fica abaixo da origem do osso). Com a opção, o ponto de sola mais baixo fica no chão (y = 0, o chão de referência, e não a altura do ponto no repouso) a até 1 cm em todo quadro do idle e do walk e as mesmas opções dão as mesmas trilhas duas vezes; sem ela, com a mesma trava pelos ossos do pé, a sola afunda no walk. `ground_points` vazio dá as mesmas trilhas das opções sem o campo, e sem a trava de chão os pontos não mudam nada. Uma tabela sem nenhum contato utilizável (osso que o destino não tem, lista vazia) cai na trava de sempre, pelos ossos do pé.
 
 const FEET: PackedStringArray = ["foot_l", "foot_r"]
 const CLIPS: PackedStringArray = ["idle", "walk"]
@@ -100,3 +100,12 @@ func test_an_empty_table_changes_nothing_and_the_points_do_nothing_without_the_l
 	for key: String in CLIPS:
 		assert_eq(_keys(empty.get_animation(key)), _keys(plain_library.get_animation(key)), key + ": ground_points vazio = o campo ausente")
 		assert_eq(_keys(unlocked.get_animation(key)), _keys(off.get_animation(key)), key + ": sem ground_lock os pontos não valem")
+
+
+func test_a_table_without_any_usable_contact_falls_back_to_the_lock_by_the_foot_bones() -> void:
+	var skeleton: Skeleton3D = _male_skeleton()
+	var useless: Dictionary[String, PackedVector3Array] = {"osso_que_nao_existe": PackedVector3Array([Vector3.ZERO]), "foot_l": PackedVector3Array()}
+	var fallback: AnimationLibrary = _library(skeleton, _options(true, useless))
+	var usual: AnimationLibrary = _library(skeleton, _options(true, {}))
+	for key: String in CLIPS:
+		assert_eq(_keys(fallback.get_animation(key)), _keys(usual.get_animation(key)), key + ": sem contato utilizável, a trava de sempre")

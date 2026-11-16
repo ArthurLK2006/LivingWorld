@@ -46,6 +46,12 @@ static func meta_file() -> String:
 	return DATA_FILE
 
 
+## O sufixo de uma variante (`ice_figure_c.json` -> `_c`; o JSON da figura -> ""): o relatório do medidor e a PROVENIENCIA de uma variante levam este sufixo e não sobrescrevem os da figura.
+static func variant_suffix(meta_name: String) -> String:
+	var rest: String = meta_name.get_basename().trim_prefix(DATA_FILE.get_basename()).trim_prefix("_")
+	return "" if rest.is_empty() else "_" + rest
+
+
 ## A cena preparada EM MEMÓRIA, sem gravar nada (os testes não tocam o disco): o corpo com pele e, se há equipamento, a espada presa ao osso da mão. O esqueleto do `Rig` passa a pertencer à cena e é LIBERADO aqui.
 static func build_scene(surfs: Array[Source.Surf], found: Source.IslandSet, built: Palette.Built, assigned: Weights.Assigned, rig: Skel.Rig) -> PackedScene:
 	var texture: ImageTexture = ImageTexture.create_from_image(built.image)
@@ -78,7 +84,7 @@ static func write(dir: String, surfs: Array[Source.Surf], found: Source.IslandSe
 	if ResourceSaver.save(scene, "%s/%s" % [dir, SCENE_FILE]) != OK:
 		errors.append("não consegui gravar %s" % SCENE_FILE)
 	errors.append_array(_save_text("%s/%s" % [dir, meta_name], JSON.stringify(data, "\t") + "\n"))
-	errors.append_array(_save_text("%s/%s" % [dir, PROVENANCE_FILE], provenance(source_sha, palette_sha, built, data["height_m"], not presentation.is_empty())))
+	errors.append_array(_save_text("%s/%s%s.txt" % [dir, PROVENANCE_FILE.get_basename(), variant_suffix(meta_name)], provenance(source_sha, palette_sha, built, data["height_m"], not presentation.is_empty())))
 	return errors
 
 

@@ -69,7 +69,7 @@ func _run() -> void:
 	lines.append_array(await _determinism(figure, dir))
 	for line: String in lines:
 		print(line)
-	var report: FileAccess = FileAccess.open("%s/%s%s.txt" % [dir, REPORT_FILE.get_basename(), Writer.meta_file().get_basename().trim_prefix(Writer.DATA_FILE.get_basename())], FileAccess.WRITE)
+	var report: FileAccess = FileAccess.open("%s/%s%s.txt" % [dir, REPORT_FILE.get_basename(), Writer.variant_suffix(Writer.meta_file())], FileAccess.WRITE)
 	if report != null:
 		report.store_string("\n".join(lines) + "\n")
 	quit(1 if _failed else 0)

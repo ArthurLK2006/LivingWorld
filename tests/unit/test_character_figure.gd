@@ -37,6 +37,9 @@ const GEAR_ON_ROOT: String = "na_raiz"
 const GEAR_BAD_BONE: String = "osso_ruim"
 ## Um osso que o esqueleto NÃO tem: o `bone_name` do equipamento no caso `osso_ruim` e o bind extra da pele no caso `alien_bind`.
 const ALIEN_BONE: String = "osso_que_nao_existe"
+## Um número finito em precisão dupla mas acima do limite do real de 32 bits do motor (a validação limita o módulo), e o número de pontos que, em DOIS ossos, passa do limite total de contatos.
+const HUGE_NUMBER: float = 1.0e39
+const OVER_HALF_OF_LIMIT: int = 33
 const ZERO_BASIS_POSE: Array = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1, 0.2, 0.3]
 const SINGULAR_BASIS_POSE: Array = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.1, 0.2, 0.3]
 ## O `stringify` escreve o infinito como 1e99999, que o motor lê com aviso ("Exponent too high"): o caso "infinito" grava o texto "infinito" no lugar do número e o troca por este literal, que passa do maior real (1,8e308) e vira infinito sem aviso.
@@ -55,12 +58,13 @@ const BAD_OPTIONAL: Array = [
 	["g_dois", {"ground_points": {"foot_l": [[0.0, 0.0]]}}, "ground_points"], ["g_texto", {"ground_points": {"foot_l": [[0.0, "0.0", 0.0]]}}, "ground_points"],
 	["g_infinito", {"ground_points": {"foot_l": [[0.0, 0.0, "infinito"]]}}, "ground_points"], ["g_solto", {"ground_points": {"foot_l": [0.0, 0.0, 0.0]}}, "ground_points"],
 	["g_numero", {"ground_points": {"foot_l": 1.0}}, "ground_points"], ["g_lista", {"ground_points": [0.5]}, "ground_points"],
+	["g_enorme", {"ground_points": {"foot_l": [[1.0e39, 0.0, 0.0]]}}, "ground_points"],
 ]
 ## Cada caso de falha: [id da figura, trecho esperado do motivo].
 const FAILURES: Array = [
 	["nao_existe", "não está no catálogo"], ["sem_cena", "não existe"], ["sem_meta", "arquivo não encontrado"], ["quebrado", "JSON inválido"],
 	["sem_osso", "ossos do catálogo"], ["armadura", "filho da raiz"], ["sem_skin", "Skin"], ["com_player", "AnimationPlayer"], ["versao", "version"], ["altura", "height_m"],
-	["sem_bind", "inválida: 65"], ["osso_zerado", BROKEN_BONE], ["osso_faltando", BROKEN_BONE], ["onze_numeros", BROKEN_BONE], ["treze_numeros", BROKEN_BONE], ["base_singular", BROKEN_BONE], ["infinito", BROKEN_BONE], ["jog", "retarget falhou"],
+	["sem_bind", "inválida: 65"], ["osso_zerado", BROKEN_BONE], ["osso_faltando", BROKEN_BONE], ["onze_numeros", BROKEN_BONE], ["treze_numeros", BROKEN_BONE], ["base_singular", BROKEN_BONE], ["enorme", BROKEN_BONE], ["infinito", BROKEN_BONE], ["jog", "retarget falhou"],
 ]
 
 ## Os "arquivos" da figura, só em memória: caminho -> cena empacotada e caminho -> texto dos metadados.
@@ -402,6 +406,7 @@ func test_every_failure_returns_null_with_a_short_readable_reason_and_leaks_noth
 		_broken_poses("onze_numeros", func(poses: Dictionary) -> void: poses[BROKEN_BONE].pop_back()),
 		_broken_poses("treze_numeros", func(poses: Dictionary) -> void: poses[BROKEN_BONE].append(0.0)),
 		_broken_poses("base_singular", func(poses: Dictionary) -> void: poses[BROKEN_BONE] = SINGULAR_BASIS_POSE),
+		_broken_poses("enorme", func(poses: Dictionary) -> void: poses[BROKEN_BONE][0] = HUGE_NUMBER),
 		_broken_poses("infinito", func(poses: Dictionary) -> void: poses[BROKEN_BONE][0] = "infinito"),
 		_write("jog", {"meta": {"reference_clip": "jog"}}),
 	])
@@ -492,6 +497,10 @@ func test_every_invalid_optional_field_returns_null_with_the_field_in_a_short_re
 	crowd.resize(CharacterFigure.MAX_GROUND_POINTS + 1)
 	crowd.fill([0.0, 0.0, 0.0])
 	rows.append(["g_demais", {"ground_points": {"foot_l": crowd}}, "ground_points"])
+	var half: Array = []
+	half.resize(OVER_HALF_OF_LIMIT)
+	half.fill([0.0, 0.0, 0.0])
+	rows.append(["g_total", {"ground_points": {"foot_l": half, "foot_r": half}}, "ground_points"])
 	var figures: Array = []
 	for spec: Array in rows:
 		figures.append(_write(spec[0], {"meta": spec[1]}))
@@ -507,7 +516,7 @@ func test_every_invalid_optional_field_returns_null_with_the_field_in_a_short_re
 
 func test_the_edges_of_the_valid_ranges_are_accepted() -> void:
 	var crowd: Array = []
-	crowd.resize(CharacterFigure.MAX_GROUND_POINTS)
+	crowd.resize(CharacterFigure.MAX_GROUND_POINTS - 1)
 	crowd.fill([0.0, 0.0, 0.0])
 	var catalog: CharacterCatalog = _catalog([_write(ID, {"meta": {"damping": {"foot_l": 0.0, "hand_r": 1.0}, "ground_points": {"foot_l": crowd, "foot_r": [[0.0, 0.0, 0.0]]}}})])
 	assert_not_null(_built(catalog, ID))

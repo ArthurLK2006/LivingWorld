@@ -14,8 +14,10 @@ const MIN_AXIS_LENGTH: float = 0.001
 const MIN_DETERMINANT: float = 0.000001
 ## [HIP] Quantos ossos o motivo de uma pose de bind inválida nomeia (o resto entra só na contagem).
 const LISTED_BONES: int = 5
-## [HIP] O máximo de pontos de contato de um osso (a ferramenta gera até 33, um por direção de apoio, e na prática 11 por bota; cada ponto custa uma passada pela cadeia do osso a cada quadro da trava de chão).
+## [HIP] O máximo de pontos de contato da figura INTEIRA, somados os ossos (na prática 11 por bota, 22 no Ice Warrior; cada ponto custa uma passada pela cadeia do osso a cada quadro da trava de chão: 65 ossos com 64 pontos cada levaram o `build` de 8 para 895 ms).
 const MAX_GROUND_POINTS: int = 64
+## [HIP] O maior módulo de um número de pose de bind ou de ponto de contato (a figura tem uns 1,5 m): acima disso o real de 32 bits do motor vira infinito ao converter e a trilha da pélvis sai NaN, mesmo com o número finito em precisão dupla.
+const MAX_COORDINATE: float = 1000.0
 
 ## O motivo da última falha de `build` ("" se deu certo).
 var failure: String = ""
@@ -158,13 +160,17 @@ static func _ground_points(reader: CharacterDataReader, meta: Dictionary, skelet
 	var points: Dictionary[String, PackedVector3Array] = {}
 	var invalid: PackedStringArray = PackedStringArray()
 	var table: Dictionary = reader.object(meta, "ground_points", "") if meta.has("ground_points") else {}
+	var total: int = 0
 	for bone_name: String in table:
 		var found: PackedVector3Array = _points_of(table[bone_name])
 		if skeleton.find_bone(bone_name) >= 0 and not found.is_empty():
 			points[bone_name] = found
+			total += found.size()
 		else:
 			invalid.append(bone_name)
-	_report(reader, "ground_points", invalid, "um osso do esqueleto com de 1 a %d pontos [x, y, z] finitos" % MAX_GROUND_POINTS)
+	_report(reader, "ground_points", invalid, "um osso do esqueleto com pontos [x, y, z] finitos")
+	if total > MAX_GROUND_POINTS:
+		reader.fail("", "ground_points", "pontos demais: %d (no máximo %d no total)" % [total, MAX_GROUND_POINTS])
 	return points
 
 
@@ -214,12 +220,12 @@ static func _is_pose(value: Variant) -> bool:
 	return absf(basis.determinant()) > MIN_DETERMINANT
 
 
-## Uma lista com `count` reais finitos. `value` é Variant porque vem do JSON; o tipo é conferido aqui.
+## Uma lista com `count` reais finitos e de módulo até `MAX_COORDINATE`. `value` é Variant porque vem do JSON; o tipo é conferido aqui.
 static func _is_numbers(value: Variant, count: int) -> bool:
 	if typeof(value) != TYPE_ARRAY or (value as Array).size() != count:
 		return false
 	for number: Variant in value as Array:
-		if typeof(number) != TYPE_FLOAT or not is_finite(float(number)):
+		if typeof(number) != TYPE_FLOAT or not is_finite(float(number)) or absf(float(number)) > MAX_COORDINATE:
 			return false
 	return true
 

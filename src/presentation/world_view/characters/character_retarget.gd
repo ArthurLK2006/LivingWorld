@@ -250,11 +250,11 @@ func _use_reference(reference_clip: Animation) -> void:
 		_source_origin[bone] = reference_clip.position_track_interpolate(moves[bone], 0.0)
 
 
-## Com a trava de chão: a cadeia (da raiz ao osso) de cada contato e a altura de referência de cada um. Sem `options.ground_points`, os contatos são as origens dos ossos do pé que o destino tem (referência: a altura do osso no repouso); com eles, só os pontos dados (referência: o chão, y = 0).
+## Com a trava de chão: a cadeia (da raiz ao osso) de cada contato e a altura de referência de cada um. Sem `options.ground_points` (ou sem nenhum contato utilizável: osso que o destino não tem, ou lista vazia), os contatos são as origens dos ossos do pé que o destino tem (referência: a altura do osso no repouso); com eles, só os pontos dados (referência: o chão, y = 0).
 func _find_ground() -> void:
 	if not _options.ground_lock:
 		return
-	var contact: bool = not _options.ground_points.is_empty()
+	var contact: bool = _has_contacts()
 	for bone_name: String in (_options.ground_points.keys() if contact else Array(GROUND_BONES)):
 		var chain: PackedInt32Array = _chain_of(bone_name)
 		var points: PackedVector3Array = _options.ground_points[bone_name] if contact else PackedVector3Array([Vector3.ZERO])
@@ -266,6 +266,14 @@ func _find_ground() -> void:
 		_ground_heights.resize(_ground_chains.size())
 	else:
 		_ground_heights = _heights(_target_base, _rest_origins)
+
+
+## Se `options.ground_points` tem ao menos um contato utilizável (osso que o destino tem e lista não vazia): sem nenhum, a trava volta aos ossos do pé, como sem a opção.
+func _has_contacts() -> bool:
+	for bone_name: String in _options.ground_points:
+		if not _options.ground_points[bone_name].is_empty() and not _chain_of(bone_name).is_empty():
+			return true
+	return false
 
 
 ## Os ossos da raiz até `bone_name` no destino (vazio se o destino não tem o osso).
