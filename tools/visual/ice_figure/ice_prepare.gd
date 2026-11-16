@@ -2,7 +2,7 @@ extends SceneTree
 ## Ferramenta de preparo do Ice Warrior (ferramenta de arte, fora do jogo): lê o original, confere que é a fonte esperada, gera a paleta própria, o esqueleto e os pesos e grava a versão preparada em art_samples/ice_figure/ (FORA do Git). Sem janela:
 ## godot --headless --path <projeto> -s res://tools/visual/ice_figure/ice_prepare.gd
 ## Termina com código 1 e a mensagem se algo não bate (fonte diferente, tabela que não bate com as ilhas, paleta que não cabe).
-## OPÇÕES (6e; sem elas a saída é a de sempre), depois do `--`: `--damping` grava o campo `damping` com a tabela `ice_damping.json` (ou `--damping=<arquivo>`: um JSON osso -> fator de 0 a 1); `--contact` grava `ground_points`, os pontos de contato das botas medidos na malha (`ice_contact.gd`); `--meta=<nome>` grava o JSON com esse nome (a variante), no lugar de `ice_figure.json`. A variante B (só amortecimento) é `--damping=<tabela com os pés>`; a C (recomendada) é `--damping --contact`.
+## OPÇÕES (6e; sem elas a saída é a de sempre), depois do `--`: `--damping` grava o campo `damping` com a tabela `ice_damping.json` (ou `--damping=<arquivo>`: um JSON osso -> fator de 0 a 1); `--contact` grava `ground_points`, os pontos de contato das botas medidos na malha (`ice_contact.gd`); `--meta=<nome>` grava o JSON com esse nome (a variante), no lugar de `ice_figure.json`. A variante B (só amortecimento) é `--damping=<tabela com os pés>`; a C (recomendada) é `--damping --contact`. `--symmetric` (6h) grava `symmetric_reference` (`SYMMETRIC_PARTS`: coxa, canela, pé e base do pé), a referência simétrica das pernas que corrige o passo manco (o `Idle` da UAL tem uma perna à frente); a variante G (a corrigida) é `--damping --contact --symmetric`.
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")
 const Palette = preload("res://tools/visual/ice_figure/ice_palette.gd")
 const Skel = preload("res://tools/visual/ice_figure/ice_skeleton.gd")
@@ -11,6 +11,9 @@ const Writer = preload("res://tools/visual/ice_figure/ice_writer.gd")
 const Contact = preload("res://tools/visual/ice_figure/ice_contact.gd")
 const DAMPING_ARG: String = "--damping"
 const CONTACT_ARG: String = "--contact"
+const SYMMETRIC_ARG: String = "--symmetric"
+## Os prefixos dos pares de ossos `<parte>_l` e `<parte>_r` das pernas cuja referência `--symmetric` simetriza.
+const SYMMETRIC_PARTS: Array[String] = ["thigh", "calf", "foot", "ball"]
 const DAMPING_FILE: String = "res://tools/visual/ice_figure/ice_damping.json"
 
 
@@ -60,10 +63,16 @@ func _prepare() -> PackedStringArray:
 		presentation["damping"] = factors
 	if OS.get_cmdline_user_args().has(CONTACT_ARG):
 		presentation["ground_points"] = Contact.points_of(surfs, assigned, rig)
+	presentation.merge(_symmetric_field(OS.get_cmdline_user_args()))
 	errors = Writer.write(Writer.OUT_DIR, surfs, found, built, assigned, rig, source_sha, presentation, Writer.meta_file())
 	if errors.is_empty():
 		print("preparado em %s: %d superfícies, %d ilhas, %d ossos, paleta de %d cores (%d px)" % [Writer.OUT_DIR, surfs.size(), found.list.size(), bones, built.colors.size(), built.image.get_width()])
 	return errors
+
+
+## O campo `symmetric_reference` com as partes das pernas se `arguments` tem `--symmetric`; vazio (nada a gravar) se não.
+static func _symmetric_field(arguments: PackedStringArray) -> Dictionary:
+	return {"symmetric_reference": SYMMETRIC_PARTS} if arguments.has(SYMMETRIC_ARG) else {}
 
 
 ## O arquivo da tabela de amortecimento pedida por `--damping` ("" = não pedida; sem valor, a do repositório).

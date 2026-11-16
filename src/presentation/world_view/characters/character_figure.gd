@@ -2,7 +2,7 @@ class_name CharacterFigure
 extends RefCounted
 ## Figura de malha inteira (ART-12, entrega 6b; só apresentação): `build(catalog, id)` instancia a figura gravada (cena com um Node3D na raiz, o `Skeleton3D` de 65 ossos com os nomes da UAL como filho direto, e as `MeshInstance3D` com malha e `Skin`, mais o equipamento da 6d, uma malha sem pele filha de um `BoneAttachment3D` do esqueleto; SEM `AnimationPlayer`: o `build` monta o dele e rejeita a cena que já tenha um) e monta nela um `AnimationPlayer` com `idle` e `walk` (em laço, PARADO) pelo MESMO `CharacterRetarget` do montador, com as opções da entrega 6a vindas dos metadados: pose de bind, clipe de referência e trava de chão LIGADA. Só idle e walk, numa ÚNICA chamada de `library_for` com os clipes do catálogo FILTRADOS e as opções já inteiras (a trava vale para todos os clipes da chamada e o jog tem fase aérea). Devolve a raiz pronta: escala uniforme para o corpo de `body_m`, origem nos pés, sem girar (a cena gravada já nasce de frente para +Z). Qualquer falha (figura fora do catálogo, cena ou JSON ausente ou inválido, cena com `AnimationPlayer`, esqueleto sem os ossos do catálogo, malha sem `Skin`, pose de bind incompleta ou degenerada, retarget que falha) devolve null e deixa o motivo legível em `failure`, sem exceção e sem log PRÓPRIO: o chamador volta ao montador ou à cápsula (entrega 4 do contrato). O `CharacterAssembler` não muda. Contrato: docs/modules/presentation.md.
 ## CARREGADORES (opcionais): `new(scene_loader, text_reader)` trocam a leitura da cena e a do JSON, para os testes não tocarem o disco nem `user://` (AGENTS 4.16 e 9.4). `scene_loader(path: String) -> Node` devolve uma instância NOVA da cena, ou null se ela não existe (padrão: `CharacterSceneLoader.instantiate`, que NÃO é filtrado: se a cena existe mas está corrompida, o MOTOR registra erro de carga no log e o `build` só devolve null com o motivo); `text_reader(path: String) -> String` devolve o texto do JSON, ou "" se ele não existe (padrão: o arquivo do disco). Os caminhos vêm do catálogo, que só aceita `res://` sem `..`.
-## METADADOS (o JSON do caminho `meta`, gravado pela ferramenta da entrega 6c): `version` (1), `reference_clip` (a chave do clipe cujo quadro 0 é a pose da malha: `idle`), `body_m` (altura do corpo no jogo, m), `height_m` (altura da malha no arquivo, m; a escala é `body_m / height_m`) e `bind_pose` (osso -> 12 números FINITOS, os eixos x, y e z e a origem da transformação MUNDIAL do osso na pose da malha, em metros do arquivo, pés em y = 0; cada eixo com comprimento acima de `MIN_AXIS_LENGTH`), com todos os ossos do esqueleto, e dois campos OPCIONAIS da entrega 6e: `damping` (osso do esqueleto -> fator FINITO de 0 a 1, para `Options.damping`: o amortecimento por osso) e `ground_points` (osso do esqueleto -> lista de 1 a `MAX_GROUND_POINTS` pontos [x, y, z] finitos no espaço local do osso, medidos na malha, para `Options.ground_points`: o contato da bota na trava de chão); ausentes ou vazios = a figura sai IDÊNTICA à de antes, e presentes e inválidos = `build` devolve null com o motivo (os ossos inválidos entram num só problema, com a contagem e os primeiros nomes). O resto (`figure`, `credit`, `bones`, `palette`, `source`, hashes...) é proveniência e o `build` ignora.
+## METADADOS (o JSON do caminho `meta`, gravado pela ferramenta da entrega 6c): `version` (1), `reference_clip` (a chave do clipe cujo quadro 0 é a pose da malha: `idle`), `body_m` (altura do corpo no jogo, m), `height_m` (altura da malha no arquivo, m; a escala é `body_m / height_m`) e `bind_pose` (osso -> 12 números FINITOS, os eixos x, y e z e a origem da transformação MUNDIAL do osso na pose da malha, em metros do arquivo, pés em y = 0; cada eixo com comprimento acima de `MIN_AXIS_LENGTH`), com todos os ossos do esqueleto, e dois campos OPCIONAIS da entrega 6e: `damping` (osso do esqueleto -> fator FINITO de 0 a 1, para `Options.damping`: o amortecimento por osso) e `ground_points` (osso do esqueleto -> lista de 1 a `MAX_GROUND_POINTS` pontos [x, y, z] finitos no espaço local do osso, medidos na malha, para `Options.ground_points`: o contato da bota na trava de chão); e o da 6h, `symmetric_reference` (lista de até `MAX_SYMMETRIC_PARTS` prefixos de pares de ossos `<parte>_l` e `<parte>_r` do esqueleto, por exemplo ["thigh", "calf", "foot", "ball"], para `Options.symmetric_reference`: a pose de referência simétrica, que corrige o passo manco); ausentes ou vazios = a figura sai IDÊNTICA à de antes, e presentes e inválidos = `build` devolve null com o motivo (os ossos ou partes inválidos entram num só problema, com a contagem e os primeiros nomes). O resto (`figure`, `credit`, `bones`, `palette`, `source`, hashes...) é proveniência e o `build` ignora.
 
 const META_VERSION: int = 1
 ## A pose de bind de um osso: quatro vetores (os eixos x, y e z e a origem) de três componentes.
@@ -16,6 +16,8 @@ const MIN_DETERMINANT: float = 0.000001
 const LISTED_BONES: int = 5
 ## [HIP] O máximo de pontos de contato da figura INTEIRA, somados os ossos (na prática 11 por bota, 22 no Ice Warrior; cada ponto custa uma passada pela cadeia do osso a cada quadro da trava de chão: 65 ossos com 64 pontos cada levaram o `build` de 8 para 895 ms).
 const MAX_GROUND_POINTS: int = 64
+## [HIP] O máximo de partes da lista `symmetric_reference` (o esqueleto de 65 ossos tem 29 pares `<parte>_l` e `<parte>_r`; a do Ice Warrior lista 4).
+const MAX_SYMMETRIC_PARTS: int = 32
 ## [HIP] O maior módulo de um número de pose de bind ou de ponto de contato (a figura tem uns 1,5 m): acima disso o real de 32 bits do motor vira infinito ao converter e a trilha da pélvis sai NaN, mesmo com o número finito em precisão dupla.
 const MAX_COORDINATE: float = 1000.0
 
@@ -129,13 +131,14 @@ static func _read_meta(path: String, text: String, skeleton: Skeleton3D) -> Meta
 	return meta
 
 
-## As opções do retarget (6a): a pose de bind, o clipe de referência e a trava de chão ligada; com o amortecimento e os pontos de contato, se os metadados os trazem (6e).
+## As opções do retarget (6a): a pose de bind, o clipe de referência e a trava de chão ligada; com o amortecimento e os pontos de contato (6e) e a referência simétrica (6h), se os metadados os trazem.
 static func _options(reader: CharacterDataReader, meta: Dictionary, skeleton: Skeleton3D) -> CharacterRetarget.Options:
 	var options: CharacterRetarget.Options = CharacterRetarget.Options.new()
 	options.reference_key = reader.text(meta, "reference_clip", "")
 	options.bind_pose = _bind_pose(reader, meta, skeleton)
 	options.damping = _damping(reader, meta, skeleton)
 	options.ground_points = _ground_points(reader, meta, skeleton)
+	options.symmetric_reference = _symmetric_reference(reader, meta, skeleton)
 	options.ground_lock = true
 	return options
 
@@ -184,6 +187,23 @@ static func _points_of(value: Variant) -> PackedVector3Array:
 			return PackedVector3Array()
 		points.append(Vector3(point[0], point[1], point[2]))
 	return points
+
+
+## As partes cuja pose de referência é simetrizada (campo OPCIONAL `symmetric_reference`; ausente = []): lista de até `MAX_SYMMETRIC_PARTS` prefixos de pares de ossos `<parte>_l` e `<parte>_r` do esqueleto. Campo que não é lista, ou lista longa demais, vira um problema no leitor; os itens inválidos (que não são texto ou sem o par de ossos no esqueleto, como "" ou o nome inteiro de um osso) entram num só.
+static func _symmetric_reference(reader: CharacterDataReader, meta: Dictionary, skeleton: Skeleton3D) -> PackedStringArray:
+	var parts: PackedStringArray = PackedStringArray()
+	var invalid: PackedStringArray = PackedStringArray()
+	var listed: Variant = meta.get("symmetric_reference", [])  # Variant: fronteira com o JSON, conferido logo abaixo
+	if typeof(listed) != TYPE_ARRAY or (listed as Array).size() > MAX_SYMMETRIC_PARTS:
+		reader.fail("", "symmetric_reference", "esperada uma lista de até %d textos" % MAX_SYMMETRIC_PARTS)
+		return parts
+	for part: Variant in listed as Array:  # Variant: o item do JSON, conferido logo abaixo
+		if typeof(part) == TYPE_STRING and skeleton.find_bone(String(part) + CharacterRetarget.LEFT_SUFFIX) >= 0 and skeleton.find_bone(String(part) + CharacterRetarget.RIGHT_SUFFIX) >= 0:
+			parts.append(String(part))
+		else:
+			invalid.append(str(part))
+	_report(reader, "symmetric_reference", invalid, "o prefixo de um par de ossos <parte>_l e <parte>_r do esqueleto")
+	return parts
 
 
 ## O problema único de um campo opcional com ossos inválidos (a contagem e os primeiros nomes, para o motivo não crescer com o esqueleto).

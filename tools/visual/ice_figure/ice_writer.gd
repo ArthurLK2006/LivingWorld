@@ -1,6 +1,6 @@
 extends RefCounted
 ## Gravação da versão PREPARADA do Ice Warrior (ferramenta de arte). Tudo vai para art_samples/ice_figure/, FORA do Git, enquanto Arthur avalia; nada em assets/. Grava: `ice_figure.scn` (raiz, `Skeleton3D` com os 65 ossos no repouso em T e a pose de bind, um `MeshInstance3D` com a malha do CORPO (até 2 superfícies), a `Skin` com os binds e os materiais com a paleta própria em filtro NEAREST, e a ESPADA, de entrega 6d: um `MeshInstance3D` de 1 superfície, sem pele, filho de um `BoneAttachment3D` do osso da mão), `ice_palette.png`, `ice_figure.json` (altura, fator para 1,80 m, os 65 ossos, a pose de bind de cada osso, o clipe de referência e os SHA-256) e `PROVENIENCIA.txt` (título como fornecido, origem da paleta, crédito CC BY 4.0 e a lista das mudanças).
-## POR OPÇÃO (6e), o JSON leva também `damping` e `ground_points` (metadados de apresentação que `CharacterFigure` lê; a cena, a paleta e a malha NÃO mudam) e a proveniência ganha uma linha de mudança; sem a opção, o JSON, a paleta e a proveniência saem como antes. `meta_file()` escolhe o nome do JSON por `--meta=` (a VARIANTE, na mesma pasta).
+## POR OPÇÃO (6e e 6h), o JSON leva também `damping`, `ground_points` e `symmetric_reference` (metadados de apresentação que `CharacterFigure` lê; a cena, a paleta e a malha NÃO mudam) e a proveniência ganha uma linha de mudança (uma para os dois primeiros, outra para o último); sem a opção, o JSON, a paleta e a proveniência saem como antes. `meta_file()` escolhe o nome do JSON por `--meta=` (a VARIANTE, na mesma pasta).
 ## O esqueleto do `Rig` passa a pertencer à cena gravada e é LIBERADO aqui: não use o `Rig` depois de gravar.
 ## A pose gravada dos ossos é a de bind (a figura estática é a malha original); o REPOUSO (rest) é o T que o `CharacterRetarget` lê.
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")
@@ -36,6 +36,8 @@ const CHANGES: PackedStringArray = [
 ]
 ## A linha de mudança da proveniência só quando o JSON leva `damping` ou `ground_points`.
 const PRESENTATION_CHANGE: String = "metadados de apresentação no JSON da figura (damping: poses amortecidas por osso; ground_points: contato da bota, pontos medidos na malha e usados pela trava de chão): só mudam as poses, a malha NÃO foi editada"
+## A linha de mudança da proveniência só quando o JSON leva `symmetric_reference` (6h).
+const SYMMETRIC_CHANGE: String = "referência simétrica das pernas no JSON da figura (symmetric_reference: coxa, canela, pé e base do pé; o retarget simetriza a pose de referência dessas partes, para o passo não mancar): só mudam as poses das pernas, a malha NÃO foi editada"
 
 
 ## O nome do JSON de metadados escolhido por `--meta=` (só o nome do arquivo, na pasta da figura): a VARIANTE de uma figura, a mesma cena com outro `damping` ou `ground_points`; sem o argumento, o da figura.
@@ -64,7 +66,7 @@ static func build_scene(surfs: Array[Source.Surf], found: Source.IslandSet, buil
 	return _scene(_mesh(Source.subset(surfs, found, carried, false), built, materials, assigned), rig, null if gear.surfs.is_empty() else _mesh(gear, built, materials), carrier)
 
 
-## Grava a versão preparada em `dir` e devolve as mensagens de falha (vazio = gravou tudo). `presentation` (6e): os campos opcionais `damping` e `ground_points` já prontos, que entram no JSON de nome `meta_name` e na proveniência; vazio = a saída de sempre.
+## Grava a versão preparada em `dir` e devolve as mensagens de falha (vazio = gravou tudo). `presentation` (6e e 6h): os campos opcionais `damping`, `ground_points` e `symmetric_reference` já prontos, que entram no JSON de nome `meta_name` e na proveniência; vazio = a saída de sempre.
 static func write(dir: String, surfs: Array[Source.Surf], found: Source.IslandSet, built: Palette.Built, assigned: Weights.Assigned, rig: Skel.Rig, source_sha: String, presentation: Dictionary = {}, meta_name: String = DATA_FILE) -> PackedStringArray:
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir)) != OK:
 		rig.skeleton.free()
@@ -84,7 +86,7 @@ static func write(dir: String, surfs: Array[Source.Surf], found: Source.IslandSe
 	if ResourceSaver.save(scene, "%s/%s" % [dir, SCENE_FILE]) != OK:
 		errors.append("não consegui gravar %s" % SCENE_FILE)
 	errors.append_array(_save_text("%s/%s" % [dir, meta_name], JSON.stringify(data, "\t") + "\n"))
-	errors.append_array(_save_text("%s/%s%s.txt" % [dir, PROVENANCE_FILE.get_basename(), variant_suffix(meta_name)], provenance(source_sha, palette_sha, built, data["height_m"], not presentation.is_empty())))
+	errors.append_array(_save_text("%s/%s%s.txt" % [dir, PROVENANCE_FILE.get_basename(), variant_suffix(meta_name)], provenance(source_sha, palette_sha, built, data["height_m"], presentation.has("damping") or presentation.has("ground_points"), presentation.has("symmetric_reference"))))
 	return errors
 
 
@@ -97,8 +99,8 @@ static func transform_numbers(transform: Transform3D) -> Array[float]:
 	return numbers
 
 
-## O texto de proveniência: título como fornecido (TITLE, o `extras.title` do GLB), origem da paleta (método, script e SHA-256), crédito e licença CC BY 4.0, SHA-256 do original e a lista das mudanças, com PRESENTATION_CHANGE no fim se `presented` (o JSON leva `damping` ou `ground_points`).
-static func provenance(source_sha: String, palette_sha: String, built: Palette.Built, height_m: float, presented: bool = false) -> String:
+## O texto de proveniência: título como fornecido (TITLE, o `extras.title` do GLB), origem da paleta (método, script e SHA-256), crédito e licença CC BY 4.0, SHA-256 do original e a lista das mudanças, com PRESENTATION_CHANGE no fim se `presented` (o JSON leva `damping` ou `ground_points`) e SYMMETRIC_CHANGE depois se `symmetric` (o JSON leva `symmetric_reference`).
+static func provenance(source_sha: String, palette_sha: String, built: Palette.Built, height_m: float, presented: bool = false, symmetric: bool = false) -> String:
 	var lines: PackedStringArray = PackedStringArray([
 		"Ice Warrior, versão preparada. FORA do Git: avaliação técnica e visual privada (15/11/2026); não redistribuir nem publicar sem aceite expresso.",
 		CREDIT,
@@ -120,6 +122,8 @@ static func provenance(source_sha: String, palette_sha: String, built: Palette.B
 		lines.append("- " + change)
 	if presented:
 		lines.append("- " + PRESENTATION_CHANGE)
+	if symmetric:
+		lines.append("- " + SYMMETRIC_CHANGE)
 	return "\n".join(lines) + "\n"
 
 
