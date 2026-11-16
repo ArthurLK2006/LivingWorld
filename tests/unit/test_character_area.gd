@@ -20,7 +20,9 @@ const INVALID: Array = [
 	["npc_id repetido", HEAD + '{"npc_id": 1, "figure": "ice"}, {"npc_id": 1, "figure": "ice"}]}', "entries[1]", "npc_id"],
 	["npc_id negativo", HEAD + '{"npc_id": -1, "figure": "ice"}]}', "entries[0]", "npc_id"],
 	["npc_id fracionário", HEAD + '{"npc_id": 1.5, "figure": "ice"}]}', "entries[0]", "npc_id"],
-	["npc_id acima do máximo", HEAD + '{"npc_id": 1000001, "figure": "ice"}]}', "entries[0]", "npc_id"],
+	["npc_id zero (NO_ID)", HEAD + '{"npc_id": 0, "figure": "ice"}]}', "entries[0]", "npc_id"],
+	["npc_id acima do máximo (2^53)", HEAD + '{"npc_id": 9007199254740992, "figure": "ice"}]}', "entries[0]", "npc_id"],
+	["npc_id muito acima do máximo", HEAD + '{"npc_id": 100000000000000000000, "figure": "ice"}]}', "entries[0]", "npc_id"],
 	["npc_id que é texto", HEAD + '{"npc_id": "1", "figure": "ice"}]}', "entries[0]", "npc_id"],
 	["npc_id ausente", HEAD + '{"figure": "ice"}]}', "entries[0]", "npc_id"],
 	["figure vazio", HEAD + '{"npc_id": 1, "figure": ""}]}', "entries[0]", "figure"],
@@ -45,8 +47,12 @@ func _area(text: String) -> CharacterArea:
 	return CharacterArea.from_files([DEFAULT], _reader({DEFAULT: text}))
 
 
-func _load(files: Dictionary) -> CharacterArea:
+## `load_default` com o texto do arquivo local e o do padrão ("" = o arquivo não existe). O dicionário é montado em execução: se LOCAL_PATH fosse igual a DEFAULT_PATH, um literal com as duas chaves nem compilaria e o arquivo de teste sumiria em silêncio.
+func _load(local_text: String, default_text: String) -> CharacterArea:
 	_asked.clear()
+	var files: Dictionary = {}
+	files[LOCAL] = local_text
+	files[DEFAULT] = default_text
 	return CharacterArea.load_default(_reader(files))
 
 
@@ -72,6 +78,18 @@ func test_one_valid_entry_gives_that_npc_its_figure_and_nobody_else() -> void:
 		assert_eq(area.figure_for(other), "", "o NPC %d segue cápsula" % other)
 
 
+func test_the_npc_id_range_is_the_one_of_the_id_generator_and_both_edges_are_read_exactly() -> void:
+	assert_eq([CharacterArea.MIN_NPC_ID, CharacterArea.MAX_NPC_ID], [IdGenerator.FIRST_ID, IdGenerator.MAX_ID], "a faixa é a do IdGenerator")
+	assert_eq([IdGenerator.NO_ID, IdGenerator.FIRST_ID, IdGenerator.MAX_ID], [0, 1, 9007199254740991], "0 é 'sem ID', 1 o primeiro e 2^53 - 1 o último")
+	for npc_id: int in [1, 9007199254740991]:
+		var area: CharacterArea = _area(HEAD + '{"npc_id": %d, "figure": "ice"}]}' % npc_id)
+		assert_true(area.failure.is_empty() and area.figure_for(npc_id) == "ice", "%d é aceito e lido sem perda de exatidão: %s" % [npc_id, area.failure])
+
+
+func test_the_local_path_is_the_fixed_file_outside_the_git() -> void:
+	assert_eq(CharacterArea.LOCAL_PATH, "res://art_samples/character_area.json", "o literal do arquivo local")
+
+
 func test_a_missing_empty_or_blank_file_is_an_empty_area_without_failure() -> void:
 	for text: String in ["", "  \n\t "]:
 		var area: CharacterArea = _area(text)
@@ -94,21 +112,21 @@ func test_every_invalid_file_is_a_handled_failure_with_file_item_and_field_and_a
 
 
 func test_the_local_file_wins_over_the_default_and_the_default_is_not_even_read() -> void:
-	var area: CharacterArea = _load({LOCAL: NPC_7, DEFAULT: NPC_9})
+	var area: CharacterArea = _load(NPC_7, NPC_9)
 	assert_eq(area.figure_for(7), "ice", "vale o local")
 	assert_eq(area.figure_for(9), "", "e não o padrão")
 	assert_eq(" ".join(_asked), LOCAL, "só o local foi lido")
 
 
 func test_without_a_local_file_or_with_it_blank_the_default_applies() -> void:
-	for files: Dictionary in [{DEFAULT: NPC_9}, {LOCAL: "  \n", DEFAULT: NPC_9}]:
-		var area: CharacterArea = _load(files)
+	for local_text: String in ["", "  \n"]:
+		var area: CharacterArea = _load(local_text, NPC_9)
 		assert_eq(area.figure_for(9), "guarda", "vale o padrão")
 		assert_eq(" ".join(_asked), LOCAL + " " + DEFAULT, "perguntou ao local primeiro")
 
 
 func test_an_invalid_local_file_gives_an_empty_area_with_the_failure_and_does_not_fall_back_to_the_default() -> void:
-	var area: CharacterArea = _load({LOCAL: '{"version": 2, "entries": []}', DEFAULT: NPC_9})
+	var area: CharacterArea = _load('{"version": 2, "entries": []}', NPC_9)
 	assert_true(area.is_empty(), "área vazia")
 	assert_true(area.failure.begins_with(LOCAL) and area.failure.contains("campo 'version'"), "a falha é do local: " + area.failure)
 	assert_eq(area.figure_for(9), "", "o padrão NÃO vale em silêncio")

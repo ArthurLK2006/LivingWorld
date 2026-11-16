@@ -1,6 +1,6 @@
 class_name CharacterArea
 extends RefCounted
-## A área controlada das figuras inteiras no mundo (ART-12, entrega 7a; só apresentação): diz qual NPC (`npc_id`) usa qual figura (`figure`, um id da lista `figures` do character_catalog.json) no lugar da cápsula. Formato (JSON): `{"version": 1, "entries": [{"npc_id": <inteiro de 0 a MAX_NPC_ID>, "figure": "<id>"}]}`; no máximo `MAX_ENTRIES` entrada(s) [HIP]: a área é para UM NPC de teste, e mais que isso é falha tratada (para não virar adoção em massa). Sem entrada, sem arquivo ou com falha, TODO NPC segue cápsula, como hoje. DOIS arquivos: o dado `DEFAULT_PATH` (padrão VAZIO, no Git) e o LOCAL `LOCAL_PATH` (mesmo formato, FORA do Git). `from_files(paths)` lê o PRIMEIRO caminho da lista com texto não vazio e esse arquivo decide: o local, se existir, vale no lugar do padrão; se ele for inválido a área é VAZIA com `failure` e NÃO cai no padrão (a falha tem de aparecer, e cair em silêncio no padrão esconderia o erro de quem editou o local); arquivo ausente ou vazio (o leitor devolve "" nos dois casos) conta como ausente; nenhum com texto = área vazia, sem falha. Os caminhos são CONSTANTES do código, nunca vêm de dado (AGENTS 12.6): `from_files` ainda recusa, sem ler nada, o que não é res:// ou tem o segmento `..` (AGENTS 4.16; a mesma regra de `CharacterCatalog._stays_in_project`, que é privada). Qualquer problema vira UMA falha tratada no formato dos outros carregadores (arquivo | item | campo | mensagem; item `entries[i]` quando o problema é de uma entrada, sem item nos do arquivo inteiro: versão, campo da raiz e entradas demais) e a área devolvida fica VAZIA: nunca lança erro nem escreve no log. Só dados simples: nada do arquivo é executado. `text_reader(path: String) -> String` troca a leitura do disco ("" se o arquivo não existe), para os testes não tocarem o disco nem `user://` (AGENTS 4.16 e 9.4). Contrato: docs/modules/presentation.md.
+## A área controlada das figuras inteiras no mundo (ART-12, entrega 7a; só apresentação): diz qual NPC (`npc_id`) usa qual figura (`figure`, um id da lista `figures` do character_catalog.json) no lugar da cápsula. Formato (JSON): `{"version": 1, "entries": [{"npc_id": <inteiro de MIN_NPC_ID a MAX_NPC_ID, a faixa do IdGenerator>, "figure": "<id>"}]}`; no máximo `MAX_ENTRIES` entrada(s) [HIP]: a área é para UM NPC de teste, e mais que isso é falha tratada (para não virar adoção em massa). Sem entrada, sem arquivo ou com falha, TODO NPC segue cápsula, como hoje. DOIS arquivos: o dado `DEFAULT_PATH` (padrão VAZIO, no Git) e o LOCAL `LOCAL_PATH` (mesmo formato, FORA do Git). `from_files(paths)` lê o PRIMEIRO caminho da lista com texto não vazio e esse arquivo decide: o local, se existir, vale no lugar do padrão; se ele for inválido a área é VAZIA com `failure` e NÃO cai no padrão (a falha tem de aparecer, e cair em silêncio no padrão esconderia o erro de quem editou o local); arquivo ausente ou vazio (o leitor devolve "" nos dois casos) conta como ausente; nenhum com texto = área vazia, sem falha. Os caminhos são CONSTANTES do código, nunca vêm de dado (AGENTS 12.6): `from_files` ainda recusa, sem ler nada, o que não é res:// ou tem o segmento `..` (AGENTS 4.16; a mesma regra de `CharacterCatalog._stays_in_project`, que é privada). Qualquer problema vira UMA falha tratada no formato dos outros carregadores (arquivo | item | campo | mensagem; item `entries[i]` quando o problema é de uma entrada, sem item nos do arquivo inteiro: versão, campo da raiz e entradas demais) e a área devolvida fica VAZIA: nunca lança erro nem escreve no log. Só dados simples: nada do arquivo é executado. `text_reader(path: String) -> String` troca a leitura do disco ("" se o arquivo não existe), para os testes não tocarem o disco nem `user://` (AGENTS 4.16 e 9.4). Contrato: docs/modules/presentation.md.
 
 const DEFAULT_PATH: String = "res://data/presentation/character_area.json"
 const LOCAL_PATH: String = "res://art_samples/character_area.json"
@@ -11,8 +11,9 @@ const ENTRY_FIELDS: PackedStringArray = ["npc_id", "figure"]
 const PARENT_SEGMENT: String = ".."
 ## [HIP] O máximo de entradas: a área é para UM NPC de teste controlado.
 const MAX_ENTRIES: int = 1
-## [HIP] O maior `npc_id` aceito (o JSON entrega todo número como real: um limite baixo mantém a conversão para inteiro exata; é folga larga sobre a população do mundo).
-const MAX_NPC_ID: int = 1000000
+## A faixa de um `npc_id` é a dos IDs de entidade do repositório (`IdGenerator`, arquitetura 7.3): do primeiro ID real (1: o 0 é `NO_ID`, "sem ID", e nunca é um NPC) ao máximo, 2^53 - 1, o maior inteiro que o JSON (todo número é real) lê sem perder exatidão.
+const MIN_NPC_ID: int = IdGenerator.FIRST_ID
+const MAX_NPC_ID: int = IdGenerator.MAX_ID
 
 ## O motivo da falha ("" se os arquivos eram válidos ou não existiam).
 var failure: String = ""
@@ -75,7 +76,7 @@ func _read_entry(reader: CharacterDataReader, row: Dictionary, item: String) -> 
 		if not ENTRY_FIELDS.has(field):
 			reader.fail(item, field, "campo desconhecido na entrada")
 	var problems: int = reader.bundle.issues.size()
-	var npc_id: int = reader.whole(row, "npc_id", item, 0, MAX_NPC_ID)
+	var npc_id: int = reader.whole(row, "npc_id", item, MIN_NPC_ID, MAX_NPC_ID)
 	var figure: String = reader.text(row, "figure", item)
 	if reader.bundle.issues.size() > problems:
 		return
