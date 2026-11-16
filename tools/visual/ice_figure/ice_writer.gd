@@ -1,5 +1,6 @@
 extends RefCounted
-## Gravação da versão PREPARADA do Ice Warrior (ferramenta de arte). Tudo vai para art_samples/ice_figure/, FORA do Git, enquanto Arthur avalia; nada em assets/. Grava: `ice_figure.scn` (raiz, `Skeleton3D` com os 65 ossos no repouso em T e a pose de bind, e um `MeshInstance3D` com a malha de 2 superfícies, a `Skin` com os binds e os materiais com a paleta própria em filtro NEAREST), `ice_palette.png`, `ice_figure.json` (altura, fator para 1,80 m, os 65 ossos, a pose de bind de cada osso, o clipe de referência e os SHA-256) e `PROVENIENCIA.txt` (título como fornecido, origem da paleta, crédito CC BY 4.0 e a lista das mudanças).
+## Gravação da versão PREPARADA do Ice Warrior (ferramenta de arte). Tudo vai para art_samples/ice_figure/, FORA do Git, enquanto Arthur avalia; nada em assets/. Grava: `ice_figure.scn` (raiz, `Skeleton3D` com os 65 ossos no repouso em T e a pose de bind, um `MeshInstance3D` com a malha do CORPO (até 2 superfícies), a `Skin` com os binds e os materiais com a paleta própria em filtro NEAREST, e a ESPADA, de entrega 6d: um `MeshInstance3D` de 1 superfície, sem pele, filho de um `BoneAttachment3D` do osso da mão), `ice_palette.png`, `ice_figure.json` (altura, fator para 1,80 m, os 65 ossos, a pose de bind de cada osso, o clipe de referência e os SHA-256) e `PROVENIENCIA.txt` (título como fornecido, origem da paleta, crédito CC BY 4.0 e a lista das mudanças).
+## POR OPÇÃO (6e e 6h), o JSON leva também `damping`, `ground_points` e `symmetric_reference` (metadados de apresentação que `CharacterFigure` lê; a cena, a paleta e a malha NÃO mudam) e a proveniência ganha uma linha de mudança (uma para os dois primeiros, outra para o último); sem a opção, o JSON, a paleta e a proveniência saem como antes. `meta_file()` escolhe o nome do JSON por `--meta=` (a VARIANTE, na mesma pasta).
 ## O esqueleto do `Rig` passa a pertencer à cena gravada e é LIBERADO aqui: não use o `Rig` depois de gravar.
 ## A pose gravada dos ossos é a de bind (a figura estática é a malha original); o REPOUSO (rest) é o T que o `CharacterRetarget` lê.
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")
@@ -11,8 +12,11 @@ const SCENE_FILE: String = "ice_figure.scn"
 const PALETTE_FILE: String = "ice_palette.png"
 const DATA_FILE: String = "ice_figure.json"
 const PROVENANCE_FILE: String = "PROVENIENCIA.txt"
+const META_ARG: String = "--meta="
 const ROOT_NAME: String = "IceFigure"
 const MESH_NAME: String = "IceMesh"
+const ATTACHMENT_NODE: String = "SwordAttachment"
+const SWORD_NODE: String = "Sword"
 const BODY_M: float = 1.8
 const CULL_MARGIN_M: float = 0.5
 const REFERENCE_CLIP: String = "idle"
@@ -23,16 +27,47 @@ const LICENSE_URL: String = "http://creativecommons.org/licenses/by/4.0/"
 const CREDIT: String = "Ice Warrior: HaydzBooter, CC BY 4.0, com alterações"
 const TITLE: String = "IceWarrior - Lowpoly character"
 const CHANGES: PackedStringArray = [
-	"esqueleto de 65 ossos (mesmos nomes e hierarquia da UAL) e pesos de pele por regra; a malha NÃO foi editada (mesmas posições e índices; as normais só passam pela codificação de 16 bits do Godot, desvio de até 1,24e-4)",
+	"esqueleto de 65 ossos (mesmos nomes e hierarquia da UAL) e pesos de pele por regra; a malha NÃO foi editada (mesmas posições e índices; as normais só passam pela codificação de 16 bits do Godot, desvio de até 2,0e-4 contra o GLB original, 1,2e-4 contra a fonte já importada pelo Godot)",
 	"paleta própria, gerada por script a partir das cores por face do original, no lugar da textura de 1024 px",
-	"espada separada em equipamento próprio: prevista na entrega 6d, AINDA NÃO feita (nesta versão a espada é a ilha original, rígida na mão direita)",
+	"espada separada: a ilha da espada (ilha 3 do original, 456 triângulos) é uma malha PRÓPRIA de 1 superfície, filha de um BoneAttachment3D ligado ao osso da mão direita (hand_r), com a transformação local igual ao inverso da pose de bind da mão: na pose de bind ela fica exatamente onde estava e a geometria não muda (as posições e os índices do corpo e da espada, juntos, são os da fonte); a espada segue a mão como corpo rígido",
+	"pesos do casaco por lado: a ilha do casaco (ilha 1) pesa PREDOMINANTEMENTE na coxa do próprio lado (a esquerda segue a coxa esquerda e a direita, a direita), com uma rampa linear de 25 cm de cada lado do plano do meio (a 10 cm do meio cerca de 30% do peso ainda segue a outra coxa, e na borda do casaco cerca de 8%), e a aba da frente à direita (ilha 18) pesa só na coxa direita; só os pesos mudam, a malha não",
 	"escala para o corpo de 1,80 m (o fator está em ice_figure.json; a cena gravada fica na escala do arquivo)",
 	"escala e posição embutidas nos vértices: a transformação dos nós do arquivo importado (escala 0,1104 = 0,01 de cm para m vezes 11,04 do nó Cube_001, mais a rotação e a posição dos nós) é aplicada aos vértices, e a malha desce 5,44 mm na vertical para os pés ficarem em y = 0; a escala é uniforme, as proporções não mudam",
 ]
+## A linha de mudança da proveniência só quando o JSON leva `damping` ou `ground_points`.
+const PRESENTATION_CHANGE: String = "metadados de apresentação no JSON da figura (damping: poses amortecidas por osso; ground_points: contato da bota, pontos medidos na malha e usados pela trava de chão): só mudam as poses, a malha NÃO foi editada"
+## A linha de mudança da proveniência só quando o JSON leva `symmetric_reference` (6h).
+const SYMMETRIC_CHANGE: String = "referência simétrica das pernas no JSON da figura (symmetric_reference: coxa, canela, pé e base do pé; o retarget simetriza a pose de referência dessas partes, para o passo não mancar): só mudam as poses das pernas, a malha NÃO foi editada"
 
 
-## Grava a versão preparada em `dir` e devolve as mensagens de falha (vazio = gravou tudo).
-static func write(dir: String, surfs: Array[Source.Surf], built: Palette.Built, assigned: Weights.Assigned, rig: Skel.Rig, source_sha: String) -> PackedStringArray:
+## O nome do JSON de metadados escolhido por `--meta=` (só o nome do arquivo, na pasta da figura): a VARIANTE de uma figura, a mesma cena com outro `damping` ou `ground_points`; sem o argumento, o da figura.
+static func meta_file() -> String:
+	for argument: String in OS.get_cmdline_user_args():
+		if argument.begins_with(META_ARG):
+			return argument.trim_prefix(META_ARG).get_file()
+	return DATA_FILE
+
+
+## O sufixo de uma variante (`ice_figure_c.json` -> `_c`; o JSON da figura -> ""): o relatório do medidor e a PROVENIENCIA de uma variante levam este sufixo e não sobrescrevem os da figura.
+static func variant_suffix(meta_name: String) -> String:
+	var rest: String = meta_name.get_basename().trim_prefix(DATA_FILE.get_basename()).trim_prefix("_")
+	return "" if rest.is_empty() else "_" + rest
+
+
+## A cena preparada EM MEMÓRIA, sem gravar nada (os testes não tocam o disco): o corpo com pele e, se há equipamento, a espada presa ao osso da mão. O esqueleto do `Rig` passa a pertencer à cena e é LIBERADO aqui.
+static func build_scene(surfs: Array[Source.Surf], found: Source.IslandSet, built: Palette.Built, assigned: Weights.Assigned, rig: Skel.Rig) -> PackedScene:
+	var texture: ImageTexture = ImageTexture.create_from_image(built.image)
+	var materials: Array[Material] = []
+	for surf: Source.Surf in surfs:
+		materials.append(Palette.material_for(surf.material, texture))
+	var carried: PackedInt32Array = PackedInt32Array(assigned.equipment.keys())
+	var carrier: String = "" if assigned.equipment.is_empty() else assigned.equipment.values()[0]
+	var gear: Source.Subset = Source.subset(surfs, found, carried, true)
+	return _scene(_mesh(Source.subset(surfs, found, carried, false), built, materials, assigned), rig, null if gear.surfs.is_empty() else _mesh(gear, built, materials), carrier)
+
+
+## Grava a versão preparada em `dir` e devolve as mensagens de falha (vazio = gravou tudo). `presentation` (6e e 6h): os campos opcionais `damping`, `ground_points` e `symmetric_reference` já prontos, que entram no JSON de nome `meta_name` e na proveniência; vazio = a saída de sempre.
+static func write(dir: String, surfs: Array[Source.Surf], found: Source.IslandSet, built: Palette.Built, assigned: Weights.Assigned, rig: Skel.Rig, source_sha: String, presentation: Dictionary = {}, meta_name: String = DATA_FILE) -> PackedStringArray:
 	if DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(dir)) != OK:
 		rig.skeleton.free()
 		return PackedStringArray(["não consegui criar a pasta %s" % dir])
@@ -41,16 +76,17 @@ static func write(dir: String, surfs: Array[Source.Surf], built: Palette.Built, 
 	if built.image.save_png(png_path) != OK:
 		errors.append("não consegui gravar %s" % png_path)
 	var palette_sha: String = FileAccess.get_sha256(png_path)
-	var texture: ImageTexture = ImageTexture.create_from_image(built.image)
-	var materials: Array[Material] = []
-	for surf: Source.Surf in surfs:
-		materials.append(Palette.material_for(surf.material, texture))
 	var data: Dictionary = _data(surfs, built, rig, palette_sha, source_sha)
-	var scene: PackedScene = _scene(Source.mesh_of(surfs, built.uvs, materials, assigned.bones, assigned.weights), rig)
+	data.merge(presentation)
+	var carrier: String = "" if assigned.equipment.is_empty() else assigned.equipment.values()[0]
+	for bone_name: String in assigned.equipment.values():
+		if bone_name != carrier:
+			errors.append("o equipamento separado precisa de um só osso (%s e %s)" % [carrier, bone_name])
+	var scene: PackedScene = build_scene(surfs, found, built, assigned, rig)
 	if ResourceSaver.save(scene, "%s/%s" % [dir, SCENE_FILE]) != OK:
 		errors.append("não consegui gravar %s" % SCENE_FILE)
-	errors.append_array(_save_text("%s/%s" % [dir, DATA_FILE], JSON.stringify(data, "\t") + "\n"))
-	errors.append_array(_save_text("%s/%s" % [dir, PROVENANCE_FILE], provenance(source_sha, palette_sha, built, data["height_m"])))
+	errors.append_array(_save_text("%s/%s" % [dir, meta_name], JSON.stringify(data, "\t") + "\n"))
+	errors.append_array(_save_text("%s/%s%s.txt" % [dir, PROVENANCE_FILE.get_basename(), variant_suffix(meta_name)], provenance(source_sha, palette_sha, built, data["height_m"], presentation.has("damping") or presentation.has("ground_points"), presentation.has("symmetric_reference"))))
 	return errors
 
 
@@ -63,8 +99,8 @@ static func transform_numbers(transform: Transform3D) -> Array[float]:
 	return numbers
 
 
-## O texto de proveniência: título como fornecido (TITLE, o `extras.title` do GLB), origem da paleta (método, script e SHA-256), crédito e licença CC BY 4.0, SHA-256 do original e a lista das mudanças.
-static func provenance(source_sha: String, palette_sha: String, built: Palette.Built, height_m: float) -> String:
+## O texto de proveniência: título como fornecido (TITLE, o `extras.title` do GLB), origem da paleta (método, script e SHA-256), crédito e licença CC BY 4.0, SHA-256 do original e a lista das mudanças, com PRESENTATION_CHANGE no fim se `presented` (o JSON leva `damping` ou `ground_points`) e SYMMETRIC_CHANGE depois se `symmetric` (o JSON leva `symmetric_reference`).
+static func provenance(source_sha: String, palette_sha: String, built: Palette.Built, height_m: float, presented: bool = false, symmetric: bool = false) -> String:
 	var lines: PackedStringArray = PackedStringArray([
 		"Ice Warrior, versão preparada. FORA do Git: avaliação técnica e visual privada (15/11/2026); não redistribuir nem publicar sem aceite expresso.",
 		CREDIT,
@@ -84,10 +120,45 @@ static func provenance(source_sha: String, palette_sha: String, built: Palette.B
 	])
 	for change: String in CHANGES:
 		lines.append("- " + change)
+	if presented:
+		lines.append("- " + PRESENTATION_CHANGE)
+	if symmetric:
+		lines.append("- " + SYMMETRIC_CHANGE)
 	return "\n".join(lines) + "\n"
 
 
-static func _scene(mesh: ArrayMesh, rig: Skel.Rig) -> PackedScene:
+## A malha de um subconjunto, com os UVs da paleta e o material de cada superfície de origem; com `assigned`, também ossos e pesos (o corpo); sem ele, rígida (a espada).
+static func _mesh(part: Source.Subset, built: Palette.Built, materials: Array[Material], assigned: Weights.Assigned = null) -> ArrayMesh:
+	var picked: Array[Material] = []
+	for source: int in part.from_surface:
+		picked.append(materials[source])
+	var uvs: Array[PackedVector2Array] = []
+	uvs.assign(part.pick(built.uvs))
+	if assigned == null:
+		return Source.mesh_of(part.surfs, uvs, picked)
+	var bones: Array[PackedInt32Array] = []
+	bones.assign(part.pick(assigned.bones, Weights.SLOTS))
+	var weights: Array[PackedFloat32Array] = []
+	weights.assign(part.pick(assigned.weights, Weights.SLOTS))
+	return Source.mesh_of(part.surfs, uvs, picked, bones, weights)
+
+
+## A espada em malha PRÓPRIA (sem pele), filha de um `BoneAttachment3D` do osso que a segura; a transformação local é o inverso da pose de bind desse osso (a mesma conta da `Skin`): na pose de bind a espada fica exatamente onde estava na malha original e, com o osso em movimento, segue rígida a ele.
+static func _attach(root: Node3D, rig: Skel.Rig, sword: ArrayMesh, bone_name: String) -> void:
+	var carrier: BoneAttachment3D = BoneAttachment3D.new()
+	carrier.name = ATTACHMENT_NODE
+	carrier.bone_name = bone_name
+	rig.skeleton.add_child(carrier)
+	var blade: MeshInstance3D = MeshInstance3D.new()
+	blade.name = SWORD_NODE
+	blade.mesh = sword
+	blade.transform = rig.bind[rig.skeleton.find_bone(bone_name)].affine_inverse()
+	carrier.add_child(blade)
+	carrier.owner = root
+	blade.owner = root
+
+
+static func _scene(mesh: ArrayMesh, rig: Skel.Rig, sword: ArrayMesh, carrier: String) -> PackedScene:
 	var root: Node3D = Node3D.new()
 	root.name = ROOT_NAME
 	rig.skeleton.name = CharacterRetarget.SKELETON_NODE
@@ -105,6 +176,8 @@ static func _scene(mesh: ArrayMesh, rig: Skel.Rig) -> PackedScene:
 	holder.skeleton = NodePath("..")
 	rig.skeleton.owner = root
 	holder.owner = root
+	if sword != null:
+		_attach(root, rig, sword, carrier)
 	var scene: PackedScene = PackedScene.new()
 	scene.pack(root)
 	root.free()

@@ -280,21 +280,6 @@ Contrato **APROVADO por Arthur em 14/11/2026** (PR #33); todos os números são 
 
 Conta de exemplo da referência de 25%: 5 pães a 2500 bp valem `ceil_div(5 × 10 × 12500, 10000)` = 63 e só nascem com o `ask` do pão em 13 ou mais.
 
-## `labor_templates.json` (LW-107f3, formato **[PROPOSTA]**, aguarda o APROVADO de Arthur): os modelos do postador do trabalho avulso do jogador
-
-Arquivo **OPCIONAL** como `contract_templates.json` e **separado dele de propósito** (as colunas são outras, e o carregador e os testes da 107c1 não mudam): sem ele não há modelo e nada é postado. **Padrão do jogo: a tabela VAZIA (`[]`)**, pela mesma razão e com a mesma pendência da entrega (LW-107c3, `docs/backlog.md`): os modelos iniciais ficam em `data/economy/labor_templates.initial.json`, que o jogo NÃO lê. Cada linha é um modelo que o `LaborPoster` (`economy.md`, seção 8, "Trabalho avulso do jogador") usa, a cada hora cheia, para postar um `labor` cujo emissor é o MERCADO do povoado do local. Todos os números são [HIP]; os nomes de arquivo e de coluna são [PROPOSTA técnica].
-
-| Coluna | Tipo | Regra |
-|---|---|---|
-| `id` | `STRING` | por convenção `<local>_<gatilho>`; único |
-| `place_id` | `STRING` | id de um local `work` de `places.json` que é local de produção (`production_sites.json`) ou posto (`service_posts.json`); **um modelo por local** |
-| `trigger` | `STRING` | `standing` (fixo: sempre) ou `vacancy` (o local tem uma vaga aberta; "por falta") |
-| `minutes` | `INT` | 30 a 480 [HIP]; o turno inteiro (referência 240: 5 minutos reais a 1x) |
-| `deadline_hours` | `INT` | 1 a 168 [HIP]; o prazo é calculado como o da entrega (início da hora cheia + `deadline_hours` × 60; referência 24) |
-| `max_open` | `INT` | 1 a 3 [HIP]; no máximo tantos `labor` do modelo em `open` ou `accepted`, por mercado; é "do modelo" o `labor` cujo emissor é o mercado do povoado do local e cujo `place_id` é o do modelo |
-
-Sem coluna de recompensa: `reward = (wage_per_hour × minutes) ÷ 60`, arredondada para baixo, é a regra anti-exploração (`economy.md`, seção 8); o carregador recusa o modelo cujo `reward` dá menos de 1, além de `id` repetido, `place_id` desconhecido ou repetido, `trigger` fora do vocabulário e faixas (`ECON_DATA_INVALID` com arquivo, item e campo). Nenhum `FLOAT`. **Dados iniciais sugeridos [HIP]** (em `labor_templates.initial.json`; todas as receitas de hoje pagam 2 por hora; sem modelo `vacancy` de exemplo enquanto não se medir quantas vagas existem no começo do jogo real **[não medido]**): `a_work_01_standing`, `b_work_01_standing` e `c_work_01_standing` (o primeiro local de produção de cada povoado: `grow_grain`, `grow_grain` e `mine_ore`), todos com `minutes` 240, `deadline_hours` 24 e `max_open` 1, recompensa **8** cada, no máximo 8 retidos por mercado (cerca de 0,3% dos 3000 iniciais do tipo `market`).
-
 ## Distribuição das 4 cadeias pelos 3 povoados, com os locais `work` contados [PROPOSTA/HIP]
 
 Arthur decidiu o princípio (**nenhum povoado se baste sozinho**) e a criação dos ofícios `miner` e `shepherd` (DEC-142, aprovada em 10/11/2026); **a tabela é [PROPOSTA/HIP], sem DEC no registro da LW-087a, para ele aprovar**, com nomes genéricos (DEC-100). **Cada local de produção e cada posto ocupa um local `work` próprio.** Os números de capacidade e de população são os do `main`:

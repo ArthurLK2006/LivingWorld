@@ -2,11 +2,20 @@ extends SceneTree
 ## Ferramenta de preparo do Ice Warrior (ferramenta de arte, fora do jogo): lê o original, confere que é a fonte esperada, gera a paleta própria, o esqueleto e os pesos e grava a versão preparada em art_samples/ice_figure/ (FORA do Git). Sem janela:
 ## godot --headless --path <projeto> -s res://tools/visual/ice_figure/ice_prepare.gd
 ## Termina com código 1 e a mensagem se algo não bate (fonte diferente, tabela que não bate com as ilhas, paleta que não cabe).
+## OPÇÕES (6e; sem elas a saída é a de sempre), depois do `--`: `--damping` grava o campo `damping` com a tabela `ice_damping.json` (ou `--damping=<arquivo>`: um JSON osso -> fator de 0 a 1); `--contact` grava `ground_points`, os pontos de contato das botas medidos na malha (`ice_contact.gd`); `--meta=<nome>` grava o JSON com esse nome (a variante), no lugar de `ice_figure.json`. A variante B (só amortecimento) é `--damping=<tabela com os pés>`; a C (recomendada) é `--damping --contact`. `--symmetric` (6h) grava `symmetric_reference` (`SYMMETRIC_PARTS`: coxa, canela, pé e base do pé), a referência simétrica das pernas, para corrigir o passo manco (o `Idle` da UAL tem uma perna à frente); a variante G (a corrigida) é `--damping --contact --symmetric`. `--jog` (6j) grava `"jog": true`: a figura ganha também o clipe de corrida `jog` (a trava de chão SÓ DE PISO, montado pelo `CharacterFigure`); a variante final do Ice Warrior é `--damping --contact --symmetric --jog`.
 const Source = preload("res://tools/visual/ice_figure/ice_source.gd")
 const Palette = preload("res://tools/visual/ice_figure/ice_palette.gd")
 const Skel = preload("res://tools/visual/ice_figure/ice_skeleton.gd")
 const Weights = preload("res://tools/visual/ice_figure/ice_weights.gd")
 const Writer = preload("res://tools/visual/ice_figure/ice_writer.gd")
+const Contact = preload("res://tools/visual/ice_figure/ice_contact.gd")
+const DAMPING_ARG: String = "--damping"
+const CONTACT_ARG: String = "--contact"
+const SYMMETRIC_ARG: String = "--symmetric"
+const JOG_ARG: String = "--jog"
+## Os prefixos dos pares de ossos `<parte>_l` e `<parte>_r` das pernas cuja referência `--symmetric` simetriza.
+const SYMMETRIC_PARTS: Array[String] = ["thigh", "calf", "foot", "ball"]
+const DAMPING_FILE: String = "res://tools/visual/ice_figure/ice_damping.json"
 
 
 func _initialize() -> void:
@@ -43,7 +52,53 @@ func _prepare() -> PackedStringArray:
 		rig.skeleton.free()
 		return assigned.errors
 	var bones: int = rig.skeleton.get_bone_count()
-	errors = Writer.write(Writer.OUT_DIR, surfs, built, assigned, rig, source_sha)
+	var presentation: Dictionary = {}
+	var damping_path: String = _damping_path()
+	if not damping_path.is_empty():
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(damping_path))  # Variant: fronteira com o JSON, conferido em _damping_errors
+		var factors: Dictionary = parsed if typeof(parsed) == TYPE_DICTIONARY else {}
+		errors = _damping_errors(factors, rig)
+		if not errors.is_empty():
+			rig.skeleton.free()
+			return errors
+		presentation["damping"] = factors
+	if OS.get_cmdline_user_args().has(CONTACT_ARG):
+		presentation["ground_points"] = Contact.points_of(surfs, assigned, rig)
+	presentation.merge(_symmetric_field(OS.get_cmdline_user_args()))
+	presentation.merge(_jog_field(OS.get_cmdline_user_args()))
+	errors = Writer.write(Writer.OUT_DIR, surfs, found, built, assigned, rig, source_sha, presentation, Writer.meta_file())
 	if errors.is_empty():
 		print("preparado em %s: %d superfícies, %d ilhas, %d ossos, paleta de %d cores (%d px)" % [Writer.OUT_DIR, surfs.size(), found.list.size(), bones, built.colors.size(), built.image.get_width()])
+	return errors
+
+
+## O campo `symmetric_reference` com as partes das pernas se `arguments` tem `--symmetric`; vazio (nada a gravar) se não.
+static func _symmetric_field(arguments: PackedStringArray) -> Dictionary:
+	return {"symmetric_reference": SYMMETRIC_PARTS} if arguments.has(SYMMETRIC_ARG) else {}
+
+
+## O campo `jog` (6j) se `arguments` tem `--jog`; vazio (nada a gravar) se não.
+static func _jog_field(arguments: PackedStringArray) -> Dictionary:
+	return {"jog": true} if arguments.has(JOG_ARG) else {}
+
+
+## O arquivo da tabela de amortecimento pedida por `--damping` ("" = não pedida; sem valor, a do repositório).
+static func _damping_path() -> String:
+	for argument: String in OS.get_cmdline_user_args():
+		if argument == DAMPING_ARG:
+			return DAMPING_FILE
+		if argument.begins_with(DAMPING_ARG + "="):
+			return argument.trim_prefix(DAMPING_ARG + "=")
+	return ""
+
+
+## Os problemas da tabela osso -> fator: ausente, vazia ou malformada, osso que o esqueleto não tem e fator que não é número de 0 a 1.
+static func _damping_errors(table: Dictionary, rig: Skel.Rig) -> PackedStringArray:
+	var errors: PackedStringArray = PackedStringArray()
+	if table.is_empty():
+		errors.append("tabela de amortecimento ausente, vazia ou malformada")
+	for bone_name: String in table:
+		var factor: Variant = table[bone_name]  # Variant: fronteira com o JSON, conferido logo abaixo
+		if rig.skeleton.find_bone(bone_name) < 0 or typeof(factor) != TYPE_FLOAT or float(factor) < 0.0 or float(factor) > 1.0:
+			errors.append("amortecimento inválido: %s (esperado um osso do esqueleto com um fator de 0 a 1)" % bone_name)
 	return errors
