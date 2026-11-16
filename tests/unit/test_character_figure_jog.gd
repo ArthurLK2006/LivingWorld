@@ -259,6 +259,7 @@ func test_a_figure_with_jog_true_gets_the_jog_made_with_the_floor_only_lock_and_
 	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(root)
 	var options: CharacterRetarget.Options = CharacterFigure._read_meta(DIR + ID + ".json", _texts[DIR + ID + ".json"], skeleton).options
 	options.ground_floor_only = true
+	options.samples_per_second = CharacterFigure.JOG_SAMPLES_PER_SECOND
 	assert_true(_same(player.get_animation("jog"), _jog_of(skeleton, options)), "o jog da figura é o do retarget com as opções da figura e a trava só de piso")
 	options.ground_floor_only = false
 	assert_false(_same(player.get_animation("jog"), _jog_of(skeleton, options)), "e não o da trava de sempre")
@@ -274,6 +275,7 @@ func test_the_jog_of_a_figure_with_sunk_contacts_is_raised_like_the_floor_only_r
 	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(root)
 	var options: CharacterRetarget.Options = CharacterFigure._read_meta(DIR + ID + ".json", _texts[DIR + ID + ".json"], skeleton).options
 	options.ground_floor_only = true
+	options.samples_per_second = CharacterFigure.JOG_SAMPLES_PER_SECOND
 	var jog: Animation = _player_of(root).get_animation("jog")
 	assert_true(_same(jog, _jog_of(skeleton, options)), "o jog da figura é o do retarget com os contatos da figura e a trava só de piso")
 	options.ground_lock = false
@@ -311,5 +313,6 @@ func test_the_jog_call_uses_the_reference_clip_of_the_figure() -> void:
 	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(root)
 	var options: CharacterRetarget.Options = CharacterFigure._read_meta(DIR + ID + ".json", _texts[DIR + ID + ".json"], skeleton).options
 	options.ground_floor_only = true
+	options.samples_per_second = CharacterFigure.JOG_SAMPLES_PER_SECOND
 	var clips: Dictionary = {"walk": _catalog.animations()["walk"], "jog": _catalog.animations()["jog"]}
 	assert_true(_same(_player_of(root).get_animation("jog"), CharacterRetarget.library_for(skeleton, clips, options).get_animation("jog")), "o jog é montado com o clipe de referência da figura")
