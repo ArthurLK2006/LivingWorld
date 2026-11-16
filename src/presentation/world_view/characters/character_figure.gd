@@ -2,7 +2,7 @@ class_name CharacterFigure
 extends RefCounted
 ## Figura de malha inteira (ART-12, entrega 6b; só apresentação): `build(catalog, id)` instancia a figura gravada (cena com um Node3D na raiz, o `Skeleton3D` de 65 ossos com os nomes da UAL como filho direto, e as `MeshInstance3D` com malha e `Skin`, mais o equipamento da 6d, uma malha sem pele filha de um `BoneAttachment3D` do esqueleto; SEM `AnimationPlayer`: o `build` monta o dele e rejeita a cena que já tenha um) e monta nela um `AnimationPlayer` com `idle` e `walk` (em laço, PARADO) pelo MESMO `CharacterRetarget` do montador, com as opções da entrega 6a vindas dos metadados: pose de bind, clipe de referência e trava de chão LIGADA. Só idle e walk, numa ÚNICA chamada de `library_for` com os clipes do catálogo FILTRADOS e as opções já inteiras (a trava vale para todos os clipes da chamada e o jog tem fase aérea). Devolve a raiz pronta: escala uniforme para o corpo de `body_m`, origem nos pés, sem girar (a cena gravada já nasce de frente para +Z). Qualquer falha (figura fora do catálogo, cena ou JSON ausente ou inválido, cena com `AnimationPlayer`, esqueleto sem os ossos do catálogo, malha sem `Skin`, pose de bind incompleta ou degenerada, retarget que falha) devolve null e deixa o motivo legível em `failure`, sem exceção e sem log PRÓPRIO: o chamador volta ao montador ou à cápsula (entrega 4 do contrato). O `CharacterAssembler` não muda. Contrato: docs/modules/presentation.md.
 ## CARREGADORES (opcionais): `new(scene_loader, text_reader)` trocam a leitura da cena e a do JSON, para os testes não tocarem o disco nem `user://` (AGENTS 4.16 e 9.4). `scene_loader(path: String) -> Node` devolve uma instância NOVA da cena, ou null se ela não existe (padrão: `CharacterSceneLoader.instantiate`, que NÃO é filtrado: se a cena existe mas está corrompida, o MOTOR registra erro de carga no log e o `build` só devolve null com o motivo); `text_reader(path: String) -> String` devolve o texto do JSON, ou "" se ele não existe (padrão: o arquivo do disco). Os caminhos vêm do catálogo, que só aceita `res://` sem `..`.
-## METADADOS (o JSON do caminho `meta`, gravado pela ferramenta da entrega 6c): `version` (1), `reference_clip` (a chave do clipe cujo quadro 0 é a pose da malha: `idle`), `body_m` (altura do corpo no jogo, m), `height_m` (altura da malha no arquivo, m; a escala é `body_m / height_m`) e `bind_pose` (osso -> 12 números FINITOS, os eixos x, y e z e a origem da transformação MUNDIAL do osso na pose da malha, em metros do arquivo, pés em y = 0; cada eixo com comprimento acima de `MIN_AXIS_LENGTH`), com todos os ossos do esqueleto. O resto (`figure`, `credit`, `bones`, `palette`, `source`, hashes...) é proveniência e o `build` ignora.
+## METADADOS (o JSON do caminho `meta`, gravado pela ferramenta da entrega 6c): `version` (1), `reference_clip` (a chave do clipe cujo quadro 0 é a pose da malha: `idle`), `body_m` (altura do corpo no jogo, m), `height_m` (altura da malha no arquivo, m; a escala é `body_m / height_m`) e `bind_pose` (osso -> 12 números FINITOS, os eixos x, y e z e a origem da transformação MUNDIAL do osso na pose da malha, em metros do arquivo, pés em y = 0; cada eixo com comprimento acima de `MIN_AXIS_LENGTH`), com todos os ossos do esqueleto, e dois campos OPCIONAIS da entrega 6e: `damping` (osso do esqueleto -> fator FINITO de 0 a 1, para `Options.damping`: o amortecimento por osso) e `ground_points` (osso do esqueleto -> lista de 1 a `MAX_GROUND_POINTS` pontos [x, y, z] finitos no espaço local do osso, medidos na malha, para `Options.ground_points`: o contato da bota na trava de chão); ausentes ou vazios = a figura sai IDÊNTICA à de antes, e presentes e inválidos = `build` devolve null com o motivo (os ossos inválidos entram num só problema, com a contagem e os primeiros nomes). O resto (`figure`, `credit`, `bones`, `palette`, `source`, hashes...) é proveniência e o `build` ignora.
 
 const META_VERSION: int = 1
 ## A pose de bind de um osso: quatro vetores (os eixos x, y e z e a origem) de três componentes.
@@ -14,6 +14,10 @@ const MIN_AXIS_LENGTH: float = 0.001
 const MIN_DETERMINANT: float = 0.000001
 ## [HIP] Quantos ossos o motivo de uma pose de bind inválida nomeia (o resto entra só na contagem).
 const LISTED_BONES: int = 5
+## [HIP] O máximo de pontos de contato da figura INTEIRA, somados os ossos (na prática 11 por bota, 22 no Ice Warrior; cada ponto custa uma passada pela cadeia do osso a cada quadro da trava de chão: 65 ossos com 64 pontos cada levaram o `build` de 8 para 895 ms).
+const MAX_GROUND_POINTS: int = 64
+## [HIP] O maior módulo de um número de pose de bind ou de ponto de contato (a figura tem uns 1,5 m): acima disso o real de 32 bits do motor vira infinito ao converter e a trilha da pélvis sai NaN, mesmo com o número finito em precisão dupla.
+const MAX_COORDINATE: float = 1000.0
 
 ## O motivo da última falha de `build` ("" se deu certo).
 var failure: String = ""
@@ -125,13 +129,67 @@ static func _read_meta(path: String, text: String, skeleton: Skeleton3D) -> Meta
 	return meta
 
 
-## As opções do retarget (6a): a pose de bind, o clipe de referência e a trava de chão ligada.
+## As opções do retarget (6a): a pose de bind, o clipe de referência e a trava de chão ligada; com o amortecimento e os pontos de contato, se os metadados os trazem (6e).
 static func _options(reader: CharacterDataReader, meta: Dictionary, skeleton: Skeleton3D) -> CharacterRetarget.Options:
 	var options: CharacterRetarget.Options = CharacterRetarget.Options.new()
 	options.reference_key = reader.text(meta, "reference_clip", "")
 	options.bind_pose = _bind_pose(reader, meta, skeleton)
+	options.damping = _damping(reader, meta, skeleton)
+	options.ground_points = _ground_points(reader, meta, skeleton)
 	options.ground_lock = true
 	return options
+
+
+## O amortecimento por osso (campo OPCIONAL `damping`; ausente = {}): osso do esqueleto -> fator finito de 0 a 1; os ossos inválidos (fora do esqueleto, ou fator que não é número de 0 a 1) viram UM só problema no leitor.
+static func _damping(reader: CharacterDataReader, meta: Dictionary, skeleton: Skeleton3D) -> Dictionary[String, float]:
+	var damping: Dictionary[String, float] = {}
+	var invalid: PackedStringArray = PackedStringArray()
+	var factors: Dictionary = reader.object(meta, "damping", "") if meta.has("damping") else {}
+	for bone_name: String in factors:
+		var factor: Variant = factors[bone_name]  # Variant: fronteira com o JSON, conferido logo abaixo
+		if skeleton.find_bone(bone_name) >= 0 and typeof(factor) == TYPE_FLOAT and float(factor) >= 0.0 and float(factor) <= 1.0:
+			damping[bone_name] = float(factor)
+		else:
+			invalid.append(bone_name)
+	_report(reader, "damping", invalid, "um osso do esqueleto com um fator de 0 a 1")
+	return damping
+
+
+## Os contatos da trava de chão (campo OPCIONAL `ground_points`; ausente = {}): osso do esqueleto -> pontos [x, y, z] no espaço local do osso; os ossos inválidos (fora do esqueleto, ou lista que não serve a `_points_of`) viram UM só problema no leitor.
+static func _ground_points(reader: CharacterDataReader, meta: Dictionary, skeleton: Skeleton3D) -> Dictionary[String, PackedVector3Array]:
+	var points: Dictionary[String, PackedVector3Array] = {}
+	var invalid: PackedStringArray = PackedStringArray()
+	var table: Dictionary = reader.object(meta, "ground_points", "") if meta.has("ground_points") else {}
+	var total: int = 0
+	for bone_name: String in table:
+		var found: PackedVector3Array = _points_of(table[bone_name])
+		if skeleton.find_bone(bone_name) >= 0 and not found.is_empty():
+			points[bone_name] = found
+			total += found.size()
+		else:
+			invalid.append(bone_name)
+	_report(reader, "ground_points", invalid, "um osso do esqueleto com pontos [x, y, z] finitos")
+	if total > MAX_GROUND_POINTS:
+		reader.fail("", "ground_points", "pontos demais: %d (no máximo %d no total)" % [total, MAX_GROUND_POINTS])
+	return points
+
+
+## Os pontos de uma lista do JSON: de 1 a `MAX_GROUND_POINTS`, cada um com 3 reais finitos; vazio se a lista não serve. `value` é Variant porque vem do JSON; o tipo é conferido aqui.
+static func _points_of(value: Variant) -> PackedVector3Array:
+	var points: PackedVector3Array = PackedVector3Array()
+	if typeof(value) != TYPE_ARRAY or (value as Array).size() > MAX_GROUND_POINTS:
+		return points
+	for point: Variant in value as Array:  # Variant: o ponto do JSON, conferido por _is_numbers
+		if not _is_numbers(point, VECTOR_SIZE):
+			return PackedVector3Array()
+		points.append(Vector3(point[0], point[1], point[2]))
+	return points
+
+
+## O problema único de um campo opcional com ossos inválidos (a contagem e os primeiros nomes, para o motivo não crescer com o esqueleto).
+static func _report(reader: CharacterDataReader, field: String, invalid: PackedStringArray, expected: String) -> void:
+	if not invalid.is_empty():
+		reader.fail("", field, "ossos inválidos: %d (esperado %s); os primeiros: %s" % [invalid.size(), expected, ", ".join(invalid.slice(0, LISTED_BONES))])
 
 
 ## osso -> transformação mundial da pose de bind, de TODOS os ossos do esqueleto; os ossos sem uma pose válida viram UM só problema no leitor (a contagem e os primeiros nomes, para o motivo não crescer com o esqueleto).
@@ -153,16 +211,23 @@ static func _bind_pose(reader: CharacterDataReader, meta: Dictionary, skeleton: 
 
 ## Os 12 números de uma pose: uma lista com 12 reais finitos e os três eixos da base com comprimento acima de `MIN_AXIS_LENGTH` e independentes (determinante acima de `MIN_DETERMINANT`: uma base singular faria o motor registrar erro). `value` é Variant porque vem do JSON; o tipo é conferido aqui.
 static func _is_pose(value: Variant) -> bool:
-	if typeof(value) != TYPE_ARRAY or (value as Array).size() != POSE_NUMBERS:
+	if not _is_numbers(value, POSE_NUMBERS):
 		return false
-	for number: Variant in value as Array:
-		if typeof(number) != TYPE_FLOAT or not is_finite(float(number)):
-			return false
 	var basis: Basis = _transform_of(value as Array).basis
 	for axis: Vector3 in [basis.x, basis.y, basis.z]:
 		if axis.length() <= MIN_AXIS_LENGTH:
 			return false
 	return absf(basis.determinant()) > MIN_DETERMINANT
+
+
+## Uma lista com `count` reais finitos e de módulo até `MAX_COORDINATE`. `value` é Variant porque vem do JSON; o tipo é conferido aqui.
+static func _is_numbers(value: Variant, count: int) -> bool:
+	if typeof(value) != TYPE_ARRAY or (value as Array).size() != count:
+		return false
+	for number: Variant in value as Array:
+		if typeof(number) != TYPE_FLOAT or not is_finite(float(number)) or absf(float(number)) > MAX_COORDINATE:
+			return false
+	return true
 
 
 ## Os 12 números (eixos x, y, z e origem) viram a transformação.
