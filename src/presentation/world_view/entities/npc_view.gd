@@ -3,6 +3,7 @@ extends Node3D
 ## Corpo provisório de um NPC em S0 (LW-072b): uma cápsula azul-acinzentada com um "nariz" que mostra a frente (-Z local, como no `look_at`).
 ## A origem fica nos pés, como no `PlayerBody`. SÓ VISUAL: sem colisão, sem física e sem regra de jogo. Parado fica imóvel; andando quica na
 ## vertical e se inclina um pouco para a frente. Não conhece o `npc`: guarda só o ID do NPC a que está ligado. Contrato: docs/modules/presentation.md.
+## FIGURA INTEIRA (ART-12, 7b-1): `attach_figure` põe uma figura montada (`CharacterFigure.build`) no lugar da cápsula, como filha do corpo e não da parte que balança; com figura a cápsula fica escondida e sem quique nem inclinação, e `set_walking` e `set_speed` escolhem o clipe (idle, walk ou jog) e a escala pelo `CharacterLocomotion`; `clear_figure` (que o `detach` chama) solta e libera a figura. Quem monta a figura e a entrega ao corpo é a 7b-2; aqui o corpo só a recebe, e sem figura ele é a cápsula de sempre.
 
 ## Cápsula [HIP] (m): a mesma do jogador, com poucos segmentos (até 50 corpos na tela; estilo low-poly).
 const CAPSULE_RADIUS_M: float = 0.4
@@ -23,6 +24,12 @@ const VISUAL_NAME: String = "Visual"
 const CAPSULE_NAME: String = "Capsule"
 const NOSE_NAME: String = "Nose"
 const HALF: float = 0.5
+## Giro da figura (rad): a figura gravada olha para +Z e o nariz da cápsula (a frente do corpo, como no `look_at`) para -Z, então ela entra virada meia-volta.
+const FIGURE_YAW_RAD: float = PI
+## Escala de reprodução do clipe que não tem escala própria (idle e walk sem velocidade conhecida): o passo na velocidade em que foi gravado.
+const NEUTRAL_PLAY_SCALE: float = 1.0
+## `custom_blend` negativo do `AnimationPlayer.play`: vale a mistura padrão da biblioteca da figura.
+const DEFAULT_BLEND: float = -1.0
 
 ## NPC a que o corpo está ligado (IdGenerator.NO_ID = livre, esperando no pool).
 var npc_id: int = IdGenerator.NO_ID
@@ -31,6 +38,14 @@ var npc_id: int = IdGenerator.NO_ID
 var _visual: Node3D
 var _is_walking: bool = false
 var _bounce_phase: float = 0.0
+## Velocidade do corpo (m/s) que o motorista informa por `set_speed`; só a figura a usa; 0 = desconhecida.
+var _speed_mps: float = 0.0
+## A figura inteira (null = a cápsula), o `AnimationPlayer` filho direto dela (null = a figura não anima), as velocidades dela (lidas UMA vez, ao receber a figura) e o último clipe e escala que mandamos tocar ("" = nenhum ainda).
+var _figure: Node3D
+var _figure_player: AnimationPlayer
+var _figure_speeds: Dictionary[String, float] = {}
+var _played_clip: String = ""
+var _played_scale: float = NEUTRAL_PLAY_SCALE
 
 
 func _init() -> void:
@@ -51,7 +66,7 @@ func _init() -> void:
 
 ## A Godot liga o `_process` sozinha quando o nó entra na árvore (o script tem `_process`); o corpo só processa andando.
 func _ready() -> void:
-	set_process(_is_walking)
+	set_process(_capsule_bounces())
 
 
 ## Liga o corpo ao NPC, parado, olhando para -Z, com os pés em `ground_position` (metros, mundo), e o mostra.
@@ -63,31 +78,67 @@ func attach(new_npc_id: int, ground_position: Vector3) -> void:
 	visible = true
 
 
-## Solta o NPC: o corpo some e fica livre para o pool.
+## Solta o NPC: o corpo some e fica livre para o pool. O corpo reciclado NÃO herda a figura nem a velocidade (todo `give_back` do pool passa por aqui).
 func detach() -> void:
+	clear_figure()
 	set_walking(false)
 	npc_id = IdGenerator.NO_ID
 	visible = false
 
 
-## Liga ou desliga o andar. Parar devolve o corpo à posição de pé (sem quique nem inclinação).
+## Liga ou desliga o andar. Parar devolve o corpo à posição de pé (sem quique nem inclinação). Com figura, também troca o clipe (parado = idle).
 func set_walking(walking: bool) -> void:
 	if walking == _is_walking:
 		return
 	_is_walking = walking
-	_bounce_phase = 0.0
-	_visual.position = Vector3.ZERO
-	_visual.rotation = Vector3(-deg_to_rad(WALK_TILT_DEGREES), 0.0, 0.0) if walking else Vector3.ZERO
-	set_process(walking)
+	_apply_capsule_pose()
+	_apply_figure_clip()
 
 
 func is_walking() -> bool:
 	return _is_walking
 
 
-## Avança o quique em `delta` segundos. Parado não faz nada. O quique nunca afunda o corpo no chão: vai de 0 até WALK_BOUNCE_HEIGHT_M.
+## Põe `figure` (a raiz de `CharacterFigure.build`, SOLTA: sem pai; senão erro visível e nada muda) no lugar da cápsula e passa a ser dona dela. A figura vira filha do CORPO, e não de `_visual`, que se inclina e quica; a escala é a do `build` e fica como está. Lê UMA vez as velocidades dela (`CharacterFigure.locomotion_of`) e acha o `AnimationPlayer` filho direto; figura SEM player aparece mas não anima. Se já havia figura, a antiga é solta e liberada (nunca há duas). Começa conforme o estado do corpo (parado = idle).
+func attach_figure(figure: Node3D) -> void:
+	if figure == null or figure.get_parent() != null:
+		push_error("NpcView.attach_figure: a figura deve existir e chegar solta (sem pai); o corpo é quem passa a ser o dono dela.")
+		return
+	_drop_figure()
+	_figure = figure
+	_figure.rotation.y = FIGURE_YAW_RAD
+	add_child(_figure)
+	_figure_speeds = CharacterFigure.locomotion_of(_figure)
+	var players: Array[Node] = _figure.find_children("*", "AnimationPlayer", false, false)
+	_figure_player = players[0] as AnimationPlayer if not players.is_empty() else null
+	_apply_capsule_pose()
+	_apply_figure_clip()
+
+
+## Solta a figura do corpo NA HORA (`remove_child`: sai da lista de filhos) e a libera (`queue_free` se estava na árvore; `free` se não estava); a cápsula volta. Zera a velocidade do corpo, a tabela de velocidades, o player e o clipe lembrado. Sem figura só zera a velocidade (nada visível muda).
+func clear_figure() -> void:
+	_speed_mps = 0.0
+	_drop_figure()
+
+
+func has_figure() -> bool:
+	return is_instance_valid(_figure)
+
+
+## A velocidade do corpo (m/s), informada pelo motorista (a cápsula não a usa). Com figura e andando, reaplica o clipe e a escala: a velocidade que a tabela da figura cobre vira walk ou jog (`CharacterLocomotion.pick`).
+func set_speed(new_speed_mps: float) -> void:
+	_speed_mps = new_speed_mps
+	_apply_figure_clip()
+
+
+## A velocidade guardada por `set_speed` (0 = desconhecida), para os testes do motorista.
+func speed_mps() -> float:
+	return _speed_mps
+
+
+## Avança o quique em `delta` segundos. Parado, ou com figura (que se anima sozinha), não faz nada. O quique nunca afunda o corpo no chão: vai de 0 até WALK_BOUNCE_HEIGHT_M.
 func advance_animation(delta: float) -> void:
-	if not _is_walking:
+	if not _capsule_bounces():
 		return
 	_bounce_phase = fmod(_bounce_phase + delta * WALK_BOUNCES_PER_SECOND * PI, PI)
 	_visual.position.y = sin(_bounce_phase) * WALK_BOUNCE_HEIGHT_M
@@ -95,6 +146,59 @@ func advance_animation(delta: float) -> void:
 
 func _process(delta: float) -> void:
 	advance_animation(delta)
+
+
+## Só a cápsula quica e se inclina, e só andando: com figura ela fica escondida e parada.
+func _capsule_bounces() -> bool:
+	return _is_walking and not has_figure()
+
+
+## Põe a cápsula conforme o estado: escondida se há figura; de pé, ou inclinada e quicando se anda sem figura. O `_process` só liga quando ela quica.
+func _apply_capsule_pose() -> void:
+	var bounces: bool = _capsule_bounces()
+	_bounce_phase = 0.0
+	_visual.visible = not has_figure()
+	_visual.position = Vector3.ZERO
+	_visual.rotation = Vector3(-deg_to_rad(WALK_TILT_DEGREES), 0.0, 0.0) if bounces else Vector3.ZERO
+	set_process(bounces)
+
+
+## Tira a figura (se houver) e esquece o que era dela; a cápsula volta ao estado do corpo. Sem figura não faz nada. A cápsula escondida é o sinal de que havia figura, mesmo uma que alguém liberou por fora (o corpo reciclado não pode ficar invisível).
+func _drop_figure() -> void:
+	if has_figure():
+		var was_in_tree: bool = _figure.is_inside_tree()
+		remove_child(_figure)
+		if was_in_tree:
+			_figure.queue_free()
+		else:
+			_figure.free()
+	_figure = null
+	_figure_player = null
+	_figure_speeds.clear()
+	_played_clip = ""
+	if not _visual.visible:
+		_apply_capsule_pose()
+
+
+## O clipe e a escala da figura para o estado do corpo: parado = idle (escala 1); andando com velocidade conhecida (finita e maior que 0) = o que o `CharacterLocomotion.pick` devolve; andando sem ela = walk na escala 1 (como a cápsula). Só manda tocar quando o clipe OU a escala mudam (`is_equal_approx`): repetir o mesmo pedido não reinicia o passo. Clipe que o player não tem (figura incompleta) fica como está, sem erro por quadro.
+func _apply_figure_clip() -> void:
+	if not is_instance_valid(_figure_player):
+		return
+	var clip: String = CharacterLocomotion.IDLE
+	var play_scale: float = NEUTRAL_PLAY_SCALE
+	if _is_walking:
+		clip = CharacterLocomotion.WALK
+		if is_finite(_speed_mps) and _speed_mps > 0.0:
+			var choice: CharacterLocomotion.Pick = CharacterLocomotion.pick(_speed_mps, _figure_speeds)
+			clip = choice.clip
+			play_scale = choice.scale
+	if clip == _played_clip and is_equal_approx(play_scale, _played_scale):
+		return
+	if not _figure_player.has_animation(StringName(clip)):
+		return
+	_figure_player.play(StringName(clip), DEFAULT_BLEND, play_scale)
+	_played_clip = clip
+	_played_scale = play_scale
 
 
 static func _new_part(part_name: String, mesh: PrimitiveMesh, color: Color, at: Vector3) -> MeshInstance3D:
