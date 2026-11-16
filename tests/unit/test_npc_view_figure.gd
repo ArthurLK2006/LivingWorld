@@ -225,6 +225,7 @@ func test_the_clip_and_the_scale_follow_the_body_speed_when_walking_and_a_stoppe
 	view.set_speed(4.0)
 	_assert_playing(player, "idle", 1.0, "Parado manda: a velocidade guardada não faz o corpo andar")
 	view.set_walking(true)
+	_assert_playing(player, "jog", 4.0 / 4.1, "Ao começar a andar, a velocidade guardada ANTES (4 m/s) já vale: a ordem das chamadas do motorista não é fixa")
 	for row: Array in TABLE:
 		var speed: float = row[0]
 		view.set_speed(speed)
