@@ -5,7 +5,8 @@ extends RefCounted
 ## de hoje do bem naquele mercado vezes a quantidade (regra (b): comprar no emissor e entregar no mesmo mercado nunca dá lucro NA HORA DE POSTAR). Funções estáticas sobre o `EconomyState`, sem sorteio e sem estado próprio: o "já existe" sai do
 ## `ContractBook`, que já é salvo. O contrato já postado não é cancelado quando o gatilho deixa de valer. Recusa do livro (por exemplo, mercado sem fundos) ou regra (b) violada: não posta, NÃO gasta ID e tenta de novo na hora seguinte, em silêncio.
 ## O aceite não ganha restrição nova. O prazo conta do INÍCIO da hora cheia da publicação (`agora - agora % 60`), não do minuto em que o evento horário é processado (60, 63 ou 60 com passos de 1, 7 ou 60 minutos): o prazo e o hash do mundo
-## ficam iguais com passos de 1, 7 e 60 minutos (passo que cobre várias horas: pendência LW-107c3, docs/backlog.md; decisão de Arthur de 15/11/2026). Sem modelo (o padrão do jogo, por ora) sai na hora, sem tocar em nada.
+## ficam iguais com passos de 1, 7 e 60 minutos (decisão de Arthur de 15/11/2026). LW-107c3: num passo que cobre várias horas o `EconomyModule.tick` passa a CADA hora atrasada o relógio da PRÓPRIA hora (`hora x 60`), então o mesmo vale para 180 ou 720 minutos
+## (aqui o `agora % 60` já é 0 e fica só como defesa de quem chamar com outro minuto). Sem modelo (o padrão do jogo, por ora) sai na hora, sem tocar em nada.
 
 
 ## A conferência da hora (`now` é o minuto de simulação): depois das vagas, um contrato vencido nesta hora já abriu espaço para o próximo.

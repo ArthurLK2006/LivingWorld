@@ -81,6 +81,8 @@ func on_new_game(_world_seed: int) -> void:
 
 
 ## A CADA passo, antes das horas cheias: as chegadas das caravanas (LW-098d2; a chegada é por minuto, e com o livro vazio isto sai na hora). Depois, a cada hora cheia que passa: se ela vira um dia, o fim do dia (mercados, depois locais de produção) vem primeiro; depois a hora de produção. Os eventos saem.
+## LW-107c3: cada hora é processada com o relógio DAQUELA hora (`hora x 60`), não com o do fim do passo: num passo que cobre várias horas (cadência de 180 minutos, por exemplo) as horas atrasadas dão o mesmo prazo, as mesmas ofertas, o mesmo vencimento e o mesmo hash dos contratos do postador que passos de 1, 7 ou 60 minutos (`test_contract_poster_long_step.gd`). Com passos de 1 minuto os dois relógios são o mesmo.
+## NÃO garantido, pendente e anterior a esta correção: `check_arrivals` roda no início do passo, então com cadência maior que 1 minuto a venda de uma chegada de caravana pode vir ANTES da hora ou do fechamento do dia do mesmo passo e mudar o estado e o hash (o jogo real roda a 1 minuto e não é afetado); só o carimbo `time` dos eventos das horas atrasadas (o `EventBus` o grava com o relógio do fim do passo) fica fora do estado e do hash.
 func tick(_elapsed_minutes: int) -> void:
 	if _state.markets == null or _clock == null:
 		return
@@ -90,7 +92,7 @@ func tick(_elapsed_minutes: int) -> void:
 		_last_hour += 1
 		if _last_hour % SimClock.HOURS_PER_DAY == 0:
 			EconomyRuntime.close_day(_state, _events)
-		EconomyRuntime.run_production_hour(_state, _events, _ids, _clock.total_minutes())
+		EconomyRuntime.run_production_hour(_state, _events, _ids, _last_hour * SimClock.MINUTES_PER_HOUR)
 
 
 ## Sem dono e sem movimento: bloco vazio (nada entra no hash além da presença do módulo).
