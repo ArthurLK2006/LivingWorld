@@ -44,8 +44,8 @@ static func check_arrivals(state: EconomyState, world: WorldModule, events: Even
 			events.publish(arrived)
 
 
-## A hora da folha: primeiro os postos de serviço, pela conta do mercado (passo 0), depois os locais de produção os contratos que venceram (`now` é o minuto atual), as vagas (a conferência de quem falta nos locais de trabalho) e, por fim, o postador de
-## contratos de entrega (LW-107c2): um contrato vencido nesta hora já abre espaço para o próximo.
+## A hora da folha: primeiro os postos de serviço, pela conta do mercado (passo 0), depois os locais de produção os contratos que venceram (`now` é o minuto da hora cheia que está sendo processada, `hora x 60`: LW-107c3, num passo que cobre várias horas cada hora atrasada
+## traz o minuto da PRÓPRIA hora), as vagas (a conferência de quem falta nos locais de trabalho) e, por fim, o postador de contratos de entrega (LW-107c2): um contrato vencido nesta hora já abre espaço para o próximo.
 static func run_production_hour(state: EconomyState, events: EventBus, ids: IdGenerator, now: int) -> void:
 	if state.posts != null:
 		for event: SimEvent in state.posts.hour_step():
