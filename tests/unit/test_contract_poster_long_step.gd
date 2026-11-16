@@ -17,8 +17,8 @@ const FLOUR_HOURS: int = 7
 const GRAIN_HOURS: int = 72
 const SHORTAGE_HOUR: int = 240
 const CHAIN_HOURS: int = 5
-## Prazo FORA da hora cheia (a hora 2 está em 120 e a hora 3 em 180): o primeiro `expire` com o relógio de uma hora cheia que o alcança é o da hora 3.
-const API_DEADLINE: int = 125
+## Prazo FORA da hora cheia, UM minuto depois dela (a hora 2 está em 120 e a hora 3 em 180): o primeiro `expire` com o relógio de uma hora cheia que o alcança é o da hora 3, e um relógio da hora adiantado em 1, 2 ou 3 minutos já o venceria na hora 2.
+const API_DEADLINE: int = 121
 const API_REWARD: int = 20
 const LOT: int = 5
 
@@ -137,14 +137,14 @@ func test_a_contract_expires_in_the_first_whole_hour_that_reaches_its_deadline_a
 	var expected: Array = [[API_DEADLINE, ContractBook.STATE_EXPIRED]]
 	for index: int in replacements:
 		expected.append([(expiry_hour + CHAIN_HOURS * (index + 1)) * MINUTES_PER_HOUR, ContractBook.STATE_EXPIRED if index < replacements - 1 else ContractBook.STATE_OPEN])
-	assert_eq([expected.size(), expected.slice(0, 3)], [18, [[125, ContractBook.STATE_EXPIRED], [480, ContractBook.STATE_EXPIRED], [780, ContractBook.STATE_EXPIRED]]], "A conta do esperado, em números soltos: o de prazo 125 vence na hora 3; o 1º repostado sai ali (prazo 480) e vence na hora 8, que posta o de prazo 780.")
+	assert_eq([expected.size(), expected.slice(0, 3)], [18, [[121, ContractBook.STATE_EXPIRED], [480, ContractBook.STATE_EXPIRED], [780, ContractBook.STATE_EXPIRED]]], "A conta do esperado, em números soltos: o de prazo 121 vence na hora 3; o 1º repostado sai ali (prazo 480) e vence na hora 8, que posta o de prazo 780.")
 	for step: int in STEPS:
 		var run: Dictionary = _run(step, _chain_template(), CHAIN_MINUTES, _post_by_api)
-		assert_eq(_deadlines_of_a(run), expected, "Passo de %d minutos: o contrato de prazo 125 vence na hora 3 (e não na primeira hora do passo) e cada repostado leva o prazo da hora em que saiu, cinco horas depois." % step)
+		assert_eq(_deadlines_of_a(run), expected, "Passo de %d minutos: o contrato de prazo 121 vence na hora 3 (e não na hora 2 nem na primeira hora do passo) e cada repostado leva o prazo da hora em que saiu, cinco horas depois." % step)
 		var failed_by_a: int = 0
 		for failure: Array in run["failures"]:
 			failed_by_a += 1 if failure[1] == run["market_a"] else 0
-		assert_eq(failed_by_a, replacements, "Passo de %d minutos: um `ContractFailed` por vencimento do mercado A (o de prazo 125 e os repostados, menos o último)." % step)
+		assert_eq(failed_by_a, replacements, "Passo de %d minutos: um `ContractFailed` por vencimento do mercado A (o de prazo 121 e os repostados, menos o último)." % step)
 
 
 func test_each_delayed_hour_of_one_long_tick_posts_with_the_deadline_of_its_own_hour() -> void:
