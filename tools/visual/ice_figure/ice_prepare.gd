@@ -43,7 +43,7 @@ func _prepare() -> PackedStringArray:
 		rig.skeleton.free()
 		return assigned.errors
 	var bones: int = rig.skeleton.get_bone_count()
-	errors = Writer.write(Writer.OUT_DIR, surfs, built, assigned, rig, source_sha)
+	errors = Writer.write(Writer.OUT_DIR, surfs, found, built, assigned, rig, source_sha)
 	if errors.is_empty():
 		print("preparado em %s: %d superfícies, %d ilhas, %d ossos, paleta de %d cores (%d px)" % [Writer.OUT_DIR, surfs.size(), found.list.size(), bones, built.colors.size(), built.image.get_width()])
 	return errors

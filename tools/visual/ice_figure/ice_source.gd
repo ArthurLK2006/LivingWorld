@@ -43,6 +43,25 @@ class IslandSet:
 	var of_vertex: PackedInt32Array = PackedInt32Array()
 
 
+## Um subconjunto da malha (os triângulos das ilhas pedidas, ou os das outras) em superfícies novas e COMPACTAS: só os vértices usados, na ordem da fonte, e os índices renumerados; a superfície que fica sem triângulo some. Os valores dos vértices (posição, normal) são os da fonte, sem mudança; `from_surface[i]` e `from_vertex[i][v]` dizem a superfície e o vértice de origem, para levar junto os valores que a fonte não guarda (UVs da paleta, ossos, pesos) por `pick`.
+class Subset:
+	extends RefCounted
+	var surfs: Array[Surf] = []
+	var from_surface: PackedInt32Array = PackedInt32Array()
+	var from_vertex: Array[PackedInt32Array] = []
+
+	## Os valores de `all` (uma lista por superfície da FONTE, `stride` valores por vértice) que cabem a este subconjunto, uma lista por superfície dele. `Variant` porque o mesmo seletor serve a UVs, ossos e pesos (Packed*Array de tipos diferentes).
+	func pick(all: Array, stride: int = 1) -> Array:
+		var out: Array = []
+		for index: int in surfs.size():
+			var values: Variant = all[from_surface[index]]
+			var kept: Variant = values.slice(0, 0)
+			for vertex: int in from_vertex[index]:
+				kept.append_array(values.slice(vertex * stride, vertex * stride + stride))
+			out.append(kept)
+		return out
+
+
 ## União por conjuntos disjuntos; a raiz é sempre o menor índice do conjunto.
 class Dsu:
 	extends RefCounted
@@ -126,6 +145,43 @@ static func islands(surfs: Array[Surf]) -> IslandSet:
 			dsu.union(surf.offset + surf.indices[first], surf.offset + surf.indices[first + 1])
 			dsu.union(surf.offset + surf.indices[first], surf.offset + surf.indices[first + 2])
 	return _collect(surfs, dsu, total)
+
+
+## Os triângulos das ilhas `ids` (`inside`) ou os das outras (`not inside`); um triângulo é da ilha do seu primeiro vértice (as ilhas não dividem vértice). Sem `ids`, `inside` falso devolve a malha inteira.
+static func subset(surfs: Array[Surf], found: IslandSet, ids: PackedInt32Array, inside: bool) -> Subset:
+	var out: Subset = Subset.new()
+	for number: int in surfs.size():
+		var surf: Surf = surfs[number]
+		var chosen: PackedByteArray = PackedByteArray()
+		chosen.resize(surf.triangles())
+		var used: PackedByteArray = PackedByteArray()
+		used.resize(surf.positions.size())
+		for tri: int in chosen.size():
+			if ids.has(found.of_vertex[surf.offset + surf.indices[tri * TRI]]) == inside:
+				chosen[tri] = 1
+				for corner: int in TRI:
+					used[surf.indices[tri * TRI + corner]] = 1
+		var part: Surf = Surf.new()
+		part.name = surf.name
+		part.material = surf.material
+		var origin: PackedInt32Array = PackedInt32Array()
+		var renumbered: PackedInt32Array = PackedInt32Array()
+		renumbered.resize(used.size())
+		for vertex: int in used.size():
+			if used[vertex] == 1:
+				renumbered[vertex] = origin.size()
+				origin.append(vertex)
+				part.positions.append(surf.positions[vertex])
+				part.normals.append(surf.normals[vertex])
+		for tri: int in chosen.size():
+			if chosen[tri] == 1:
+				for corner: int in TRI:
+					part.indices.append(renumbered[surf.indices[tri * TRI + corner]])
+		if not part.indices.is_empty():
+			out.surfs.append(part)
+			out.from_surface.append(number)
+			out.from_vertex.append(origin)
+	return out
 
 
 ## Confere a fonte contra o esperado; devolve as mensagens de falha (vazio = é a fonte esperada). Sem superfícies (original presente mas não importado) é uma falha só, com o remédio.
