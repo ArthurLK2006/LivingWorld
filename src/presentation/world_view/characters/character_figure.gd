@@ -1,8 +1,8 @@
 class_name CharacterFigure
 extends RefCounted
-## Figura de malha inteira (ART-12, entrega 6b; só apresentação): `build(catalog, id)` instancia a figura gravada (cena com um Node3D na raiz, o `Skeleton3D` de 65 ossos com os nomes da UAL como filho direto, e as `MeshInstance3D` com malha e `Skin`, mais o equipamento da 6d, uma malha sem pele filha de um `BoneAttachment3D` do esqueleto; SEM `AnimationPlayer`: o `build` monta o dele e rejeita a cena que já tenha um) e monta nela um `AnimationPlayer` com `idle` e `walk` (em laço, PARADO) pelo MESMO `CharacterRetarget` do montador, com as opções da entrega 6a vindas dos metadados: pose de bind, clipe de referência e trava de chão LIGADA. Só idle e walk, numa ÚNICA chamada de `library_for` com os clipes do catálogo FILTRADOS e as opções já inteiras (a trava vale para todos os clipes da chamada e o jog tem fase aérea). Devolve a raiz pronta: escala uniforme para o corpo de `body_m`, origem nos pés, sem girar (a cena gravada já nasce de frente para +Z). Qualquer falha (figura fora do catálogo, cena ou JSON ausente ou inválido, cena com `AnimationPlayer`, esqueleto sem os ossos do catálogo, malha sem `Skin`, pose de bind incompleta ou degenerada, retarget que falha) devolve null e deixa o motivo legível em `failure`, sem exceção e sem log PRÓPRIO: o chamador volta ao montador ou à cápsula (entrega 4 do contrato). O `CharacterAssembler` não muda. Contrato: docs/modules/presentation.md.
+## Figura de malha inteira (ART-12, entrega 6b; só apresentação): `build(catalog, id)` instancia a figura gravada (cena com um Node3D na raiz, o `Skeleton3D` de 65 ossos com os nomes da UAL como filho direto, e as `MeshInstance3D` com malha e `Skin`, mais o equipamento da 6d, uma malha sem pele filha de um `BoneAttachment3D` do esqueleto; SEM `AnimationPlayer`: o `build` monta o dele e rejeita a cena que já tenha um) e monta nela um `AnimationPlayer` com `idle` e `walk` (em laço, PARADO) pelo MESMO `CharacterRetarget` do montador, com as opções da entrega 6a vindas dos metadados: pose de bind, clipe de referência e trava de chão LIGADA. Só idle e walk, numa ÚNICA chamada de `library_for` com os clipes do catálogo FILTRADOS e as opções já inteiras (a trava vale para todos os clipes da chamada e o jog tem fase aérea), mais o `jog`, quando pedido, numa chamada própria (campo OPCIONAL `jog` dos metadados, 6j): os clipes {o de referência, `jog`}, as mesmas opções e a trava SÓ DE PISO (`Options.ground_floor_only`: a pélvis só sobe e a fase aérea fica); só o `jog` dessa chamada entra no `AnimationPlayer`. Devolve a raiz pronta: escala uniforme para o corpo de `body_m`, origem nos pés, sem girar (a cena gravada já nasce de frente para +Z). Qualquer falha (figura fora do catálogo, cena ou JSON ausente ou inválido, cena com `AnimationPlayer`, esqueleto sem os ossos do catálogo, malha sem `Skin`, pose de bind incompleta ou degenerada, retarget que falha) devolve null e deixa o motivo legível em `failure`, sem exceção e sem log PRÓPRIO: o chamador volta ao montador ou à cápsula (entrega 4 do contrato). O `CharacterAssembler` não muda. Contrato: docs/modules/presentation.md.
 ## CARREGADORES (opcionais): `new(scene_loader, text_reader)` trocam a leitura da cena e a do JSON, para os testes não tocarem o disco nem `user://` (AGENTS 4.16 e 9.4). `scene_loader(path: String) -> Node` devolve uma instância NOVA da cena, ou null se ela não existe (padrão: `CharacterSceneLoader.instantiate`, que NÃO é filtrado: se a cena existe mas está corrompida, o MOTOR registra erro de carga no log e o `build` só devolve null com o motivo); `text_reader(path: String) -> String` devolve o texto do JSON, ou "" se ele não existe (padrão: o arquivo do disco). Os caminhos vêm do catálogo, que só aceita `res://` sem `..`.
-## METADADOS (o JSON do caminho `meta`, gravado pela ferramenta da entrega 6c): `version` (1), `reference_clip` (a chave do clipe cujo quadro 0 é a pose da malha: `idle`), `body_m` (altura do corpo no jogo, m), `height_m` (altura da malha no arquivo, m; a escala é `body_m / height_m`) e `bind_pose` (osso -> 12 números FINITOS, os eixos x, y e z e a origem da transformação MUNDIAL do osso na pose da malha, em metros do arquivo, pés em y = 0; cada eixo com comprimento acima de `MIN_AXIS_LENGTH`), com todos os ossos do esqueleto, e dois campos OPCIONAIS da entrega 6e: `damping` (osso do esqueleto -> fator FINITO de 0 a 1, para `Options.damping`: o amortecimento por osso) e `ground_points` (osso do esqueleto -> lista de 1 a `MAX_GROUND_POINTS` pontos [x, y, z] finitos no espaço local do osso, medidos na malha, para `Options.ground_points`: o contato da bota na trava de chão); e o da 6h, `symmetric_reference` (lista de até `MAX_SYMMETRIC_PARTS` prefixos de pares de ossos `<parte>_l` e `<parte>_r` do esqueleto, por exemplo ["thigh", "calf", "foot", "ball"], para `Options.symmetric_reference`: a pose de referência simétrica, para corrigir o passo manco); ausentes ou vazios = a figura sai IDÊNTICA à de antes, e presentes e inválidos = `build` devolve null com o motivo (os ossos ou partes inválidos entram num só problema, com a contagem e os primeiros nomes). O resto (`figure`, `credit`, `bones`, `palette`, `source`, hashes...) é proveniência e o `build` ignora.
+## METADADOS (o JSON do caminho `meta`, gravado pela ferramenta da entrega 6c): `version` (1), `reference_clip` (a chave do clipe cujo quadro 0 é a pose da malha: `idle`), `body_m` (altura do corpo no jogo, m), `height_m` (altura da malha no arquivo, m; a escala é `body_m / height_m`) e `bind_pose` (osso -> 12 números FINITOS, os eixos x, y e z e a origem da transformação MUNDIAL do osso na pose da malha, em metros do arquivo, pés em y = 0; cada eixo com comprimento acima de `MIN_AXIS_LENGTH`), com todos os ossos do esqueleto, e dois campos OPCIONAIS da entrega 6e: `damping` (osso do esqueleto -> fator FINITO de 0 a 1, para `Options.damping`: o amortecimento por osso) e `ground_points` (osso do esqueleto -> lista de 1 a `MAX_GROUND_POINTS` pontos [x, y, z] finitos no espaço local do osso, medidos na malha, para `Options.ground_points`: o contato da bota na trava de chão); e o da 6h, `symmetric_reference` (lista de até `MAX_SYMMETRIC_PARTS` prefixos de pares de ossos `<parte>_l` e `<parte>_r` do esqueleto, por exemplo ["thigh", "calf", "foot", "ball"], para `Options.symmetric_reference`: a pose de referência simétrica, para corrigir o passo manco); ausentes ou vazios = a figura sai IDÊNTICA à de antes, e presentes e inválidos = `build` devolve null com o motivo (os ossos ou partes inválidos entram num só problema, com a contagem e os primeiros nomes). E o da 6j, `jog` (booleano: ausente ou `false` = a figura sai IDÊNTICA, só `idle` e `walk`; `true` = ganha também o clipe `jog`, em laço e parado, montado como no cabeçalho; outro tipo, ou catálogo sem a animação `jog` = `build` devolve null com o motivo). O resto (`figure`, `credit`, `bones`, `palette`, `source`, hashes...) é proveniência e o `build` ignora.
 
 const META_VERSION: int = 1
 ## A pose de bind de um osso: quatro vetores (os eixos x, y e z e a origem) de três componentes.
@@ -18,6 +18,8 @@ const LISTED_BONES: int = 5
 const MAX_GROUND_POINTS: int = 64
 ## [HIP] O máximo de partes da lista `symmetric_reference` (o esqueleto de 65 ossos tem 29 pares `<parte>_l` e `<parte>_r`; a do Ice Warrior lista 4).
 const MAX_SYMMETRIC_PARTS: int = 32
+## A chave da animação de corrida no catálogo e na biblioteca da figura (campo `jog`, 6j).
+const JOG_KEY: String = "jog"
 ## [HIP] O maior módulo de um número de pose de bind ou de ponto de contato (a figura tem uns 1,5 m): acima disso o real de 32 bits do motor vira infinito ao converter e a trilha da pélvis sai NaN, mesmo com o número finito em precisão dupla.
 const MAX_COORDINATE: float = 1000.0
 
@@ -79,11 +81,27 @@ func _assemble(root: Node3D, meta_path: String, catalog: CharacterCatalog) -> St
 	var library: AnimationLibrary = CharacterRetarget.library_for(skeleton, clips, meta.options)
 	if library == null:
 		return "o retarget falhou: o clipe de referência '%s' deve ser idle ou walk e os arquivos de animação precisam existir" % meta.options.reference_key
+	if meta.jog:
+		var jog: Animation = _jog_clip(skeleton, catalog, meta.options)
+		if jog == null:
+			return "o campo jog pede o clipe '%s', que o catálogo não tem ou o retarget não conseguiu montar" % JOG_KEY
+		library.add_animation(StringName(JOG_KEY), jog)
 	var player: AnimationPlayer = AnimationPlayer.new()
 	root.add_child(player)
 	player.add_animation_library("", library)
 	root.scale = Vector3.ONE * meta.factor
 	return ""
+
+
+## O clipe `jog` (6j) retargetado numa chamada PRÓPRIA de `library_for`: os clipes {o de referência, `jog`} do catálogo e as mesmas opções, com a trava SÓ DE PISO ligada em `options` (o jog tem fase aérea; a trava de sempre a apagaria; o chamador não usa mais as opções). Só o `jog` interessa. Null se o catálogo não tem o clipe ou o retarget falha.
+static func _jog_clip(skeleton: Skeleton3D, catalog: CharacterCatalog, options: CharacterRetarget.Options) -> Animation:
+	var animations: Dictionary = catalog.animations()
+	if not animations.has(JOG_KEY):
+		return null
+	var clips: Dictionary = {options.reference_key: animations[options.reference_key], JOG_KEY: animations[JOG_KEY]}
+	options.ground_floor_only = true
+	var library: AnimationLibrary = CharacterRetarget.library_for(skeleton, clips, options)
+	return library.get_animation(StringName(JOG_KEY)) if library != null else null
 
 
 ## O motivo de a cena não servir ("" se serve): sem `AnimationPlayer` (o `build` monta o dele), com o `Skeleton3D` filho direto da raiz com os ossos do catálogo e malha com `Skin` que o sirva.
@@ -125,6 +143,7 @@ static func _read_meta(path: String, text: String, skeleton: Skeleton3D) -> Meta
 	if reader.bundle.is_valid():
 		reader.whole(data, "version", "", META_VERSION, META_VERSION)
 		meta.options = _options(reader, data, skeleton)
+		meta.jog = _wants_jog(reader, data)
 		meta.factor = _scale_of(reader, data)
 	if not reader.bundle.is_valid():
 		meta.problem = "os metadados são inválidos: " + reader.bundle.describe_issues()
@@ -206,6 +225,15 @@ static func _symmetric_reference(reader: CharacterDataReader, meta: Dictionary, 
 	return parts
 
 
+## Se a figura pede o clipe `jog` (campo OPCIONAL `jog`; ausente = false): um booleano; de outro tipo vira um problema no leitor.
+static func _wants_jog(reader: CharacterDataReader, meta: Dictionary) -> bool:
+	var value: Variant = meta.get("jog", false)  # Variant: fronteira com o JSON, conferido logo abaixo
+	if typeof(value) != TYPE_BOOL:
+		reader.fail("", "jog", "esperado verdadeiro ou falso")
+		return false
+	return bool(value)
+
+
 ## O problema único de um campo opcional com ossos inválidos (a contagem e os primeiros nomes, para o motivo não crescer com o esqueleto).
 static func _report(reader: CharacterDataReader, field: String, invalid: PackedStringArray, expected: String) -> void:
 	if not invalid.is_empty():
@@ -273,10 +301,11 @@ static func _metric(reader: CharacterDataReader, meta: Dictionary, field: String
 	return float(value)
 
 
-## O que se lê dos metadados: as opções do retarget, a escala uniforme e o problema (vazio = tudo certo).
+## O que se lê dos metadados: as opções do retarget, a escala uniforme, se a figura pede o `jog` (6j) e o problema (vazio = tudo certo).
 class Meta:
 	extends RefCounted
 
 	var options: CharacterRetarget.Options = null
 	var factor: float = 1.0
+	var jog: bool = false
 	var problem: String = ""
