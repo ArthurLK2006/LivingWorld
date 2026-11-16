@@ -6,6 +6,7 @@ extends RefCounted
 ## Conclusão (parte c): `labor` pelo turno de trabalho registrado no local (`work_shift`; "um trabalho, um pagamento": recusado se o trabalhador já é atribuído àquele local) e `delivery` pela entrega dos bens ao destino (`deliver`); a custódia paga o
 ## aceitante (`contract_payout`) e o estado vira `completed`. Prazo (parte d): `expire` vence, na hora seguinte, o contrato aberto ou aceito cujo prazo passou: a custódia volta ao emissor (`contract_refund`) e o estado vira `expired`; emissor FECHADO (morreu): a custódia vai para a conta do MERCADO do povoado
 ## do contrato (`ContractRefundMarket`; mesmo motivo, sem queimar nada), e fica retida na conta do contrato só se o povoado é desconhecido [LIM]. `deadline` é um minuto de simulação (0 = sem prazo, só para a vaga). Nunca sorteia nem olha o relógio: quem chama passa o `now`.
+## Abandono (LW-107f1): `abandon` encerra o `delivery` aceito, antes do prazo, devolvendo a custódia pela mesma rotina do `expire`: o estado vai a `failed` e o campo OPCIONAL `closed_reason` (`abandoned`) o distingue da falha real; nada é pago, nenhum bem se move.
 
 const LABOR: String = "labor"
 const DELIVERY: String = "delivery"
@@ -36,6 +37,11 @@ const KEY_DESTINATION: String = "destination_id"
 const KEY_WORKED: String = "worked_minutes"
 ## O local de trabalho (o `site_id` ou o `post_id`) a que a vaga se refere.
 const KEY_WORKPLACE: String = "workplace_id"
+## Por que o `delivery` terminou `failed` (LW-107f1): campo OPCIONAL, AUSENTE em todo contrato que não foi abandonado (nunca gravado como texto vazio; a consulta devolve `""` quando não existe). `failed` sem ele é a falha real; o abandono não é falha.
+const KEY_CLOSED_REASON: String = "closed_reason"
+## O conjunto fechado do `closed_reason`; o texto é o mesmo do `reason` do `ContractFailed`.
+const CLOSED_ABANDONED: String = ContractFailed.REASON_ABANDONED
+const CLOSED_REASONS: Array[String] = [CLOSED_ABANDONED]
 ## Chaves do objetivo que quem posta entrega (as mesmas do estado).
 const OBJECTIVE_LABOR: Array[String] = [KEY_PLACE, KEY_MINUTES]
 const OBJECTIVE_DELIVERY: Array[String] = [KEY_GOOD, KEY_QUANTITY, KEY_DESTINATION]
@@ -174,6 +180,28 @@ func deliver(contract_id: int, now: int) -> Outcome:
 	return _complete(contract_id)
 
 
+## O aceitante abandona o contrato `delivery` ANTES do prazo (LW-107f1; seção 8, item (a)): a custódia volta ao emissor (ou ao mercado do povoado do destino, se ele morreu; a rotina do `expire`, `contract_refund`) e o estado vai de `accepted` a `failed` com o `closed_reason` `abandoned`; o aceitante FICA no contrato. Nada é pago,
+## nenhum bem se move, nenhum ID nasce. Tudo ou nada, conferido NESTA ordem: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_IMPOSSIBLE` (não é `delivery`: a vaga e o `labor` não se abandonam), `ECON_CONTRACT_NOT_OPEN` (não está aceito), `ECON_CONTRACT_IMPOSSIBLE` (o ator não é o aceitante) e `ECON_CONTRACT_IMPOSSIBLE` (o prazo passou: o vencido termina `expired`, não abandonado).
+func abandon(contract_id: int, actor_id: int, now: int) -> Result:
+	if not _contracts.has(contract_id):
+		return Result.failure(EconomyCodes.UNKNOWN_CONTRACT, "ContractBook.abandon: o contrato %d não existe." % contract_id)
+	var state: Dictionary = _contracts[contract_id]
+	if state[KEY_KIND] != DELIVERY:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.abandon: o contrato %d é '%s'; esperado '%s'." % [contract_id, state[KEY_KIND], DELIVERY])
+	if state[KEY_STATE] != STATE_ACCEPTED:
+		return Result.failure(EconomyCodes.CONTRACT_NOT_OPEN, "ContractBook.abandon: o contrato %d está '%s'; esperado '%s'." % [contract_id, state[KEY_STATE], STATE_ACCEPTED])
+	if actor_id != state[KEY_ACCEPTOR]:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.abandon: o ator %d não é o aceitante do contrato %d." % [actor_id, contract_id])
+	if now >= int(state[KEY_DEADLINE]):
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "ContractBook.abandon: o prazo do contrato %d (%d) já passou (agora %d); o vencido termina '%s'." % [contract_id, state[KEY_DEADLINE], now, STATE_EXPIRED])
+	var refunded: Result = _refund_custody(contract_id, state)
+	if not refunded.ok:
+		return Result.failure(refunded.code, "ContractBook.abandon: " + refunded.message)
+	state[KEY_STATE] = STATE_FAILED
+	state[KEY_CLOSED_REASON] = CLOSED_ABANDONED
+	return Result.success()
+
+
 ## Um contrato que acabou de vencer (para quem chama publicar o `ContractFailed`).
 class Expired:
 	extends RefCounted
@@ -217,14 +245,11 @@ func expire(now: int) -> Array[Expired]:
 		var held: bool = state[KEY_STATE] == STATE_OPEN or state[KEY_STATE] == STATE_ACCEPTED
 		if not held or state[KEY_KIND] == VACANCY or int(state[KEY_DEADLINE]) == 0 or now < int(state[KEY_DEADLINE]):
 			continue
-		var issuer: int = state[KEY_ISSUER]
-		var receiver: int = issuer if _book.check_open(issuer).ok else _refund_market_of(state)
-		if receiver != IdGenerator.NO_ID and _ledger.balance_of(contract_id) > 0:
-			var refunded: Result = _ledger.transfer(contract_id, receiver, _ledger.balance_of(contract_id), Ledger.REASON_CONTRACT_REFUND)
-			if not refunded.ok:
-				push_error("ContractBook.expire: a custódia do contrato %d não foi devolvida a %d: %s" % [contract_id, receiver, refunded.message])
+		var refunded: Result = _refund_custody(contract_id, state)
+		if not refunded.ok:
+			push_error("ContractBook.expire: " + refunded.message)
 		state[KEY_STATE] = STATE_EXPIRED
-		expired.append(Expired.new(contract_id, issuer))
+		expired.append(Expired.new(contract_id, state[KEY_ISSUER]))
 	return expired
 
 
@@ -293,7 +318,7 @@ func serialize() -> Dictionary:
 	return {KEY_CONTRACTS: contracts}
 
 
-## Confere tudo antes de alterar o estado: tipo e estado conhecidos, emissor e aceitante como IDs positivos, recompensa 0 ou mais (só a vaga é 0), objetivo com as chaves e os tipos do tipo. Se algo for inválido, o livro fica como estava.
+## Confere tudo antes de alterar o estado: tipo e estado conhecidos, emissor e aceitante como IDs positivos, recompensa 0 ou mais (só a vaga é 0), objetivo com as chaves e os tipos do tipo e, se vier, o `closed_reason` (opcional: um save sem ele carrega igual). Se algo for inválido, o livro fica como estava.
 func load_from(data: Dictionary) -> Result:
 	var raw_contracts: Variant = data.get(KEY_CONTRACTS)
 	if typeof(raw_contracts) != TYPE_DICTIONARY:
@@ -326,6 +351,18 @@ func validate() -> Array[String]:
 		if _ledger.balance_of(contract_id) != expected and not retained_by_dead_issuer:
 			problems.append("o contrato %d (%s) deveria ter %d na custódia e tem %d" % [contract_id, state[KEY_STATE], expected, _ledger.balance_of(contract_id)])
 	return problems
+
+
+## A rotina do `expire` e do `abandon`: a custódia volta ao emissor se ele está aberto ou, se morreu, ao mercado do povoado do contrato (`contract_refund`, sem queimar nada); povoado desconhecido: nada se move e a custódia fica retida na conta do contrato [LIM]. Só mexe no dinheiro: o estado é de quem chama.
+func _refund_custody(contract_id: int, state: Dictionary) -> Result:
+	var issuer: int = state[KEY_ISSUER]
+	var receiver: int = issuer if _book.check_open(issuer).ok else _refund_market_of(state)
+	if receiver == IdGenerator.NO_ID or _ledger.balance_of(contract_id) < 1:
+		return Result.success()
+	var refunded: Result = _ledger.transfer(contract_id, receiver, _ledger.balance_of(contract_id), Ledger.REASON_CONTRACT_REFUND)
+	if refunded.ok:
+		return refunded
+	return Result.failure(refunded.code, "a custódia do contrato %d não foi devolvida a %d: %s" % [contract_id, receiver, refunded.message])
 
 
 ## O mercado que recebe a custódia do contrato vencido de um emissor morto: o do povoado do local de trabalho (`labor`) ou do destino (`delivery`); `IdGenerator.NO_ID` se a economia não o conhece.
@@ -428,6 +465,11 @@ func _parse_contract(contract_id: int, raw_entry: Variant) -> Variant:
 	if kind == VACANCY and (reward != 0 or deadline != 0):
 		return "a vaga tem '%s' e '%s' 0 (sem recompensa e sem prazo)" % [KEY_REWARD, KEY_DEADLINE]
 	var state: Dictionary = {KEY_KIND: str(kind), KEY_ISSUER: issuer, KEY_REWARD: reward, KEY_DEADLINE: deadline, KEY_STATE: str(state_name), KEY_ACCEPTOR: acceptor}
+	if entry.has(KEY_CLOSED_REASON):
+		var closed_problem: String = _closed_reason_problem(entry[KEY_CLOSED_REASON], str(kind), str(state_name), acceptor)
+		if not closed_problem.is_empty():
+			return closed_problem
+		state[KEY_CLOSED_REASON] = str(entry[KEY_CLOSED_REASON])
 	if kind == LABOR:
 		if not EconomyJson.is_int_like(entry.get(KEY_WORKED)) or EconomyJson.to_int(entry[KEY_WORKED]) < 0:
 			return "'%s' deve ser um inteiro de 0 ou mais" % KEY_WORKED
@@ -446,6 +488,15 @@ func _parse_contract(contract_id: int, raw_entry: Variant) -> Variant:
 		else:
 			state[key] = EconomyJson.to_int(value)
 	return state
+
+
+## Texto do problema do `closed_reason` de um save, ou vazio se vale: `value` vem do JSON (`Variant`), então confere o tipo antes de tudo; tem de ser um texto do conjunto fechado e só existe em contrato `delivery` `failed` com aceitante.
+func _closed_reason_problem(value: Variant, kind: String, state_name: String, acceptor: int) -> String:
+	if typeof(value) != TYPE_STRING or not CLOSED_REASONS.has(str(value)):
+		return "'%s' deve ser um texto de %s" % [KEY_CLOSED_REASON, ", ".join(CLOSED_REASONS)]
+	if kind != DELIVERY or state_name != STATE_FAILED or acceptor == IdGenerator.NO_ID:
+		return "'%s' só existe em contrato '%s' '%s' com aceitante" % [KEY_CLOSED_REASON, DELIVERY, STATE_FAILED]
+	return ""
 
 
 func _invalid_save(detail: String) -> Result:

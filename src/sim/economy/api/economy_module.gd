@@ -184,6 +184,17 @@ func request_accept_contract(contract_id: int, actor_id: int) -> Result:
 	return _state.contracts.accept(contract_id, actor_id, _clock.total_minutes())
 
 
+## Abandona a encomenda `delivery` que `actor_id` aceitou, antes do prazo (LW-107f1; seção 8, item (a)): a custódia volta ao emissor (ou ao mercado do povoado do destino, se ele morreu), o contrato fica `failed` com o `closed_reason` `abandoned` e o `ContractFailed` sai com o motivo `abandoned` (que NÃO é falha para a crônica, a reputação nem as facções). Nada é pago e nenhum bem se move; a recusa não muda nada nem publica.
+## Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_CONTRACT_IMPOSSIBLE` (não é `delivery`, outro ator, prazo vencido ou sem `setup`).
+func request_abandon_contract(contract_id: int, actor_id: int) -> Result:
+	if _clock == null or _events == null:
+		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "EconomyModule.request_abandon_contract: módulo sem setup (sem relógio nem barramento); esperado um módulo registrado no World.")
+	var abandoned: Result = _state.contracts.abandon(contract_id, actor_id, _clock.total_minutes())
+	if abandoned.ok:
+		_events.publish(ContractFailed.new(contract_id, int(_state.contracts.state_of(contract_id)[ContractBook.KEY_ISSUER]), ContractFailed.REASON_ABANDONED))
+	return abandoned
+
+
 ## O NPC consome comida do inventário dele (LW-093; contrato, seção 7): destrói o bem (`consumed`) e devolve o alívio para o `npc` aplicar à necessidade (`EconomyReplies.ConsumeResult`).
 func request_consume(owner_id: int, good_id: String, quantity: int) -> EconomyReplies.ConsumeResult:
 	return EconomyCommands.consume(_state, owner_id, good_id, quantity)
@@ -269,7 +280,7 @@ func peek_posts_of(settlement_id: String) -> EconomyReplies.PostsQuery:
 	return EconomyQueries.peek_posts_of(_state, settlement_id)
 
 
-## O contrato `contract_id` (`ECON_UNKNOWN_CONTRACT` se não existe): tipo, emissor, recompensa, prazo, estado, aceitante e o objetivo do tipo (seção 8 do contrato).
+## O contrato `contract_id` (`ECON_UNKNOWN_CONTRACT` se não existe): tipo, emissor, recompensa, prazo, estado, aceitante, o `closed_reason` (`""` se o contrato não foi abandonado) e o objetivo do tipo (seção 8 do contrato).
 func peek_contract(contract_id: int) -> EconomyReplies.ContractQuery:
 	return EconomyQueries.peek_contract(_state, contract_id)
 

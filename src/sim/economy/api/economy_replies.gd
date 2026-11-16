@@ -231,7 +231,7 @@ class PostContractResult:
 
 ## `peek_contract` e `peek_contracts` (LW-096; seção 8 do contrato): um contrato, com `kind`, `issuer_id`, `reward`, `deadline` (0 = sem prazo), `state` (`open`, `accepted`, `completed`, `failed`, `expired`) e `acceptor_id` (`IdGenerator.NO_ID` se ninguém).
 ## O objetivo vem pelas chaves do tipo: `labor` (`place_id`, `minutes` e `worked_minutes`, os já trabalhados), `delivery` (`good_id`, `quantity`, `destination_id`) e, na vaga, `workplace_id` e os nomes de `peek_site` (`place_id`, `settlement_id`, `occupation_id`, `wage_per_hour`, `workers_wanted`, `workers_assigned`);
-## o que não é do tipo fica no valor vazio. `result` falha com `ECON_UNKNOWN_CONTRACT` se não há o contrato (então o resto não vale).
+## o que não é do tipo fica no valor vazio. `closed_reason` (LW-107f1) diz por que o contrato `failed` terminou (`abandoned`: o aceitante largou a encomenda, sem multa) e é `""` em todo contrato que não foi abandonado. `result` falha com `ECON_UNKNOWN_CONTRACT` se não há o contrato (então o resto não vale).
 class ContractQuery:
 	extends RefCounted
 
@@ -243,6 +243,7 @@ class ContractQuery:
 	var deadline: int = 0
 	var state: String = ""
 	var acceptor_id: int = IdGenerator.NO_ID
+	var closed_reason: String = ""
 	var place_id: String = ""
 	var minutes: int = 0
 	var worked_minutes: int = 0
