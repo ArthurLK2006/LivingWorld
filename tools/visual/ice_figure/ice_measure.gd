@@ -69,7 +69,7 @@ func _run() -> void:
 	lines.append_array(await _determinism(figure, dir))
 	for line: String in lines:
 		print(line)
-	var report: FileAccess = FileAccess.open("%s/%s" % [dir, REPORT_FILE], FileAccess.WRITE)
+	var report: FileAccess = FileAccess.open("%s/%s%s.txt" % [dir, REPORT_FILE.get_basename(), Writer.meta_file().get_basename().trim_prefix(Writer.DATA_FILE.get_basename())], FileAccess.WRITE)
 	if report != null:
 		report.store_string("\n".join(lines) + "\n")
 	quit(1 if _failed else 0)
@@ -77,7 +77,7 @@ func _run() -> void:
 
 func _build(dir: String) -> Node3D:
 	var data: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(CharacterCatalog.DEFAULT_PATH))
-	data["figures"] = [{"id": FIGURE_ID, "scene": "%s/%s" % [dir, Writer.SCENE_FILE], "meta": "%s/%s" % [dir, Writer.DATA_FILE]}]
+	data["figures"] = [{"id": FIGURE_ID, "scene": "%s/%s" % [dir, Writer.SCENE_FILE], "meta": "%s/%s" % [dir, Writer.meta_file()]}]
 	var maker: CharacterFigure = CharacterFigure.new()
 	var figure: Node3D = maker.build(CharacterCatalog.from_json(JSON.stringify(data), "catalogo_de_medida.json").catalog, FIGURE_ID)
 	if figure == null:
