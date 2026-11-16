@@ -1,5 +1,5 @@
 extends GutTest
-## ART-12, entrega 7b-1: o corpo do NPC (`NpcView`) recebe uma figura inteira (`attach_figure`, `clear_figure`, `has_figure`, `set_speed`, `speed_mps`), SÓ o corpo: a ligação no mundo é a 7b-2. A figura é SINTÉTICA e existe só em memória (um Node3D com um AnimationPlayer de `idle`, `walk` e `jog` de 1 s em laço e o metadado de velocidades {walk 0,73; jog 4,1} que o `CharacterFigure.locomotion_of` lê): nenhum ativo de terceiros nem arquivo. Com figura: ela é filha do CORPO (não do `_visual`, que se inclina e quica), vira meia-volta, a cápsula fica escondida e parada, e o clipe e a escala seguem `set_walking` e `set_speed` (parado = idle; andando sem velocidade = walk 1x; andando com velocidade = `CharacterLocomotion.pick`), sem mandar tocar de novo quando nada mudou. `clear_figure` (e o `detach` do pool) solta a figura na hora e a libera; o corpo reciclado não herda figura nem velocidade. Sem figura o corpo é a cápsula de sempre (o `test_npc_view_pool` segue como estava).
+## ART-12, entrega 7b-1: o corpo do NPC (`NpcView`) recebe uma figura inteira (`attach_figure`, `clear_figure`, `has_figure`, `set_speed_mps`, `speed_mps`), SÓ o corpo: a ligação no mundo é a 7b-2. A figura é SINTÉTICA e existe só em memória (um Node3D com um AnimationPlayer de `idle`, `walk` e `jog` de 1 s em laço e o metadado de velocidades {walk 0,73; jog 4,1} que o `CharacterFigure.locomotion_of` lê): nenhum ativo de terceiros nem arquivo. Com figura: ela é filha do CORPO (não do `_visual`, que se inclina e quica), vira meia-volta, a cápsula fica escondida e parada, e o clipe e a escala seguem `set_walking` e `set_speed_mps` (parado = idle; andando sem velocidade = walk 1x; andando com velocidade = `CharacterLocomotion.pick`), sem mandar tocar de novo quando nada mudou. `clear_figure` (e o `detach` do pool) solta a figura na hora e a libera; o corpo reciclado não herda figura nem velocidade. Sem figura o corpo é a cápsula de sempre (o `test_npc_view_pool` segue como estava).
 
 const GROUND_M: Vector3 = Vector3(320.0, 12.5, 540.0)
 const OTHER_M: Vector3 = Vector3(341.0, 11.0, 560.0)
@@ -98,7 +98,7 @@ func test_a_second_figure_replaces_the_first_frees_it_and_starts_from_the_state_
 	var second: Node3D = _synthetic_figure()
 	view.attach_figure(first)
 	view.set_walking(true)
-	view.set_speed(4.0)
+	view.set_speed_mps(4.0)
 	view.attach_figure(second)
 	assert_eq([first.get_parent() == null, second.get_parent() == view, view.get_child_count()], [true, true, 2], "A antiga sai na hora: ficam só a parte visual e a figura nova.")
 	assert_true(first.is_queued_for_deletion(), "E é liberada.")
@@ -138,7 +138,7 @@ func test_a_figure_without_a_player_is_shown_but_does_not_animate_and_one_freed_
 	var bare: Node3D = Node3D.new()
 	view.attach_figure(bare)
 	view.set_walking(true)
-	view.set_speed(4.0)
+	view.set_speed_mps(4.0)
 	assert_eq([view.has_figure(), _visual_of(view).visible, bare.get_parent()], [true, false, view], "Aparece, sem erro, e não anima.")
 	bare.free()
 	assert_false(view.has_figure(), "Liberada por fora: o corpo percebe.")
@@ -155,7 +155,7 @@ func test_clear_removes_the_figure_at_once_frees_it_and_brings_back_the_capsule_
 	var figure: Node3D = _synthetic_figure()
 	view.attach_figure(figure)
 	view.set_walking(true)
-	view.set_speed(4.0)
+	view.set_speed_mps(4.0)
 	view.clear_figure()
 	assert_eq([view.has_figure(), figure.get_parent() == null, view.get_children().has(figure)], [false, true, false], "Some da lista de filhos NA HORA.")
 	assert_true(figure.is_queued_for_deletion(), "E é liberada ao fim do quadro (estava na árvore).")
@@ -177,10 +177,10 @@ func test_clearing_a_figure_of_a_body_outside_the_tree_frees_it_at_once() -> voi
 
 func test_without_a_figure_the_new_calls_are_harmless_and_the_capsule_bounces_and_leans_as_always() -> void:
 	var view: NpcView = _new_view()
-	view.set_speed(3.0)
+	view.set_speed_mps(3.0)
 	view.clear_figure()
 	assert_eq([view.has_figure(), view.speed_mps(), view.get_child_count(), _visual_of(view).visible], [false, 0.0, 1, true], "Limpar sem figura só zera a velocidade.")
-	view.set_speed(4.0)
+	view.set_speed_mps(4.0)
 	view.set_walking(true)
 	view.advance_animation(STEP_SECONDS)
 	assert_almost_eq(_visual_of(view).rotation.x, -deg_to_rad(4.0), TOLERANCE, "Com velocidade e tudo, a cápsula inclina...")
@@ -201,7 +201,7 @@ func test_a_recycled_body_does_not_inherit_the_figure_and_the_pool_neither_leaks
 	var figure: Node3D = _synthetic_figure()
 	view.attach_figure(figure)
 	view.set_walking(true)
-	view.set_speed(4.0)
+	view.set_speed_mps(4.0)
 	assert_true(pool.give_back(7))
 	assert_eq([view.has_figure(), figure.get_parent() == null, view.speed_mps(), view.is_walking(), _visual_of(view).visible], [false, true, 0.0, false, true], "Devolver solta a figura na hora.")
 	await wait_process_frames(2)
@@ -220,15 +220,15 @@ func test_the_clip_and_the_scale_follow_the_body_speed_when_walking_and_a_stoppe
 	var figure: Node3D = _synthetic_figure()
 	view.attach_figure(figure)
 	var player: AnimationPlayer = _player_of(figure)
-	view.set_speed(0.0)
+	view.set_speed_mps(0.0)
 	_assert_playing(player, "idle", 1.0, "0 m/s, parado")
-	view.set_speed(4.0)
+	view.set_speed_mps(4.0)
 	_assert_playing(player, "idle", 1.0, "Parado manda: a velocidade guardada não faz o corpo andar")
 	view.set_walking(true)
 	_assert_playing(player, "jog", 4.0 / 4.1, "Ao começar a andar, a velocidade guardada ANTES (4 m/s) já vale: a ordem das chamadas do motorista não é fixa")
 	for row: Array in TABLE:
 		var speed: float = row[0]
-		view.set_speed(speed)
+		view.set_speed_mps(speed)
 		_assert_playing(player, row[1], row[2], "Andando a %s m/s" % speed)
 	view.set_walking(false)
 	_assert_playing(player, "idle", 1.0, "Parou")
@@ -242,8 +242,8 @@ func test_walking_without_a_known_speed_plays_the_walk_at_scale_one_and_stopping
 	view.set_walking(true)
 	_assert_playing(player, "walk", 1.0, "Só `set_walking`")
 	for unknown: float in [0.0, -2.0, NAN, INF]:
-		view.set_speed(4.0)
-		view.set_speed(unknown)
+		view.set_speed_mps(4.0)
+		view.set_speed_mps(unknown)
 		_assert_playing(player, "walk", 1.0, "Velocidade %s é desconhecida" % unknown)
 	view.set_walking(false)
 	_assert_playing(player, "idle", 1.0, "`set_walking(false)`")
@@ -255,22 +255,22 @@ func test_the_same_request_does_not_touch_the_player_and_a_new_scale_keeps_the_s
 	view.attach_figure(figure)
 	var player: AnimationPlayer = _player_of(figure)
 	view.set_walking(true)
-	view.set_speed(1.0)
+	view.set_speed_mps(1.0)
 	player.advance(PHASE_SECONDS)
 	var phase: float = player.current_animation_position
 	assert_gt(phase, 0.0, "O passo andou.")
-	view.set_speed(1.0)
+	view.set_speed_mps(1.0)
 	view.set_walking(true)
 	assert_almost_eq(player.current_animation_position, phase, TOLERANCE, "Repetir o pedido não reinicia o passo.")
-	view.set_speed(1.1)
+	view.set_speed_mps(1.1)
 	assert_almost_eq(player.current_animation_position, phase, TOLERANCE, "Só a escala mudou: o passo segue de onde estava.")
 	assert_almost_eq(player.get_playing_speed(), 1.1 / 0.73, TOLERANCE, "E na escala nova.")
 	player.play(&"jog", -1.0, SENTINEL_SCALE)
-	view.set_speed(1.1)
-	view.set_speed(1.1 + NOISE_MPS)
+	view.set_speed_mps(1.1)
+	view.set_speed_mps(1.1 + NOISE_MPS)
 	view.set_walking(true)
 	_assert_playing(player, "jog", SENTINEL_SCALE, "Pedido repetido ou com ruído abaixo da tolerância: o corpo não manda tocar (o que o player faz por fora segue)")
-	view.set_speed(1.0)
+	view.set_speed_mps(1.0)
 	_assert_playing(player, "walk", 1.0 / 0.73, "Mudou de verdade: manda tocar")
 
 
@@ -281,7 +281,7 @@ func test_a_figure_without_the_speed_table_only_has_idle_and_walk_and_never_scal
 	var player: AnimationPlayer = _player_of(figure)
 	view.set_walking(true)
 	for speed: float in [0.5, 4.0, 32.0]:
-		view.set_speed(speed)
+		view.set_speed_mps(speed)
 		_assert_playing(player, "walk", 1.0, "%s m/s sem tabela" % speed)
 
 
@@ -290,5 +290,5 @@ func test_a_clip_the_player_does_not_have_is_skipped_without_error() -> void:
 	var figure: Node3D = _synthetic_figure(REAL, ["idle", "walk"])
 	view.attach_figure(figure)
 	view.set_walking(true)
-	view.set_speed(4.0)
+	view.set_speed_mps(4.0)
 	_assert_playing(_player_of(figure), "walk", 1.0, "A tabela pede jog, o player não tem: fica no que tocava")
