@@ -122,7 +122,9 @@ func _open_market(market_id: int) -> void:
 ## Os corpos dos NPCs (LW-072f). A `NpcBodiesView` liga o interruptor de corpos da simulação ao ser ligada à ponte e o motorista é ligado logo em seguida, neste
 ## mesmo `_ready`: a simulação só avança no `_process` do host, então nenhum Intent aparece sem motorista. Quem avança cada um é ele mesmo (a view reconcilia no
 ## seu `_process`, o motorista anda no seu `_physics_process`). Ponte que recusa: a view já registrou o motivo (push_error) e nada fica rodando; se só o
-## motorista falhar, os corpos são desligados de novo.
+## motorista falhar, os corpos são desligados de novo. FIGURAS (ART-12, 7b-2), DESLIGADAS por padrão: só uma área com entrada (`CharacterArea.load_default`: o arquivo local
+## `art_samples/character_area.json`; o dado padrão é vazio) liga a fonte da figura e passa a área e `source.make` à view; área vazia (o padrão) = `setup(bridge, terrain)`
+## como sempre, sem ler catálogo nem avisar; área inválida = UM aviso e tudo cápsula.
 func _setup_npc_bodies(bridge: SimBridge) -> void:
 	_bodies_view = NpcBodiesView.new()
 	_bodies_view.name = BODIES_VIEW_NAME
@@ -130,8 +132,26 @@ func _setup_npc_bodies(bridge: SimBridge) -> void:
 	_body_driver = NpcBodyDriver.new()
 	_body_driver.name = BODY_DRIVER_NAME
 	add_child(_body_driver)
-	if _bodies_view.setup(bridge, _terrain_view) and not _body_driver.setup(bridge, _bodies_view):
+	var area: CharacterArea = CharacterArea.load_default()
+	if not area.failure.is_empty():
+		push_warning("MainWorldView: a área das figuras é inválida e todo NPC segue cápsula: %s" % area.failure)
+	var source: CharacterFigureSource = _prepare_figures(area)
+	var bodies_ready: bool = _bodies_view.setup(bridge, _terrain_view) if source == null else _bodies_view.setup(bridge, _terrain_view, area, source.make)
+	if bodies_ready and not _body_driver.setup(bridge, _bodies_view):
 		_bodies_view.release()
+
+
+## A fonte das figuras (7b-2) só se a área tem entrada; null = tudo cápsula. Catálogo ou figura que falha: UM aviso com o motivo, e o `make` da fonte devolve null (cápsula).
+func _prepare_figures(area: CharacterArea) -> CharacterFigureSource:
+	if area.is_empty():
+		return null
+	var loaded: CharacterCatalog.LoadResult = CharacterFigureSource.load_catalog()
+	if not loaded.result.ok:
+		push_warning("MainWorldView: o catálogo das figuras falhou: %s" % loaded.result.message)
+	var source: CharacterFigureSource = CharacterFigureSource.prepare(area, loaded.catalog)
+	for figure_id: String in source.failures:
+		push_warning("MainWorldView: a figura '%s' não foi preparada e o NPC dela segue cápsula: %s" % [figure_id, source.failures[figure_id]])
+	return source
 
 
 ## Textos de data/text/pt_br.json. Arquivo inválido: push_error com arquivo e chave e textos vazios (cada chave aparece como [chave]).

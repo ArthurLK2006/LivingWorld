@@ -3,7 +3,7 @@ extends Node3D
 ## Corpo provisório de um NPC em S0 (LW-072b): uma cápsula azul-acinzentada com um "nariz" que mostra a frente (-Z local, como no `look_at`).
 ## A origem fica nos pés, como no `PlayerBody`. SÓ VISUAL: sem colisão, sem física e sem regra de jogo. Parado fica imóvel; andando quica na
 ## vertical e se inclina um pouco para a frente. Não conhece o `npc`: guarda só o ID do NPC a que está ligado. Contrato: docs/modules/presentation.md.
-## FIGURA INTEIRA (ART-12, 7b-1): `attach_figure` põe uma figura montada (`CharacterFigure.build`) no lugar da cápsula, como filha do corpo e não da parte que balança; com figura a cápsula fica escondida e sem quique nem inclinação, e `set_walking` e `set_speed` escolhem o clipe (idle, walk ou jog) e a escala pelo `CharacterLocomotion`; `clear_figure` (que o `detach` chama) solta e libera a figura. Quem monta a figura e a entrega ao corpo é a 7b-2; aqui o corpo só a recebe, e sem figura ele é a cápsula de sempre.
+## FIGURA INTEIRA (ART-12, 7b-1): `attach_figure` põe uma figura montada (`CharacterFigure.build`) no lugar da cápsula, como filha do corpo e não da parte que balança; com figura a cápsula fica escondida e sem quique nem inclinação, e `set_walking` e `set_speed_mps` escolhem o clipe (idle, walk ou jog) e a escala pelo `CharacterLocomotion`; `clear_figure` (que o `detach` chama) solta e libera a figura. Quem monta a figura e a entrega ao corpo é a 7b-2; aqui o corpo só a recebe, e sem figura ele é a cápsula de sempre.
 
 ## Cápsula [HIP] (m): a mesma do jogador, com poucos segmentos (até 50 corpos na tela; estilo low-poly).
 const CAPSULE_RADIUS_M: float = 0.4
@@ -38,7 +38,7 @@ var npc_id: int = IdGenerator.NO_ID
 var _visual: Node3D
 var _is_walking: bool = false
 var _bounce_phase: float = 0.0
-## Velocidade do corpo (m/s) que o motorista informa por `set_speed`; só a figura a usa; 0 = desconhecida.
+## Velocidade do corpo (m/s) que o motorista informa por `set_speed_mps`; só a figura a usa; 0 = desconhecida.
 var _speed_mps: float = 0.0
 ## A figura inteira (null = a cápsula), o `AnimationPlayer` filho direto dela (null = a figura não anima), as velocidades dela (lidas UMA vez, ao receber a figura) e o último clipe e escala que mandamos tocar ("" = nenhum ainda).
 var _figure: Node3D
@@ -126,12 +126,12 @@ func has_figure() -> bool:
 
 
 ## A velocidade do corpo (m/s), informada pelo motorista (a cápsula não a usa). Com figura e andando, reaplica o clipe e a escala: a velocidade que a tabela da figura cobre vira walk ou jog (`CharacterLocomotion.pick`).
-func set_speed(new_speed_mps: float) -> void:
+func set_speed_mps(new_speed_mps: float) -> void:
 	_speed_mps = new_speed_mps
 	_apply_figure_clip()
 
 
-## A velocidade guardada por `set_speed` (0 = desconhecida), para os testes do motorista.
+## A velocidade guardada por `set_speed_mps` (0 = desconhecida), para os testes do motorista.
 func speed_mps() -> float:
 	return _speed_mps
 
