@@ -10,6 +10,7 @@ const TOLERANCE: float = 0.00001
 const RATIO_TOLERANCE: float = 0.0001
 const GRID_STEPS: int = 12
 const EDGE_STEPS: int = 8
+const SCAN_STEPS: int = 130
 const BODY_ROLE: String = "~body"
 const PLAIN_ROLE: String = "~plain"
 const ARM_BASES: PackedStringArray = ["clavicle", "upperarm", "lowerarm", "hand"]
@@ -41,6 +42,15 @@ func _grid() -> PackedVector3Array:
 	for column: int in GRID_STEPS + 1:
 		for row: int in GRID_STEPS + 1:
 			points.append(Vector3(lerpf(-Weights.WALL_X_NONE_M, Weights.WALL_X_NONE_M, float(column) / GRID_STEPS), lerpf(Weights.WALL_Y_NONE_LOW_M, Weights.WALL_Y_NONE_HIGH_M, float(row) / GRID_STEPS), 0.0))
+	return points
+
+
+## A parede em linhas finas (passo de cerca de 2 mm em x, só o lado direito, em três alturas da faixa cheia): onde um osso do braço e um do tronco disputam um dos K_NEAREST lugares, que a grade larga pode não pegar.
+func _wall_scan() -> PackedVector3Array:
+	var points: PackedVector3Array = PackedVector3Array()
+	for fraction: float in [0.0, 0.5, 1.0]:
+		for step: int in SCAN_STEPS + 1:
+			points.append(Vector3(-Weights.WALL_X_NONE_M * float(step) / SCAN_STEPS, lerpf(Weights.WALL_Y_FULL_LOW_M, Weights.WALL_Y_FULL_HIGH_M, fraction), 0.0))
 	return points
 
 
@@ -191,6 +201,18 @@ func test_over_the_zone_the_arm_never_gains_weight_and_the_trunk_takes_the_rest(
 			ratios += _check_ratios(point, before, after)
 	assert_gt(reduced, 0, "a redução existe em algum ponto da zona")
 	assert_gt(ratios, 0, "e a razão braço/tronco foi conferida em algum ponto")
+
+
+func test_the_correction_lets_a_trunk_bone_into_the_vertex_before_the_nearest_bones_are_chosen() -> void:
+	var entered: int = 0
+	for point: Vector3 in _wall_scan():
+		var before: Dictionary[String, float] = _weights(point, PLAIN_ROLE)
+		var after: Dictionary[String, float] = _weights(point, BODY_ROLE)
+		for bone_name: String in after:
+			if not _is_arm(bone_name) and not before.has(bone_name):
+				entered += 1
+				break
+	assert_gt(entered, 0, "um osso do tronco entra no lugar de um do braço: o peso bruto do braço cai ANTES da escolha dos K_NEAREST, não depois")
 
 
 func test_the_mirrored_vertex_gets_the_mirrored_weights() -> void:
