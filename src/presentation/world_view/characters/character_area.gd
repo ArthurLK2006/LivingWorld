@@ -54,6 +54,16 @@ func is_empty() -> bool:
 	return _figures.is_empty()
 
 
+## Os ids de figura DISTINTOS da área, em ordem alfabética (a fonte da figura, 7b-2, prepara cada um UMA vez).
+func figure_ids() -> PackedStringArray:
+	var ids: PackedStringArray = []
+	for figure: String in _figures.values():
+		if not ids.has(figure):
+			ids.append(figure)
+	ids.sort()
+	return ids
+
+
 ## Confere o objeto raiz e guarda as entradas; os problemas vão para `reader`.
 func _read(reader: CharacterDataReader, root: Dictionary) -> void:
 	for field: String in root:

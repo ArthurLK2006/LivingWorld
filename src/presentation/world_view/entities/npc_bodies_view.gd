@@ -6,6 +6,7 @@ extends Node3D
 ## ESCONDIDO enquanto o terreno do seu chunk não está desenhado (`TerrainView.has_chunk`). `setup` liga o interruptor de corpos da simulação e
 ## `release` o desliga; ponte que falha = nenhum corpo e interruptor desligado, até outro `setup`. O corpo fica parado onde nasceu (o andar é da
 ## LW-072d) e a cena ainda não cria a view (LW-072f). Contrato: docs/modules/presentation.md.
+## FIGURA INTEIRA (ART-12, 7b-2): com uma área de figuras (`CharacterArea`, não vazia) e uma fábrica (`figure_factory(figure_id) -> Node3D`), o NPC da área que ENTRA em S0 recebe a figura no corpo que acaba de sair da reserva (`NpcView.attach_figure`); fábrica que devolve null deixa a cápsula e dá UM aviso por NPC. Sair de S0 e o `release` devolvem a cápsula (o `give_back` do pool chama `detach`, que libera a figura); a reserva não guarda figura. Sem área, com área vazia ou sem fábrica a view é a de sempre.
 
 var _bridge: SimBridge
 var _terrain: TerrainView
@@ -13,11 +14,15 @@ var _pool: NpcViewPool
 var _chunk_size_m: float = 0.0
 var _chunk_count: Vector2i = Vector2i.ZERO
 var _is_active: bool = false
+## A área das figuras (null = nenhuma: vazia ou sem fábrica), a fábrica e os NPCs cuja figura falhou e já foram avisados.
+var _area: CharacterArea
+var _figure_factory: Callable
+var _warned_npcs: Dictionary[int, bool] = {}
 
 
 ## Liga a view à ponte e ao terreno, cria a reserva de corpos e liga o interruptor de corpos da simulação. Ponte ou terreno nulo, ponte sem
-## terreno ou interruptor recusado: push_error, nenhum corpo e a view fica inativa (devolve falso).
-func setup(bridge: SimBridge, terrain: TerrainView) -> bool:
+## terreno ou interruptor recusado: push_error, nenhum corpo e a view fica inativa (devolve falso). `area` e `figure_factory` são opcionais (ver o cabeçalho): só valem juntos, com área não vazia e fábrica válida.
+func setup(bridge: SimBridge, terrain: TerrainView, area: CharacterArea = null, figure_factory: Callable = Callable()) -> bool:
 	_clear()
 	if bridge == null or terrain == null:
 		push_error("NpcBodiesView.setup: ponte ou TerrainView nulo; esperado os dois.")
@@ -33,6 +38,8 @@ func setup(bridge: SimBridge, terrain: TerrainView) -> bool:
 	_chunk_size_m = float(layout.chunk_cells) * layout.cell_size_m
 	_chunk_count = layout.chunk_count
 	_pool = NpcViewPool.new(self)
+	_area = area if area != null and not area.is_empty() and figure_factory.is_valid() else null
+	_figure_factory = figure_factory
 	_is_active = true
 	return true
 
@@ -55,7 +62,9 @@ func reconcile() -> void:
 			_pool.give_back(npc_id)
 	for body: BridgeReplies.NpcBodyReply in reply.bodies:
 		if _pool.body_of(body.npc_id) == null:
-			_pool.take(body.npc_id, body.position)
+			var entered: NpcView = _pool.take(body.npc_id, body.position)
+			if entered != null and _area != null:
+				_attach_figure_of(entered, body.npc_id)
 	for npc_id: int in _pool.active_ids():
 		var view: NpcView = _pool.body_of(npc_id)
 		view.visible = _terrain.has_chunk(_chunk_of(view.position))
@@ -102,6 +111,19 @@ func _chunk_of(point: Vector3) -> Vector2i:
 	return Vector2i(clampi(floori(point.x / _chunk_size_m), 0, _chunk_count.x - 1), clampi(floori(point.z / _chunk_size_m), 0, _chunk_count.y - 1))
 
 
+## Põe no corpo que acaba de entrar a figura que a área dá a esse NPC (se ele está nela). Fábrica que devolve null: o corpo segue cápsula e o NPC recebe UM aviso, nunca um por quadro (nem a cada reentrada em S0).
+func _attach_figure_of(view: NpcView, npc_id: int) -> void:
+	var figure_id: String = _area.figure_for(npc_id)
+	if figure_id.is_empty():
+		return
+	var figure: Node3D = _figure_factory.call(figure_id) as Node3D
+	if figure != null:
+		view.attach_figure(figure)
+	elif not _warned_npcs.has(npc_id):
+		_warned_npcs[npc_id] = true
+		push_warning("NpcBodiesView: o NPC %d segue cápsula: a fábrica não devolveu a figura '%s'." % [npc_id, figure_id])
+
+
 func _fail(what: String, failure: Result) -> bool:
 	push_error("NpcBodiesView.setup: %s (%s): %s" % [what, failure.code, failure.message])
 	return false
@@ -114,3 +136,6 @@ func _clear() -> void:
 		remove_child(child)
 		child.free()
 	_pool = null
+	_area = null
+	_figure_factory = Callable()
+	_warned_npcs.clear()

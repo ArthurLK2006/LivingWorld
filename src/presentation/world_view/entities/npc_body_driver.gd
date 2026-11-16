@@ -27,6 +27,8 @@ var _jobs: Dictionary[int, Job] = {}
 var _moved: Dictionary[int, bool] = {}
 var _frames_since_report: int = 0
 var _warned_codes: Dictionary[String, bool] = {}
+## A velocidade dos corpos neste quadro (m/s; `NpcRoute.speed_mps`, a mesma para todos): vai ao corpo por `set_speed_mps`, que a figura inteira (ART-12, 7b) usa para escolher o clipe e a escala. A cápsula só a guarda.
+var _speed_mps: float = 0.0
 var _is_ready: bool = false
 
 
@@ -77,7 +79,8 @@ func advance(delta: float) -> void:
 		_warn_once(listed.result if time.result.ok else time.result, "relógio ou Intents indisponíveis")
 		return
 	_sync_jobs(listed.intents, time.total_minutes)
-	var step_m: float = NpcRoute.speed_mps(time.speed, time.is_paused) * delta
+	_speed_mps = NpcRoute.speed_mps(time.speed, time.is_paused)
+	var step_m: float = _speed_mps * delta
 	for job: Job in _jobs.values():
 		_step_job(job, step_m, time.total_minutes)
 	_frames_since_report += 1
@@ -139,6 +142,7 @@ func _step_job(job: Job, step_m: float, now: int) -> void:
 		job.traveled_m = minf(job.traveled_m + step_m, job.route.length_m)
 		view.position = job.route.position_at(job.traveled_m)
 		_moved[job.intent.npc_id] = true
+	view.set_speed_mps(_speed_mps)
 	view.set_walking(can_move and job.traveled_m < job.route.length_m)
 	if job.traveled_m < job.route.length_m:
 		return
