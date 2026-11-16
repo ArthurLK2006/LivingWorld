@@ -1,5 +1,5 @@
 extends GutTest
-## ART-12, entrega 6b (2): o CharacterFigure com uma figura SINTÉTICA (nenhum ativo de terceiros): esqueleto = clone do corpo masculino do repositório, ENCOLHIDO a cerca de 1,44 m como o do Ice Warrior (o fator de escala até 1,80 m é 1,25 e não 1,00: escala ausente ou invertida não passa), pernas 25% mais curtas e pose de bind diferente do T; malha = dois triângulos com Skin. A cena (PackedScene) e o JSON de metadados existem só em MEMÓRIA e entram pelos carregadores injetáveis do `CharacterFigure`, com caminhos de mentira `res://figuras_de_teste/...`: nada toca o disco nem `user://` (AGENTS 4.16 e 9.4), então rodadas simultâneas não colidem. `build` devolve a raiz com os 65 ossos, escala para 1,80 m, pés em y = 0, sem girar, com o AnimationPlayer só com idle e walk, em laço e PARADO; as opções do retarget vêm dos metadados (o quadro 0 do idle reproduz o bind; o pé mais baixo fica a 1 cm do bind no idle e no walk); `build` repetido e `duplicate()` animam igual; cada falha (figura fora do catálogo, cena ausente (o carregador devolve null, sem erro do motor) ou com AnimationPlayer próprio, metadados ausentes, JSON quebrado, campo inválido, 64 ossos, sem Skin, osso da pose de bind ausente, zerado, não finito ou com 11 números, clipe de referência fora de idle e walk) devolve null com o motivo curto e sem vazar nó; os carregadores PADRÃO só leem arquivos do repositório.
+## ART-12, entrega 6b (2): o CharacterFigure com uma figura SINTÉTICA (nenhum ativo de terceiros): esqueleto = clone do corpo masculino do repositório, ENCOLHIDO a cerca de 1,44 m como o do Ice Warrior (o fator de escala até 1,80 m é 1,25 e não 1,00: escala ausente ou invertida não passa), pernas 25% mais curtas e pose de bind diferente do T; malha = dois triângulos com Skin. A cena (PackedScene) e o JSON de metadados existem só em MEMÓRIA e entram pelos carregadores injetáveis do `CharacterFigure`, com caminhos de mentira `res://figuras_de_teste/...`: nada toca o disco nem `user://` (AGENTS 4.16 e 9.4), então rodadas simultâneas não colidem. `build` devolve a raiz com os 65 ossos, escala para 1,80 m, pés em y = 0, sem girar, com o AnimationPlayer só com idle e walk, em laço e PARADO; as opções do retarget vêm dos metadados (o quadro 0 do idle reproduz o bind; o pé mais baixo fica a 1 cm do bind no idle e no walk); `build` repetido e `duplicate()` animam igual; cada falha (figura fora do catálogo, cena ausente (o carregador devolve null, sem erro do motor) ou com AnimationPlayer próprio, metadados ausentes, JSON quebrado, campo inválido, 64 ossos, sem Skin, osso da pose de bind ausente, zerado, não finito ou com 11 números, clipe de referência fora de idle e walk) devolve null com o motivo curto e sem vazar nó; os carregadores PADRÃO só leem arquivos do repositório. ENTREGA 6e: os campos OPCIONAIS `damping` e `ground_points` dos metadados: ausentes ou vazios, a figura sai igual; `damping` 0 para um osso o deixa na orientação do bind no walk; `ground_points` com dois pontos de sola por pé (abaixo da origem do osso) mantém o ponto mais baixo a 1 cm do chão no idle e no walk, onde a trava só pelos ossos do pé afunda a sola; cada campo inválido (osso fora do esqueleto, fator fora de 0 a 1, texto, nulo, infinito, lista vazia, ponto sem 3 números, mais pontos que o limite, campo que não é objeto) devolve null com o campo no motivo curto, e os extremos válidos (0, 1 e o limite de pontos) passam.
 
 const DIR: String = "res://figuras_de_teste/"
 const REAL_JSON: String = "res://tests/unit/support/character_catalog_ok.json"
@@ -41,6 +41,21 @@ const ZERO_BASIS_POSE: Array = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.1
 const SINGULAR_BASIS_POSE: Array = [1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.1, 0.2, 0.3]
 ## O `stringify` escreve o infinito como 1e99999, que o motor lê com aviso ("Exponent too high"): o caso "infinito" grava o texto "infinito" no lugar do número e o troca por este literal, que passa do maior real (1,8e308) e vira infinito sem aviso.
 const INFINITE_LITERAL: String = "1e309"
+## A 6e: o osso que o amortecimento 0 prende no bind, os instantes do walk em que se mede, a meia distância (10 cm) dos dois pontos de sola de cada pé e o giro mínimo do osso sem amortecer (parte vetorial do quaternion). Sem os pontos a sola afunda além de GROUND_TOLERANCE_M (medido na figura sintética: 1,9 cm no walk).
+const DAMPED_BONE: String = "upperarm_l"
+const WALK_TIMES: Array[float] = [0.2, 0.5, 0.9]
+const SOLE_HALF_M: float = 0.1
+const MIN_SWING: float = 0.05
+## Cada campo opcional inválido: [id, o campo `meta`, o campo que o motivo cita]; "infinito" vira o literal do infinito no texto.
+const BAD_OPTIONAL: Array = [
+	["d_osso", {"damping": {ALIEN_BONE: 0.5}}, "damping"], ["d_negativo", {"damping": {"foot_l": -0.1}}, "damping"], ["d_acima", {"damping": {"foot_l": 1.1}}, "damping"],
+	["d_texto", {"damping": {"foot_l": "0.5"}}, "damping"], ["d_nulo", {"damping": {"foot_l": null}}, "damping"], ["d_infinito", {"damping": {"foot_l": "infinito"}}, "damping"],
+	["d_lista", {"damping": [0.5]}, "damping"], ["d_campo_nulo", {"damping": null}, "damping"],
+	["g_osso", {"ground_points": {ALIEN_BONE: [[0.0, 0.0, 0.0]]}}, "ground_points"], ["g_vazia", {"ground_points": {"foot_l": []}}, "ground_points"],
+	["g_dois", {"ground_points": {"foot_l": [[0.0, 0.0]]}}, "ground_points"], ["g_texto", {"ground_points": {"foot_l": [[0.0, "0.0", 0.0]]}}, "ground_points"],
+	["g_infinito", {"ground_points": {"foot_l": [[0.0, 0.0, "infinito"]]}}, "ground_points"], ["g_solto", {"ground_points": {"foot_l": [0.0, 0.0, 0.0]}}, "ground_points"],
+	["g_numero", {"ground_points": {"foot_l": 1.0}}, "ground_points"], ["g_lista", {"ground_points": [0.5]}, "ground_points"],
+]
 ## Cada caso de falha: [id da figura, trecho esperado do motivo].
 const FAILURES: Array = [
 	["nao_existe", "não está no catálogo"], ["sem_cena", "não existe"], ["sem_meta", "arquivo não encontrado"], ["quebrado", "JSON inválido"],
@@ -273,6 +288,42 @@ func _played(root: Node3D, key: String, time: float) -> Dictionary[String, Trans
 	return _globals(CharacterSceneLoader.skeleton_of(root))
 
 
+## Dois pontos de sola por pé, em listas [x, y, z] do espaço local do osso (como no JSON): na pose de bind, 10 cm à frente e 10 cm atrás da origem do pé, na altura do chão.
+func _soles(bind: Dictionary[String, Transform3D]) -> Dictionary:
+	var soles: Dictionary = {}
+	for bone_name: String in ["foot_l", "foot_r"]:
+		soles[bone_name] = []
+		for offset: float in [SOLE_HALF_M, -SOLE_HALF_M]:
+			var point: Vector3 = bind[bone_name].affine_inverse() * Vector3(bind[bone_name].origin.x, 0.0, bind[bone_name].origin.z + offset)
+			soles[bone_name].append([point.x, point.y, point.z])
+	return soles
+
+
+## Por quadro a 30 por segundo, a altura do ponto de sola mais baixo (os pontos como em `_soles`).
+func _lowest(skeleton: Skeleton3D, clip: Animation, soles: Dictionary) -> Array[float]:
+	var lows: Array[float] = []
+	for step: int in int(ceil(clip.length * SAMPLES_PER_SECOND)) + 1:
+		_pose(skeleton, clip, minf(step / SAMPLES_PER_SECOND, clip.length))
+		var low: float = INF
+		for bone_name: String in soles:
+			for point: Array in soles[bone_name]:
+				low = minf(low, (skeleton.get_bone_global_pose(skeleton.find_bone(bone_name)) * Vector3(point[0], point[1], point[2])).y)
+		lows.append(low)
+	return lows
+
+
+## O maior desvio, nos instantes de WALK_TIMES, da orientação mundial de `bone_name` no walk em relação à do bind (a pose com que a figura nasce; chame uma vez por figura).
+func _swing(root: Node3D, bone_name: String) -> float:
+	var skeleton: Skeleton3D = CharacterSceneLoader.skeleton_of(root)
+	var bone: int = skeleton.find_bone(bone_name)
+	var bind: Quaternion = skeleton.get_bone_global_pose(bone).basis.get_rotation_quaternion()
+	var worst: float = 0.0
+	for time: float in WALK_TIMES:
+		_pose(skeleton, _player_of(root).get_animation("walk"), time)
+		worst = maxf(worst, _distance(skeleton.get_bone_global_pose(bone).basis.get_rotation_quaternion(), bind))
+	return worst
+
+
 func test_build_returns_the_scaled_figure_with_idle_and_walk_in_loop_and_not_playing() -> void:
 	var catalog: CharacterCatalog = _catalog([_write(ID, SHORT_TURNED)])
 	var figure: CharacterFigure = _figure()
@@ -407,3 +458,56 @@ func test_the_default_loaders_only_read_repository_files() -> void:
 	assert_null(default_text.build(catalog, "meta_ausente"))
 	assert_string_contains(default_text.failure, "arquivo não encontrado")
 	assert_no_new_orphans()
+
+
+func test_absent_and_empty_optional_fields_build_the_same_figure() -> void:
+	var catalog: CharacterCatalog = _catalog([_write(ID, SHORT_TURNED), _write("vazios", SHORT_TURNED.merged({"meta": {"damping": {}, "ground_points": {}}}))])
+	var plain: Node3D = _built(catalog, ID)
+	var empty: Node3D = _built(catalog, "vazios")
+	for key: String in CLIPS:
+		assert_true(_same_clip(_player_of(plain).get_animation(key), _player_of(empty).get_animation(key)), key + ": campos vazios, as mesmas trilhas dos campos ausentes")
+
+
+func test_the_damping_field_holds_the_damped_bone_at_its_bind_orientation_in_the_walk() -> void:
+	var catalog: CharacterCatalog = _catalog([_write(ID, SHORT_TURNED), _write("amortecida", SHORT_TURNED.merged({"meta": {"damping": {DAMPED_BONE: 0.0}}}))])
+	assert_gt(_swing(_built(catalog, ID), DAMPED_BONE), MIN_SWING, "sem o campo o osso gira no walk")
+	assert_lt(_swing(_built(catalog, "amortecida"), DAMPED_BONE), ROTATION_TOLERANCE, "com o fator 0 o osso fica na orientação do bind")
+
+
+func test_the_ground_points_field_holds_the_lowest_sole_at_the_ground_where_the_bone_origins_sink() -> void:
+	var plain_catalog: CharacterCatalog = _catalog([_write(ID, SHORT_TURNED)])
+	var soles: Dictionary = _soles(_globals(CharacterSceneLoader.skeleton_of(_built(plain_catalog, ID))))
+	var catalog: CharacterCatalog = _catalog([_write(ID, SHORT_TURNED), _write("contato", SHORT_TURNED.merged({"meta": {"ground_points": soles}}))])
+	var plain: Node3D = _built(catalog, ID)
+	var held: Node3D = _built(catalog, "contato")
+	for key: String in CLIPS:
+		var lows: Array[float] = _lowest(CharacterSceneLoader.skeleton_of(held), _player_of(held).get_animation(key), soles)
+		assert_lt(maxf(lows.max(), -lows.min()), GROUND_TOLERANCE_M, key + ": com os pontos de contato a sola mais baixa fica no chão")
+	assert_lt(_lowest(CharacterSceneLoader.skeleton_of(plain), _player_of(plain).get_animation("walk"), soles).min(), -GROUND_TOLERANCE_M, "sem os pontos, a trava pelos ossos do pé deixa a sola afundar além do centímetro")
+
+
+func test_every_invalid_optional_field_returns_null_with_the_field_in_a_short_reason() -> void:
+	var rows: Array = BAD_OPTIONAL.duplicate()
+	var crowd: Array = []
+	crowd.resize(CharacterFigure.MAX_GROUND_POINTS + 1)
+	crowd.fill([0.0, 0.0, 0.0])
+	rows.append(["g_demais", {"ground_points": {"foot_l": crowd}}, "ground_points"])
+	var figures: Array = []
+	for spec: Array in rows:
+		figures.append(_write(spec[0], {"meta": spec[1]}))
+		_texts[DIR + spec[0] + ".json"] = _texts[DIR + spec[0] + ".json"].replace("\"infinito\"", INFINITE_LITERAL)
+	var catalog: CharacterCatalog = _catalog(figures)
+	for spec: Array in rows:
+		var figure: CharacterFigure = _figure()
+		assert_null(figure.build(catalog, spec[0]), spec[0])
+		assert_string_contains(figure.failure, spec[2], spec[0])
+		assert_lt(figure.failure.length(), MAX_REASON_CHARS, spec[0] + ": o motivo é curto")
+	assert_no_new_orphans()
+
+
+func test_the_edges_of_the_valid_ranges_are_accepted() -> void:
+	var crowd: Array = []
+	crowd.resize(CharacterFigure.MAX_GROUND_POINTS)
+	crowd.fill([0.0, 0.0, 0.0])
+	var catalog: CharacterCatalog = _catalog([_write(ID, {"meta": {"damping": {"foot_l": 0.0, "hand_r": 1.0}, "ground_points": {"foot_l": crowd, "foot_r": [[0.0, 0.0, 0.0]]}}})])
+	assert_not_null(_built(catalog, ID))

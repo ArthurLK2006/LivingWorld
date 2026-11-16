@@ -6,7 +6,7 @@ extends RefCounted
 ## OSSO SEM PAR: um osso do destino que a UAL não tem (pelo nome) fica no repouso MUNDIAL do destino, isto é, não acompanha o pai (a rotação local dele compensa a do pai). Nenhum ativo atual exerce isso: a UAL e os personagens têm os mesmos 65 ossos (medido nos ativos), então o caso vale só para um esqueleto futuro.
 ## OPÇÕES (entrega 6a; DESLIGADAS por padrão: sem `Options`, ou com uma `Options` nova, as trilhas saem IDÊNTICAS às de antes, e `new(fonte, destino)` e `library_for(destino, clipes)` funcionam como sempre). Vêm da prova de movimento do Ice Warrior (malha inteira, esqueleto próprio), que precisou corrigir fora de src/ o que o retarget acima supõe. Valem para TODO clipe retargetado pela instância (na `library_for`, para todos os clipes dela; o jog, com fase aérea, não deve passar pela trava de chão). RECEITA: para travar só alguns clipes (o contrato: `idle` e `walk`), passe só esses à `library_for`; para ter clipes com e sem a trava, monte duas bibliotecas, e com a pose de referência as duas listas levam o clipe de referência. As `Options` são lidas na construção (e `ground_lock`, de novo em `retarget`): monte-as inteiras antes de construir. Um clipe com duas trilhas do mesmo tipo para o mesmo osso vale só pela última.
 ## (1) POSE DE REFERÊNCIA (`Options.bind_pose` não vazio; o "re-base"). POR QUÊ: o retarget acima SUPÕE a malha do destino na pose de repouso do esqueleto (o T da UAL). Uma figura inteira pode estar noutra pose (braços caídos, espada para a frente), com o esqueleto em T no repouso e a pose da malha só nos binds da `Skin`; aí o delta mundial da UAL sobre o repouso leva a malha à pose ABSOLUTA da UAL (medido na prova: a espada saía de lado e os pés ficavam 3 a 5 cm abaixo do chão). O QUE FAZ: o delta de cada osso passa a ser relativo ao QUADRO 0 de um clipe de referência (`reference_clip`, 4º argumento do construtor; na `library_for`, o clipe da chave `Options.reference_key`, por padrão `idle`) e é aplicado à rotação MUNDIAL de bind do destino (`bind_pose`: osso -> Transform3D mundial; osso fora do dicionário fica no repouso): o quadro 0 da referência É a pose da malha e o resto é o movimento da UAL em torno dela. A translação da pélvis é o repouso do destino mais o deslocamento em relação ao quadro 0 da referência, vezes a razão da perna. NÃO FAZ: só as ROTAÇÕES do bind entram (as posições vêm das translações de repouso do esqueleto, que devem ser coerentes com o bind, como no esqueleto do Ice Warrior); não conserta uma pose de bind que o esqueleto não alcança; sem clipe de referência o delta é o do repouso da UAL; a razão da perna segue vindo do repouso; um osso sem trilha de rotação no clipe de referência conta como parado no repouso da UAL (o quadro 0 dele é o repouso).
-## (2) TRAVA DE CHÃO (`Options.ground_lock`). POR QUÊ: a perna do Ice Warrior é bem mais curta que a da UAL (razão 0,761, medida por este retarget) e o pé afundou até 5,2 cm no walk: o retarget só escala a translação da pélvis pela razão da perna, o que não basta quando coxa e canela também mudam de proporção. O QUE FAZ: por quadro (reamostrada a 30 por segundo, como a rotação), mede a altura de cada osso de `GROUND_BONES` (tornozelo, base e ponta dos dedos, dos dois pés) em relação à SUA altura na pose de referência (a de repouso; com a pose de referência, a de bind) e move a pélvis, só na vertical, pelo desvio do osso mais baixo: o pé mais baixo fica na altura de referência, sem afundar nem flutuar. NÃO FAZ: IK (se a perna não alcança o passo, o pé continua escorregando); não preserva fase aérea (num clipe de corrida o pé mais baixo ficaria sempre no chão); só a translação da PÉLVIS entra na conta (a UAL só anima a dela); sem trilha da pélvis no clipe, cria uma com o repouso mais a correção.
+## (2) TRAVA DE CHÃO (`Options.ground_lock`). POR QUÊ: a perna do Ice Warrior é bem mais curta que a da UAL (razão 0,761, medida por este retarget) e o pé afundou até 5,2 cm no walk: o retarget só escala a translação da pélvis pela razão da perna, o que não basta quando coxa e canela também mudam de proporção. O QUE FAZ: por quadro (reamostrada a 30 por segundo, como a rotação), mede a altura de cada osso de `GROUND_BONES` (tornozelo, base e ponta dos dedos, dos dois pés) em relação à SUA altura na pose de referência (a de repouso; com a pose de referência, a de bind) e move a pélvis, só na vertical, pelo desvio do osso mais baixo: o pé mais baixo fica na altura de referência, sem afundar nem flutuar. NÃO FAZ: IK (se a perna não alcança o passo, o pé continua escorregando); não preserva fase aérea (num clipe de corrida o pé mais baixo ficaria sempre no chão); só a translação da PÉLVIS entra na conta (a UAL só anima a dela); sem trilha da pélvis no clipe, cria uma com o repouso mais a correção. CONTATOS (6e, `Options.ground_points`): uma bota com a sola abaixo da origem do osso do pé afundaria mesmo com a trava; com os pontos de contato da figura (osso -> pontos no espaço LOCAL do osso, medidos na malha), a trava mede SÓ eles, no lugar dos ossos do pé, e mantém o mais baixo no chão de referência (y = 0 da pose de bind, e não a altura de cada osso no repouso). Vazio (o padrão) = a trava de sempre; sem `ground_lock` os pontos não valem; osso que o destino não tem e lista vazia são ignorados.
 ## (3) AMORTECIMENTO (`Options.damping`: osso -> fator de 0 a 1). POR QUÊ: uma peça rígida longa na mão (a espada de 80 cm do Ice Warrior) transforma o balanço do punho em grande deslocamento da ponta; a prova a amorteceu a 40% no braço dela. O QUE FAZ: mistura (slerp) o delta MUNDIAL de rotação do osso com a identidade: 1 = inteiro, 0 = o osso fica parado na orientação de referência (a de bind, ou a de repouso). Cada osso é independente (a rotação local do filho compensa a do pai). NÃO FAZ: não amortece translação; fator fora de 0 a 1 é limitado; osso que o destino não tem é ignorado.
 
 const SAMPLES_PER_SECOND: float = 30.0
@@ -19,12 +19,13 @@ const MOVING_BONES: PackedStringArray = ["root", "pelvis"]
 const GROUND_BONES: PackedStringArray = ["foot_l", "foot_r", "ball_l", "ball_r", "ball_leaf_l", "ball_leaf_r"]
 
 
-## As opções da entrega 6a, todas DESLIGADAS por padrão (ver o cabeçalho). `bind_pose`: osso -> Transform3D MUNDIAL da pose da malha (vazio = sem pose de referência; dicionário TIPADO: quem o monta de dados cria um `Dictionary[String, Transform3D]`); `reference_key`: a chave, em `clips` da `library_for`, do clipe cujo quadro 0 é a referência; `ground_lock`: a trava de chão; `damping`: osso -> fator de 0 a 1 (vazio = sem amortecer).
+## As opções da entrega 6a, todas DESLIGADAS por padrão (ver o cabeçalho). `bind_pose`: osso -> Transform3D MUNDIAL da pose da malha (vazio = sem pose de referência; dicionário TIPADO: quem o monta de dados cria um `Dictionary[String, Transform3D]`); `reference_key`: a chave, em `clips` da `library_for`, do clipe cujo quadro 0 é a referência; `ground_lock`: a trava de chão; `damping`: osso -> fator de 0 a 1 (vazio = sem amortecer); `ground_points` (6e): osso -> pontos de contato no espaço LOCAL do osso, para a trava de chão (vazio = a trava usa os ossos do pé).
 class Options extends RefCounted:
 	var bind_pose: Dictionary[String, Transform3D] = {}
 	var reference_key: String = "idle"
 	var ground_lock: bool = false
 	var damping: Dictionary[String, float] = {}
+	var ground_points: Dictionary[String, PackedVector3Array] = {}
 
 
 ## Comprimento da perna do destino sobre o da UAL (1 se um dos esqueletos não tem pélvis ou pé).
@@ -43,6 +44,7 @@ var _rest_origins: Array[Vector3] = []
 var _damping: PackedFloat64Array = PackedFloat64Array()
 var _ground_chains: Array[PackedInt32Array] = []
 var _ground_heights: PackedFloat64Array = PackedFloat64Array()
+var _ground_offsets: PackedVector3Array = PackedVector3Array()
 
 
 ## `source` é o esqueleto do arquivo de animações (a UAL) e `target`, o do personagem montado; só os repousos deles são lidos. `options` (padrão: tudo desligado) e `reference_clip` (o clipe da UAL cujo quadro 0 é a pose de referência; só vale com `options.bind_pose`) são da entrega 6a.
@@ -248,30 +250,44 @@ func _use_reference(reference_clip: Animation) -> void:
 		_source_origin[bone] = reference_clip.position_track_interpolate(moves[bone], 0.0)
 
 
-## Com a trava de chão: a cadeia (da raiz ao osso) de cada osso do pé que o destino tem e a altura de referência de cada um.
+## Com a trava de chão: a cadeia (da raiz ao osso) de cada contato e a altura de referência de cada um. Sem `options.ground_points`, os contatos são as origens dos ossos do pé que o destino tem (referência: a altura do osso no repouso); com eles, só os pontos dados (referência: o chão, y = 0).
 func _find_ground() -> void:
 	if not _options.ground_lock:
 		return
-	for bone_name: String in GROUND_BONES:
-		var chain: PackedInt32Array = PackedInt32Array()
-		var bone: int = _target.find_bone(bone_name)
-		while bone >= 0:
-			chain.insert(0, bone)
-			bone = _target.get_bone_parent(bone)
-		if not chain.is_empty():
+	var contact: bool = not _options.ground_points.is_empty()
+	for bone_name: String in (_options.ground_points.keys() if contact else Array(GROUND_BONES)):
+		var chain: PackedInt32Array = _chain_of(bone_name)
+		var points: PackedVector3Array = _options.ground_points[bone_name] if contact else PackedVector3Array([Vector3.ZERO])
+		for point: Vector3 in points if not chain.is_empty() else PackedVector3Array():
 			_ground_chains.append(chain)
-	_ground_heights = _heights(_target_base, _rest_origins)
+			_ground_offsets.append(point)
+	_ground_heights = PackedFloat64Array()
+	if contact:
+		_ground_heights.resize(_ground_chains.size())
+	else:
+		_ground_heights = _heights(_target_base, _rest_origins)
 
 
-## A altura mundial de cada osso do pé (na ordem de `_ground_chains`), dadas as rotações mundiais e as translações locais dos ossos.
+## Os ossos da raiz até `bone_name` no destino (vazio se o destino não tem o osso).
+func _chain_of(bone_name: String) -> PackedInt32Array:
+	var chain: PackedInt32Array = PackedInt32Array()
+	var bone: int = _target.find_bone(bone_name)
+	while bone >= 0:
+		chain.insert(0, bone)
+		bone = _target.get_bone_parent(bone)
+	return chain
+
+
+## A altura mundial de cada contato (na ordem de `_ground_chains`): a do osso mais a do ponto local do contato girado pela rotação mundial do osso, dadas as rotações mundiais e as translações locais dos ossos.
 func _heights(world: Array[Quaternion], origins: Array[Vector3]) -> PackedFloat64Array:
 	var heights: PackedFloat64Array = PackedFloat64Array()
-	for chain: PackedInt32Array in _ground_chains:
+	for index: int in _ground_chains.size():
+		var chain: PackedInt32Array = _ground_chains[index]
 		var position: Vector3 = Vector3.ZERO
 		for bone: int in chain:
 			var parent: int = _target.get_bone_parent(bone)
 			position += origins[bone] if parent < 0 else world[parent] * origins[bone]
-		heights.append(position.y)
+		heights.append(position.y + (world[chain[-1]] * _ground_offsets[index]).y)
 	return heights
 
 
