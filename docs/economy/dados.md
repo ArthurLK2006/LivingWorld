@@ -258,7 +258,7 @@ Contrato **APROVADO por Arthur em 14/11/2026** (PR #33); todos os números são 
 | Coluna | Tipo | Regra |
 |---|---|---|
 | `id` | `STRING` | por convenção `<bem>_<gatilho>` (por exemplo, `bread_standing`); único |
-| `kind` | `STRING` | só `delivery` nesta etapa (o `labor` do jogador é a LW-107f, OBRIGATÓRIA, e depende de uma regra de trabalho do jogador no `world` que ainda não tem contrato; não se dá por concluída por antecipação) |
+| `kind` | `STRING` | só `delivery` nesta etapa (o `labor` por tempo é de categorias futuras, DEC-237; a LW-107f são as encomendas de entrega) |
 | `good_id` | `STRING` | id de `goods.json` (mesma leitura); **um modelo por bem** (o postador reconhece o contrato "do modelo" pelo bem) |
 | `quantity` | `INT` | 1 ou mais; o lote cabe no inventário do jogador: `quantity × weight` do bem não passa da `weight_capacity` do tipo `player` em `owner_kinds.json` (60 hoje, [HIP]) **[PROPOSTA]** |
 | `trigger` | `STRING` | `shortage` (o bem está com a escassez declarada no mercado) ou `standing` (fixo: sempre que o espaço e a regra anti-exploração permitem) |
