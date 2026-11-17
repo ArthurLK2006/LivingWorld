@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/soak/merchant_emulation/merchant_emulation_node.gd" id="1_node"]
+
+[node name="MerchantEmulationMain" type="Node"]
+script = ExtResource("1_node")
