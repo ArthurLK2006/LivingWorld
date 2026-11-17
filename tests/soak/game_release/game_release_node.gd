@@ -10,6 +10,8 @@ extends Node
 ## corpos houve de fato. ART-12, 7c-1 (a rodada COM a figura, com `LW_ART_SAMPLES=1` no tests/soak/run_game_release): o medidor imprime à parte a CARGA da cena (onde o preparo da figura
 ## acontece, fora das seções do quadro), a linha da área local das figuras e, por ensaio, as FIGURAS ATIVAS (corpos com `has_figure()`) com AVISOS (0 figuras, NPC sem corpo ou que não andou no
 ## POVOADO; texto em FigureReport). Com a área vazia (o padrão) nada é olhado por quadro. O veredito segue a DEC-119; o delta de UMA figura é só informativo.
+## ART-12, 7c-1b: cada ensaio imprime também o VEREDITO da DEC-119 (FrameVerdict: média de 60 fps ou mais e nenhum quadro acima de 33 ms). `--segundos N` (CURTA=1 no script) encurta os ensaios só para VALIDAR O
+## INSTRUMENTO: o veredito vira "VALIDAÇÃO DO INSTRUMENTO: sem veredito DEC-119", porque a DEC-119 só vale com as durações completas (as durações padrão e os critérios não mudam). O perfil de energia é do script.
 
 const GAME_SCENE: String = "res://scenes/main.tscn"
 const ROUTE_SECONDS: float = 60.0
@@ -46,6 +48,9 @@ var _area: CharacterArea
 var _has_figure_area: bool = false
 var _load_line: String = ""
 var _seen: FigureReport.Seen = FigureReport.Seen.new()
+var _short_seconds: float = 0.0
+var _mean_ms: float = 0.0
+var _over_33: int = 0
 
 
 func _ready() -> void:
@@ -57,6 +62,7 @@ func _ready() -> void:
 	_load_line = FigureReport.load_line(float(add_us - file_us) / US_PER_MS, float(Time.get_ticks_usec() - add_us) / US_PER_MS)
 	_area = CharacterArea.load_default()
 	_has_figure_area = not _area.is_empty()
+	_short_seconds = _requested_seconds()
 	_terrain = game.get_node("TerrainView") as TerrainView
 	_body = game.get_node("PlayerBody") as PlayerBody
 	_bodies = game.get_node("NpcBodiesView") as NpcBodiesView
@@ -120,6 +126,13 @@ func _enter_settlement() -> void:
 	await _wait_for_terrain()
 
 
+## `--segundos N` (CURTA=1 no script): cada ensaio dura no máximo N segundos, só para VALIDAR O INSTRUMENTO; 0 = sem o argumento, as durações da DEC-119.
+func _requested_seconds() -> float:
+	var args: PackedStringArray = OS.get_cmdline_user_args()
+	var at: int = args.find("--segundos")
+	return maxf(args[at + 1].to_float(), 0.0) if at >= 0 and at + 1 < args.size() else 0.0
+
+
 func _requested_trials() -> PackedStringArray:
 	var args: PackedStringArray = OS.get_cmdline_user_args()
 	var at: int = args.find("--ensaios")
@@ -141,9 +154,11 @@ func _extra_header_lines() -> PackedStringArray:
 	return FigureReport.header_lines(_load_line, _area.is_empty(), _area.figure_ids(), _area.failure)
 
 
-## O resto do RESUMO de um ensaio, uma lista só: as figuras ativas e os avisos (7c-1a; vazio na rodada sem figura). Quem acrescentar assunto ao resumo (a classificação, 7c-1b) acrescenta linhas a esta lista.
+## O resto do RESUMO de um ensaio, uma lista só: o veredito da DEC-119 (7c-1b) e as figuras ativas e os avisos (7c-1a; vazio na rodada sem figura). Quem acrescentar assunto ao resumo acrescenta linhas a esta lista. A classificação da execução (energia e térmico) é do script, que lê o pmset.
 func _extra_report_lines(is_settlement: bool) -> PackedStringArray:
-	return FigureReport.summary_lines(_has_figure_area, is_settlement, _max_bodies, _seen)
+	var lines: PackedStringArray = PackedStringArray([FrameVerdict.line(_mean_ms, _over_33, _short_seconds)])
+	lines.append_array(FigureReport.summary_lines(_has_figure_area, is_settlement, _max_bodies, _seen))
+	return lines
 
 
 ## Olha os corpos (a cada FIGURE_SAMPLE_EVERY_FRAMES quadros, só com a área não vazia): quantos têm figura, quantos são de NPCs da área e se algum deles anda.
@@ -189,10 +204,11 @@ func _measure(label: String, seconds: float, is_settlement: bool = false) -> voi
 	_sections.reset()
 	_max_bodies = 0
 	_seen = FigureReport.Seen.new()
+	var duration: float = minf(seconds, _short_seconds) if _short_seconds > 0.0 else seconds
 	var snapshots: PackedStringArray = ["começo: " + _snapshot(), ""]
 	var start_us: int = Time.get_ticks_usec()
 	var last_us: int = start_us
-	while float(last_us - start_us) / US_PER_SECOND < seconds:
+	while float(last_us - start_us) / US_PER_SECOND < duration:
 		await get_tree().process_frame
 		var now_us: int = Time.get_ticks_usec()
 		_frames_ms.append(float(now_us - last_us) / US_PER_MS)
@@ -202,12 +218,12 @@ func _measure(label: String, seconds: float, is_settlement: bool = false) -> voi
 		if _has_figure_area and _frames_ms.size() % FIGURE_SAMPLE_EVERY_FRAMES == 0:
 			_watch_figures()
 		last_us = now_us
-		if snapshots[1].is_empty() and float(now_us - start_us) / US_PER_SECOND >= seconds / 2.0:
+		if snapshots[1].is_empty() and float(now_us - start_us) / US_PER_SECOND >= duration / 2.0:
 			snapshots[1] = "meio: " + _snapshot()
 	snapshots.append("fim: " + _snapshot())
 	if _has_figure_area:
 		_watch_figures()
-	_print_report(label, snapshots, is_settlement)
+	_print_report(label if _short_seconds <= 0.0 else "%s [CURTA: %d s]" % [label, roundi(duration)], snapshots, is_settlement)
 
 
 func _print_report(label: String, snapshots: PackedStringArray, is_settlement: bool) -> void:
@@ -224,8 +240,10 @@ func _print_report(label: String, snapshots: PackedStringArray, is_settlement: b
 		if counted[index] > BUDGET_30_HZ_MS:
 			over_30 += 1
 			slow_list.append("%.1f ms em %.1f s" % [counted[index], _stamps_s[index + SKIPPED_FRAMES]])
+	_mean_ms = sum / float(maxi(counted.size(), 1))
+	_over_33 = over_30
 	print("ENSAIO %s" % label)
-	print("  quadros %d, média %.2f ms, mediana %.2f ms, percentil 99 %.2f ms, pior (sem os %d primeiros) %.1f ms" % [counted.size(), sum / float(maxi(counted.size(), 1)), sorted[IntMath.floor_div(sorted.size(), 2)], sorted[mini(int(float(sorted.size()) * 0.99), sorted.size() - 1)], SKIPPED_FRAMES, sorted[sorted.size() - 1]])
+	print("  quadros %d, média %.2f ms, mediana %.2f ms, percentil 99 %.2f ms, pior (sem os %d primeiros) %.1f ms" % [counted.size(), _mean_ms, sorted[IntMath.floor_div(sorted.size(), 2)], sorted[mini(int(float(sorted.size()) * 0.99), sorted.size() - 1)], SKIPPED_FRAMES, sorted[sorted.size() - 1]])
 	print("  acima de 16,7 ms: %d · acima de 33 ms: %d%s" % [over_60, over_30, "" if slow_list.is_empty() else " (" + "; ".join(slow_list) + ")"])
 	print(_sections.line(SKIPPED_FRAMES))
 	print("  %s | %s | %s | máximo de corpos %d | posição final x=%.1f m" % [snapshots[0], snapshots[1], snapshots[2], _max_bodies, _body.global_position.x])
