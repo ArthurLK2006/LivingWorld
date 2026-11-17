@@ -7,7 +7,9 @@ extends Node
 ## ensaio imprime também o custo por SEÇÃO do quadro (NpcBodiesView, NpcBodyDriver e o resto, FrameSections). Para medir as duas seções, este nó desliga o `_process`
 ## da view e o `_physics_process` do motorista e os chama ele mesmo, com o relógio em volta, no mesmo ritmo (uma vez por quadro e uma por passo de física). O ensaio
 ## POVOADO (30 s) leva o relógio às 6h45 (só passos da simulação), põe o jogador no centro do povoado A e mede com os NPCs saindo de casa: o relatório diz quantos
-## corpos houve de fato.
+## corpos houve de fato. ART-12, 7c-1 (a rodada COM a figura, com `LW_ART_SAMPLES=1` no tests/soak/run_game_release): o medidor imprime à parte a CARGA da cena (onde o preparo da figura
+## acontece, fora das seções do quadro), a linha da área local das figuras e, por ensaio, as FIGURAS ATIVAS (corpos com `has_figure()`) com AVISOS (0 figuras, NPC sem corpo ou que não andou no
+## POVOADO; texto em FigureReport). Com a área vazia (o padrão) nada é olhado por quadro. O veredito segue a DEC-119; o delta de UMA figura é só informativo.
 
 const GAME_SCENE: String = "res://scenes/main.tscn"
 const ROUTE_SECONDS: float = 60.0
@@ -29,6 +31,8 @@ const BUDGET_30_HZ_MS: float = 33.0
 const SUSPENDED_MS: float = 1000.0
 const US_PER_MS: float = 1000.0
 const US_PER_SECOND: float = 1000000.0
+## As figuras só são olhadas a cada 6 quadros (10 Hz) e só com a área não vazia: o andar dura segundos, e olhar todo quadro pesaria perto dos 0,033 ms que UMA figura custa.
+const FIGURE_SAMPLE_EVERY_FRAMES: int = 6
 
 var _terrain: TerrainView
 var _body: PlayerBody
@@ -38,11 +42,21 @@ var _sections: FrameSections = FrameSections.new()
 var _max_bodies: int = 0
 var _frames_ms: Array[float] = []
 var _stamps_s: Array[float] = []
+var _area: CharacterArea
+var _has_figure_area: bool = false
+var _load_line: String = ""
+var _seen: FigureReport.Seen = FigureReport.Seen.new()
 
 
 func _ready() -> void:
-	var game: Node = (load(GAME_SCENE) as PackedScene).instantiate()
+	var file_us: int = Time.get_ticks_usec()
+	var scene: PackedScene = load(GAME_SCENE) as PackedScene
+	var add_us: int = Time.get_ticks_usec()
+	var game: Node = scene.instantiate()
 	add_child(game)
+	_load_line = FigureReport.load_line(float(add_us - file_us) / US_PER_MS, float(Time.get_ticks_usec() - add_us) / US_PER_MS)
+	_area = CharacterArea.load_default()
+	_has_figure_area = not _area.is_empty()
 	_terrain = game.get_node("TerrainView") as TerrainView
 	_body = game.get_node("PlayerBody") as PlayerBody
 	_bodies = game.get_node("NpcBodiesView") as NpcBodiesView
@@ -89,7 +103,7 @@ func _run() -> void:
 		await _measure("PAUSADO 30 s com HUD", PAUSED_SECONDS)
 	if trials.has("povoado"):
 		await _enter_settlement()
-		await _measure("POVOADO 30 s com o jogador no centro de A, NPCs saindo de casa", SETTLEMENT_SECONDS)
+		await _measure("POVOADO 30 s com o jogador no centro de A, NPCs saindo de casa", SETTLEMENT_SECONDS, true)
 		if _max_bodies == 0:
 			print("  ATENÇÃO: o ensaio POVOADO não teve nenhum corpo; os números dele NÃO medem o caso (S0 cheio).")
 	get_tree().quit(0)
@@ -118,6 +132,34 @@ func _print_header() -> void:
 	print("Motor: Godot %s, %s, %s" % [Engine.get_version_info()["string"], OS.get_name(), RenderingServer.get_video_adapter_name()])
 	print("Renderização: driver %s, método %s" % [RenderingServer.get_current_rendering_driver_name(), RenderingServer.get_current_rendering_method()])
 	print("Tela: %.0f Hz, vsync %d, max_fps %d, janela %s" % [DisplayServer.screen_get_refresh_rate(), DisplayServer.window_get_vsync_mode(), Engine.max_fps, str(DisplayServer.window_get_size())])
+	for line: String in _extra_header_lines():
+		print(line)
+
+
+## O resto do CABEÇALHO, uma lista só: a carga da cena e a área das figuras (7c-1a). Quem acrescentar assunto ao cabeçalho (o perfil de energia, 7c-1b) acrescenta linhas a esta lista.
+func _extra_header_lines() -> PackedStringArray:
+	return FigureReport.header_lines(_load_line, _area.is_empty(), _area.figure_ids(), _area.failure)
+
+
+## O resto do RESUMO de um ensaio, uma lista só: as figuras ativas e os avisos (7c-1a; vazio na rodada sem figura). Quem acrescentar assunto ao resumo (a classificação, 7c-1b) acrescenta linhas a esta lista.
+func _extra_report_lines(is_settlement: bool) -> PackedStringArray:
+	return FigureReport.summary_lines(_has_figure_area, is_settlement, _max_bodies, _seen)
+
+
+## Olha os corpos (a cada FIGURE_SAMPLE_EVERY_FRAMES quadros, só com a área não vazia): quantos têm figura, quantos são de NPCs da área e se algum deles anda.
+func _watch_figures() -> void:
+	var figures: int = 0
+	var of_area: int = 0
+	var area_npc: int = IdGenerator.NO_ID
+	var walking: bool = false
+	for npc_id: int in _bodies.active_ids():
+		var view: NpcView = _bodies.pool().body_of(npc_id)
+		if not _area.figure_for(npc_id).is_empty():
+			of_area += 1
+			area_npc = npc_id
+			walking = walking or view.is_walking()
+		figures += 1 if view.has_figure() else 0
+	_seen.record(figures, of_area, area_npc, walking)
 
 
 ## Espera o terreno assentar (nada na fila de construção, de liberação e de colisão), com limite de tempo, e mais um pouco.
@@ -141,11 +183,12 @@ func _snapshot() -> String:
 
 
 ## Mede `seconds` de quadros (intervalo entre um quadro e o seguinte) e imprime o relatório do ensaio.
-func _measure(label: String, seconds: float) -> void:
+func _measure(label: String, seconds: float, is_settlement: bool = false) -> void:
 	_frames_ms.clear()
 	_stamps_s.clear()
 	_sections.reset()
 	_max_bodies = 0
+	_seen = FigureReport.Seen.new()
 	var snapshots: PackedStringArray = ["começo: " + _snapshot(), ""]
 	var start_us: int = Time.get_ticks_usec()
 	var last_us: int = start_us
@@ -156,14 +199,18 @@ func _measure(label: String, seconds: float) -> void:
 		_stamps_s.append(float(now_us - start_us) / US_PER_SECOND)
 		_sections.end_frame(_frames_ms[_frames_ms.size() - 1])
 		_max_bodies = maxi(_max_bodies, _bodies.pool().active_count())
+		if _has_figure_area and _frames_ms.size() % FIGURE_SAMPLE_EVERY_FRAMES == 0:
+			_watch_figures()
 		last_us = now_us
 		if snapshots[1].is_empty() and float(now_us - start_us) / US_PER_SECOND >= seconds / 2.0:
 			snapshots[1] = "meio: " + _snapshot()
 	snapshots.append("fim: " + _snapshot())
-	_print_report(label, snapshots)
+	if _has_figure_area:
+		_watch_figures()
+	_print_report(label, snapshots, is_settlement)
 
 
-func _print_report(label: String, snapshots: PackedStringArray) -> void:
+func _print_report(label: String, snapshots: PackedStringArray, is_settlement: bool) -> void:
 	var counted: Array[float] = _frames_ms.slice(SKIPPED_FRAMES)
 	var sorted: Array[float] = counted.duplicate()
 	sorted.sort()
@@ -182,5 +229,7 @@ func _print_report(label: String, snapshots: PackedStringArray) -> void:
 	print("  acima de 16,7 ms: %d · acima de 33 ms: %d%s" % [over_60, over_30, "" if slow_list.is_empty() else " (" + "; ".join(slow_list) + ")"])
 	print(_sections.line(SKIPPED_FRAMES))
 	print("  %s | %s | %s | máximo de corpos %d | posição final x=%.1f m" % [snapshots[0], snapshots[1], snapshots[2], _max_bodies, _body.global_position.x])
+	for line: String in _extra_report_lines(is_settlement):
+		print(line)
 	if sorted[sorted.size() - 1] > SUSPENDED_MS:
 		print("  ATENÇÃO: quadro de mais de 1 s; o Mac pode ter suspendido, estes números não valem.")
