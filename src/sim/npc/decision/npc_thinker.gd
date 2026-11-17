@@ -285,9 +285,9 @@ func _candidate_for(state: NpcState, action: ActionDef, now: int, running: bool,
 
 
 ## `haul` não tem efeito na tabela: o benefício dela é DERIVADO do lucro esperado (098f2, npc.md 14.11), só o `net_profit` do melhor plano, que já traz o tempo e o risco da viagem. 0 para as outras ações e para quem não tem plano: `haul`
-## sem valor não é candidata e o comerciante fica parado.
+## sem valor não é candidata e o comerciante fica parado. Uma consulta só (098h3a): `haul_value` já devolve 0 sem plano e o valor 0 descarta a candidata (`_candidate_for`), então não se pergunta antes se há plano (eram duas chamadas a `peek_trade_plans`).
 func _haul_value(state: NpcState, action: ActionDef) -> int:
-	if action.id != MerchantTrade.HAUL_ACTION_ID or not _provider.has_trade_plan(state.npc_id):
+	if action.id != MerchantTrade.HAUL_ACTION_ID:
 		return 0
 	return _provider.haul_value(state.npc_id)
 
