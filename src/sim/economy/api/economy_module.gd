@@ -185,7 +185,7 @@ func request_accept_contract(contract_id: int, actor_id: int) -> Result:
 
 
 ## Abandona a encomenda `delivery` que `actor_id` aceitou, antes do prazo (LW-107f1; seção 8, item (a)): a custódia volta ao emissor (ou ao mercado do povoado do destino, se ele morreu), o contrato fica `failed` com o `closed_reason` `abandoned` e o `ContractFailed` sai com o motivo `abandoned` (que NÃO é falha para a crônica, a reputação nem as facções). Nada é pago e nenhum bem se move; a recusa não muda nada nem publica.
-## Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_CONTRACT_IMPOSSIBLE` (não é `delivery`, outro ator, prazo vencido ou sem `setup`).
+## Falhas: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_NOT_OPEN`, `ECON_CONTRACT_IMPOSSIBLE` (não é `delivery`, outro ator, prazo vencido ou sem `setup`) e o código do `Ledger` se ele recusar a devolução (`ECON_BAD_AMOUNT`: o saldo de quem recebe passaria do teto; nada muda).
 func request_abandon_contract(contract_id: int, actor_id: int) -> Result:
 	if _clock == null or _events == null:
 		return Result.failure(EconomyCodes.CONTRACT_IMPOSSIBLE, "EconomyModule.request_abandon_contract: módulo sem setup (sem relógio nem barramento); esperado um módulo registrado no World.")
