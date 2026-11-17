@@ -107,11 +107,8 @@ func test_the_same_seed_gives_the_same_hash_and_another_seed_another() -> void:
 	var second: MerchantEmulation.Report = again.run(1)
 	assert_eq(second.state_hash, _report.state_hash, "Mesma semente, mesmo hash depois de 1 dia.")
 	assert_eq(second.rows.map(func(row: MerchantEmulation.Row) -> String: return row.describe()), _report.rows.map(func(row: MerchantEmulation.Row) -> String: return row.describe()), "E a mesma contabilidade por comerciante.")
-	var same: MerchantEmulation = _start(SEED, MerchantEmulation.SPREAD_Q7, MERCHANTS)
 	var other: MerchantEmulation = _start(2, MerchantEmulation.SPREAD_Q7, MERCHANTS)
-	same.runner.run_steps(ONE_HOUR)
-	other.runner.run_steps(ONE_HOUR)
-	assert_ne(other.runner.world.state_hash(), same.runner.world.state_hash(), "Outra semente, outro mundo (comparados no mesmo ponto: depois de 1 hora de jogo).")
+	assert_ne(other.run(1).state_hash, _report.state_hash, "Outra semente, outro mundo (o hash do fim do dia 1, tomado dentro do `run`).")
 
 
 func test_the_q7_changes_the_initial_stocks_and_prices_and_none_changes_nothing() -> void:
@@ -161,6 +158,23 @@ func test_the_row_follows_the_hunger_and_counts_a_death_once() -> void:
 	report.rows.append(row)
 	assert_eq(report.alive_count(), 0, "Morto não conta como vivo no relatório.")
 	assert_string_contains(report.summary(), "alive_merchants=0/1")
+
+
+func test_a_failed_conservation_check_fails_the_report_and_a_good_day_does_not_erase_it() -> void:
+	var good_money: EconomyReplies.ConservationQuery = EconomyReplies.ConservationQuery.new(100, 100, 0)
+	var bad_money: EconomyReplies.ConservationQuery = EconomyReplies.ConservationQuery.new(101, 100, 0)
+	var good_goods: EconomyReplies.GoodsConservationQuery = EconomyReplies.GoodsConservationQuery.new([{"good_id": BREAD, "in_stock": 5, "created": 5, "destroyed": 0, "ok": true}])
+	var bad_goods: EconomyReplies.GoodsConservationQuery = EconomyReplies.GoodsConservationQuery.new([{"good_id": BREAD, "in_stock": 6, "created": 5, "destroyed": 0, "ok": false}])
+	var report: MerchantEmulation.Report = MerchantEmulation.Report.new()
+	report.record_day_check(good_money, good_goods)
+	assert_eq([report.checks, report.money_ok, report.goods_ok, report.is_sound()], [1, true, true, true], "Dia bom: o relatório segue sólido.")
+	report.record_day_check(bad_money, good_goods)
+	report.record_day_check(good_money, good_goods)
+	assert_eq([report.checks, report.money_ok, report.goods_ok, report.is_sound()], [3, false, true, false], "O dinheiro que não fechou num dia reprova, e o dia bom seguinte não apaga.")
+	var other: MerchantEmulation.Report = MerchantEmulation.Report.new()
+	other.record_day_check(good_money, bad_goods)
+	other.record_day_check(good_money, good_goods)
+	assert_eq([other.checks, other.money_ok, other.goods_ok, other.is_sound()], [2, true, false, false], "Os bens que não fecharam num dia reprovam, e o dia bom seguinte não apaga.")
 
 
 func test_the_step_statistics_are_exact_on_known_series() -> void:
