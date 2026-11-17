@@ -292,6 +292,29 @@ func test_an_accepted_contract_past_its_deadline_does_not_take_a_slot() -> void:
 	assert_true(_accept(fourth).result.ok, "O vencido não ocupa vaga.")
 
 
+func test_a_contract_on_its_last_minute_still_takes_a_slot_and_can_still_be_abandoned() -> void:
+	var last: int = _post(_market_a, _market_b, SHORT_MINUTES)
+	assert_true(_accept(last).result.ok)
+	for _index: int in LIMIT - 1:
+		assert_true(_accept(_post(_market_a, _market_b)).result.ok)
+	_host.runner.run_steps(SHORT_MINUTES - 1)
+	assert_eq(_economy.peek_contract(last).deadline - _now(), 1, "Pré-condição: falta 1 minuto para o prazo.")
+	_refused_accept(_post(_market_a, _market_b), BridgePlayerContracts.CODE_LIMIT, KEY_LIMIT)
+	var abandoned: BridgePlayerContractsReplies.ContractActionReply = _abandon(last)
+	assert_true(abandoned.result.ok, abandoned.result.message)
+	assert_eq(_economy.peek_contract(last).closed_reason, ABANDONED, "Abandonar no último minuto vale.")
+
+
+func test_a_labor_the_actor_holds_is_not_yours_and_takes_no_delivery_slot() -> void:
+	var labor: int = _post_labor()
+	assert_true(_economy.request_accept_contract(labor, _actor_id).ok, "Pré-condição: o ator aceita o `labor` direto na economia (a ponte só opera entrega).")
+	_refused_abandon(labor, BridgePlayerContracts.CODE_NOT_YOURS, KEY_NOT_YOURS)
+	for _index: int in LIMIT - 1:
+		assert_true(_accept(_post(_market_a, _market_b)).result.ok)
+	var third: BridgePlayerContractsReplies.ContractActionReply = _accept(_post(_market_a, _market_b))
+	assert_true(third.result.ok, "Com 2 entregas e 1 `labor` aceitos, a 3ª entrega cabe, porque outra categoria não conta. " + third.result.message)
+
+
 func test_a_category_without_a_line_in_the_data_has_no_limit_and_the_board_says_zero() -> void:
 	_end()
 	var terrain: TerrainData = TerrainLoader.load_dir(WORLD_DIR).terrain
@@ -330,3 +353,16 @@ func test_the_board_shows_the_limit_the_closed_reason_and_the_abandoned_deliveri
 	assert_eq([board.rows[0].state, board.rows[0].closed_reason, board.rows[0].is_mine], [ContractBook.STATE_FAILED, ABANDONED, true], "O abandonado é `failed` com o motivo CRU, e é do jogador.")
 	assert_eq([board.rows[5].closed_reason, board.rows[6].closed_reason], ["", ""], "Sem abandono, o motivo é vazio.")
 	assert_eq(_snapshot(), before, "A consulta só lê.")
+
+
+func test_a_finished_labor_of_the_actor_does_not_take_one_of_the_finished_slots_of_the_board() -> void:
+	var abandoned: Array[int] = []
+	for index: int in BridgePlayerContracts.FINISHED_LIMIT:
+		abandoned.append(_post(_market_a, _market_b))
+		assert_true(_accept(abandoned[index]).result.ok)
+		assert_true(_abandon(abandoned[index]).result.ok)
+	var labor: int = _post_labor()
+	assert_true(_economy.request_accept_contract(labor, _actor_id).ok)
+	_host.runner.run_steps(LONG_MINUTES + MINUTES_PER_HOUR)
+	assert_eq(_economy.peek_contract(labor).state, ContractBook.STATE_EXPIRED, "Pré-condição: o `labor` do ator venceu, com o id maior que o dos 5 abandonos.")
+	assert_eq(_ids(_bridge.peek_contract_board(_actor_id, _market_a)), abandoned, "O `labor` terminado não ocupa uma vaga dos terminados (só entrega conta): os 5 `failed` seguem na lista.")
