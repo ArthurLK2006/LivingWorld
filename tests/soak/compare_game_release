@@ -3,7 +3,9 @@
 # SÓ LÊ os arquivos: o veredito da DEC-119 (média de 60 fps ou mais e nenhum quadro acima de 33 ms), o custo por seção e a carga da cena são os que o medidor imprimiu; nada aqui calcula veredito.
 # Cada rótulo da linha PERFIL é um grupo PRÓPRIO (bateria, tomada, "(baixo consumo LIGADO)" e "(baixo consumo DESCONHECIDO)" nunca se somam) e, dentro dele, FIGURA com e sem. São DESCARTADAS de toda
 # estatística e LISTADAS com o motivo: a execução INCONCLUSIVA (CLASSIFICAÇÃO), a sem PERFIL, FIGURA ou CLASSIFICAÇÃO legíveis (formato anterior à 7c-1b ou execução cortada), a que traz o aviso do
-# próprio medidor de que os números não valem (quadro de mais de 1 s; povoado sem corpo) e a execução COM a figura sem nenhuma figura ativa. A execução CURTA (CURTA=1, só valida o instrumento) é IGNORADA.
+# próprio medidor de que os números não valem (quadro de mais de 1 s; povoado sem corpo), a que não imprime as DUAS contagens da DEC-119 (quadros acima de 16,7 ms e de 33 ms) ou o veredito, a COM a figura
+# sem nenhuma figura ativa (ou sem a linha delas) e a SEM a figura que traz figuras ativas (base contaminada). A execução CURTA (CURTA=1, só valida o instrumento) é IGNORADA. Cada arquivo conta UMA vez.
+# A carga da cena que o medidor não imprimiu NÃO descarta: o relatório diz "carga da cena: não impressa". O awk roda com LC_ALL=C: o locale do Terminal (vírgula decimal) não pode truncar o ponto dos números.
 # O DELTA (com menos sem) é só informativo: a DISPERSÃO é o máximo menos o mínimo de cada condição e, com |delta| dentro da maior delas, a linha diz "abaixo do ruído" (com menos de 2 execuções por condição
 # o ruído NÃO é estimável). ONDE: uma seção do quadro ou a carga da cena com diferença acima da dispersão; senão "nada identificável".
 # Uso: tests/soak/compare_game_release PASTA_OU_ARQUIVO [...]   (pasta: lê os game_release_run_*.txt dentro dela; ex.: as pastas sem/ e com/ de uma rodada do tests/soak/medir_figura)
@@ -11,23 +13,29 @@
 set -u
 usage() { echo "Uso: $0 PASTA_OU_ARQUIVO [...]   (pasta: lê os game_release_run_*.txt dentro dela)" >&2; exit 2; }
 [ "$#" -ge 1 ] || usage
+nl='
+'
+seen=$nl
+fresh() { # $1 = arquivo: põe em $path o caminho REAL dele (pasta resolvida; sempre com "/" na frente, para o awk nunca tomar o nome por atribuição) e diz se é a 1ª vez: um arquivo = UMA execução, por mais caminhos que o nomeiem
+    path=$(CDPATH= cd -- "$(dirname -- "$1")" && pwd -P)/$(basename -- "$1")
+    case "$seen" in *"$nl$path$nl"*) return 1;; esac
+    seen=$seen$path$nl
+}
 count=$#
-while [ "$count" -gt 0 ]; do # troca cada pasta pelos arquivos dela (o que sobra em "$@" são só arquivos; ./ na frente para o awk nunca tomar o nome por atribuição)
+while [ "$count" -gt 0 ]; do # troca cada pasta pelos arquivos dela (o que sobra em "$@" são só arquivos, cada um UMA vez, mesmo dado por pasta e por arquivo)
     arg=$1; shift; count=$((count - 1))
     if [ -d "$arg" ]; then
         for file in "$arg"/game_release_run_*.txt; do
-            case "$file" in /*|./*) ;; *) file=./$file;; esac
-            [ -s "$file" ] && set -- "$@" "$file"
+            [ -s "$file" ] && fresh "$file" && set -- "$@" "$path"
         done
     elif [ -f "$arg" ]; then
-        case "$arg" in /*|./*) ;; *) arg=./$arg;; esac
-        set -- "$@" "$arg"
+        fresh "$arg" && set -- "$@" "$path"
     else
         echo "ERRO: '$arg' não é uma pasta nem um arquivo de execução." >&2; usage
     fi
 done
 [ "$#" -ge 1 ] || { echo "ERRO: nenhuma execução (game_release_run_*.txt) nas pastas dadas." >&2; exit 1; }
-awk '
+LC_ALL=C awk '
 function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
 function after(s, tag,   i) { i = index(s, tag); return i ? substr(s, i + length(tag)) : "" }
 function lead(s) { sub(/[^0-9.].*$/, "", s); return s }
@@ -72,8 +80,14 @@ function judge(k,   p, f, why, i, e, r, key, m, rest, j, q, name, v, line) {
     if (ne[k] == 0) why = why "nenhum ensaio no arquivo; "
     if (inv[k] != "") why = why inv[k] "; "
     for (i = 1; i <= ne[k]; i++) {
-        if (!((k, i) in okq)) why = why "ensaio " en[k, i] " sem a linha de tempos de quadro; "
-        if (f == "com" && (!((k, i) in fig) || fig[k, i] < 1 || ((k, i) in zero))) why = why "COM a figura, mas 0 figuras ativas no ensaio " en[k, i] " (a rodada que não mediu figura não entra como COM); "
+        e = en[k, i]
+        if (!((k, i) in okq)) why = why "ensaio " e " sem a linha de tempos de quadro; "
+        if (o167[k, i] == "") why = why "ensaio " e " sem a contagem de quadros acima de 16,7 ms; "
+        if (o33[k, i] == "") why = why "ensaio " e " sem a contagem de quadros acima de 33 ms (a da DEC-119); "
+        if (!((k, i) in ver)) why = why "ensaio " e " sem o veredito DEC-119 impresso; "
+        if (f == "com" && !((k, i) in fig)) why = why "COM a figura, mas sem a linha de figuras ativas no ensaio " e "; "
+        else if (f == "com" && (fig[k, i] < 1 || ((k, i) in zero))) why = why "COM a figura, mas 0 figuras ativas no ensaio " e " (a rodada que não mediu figura não entra como COM); "
+        if (f == "sem" && ((k, i) in fig) && fig[k, i] > 0) why = why "sem a figura, mas com figuras ativas: a base está contaminada (ensaio " e ", máximo " fig[k, i] "); "
     }
     if (!(p in pseen)) { pseen[p] = 1; plist[++np] = p }
     ng[p, f]++
@@ -88,7 +102,7 @@ function judge(k,   p, f, why, i, e, r, key, m, rest, j, q, name, v, line) {
         m = mean[k, i] + 0
         acc(key "fps", m > 0 ? 1000 / m : 0); acc(key "mean", m); acc(key "med", med[k, i] + 0); acc(key "p99", p99[k, i] + 0); acc(key "worst", worst[k, i] + 0)
         acc(key "o167", o167[k, i] + 0); acc(key "o33", o33[k, i] + 0)
-        if ((k, i) in ver) { vt[key "v"]++; if (ver[k, i] == "PASSA") vp[key "v"]++ }
+        vt[key "v"]++; if (ver[k, i] == "PASSA") vp[key "v"]++
         rest = sec[k, i]
         while (rest != "") { # "NpcBodiesView 0.10 / 1.20 | NpcBodyDriver 0.20 / 2.30 | resto do quadro 16.0 / 28.0": o nome vai até o último espaço antes da média
             j = index(rest, " | "); if (j > 0) { v = substr(rest, 1, j - 1); rest = substr(rest, j + 3) } else { v = rest; rest = "" }
@@ -97,8 +111,8 @@ function judge(k,   p, f, why, i, e, r, key, m, rest, j, q, name, v, line) {
             name = substr(v, 1, q - 1); acc(key "s:" name, substr(v, q + 1) + 0)
             if (index("|" sn[p, e] "|", "|" name "|") == 0) sn[p, e] = sn[p, e] (sn[p, e] == "" ? "" : "|") name
         }
-        line = sprintf("      %s: FPS %.1f | média %.2f ms, mediana %.2f ms, p99 %.2f ms, pior %.1f ms | acima de 16,7 ms: %s, acima de 33 ms: %s%s\n", short(path[k]), m > 0 ? 1000 / m : 0, m, med[k, i], p99[k, i], worst[k, i], o167[k, i], o33[k, i], worst5(slow[k, i]))
-        line = line "        VEREDITO DEC-119 (o do medidor): " (((k, i) in ver) ? ver[k, i] " (" vtx[k, i] ")" : "sem a linha do veredito") "\n        seções, em ms por quadro (média / pior): " (sec[k, i] == "" ? "sem a linha" : sec[k, i]) "\n"
+        line = sprintf("      %s: FPS %.2f | média %.2f ms, mediana %.2f ms, p99 %.2f ms, pior %.1f ms | acima de 16,7 ms: %s, acima de 33 ms: %s%s\n", short(path[k]), m > 0 ? 1000 / m : 0, m, med[k, i], p99[k, i], worst[k, i], o167[k, i], o33[k, i], worst5(slow[k, i]))
+        line = line "        VEREDITO DEC-119 (o do medidor): " ver[k, i] " (" vtx[k, i] ")\n        seções, em ms por quadro (média / pior): " (sec[k, i] == "" ? "sem a linha" : sec[k, i]) "\n"
         det[key "d"] = det[key "d"] line
         if (wr[k, i] != "") wl[p, f] = wl[p, f] "    aviso do medidor (" short(path[k]) ", ensaio " e "): " wr[k, i] "\n"
     }
@@ -126,7 +140,7 @@ function cond_block(p, f, e,   key) {
     key = p SUBSEP f SUBSEP e SUBSEP
     if (!((key "fps") in an)) { printf "    FIGURA %s: nenhuma execução válida com este ensaio\n", f; return }
     printf "    FIGURA %s, %d execução(ões) válida(s) (média, de mín a máx ENTRE as execuções):\n", f, an[key "fps"]
-    printf "      FPS médio (1000 / média do quadro): %s\n", stat(key "fps", 1)
+    printf "      FPS médio (1000 / média do quadro): %s\n", stat(key "fps", 2)
     printf "      tempos de quadro em ms: média %s | mediana %s | percentil 99 %s | pior %s\n", stat(key "mean", 2), stat(key "med", 2), stat(key "p99", 2), stat(key "worst", 1)
     printf "      quadros por execução acima de 16,7 ms: %s | acima de 33 ms: %s\n", stat(key "o167", 1), stat(key "o33", 1)
     printf "      VEREDITO DEC-119 (o do medidor): PASSA em %d de %d execução(ões)\n%s", vp[key "v"], vt[key "v"], det[key "d"]
@@ -142,12 +156,17 @@ function delta_block(p, e,   ks, kc, cond, w) {
     w = where(p, e, ks, kc)
     print "      ONDE está a diferença: " (w != "" ? w : ((an[ks "fps"] < 2 || an[kc "fps"] < 2) ? "não estimável (menos de 2 execuções em uma condição)" : "nada identificável"))
 }
+function load_line(p, f,   k, miss) { # a carga da cena de UMA condição; diz quando o medidor não a imprimiu (em todas as execuções válidas ou só em parte)
+    if (nv[p, f] == 0) return
+    k = p SUBSEP f SUBSEP "-" SUBSEP; miss = nv[p, f] - (((k "lf") in an) ? an[k "lf"] : 0)
+    if (miss == nv[p, f]) printf "    FIGURA %s: carga da cena: não impressa\n", f
+    else printf "    FIGURA %s: ler o arquivo %s | instanciar e adicionar %s%s\n", f, stat(k "lf", 1), stat(k "la", 1), miss ? " (carga da cena: não impressa em " miss " das " nv[p, f] " execuções válidas)" : ""
+}
 function load_block(p,   fa, fb, la_a, la_b, cond) {
+    if (nv[p, "sem"] == 0 && nv[p, "com"] == 0) return
     fa = p SUBSEP "sem" SUBSEP "-" SUBSEP "lf"; fb = p SUBSEP "com" SUBSEP "-" SUBSEP "lf"; la_a = p SUBSEP "sem" SUBSEP "-" SUBSEP "la"; la_b = p SUBSEP "com" SUBSEP "-" SUBSEP "la"
-    if (!(fa in an) && !(fb in an)) return
     print "\n  CARGA da cena principal (fora das seções do quadro; o preparo da figura acontece aqui), em ms (média, de mín a máx):"
-    if (fa in an) printf "    FIGURA sem: ler o arquivo %s | instanciar e adicionar %s\n", stat(fa, 1), stat(la_a, 1)
-    if (fb in an) printf "    FIGURA com: ler o arquivo %s | instanciar e adicionar %s\n", stat(fb, 1), stat(la_b, 1)
+    load_line(p, "sem"); load_line(p, "com")
     if ((fa in an) && (fb in an)) { cond = (an[fa] == an[fb]) ? an[fa] " execuções por condição" : an[fa] " sem e " an[fb] " com"; delta_line("delta da carga (com menos sem), instanciar e adicionar", "ms", 1, la_a, la_b, cond) }
 }
 function report(   a, i, j, p, t, f, g, e) {

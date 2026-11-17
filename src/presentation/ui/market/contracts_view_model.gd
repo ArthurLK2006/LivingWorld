@@ -4,18 +4,24 @@ extends RefCounted
 ## por frases e desenha (LW-107e). `refresh` lê a ponte (`peek_contract_board`, `peek_player_economy` e `peek_economy_markets`) e COPIA o que precisa: nenhuma resposta da ponte é guardada. Só lê e não tem regra de jogo:
 ## não calcula recompensa, custo nem regra de prazo, só SUBTRAI e COMPARA com o `now` que veio na MESMA resposta da ponte (nunca outro relógio; o modelo não lê relógio nenhum). Falhou? O modelo fica VAZIO e inválido, com o
 ## código da recusa em `error_code()`: um número da leitura anterior nunca aparece como se fosse atual. Quem decide QUANDO atualizar é a tela; ela mostra `ui.contracts.unavailable` quando o modelo é inválido.
+## LW-107f4a (docs/modules/presentation.md, "Encomendas por objetivo: abandonar, confirmar e capacidade"): a linha ganha `closed_reason` e `can_abandon`, o `display_state` distingue o abandono, e o modelo expõe `accepted_count()` e `capacity()` (o `accepted_limit` da ponte).
 
-## Os estados do contrato com o texto da ponte (o da economia; um teste confere). Em `Row.display_state` são os estados que a tela MOSTRA: `expired` é o "Vencido".
+## Os estados do contrato com o texto da ponte (o da economia; um teste confere). Em `Row.display_state` são os estados que a tela MOSTRA: `expired` é o "Vencido". `STATE_ABANDONED` só existe em `display_state` (LW-107f4a): é o
+## `failed` cujo `closed_reason` é `REASON_ABANDONED` (o texto da economia); o `failed` sem motivo (a falha real) segue `failed`.
 const STATE_OPEN: String = "open"
 const STATE_ACCEPTED: String = "accepted"
 const STATE_COMPLETED: String = "completed"
 const STATE_EXPIRED: String = "expired"
+const STATE_FAILED: String = "failed"
+const STATE_ABANDONED: String = "abandoned"
+const REASON_ABANDONED: String = "abandoned"
 
 
 ## Uma linha da aba: um contrato de entrega do quadro. `state` é o da ponte; `display_state` é o que a tela MOSTRA (`expired` para todo contrato `open` ou `accepted` com o prazo passado, ainda que a economia só o encerre na hora
-## cheia, e para o que ela já encerrou; nos demais casos, o próprio `state`). `minutes_left` é `deadline - now`, SEM limite: zero ou negativo com o prazo passado, e a tela só o mostra quando `display_state` é `open` ou
-## `accepted`. `is_overdue` olha SÓ o prazo (`deadline <= now`), nunca o estado: um `completed` com o prazo passado tem `is_overdue` verdadeiro e `display_state` `completed`, então a tela decide por `display_state`.
-## `owned` é quanto o jogador tem do bem. `can_deliver` é só DICA para habilitar o botão (quem decide é a ponte e a economia). `destination_settlement_id` é o povoado do destino, para o nome por chave (vazio se o destino não é mercado).
+## cheia, e para o que ela já encerrou; `abandoned` para o `failed` com `closed_reason` `abandoned` (nunca "Falhou" nem "Vencido"); nos demais casos, o próprio `state`). `minutes_left` é `deadline - now`, SEM limite: zero ou negativo com o prazo passado,
+## e a tela só o mostra quando `display_state` é `open` ou `accepted`. `is_overdue` olha SÓ o prazo (`deadline <= now`), nunca o estado: um `completed` com o prazo passado tem `is_overdue` verdadeiro e `display_state` `completed`, então a tela decide por `display_state`.
+## `owned` é quanto o jogador tem do bem. `can_deliver` e `can_abandon` (a linha é minha, está `accepted` e o prazo não passou) são só DICAS para habilitar os botões (quem decide é a ponte e a economia). `closed_reason` é o da ponte, CRU (vazio se não há).
+## `destination_settlement_id` é o povoado do destino, para o nome por chave (vazio se o destino não é mercado).
 class Row:
 	extends RefCounted
 
@@ -31,13 +37,16 @@ class Row:
 	var minutes_left: int = 0
 	var is_overdue: bool = false
 	var display_state: String = ""
+	var closed_reason: String = ""
 	var owned: int = 0
 	var can_deliver: bool = false
+	var can_abandon: bool = false
 
 
 var _is_valid: bool = false
 var _error_code: String = ""
 var _market_id: int = IdGenerator.NO_ID
+var _accepted_limit: int = 0
 var _rows: Array[Row] = []
 
 
@@ -68,6 +77,7 @@ func refresh(bridge: SimBridge, actor_id: int, market_id: int) -> bool:
 		var settlement_id: String = settlement_of.get(source.destination_id, "")
 		_rows.append(_row_of(source, board.now, board.market_id, owned, settlement_id))
 	_market_id = board.market_id
+	_accepted_limit = board.accepted_limit
 	_is_valid = true
 	return true
 
@@ -101,7 +111,7 @@ func available() -> Array[Row]:
 	return listed
 
 
-## "Meus contratos": primeiro as `accepted` da ponte (inclusive a de prazo passado) e depois as terminadas (`completed` e `expired`), cada grupo na ordem da ponte. Junto com `available()` cobre toda linha, uma vez só.
+## "Meus contratos": primeiro as `accepted` da ponte (inclusive a de prazo passado) e depois as terminadas (`completed`, `expired` e `failed`, o abandono entre elas), cada grupo na ordem da ponte. Junto com `available()` cobre toda linha, uma vez só.
 func mine() -> Array[Row]:
 	var listed: Array[Row] = []
 	for row: Row in _rows:
@@ -113,10 +123,21 @@ func mine() -> Array[Row]:
 	return listed
 
 
+## Quantos contratos o jogador tem aceitos AGORA: as linhas de `display_state` `accepted`, isto é, as `accepted` que NÃO venceram (a MESMA conta da ponte, que não deixa o vencido ocupar vaga). Zero se o modelo é inválido.
+func accepted_count() -> int:
+	return _rows.filter(func(row: Row) -> bool: return row.display_state == STATE_ACCEPTED).size()
+
+
+## O limite de contratos de entrega aceitos ao mesmo tempo, o `accepted_limit` da leitura (0 = sem limite definido; o modelo não tem número nenhum). Zero se o modelo é inválido.
+func capacity() -> int:
+	return _accepted_limit
+
+
 func _clear() -> void:
 	_is_valid = false
 	_error_code = ""
 	_market_id = IdGenerator.NO_ID
+	_accepted_limit = 0
 	_rows.clear()
 
 
@@ -139,15 +160,19 @@ static func _row_of(source: BridgePlayerContractsReplies.ContractBoardRow, now: 
 	row.destination_settlement_id = settlement_id
 	row.minutes_left = source.deadline - now
 	row.is_overdue = source.deadline <= now
-	row.display_state = _display_state_of(source.state, row.is_overdue)
+	row.closed_reason = source.closed_reason
+	row.display_state = _display_state_of(source.state, row.is_overdue, source.closed_reason)
 	row.owned = owned
 	row.can_deliver = source.is_mine and source.state == STATE_ACCEPTED and source.destination_id == market_id and owned >= source.quantity and not row.is_overdue
+	row.can_abandon = source.is_mine and source.state == STATE_ACCEPTED and not row.is_overdue
 	return row
 
 
-## O estado que a tela mostra: o contrato que ainda consta `open` ou `accepted` mas já passou do prazo é "Vencido", e o `state` da economia nunca é mexido.
-static func _display_state_of(state: String, is_overdue: bool) -> String:
+## O estado que a tela mostra: o contrato que ainda consta `open` ou `accepted` mas já passou do prazo é "Vencido"; o `failed` que o jogador largou (`closed_reason` `abandoned`) é "Abandonado" e o `failed` sem motivo segue `failed`; o `state` da economia nunca é mexido.
+static func _display_state_of(state: String, is_overdue: bool, closed_reason: String) -> String:
 	var is_held: bool = state == STATE_OPEN or state == STATE_ACCEPTED
 	if state == STATE_EXPIRED or (is_held and is_overdue):
 		return STATE_EXPIRED
+	if state == STATE_FAILED and closed_reason == REASON_ABANDONED:
+		return STATE_ABANDONED
 	return state
