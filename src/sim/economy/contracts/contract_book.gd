@@ -181,7 +181,7 @@ func deliver(contract_id: int, now: int) -> Outcome:
 
 
 ## O aceitante abandona o contrato `delivery` ANTES do prazo (LW-107f1; seção 8, item (a)): a custódia volta ao emissor (ou ao mercado do povoado do destino, se ele morreu; a rotina do `expire`, `contract_refund`) e o estado vai de `accepted` a `failed` com o `closed_reason` `abandoned`; o aceitante FICA no contrato. Nada é pago,
-## nenhum bem se move, nenhum ID nasce. Tudo ou nada, conferido NESTA ordem: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_IMPOSSIBLE` (não é `delivery`: a vaga e o `labor` não se abandonam), `ECON_CONTRACT_NOT_OPEN` (não está aceito), `ECON_CONTRACT_IMPOSSIBLE` (o ator não é o aceitante) e `ECON_CONTRACT_IMPOSSIBLE` (o prazo passou: o vencido termina `expired`, não abandonado).
+## nenhum bem se move, nenhum ID nasce. Tudo ou nada, conferido NESTA ordem: `ECON_UNKNOWN_CONTRACT`, `ECON_CONTRACT_IMPOSSIBLE` (não é `delivery`: a vaga e o `labor` não se abandonam), `ECON_CONTRACT_NOT_OPEN` (não está aceito), `ECON_CONTRACT_IMPOSSIBLE` (o ator não é o aceitante) e `ECON_CONTRACT_IMPOSSIBLE` (o prazo passou: o vencido termina `expired`, não abandonado). Se o `Ledger` recusar a devolução (o saldo de quem recebe passaria do teto), o código DELE sobe (`ECON_BAD_AMOUNT`) e nada muda.
 func abandon(contract_id: int, actor_id: int, now: int) -> Result:
 	if not _contracts.has(contract_id):
 		return Result.failure(EconomyCodes.UNKNOWN_CONTRACT, "ContractBook.abandon: o contrato %d não existe." % contract_id)

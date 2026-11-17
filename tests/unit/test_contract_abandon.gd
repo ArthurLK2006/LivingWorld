@@ -22,6 +22,8 @@ const SHORT_DEADLINE: int = 90
 const NPC_START_MONEY: int = 60
 ## O texto do contrato (item (b)): o único valor do `closed_reason` e o `reason` do `ContractFailed`.
 const ABANDONED: String = "abandoned"
+## O contrato dos livros sem mundo (`Rig`).
+const BOOK_CONTRACT: int = 200
 
 
 class Scene:
@@ -32,6 +34,15 @@ class Scene:
 	var market_a: int = IdGenerator.NO_ID
 	var market_b: int = IdGenerator.NO_ID
 	var failed: Array[ContractFailed] = []
+
+
+## Os livros sem mundo (só o `OwnerBook`, o `Ledger` e o `ContractBook`), para o que o módulo não alcança: o `Ledger` recusando a devolução e a custódia já vazia. O `BOOK_CONTRACT` está aceito pelo ACTOR.
+class Rig:
+	extends RefCounted
+
+	var owners: OwnerBook
+	var ledger: Ledger
+	var contracts: ContractBook
 
 
 ## `new_game` falso monta o mundo só para receber um save. Com jogo novo: os NPCs ISSUER e OTHER e o jogador ACTOR têm conta.
@@ -176,6 +187,26 @@ func _save_of(scene: Scene) -> Dictionary:
 ## O contrato dentro do bloco `economy` de um save (a mesma forma com ou sem JSON).
 func _entry(block: Dictionary, contract_id: int) -> Dictionary:
 	return (block[ContractBook.KEY_CONTRACTS] as Dictionary)[ContractBook.KEY_CONTRACTS][str(contract_id)]
+
+
+func _rig() -> Rig:
+	var loaded: GoodsLoader.LoadResult = GoodsLoader.load_dir(GoodsLoader.DEFAULT_DIR)
+	assert_true(loaded.result.ok, loaded.result.message)
+	var rig: Rig = Rig.new()
+	rig.owners = OwnerBook.new()
+	for owner_id: int in [ISSUER, ACTOR, OTHER]:
+		assert_true(rig.owners.open_owner(owner_id, "npc").ok)
+	rig.ledger = Ledger.new(rig.owners)
+	assert_true(rig.ledger.mint(ISSUER, REWARD, Ledger.REASON_GAME_START).ok)
+	rig.contracts = ContractBook.new(rig.owners, rig.ledger, GoodsStore.new(rig.owners, loaded.goods, loaded.kinds), null, null)
+	var objective: Dictionary = {ContractBook.KEY_GOOD: GOOD, ContractBook.KEY_QUANTITY: QUANTITY, ContractBook.KEY_DESTINATION: OTHER}
+	assert_true(rig.contracts.post(BOOK_CONTRACT, ContractBook.DELIVERY, ISSUER, REWARD, SHORT_DEADLINE, 0, objective).ok)
+	assert_true(rig.contracts.accept(BOOK_CONTRACT, ACTOR, 0).ok)
+	return rig
+
+
+func _books_snapshot(rig: Rig) -> String:
+	return JSON.stringify([rig.owners.serialize(), rig.ledger.serialize(), rig.contracts.serialize()], "", true, true)
 
 
 func test_abandoning_an_accepted_delivery_closes_it_as_failed_abandoned_and_the_custody_goes_back_to_the_issuer() -> void:
@@ -414,3 +445,24 @@ func test_load_rejects_a_closed_reason_that_is_unknown_not_text_or_outside_a_fai
 		assert_eq(fresh.economy.serialize(), {}, "Recusado, o módulo fica como estava (vazio).")
 		fresh.world.teardown()
 	scene.world.teardown()
+
+
+func test_when_the_ledger_refuses_the_refund_the_abandon_fails_and_changes_nothing() -> void:
+	var rig: Rig = _rig()
+	assert_true(rig.ledger.mint(ISSUER, Ledger.MAX_AMOUNT - REWARD + 1, Ledger.REASON_TRADE).ok, "O saldo do emissor fica a uma unidade do teto: a devolução o estouraria.")
+	var before: String = _books_snapshot(rig)
+	var refused: Result = rig.contracts.abandon(BOOK_CONTRACT, ACTOR, 0)
+	assert_eq([refused.code, refused.message.begins_with("ContractBook.abandon: ")], [EconomyCodes.BAD_AMOUNT, true], "O código do `Ledger` sobe, com a mensagem do `abandon`: " + refused.message)
+	assert_eq(_books_snapshot(rig), before, "Nada muda, byte a byte: livros, `Ledger` e contrato (segue `accepted`, sem `closed_reason`).")
+
+
+func test_abandoning_a_contract_whose_custody_is_already_empty_succeeds_without_any_transfer() -> void:
+	var rig: Rig = _rig()
+	assert_true(rig.ledger.transfer(BOOK_CONTRACT, ISSUER, REWARD, Ledger.REASON_CONTRACT_REFUND).ok, "A custódia é esvaziada à mão (um jogo de verdade não a deixa assim, mas o livro tem de aguentar).")
+	var ledger_before: Dictionary = rig.ledger.serialize()
+	var abandoned: Result = rig.contracts.abandon(BOOK_CONTRACT, ACTOR, 0)
+	assert_true(abandoned.ok, abandoned.message)
+	var state: Dictionary = rig.contracts.state_of(BOOK_CONTRACT)
+	assert_eq([state[ContractBook.KEY_STATE], state[ContractBook.KEY_CLOSED_REASON]], [ContractBook.STATE_FAILED, ABANDONED], "Sem o que devolver, o contrato fecha do mesmo jeito.")
+	assert_eq(rig.ledger.serialize(), ledger_before, "Nenhuma transferência, nem uma de valor 0: o `Ledger` não se mexe.")
+	assert_eq(rig.contracts.validate(), [] as Array[String], "Nenhum problema no livro.")
