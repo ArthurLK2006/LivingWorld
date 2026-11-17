@@ -348,3 +348,19 @@ func test_the_page_passes_escape_and_interact_to_the_panel_only_while_it_is_open
 		_ask(held)
 		assert_eq([_page.consume_cancel(event), _is_asking()], [true, false], "Com o painel aberto, Esc e `interact` o cancelam e a página consome o evento.")
 	assert_signal_not_emitted(_page, "abandon_requested")
+
+
+func test_the_panel_follows_the_asked_contract_and_not_the_chosen_row_and_closes_when_the_asked_one_is_delivered() -> void:
+	var first: int = _hold(LONG_MINUTES)
+	var second: int = _hold(LONG_MINUTES)
+	_show_page()
+	_ask(first)
+	_drop(second)
+	_page.refresh(_market_a, false)
+	_buttons_on(second)
+	_page.refresh(_market_a, false)
+	assert_true(_is_asking(), "O painel segue o contrato PERGUNTADO (ainda abandonável), não a linha escolhida (já abandonada).")
+	_finish(first)
+	_page.refresh(_market_a, false)
+	assert_false(_is_asking(), "Entregue em outro lugar: o painel fecha sozinho.")
+	assert_signal_not_emitted(_page, "abandon_requested")

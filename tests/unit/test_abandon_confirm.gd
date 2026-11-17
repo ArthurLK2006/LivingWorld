@@ -273,3 +273,11 @@ func test_build_with_a_null_parent_reports_an_error_and_open_does_nothing() -> v
 	assert_push_error("raiz nula")
 	empty.open(_contract_id)
 	assert_eq([empty.is_open(), empty.consume_cancel(_press_of(&"ui_cancel"))], [false, false], "Sem nós, o painel nunca abre.")
+
+
+func test_the_panel_is_already_closed_when_it_announces_the_confirmation() -> void:
+	var open_when_heard: Array[bool] = []
+	_confirm.confirmed.connect(func(_asked: int) -> void: open_when_heard.append(_confirm.is_open()))
+	await _open()
+	_click(_button(YES))
+	assert_eq(open_when_heard, [false], "`close` vem ANTES de `confirmed`: quem ouve já encontra o painel fechado, então um clique feito de dentro do ouvinte não reenvia.")
