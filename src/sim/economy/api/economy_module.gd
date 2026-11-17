@@ -25,6 +25,8 @@ const KEY_PRODUCTION: String = EconomyPersistence.KEY_PRODUCTION
 const NPC_DIED: String = "NpcDied"
 ## O evento do `world` que a economia ouve (LW-098e), pelo NOME, lido pelos campos `route_id` e `new_state` (9.2).
 const ROUTE_STATE_CHANGED: String = "RouteStateChanged"
+## O valor de `peek_contract_limit` para a categoria SEM limite definido (a mesma convenção do prazo 0 da vaga).
+const NO_CONTRACT_LIMIT: int = 0
 ## Tipo do dono que o `npc` abre (id em `owner_kinds.json`); só para o aviso de morte, que fecha o dono desse tipo.
 const KIND_NPC: String = "npc"
 ## Tipo do dono do comerciante (id em `owner_kinds.json`; LW-098c): carrinho de peso 120 e saldo 300 [HIP]. O `NpcDied` o fecha como fecha o `npc`.
@@ -365,6 +367,14 @@ func peek_goods_for_need(need_id: String) -> EconomyReplies.GoodsQuery:
 ## O estoque do bem no mercado (a quantidade do dono mercado), com as mesmas falhas de `peek_price`.
 func peek_stock(market_id: int, good_id: String) -> EconomyReplies.ValueQuery:
 	return EconomyQueries.peek_stock(_state, market_id, good_id)
+
+
+## O limite de encomendas ACEITAS ao mesmo tempo da categoria `kind` (LW-107f2; `contract_limits.json`, seção 8, item (c)): o `max_accepted` da linha da categoria; 0 (`NO_CONTRACT_LIMIT`) = SEM limite definido (categoria desconhecida ou sem linha, arquivo ausente, tabela vazia ou módulo sem definições). Só INFORMA: quem aplica é a ponte, no `accept` do jogador; o `ContractBook.accept` segue sem teto para qualquer aceitante.
+func peek_contract_limit(kind: String) -> int:
+	for limit: ContractLimitDef in _definitions.contract_limits:
+		if limit.kind == kind:
+			return limit.max_accepted
+	return NO_CONTRACT_LIMIT
 
 
 ## `NpcDied` (DEC-146): fecha o dono do NPC, se ele existe e é do tipo `npc` ou `merchant` (LW-098c), e apaga a caravana do comerciante (o saldo e a carga ficam na conta fechada, na soma). NPC que nunca abriu conta não é erro. O evento é lido pelo campo `npc_id`, sem citar a classe do `npc`.

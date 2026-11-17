@@ -1,0 +1,3 @@
+[
+	{"id": "delivery_limit", "kind": "delivery", "max_accepted": 3}
+]

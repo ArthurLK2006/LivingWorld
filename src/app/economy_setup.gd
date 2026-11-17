@@ -4,6 +4,7 @@ extends RefCounted
 ## sem autoload, e qualquer arquivo ausente ou inválido vira UMA falha tratada (`result`, `ECONOMY_SETUP_INVALID`) com o assunto e a mensagem do carregador (arquivo, item e campo). Nunca lança erro nem escreve no log.
 ## LW-098d3: lê também `caravan_params.json` (os parâmetros do comerciante) e os põe nas definições; a porta de rotas do `world`, quem a entrega à economia é o `GameModules`.
 ## LW-107c1: lê também `contract_templates.json` (os modelos do postador; arquivo OPCIONAL) e os põe nas definições; nada os usa até o `ContractPoster` (LW-107c2).
+## LW-107f2: lê também `contract_limits.json` (o limite de encomendas aceitas ao mesmo tempo, por categoria; arquivo OPCIONAL) e o põe nas definições; só `EconomyModule.peek_contract_limit` o lê.
 
 const CODE_INVALID: String = "ECONOMY_SETUP_INVALID"
 const DEFAULT_DIR: String = "res://data/economy"
@@ -34,10 +35,13 @@ static func from_dir(data_dir: String = DEFAULT_DIR, is_development_build: bool 
 	var templates: ContractTemplateLoader.LoadResult = ContractTemplateLoader.load_dir(data_dir)
 	if not templates.result.ok:
 		return setup._fail("modelos de contrato", templates.result)
+	var limits: ContractLimitLoader.LoadResult = ContractLimitLoader.load_dir(data_dir)
+	if not limits.result.ok:
+		return setup._fail("limites de contrato", limits.result)
 	var conflict: String = place_conflict(production.sites, posts.posts)
 	if not conflict.is_empty():
 		return setup._fail("locais de trabalho", Result.failure(EconomyCodes.DATA_INVALID, conflict))
-	setup.definitions = EconomyDefinitions.new(goods.goods, goods.kinds, markets.targets, markets.params, is_development_build, null, production.recipes, production.params, production.sites, posts.posts, caravan.params, templates.templates)
+	setup.definitions = EconomyDefinitions.new(goods.goods, goods.kinds, markets.targets, markets.params, is_development_build, null, production.recipes, production.params, production.sites, posts.posts, caravan.params, templates.templates, limits.limits)
 	return setup
 
 
