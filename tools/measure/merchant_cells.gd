@@ -5,7 +5,7 @@ extends RefCounted
 ## `merchants_alive` (vivos); `merchants_travelling` e `merchants_held` (os vivos cuja caravana está em `travelling` ou em `held`, a parada por rota fechada; contas
 ## SEPARADAS: quem está `held` não entra em viagem); `merchants_trips` (viagens concluídas desde que a classe nasceu: um `CaravanArrived` cada; quem morre na estrada
 ## não conta); `merchants_profit` (a soma do lucro realizado, `max(0, revenue - cost_paid)` de cada chegada, a mesma conta do `npc`, `MerchantArrival`); `merchants_hunger_max`
-## (a maior fome, de 0 a 100, entre os vivos: o valor do último pensamento, com no máximo `think_interval_min` minutos de idade). Sem comerciante todas valem 0.
+## (a maior fome, de 0 a 100, entre os vivos NO INSTANTE DA LINHA, as 05:45 de jogo do `measure_economy`, e não o pico do dia: o valor do último pensamento, com no máximo `think_interval_min` minutos de idade). Sem comerciante todas valem 0.
 ## Viagens e lucro são ACUMULADOS pela assinatura do `CaravanArrived`: a classe tem de nascer antes do primeiro passo do jogo para ouvir tudo.
 
 const OCCUPATION_ID: String = "merchant"

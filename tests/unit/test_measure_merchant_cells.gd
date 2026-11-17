@@ -143,6 +143,16 @@ func test_the_columns_are_the_six_named_ones_in_order_and_each_row_has_one_cell_
 	assert_eq(rig.cells.row().size(), NAMES.size(), "Uma célula por coluna, nem uma a mais nem a menos.")
 
 
+## O ofício `merchant` é um literal da classe (o `npc` não expõe o `owner_kind` do ofício): esta guarda confere nos dados de hoje que ele é o ÚNICO ofício de comerciante.
+func test_the_merchant_literal_is_the_only_occupation_of_the_merchant_owner_kind_in_the_data() -> void:
+	var rows: Array = JSON.parse_string(FileAccess.get_file_as_string(DATA_DIR + "/occupations.json"))
+	var merchant_ids: Array[String] = []
+	for row: Dictionary in rows:
+		if row.get("owner_kind", "") == EconomyModule.KIND_MERCHANT:
+			merchant_ids.append(str(row["id"]))
+	assert_eq(merchant_ids, [MerchantCells.OCCUPATION_ID], "Nos dados, o único ofício de dono merchant é o literal que a classe conta.")
+
+
 func test_a_game_without_merchants_reads_zero_even_with_a_hungry_non_merchant() -> void:
 	var rig: Rig = _rig(MORNING)
 	var farmer: int = _spawn(rig, FARMER, SETTLEMENT_A, MARKET_A, FARM_A, 80)
