@@ -280,6 +280,20 @@ Contrato **APROVADO por Arthur em 14/11/2026** (PR #33); todos os números são 
 
 Conta de exemplo da referência de 25%: 5 pães a 2500 bp valem `ceil_div(5 × 10 × 12500, 10000)` = 63 e só nascem com o `ask` do pão em 13 ou mais.
 
+## `contract_limits.json` (LW-107f2; contrato de 16/11/2026, D1 aprovado por Arthur): o limite de encomendas aceitas ao mesmo tempo, por categoria
+
+Cada linha é o máximo de contratos de UMA categoria (`kind`) que o jogador pode ter ACEITOS ao mesmo tempo (`economy.md`, seção 8, item (c)). O número é **PROVISÓRIO do primeiro recorte** (valor aprovado por Arthur em 16/11/2026) e **[HIP]**; a regra NÃO é global: vale só para a categoria da linha, e a categoria sem linha não herda o limite de outra. **Arquivo OPCIONAL** (como `contract_templates.json`): arquivo ausente, tabela vazia ou categoria sem linha = SEM limite definido por este dado (`EconomyModule.peek_contract_limit(kind)` devolve 0). **Quem aplica é a ponte, no `accept` do jogador** (LW-107f3, contando os `accepted` do ator ainda não vencidos); a economia só informa o número, e o `ContractBook.accept` segue sem teto para qualquer aceitante (um NPC, os testes e as ferramentas aceitam sem limite). **Sem texto ao jogador na tabela.** Formato: uma lista de objetos na raiz (como as outras tabelas; o nome da tabela no esquema é `contract_limits`).
+
+| Coluna | Tipo | Regra |
+|---|---|---|
+| `id` | `STRING` | por convenção `<kind>_limit` (por exemplo, `delivery_limit`); único. O `id` é o campo implícito que o `data` exige em todo registro (DEC-082): o exemplo de linha do contrato (`economy.md`, item (c)) cita só `kind` e `max_accepted` |
+| `kind` | `STRING` | a categoria: um de `labor`, `delivery` e `vacancy` (o vocabulário de `ContractBook.CONTRACT_TYPES`); **uma linha por categoria** (não se repete) |
+| `max_accepted` | `INT` | 1 a 20 **[HIP]**; 0 não é linha válida, porque "sem limite" é a categoria SEM linha |
+
+**Regras e faixas (no carregador, `ContractLimitLoader`, `ECON_DATA_INVALID` com arquivo, item e campo):** `id` único; `kind` do vocabulário e sem repetição (o item citado é a linha repetida); `max_accepted` inteiro de 1 a 20; campo desconhecido, ausente ou de tipo errado, linha que não é objeto e JSON malformado falham. Nenhum `FLOAT` (AGENTS 4.11).
+
+**Dado inicial (o arquivo REAL do jogo):** uma linha, `{"id": "delivery_limit", "kind": "delivery", "max_accepted": 3}`, isto é, no máximo 3 encomendas de entrega aceitas ao mesmo tempo (D1 de Arthur); `labor` e `vacancy` ficam sem linha. Teste: `tests/unit/test_contract_limits_data.gd`.
+
 ## Distribuição das 4 cadeias pelos 3 povoados, com os locais `work` contados [PROPOSTA/HIP]
 
 Arthur decidiu o princípio (**nenhum povoado se baste sozinho**) e a criação dos ofícios `miner` e `shepherd` (DEC-142, aprovada em 10/11/2026); **a tabela é [PROPOSTA/HIP], sem DEC no registro da LW-087a, para ele aprovar**, com nomes genéricos (DEC-100). **Cada local de produção e cada posto ocupa um local `work` próprio.** Os números de capacidade e de população são os do `main`:

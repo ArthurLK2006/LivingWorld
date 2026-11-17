@@ -10,7 +10,7 @@ extends RefCounted
 ## no construtor (opcional), e a entrega do foco do LOD a cada relato de posição do ator. Nenhuma regra de jogo aqui.
 ## LW-072a: o interruptor de corpos e a consulta dos corpos a manter (os NPCs em S0), para a apresentação desenhar os NPCs.
 ## LW-108b: três consultas de leitura da economia (`peek_economy_*`) para o painel econômico de depuração; a conta fica em `BridgeEconomyInspect`.
-## LW-107b: o quadro de contratos do jogador (`peek_contract_board`, `request_contract_accept` e `request_contract_deliver`); a lógica fica em `BridgePlayerContracts` e só se delega aqui.
+## LW-107b: o quadro de contratos do jogador (`peek_contract_board`, `request_contract_accept` e `request_contract_deliver`); a lógica fica em `BridgePlayerContracts` e só se delega aqui. LW-107f3: também `request_contract_abandon`.
 
 const CODE_NO_GAME: String = "BRIDGE_NO_GAME"
 const CODE_NO_TERRAIN: String = "BRIDGE_NO_TERRAIN"
@@ -265,6 +265,17 @@ func request_contract_deliver(actor_id: int, contract_id: int) -> BridgePlayerCo
 	if economy == null:
 		return BridgePlayerContractsReplies.ContractActionReply.new(_missing_economy("request_contract_deliver"), contract_id)
 	return BridgePlayerContracts.deliver(character, economy, _places, actor_id, contract_id)
+
+
+## LW-107f3: o jogador abandona o contrato de entrega que aceitou, de QUALQUER lugar e antes do prazo (`BridgePlayerContractsReplies.ContractActionReply`, com a chave do texto). A ponte só delega; o estado `failed`, o `closed_reason`, a custódia e o `ContractFailed` são da `economy`.
+func request_contract_abandon(actor_id: int, contract_id: int) -> BridgePlayerContractsReplies.ContractActionReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgePlayerContractsReplies.ContractActionReply.new(_missing_character("request_contract_abandon"), contract_id)
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgePlayerContractsReplies.ContractActionReply.new(_missing_economy("request_contract_abandon"), contract_id)
+	return BridgePlayerContracts.abandon(character, economy, actor_id, contract_id)
 
 
 ## Intenções de NPC em S0 que a apresentação ainda não cumpriu (LW-070), em CÓPIAS, em ordem crescente de NPC, com o destino em metros e a
