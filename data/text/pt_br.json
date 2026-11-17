@@ -99,6 +99,8 @@
 	"economy.contract.not_yours": "Este contrato não é seu.",
 	"economy.contract.expired": "Este contrato venceu: não dá mais para aceitar.",
 	"economy.contract.failed": "Não foi possível fazer isso com o contrato.",
+	"economy.contract.abandoned": "Encomenda abandonada. Não há multa: a recompensa volta ao emissor e os itens ficam com você.",
+	"economy.contract.limit": "Você já tem o máximo de encomendas aceitas ao mesmo tempo. Entregue ou abandone uma antes de aceitar outra.",
 	"tools.npc_inspector.title": "Painel de depuração de NPC",
 	"tools.npc_inspector.hint": "F3 ou Tab fecha · N próximo · B anterior · T marca o rastro",
 	"tools.npc_inspector.no_selection": "Nenhum NPC selecionado: aperte N ou B, ou escolha na lista.",
