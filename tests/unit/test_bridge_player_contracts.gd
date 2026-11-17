@@ -28,7 +28,7 @@ const KEY_TOO_FAR: String = "economy.contract.too_far"
 const KEY_NOT_YOURS: String = "economy.contract.not_yours"
 const KEY_EXPIRED: String = "economy.contract.expired"
 const KEY_FAILED: String = "economy.contract.failed"
-## A tabela do contrato (item (iii)): o código que a ponte recusa e a chave que devolve; com as 2 de sucesso e a genérica são as 11 chaves.
+## A tabela do contrato (item (iii) e, na LW-107f3, o item (iv) de "Encomendas por objetivo"): o código que a ponte recusa e a chave que devolve; com as 3 de sucesso (aceite, entrega e abandono) e a genérica são as 13 chaves (mudança de contrato aprovada por Arthur no D4).
 const EXPECTED_FAILURE_KEYS: Dictionary[String, String] = {
 	"ECON_CONTRACT_NOT_OPEN": KEY_NOT_OPEN,
 	"ECON_UNKNOWN_CONTRACT": "economy.contract.unknown",
@@ -38,6 +38,7 @@ const EXPECTED_FAILURE_KEYS: Dictionary[String, String] = {
 	"PLACE_TOO_FAR": KEY_TOO_FAR,
 	"BRIDGE_CONTRACT_NOT_YOURS": KEY_NOT_YOURS,
 	"BRIDGE_CONTRACT_EXPIRED": KEY_EXPIRED,
+	"BRIDGE_CONTRACT_LIMIT": "economy.contract.limit",
 }
 
 var _terrain: TerrainData
@@ -403,12 +404,13 @@ func _assert_failure_code(bridge: SimBridge, code: String) -> void:
 
 
 func test_the_codes_the_keys_and_the_economys_names_are_the_contracts() -> void:
-	assert_eq([BridgePlayerContracts.CODE_NOT_YOURS, BridgePlayerContracts.CODE_EXPIRED, BridgePlayerContracts.FINISHED_LIMIT], ["BRIDGE_CONTRACT_NOT_YOURS", "BRIDGE_CONTRACT_EXPIRED", 5])
-	assert_eq([BridgePlayerContracts.KIND_DELIVERY, BridgePlayerContracts.STATE_OPEN, BridgePlayerContracts.STATE_ACCEPTED, BridgePlayerContracts.STATE_COMPLETED, BridgePlayerContracts.STATE_EXPIRED], [ContractBook.DELIVERY, ContractBook.STATE_OPEN, ContractBook.STATE_ACCEPTED, ContractBook.STATE_COMPLETED, ContractBook.STATE_EXPIRED], "O texto do tipo e dos estados é o da economia.")
+	assert_eq([BridgePlayerContracts.CODE_NOT_YOURS, BridgePlayerContracts.CODE_EXPIRED, BridgePlayerContracts.CODE_LIMIT, BridgePlayerContracts.FINISHED_LIMIT], ["BRIDGE_CONTRACT_NOT_YOURS", "BRIDGE_CONTRACT_EXPIRED", "BRIDGE_CONTRACT_LIMIT", 5])
+	assert_eq([BridgePlayerContracts.KIND_DELIVERY, BridgePlayerContracts.STATE_OPEN, BridgePlayerContracts.STATE_ACCEPTED, BridgePlayerContracts.STATE_COMPLETED, BridgePlayerContracts.STATE_EXPIRED, BridgePlayerContracts.STATE_FAILED], [ContractBook.DELIVERY, ContractBook.STATE_OPEN, ContractBook.STATE_ACCEPTED, ContractBook.STATE_COMPLETED, ContractBook.STATE_EXPIRED, ContractBook.STATE_FAILED], "O texto do tipo e dos estados é o da economia.")
 	assert_eq(BridgePlayerContractsReplies.ContractActionReply.FAILURE_KEYS, EXPECTED_FAILURE_KEYS, "A tabela do item (iii): uma chave por código.")
-	var keys: Array[String] = [BridgePlayerContractsReplies.ContractActionReply.KEY_ACCEPTED, BridgePlayerContractsReplies.ContractActionReply.KEY_DELIVERED, BridgePlayerContractsReplies.ContractActionReply.FALLBACK_KEY]
+	assert_eq(BridgePlayerContractsReplies.ContractActionReply.KEY_ABANDONED, "economy.contract.abandoned", "A chave de sucesso do abandono (LW-107f3).")
+	var keys: Array[String] = [BridgePlayerContractsReplies.ContractActionReply.KEY_ACCEPTED, BridgePlayerContractsReplies.ContractActionReply.KEY_DELIVERED, BridgePlayerContractsReplies.ContractActionReply.KEY_ABANDONED, BridgePlayerContractsReplies.ContractActionReply.FALLBACK_KEY]
 	keys.append_array(BridgePlayerContractsReplies.ContractActionReply.FAILURE_KEYS.values())
-	assert_eq(keys.size(), 11, "São 11 chaves: 2 de sucesso, 8 de recusa e a genérica.")
+	assert_eq(keys.size(), 13, "São 13 chaves: 3 de sucesso, 9 de recusa e a genérica.")
 	for key: String in keys:
 		assert_true(key.begins_with("economy.contract."), "A chave %s tem o prefixo economy.contract." % key)
 		assert_eq(keys.count(key), 1, "A chave %s é única." % key)
