@@ -5,8 +5,9 @@ extends RefCounted
 ## `contract_id`) e o foco. NÃO abre nem fecha a tela, NÃO troca de aba e NÃO lê o relógio: a `MarketView` decide, lhe diz se está pausado (`refresh`) e a página só lhe PEDE o fechamento (`close_requested`). LW-107e2b: Aceitar e Entregar são ligados em `_update_actions`, o ÚNICO lugar que
 ## decide os botões e as dicas; a página NÃO envia pedido nenhum à ponte (só consulta): quem ENVIA `request_contract_accept` e `request_contract_deliver` é a `MarketView`, ouvindo os sinais `accept_requested` e `deliver_requested` da página (o contrato diz que ela é a única que envia), e a resposta volta
 ## por `show_reply`. A divisão em "Disponíveis" e "Meus contratos" e o estado mostrado (`display_state`) são do modelo: a página só os escreve. LW-107f4a (docs/modules/presentation.md, "Encomendas por objetivo: abandonar, confirmar e capacidade"): o botão Abandonar só AVISA, pelo
-## sinal `abandon_asked` (ninguém o ouve ainda: a fiação e a confirmação são da 107f4b e da 107f4c); Aceitar fica desativado quando o jogador já está na capacidade (só dica: a ponte decide e recusa com `economy.contract.limit`); a linha da capacidade ("n de N") fica escondida sem limite definido;
-## e as linhas terminadas mostram "Abandonado" (com a nota de que não há multa), "Falhou" ou "Vencido", sempre diferentes entre si.
+## sinal `abandon_asked` (LW-107f4b: a própria página o ouve e abre o painel de confirmação, `AbandonConfirm`); Aceitar fica desativado quando o jogador já está na capacidade (só dica: a ponte decide e recusa com `economy.contract.limit`); a linha da capacidade ("n de N") fica escondida sem limite definido;
+## e as linhas terminadas mostram "Abandonado" (com a nota de que não há multa), "Falhou" ou "Vencido", sempre diferentes entre si. LW-107f4b: só o "Abandonar" do painel faz a página emitir `abandon_requested` (a `MarketView` o ligará a `request_contract_abandon` na 107f4c); o `refresh` fecha o painel
+## sozinho se a linha deixa de ser abandonável ou o relógio para (`keep_if`), e a tela ou a página que escondem o fecham (o próprio painel ouve o `hidden`); a página continua SÓ consultando a ponte.
 
 ## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed`, `expired`, `abandoned` e `failed`).
 const KEY_CONTRACTS_TITLE: String = "ui.contracts.title"
@@ -43,14 +44,17 @@ signal close_requested
 ## Saem quando Aceitar ou Entregar é apertado COM o botão ativo, trazendo o contrato escolhido; quem ENVIA o pedido é a `MarketView`, nunca a página.
 signal accept_requested(contract_id: int)
 signal deliver_requested(contract_id: int)
-## Sai quando Abandonar é apertado COM o botão ativo, trazendo o contrato escolhido; ninguém o ouve ainda (LW-107f4a): a confirmação e o envio são da 107f4b e da 107f4c.
+## Sai quando Abandonar é apertado COM o botão ativo, trazendo o contrato escolhido; a própria página o ouve e abre o painel de confirmação (LW-107f4b).
 signal abandon_asked(contract_id: int)
+## Sai quando o "Abandonar" do PAINEL de confirmação é apertado, trazendo o contrato perguntado; quem ENVIA o pedido é a `MarketView` (LW-107f4c: ninguém o ouve ainda), nunca a página.
+signal abandon_requested(contract_id: int)
 
 var _bridge: SimBridge
 var _texts: UiText
 var _actor_id: int = IdGenerator.NO_ID
 var _is_paused: bool = false
 var _layout: ContractsLayout = ContractsLayout.new()
+var _confirm: AbandonConfirm = AbandonConfirm.new()
 var _model: ContractsViewModel = ContractsViewModel.new()
 var _contract_rows: Dictionary[int, ContractsViewModel.Row] = {}
 var _chosen_contract: int = IdGenerator.NO_ID
@@ -63,6 +67,7 @@ func setup(bridge: SimBridge, texts: UiText, actor_id: int, parent: Control) -> 
 	_texts = texts
 	_actor_id = actor_id
 	_layout.build(parent)
+	_confirm.build(_layout.page, _texts)
 	_layout.title.text = _texts.get_text(KEY_CONTRACTS_TITLE)
 	_layout.open_title.text = _texts.get_text(KEY_SECTION_OPEN)
 	_layout.mine_title.text = _texts.get_text(KEY_SECTION_MINE)
@@ -73,6 +78,8 @@ func setup(bridge: SimBridge, texts: UiText, actor_id: int, parent: Control) -> 
 	_layout.accept_button.pressed.connect(_notify.bind(accept_requested, _layout.accept_button))
 	_layout.deliver_button.pressed.connect(_notify.bind(deliver_requested, _layout.deliver_button))
 	_layout.abandon_button.pressed.connect(_notify.bind(abandon_asked, _layout.abandon_button))
+	abandon_asked.connect(_confirm.open)
+	_confirm.confirmed.connect(abandon_requested.emit)
 	_layout.close_button.pressed.connect(close_requested.emit)
 	_layout.open_list.item_selected.connect(_choose.bind(_layout.open_list))
 	_layout.mine_list.item_selected.connect(_choose.bind(_layout.mine_list))
@@ -94,8 +101,14 @@ func main_list() -> Tree:
 	return _layout.open_list
 
 
+## Esc (`ui_cancel`) e `interact` só cancelam o painel de confirmação aberto: devolve verdadeiro se ele estava aberto e cancelou. A `MarketView` o chama no início do `_input` (LW-107f4c) e, com verdadeiro, cede a vez: a tela só fecha com o painel já fechado.
+func consume_cancel(event: InputEvent) -> bool:
+	return _confirm.consume_cancel(event)
+
+
 ## Refaz a consulta de contratos do mercado `market_id` e as duas listas, PRESERVANDO a escolha (por `contract_id`; uma só nas duas listas; sem escolha válida, a primeira linha) e o foco. Falhou (sem jogo ou sem conta): listas vazias, sem
 ## número da leitura anterior, e `ui.contracts.unavailable` na linha de resultado da aba; Aceitar e Entregar ficam desativados (sem linha escolhida). `is_paused` é o relógio pausado, lido pela `MarketView` como faz para Comprar e Vender: pausado, os dois ficam desativados.
+## LW-107f4b: o painel de confirmação aberto se fecha sozinho, SEM enviar nada, se o contrato que ele pergunta deixou de ser abandonável nesta leitura (`keep_if`).
 func refresh(market_id: int, is_paused: bool) -> void:
 	_is_paused = is_paused
 	var is_valid: bool = _model.refresh(_bridge, _actor_id, market_id)
@@ -116,6 +129,7 @@ func refresh(market_id: int, is_paused: bool) -> void:
 		_layout.result.text = _texts.get_text(KEY_CONTRACTS_UNAVAILABLE)
 	_show_detail()
 	_update_actions()
+	_confirm.keep_if(_is_abandonable(_confirm.asked_contract_id()))
 
 
 ## Escreve a resposta de um pedido na linha de resultado: o texto da `text_key` que a ponte devolveu, com a recompensa no `{reward}` das frases de sucesso (`economy.contract.accepted` e `delivered`; nas recusas ela é 0 e a frase não a usa). SÓ escreve: quem envia o pedido é a `MarketView`.
@@ -135,11 +149,17 @@ func _update_actions() -> void:
 	var is_full: bool = _model.capacity() > 0 and _model.accepted_count() >= _model.capacity()
 	_layout.accept_button.disabled = _is_paused or shown_state != ContractsViewModel.STATE_OPEN or is_full
 	_layout.deliver_button.disabled = _is_paused or row == null or not row.can_deliver
-	_layout.abandon_button.disabled = _is_paused or row == null or not row.can_abandon
+	_layout.abandon_button.disabled = not _is_abandonable(_chosen_contract)
 	_layout.capacity.visible = _model.capacity() > 0
 	_layout.capacity.text = _texts.get_text(KEY_CAPACITY, {"accepted": _model.accepted_count(), "limit": _model.capacity()}) if _layout.capacity.visible else ""
 	_layout.hints.text = _texts.get_text(hint_key) if not hint_key.is_empty() else ""
 	_layout.hints.visible = not hint_key.is_empty()
+
+
+## LW-107f4b: a regra do Abandonar, num lugar só: o contrato é uma linha da última leitura com `can_abandon` (a dica do modelo: minha, `accepted` e no prazo) e o relógio anda. Vale para o botão da página (`_update_actions`) e para o painel de confirmação aberto, que o `refresh` fecha se ela deixa de valer.
+func _is_abandonable(contract_id: int) -> bool:
+	var row: ContractsViewModel.Row = _contract_rows.get(contract_id) as ContractsViewModel.Row
+	return not _is_paused and row != null and row.can_abandon
 
 
 ## O clique de um botão vira o aviso `requested` com o contrato ESCOLHIDO, só se o botão está ativo (a regra é de `_update_actions`; o clique de verdade nem chega num botão desativado, mas o sinal `pressed` pode ser emitido à mão).
