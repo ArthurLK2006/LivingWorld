@@ -240,6 +240,14 @@ func test_a_held_record_is_exempt_only_with_a_closed_route_from_its_current_leg_
 		assert_eq(_samples(rig, EVENING + SAMPLE, rig.economy).problems.size(), 1, "`leg_index` %d fora da lista de rotas (registro inconsistente): acusado mesmo com as rotas fechadas." % leg_index)
 
 
+func test_a_held_record_is_also_exempt_when_only_a_later_leg_is_closed() -> void:
+	var rig: Rig = _rig(EVENING)
+	var merchant: int = _spawn(rig, MERCHANT)
+	assert_true(rig.routes.request_close_route("route_b_c").ok)
+	_load_caravan(rig, merchant, {"state": Caravan.STATE_HELD, "elapsed_at_hold": 0, "leg_index": 0})
+	assert_eq(_samples(rig, EVENING + SAMPLE, rig.economy).problems.size(), 0, "Do trecho atual em diante: com o trecho atual (route_a_c) aberto e um trecho POSTERIOR (route_b_c) fechado, a retomada não tem por onde seguir: isento.")
+
+
 # ---------------------------------------------------------------------------------------------------- V6 e V7
 
 func test_an_inconsistent_record_is_flagged() -> void:
