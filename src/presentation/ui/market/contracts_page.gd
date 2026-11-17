@@ -6,7 +6,7 @@ extends RefCounted
 ## decide os botões e as dicas; a página NÃO envia pedido nenhum à ponte (só consulta): quem ENVIA `request_contract_accept` e `request_contract_deliver` é a `MarketView`, ouvindo os sinais `accept_requested` e `deliver_requested` da página (o contrato diz que ela é a única que envia), e a resposta volta
 ## por `show_reply`. A divisão em "Disponíveis" e "Meus contratos" e o estado mostrado (`display_state`) são do modelo: a página só os escreve. LW-107f4a (docs/modules/presentation.md, "Encomendas por objetivo: abandonar, confirmar e capacidade"): o botão Abandonar só AVISA, pelo
 ## sinal `abandon_asked` (LW-107f4b: a própria página o ouve e abre o painel de confirmação, `AbandonConfirm`); Aceitar fica desativado quando o jogador já está na capacidade (só dica: a ponte decide e recusa com `economy.contract.limit`); a linha da capacidade ("n de N") fica escondida sem limite definido;
-## e as linhas terminadas mostram "Abandonado" (com a nota de que não há multa), "Falhou" ou "Vencido", sempre diferentes entre si. LW-107f4b: só o "Abandonar" do painel faz a página emitir `abandon_requested` (a `MarketView` o ligará a `request_contract_abandon` na 107f4c); o `refresh` fecha o painel
+## e as linhas terminadas mostram "Abandonado" (com a nota de que não há multa), "Falhou" ou "Vencido", sempre diferentes entre si. LW-107f4b: só o "Abandonar" do painel faz a página emitir `abandon_requested` (a `MarketView` o liga a `request_contract_abandon`, 107f4c); o `refresh` fecha o painel
 ## sozinho se a linha deixa de ser abandonável ou o relógio para (`keep_if`), e a tela ou a página que escondem o fecham (o próprio painel ouve o `hidden`); a página continua SÓ consultando a ponte.
 
 ## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed`, `expired`, `abandoned` e `failed`).
@@ -46,7 +46,7 @@ signal accept_requested(contract_id: int)
 signal deliver_requested(contract_id: int)
 ## Sai quando Abandonar é apertado COM o botão ativo, trazendo o contrato escolhido; a própria página o ouve e abre o painel de confirmação (LW-107f4b).
 signal abandon_asked(contract_id: int)
-## Sai quando o "Abandonar" do PAINEL de confirmação é apertado, trazendo o contrato perguntado; quem ENVIA o pedido é a `MarketView` (LW-107f4c: ninguém o ouve ainda), nunca a página.
+## Sai quando o "Abandonar" do PAINEL de confirmação é apertado, trazendo o contrato perguntado; quem ENVIA o pedido é a `MarketView` (LW-107f4c: a `MarketView` o liga a `request_contract_abandon`), nunca a página.
 signal abandon_requested(contract_id: int)
 
 var _bridge: SimBridge
