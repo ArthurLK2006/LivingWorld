@@ -7,6 +7,7 @@ const SETTLEMENT_A: String = "test_settlement_a"
 const MARKET: int = 1
 const NPC: int = 100
 const BROKE: int = 101
+const MERCHANT: int = 102
 const NEED_IDS: Array[String] = ["hunger", "rest", "safety", "income", "social"]
 
 var _states: Dictionary[int, NpcState] = {}
@@ -194,4 +195,64 @@ func test_the_food_stub_only_consumes_when_the_food_did_not_come_from_the_invent
 	assert_true(runner.begin(NPC, "eat", "", 20).ok, "A segunda refeição começa quando a primeira acabou (minuto 20).")
 	assert_eq(runner.advance(NPC, 40).outcome, ActionRunner.Outcome.COMPLETED)
 	assert_eq([spy.completed, module.peek_inventory(NPC).rows.size()], [1, 0], "Comeu do inventário: o runner não avisa o estoque provisório, que não consome de novo.")
+	(pair[1] as World).teardown()
+
+
+func test_the_plan_never_exceeds_the_room_in_the_pack_it_shrinks_to_what_fits_and_is_empty_when_full() -> void:
+	var pair: Array = _world_with_economy()
+	var module: EconomyModule = pair[0]
+	var trade: NpcTrade = NpcTrade.new(module, _states, 2, 100)
+	assert_true(module.request_transfer_goods(MARKET, NPC, "wood", 7).ok and module.request_transfer_goods(MARKET, NPC, "tool", 2).ok)
+	assert_eq([module.peek_inventory(NPC).weight, module.peek_inventory(NPC).capacity], [39, 40], "Falta 1 de peso para encher a mochila de 40.")
+	var plan: NpcTrade.FoodPlan = trade.plan_food(NPC)
+	assert_eq([plan.good_id, plan.units], ["bread", 1], "Só cabe 1 pão (peso 1; o grão pesa 2 e rende mais por moeda): a compra de 2 encolhe para o que cabe, no limite exato.")
+	assert_eq(trade.complete(NPC, "buy").problem, "", "O que o plano diz que cabe a economia aceita.")
+	assert_eq([module.peek_inventory(NPC).weight, trade.plan_food(NPC).is_empty(), trade.buy_value(NPC)], [40, true, 0], "Mochila cheia: nenhuma compra é planejada e `buy` não vale nada.")
+	assert_true(module.peek_conservation().ok and module.peek_goods_conservation().ok)
+	(pair[1] as World).teardown()
+
+
+## Um povoado COM comida no estoque provisório (`has_food` sempre verdadeiro), para provar que a comida do povoado não conta: só a da MOCHILA impede a compra do comerciante.
+class StockedSettlement:
+	extends ActionConditionProvider
+
+	func has_food(_settlement_id: String) -> bool:
+		return true
+
+
+func test_food_in_the_settlement_stub_alone_does_not_stop_the_merchant_from_buying() -> void:
+	var pair: Array = _world_with_economy()
+	var module: EconomyModule = pair[0]
+	assert_true(module.request_open_owner(MERCHANT, "merchant").ok)
+	_states[MERCHANT] = NpcState.new(MERCHANT)
+	_states[MERCHANT].settlement_id = SETTLEMENT_A
+	_states[MERCHANT].occupation_id = "merchant"
+	var trade: NpcTrade = NpcTrade.new(module, _states, 2, 100, 100, RoutineLoader.load_dir().table)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, StockedSettlement.new(), null, trade)
+	provider.subject = _states[MERCHANT]
+	assert_true(provider.has_food(SETTLEMENT_A) and provider.npc_has_food(MERCHANT, SETTLEMENT_A), "O povoado tem comida no estoque provisório (e `npc_has_food` a conta).")
+	assert_true(not trade.has_food(MERCHANT) and provider.can_buy_food(MERCHANT) and provider.can_buy_food(NPC), "Sem comida NA MOCHILA o comerciante compra, mesmo com comida no estoque do povoado.")
+	(pair[1] as World).teardown()
+
+
+func test_the_merchant_with_food_in_the_pack_cannot_buy_food_until_it_eats_and_the_common_npc_always_can() -> void:
+	var pair: Array = _world_with_economy()
+	var module: EconomyModule = pair[0]
+	assert_true(module.request_open_owner(MERCHANT, "merchant").ok)
+	_states[MERCHANT] = NpcState.new(MERCHANT)
+	_states[MERCHANT].settlement_id = SETTLEMENT_A
+	_states[MERCHANT].occupation_id = "merchant"
+	var trade: NpcTrade = NpcTrade.new(module, _states, 2, 100, 100, RoutineLoader.load_dir().table)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, null, null, trade)
+	assert_true(trade.is_merchant(MERCHANT) and not trade.is_merchant(NPC), "O ofício decide: o NPC 100 é comum.")
+	assert_true(provider.can_buy_food(MERCHANT) and provider.can_buy_food(NPC), "Sem comida na mochila os dois podem comprar.")
+	assert_true(module.request_transfer_goods(MARKET, MERCHANT, "wool", 1).ok)
+	assert_true(provider.can_buy_food(MERCHANT), "Bem que não é comida não impede a compra de comida.")
+	for good_id: String in ["bread", "grain"]:
+		for holder: int in [MERCHANT, NPC]:
+			assert_true(module.request_transfer_goods(MARKET, holder, good_id, 1).ok)
+		assert_eq([provider.can_buy_food(MERCHANT), provider.can_buy_food(NPC)], [false, true], "Com %s na mochila o comerciante não compra; o NPC comum continua comprando." % good_id)
+		for holder: int in [MERCHANT, NPC]:
+			assert_eq(trade.complete(holder, "eat").problem, "")
+		assert_true(provider.can_buy_food(MERCHANT), "Comeu a comida (sobra só a lã): volta a poder comprar.")
 	(pair[1] as World).teardown()

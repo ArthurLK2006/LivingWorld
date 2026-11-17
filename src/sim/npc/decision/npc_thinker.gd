@@ -498,8 +498,9 @@ class ConditionProvider:
 	func npc_has_food(npc_id: int, settlement_id: String) -> bool:
 		return (_trade != null and _trade.has_food(npc_id)) or has_food(settlement_id)
 
+	## LW-098h0: o comerciante que já tem comida na mochila não compra mais (só precisa chegar em casa para comer). Sem isto `buy`, que vale a fome inteira, vence `eat` e ele morre de fome com a mochila cheia de pão. O NPC comum não muda (a correção geral é da LW-094).
 	func can_buy_food(npc_id: int) -> bool:
-		return _trade != null and not _trade.plan_food(npc_id).is_empty()
+		return _trade != null and not (_trade.is_merchant(npc_id) and _trade.has_food(npc_id)) and not _trade.plan_food(npc_id).is_empty()
 
 	func has_goods(npc_id: int) -> bool:
 		return _trade != null and _trade.has_goods(npc_id)
