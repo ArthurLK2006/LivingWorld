@@ -1,8 +1,8 @@
 #!/bin/sh
 # ART-12, 7c-1c: o ROTEIRO tests/soak/medir_figura, SEM janela, SEM Godot, SEM rede e SEM bateria: um run_game_release FALSO (LW_RUN_GAME_RELEASE) registra cada chamada e escreve arquivos de execução de mentira no formato do
-# medidor; um compare FALSO (LW_COMPARE_GAME_RELEASE) registra os argumentos. Confere a ORDEM sem/com/sem/com/sem/com, a validação CURTA primeiro, a construção UMA vez por condição (2 chamadas de construção, não 6), a
-# PARADA na primeira inconclusiva (e na validação, na recusa, na troca de perfil), a chamada final da comparação só com as pastas DESTA rodada e as variáveis de segurança passando adiante sem afrouxar. Um caso usa a
-# comparação REAL sobre os arquivos falsos.
+# medidor; um compare FALSO (LW_COMPARE_GAME_RELEASE) registra os argumentos. Confere a ORDEM contrabalançada sem/com/com/sem/sem/com, a validação CURTA primeiro, a construção UMA vez por condição (2 chamadas de construção,
+# não 6), a PARADA na primeira inconclusiva (e na validação, na recusa, na troca de perfil), a chamada final da comparação só com as pastas DESTA rodada (a antiga não entra) e as variáveis de segurança (PERFIL e as 3
+# travas da bateria, com valores DIFERENTES dos padrões) passando adiante IGUAIS, sem afrouxar. Um caso usa a comparação REAL sobre os arquivos falsos.
 set -eu
 project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 work=$(mktemp -d "${TMPDIR:-/tmp}/lw_medir_test.XXXXXX")
@@ -14,7 +14,7 @@ expect_lacks() { case "$2" in *"$3"*) echo "FALHA: $1: não devia ter '$3'"; exi
 cat > "$work/run_falso" <<'FAKE'
 #!/bin/sh
 dir=$1; cond=$(basename "$dir")
-printf 'BUILD=%s RUN=%s COND=%s ART=%s CURTA=%s ENSAIOS=%s RUNS=%s PERFIL=%s INICIO=%s BIN=%s\n' "${LW_BUILD_ONLY:-0}" "${LW_RUN_ONLY:-0}" "$cond" "${LW_ART_SAMPLES:-0}" "${CURTA:-0}" "${ENSAIOS:-}" "${RUNS:-}" "${PERFIL:-auto}" "${BATERIA_MIN_INICIO:-30}" "${LW_RELEASE_BIN:-}" >> "$FAKE_LOG"
+printf 'BUILD=%s RUN=%s COND=%s ART=%s CURTA=%s ENSAIOS=%s RUNS=%s PERFIL=%s INICIO=%s QUEDA=%s PARADA=%s BIN=%s\n' "${LW_BUILD_ONLY:-0}" "${LW_RUN_ONLY:-0}" "$cond" "${LW_ART_SAMPLES:-0}" "${CURTA:-0}" "${ENSAIOS:-}" "${RUNS:-}" "${PERFIL:-auto}" "${BATERIA_MIN_INICIO:-30}" "${BATERIA_QUEDA_MAX:-5}" "${BATERIA_MIN_PARADA:-20}" "${LW_RELEASE_BIN:-}" >> "$FAKE_LOG"
 if [ "${LW_BUILD_ONLY:-0}" = 1 ]; then
     if [ "${FAKE_BUILD_FAIL:-}" = "$cond" ]; then echo 'ERRO: construção recusada pelo falso' >&2; exit 1; fi
     mkdir -p "$dir/execucao"; echo "construído: $cond"; exit 0
@@ -48,13 +48,13 @@ roteiro() { # $1 = nome do caso; o resto = variáveis de ambiente do caso (o com
     rc=0; out=$(env FAKE_LOG="$work/log_$name" FAKE_COUNT="$work/count_$name" FAKE_COMPARE_LOG="$work/cmp_$name" LW_RUN_GAME_RELEASE="$work/run_falso" LW_COMPARE_GAME_RELEASE="$work/compare_falso" "$@" "$script" "$base" < /dev/null 2>&1) || rc=$?
 }
 seq_of() { awk '{ b = 0; c = ""; k = 0; for (i = 1; i <= NF; i++) { split($i, kv, "="); if (kv[1] == "BUILD") b = kv[2]; else if (kv[1] == "COND") c = kv[2]; else if (kv[1] == "CURTA") k = kv[2] } printf "%s%s", (NR > 1 ? " " : ""), (b == 1 ? "B:" c : "R:" c (k == 1 ? ":curta" : "")) } END { print "" }' "$work/log_$1"; }
-full='B:com R:com:curta B:sem R:sem R:com R:sem R:com R:sem R:com'
+full='B:com R:com:curta B:sem R:sem R:com R:com R:sem R:sem R:com'
 
-# 1) A rodada completa: a validação CURTA primeiro, a construção UMA vez por condição, a ordem sem/com/sem/com/sem/com e a comparação por último, só com as pastas DESTA rodada (uma rodada antiga existe e não entra).
-new_base cheio; mkdir -p "$work/base_cheio/figura_antiga/sem"; echo 'PERFIL: tomada' > "$work/base_cheio/figura_antiga/sem/game_release_run_1.txt"
-roteiro cheio PERFIL=bateria BATERIA_MIN_INICIO=40
+# 1) A rodada completa: a validação CURTA primeiro, a construção UMA vez por condição, a ordem CONTRABALANÇADA sem/com/com/sem/sem/com (o par do meio troca a ordem: o com não roda sempre depois) e a comparação por último, só com as pastas DESTA rodada (uma rodada antiga, com sem/ e com/, existe e não entra).
+new_base cheio; mkdir -p "$work/base_cheio/figura_antiga/sem" "$work/base_cheio/figura_antiga/com"; echo 'PERFIL: tomada' > "$work/base_cheio/figura_antiga/sem/game_release_run_1.txt"; echo 'PERFIL: tomada' > "$work/base_cheio/figura_antiga/com/game_release_run_1.txt"
+roteiro cheio PERFIL=bateria BATERIA_MIN_INICIO=40 BATERIA_QUEDA_MAX=4 BATERIA_MIN_PARADA=25
 expect 'rodada completa: código 0' "$rc" 0
-expect 'a ordem: CURTA primeiro, construção de cada condição, depois sem/com/sem/com/sem/com' "$(seq_of cheio)" "$full"
+expect 'a ordem: CURTA primeiro, construção de cada condição, depois sem/com/com/sem/sem/com' "$(seq_of cheio)" "$full"
 expect 'a construção roda 2 vezes (uma por condição), não 6' "$(grep -c '^BUILD=1 ' "$work/log_cheio")" 2
 expect 'a validação CURTA vem antes de qualquer execução da comparação' "$(sed -n '2p' "$work/log_cheio" | grep -c 'CURTA=1')" 1
 expect 'as 6 execuções da comparação são do ensaio povoado, 1 por chamada, sem CURTA' "$(grep '^BUILD=0 RUN=1 ' "$work/log_cheio" | grep -c 'CURTA=0 ENSAIOS=povoado RUNS=1 ')" 6
@@ -62,8 +62,10 @@ expect 'COM a figura: LW_ART_SAMPLES=1 na construção, na CURTA e nas 3 execuç
 expect 'SEM a figura: LW_ART_SAMPLES=0 na construção e nas 3 execuções sem' "$(grep -c 'COND=sem ART=0 ' "$work/log_cheio")" 4
 expect 'o binário de release já extraído vai para as 2 construções (nada baixado)' "$(grep '^BUILD=1 ' "$work/log_cheio" | grep -c "BIN=$work/base_cheio/bin/godot_release_falso\$")" 2
 expect 'as variáveis de segurança (PERFIL e BATERIA_MIN_INICIO) passam por TODAS as 9 chamadas, sem afrouxar' "$(grep -c 'PERFIL=bateria INICIO=40 ' "$work/log_cheio")" 9
+expect 'as 3 travas da bateria (INICIO 40, QUEDA 4, PARADA 25: diferentes dos padrões) passam IGUAIS por TODAS as 9 chamadas' "$(grep -c 'PERFIL=bateria INICIO=40 QUEDA=4 PARADA=25 ' "$work/log_cheio")" 9
 expect 'a comparação roda UMA vez' "$(wc -l < "$work/cmp_cheio" | tr -d ' ')" 1
-case "$(cat "$work/cmp_cheio")" in "$work/base_cheio"/figura_2*/sem\ "$work/base_cheio"/figura_2*/com) echo 'OK: a comparação recebe SÓ as pastas sem/ e com/ desta rodada (a antiga não entra)';; *) echo "FALHA: argumentos da comparação: $(cat "$work/cmp_cheio")"; exit 1;; esac
+round=$(ls -d "$work/base_cheio"/figura_[0-9]* | head -1)
+expect 'a comparação recebe SÓ as pastas sem/ e com/ desta rodada (a antiga, figura_antiga, não entra)' "$(cat "$work/cmp_cheio")" "$round/sem $round/com"
 expect_has 'a comparação vem DEPOIS da última execução' "${out%%COMPARAÇÃO FALSA*}" 'Execução 6 de 6: com a figura (par 3 de 3)'
 expect_has 'diz quantas rodou' "$out" 'Rodou 6 de 6 execuções da comparação.'; expect_has 'diz que não exige tomada' "$out" 'não exige tomada'
 
@@ -76,13 +78,14 @@ expect_has 'comparação real: a CURTA é ignorada' "$out" 'IGNORADA(s): 1'; exp
 # 3) PARA na primeira execução inconclusiva e diz quantas rodou (a comparação ainda lê o que rodou).
 roteiro para3 FAKE_BAD_AT=4
 expect 'inconclusiva na 3ª da comparação: código 1' "$rc" 1
-expect 'para na primeira inconclusiva: nada roda depois dela' "$(seq_of para3)" 'B:com R:com:curta B:sem R:sem R:com R:sem'
-expect_has 'diz quantas rodou e por quê' "$out" 'Rodou 3 de 6 execuções da comparação; PARADO: a execução 3 (sem a figura) saiu INCONCLUSIVA (CLASSIFICAÇÃO: inconclusiva (a bateria caiu 6 pontos'
+expect 'para na primeira inconclusiva: nada roda depois dela' "$(seq_of para3)" 'B:com R:com:curta B:sem R:sem R:com R:com'
+expect_has 'diz quantas rodou e por quê' "$out" 'Rodou 3 de 6 execuções da comparação; PARADO: a execução 3 (com a figura) saiu INCONCLUSIVA (CLASSIFICAÇÃO: inconclusiva (a bateria caiu 6 pontos'
 expect 'a comparação lê o que rodou (UMA chamada)' "$(wc -l < "$work/cmp_para3" | tr -d ' ')" 1
+roteiro para4 FAKE_BAD_AT=5; expect 'inconclusiva na 4ª (o par do meio, trocado): para ali' "$(seq_of para4)" 'B:com R:com:curta B:sem R:sem R:com R:com R:sem'; expect_has 'rodou 4 de 6, a 4ª sem a figura' "$out" 'Rodou 4 de 6 execuções da comparação; PARADO: a execução 4 (sem a figura) saiu INCONCLUSIVA'
 roteiro para1 FAKE_BAD_AT=2; expect 'inconclusiva na 1ª da comparação: para ali' "$(seq_of para1)" 'B:com R:com:curta B:sem R:sem'; expect_has 'rodou 1 de 6' "$out" 'Rodou 1 de 6 execuções'
 roteiro semfig FAKE_NOFIG_AT=3; expect 'execução COM sem figura ativa: para (as que faltam não gastam bateria)' "$(seq_of semfig)" 'B:com R:com:curta B:sem R:sem R:com'
 expect_has 'execução COM sem figura ativa: diz quantas rodou e por quê' "$out" 'Rodou 2 de 6 execuções da comparação; PARADO: a execução 2 (com a figura) não mostrou nenhuma figura ativa'
-roteiro muda FAKE_LABEL_AT=4; expect 'o perfil de energia mudou entre as execuções: para' "$(seq_of muda)" 'B:com R:com:curta B:sem R:sem R:com R:sem'
+roteiro muda FAKE_LABEL_AT=4; expect 'o perfil de energia mudou entre as execuções: para' "$(seq_of muda)" 'B:com R:com:curta B:sem R:sem R:com R:com'
 expect_has 'perfis diferentes não se misturam' "$out" "o perfil de energia mudou entre as execuções (de 'bateria' para 'bateria (baixo consumo LIGADO)')"
 roteiro recusa FAKE_REFUSE_AT=3; expect 'execução recusada: para' "$(seq_of recusa)" 'B:com R:com:curta B:sem R:sem R:com'; expect_has 'execução recusada: diz RECUSADA e quantas rodou' "$out" 'Rodou 1 de 6 execuções da comparação; PARADO: a execução 2 (com a figura) foi RECUSADA'
 

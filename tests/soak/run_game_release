@@ -15,6 +15,8 @@
 #          LW_BUILD_ONLY=1 constrói o projeto, o .pck e a pasta execucao/ de UMA condição (figura com ou sem, pela LW_ART_SAMPLES) na pasta dada, grava execucao/figura.txt e SAI sem rodar o jogo;
 #          LW_RUN_ONLY=1 SÓ roda as execuções sobre essa pasta já construída (não baixa, copia nem exporta nada; recusa se a pasta não foi construída ou se a condição de figura é outra);
 #          LW_RELEASE_BIN=<arquivo> usa esse binário de release já extraído (nada é baixado) em vez de procurar em $WORK/bin.
+#          Por DESENHO (o comportamento não mudou): o figura.txt só é gravado por LW_BUILD_ONLY=1, então o modo padrão numa pasta já construída NÃO o atualiza (o medir_figura usa uma pasta NOVA por rodada); e LW_BUILD_ONLY=1
+#          SEM LW_RELEASE_BIN nem $WORK/bin BAIXA os ~1,28 GB, como o modo padrão (só o medir_figura impede, passando LW_RELEASE_BIN).
 # O projeto de medição ($HOME/lw-release-probe/projeto) é LOCAL e nunca é distribuído; toda build distribuível EXCLUI art_samples/* (docs/modules/presentation.md).
 set -eu
 PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
@@ -91,7 +93,7 @@ if [ -n "${LW_RELEASE_BIN:-}" ]; then # ART-12, 7c-1c: o binário já extraído 
 elif existing=$(ls "$WORK"/bin/*release* 2> /dev/null | head -1) && [ -n "$existing" ] && [ -x "$existing" ]; then
     RELEASE_BIN=$existing
     say "1/4 Reaproveitando o binário de release já extraído (nada será baixado): $RELEASE_BIN"
-else
+else # sem LW_RELEASE_BIN nem $WORK/bin: BAIXA (também com LW_BUILD_ONLY=1, por desenho; só o medir_figura impede, passando LW_RELEASE_BIN)
     command -v curl > /dev/null && command -v unzip > /dev/null || fail "curl e unzip são necessários."
     TPZ=$WORK/$TEMPLATES_FILE
     say "1/4 Baixando os modelos de exportação oficiais (~1,28 GB) para $WORK"
@@ -156,7 +158,7 @@ cp "$RELEASE_BIN" "$WORK/execucao/game_release"
 chmod +x "$WORK/execucao/game_release"
 cp "$WORK/game.pck" "$WORK/execucao/game_release.pck"
 command -v codesign > /dev/null && codesign --force --sign - "$WORK/execucao/game_release" 2> /dev/null || true
-if [ "$LW_BUILD_ONLY" = 1 ]; then # ART-12, 7c-1c: construiu UMA vez e SAI; a condição de figura fica gravada para o LW_RUN_ONLY conferir
+if [ "$LW_BUILD_ONLY" = 1 ]; then # ART-12, 7c-1c: construiu UMA vez e SAI; a condição de figura fica gravada para o LW_RUN_ONLY conferir (SÓ aqui: o modo padrão, abaixo, não grava nem atualiza o figura.txt; ver o cabeçalho)
     printf '%s\n' "$FIGURA" > "$WORK/execucao/figura.txt"
     say "Pronto: o jogo ($FIGURA a figura) está construído em $WORK/execucao. Rode com LW_RUN_ONLY=1 sobre esta mesma pasta (e o mesmo LW_ART_SAMPLES)."
     du -sh "$WORK"; exit 0

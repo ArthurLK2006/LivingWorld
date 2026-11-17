@@ -1,10 +1,12 @@
 #!/bin/sh
 # ART-12, 7c-1c: o ROTEIRO da comparação do medidor de quadros em release COM e SEM a figura do Ice Warrior, no perfil de energia em que o Mac estiver (bateria ou tomada: a medição NÃO exige tomada, decisão
-# de Arthur de 16/11/2026) e com o MENOR conjunto de repetições: 3 PARES do ensaio `povoado` de 30 s, alternados (sem, com, sem, com, sem, com), sem 20 minutos contínuos. Quem o roda é a MEDIÇÃO REAL (com janela,
-# com a ordem de Arthur); os testes só o exercitam com um run_game_release FALSO (tests/test_medir_figura.sh).
+# de Arthur de 16/11/2026) e com o MENOR conjunto de repetições: 3 PARES do ensaio `povoado` de 30 s, CONTRABALANCEADOS (sem, com, com, sem, sem, com), sem 20 minutos contínuos. Quem o roda é a MEDIÇÃO REAL (com
+# janela, com a ordem de Arthur); os testes só o exercitam com um run_game_release FALSO (tests/test_medir_figura.sh).
 # 1) CURTA: constrói o jogo COM a figura (UMA vez) e roda a medição CURTA de validação (CURTA=1, LW_ART_SAMPLES=1: um ensaio povoado de 10 s, sem veredito DEC-119). PARA se ela for recusada, sair inconclusiva
 #    ou não mostrar figura ativa: o instrumento não está validado e nenhuma bateria mais é gasta.
-# 2) constrói o jogo SEM a figura (UMA vez por condição: o projeto e o .pck NÃO se refazem a cada execução; LW_BUILD_ONLY=1 do run_game_release) e alterna as 6 execuções (LW_RUN_ONLY=1, ENSAIOS=povoado, RUNS=1).
+# 2) constrói o jogo SEM a figura (UMA vez por condição: o projeto e o .pck NÃO se refazem a cada execução; LW_BUILD_ONLY=1 do run_game_release) e roda as 6 execuções (LW_RUN_ONLY=1, ENSAIOS=povoado, RUNS=1) na ordem sem, com, com, sem, sem, com.
+#    Por que essa ordem: o Mac (um MacBook Air, sem ventoinha) esquenta ao longo da rodada; sem, com, sem, com, sem, com deixava o com sempre DEPOIS e mais quente (posição média 4 contra 3). O par do meio troca a
+#    ordem (ABBAAB, as mesmas 6 execuções e as mesmas 2 construções): a posição média passa a 3,33 (sem) e 3,67 (com), um terço do viés. Com 6 execuções o zero é impossível (a soma 1+...+6 = 21 é ímpar).
 #    PARA na PRIMEIRA execução que sair inconclusiva (bateria, fonte, térmico, baixo consumo ou jogo incompleto), recusada, COM a figura mas sem nenhuma figura ativa ou com o perfil de energia diferente
 #    do da validação, e diz quantas rodou.
 # 3) chama tests/soak/compare_game_release sobre as pastas DESTA rodada ($BASE/figura_<data>/sem e /com; uma rodada antiga nunca entra) e imprime o relatório por perfil.
@@ -48,10 +50,10 @@ grep -q 'figuras ativas: máximo [1-9]' "$LOG" || abort "a medição CURTA não 
 label=$(profile_of_log)
 echo "Instrumento validado no perfil '$label': classificação válida e figura ativa."
 
-say "2/3 Construindo o jogo SEM a figura e alternando as 6 execuções (sem, com, sem, com, sem, com) do ensaio povoado de 30 s"
+say "2/3 Construindo o jogo SEM a figura e rodando as 6 execuções (sem, com, com, sem, sem, com: o par do meio troca a ordem para o calor da rodada não pesar sempre na mesma condição) do ensaio povoado de 30 s"
 build sem 0 || abort "a construção SEM a figura falhou ou foi RECUSADA (saída acima); só a validação CURTA rodou."
 ran=0; halted=''
-for cond in sem com sem com sem com; do
+for cond in sem com com sem sem com; do
     art=0; [ "$cond" = com ] && art=1
     n=$((ran + 1)); say "Execução $n de 6: $cond a figura (par $(((n + 1) / 2)) de 3)"
     run "$cond" "$art" 0 || { halted="a execução $n ($cond a figura) foi RECUSADA ou falhou (saída acima)"; break; }
