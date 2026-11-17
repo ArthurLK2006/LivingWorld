@@ -1,0 +1,221 @@
+#!/bin/sh
+# ART-12, 7c-1c: COMPARA as execuções do medidor de quadros em release (game_release_run_N.txt, de tests/soak/run_game_release) COM e SEM a figura do Ice Warrior, POR PERFIL DE ENERGIA.
+# SÓ LÊ os arquivos: o veredito da DEC-119 (média de 60 fps ou mais e nenhum quadro acima de 33 ms), o custo por seção e a carga da cena são os que o medidor imprimiu; nada aqui calcula veredito.
+# Cada rótulo da linha PERFIL é um grupo PRÓPRIO (bateria, tomada, "(baixo consumo LIGADO)" e "(baixo consumo DESCONHECIDO)" nunca se somam) e, dentro dele, FIGURA com e sem. São DESCARTADAS de toda
+# estatística e LISTADAS com o motivo: a execução INCONCLUSIVA (CLASSIFICAÇÃO), a sem PERFIL, FIGURA ou CLASSIFICAÇÃO legíveis (formato anterior à 7c-1b ou execução cortada), a que traz o aviso do
+# próprio medidor de que os números não valem (quadro de mais de 1 s; povoado sem corpo), a que não imprime as DUAS contagens da DEC-119 (quadros acima de 16,7 ms e de 33 ms) ou o veredito, a COM a figura
+# sem nenhuma figura ativa (ou sem a linha delas) e a SEM a figura que traz figuras ativas (base contaminada). A execução CURTA (CURTA=1, só valida o instrumento) é IGNORADA. Cada arquivo conta UMA vez.
+# A carga da cena que o medidor não imprimiu NÃO descarta: o relatório diz "carga da cena: não impressa". O awk roda com LC_ALL=C: o locale do Terminal (vírgula decimal) não pode truncar o ponto dos números.
+# O DELTA (com menos sem) é só informativo: a DISPERSÃO é o máximo menos o mínimo de cada condição e, com |delta| dentro da maior delas, a linha diz "abaixo do ruído" (com menos de 2 execuções por condição
+# o ruído NÃO é estimável). ONDE: uma seção do quadro ou a carga da cena com diferença acima da dispersão; senão "nada identificável".
+# Uso: tests/soak/compare_game_release PASTA_OU_ARQUIVO [...]   (pasta: lê os game_release_run_*.txt dentro dela; ex.: as pastas sem/ e com/ de uma rodada do tests/soak/medir_figura)
+# Saída 0 = relatório impresso e todo grupo tem execução válida; 1 = algum grupo sem nenhuma execução válida (ou nenhuma execução achada); 2 = uso errado.
+set -u
+usage() { echo "Uso: $0 PASTA_OU_ARQUIVO [...]   (pasta: lê os game_release_run_*.txt dentro dela)" >&2; exit 2; }
+[ "$#" -ge 1 ] || usage
+nl='
+'
+seen=$nl
+fresh() { # $1 = arquivo: põe em $path o caminho REAL dele (pasta resolvida; sempre com "/" na frente, para o awk nunca tomar o nome por atribuição) e diz se é a 1ª vez: um arquivo = UMA execução, por mais caminhos que o nomeiem
+    path=$(CDPATH= cd -- "$(dirname -- "$1")" && pwd -P)/$(basename -- "$1")
+    case "$seen" in *"$nl$path$nl"*) return 1;; esac
+    seen=$seen$path$nl
+}
+count=$#
+while [ "$count" -gt 0 ]; do # troca cada pasta pelos arquivos dela (o que sobra em "$@" são só arquivos, cada um UMA vez, mesmo dado por pasta e por arquivo)
+    arg=$1; shift; count=$((count - 1))
+    if [ -d "$arg" ]; then
+        for file in "$arg"/game_release_run_*.txt; do
+            [ -s "$file" ] && fresh "$file" && set -- "$@" "$path"
+        done
+    elif [ -f "$arg" ]; then
+        fresh "$arg" && set -- "$@" "$path"
+    else
+        echo "ERRO: '$arg' não é uma pasta nem um arquivo de execução." >&2; usage
+    fi
+done
+[ "$#" -ge 1 ] || { echo "ERRO: nenhuma execução (game_release_run_*.txt) nas pastas dadas." >&2; exit 1; }
+LC_ALL=C awk '
+function trim(s) { sub(/^[ \t]+/, "", s); sub(/[ \t\r]+$/, "", s); return s }
+function after(s, tag,   i) { i = index(s, tag); return i ? substr(s, i + length(tag)) : "" }
+function lead(s) { sub(/[^0-9.].*$/, "", s); return s }
+function nafter(s, tag) { return lead(after(s, tag)) }
+function absv(x) { return x < 0 ? -x : x }
+function acc(k, v) { if (an[k]++ == 0) { amin[k] = v; amax[k] = v } else { if (v < amin[k]) amin[k] = v; if (v > amax[k]) amax[k] = v }; as[k] += v }
+function avg(k) { return as[k] / an[k] }
+function rng(k) { return amax[k] - amin[k] }
+function stat(k, d) { return sprintf("%." d "f (%." d "f a %." d "f)", avg(k), amin[k], amax[k]) }
+function short(p,   n, a) { n = split(p, a, "/"); return n >= 2 ? a[n - 1] "/" a[n] : p }
+function banner() {
+    print "**************************************************************************************************************************"
+    print "*** NÃO compare os perfis bateria e tomada como equivalentes: cada perfil tem a sua tabela."
+    print "*** RESSALVA: este resultado vale para ESTE Mac, estas condições e estas execuções; não representa outros Macs nem plataformas."
+    print "**************************************************************************************************************************"
+}
+# Os (no máximo 5) piores quadros da lista "35.2 ms em 3.1 s; 40.0 ms em 12.0 s" que o medidor imprime (acima de 33 ms).
+function worst5(list,   n, e, i, r, best, used, out, shown) {
+    if (list == "") return ""
+    n = split(list, e, "; ")
+    for (r = 1; r <= 5 && r <= n; r++) {
+        best = 0
+        for (i = 1; i <= n; i++) if (!(i in used) && (best == 0 || lead(e[i]) + 0 > lead(e[best]) + 0)) best = i
+        used[best] = 1; shown++
+        out = out (out == "" ? "" : "; ") e[best]
+    }
+    return " [piores: " out (n > shown ? "; +" (n - shown) " outros" : "") "]"
+}
+# Uma execução: decide se é válida ou DESCARTADA (com o motivo) e soma nas estatísticas do grupo (perfil, figura) SÓ se válida.
+function judge(k,   p, f, why, i, e, r, key, m, rest, j, q, name, v, line) {
+    if (dur[k] ~ /^CURTA/) { ncurta++; return }
+    p = ((k in perfil) && perfil[k] != "") ? perfil[k] : "(arquivo sem a linha PERFIL)"
+    f = (k in figura) ? figura[k] : "?"
+    if (p == "(arquivo sem a linha PERFIL)") why = why "sem a linha PERFIL (formato anterior à 7c-1b: o perfil de energia é desconhecido); "
+    if (f != "sem" && f != "com") { why = why "FIGURA ausente ou desconhecida (" f "); "; f = "?" }
+    r = cls[k]
+    if (r == "") why = why "sem a linha CLASSIFICAÇÃO (execução incompleta ou de formato anterior à 7c-1b); "
+    else if (r != "válida") {
+        if (index(r, "inconclusiva (") == 1) { sub(/^inconclusiva \(/, "", r); sub(/\)$/, "", r); why = why "inconclusiva: " r "; " }
+        else why = why "CLASSIFICAÇÃO desconhecida: " r "; "
+    }
+    if (ne[k] == 0) why = why "nenhum ensaio no arquivo; "
+    if (inv[k] != "") why = why inv[k] "; "
+    for (i = 1; i <= ne[k]; i++) {
+        e = en[k, i]
+        if (!((k, i) in okq)) why = why "ensaio " e " sem a linha de tempos de quadro; "
+        if (o167[k, i] == "") why = why "ensaio " e " sem a contagem de quadros acima de 16,7 ms; "
+        if (o33[k, i] == "") why = why "ensaio " e " sem a contagem de quadros acima de 33 ms (a da DEC-119); "
+        if (!((k, i) in ver)) why = why "ensaio " e " sem o veredito DEC-119 impresso; "
+        if (f == "com" && !((k, i) in fig)) why = why "COM a figura, mas sem a linha de figuras ativas no ensaio " e "; "
+        else if (f == "com" && (fig[k, i] < 1 || ((k, i) in zero))) why = why "COM a figura, mas 0 figuras ativas no ensaio " e " (a rodada que não mediu figura não entra como COM); "
+        if (f == "sem" && ((k, i) in fig) && fig[k, i] > 0) why = why "sem a figura, mas com figuras ativas: a base está contaminada (ensaio " e ", máximo " fig[k, i] "); "
+    }
+    if (!(p in pseen)) { pseen[p] = 1; plist[++np] = p }
+    ng[p, f]++
+    if (why != "") { sub(/; $/, "", why); ni[p, f]++; dl[p, f] = dl[p, f] "    descartada: " short(path[k]) ": " why "\n"; return }
+    nv[p, f]++
+    if (k in la) { acc(p SUBSEP f SUBSEP "-" SUBSEP "lf", lf[k] + 0); acc(p SUBSEP f SUBSEP "-" SUBSEP "la", la[k] + 0) }
+    for (i = 1; i <= ne[k]; i++) {
+        e = en[k, i]
+        if (!(e in eseen)) { eseen[e] = 1; elist[++nel] = e }
+        pe[p, e] = 1
+        key = p SUBSEP f SUBSEP e SUBSEP
+        m = mean[k, i] + 0
+        acc(key "fps", m > 0 ? 1000 / m : 0); acc(key "mean", m); acc(key "med", med[k, i] + 0); acc(key "p99", p99[k, i] + 0); acc(key "worst", worst[k, i] + 0)
+        acc(key "o167", o167[k, i] + 0); acc(key "o33", o33[k, i] + 0)
+        vt[key "v"]++; if (ver[k, i] == "PASSA") vp[key "v"]++
+        rest = sec[k, i]
+        while (rest != "") { # "NpcBodiesView 0.10 / 1.20 | NpcBodyDriver 0.20 / 2.30 | resto do quadro 16.0 / 28.0": o nome vai até o último espaço antes da média
+            j = index(rest, " | "); if (j > 0) { v = substr(rest, 1, j - 1); rest = substr(rest, j + 3) } else { v = rest; rest = "" }
+            j = index(v, " / "); if (j == 0) continue
+            v = substr(v, 1, j - 1); q = match(v, / [^ ]+$/); if (q == 0) continue
+            name = substr(v, 1, q - 1); acc(key "s:" name, substr(v, q + 1) + 0)
+            if (index("|" sn[p, e] "|", "|" name "|") == 0) sn[p, e] = sn[p, e] (sn[p, e] == "" ? "" : "|") name
+        }
+        line = sprintf("      %s: FPS %.2f | média %.2f ms, mediana %.2f ms, p99 %.2f ms, pior %.1f ms | acima de 16,7 ms: %s, acima de 33 ms: %s%s\n", short(path[k]), m > 0 ? 1000 / m : 0, m, med[k, i], p99[k, i], worst[k, i], o167[k, i], o33[k, i], worst5(slow[k, i]))
+        line = line "        VEREDITO DEC-119 (o do medidor): " ver[k, i] " (" vtx[k, i] ")\n        seções, em ms por quadro (média / pior): " (sec[k, i] == "" ? "sem a linha" : sec[k, i]) "\n"
+        det[key "d"] = det[key "d"] line
+        if (wr[k, i] != "") wl[p, f] = wl[p, f] "    aviso do medidor (" short(path[k]) ", ensaio " e "): " wr[k, i] "\n"
+    }
+}
+function beyond(a, b,   ra, rb) { if (an[a] < 2 || an[b] < 2) return 0; ra = rng(a); rb = rng(b); return absv(avg(b) - avg(a)) > (ra > rb ? ra : rb) + 0.000001 }
+function noise_text(a, b, cond) {
+    if (an[a] < 2 || an[b] < 2) return "ruído NÃO estimável (menos de 2 execuções em uma condição: " cond ")"
+    return beyond(a, b) ? "ACIMA da dispersão (" cond "): indício de diferença, a confirmar com mais execuções" : "abaixo do ruído (" cond ")"
+}
+function delta_line(label, unit, dec, a, b, cond) {
+    printf "      %s: %+." dec "f %s (sem %." dec "f, com %." dec "f; dispersão sem %." dec "f, com %." dec "f): %s\n", label, avg(b) - avg(a), unit, avg(a), avg(b), rng(a), rng(b), noise_text(a, b, cond)
+}
+# ONDE está a diferença: as seções do quadro e a carga da cena (instanciar e adicionar) com diferença ACIMA da dispersão; vazio = nada identificável.
+function where(p, e, ks, kc,   n, i, parts, a, b, out) {
+    n = split(sn[p, e], parts, "|")
+    for (i = 1; i <= n; i++) {
+        a = ks "s:" parts[i]; b = kc "s:" parts[i]
+        if ((a in an) && (b in an) && beyond(a, b)) out = out (out == "" ? "" : "; ") sprintf("seção do quadro %s %+.2f ms por quadro", parts[i], avg(b) - avg(a))
+    }
+    a = p SUBSEP "sem" SUBSEP "-" SUBSEP "la"; b = p SUBSEP "com" SUBSEP "-" SUBSEP "la"
+    if ((a in an) && (b in an) && beyond(a, b)) out = out (out == "" ? "" : "; ") sprintf("carga da cena (instanciar e adicionar) %+.1f ms, custo único fora dos quadros", avg(b) - avg(a))
+    return out
+}
+function cond_block(p, f, e,   key) {
+    key = p SUBSEP f SUBSEP e SUBSEP
+    if (!((key "fps") in an)) { printf "    FIGURA %s: nenhuma execução válida com este ensaio\n", f; return }
+    printf "    FIGURA %s, %d execução(ões) válida(s) (média, de mín a máx ENTRE as execuções):\n", f, an[key "fps"]
+    printf "      FPS médio (1000 / média do quadro): %s\n", stat(key "fps", 2)
+    printf "      tempos de quadro em ms: média %s | mediana %s | percentil 99 %s | pior %s\n", stat(key "mean", 2), stat(key "med", 2), stat(key "p99", 2), stat(key "worst", 1)
+    printf "      quadros por execução acima de 16,7 ms: %s | acima de 33 ms: %s\n", stat(key "o167", 1), stat(key "o33", 1)
+    printf "      VEREDITO DEC-119 (o do medidor): PASSA em %d de %d execução(ões)\n%s", vp[key "v"], vt[key "v"], det[key "d"]
+}
+function delta_block(p, e,   ks, kc, cond, w) {
+    ks = p SUBSEP "sem" SUBSEP e SUBSEP; kc = p SUBSEP "com" SUBSEP e SUBSEP
+    if (!((ks "fps") in an) || !((kc "fps") in an)) { printf "    DELTA (com menos sem): INDISPONÍVEL, falta execução válida %s neste ensaio\n", ((ks "fps") in an) ? "COM a figura" : "SEM a figura"; return }
+    cond = (an[ks "fps"] == an[kc "fps"]) ? an[ks "fps"] " execuções por condição" : an[ks "fps"] " sem e " an[kc "fps"] " com"
+    print "    DELTA (com menos sem), INFORMATIVO (a dispersão é o máximo menos o mínimo de cada condição):"
+    delta_line("FPS médio", "fps", 2, ks "fps", kc "fps", cond)
+    delta_line("mediana do quadro", "ms", 2, ks "med", kc "med", cond)
+    delta_line("percentil 99 do quadro", "ms", 2, ks "p99", kc "p99", cond)
+    w = where(p, e, ks, kc)
+    print "      ONDE está a diferença: " (w != "" ? w : ((an[ks "fps"] < 2 || an[kc "fps"] < 2) ? "não estimável (menos de 2 execuções em uma condição)" : "nada identificável"))
+}
+function load_line(p, f,   k, miss) { # a carga da cena de UMA condição; diz quando o medidor não a imprimiu (em todas as execuções válidas ou só em parte)
+    if (nv[p, f] == 0) return
+    k = p SUBSEP f SUBSEP "-" SUBSEP; miss = nv[p, f] - (((k "lf") in an) ? an[k "lf"] : 0)
+    if (miss == nv[p, f]) printf "    FIGURA %s: carga da cena: não impressa\n", f
+    else printf "    FIGURA %s: ler o arquivo %s | instanciar e adicionar %s%s\n", f, stat(k "lf", 1), stat(k "la", 1), miss ? " (carga da cena: não impressa em " miss " das " nv[p, f] " execuções válidas)" : ""
+}
+function load_block(p,   fa, fb, la_a, la_b, cond) {
+    if (nv[p, "sem"] == 0 && nv[p, "com"] == 0) return
+    fa = p SUBSEP "sem" SUBSEP "-" SUBSEP "lf"; fb = p SUBSEP "com" SUBSEP "-" SUBSEP "lf"; la_a = p SUBSEP "sem" SUBSEP "-" SUBSEP "la"; la_b = p SUBSEP "com" SUBSEP "-" SUBSEP "la"
+    print "\n  CARGA da cena principal (fora das seções do quadro; o preparo da figura acontece aqui), em ms (média, de mín a máx):"
+    load_line(p, "sem"); load_line(p, "com")
+    if ((fa in an) && (fb in an)) { cond = (an[fa] == an[fb]) ? an[fa] " execuções por condição" : an[fa] " sem e " an[fb] " com"; delta_line("delta da carga (com menos sem), instanciar e adicionar", "ms", 1, la_a, la_b, cond) }
+}
+function report(   a, i, j, p, t, f, g, e) {
+    banner()
+    if (ncurta > 0) printf "execução(ões) CURTA(s) (validação do instrumento, sem veredito DEC-119) IGNORADA(s): %d\n", ncurta
+    for (i = 2; i <= np; i++) { t = plist[i]; for (j = i - 1; j >= 1 && plist[j] > t; j--) plist[j + 1] = plist[j]; plist[j + 1] = t }
+    if (np == 0) { print "\nNENHUMA execução (fora as CURTAS) para comparar."; bad = 1 }
+    for (a = 1; a <= np; a++) {
+        p = plist[a]
+        printf "\n######## PERFIL: %s ########\n", p
+        for (i = 1; i <= 3; i++) {
+            f = (i == 1) ? "sem" : ((i == 2) ? "com" : "?"); g = p SUBSEP f
+            if (!(g in ng)) { if (f != "?") printf "  FIGURA %s: nenhuma execução neste perfil (sem delta)\n", f; continue }
+            printf "  FIGURA %s: %d execução(ões): %d válida(s) e %d inconclusiva(s) (as inconclusivas, listadas abaixo, NÃO entram em estatística nenhuma)\n%s%s", f, ng[g], nv[g], ni[g], dl[g], wl[g]
+            if (nv[g] == 0) { print "    NENHUMA execução válida neste grupo: nada a comparar."; bad = 1 }
+        }
+        for (j = 1; j <= nel; j++) { e = elist[j]; if ((p, e) in pe) { printf "\n  ENSAIO %s\n", e; cond_block(p, "sem", e); cond_block(p, "com", e); delta_block(p, e) } }
+        load_block(p)
+    }
+    print ""
+    banner()
+}
+FNR == 1 { fid++; path[fid] = FILENAME; ne[fid] = 0 }
+{
+    t = trim($0); i = ne[fid]
+    if (index(t, "PERFIL: ") == 1) { if (!(fid in perfil)) perfil[fid] = after(t, "PERFIL: ") }
+    else if (index(t, "FIGURA: ") == 1) { if (!(fid in figura)) figura[fid] = after(t, "FIGURA: ") }
+    else if (index(t, "DURAÇÃO: ") == 1) { if (!(fid in dur)) dur[fid] = after(t, "DURAÇÃO: ") }
+    else if (index(t, "CLASSIFICAÇÃO: ") == 1) cls[fid] = after(t, "CLASSIFICAÇÃO: ")
+    else if (index(t, "carga da cena principal") == 1) { if (index(t, "ler o arquivo ") > 0 && index(t, "instanciar e adicionar ") > 0) { lf[fid] = nafter(t, "ler o arquivo "); la[fid] = nafter(t, "instanciar e adicionar ") } }
+    else if (index(t, "ENSAIO ") == 1) { ne[fid] = ++i; split(after(t, "ENSAIO "), w, " "); en[fid, i] = tolower(w[1]) }
+    else if (i > 0) {
+        if (index(t, "quadros ") == 1) {
+            mean[fid, i] = nafter(t, "média "); med[fid, i] = nafter(t, "mediana "); p99[fid, i] = nafter(t, "percentil 99 "); worst[fid, i] = nafter(t, "primeiros) ")
+            if (mean[fid, i] != "" && med[fid, i] != "" && p99[fid, i] != "" && worst[fid, i] != "") okq[fid, i] = 1
+        } else if (index(t, "acima de 16,7 ms: ") == 1) {
+            o167[fid, i] = nafter(t, "acima de 16,7 ms: "); r = after(t, "acima de 33 ms: "); o33[fid, i] = lead(r)
+            if ((j = index(r, "(")) > 0) { slow[fid, i] = substr(r, j + 1); sub(/\)[^)]*$/, "", slow[fid, i]) }
+        } else if (index(t, "custo por seção, em ms por quadro (média / pior): ") == 1) sec[fid, i] = after(t, "custo por seção, em ms por quadro (média / pior): ")
+        else if (index(t, "VEREDITO DEC-119: ") == 1) {
+            r = after(t, "VEREDITO DEC-119: "); ver[fid, i] = r; sub(/ .*/, "", ver[fid, i]); vtx[fid, i] = r; sub(/^[^(]*\(/, "", vtx[fid, i]); sub(/;.*/, "", vtx[fid, i])
+        } else if (index(t, "figuras ativas: máximo ") == 1) fig[fid, i] = nafter(t, "figuras ativas: máximo ") + 0
+        else if (index(t, "ATENÇÃO:") == 1) {
+            wr[fid, i] = wr[fid, i] (wr[fid, i] == "" ? "" : " | ") t
+            if (index(t, "0 figuras ativas") > 0) zero[fid, i] = 1
+            if (index(t, "estes números não valem") > 0 || index(t, "NÃO medem o caso") > 0) inv[fid] = (inv[fid] != "" ? inv[fid] "; " : "") "aviso do medidor no ensaio " en[fid, i] ": os números não valem (" t ")"
+        }
+    }
+}
+END { for (k = 1; k <= fid; k++) judge(k); report(); exit bad }
+' "$@"
+exit $?

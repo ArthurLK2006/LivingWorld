@@ -33,7 +33,7 @@ exit "${FAKE_EXIT:-0}"
 FAKE
 chmod +x "$work/bin/pmset" "$work/bin/sysctl" "$work/bin/jogo_falso"
 FAKE_STATE="$work/state"; FAKE_AFTER="$work/nada"; PATH="$work/bin:$PATH"; export FAKE_STATE FAKE_AFTER PATH
-unset PERFIL LW_ART_SAMPLES CURTA RUNS ENSAIOS GAME_EXTRA LW_PROBE_COPY KEEP_DOWNLOAD GODOT_BIN FAKE_NCPU BATERIA_MIN_INICIO BATERIA_MIN_PARADA BATERIA_QUEDA_MAX
+unset PERFIL LW_ART_SAMPLES CURTA RUNS ENSAIOS GAME_EXTRA LW_PROBE_COPY KEEP_DOWNLOAD GODOT_BIN FAKE_NCPU BATERIA_MIN_INICIO BATERIA_MIN_PARADA BATERIA_QUEDA_MAX LW_BUILD_ONLY LW_RUN_ONLY LW_RELEASE_BIN
 . "$project_dir/tests/soak/game_release_energy.sh"
 fail() { printf 'ERRO: %s\n' "$1" >&2; exit 1; }
 expect() { [ "$2" = "$3" ] || { echo "FALHA: $1: esperado '$3', veio '$2'"; exit 1; }; echo "OK: $1"; }
@@ -200,6 +200,51 @@ out=$(editor_run duas RUNS=2 ENSAIOS=povoado); expect_has 'sem CURTA: 2 execuç�
 set_state "$S" bateria 80 discharging ausente normal; out=$(editor_run baixo CURTA=1)
 expect_has 'lowpowermode ausente: perfil DESCONHECIDO na primeira linha' "$out" 'perfil de energia: bateria (baixo consumo DESCONHECIDO) (fonte bateria'; expect_has 'lowpowermode ausente: AVISO no começo da série' "$out" 'AVISO: não consegui ler o baixo consumo'
 expect_has 'lowpowermode ausente: o arquivo da execução leva o perfil próprio' "$(cat "$work/baixo/game_editor_run_1.txt")" 'PERFIL: bateria (baixo consumo DESCONHECIDO)'; expect_has 'lowpowermode ausente: a execução segue e é válida' "$out" 'RESUMO (bateria (baixo consumo DESCONHECIDO), FIGURA sem'
+
+# 3c) As opções NOVAS do script (7c-1c): LW_BUILD_ONLY, LW_RUN_ONLY e LW_RELEASE_BIN. As recusas vêm ANTES do Godot e de qualquer download (GODOT_BIN=/nao/existe). Depois, com o Godot, o binário de release, o curl e o
+# projeto FALSOS (um `git init` numa pasta temporária), o fluxo de SEMPRE (sem as opções: constrói e roda) e o novo: construir UMA vez (nada rodou) e rodar várias (nada baixado, copiado nem exportado).
+set_state "$S" bateria 80 discharging 0 normal
+refusal 'script: LW_BUILD_ONLY inválido' 'LW_BUILD_ONLY deve ser 0 ou 1' LW_BUILD_ONLY=2
+refusal 'script: LW_RUN_ONLY inválido' 'LW_RUN_ONLY deve ser 0 ou 1' LW_RUN_ONLY=x
+refusal 'script: LW_BUILD_ONLY e LW_RUN_ONLY juntas' 'NÃO podem ficar ligadas juntas' LW_BUILD_ONLY=1 LW_RUN_ONLY=1
+refusal 'script: LW_RELEASE_BIN que não é executável' 'não é um arquivo executável' LW_RELEASE_BIN=/nao/existe
+refusal 'script: LW_RUN_ONLY numa pasta que nunca foi construída' 'não tem o jogo construído' LW_RUN_ONLY=1
+if out=$(env GODOT_BIN=/nao/existe LW_BUILD_ONLY=1 "$work/proj/tests/soak/run_game_release" --editor "$work/pasta_nunca_criada" < /dev/null 2>&1); then echo 'FALHA: LW_BUILD_ONLY no modo --editor deveria recusar'; exit 1; fi
+expect_has 'script: as opções novas no modo --editor' "$out" 'só valem no modo release'; [ ! -e "$work/pasta_nunca_criada" ] || { echo 'FALHA: o modo --editor criou a pasta antes de recusar'; exit 1; }
+cat > "$work/bin/godot_falso" <<'FAKE'
+#!/bin/sh
+case "$*" in
+    --version) echo '4.7.2.stable.official.falso';;
+    *--export-pack*) for last; do :; done; echo PCK > "$last";;
+esac
+exit 0
+FAKE
+printf '#!/bin/sh\necho "curl $*" >> "$FAKE_STATE/rede"\nexit 1\n' > "$work/bin/curl"; chmod +x "$work/bin/godot_falso" "$work/bin/curl"; cp "$work/bin/jogo_falso" "$work/bin/release_falso"
+printf 'run/main_scene="res://scenes/antiga.tscn"\n' > "$work/proj/project.godot"; printf 'art_samples/\n' > "$work/proj/.gitignore"; mkdir -p "$work/proj/art_samples"; echo '{}' > "$work/proj/art_samples/character_area.json"; echo '{}' > "$work/proj/art_samples/character_catalog.json"
+git init -q "$work/proj"
+e2e() { dir=$1; shift; env GODOT_BIN="$work/bin/godot_falso" LW_PROBE_COPY=worktree RUNS=1 ENSAIOS=povoado "$@" "$work/proj/tests/soak/run_game_release" "$work/$dir" < /dev/null 2>&1; }
+has_file() { [ -f "$work/$1" ] || { echo "FALHA: devia existir $1"; exit 1; }; echo "OK: existe $1"; }
+no_file() { [ ! -e "$work/$1" ] || { echo "FALHA: NÃO devia existir $1"; exit 1; }; echo "OK: não existe $1"; }
+echo 0 > "$S/contagem"; mkdir -p "$work/e2e_padrao/bin"; : > "$work/e2e_padrao/.lw-release-probe"; cp "$work/bin/release_falso" "$work/e2e_padrao/bin/godot_release_falso"
+out=$(e2e e2e_padrao); expect_has 'sem as opções: o fluxo de sempre, reaproveitando o binário' "$out" 'Reaproveitando o binário de release já extraído'
+expect_has 'sem as opções: exporta o pacote e roda o jogo (1 válida)' "$out" 'Pacote criado:'; expect_has 'sem as opções: roda o jogo' "$out" '1 execução(ões), 1 válida(s) e 0 inconclusiva(s)'
+for f in projeto/project.godot game.pck execucao/game_release execucao/game_release.pck game_release_run_1.txt; do has_file "e2e_padrao/$f"; done
+no_file e2e_padrao/execucao/figura.txt; expect 'sem as opções: o jogo rodou 1 vez' "$(cat "$S/contagem")" 1
+expect_has 'a cena principal foi trocada SÓ na cópia' "$(cat "$work/e2e_padrao/projeto/project.godot")" 'run/main_scene="res://tests/soak/game_release/game_release_main.tscn"'
+echo 0 > "$S/contagem"; out=$(e2e e2e_sem LW_BUILD_ONLY=1 LW_RELEASE_BIN="$work/bin/release_falso")
+expect_has 'LW_BUILD_ONLY: usa o binário indicado, sem baixar' "$out" 'Usando o binário de release indicado em LW_RELEASE_BIN (nada será baixado)'; expect_has 'LW_BUILD_ONLY: diz que construiu e sai' "$out" 'está construído em'
+expect_lacks 'LW_BUILD_ONLY: NÃO roda o jogo' "$out" 'ENSAIO POVOADO de mentira'; expect 'LW_BUILD_ONLY: o jogo não rodou nenhuma vez' "$(cat "$S/contagem")" 0
+for f in projeto/project.godot game.pck execucao/game_release execucao/game_release.pck execucao/figura.txt; do has_file "e2e_sem/$f"; done
+no_file e2e_sem/game_release_run_1.txt; no_file e2e_sem/projeto/art_samples; expect 'LW_BUILD_ONLY: grava a condição SEM a figura' "$(cat "$work/e2e_sem/execucao/figura.txt")" sem
+touch "$work/e2e_sem/projeto/marcador"; out=$(e2e e2e_sem LW_RUN_ONLY=1 RUNS=2)
+expect_has 'LW_RUN_ONLY: 2 execuções válidas, com FIGURA sem' "$out" '2 execução(ões), 2 válida(s) e 0 inconclusiva(s)'; expect 'LW_RUN_ONLY: o jogo rodou 2 vezes' "$(cat "$S/contagem")" 2
+has_file e2e_sem/game_release_run_1.txt; has_file e2e_sem/game_release_run_2.txt; expect_has 'LW_RUN_ONLY: FIGURA sem no arquivo' "$(cat "$work/e2e_sem/game_release_run_2.txt")" 'FIGURA: sem'
+has_file e2e_sem/projeto/marcador; expect_lacks 'LW_RUN_ONLY: não copia nem exporta' "$out" 'Pacote criado'; no_file state/rede
+if out=$(e2e e2e_sem LW_RUN_ONLY=1 LW_ART_SAMPLES=1); then echo 'FALHA: rodar a construção SEM a figura como COM deveria recusar'; exit 1; fi; expect_has 'LW_RUN_ONLY: a condição de figura NUNCA erra (sem construído, com pedido)' "$out" 'foi construída sem a figura, mas esta execução é com a figura'
+out=$(e2e e2e_com LW_BUILD_ONLY=1 LW_ART_SAMPLES=1 LW_RELEASE_BIN="$work/bin/release_falso"); has_file e2e_com/projeto/art_samples/character_area.json; expect 'LW_BUILD_ONLY com LW_ART_SAMPLES=1: grava COM' "$(cat "$work/e2e_com/execucao/figura.txt")" com
+if out=$(e2e e2e_com LW_RUN_ONLY=1); then echo 'FALHA: rodar a construção COM a figura como SEM deveria recusar'; exit 1; fi; expect_has 'LW_RUN_ONLY: a condição de figura NUNCA erra (com construído, sem pedido)' "$out" 'foi construída com a figura, mas esta execução é sem a figura'
+out=$(e2e e2e_com LW_RUN_ONLY=1 LW_ART_SAMPLES=1 CURTA=1); expect_has 'LW_RUN_ONLY + CURTA=1 (a validação do roteiro)' "$out" 'ARGS -- --ensaios povoado --segundos 10'; expect_has 'LW_RUN_ONLY com LW_ART_SAMPLES=1: FIGURA com e CURTA no arquivo' "$(cat "$work/e2e_com/game_release_run_1.txt")" 'FIGURA: com'
+no_file state/rede; echo 'OK: nenhum curl (nenhum download) em nenhum dos fluxos'
 
 # 4) As execuções do run_trials com o jogo FALSO: o registro, a classificação, o resumo (as inconclusivas fora da conta) e as paradas.
 series() { # $1 = nome, $2 = RUNS, o resto = o estado DEPOIS de cada execução (argumentos do set_state numa palavra só); o ANTES é o estado atual

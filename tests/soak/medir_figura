@@ -1,0 +1,76 @@
+#!/bin/sh
+# ART-12, 7c-1c: o ROTEIRO da comparação do medidor de quadros em release COM e SEM a figura do Ice Warrior, no perfil de energia em que o Mac estiver (bateria ou tomada: a medição NÃO exige tomada, decisão
+# de Arthur de 16/11/2026) e com o MENOR conjunto de repetições: 3 PARES do ensaio `povoado` de 30 s, CONTRABALANCEADOS (sem, com, com, sem, sem, com), sem 20 minutos contínuos. Quem o roda é a MEDIÇÃO REAL (com
+# janela, com a ordem de Arthur); os testes só o exercitam com um run_game_release FALSO (tests/test_medir_figura.sh).
+# 1) CURTA: constrói o jogo COM a figura (UMA vez) e roda a medição CURTA de validação (CURTA=1, LW_ART_SAMPLES=1: um ensaio povoado de 10 s, sem veredito DEC-119). PARA se ela for recusada, sair inconclusiva
+#    ou não mostrar figura ativa: o instrumento não está validado e nenhuma bateria mais é gasta.
+# 2) constrói o jogo SEM a figura (UMA vez por condição: o projeto e o .pck NÃO se refazem a cada execução; LW_BUILD_ONLY=1 do run_game_release) e roda as 6 execuções (LW_RUN_ONLY=1, ENSAIOS=povoado, RUNS=1) na ordem sem, com, com, sem, sem, com.
+#    Por que essa ordem: o Mac (um MacBook Air, sem ventoinha) esquenta ao longo da rodada; sem, com, sem, com, sem, com deixava o com sempre DEPOIS e mais quente (posição média 4 contra 3). O par do meio troca a
+#    ordem (ABBAAB, as mesmas 6 execuções e as mesmas 2 construções): a posição média passa a 3,33 (sem) e 3,67 (com), um terço do viés. Com 6 execuções o zero é impossível (a soma 1+...+6 = 21 é ímpar).
+#    PARA na PRIMEIRA execução que sair inconclusiva (bateria, fonte, térmico, baixo consumo ou jogo incompleto), recusada, COM a figura mas sem nenhuma figura ativa ou com o perfil de energia diferente
+#    do da validação, e diz quantas rodou.
+# 3) chama tests/soak/compare_game_release sobre as pastas DESTA rodada ($BASE/figura_<data>/sem e /com; uma rodada antiga nunca entra) e imprime o relatório por perfil.
+# NÃO baixa nada: precisa do binário de release já extraído em $BASE/bin (o do tests/soak/run_game_release). Todas as variáveis de segurança do run_game_release (PERFIL, BATERIA_MIN_INICIO, BATERIA_MIN_PARADA,
+# BATERIA_QUEDA_MAX, GODOT_BIN, LW_PROBE_COPY) valem como estão no ambiente e passam adiante SEM serem afrouxadas; o roteiro só fixa o que é dele (ENSAIOS, RUNS, CURTA, LW_ART_SAMPLES, LW_BUILD_ONLY, LW_RUN_ONLY, LW_RELEASE_BIN).
+# Uso: tests/soak/medir_figura [pasta-base]    (padrão $HOME/lw-release-probe)    Saída: 0 = 6 execuções válidas e a comparação sem grupo vazio; 1 = parou, recusou ou a comparação acusou grupo sem execução válida; 2 = uso errado.
+# Para os testes: LW_RUN_GAME_RELEASE e LW_COMPARE_GAME_RELEASE trocam o run_game_release e o compare_game_release por outros (falsos).
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+RUN_GAME=${LW_RUN_GAME_RELEASE:-$project_dir/tests/soak/run_game_release}
+COMPARE=${LW_COMPARE_GAME_RELEASE:-$project_dir/tests/soak/compare_game_release}
+[ "$#" -le 1 ] || { echo "Uso: $0 [pasta-base]" >&2; exit 2; }
+BASE=${1:-$HOME/lw-release-probe}
+say() { printf '\n== %s\n' "$1"; }
+abort() { printf '\nPARADO: %s\nNada foi medido a mais; nenhuma comparação foi feita.\n' "$1"; exit 1; }
+release_bin=$(ls "$BASE"/bin/*release* 2> /dev/null | head -1)
+[ -n "$release_bin" ] && [ -x "$release_bin" ] || { printf "ERRO: falta o binário de release em '%s/bin'. Este roteiro NÃO baixa nada: rode antes o tests/soak/run_game_release (que o baixa UMA vez) ou aponte a pasta-base que o tem.\n" "$BASE" >&2; exit 1; }
+ROUND=$BASE/figura_$(date '+%Y%m%d_%H%M%S')
+[ ! -e "$ROUND" ] || { echo "ERRO: a pasta da rodada '$ROUND' já existe; espere um segundo e rode de novo." >&2; exit 1; }
+mkdir -p "$ROUND" || exit 1
+echo "Rodada: $ROUND (sem/ e com/ guardam as execuções; saida_N.txt, a saída de cada chamada)"
+build() { # $1 = condição (sem|com), $2 = LW_ART_SAMPLES: constrói o projeto e o .pck dessa condição UMA vez e sai
+    say "Construindo o jogo $1 a figura (UMA vez por condição; o projeto e o .pck não se refazem a cada execução)"
+    env LW_BUILD_ONLY=1 LW_RUN_ONLY=0 CURTA=0 LW_ART_SAMPLES="$2" LW_RELEASE_BIN="$release_bin" "$RUN_GAME" "$ROUND/$1"
+}
+calls=0
+run() { # $1 = condição, $2 = LW_ART_SAMPLES, $3 = CURTA (0|1): roda UMA execução sobre a pasta já construída; a saída vai para $LOG e para a tela; devolve o código do script
+    calls=$((calls + 1)); LOG=$ROUND/saida_$calls.txt
+    env LW_BUILD_ONLY=0 LW_RUN_ONLY=1 CURTA="$3" LW_ART_SAMPLES="$2" ENSAIOS=povoado RUNS=1 "$RUN_GAME" "$ROUND/$1" > "$LOG" 2>&1
+    code=$?; cat "$LOG"; return "$code"
+}
+is_valid() { grep -q '^CLASSIFICAÇÃO: válida$' "$LOG"; }
+classification() { grep '^CLASSIFICAÇÃO:' "$LOG" | head -1; }
+profile_of_log() { sed -n 's/^PERFIL: //p' "$LOG" | head -1; }
+
+say "1/3 Validação CURTA do instrumento (um ensaio povoado de 10 s COM a figura; sem veredito DEC-119)"
+build com 1 || abort "a construção COM a figura falhou ou foi RECUSADA (saída acima)."
+run com 1 1 || abort "a medição CURTA foi RECUSADA ou falhou (saída acima)."
+is_valid || abort "a medição CURTA saiu INCONCLUSIVA ($(classification)): o instrumento não está validado."
+grep -q 'figuras ativas: máximo [1-9]' "$LOG" || abort "a medição CURTA não mostrou nenhuma figura ativa: confira a pasta local art_samples/ (área e catálogo) e o NPC da figura (npc_id 33); os avisos ATENÇÃO do medidor estão acima."
+label=$(profile_of_log)
+echo "Instrumento validado no perfil '$label': classificação válida e figura ativa."
+
+say "2/3 Construindo o jogo SEM a figura e rodando as 6 execuções (sem, com, com, sem, sem, com: o par do meio troca a ordem para o calor da rodada não pesar sempre na mesma condição) do ensaio povoado de 30 s"
+build sem 0 || abort "a construção SEM a figura falhou ou foi RECUSADA (saída acima); só a validação CURTA rodou."
+ran=0; halted=''
+for cond in sem com com sem sem com; do
+    art=0; [ "$cond" = com ] && art=1
+    n=$((ran + 1)); say "Execução $n de 6: $cond a figura (par $(((n + 1) / 2)) de 3)"
+    run "$cond" "$art" 0 || { halted="a execução $n ($cond a figura) foi RECUSADA ou falhou (saída acima)"; break; }
+    ran=$n
+    is_valid || { halted="a execução $n ($cond a figura) saiu INCONCLUSIVA ($(classification)); as que faltam NÃO rodam (a bateria é poupada)"; break; }
+    [ "$cond" = sem ] || grep -q 'figuras ativas: máximo [1-9]' "$LOG" || { halted="a execução $n (com a figura) não mostrou nenhuma figura ativa: estes números NÃO medem a figura; as que faltam NÃO rodam (a bateria é poupada)"; break; }
+    now=$(profile_of_log)
+    [ "$now" = "$label" ] || { halted="o perfil de energia mudou entre as execuções (de '$label' para '$now'); as que faltam NÃO rodam, porque perfis diferentes não se misturam"; break; }
+done
+
+say "3/3 Comparação das execuções DESTA rodada ($ROUND), por perfil"
+echo "Rodou $ran de 6 execuções da comparação${halted:+; PARADO: $halted}."
+[ "$ran" -gt 0 ] || { echo "Nenhuma execução da comparação: nada a comparar."; exit 1; }
+set --
+for cond in sem com; do [ -d "$ROUND/$cond" ] && set -- "$@" "$ROUND/$cond"; done
+"$COMPARE" "$@"; compare_code=$?
+[ -z "$halted" ] || exit 1
+[ "$compare_code" = 0 ] || { echo "A comparação saiu com o código $compare_code (algum grupo sem execução válida)." >&2; exit 1; }
+echo "Pronto: 6 de 6 execuções válidas no perfil '$label'. A medição vale para ESTE Mac e estas condições; não exige tomada."
+exit 0
