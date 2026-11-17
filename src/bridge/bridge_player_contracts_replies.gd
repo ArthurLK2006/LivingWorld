@@ -4,13 +4,15 @@ extends RefCounted
 ## apresentação nunca citar tipo de `sim/`. Sem estado e sem método de regra: é só o lugar dos tipos.
 
 
-## Uma linha do quadro (`peek_contract_board`): cópia dos campos do contrato na economia, com os nomes do `ContractQuery`. `is_mine`: o aceitante é o ator. `place_id`, `minutes` e `worked_minutes` só valem no `labor` (LW-107f): ficam no contrato para ele não mudar; na entrega vêm no valor vazio.
+## Uma linha do quadro (`peek_contract_board`): cópia dos campos do contrato na economia, com os nomes do `ContractQuery`. `is_mine`: o aceitante é o ator. `closed_reason` (LW-107f3) é o da economia, CRU (`""` se não há; `abandoned` no `failed` que o jogador largou): quem o rotula é a tela. `place_id`, `minutes` e `worked_minutes` só valem no `labor`,
+## que o jogador NÃO opera (o `labor` por turnos da LW-107f não foi aprovado; a 107f3 trouxe só o abandono e o limite): ficam no contrato para ele não mudar; na entrega vêm no valor vazio.
 class ContractBoardRow:
 	extends RefCounted
 
 	var contract_id: int = IdGenerator.NO_ID
 	var kind: String = ""
 	var state: String = ""
+	var closed_reason: String = ""
 	var is_mine: bool = false
 	var issuer_id: int = IdGenerator.NO_ID
 	var reward: int = 0
@@ -23,8 +25,8 @@ class ContractBoardRow:
 	var worked_minutes: int = 0
 
 
-## `peek_contract_board`: o mercado consultado (`market_id`) e o assentamento dele, `now` (o `total_minutes` do relógio lido na MESMA consulta, para a tela calcular o prazo restante sem outro relógio) e as linhas, por `contract_id` crescente. Só valem se `result.ok`;
-## quadro vazio é sucesso (`result.ok` com `rows` vazio).
+## `peek_contract_board`: o mercado consultado (`market_id`) e o assentamento dele, `now` (o `total_minutes` do relógio lido na MESMA consulta, para a tela calcular o prazo restante sem outro relógio), as linhas, por `contract_id` crescente, e `accepted_limit` (LW-107f3): o limite de contratos de ENTREGA aceitos ao mesmo tempo
+## (o `peek_contract_limit("delivery")` da economia; 0 = sem limite), para a tela mostrar "n de N" sem número próprio. Só valem se `result.ok`; quadro vazio é sucesso (`result.ok` com `rows` vazio).
 class ContractBoardReply:
 	extends RefCounted
 
@@ -33,23 +35,26 @@ class ContractBoardReply:
 	var settlement_id: String
 	var now: int
 	var rows: Array[ContractBoardRow]
+	var accepted_limit: int
 
-	func _init(reply_result: Result, id_of_market: int = IdGenerator.NO_ID, id_of_settlement: String = "", total_minutes: int = 0, board_rows: Array[ContractBoardRow] = []) -> void:
+	func _init(reply_result: Result, id_of_market: int = IdGenerator.NO_ID, id_of_settlement: String = "", total_minutes: int = 0, board_rows: Array[ContractBoardRow] = [], limit_of_accepted: int = 0) -> void:
 		result = reply_result
 		market_id = id_of_market
 		settlement_id = id_of_settlement
 		now = total_minutes
 		rows = board_rows
+		accepted_limit = limit_of_accepted
 
 
-## `request_contract_accept` e `request_contract_deliver`: o desfecho do pedido do jogador. `contract_id` é sempre o contrato pedido. `reward` (inteiro, em dinheiro do jogo) só vale se `result.ok`: no `accept` a que será paga, no `deliver` a paga (lida do contrato antes de entregar); na recusa, 0.
-## `text_key` é SEMPRE a chave do texto a mostrar, nunca o texto (DEC-036): no sucesso, a de aceite ou de entrega; na recusa, a do código de falha (`FAILURE_KEYS`, que inclui o `PLACE_TOO_FAR` do `world`: longe do mercado); código sem chave própria (os demais da ponte, os do `character` e `ECON_UNKNOWN_OWNER`) usa
-## `FALLBACK_KEY`. O texto em `data/text/pt_br.json` é da LW-107e2: aqui só existe a chave.
+## `request_contract_accept`, `request_contract_deliver` e `request_contract_abandon`: o desfecho do pedido do jogador. `contract_id` é sempre o contrato pedido. `reward` (inteiro, em dinheiro do jogo) só vale se `result.ok`: no `accept` a que será paga, no `deliver` a paga (lida do contrato antes de entregar), no `abandon` 0 (nada é pago); na recusa, 0.
+## `text_key` é SEMPRE a chave do texto a mostrar, nunca o texto (DEC-036): no sucesso, a de aceite, de entrega ou de abandono; na recusa, a do código de falha (`FAILURE_KEYS`, que inclui o `PLACE_TOO_FAR` do `world`: longe do mercado); código sem chave própria (os demais da ponte, os do `character` e `ECON_UNKNOWN_OWNER`) usa
+## `FALLBACK_KEY`. O texto em `data/text/pt_br.json` é da LW-107e2 (e, para `abandoned` e `limit`, da LW-107f4c): aqui só existe a chave.
 class ContractActionReply:
 	extends RefCounted
 
 	const KEY_ACCEPTED: String = "economy.contract.accepted"
 	const KEY_DELIVERED: String = "economy.contract.delivered"
+	const KEY_ABANDONED: String = "economy.contract.abandoned"
 	const FALLBACK_KEY: String = "economy.contract.failed"
 	const FAILURE_KEYS: Dictionary[String, String] = {
 		EconomyCodes.CONTRACT_NOT_OPEN: "economy.contract.not_open",
@@ -60,6 +65,7 @@ class ContractActionReply:
 		MarketReach.CODE_PLACE_TOO_FAR: "economy.contract.too_far",
 		BridgePlayerContracts.CODE_NOT_YOURS: "economy.contract.not_yours",
 		BridgePlayerContracts.CODE_EXPIRED: "economy.contract.expired",
+		BridgePlayerContracts.CODE_LIMIT: "economy.contract.limit",
 	}
 
 	var result: Result
