@@ -28,6 +28,49 @@ class FlatTariffRules:
 		return TradeTerms.new(false, tariff_basis_points, false)
 
 
+## Regra de teste: todo bem proibido num mercado (a origem ou o destino), sem tarifa.
+class BanRules:
+	extends TradeRules
+
+	var banned_market: int
+
+
+	func _init(market_id: int) -> void:
+		banned_market = market_id
+
+
+	func peek_terms(_good_id: String, market_id: int, _actor_id: int) -> TradeTerms:
+		return TradeTerms.new(market_id == banned_market, 0, false)
+
+
+## O planejador SEM a pré-checagem (LW-098h3b): a busca completa que o `_candidate` fazia antes. É a referência da equivalência: a pré-checagem (descartar sem a busca binária do saldo) só pode rejeitar o que a busca completa também rejeitaria.
+class FullSearchPlanner:
+	extends TradePlanner
+
+	func _rules_out(_trader_id: int, _origin_id: int, _destination_id: int, _good_id: String, _min_gain: int) -> bool:
+		return false
+
+
+## O motor que conta as cotações pedidas: o custo que a pré-checagem existe para cortar.
+class CountingEngine:
+	extends TradeEngine
+
+	var quotes: int = 0
+
+
+	func quote(market_id: int, good_id: String, quantity: int, side: String, actor_id: int = IdGenerator.NO_ID) -> TradeEngine.Outcome:
+		quotes += 1
+		return super.quote(market_id, good_id, quantity, side, actor_id)
+
+
+## Motor de teste com curvas NÃO côncavas: compra a 10 por unidade; a venda rende 5 na 1ª unidade e 100 por unidade a partir da 2ª.
+class ScriptedEngine:
+	extends TradeEngine
+
+	func quote(_market_id: int, _good_id: String, quantity: int, side: String, _actor_id: int = IdGenerator.NO_ID) -> TradeEngine.Outcome:
+		return TradeEngine.Outcome.new(Result.success(), quantity, 10 * quantity if side == TradeEngine.SIDE_BUY else (5 if quantity == 1 else 100 * quantity), 0)
+
+
 class Rig:
 	extends RefCounted
 
@@ -45,7 +88,7 @@ func _params(time_cost_per_hour: int = 2) -> CaravanParams:
 
 func _good_defs() -> Array[GoodDef]:
 	var defs: Array[GoodDef] = []
-	for row: Array in [["bread", 10, 1], ["anvil", 30, 10], ["twin_a", 10, 1], ["twin_b", 10, 1], ["grain", 20, 1]]:
+	for row: Array in [["bread", 10, 1], ["anvil", 30, 10], ["twin_a", 10, 1], ["twin_b", 10, 1], ["grain", 20, 1], ["feather", 10, 0]]:
 		defs.append(GoodDef.new(row[0], "good.%s.name" % row[0], GoodDef.CATEGORY_PROCESSED, row[1], row[2], 0))
 	return defs
 
@@ -326,3 +369,159 @@ func test_requests_that_cannot_be_planned_give_no_plan() -> void:
 	assert_true(rig.book.close_owner(TRADER).ok)
 	assert_null(rig.planner.plan_for(TRADER, MARKET_A, MARKET_B, _legs()), "Comerciante fechado (morreu): a cotação falha, não há plano.")
 
+
+## Parâmetros sem custo de tempo nem margem mínima, só com o lucro mínimo dado (pode ser 0 ou negativo).
+func _relaxed(min_net_profit: int) -> CaravanParams:
+	return CaravanParams.new({"speed_cm_per_min": 400, "difficulty_slowdown_bp": 50, "risk_bp_per_point": 25, "time_cost_per_hour": 0, "fixed_cost": 0, "min_net_profit": min_net_profit, "min_margin_bp": 0, "origin_reserve_bp": RESERVE_BP})
+
+
+## [o planejador real, o de referência sem a pré-checagem] sobre o MESMO mundo e o mesmo motor; `max_order` vale só para o planejador.
+func _planners(rig: Rig, params: CaravanParams, engine: TradeEngine, max_order: int = MAX_ORDER) -> Array[TradePlanner]:
+	var record: Dictionary = PRICE_RECORD.duplicate()
+	record["max_order_quantity"] = max_order
+	var price_params: PriceParams = PriceParams.new(record)
+	return [TradePlanner.new(engine, rig.markets, rig.goods, rig.ledger, params, price_params), FullSearchPlanner.new(engine, rig.markets, rig.goods, rig.ledger, params, price_params)]
+
+
+## Os planos de B e C com e sem a pré-checagem sobre o mesmo mundo: IDÊNTICOS, inclusive "sem plano". Devolve os planos.
+func _assert_same_plans(rig: Rig, params: CaravanParams, label: String, max_order: int = MAX_ORDER, risk: int = 10) -> Array[TradePlanner.Plan]:
+	var pair: Array[TradePlanner] = _planners(rig, params, rig.engine, max_order)
+	var paths: Dictionary[int, Array] = {MARKET_B: _legs(520, risk), MARKET_C: _legs(340, risk + 5)}
+	var plans: Array[TradePlanner.Plan] = pair[0].plan_all(TRADER, MARKET_A, paths)
+	var got: Array = []
+	for plan: TradePlanner.Plan in plans:
+		got.append(_describe(plan))
+	var want: Array = []
+	for plan: TradePlanner.Plan in pair[1].plan_all(TRADER, MARKET_A, paths):
+		want.append(_describe(plan))
+	assert_eq(got, want, label)
+	return plans
+
+
+## A margem da 1ª unidade de A para B pelas cotações cruas (a conta que a pré-checagem faz).
+func _first_spread(rig: Rig, good_id: String) -> int:
+	var bought: TradeEngine.Outcome = rig.engine.quote(MARKET_A, good_id, 1, TradeEngine.SIDE_BUY, TRADER)
+	var sold: TradeEngine.Outcome = rig.engine.quote(MARKET_B, good_id, 1, TradeEngine.SIDE_SELL, TRADER)
+	return sold.total - sold.tariff - (bought.total + bought.tariff)
+
+
+## As cotações que o `plan_all` pede ao motor, com a pré-checagem ou (`full_search`) sem ela.
+func _quotes_of(rig: Rig, params: CaravanParams, full_search: bool, max_order: int = MAX_ORDER) -> int:
+	var engine: CountingEngine = CountingEngine.new(rig.book, rig.ledger, rig.goods, rig.markets, NeutralTradeRules.new(), PriceParams.new(PRICE_RECORD))
+	var paths: Dictionary[int, Array] = {MARKET_B: _legs(), MARKET_C: _legs(340, 15)}
+	_planners(rig, params, engine, max_order)[1 if full_search else 0].plan_all(TRADER, MARKET_A, paths)
+	return engine.quotes
+
+
+## O pão a 5 no A (200) e a 25 no B (40): diferença grande; só A e B existem.
+func _gap() -> Dictionary:
+	return {MARKET_A: {"bread": [100, 200, 20000]}, MARKET_B: {"bread": [100, 40, 20000]}}
+
+
+## Mundos com diferença de preço mas SEM lote possível (reserva da origem, teto do destino, mochila, bem sem peso): o `plan_all` não acha plano e a pré-checagem não cota nada.
+func _no_room_cases() -> Array[Dictionary]:
+	return [
+		{"label": "estoque abaixo da reserva da origem", "spec": _spec(45, 10, 100), "expect": 0},
+		{"label": "teto do destino já cheio", "spec": {MARKET_A: {"bread": [100, 200, 20000]}, MARKET_B: {"bread": [100, 40, 4000]}}, "expect": 0},
+		{"label": "mochila cheia", "spec": _gap(), "carried": {"anvil": 12}, "expect": 0},
+		{"label": "bem sem peso", "spec": {MARKET_A: {"feather": [100, 200, 20000]}, MARKET_B: {"feather": [100, 40, 20000]}}, "expect": 0}]
+
+
+func test_the_precheck_changes_no_plan_in_a_grid_of_worlds() -> void:
+	var rules_set: Array[TradeRules] = [NeutralTradeRules.new(), FlatTariffRules.new(100), FlatTariffRules.new(900), BanRules.new(MARKET_A), BanRules.new(MARKET_B)]
+	var with_plan: int = 0
+	var without_plan: int = 0
+	var zero_spread: int = 0
+	var negative_spread: int = 0
+	var hidden: int = 0
+	for rules_at: int in rules_set.size():
+		for min_net_profit: int in [-3, 0, 5]:
+			for a_stock: int in [5000, 5400]:
+				for b_stock: int in range(3800, 4801, 200):
+					var params: CaravanParams = _relaxed(min_net_profit)
+					var rig: Rig = _rig({MARKET_A: {"grain": [5000, a_stock, 20000]}, MARKET_B: {"grain": [5000, b_stock, 20000]}}, _funds(), params, {}, rules_set[rules_at])
+					var plans: Array[TradePlanner.Plan] = _assert_same_plans(rig, params, "curva plana, regra %d, lucro mínimo %d, A=%d B=%d" % [rules_at, min_net_profit, a_stock, b_stock])
+					with_plan += 0 if plans.is_empty() else 1
+					without_plan += 1 if plans.is_empty() else 0
+					if rules_at == 0:
+						var spread: int = _first_spread(rig, "grain")
+						zero_spread += 1 if spread == 0 else 0
+						negative_spread += 1 if spread < 0 else 0
+						hidden += 1 if not plans.is_empty() and _net_at(rig, MARKET_A, MARKET_B, "grain", 1, _legs(), params) <= 0 else 0
+	for a_stock: int in [30, 60, 100, 200]:
+		for b_stock: int in [20, 40, 70, 100, 190]:
+			for trader_funds: int in [10000, 100, 0]:
+				var funds: Dictionary = _funds(trader_funds, 40 if b_stock == 70 else 3000)
+				if trader_funds == 0:
+					funds.erase(TRADER)
+				var plans: Array[TradePlanner.Plan] = _assert_same_plans(_rig(_spec(a_stock, b_stock, 100), funds), _params(), "pão A=%d B=%d saldo %d" % [a_stock, b_stock, trader_funds])
+				with_plan += 0 if plans.is_empty() else 1
+				without_plan += 1 if plans.is_empty() else 0
+	assert_gt(with_plan, 30, "A grade tem muitos casos com plano.")
+	assert_gt(without_plan, 100, "A grade tem muitos casos sem plano.")
+	assert_gt(zero_spread, 0, "A grade tem a margem da 1ª unidade exatamente 0.")
+	assert_gt(negative_spread, 0, "A grade tem a margem da 1ª unidade negativa.")
+	assert_gt(hidden, 0, "A grade tem plano atrás de uma 1ª unidade de 0 moeda ou menos depois do risco: a armadilha da saída antecipada.")
+
+
+func test_the_precheck_changes_no_plan_in_the_limit_and_special_cases() -> void:
+	var no_money: Dictionary = _funds()
+	no_money.erase(TRADER)
+	var many: Dictionary = {MARKET_A: {"bread": [100, 200, 20000], "anvil": [20, 40, 20000], "twin_a": [100, 200, 20000]}, MARKET_B: {"bread": [100, 40, 20000], "anvil": [20, 4, 20000], "twin_a": [100, 40, 20000]}}
+	var cases: Array[Dictionary] = [
+		{"label": "controle: lote e diferença", "spec": _gap(), "expect": MAX_ORDER},
+		{"label": "saldo 0", "spec": _gap(), "funds": no_money, "expect": 0},
+		{"label": "ordem máxima de 1", "spec": _gap(), "max_order": 1, "expect": 1},
+		{"label": "estoque 1 acima da reserva", "spec": {MARKET_A: {"bread": [100, 51, 20000]}, MARKET_B: {"bread": [100, 15, 20000]}}, "expect": 1},
+		{"label": "bem banido na origem", "spec": _gap(), "rules": BanRules.new(MARKET_A), "expect": 0},
+		{"label": "bem banido no destino", "spec": _gap(), "rules": BanRules.new(MARKET_B), "expect": 0},
+		{"label": "margem negativa", "spec": _spec(30, 200, 100), "expect": 0},
+		{"label": "margem negativa e lucro mínimo negativo", "spec": _spec(30, 200, 100), "params": _relaxed(-5), "expect": 0},
+		{"label": "lucro mínimo 0", "spec": _gap(), "params": _relaxed(0)},
+		{"label": "tarifa de 5%", "spec": _gap(), "rules": FlatTariffRules.new(500)},
+		{"label": "saldo do destino quase vazio", "spec": _gap(), "funds": _funds(10000, 40)},
+		{"label": "vários bens", "spec": many}]
+	cases.append_array(_no_room_cases())
+	for test_case: Dictionary in cases:
+		var params: CaravanParams = test_case.get("params", _relaxed(1))
+		var rig: Rig = _rig(test_case["spec"], test_case.get("funds", _funds()), params, test_case.get("carried", {}), test_case.get("rules"))
+		var plans: Array[TradePlanner.Plan] = _assert_same_plans(rig, params, str(test_case["label"]), test_case.get("max_order", MAX_ORDER))
+		if test_case.has("expect"):
+			assert_eq(0 if plans.is_empty() else plans[0].quantity, test_case["expect"], "%s: o lote do plano." % test_case["label"])
+
+
+func test_the_precheck_keeps_a_plan_that_reaches_the_minimum_gain_exactly() -> void:
+	var first: int = _first_spread(_rig(_spec(200, 40, 100), _funds()), "bread")
+	assert_gt(first, 0, "Controle: a 1ª unidade rende.")
+	for min_net_profit: int in [first - 1, first, first + 1]:
+		var params: CaravanParams = _relaxed(min_net_profit)
+		var plans: Array[TradePlanner.Plan] = _assert_same_plans(_rig(_spec(200, 40, 100), _funds(), params), params, "lucro mínimo %d" % min_net_profit, 1, 0)
+		assert_eq(plans.size(), 1 if min_net_profit <= first else 0, "Lucro mínimo %d, 1ª unidade %d: com lote de 1 e sem risco nem tempo, o plano existe se e só se a 1ª unidade alcança o mínimo." % [min_net_profit, first])
+
+
+func test_the_precheck_spares_the_balance_search() -> void:
+	var stable: Rig = _rig(_spec(100, 100, 100), _funds())
+	assert_eq(_quotes_of(stable, _params(), false), 8, "Sem diferença de preço, cada um dos 2 candidatos custa só as 4 cotações da margem da 1ª unidade.")
+	assert_gt(_quotes_of(stable, _params(), true), 8, "A busca completa pede mais cotações, no mesmo mundo.")
+	var small_gap: Rig = _rig(_spec(100, 70, 100), _funds())
+	var spread: int = _first_spread(small_gap, "bread")
+	assert_gt(spread, 0, "Controle: a 1ª unidade rende um pouco.")
+	var order: int = PriceMath.ceil_div(_params().min_net_profit, spread)
+	assert_eq(_quotes_of(small_gap, _params(), false, order), 8, "O maior lote (%d) cobre o lucro mínimo mas não o custo de tempo: também só as 4 cotações por candidato." % order)
+	assert_gt(_quotes_of(small_gap, _params(), true, order), 8, "A busca completa pede mais cotações, no mesmo mundo.")
+	for test_case: Dictionary in _no_room_cases():
+		assert_eq(_quotes_of(_rig(test_case["spec"], _funds(), _params(), test_case.get("carried", {})), _params(), false), 0, "%s: sem lote possível, nada é cotado." % test_case["label"])
+
+
+func test_the_precheck_keeps_what_the_search_finds_behind_a_first_unit_that_loses_money() -> void:
+	var params: CaravanParams = _relaxed(-100)
+	var rig: Rig = _rig(_gap(), _funds(100), params)
+	var engine: ScriptedEngine = ScriptedEngine.new(rig.book, rig.ledger, rig.goods, rig.markets, NeutralTradeRules.new(), PriceParams.new(PRICE_RECORD))
+	var pair: Array[TradePlanner] = _planners(rig, params, engine)
+	var full: TradePlanner.Plan = pair[1].plan_for(TRADER, MARKET_A, MARKET_B, _legs())
+	var plan: TradePlanner.Plan = pair[0].plan_for(TRADER, MARKET_A, MARKET_B, _legs())
+	assert_not_null(full, "Controle: a busca completa acha o plano (lote de 10, o que os 100 de saldo pagam) mesmo com a 1ª unidade em prejuízo.")
+	assert_not_null(plan, "A pré-checagem não descarta a margem negativa quando o lucro mínimo não é positivo.")
+	if full != null and plan != null:
+		assert_eq(full.quantity, 10, "Controle: o lote é o que o saldo paga.")
+		assert_eq(_describe(plan), _describe(full), "O plano é o da busca completa.")

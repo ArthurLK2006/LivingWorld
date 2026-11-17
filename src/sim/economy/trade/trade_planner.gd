@@ -79,7 +79,10 @@ static func _beats(plan: Plan, other: Plan) -> bool:
 func _candidate(trader_id: int, origin_id: int, destination_id: int, good_id: String, legs: Array[RouteCost.Leg], minutes: int) -> Plan:
 	var risk_points: int = RouteCost.path_risk_points(legs)
 	var time_cost: int = RouteCost.time_cost(minutes, _params)
-	var quantity: int = _best_quantity(trader_id, origin_id, destination_id, good_id, risk_points, _max_quantity(trader_id, origin_id, destination_id, good_id), _params.min_net_profit + time_cost)
+	var min_gain: int = _params.min_net_profit + time_cost
+	if _rules_out(trader_id, origin_id, destination_id, good_id, min_gain):
+		return null
+	var quantity: int = _best_quantity(trader_id, origin_id, destination_id, good_id, risk_points, _max_quantity(trader_id, origin_id, destination_id, good_id), min_gain)
 	if quantity < 1:
 		return null
 	var plan: Plan = Plan.new()
@@ -100,18 +103,23 @@ func _candidate(trader_id: int, origin_id: int, destination_id: int, good_id: St
 	return plan
 
 
-## `q_max` (9.5): o menor dos limites de peso livre, estoque com reserva, teto do destino e ordem, e depois o que o saldo paga (`custo` só cresce com `q`, então aqui a busca binária é exata). Menos de 1 = sem lote.
+## Pré-checagem EXATA, antes da busca binária do saldo (LW-098h3b; medição da 098h): `true` só quando `_best_quantity` também daria 0. Vale porque `q_max <= _upper_quantity` e a cota dele é `q_max` vezes a margem da 1ª unidade (com a mesma folga da tarifa): sem margem negativa, se nem o maior lote possível alcança `min_gain`, nenhum `q_max` alcança; com margem negativa, a cota de todo `q_max >= 1` é negativa e `min_gain > 0` basta. Sem lote possível (`upper < 1`) não há plano e nada é cotado.
+func _rules_out(trader_id: int, origin_id: int, destination_id: int, good_id: String, min_gain: int) -> bool:
+	var upper: int = _upper_quantity(trader_id, origin_id, destination_id, good_id)
+	if upper < 1:
+		return true
+	var first_spread: int = _revenue_of(trader_id, destination_id, good_id, 1) - _cost_of(trader_id, origin_id, good_id, 1)
+	var spread: int = first_spread + (TARIFF_SLACK if _is_taxed(trader_id, origin_id, destination_id, good_id) else 0)
+	if spread >= 0:
+		return spread * upper < min_gain
+	return min_gain > 0
+
+
+## `q_max` (9.5): o limite do `_upper_quantity` e depois o que o saldo paga (`custo` só cresce com `q`, então aqui a busca binária é exata). Menos de 1 = sem lote.
 func _max_quantity(trader_id: int, origin_id: int, destination_id: int, good_id: String) -> int:
-	var unit_weight: int = _goods.weight_per_unit(good_id)
-	if unit_weight < 1:
-		return 0
-	var reserve: int = PriceMath.ceil_div(_markets.target_of(origin_id, good_id) * _params.origin_reserve_bp, PriceMath.BASIS)
-	var by_weight: int = IntMath.floor_div(_goods.capacity_of(trader_id) - _goods.weight_of(trader_id), unit_weight)
-	var by_stock: int = _goods.quantity_of(origin_id, good_id) - reserve
-	var by_cap: int = _markets.buy_cap_of(destination_id, good_id) - _goods.quantity_of(destination_id, good_id)
 	var funds: int = _ledger.balance_of(trader_id)
 	var low: int = 0
-	var high: int = mini(mini(by_weight, by_stock), mini(by_cap, _max_order_quantity))
+	var high: int = _upper_quantity(trader_id, origin_id, destination_id, good_id)
 	while low < high:
 		var middle: int = IntMath.floor_div(low + high + 1, 2)
 		if _cost_of(trader_id, origin_id, good_id, middle) <= funds:
@@ -119,6 +127,18 @@ func _max_quantity(trader_id: int, origin_id: int, destination_id: int, good_id:
 		else:
 			high = middle - 1
 	return low
+
+
+## O maior lote que NÃO depende de cotação (9.5): o menor dos limites de peso livre, estoque com reserva, teto do destino e ordem. Zero se o bem não pesa nada (`weight_per_unit < 1`); pode ser negativo (reserva acima do estoque); `q_max` nunca passa dele.
+func _upper_quantity(trader_id: int, origin_id: int, destination_id: int, good_id: String) -> int:
+	var unit_weight: int = _goods.weight_per_unit(good_id)
+	if unit_weight < 1:
+		return 0
+	var reserve: int = PriceMath.ceil_div(_markets.target_of(origin_id, good_id) * _params.origin_reserve_bp, PriceMath.BASIS)
+	var by_weight: int = IntMath.floor_div(_goods.capacity_of(trader_id) - _goods.weight_of(trader_id), unit_weight)
+	var by_stock: int = _goods.quantity_of(origin_id, good_id) - reserve
+	var by_cap: int = _markets.buy_cap_of(destination_id, good_id) - _goods.quantity_of(destination_id, good_id)
+	return mini(mini(by_weight, by_stock), mini(by_cap, _max_order_quantity))
 
 
 ## `q*`: a `q` de maior ganho entre 1 e `q_max` (empate: a menor). Varredura linear exata (no máximo `max_order_quantity` cotações duplas). Saída antecipada com COTA EXATA: a margem de cada unidade (receita menos custo) só decresce com a quantidade, então nenhuma `q` rende mais que `q_max` vezes a margem da 1ª unidade (o risco só diminui o ganho; com tarifa, que é `ceil` por ordem, a cota ganha a folga `TARIFF_SLACK`); se isso não chega a `min_gain` (o limiar de lucro mais o custo de tempo), não há plano e sai com 2 cotações. Passando da cota, varre tudo: uma curva plana pode esconder ganho atrás de uma 1ª unidade de 0 moeda depois do risco (a saída da 1ª versão, por "1ª unidade não rende", perdia esses planos).
