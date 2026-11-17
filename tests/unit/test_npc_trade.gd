@@ -212,6 +212,29 @@ func test_the_plan_never_exceeds_the_room_in_the_pack_it_shrinks_to_what_fits_an
 	(pair[1] as World).teardown()
 
 
+## Um povoado COM comida no estoque provisório (`has_food` sempre verdadeiro), para provar que a comida do povoado não conta: só a da MOCHILA impede a compra do comerciante.
+class StockedSettlement:
+	extends ActionConditionProvider
+
+	func has_food(_settlement_id: String) -> bool:
+		return true
+
+
+func test_food_in_the_settlement_stub_alone_does_not_stop_the_merchant_from_buying() -> void:
+	var pair: Array = _world_with_economy()
+	var module: EconomyModule = pair[0]
+	assert_true(module.request_open_owner(MERCHANT, "merchant").ok)
+	_states[MERCHANT] = NpcState.new(MERCHANT)
+	_states[MERCHANT].settlement_id = SETTLEMENT_A
+	_states[MERCHANT].occupation_id = "merchant"
+	var trade: NpcTrade = NpcTrade.new(module, _states, 2, 100, 100, RoutineLoader.load_dir().table)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, StockedSettlement.new(), null, trade)
+	provider.subject = _states[MERCHANT]
+	assert_true(provider.has_food(SETTLEMENT_A) and provider.npc_has_food(MERCHANT, SETTLEMENT_A), "O povoado tem comida no estoque provisório (e `npc_has_food` a conta).")
+	assert_true(not trade.has_food(MERCHANT) and provider.can_buy_food(MERCHANT) and provider.can_buy_food(NPC), "Sem comida NA MOCHILA o comerciante compra, mesmo com comida no estoque do povoado.")
+	(pair[1] as World).teardown()
+
+
 func test_the_merchant_with_food_in_the_pack_cannot_buy_food_until_it_eats_and_the_common_npc_always_can() -> void:
 	var pair: Array = _world_with_economy()
 	var module: EconomyModule = pair[0]

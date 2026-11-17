@@ -14,6 +14,8 @@ const MARKET_Z_CM: int = 55600
 ## A fome nasce crítica (a de dados nasce em 20): a janela em que o NPC com pão na mochila tem de comer cabe em poucas horas.
 const CRITICAL_START: int = 95
 const HOURS: int = 3
+## O índice da fome na lista de necessidades dos dados.
+const HUNGER: int = 0
 
 var _host: SimulationHostNode
 var _app: GameAppNode
@@ -70,7 +72,7 @@ func _start_game_with_critical_hunger() -> void:
 	var economy_setup: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR, true)
 	for result: Result in [terrain.result, points.result, loaded.result, npc_setup.result, world_setup.result, economy_setup.result]:
 		assert_true(result.ok, result.message)
-	npc_setup.need_defs[0].start_value = CRITICAL_START
+	npc_setup.need_defs[HUNGER].start_value = CRITICAL_START
 	_host.start_new_game(GameAppNode.DEFAULT_WORLD_SEED, terrain.terrain, points.points, npc_setup, GameAppNode.NEW_GAME_START_MINUTE, economy_setup, world_setup)
 
 
@@ -115,5 +117,5 @@ func test_the_hungry_merchant_with_bread_in_the_pack_eats_instead_of_buying_whil
 		for holder: int in [merchant, farmer]:
 			bought[holder] += 1 if _host.npc.peek_npc(holder).action_id == "buy" else 0
 	assert_eq([bought[merchant], bought[farmer] > 0], [0, true], "O comerciante com pão na mochila nunca começa `buy`; o NPC comum, nas mesmas condições, segue comprando como antes (a correção geral é da LW-094).")
-	assert_true(_bread_of(merchant) < 2 and _host.npc.peek_npc(merchant).need_urgencies[0] < NeedMath.URGENCY_CRITICAL, "O comerciante comeu da mochila e a fome saiu do nível crítico.")
+	assert_true(_bread_of(merchant) < 2 and _host.npc.peek_npc(merchant).need_urgencies[HUNGER] < NeedMath.URGENCY_CRITICAL, "O comerciante comeu da mochila e a fome saiu do nível crítico.")
 	assert_true(_host.economy.peek_conservation().ok and _host.economy.peek_goods_conservation().ok)
