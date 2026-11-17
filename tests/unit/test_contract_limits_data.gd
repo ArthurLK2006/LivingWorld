@@ -116,9 +116,9 @@ func test_the_game_assembly_reads_the_real_file_and_the_economy_answers_three_fo
 	assert_eq(_as_rows(setup.definitions.contract_limits), [["delivery_limit", "delivery", 3]], "O setup leva a linha do arquivo real às definições.")
 	_host = _start_game()
 	var answers: Array = []
-	for kind: String in [ContractBook.DELIVERY, ContractBook.LABOR, ContractBook.VACANCY, "hunt", ""]:
+	for kind: String in [ContractBook.DELIVERY, ContractBook.LABOR, ContractBook.VACANCY, "hunt", "", "Delivery", "deliver", " delivery"]:
 		answers.append(_host.economy.peek_contract_limit(kind))
-	assert_eq(answers, [3, 0, 0, 0, 0])
+	assert_eq(answers, [3, 0, 0, 0, 0, 0, 0, 0], "A categoria é a igualdade EXATA: nem outra caixa, nem prefixo, nem espaço dão o limite de `delivery`.")
 
 
 ## A economia só INFORMA o limite: com `delivery` = 3 carregado, o mesmo ator aceita 7 encomendas pela economia (a ponte, e não o `ContractBook.accept`, é quem recusa a 4ª do jogador, LW-107f3).
