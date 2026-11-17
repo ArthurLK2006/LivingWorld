@@ -73,12 +73,12 @@ func test_the_market_layout_only_gains_the_tab_header_and_its_page_nodes_keep_th
 	assert_eq([_market.close_button.find_next_valid_focus(), _market.goods.find_prev_valid_focus(), _market.contracts_tab.find_next_valid_focus()], [_market.goods, _market.contracts_tab, _market.goods], "O ciclo de Tab da página do mercado é o da LW-106; o cabeçalho se alcança com Shift+Tab.")
 
 
-func test_with_the_market_page_hidden_tab_goes_through_the_header_the_two_lists_and_the_three_buttons_and_wraps() -> void:
+func test_with_the_market_page_hidden_tab_goes_through_the_header_the_two_lists_and_the_four_buttons_and_wraps() -> void:
 	for node: Control in _market.market_page:
 		node.visible = false
 	_layout.page.visible = true
 	var current: Control = _market.market_tab
-	for next: Control in [_market.contracts_tab, _layout.open_list, _layout.mine_list, _layout.accept_button, _layout.deliver_button, _layout.close_button, _market.market_tab]:
+	for next: Control in [_market.contracts_tab, _layout.open_list, _layout.mine_list, _layout.accept_button, _layout.deliver_button, _layout.abandon_button, _layout.close_button, _market.market_tab]:
 		current = current.find_next_valid_focus()
 		assert_eq(current, next, "Tab segue a ordem de criação, sem passar pelo que está escondido.")
 

@@ -4,9 +4,11 @@ extends RefCounted
 ## coluna do painel, liga o `ContractsViewModel` (dados), escreve os textos só por chave (`UiText`), preenche as duas listas e o detalhe e refaz a consulta quando a `MarketView` manda (`refresh`, no ritmo de 1 s da tela), PRESERVANDO a escolha (por
 ## `contract_id`) e o foco. NÃO abre nem fecha a tela, NÃO troca de aba e NÃO lê o relógio: a `MarketView` decide, lhe diz se está pausado (`refresh`) e a página só lhe PEDE o fechamento (`close_requested`). LW-107e2b: Aceitar e Entregar são ligados em `_update_actions`, o ÚNICO lugar que
 ## decide os botões e as dicas; a página NÃO envia pedido nenhum à ponte (só consulta): quem ENVIA `request_contract_accept` e `request_contract_deliver` é a `MarketView`, ouvindo os sinais `accept_requested` e `deliver_requested` da página (o contrato diz que ela é a única que envia), e a resposta volta
-## por `show_reply`. A divisão em "Disponíveis" e "Meus contratos" e o estado mostrado (`display_state`) são do modelo: a página só os escreve.
+## por `show_reply`. A divisão em "Disponíveis" e "Meus contratos" e o estado mostrado (`display_state`) são do modelo: a página só os escreve. LW-107f4a (docs/modules/presentation.md, "Encomendas por objetivo: abandonar, confirmar e capacidade"): o botão Abandonar só AVISA, pelo
+## sinal `abandon_asked` (ninguém o ouve ainda: a fiação e a confirmação são da 107f4b e da 107f4c); Aceitar fica desativado quando o jogador já está na capacidade (só dica: a ponte decide e recusa com `economy.contract.limit`); a linha da capacidade ("n de N") fica escondida sem limite definido;
+## e as linhas terminadas mostram "Abandonado" (com a nota de que não há multa), "Falhou" ou "Vencido", sempre diferentes entre si.
 
-## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed` e `expired`).
+## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed`, `expired`, `abandoned` e `failed`).
 const KEY_CONTRACTS_TITLE: String = "ui.contracts.title"
 const KEY_SECTION_OPEN: String = "ui.contracts.section_open"
 const KEY_SECTION_MINE: String = "ui.contracts.section_mine"
@@ -18,11 +20,14 @@ const KEY_DEADLINE: String = "ui.contracts.deadline"
 const KEY_DESTINATION: String = "ui.contracts.destination"
 const KEY_OWNED: String = "ui.contracts.owned"
 const KEY_STATE_PREFIX: String = "ui.contracts.state."
-const KEY_EXPIRED_NOTE: String = "ui.contracts.expired_note"
 const KEY_ACCEPT: String = "ui.contracts.accept"
 const KEY_DELIVER: String = "ui.contracts.deliver"
+const KEY_ABANDON: String = "ui.contracts.abandon"
+const KEY_CAPACITY: String = "ui.contracts.capacity"
 const KEY_CONTRACTS_UNAVAILABLE: String = "ui.contracts.unavailable"
 const KEY_CLOSE: String = "ui.market.close"
+## A nota do detalhe de cada estado mostrado que a tem: o "Vencido" e o "Abandonado" (o "Falhou" não tem nota).
+const KEY_NOTES: Dictionary[String, String] = {ContractsViewModel.STATE_EXPIRED: "ui.contracts.expired_note", ContractsViewModel.STATE_ABANDONED: "ui.contracts.abandoned_note"}
 ## A dica de uso de cada estado mostrado em que ainda há o que fazer (a regra está em `_update_actions`).
 const KEY_HINTS: Dictionary[String, String] = {
 	ContractsViewModel.STATE_OPEN: "ui.contracts.hint_accept",
@@ -38,6 +43,8 @@ signal close_requested
 ## Saem quando Aceitar ou Entregar é apertado COM o botão ativo, trazendo o contrato escolhido; quem ENVIA o pedido é a `MarketView`, nunca a página.
 signal accept_requested(contract_id: int)
 signal deliver_requested(contract_id: int)
+## Sai quando Abandonar é apertado COM o botão ativo, trazendo o contrato escolhido; ninguém o ouve ainda (LW-107f4a): a confirmação e o envio são da 107f4b e da 107f4c.
+signal abandon_asked(contract_id: int)
 
 var _bridge: SimBridge
 var _texts: UiText
@@ -61,9 +68,11 @@ func setup(bridge: SimBridge, texts: UiText, actor_id: int, parent: Control) -> 
 	_layout.mine_title.text = _texts.get_text(KEY_SECTION_MINE)
 	_layout.accept_button.text = _texts.get_text(KEY_ACCEPT)
 	_layout.deliver_button.text = _texts.get_text(KEY_DELIVER)
+	_layout.abandon_button.text = _texts.get_text(KEY_ABANDON)
 	_layout.close_button.text = _texts.get_text(KEY_CLOSE)
 	_layout.accept_button.pressed.connect(_notify.bind(accept_requested, _layout.accept_button))
 	_layout.deliver_button.pressed.connect(_notify.bind(deliver_requested, _layout.deliver_button))
+	_layout.abandon_button.pressed.connect(_notify.bind(abandon_asked, _layout.abandon_button))
 	_layout.close_button.pressed.connect(close_requested.emit)
 	_layout.open_list.item_selected.connect(_choose.bind(_layout.open_list))
 	_layout.mine_list.item_selected.connect(_choose.bind(_layout.mine_list))
@@ -117,13 +126,18 @@ func show_reply(reply: BridgePlayerContractsReplies.ContractActionReply) -> void
 ## LW-107e2b: o ÚNICO lugar que decide Aceitar, Entregar e as dicas; os pedidos (`request_contract_accept` e `request_contract_deliver`) são ENVIADOS pela `MarketView`, a partir dos sinais da página (o contrato diz que ela é a única que envia). **Aceitar** só com a linha escolhida em "Disponíveis"
 ## com `display_state` `open` (não vencida: a linha "Vencido" não se aceita) e o relógio andando. **Entregar** só com a linha escolhida em "Meus contratos" com `can_deliver` (a dica do modelo: a ponte e a economia decidem) e o relógio andando. Relógio pausado, sem linha, linha vencida, `completed` ou `expired`:
 ## os dois desativados. **Dicas:** a linha de dicas mostra `hint_accept` com uma linha `open` escolhida e `hint_deliver` com uma `accepted` escolhida (ambas no prazo: o estado mostrado, não o da ponte), a regra do que ainda há a fazer naquela linha, e fica vazia e escondida nas demais (sem linha, `completed`, "Vencido").
-## É chamado no `setup`, depois de cada leitura (`refresh`) e de cada escolha (`_choose`), os momentos em que a linha escolhida e o relógio mudam.
+## LW-107f4a: **Abandonar** só com a linha escolhida em "Meus contratos" com `can_abandon` (a dica do modelo: minha, `accepted` e no prazo) e o relógio andando; **Aceitar** também fica desativado com a capacidade definida (maior que 0) já alcançada por `accepted_count()`, e a linha da
+## capacidade mostra "n de N" só com a capacidade definida. É chamado no `setup`, depois de cada leitura (`refresh`) e de cada escolha (`_choose`), os momentos em que a linha escolhida e o relógio mudam.
 func _update_actions() -> void:
 	var row: ContractsViewModel.Row = _contract_rows.get(_chosen_contract) as ContractsViewModel.Row
 	var shown_state: String = row.display_state if row != null else ""
 	var hint_key: String = KEY_HINTS.get(shown_state, "")
-	_layout.accept_button.disabled = _is_paused or shown_state != ContractsViewModel.STATE_OPEN
+	var is_full: bool = _model.capacity() > 0 and _model.accepted_count() >= _model.capacity()
+	_layout.accept_button.disabled = _is_paused or shown_state != ContractsViewModel.STATE_OPEN or is_full
 	_layout.deliver_button.disabled = _is_paused or row == null or not row.can_deliver
+	_layout.abandon_button.disabled = _is_paused or row == null or not row.can_abandon
+	_layout.capacity.visible = _model.capacity() > 0
+	_layout.capacity.text = _texts.get_text(KEY_CAPACITY, {"accepted": _model.accepted_count(), "limit": _model.capacity()}) if _layout.capacity.visible else ""
 	_layout.hints.text = _texts.get_text(hint_key) if not hint_key.is_empty() else ""
 	_layout.hints.visible = not hint_key.is_empty()
 
@@ -174,12 +188,12 @@ func _show_detail() -> void:
 	_layout.detail.text = "" if row == null else _facts_of(row)
 
 
-## As informações do detalhe da linha escolhida, na ordem do contrato: bem e quantidade, recompensa, prazo restante (só se há), destino (só se é um mercado), "você tem X de Y", estado e, no vencido, a nota da falha por prazo.
+## As informações do detalhe da linha escolhida, na ordem do contrato: bem e quantidade, recompensa, prazo restante (só se há), destino (só se é um mercado), "você tem X de Y", estado e a nota do estado (no vencido, a do prazo; no abandonado, a de que não há multa).
 func _facts_of(row: ContractsViewModel.Row) -> String:
 	var destination: String = ""
 	if not row.destination_settlement_id.is_empty():
 		destination = _texts.get_text(KEY_DESTINATION, {"destination": _texts.get_text(KEY_SETTLEMENT_NAME % row.destination_settlement_id)})
-	var note: String = _texts.get_text(KEY_EXPIRED_NOTE) if row.display_state == ContractsViewModel.STATE_EXPIRED else ""
+	var note: String = _texts.get_text(KEY_NOTES[row.display_state]) if KEY_NOTES.has(row.display_state) else ""
 	var owned: String = _texts.get_text(KEY_OWNED, {"owned": row.owned, "quantity": row.quantity})
 	var shown: PackedStringArray = []
 	for fact: String in [_line_of(row), _reward_of(row), _deadline_of(row), destination, owned, _state_of(row), note]:
