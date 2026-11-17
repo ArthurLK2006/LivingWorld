@@ -11,6 +11,12 @@
 #          PERFIL=auto|bateria|tomada (ART-12, 7c-1b: o perfil de ENERGIA; a medição NÃO exige tomada. auto detecta e rotula; bateria ou tomada exigem essa fonte, senão o script RECUSA; os perfis NUNCA se misturam),
 #          BATERIA_MIN_INICIO (30, piso 20), BATERIA_MIN_PARADA (20, piso 10), BATERIA_QUEDA_MAX (5, teto 10) [HIP, inteiros de 0 a 999, só para ENDURECER; ver tests/soak/game_release_energy.sh], CURTA=1 (VALIDAÇÃO DO INSTRUMENTO: UM ensaio
 #          povoado de 10 s, sem veredito DEC-119, 1 execução). Cada execução termina em "CLASSIFICAÇÃO: válida" ou "inconclusiva (motivos)". O script só LÊ a energia (pmset -g batt, -g e -g therm): nunca altera nada.
+#          LW_BUILD_ONLY=1 | LW_RUN_ONLY=1 (ART-12, 7c-1c; só no modo release e NUNCA juntas; padrão 0 = o comportamento de sempre; o roteiro tests/soak/medir_figura as usa para construir UMA vez por condição e rodar várias):
+#          LW_BUILD_ONLY=1 constrói o projeto, o .pck e a pasta execucao/ de UMA condição (figura com ou sem, pela LW_ART_SAMPLES) na pasta dada, grava execucao/figura.txt e SAI sem rodar o jogo;
+#          LW_RUN_ONLY=1 SÓ roda as execuções sobre essa pasta já construída (não baixa, copia nem exporta nada; recusa se a pasta não foi construída ou se a condição de figura é outra);
+#          LW_RELEASE_BIN=<arquivo> usa esse binário de release já extraído (nada é baixado) em vez de procurar em $WORK/bin.
+#          Por DESENHO (o comportamento não mudou): o figura.txt só é gravado por LW_BUILD_ONLY=1, então o modo padrão numa pasta já construída NÃO o atualiza (o medir_figura usa uma pasta NOVA por rodada); e LW_BUILD_ONLY=1
+#          SEM LW_RELEASE_BIN nem $WORK/bin BAIXA os ~1,28 GB, como o modo padrão (só o medir_figura impede, passando LW_RELEASE_BIN).
 # O projeto de medição ($HOME/lw-release-probe/projeto) é LOCAL e nunca é distribuído; toda build distribuível EXCLUI art_samples/* (docs/modules/presentation.md).
 set -eu
 PROJECT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
@@ -42,6 +48,17 @@ case "$CURTA" in 0|1) ;; *) fail "CURTA deve ser 0 ou 1 (recebi '$CURTA').";; es
 GAME_EXTRA=''; DURACAO=completa; FIGURA=sem
 if [ "$CURTA" = 1 ]; then ENSAIOS=povoado; RUNS=1; GAME_EXTRA="--segundos $CURTA_SEGUNDOS"; DURACAO="CURTA de $CURTA_SEGUNDOS s (VALIDAÇÃO DO INSTRUMENTO: sem veredito DEC-119)"; fi
 if [ "$LW_ART_SAMPLES" = 1 ] || { [ "$MODE" = editor ] && [ -f "$PROJECT_DIR/art_samples/character_area.json" ]; }; then FIGURA=com; fi
+LW_BUILD_ONLY=${LW_BUILD_ONLY:-0}; LW_RUN_ONLY=${LW_RUN_ONLY:-0} # ART-12, 7c-1c: o padrão é 0 (desligadas): sem elas o script faz tudo, como sempre
+case "$LW_BUILD_ONLY" in 0|1) ;; *) fail "LW_BUILD_ONLY deve ser 0 ou 1 (recebi '$LW_BUILD_ONLY').";; esac
+case "$LW_RUN_ONLY" in 0|1) ;; *) fail "LW_RUN_ONLY deve ser 0 ou 1 (recebi '$LW_RUN_ONLY').";; esac
+[ "$LW_BUILD_ONLY$LW_RUN_ONLY" != 11 ] || fail "LW_BUILD_ONLY e LW_RUN_ONLY NÃO podem ficar ligadas juntas: construir é um passo e rodar é outro (o tests/soak/medir_figura faz um e depois o outro)."
+if [ "$MODE" = editor ] && [ "$LW_BUILD_ONLY$LW_RUN_ONLY" != 00 ]; then fail "LW_BUILD_ONLY e LW_RUN_ONLY só valem no modo release (o modo --editor não constrói nada)."; fi
+if [ -n "${LW_RELEASE_BIN:-}" ] && { [ ! -f "$LW_RELEASE_BIN" ] || [ ! -x "$LW_RELEASE_BIN" ]; }; then fail "LW_RELEASE_BIN='$LW_RELEASE_BIN' não é um arquivo executável (o binário de release já extraído; com ele nada é baixado)."; fi
+if [ "$LW_RUN_ONLY" = 1 ]; then # a pasta já construída: o jogo, o .pck e a condição de figura de quando foi construída (figura.txt), que NÃO pode ser outra (o rótulo FIGURA nunca erra)
+    [ -x "$WORK/execucao/game_release" ] && [ -f "$WORK/execucao/game_release.pck" ] && [ -f "$WORK/execucao/figura.txt" ] || fail "LW_RUN_ONLY=1, mas '$WORK/execucao' não tem o jogo construído (game_release, game_release.pck e figura.txt). Construa antes a mesma pasta com LW_BUILD_ONLY=1."
+    built_figura=$(cat "$WORK/execucao/figura.txt")
+    [ "$built_figura" = "$FIGURA" ] || fail "A pasta '$WORK' foi construída $built_figura a figura, mas esta execução é $FIGURA a figura (LW_ART_SAMPLES=$LW_ART_SAMPLES): o rótulo FIGURA nunca erra. Use o mesmo LW_ART_SAMPLES da construção."
+fi
 PERFIL=${PERFIL:-auto}
 energy_start "$PERFIL" || fail "$E_MESSAGE"
 echo "perfil de energia: $E_LABEL (fonte $E_SOURCE, bateria ${E_PERCENT:-?}%, estado ${E_STATE:-?}, baixo consumo ${E_LOW:-?}); figura: $FIGURA; duração: $DURACAO"
@@ -57,16 +74,26 @@ if [ "$MODE" = editor ]; then
     run_trials game_editor "$GODOT_BIN" --path "$PROJECT_DIR" "$MAIN_SCENE"
     du -sh "$WORK"; exit 0
 fi
+if [ "$LW_RUN_ONLY" = 1 ]; then # ART-12, 7c-1c: SÓ as execuções, sobre a pasta já construída (conferida no começo): nada é baixado, copiado nem exportado
+    say "Rodando o jogo JÁ CONSTRUÍDO em $WORK/execucao ($RUNS vez(es), ensaios: $ENSAIOS; figura: $FIGURA)"
+    echo "Uma janela vai abrir. Deixe-a em primeiro plano e não mexa no Mac durante a medição."
+    run_trials game_release "$WORK/execucao/game_release"
+    say "Pronto. Saídas em $WORK/game_release_run_*.txt"
+    exit 0
+fi
 # Trava de segurança: o script apaga subpastas dele (projeto/, modelos/) na pasta de trabalho; só aceita pasta nova/vazia ou criada por ele.
 if [ ! -f "$WORK/.lw-release-probe" ] && [ -n "$(ls -A "$WORK")" ] && [ ! -d "$WORK/execucao" ] && [ ! -f "$WORK/sp1.pck" ] && [ ! -f "$WORK/release_run_1.txt" ]; then
     fail "A pasta '$WORK' não está vazia e não foi criada por este script. Use uma pasta nova (ex.: \$HOME/lw-release-probe)."
 fi
 : > "$WORK/.lw-release-probe"
 
-if existing=$(ls "$WORK"/bin/*release* 2> /dev/null | head -1) && [ -n "$existing" ] && [ -x "$existing" ]; then
+if [ -n "${LW_RELEASE_BIN:-}" ]; then # ART-12, 7c-1c: o binário já extraído (conferido no começo): nada é procurado nem baixado
+    RELEASE_BIN=$LW_RELEASE_BIN
+    say "1/4 Usando o binário de release indicado em LW_RELEASE_BIN (nada será baixado): $RELEASE_BIN"
+elif existing=$(ls "$WORK"/bin/*release* 2> /dev/null | head -1) && [ -n "$existing" ] && [ -x "$existing" ]; then
     RELEASE_BIN=$existing
     say "1/4 Reaproveitando o binário de release já extraído (nada será baixado): $RELEASE_BIN"
-else
+else # sem LW_RELEASE_BIN nem $WORK/bin: BAIXA (também com LW_BUILD_ONLY=1, por desenho; só o medir_figura impede, passando LW_RELEASE_BIN)
     command -v curl > /dev/null && command -v unzip > /dev/null || fail "curl e unzip são necessários."
     TPZ=$WORK/$TEMPLATES_FILE
     say "1/4 Baixando os modelos de exportação oficiais (~1,28 GB) para $WORK"
@@ -126,13 +153,18 @@ rm -f "$WORK/game.pck"
 [ -s "$WORK/game.pck" ] || { cat "$WORK/exportacao.txt" >&2; fail "A exportação do pacote falhou (saída acima)."; }
 echo "Pacote criado: $WORK/game.pck"
 
-say "4/4 Rodando o jogo em release ($RUNS vez(es), ensaios: $ENSAIOS)"
-echo "Uma janela vai abrir. Deixe-a em primeiro plano e não mexa no Mac durante a medição."
 mkdir -p "$WORK/execucao"
 cp "$RELEASE_BIN" "$WORK/execucao/game_release"
 chmod +x "$WORK/execucao/game_release"
 cp "$WORK/game.pck" "$WORK/execucao/game_release.pck"
 command -v codesign > /dev/null && codesign --force --sign - "$WORK/execucao/game_release" 2> /dev/null || true
+if [ "$LW_BUILD_ONLY" = 1 ]; then # ART-12, 7c-1c: construiu UMA vez e SAI; a condição de figura fica gravada para o LW_RUN_ONLY conferir (SÓ aqui: o modo padrão, abaixo, não grava nem atualiza o figura.txt; ver o cabeçalho)
+    printf '%s\n' "$FIGURA" > "$WORK/execucao/figura.txt"
+    say "Pronto: o jogo ($FIGURA a figura) está construído em $WORK/execucao. Rode com LW_RUN_ONLY=1 sobre esta mesma pasta (e o mesmo LW_ART_SAMPLES)."
+    du -sh "$WORK"; exit 0
+fi
+say "4/4 Rodando o jogo em release ($RUNS vez(es), ensaios: $ENSAIOS)"
+echo "Uma janela vai abrir. Deixe-a em primeiro plano e não mexa no Mac durante a medição."
 run_trials game_release "$WORK/execucao/game_release"
 say "Pronto. Saídas em $WORK/game_release_run_*.txt"
 du -sh "$WORK"
