@@ -1,10 +1,10 @@
 #!/bin/sh
 # Prepara uma CÓPIA descartável do jogo para um experimento (nada é alterado no repositório):
 #   preparar_copia.sh <ref-git> <pasta-destino> [--historico]
-# Exporta o ref com `git archive`, põe nela o medidor (tools/measure_economy*) e, só se pedido, liga o histórico do Ledger NA CÓPIA e instala
+# Exporta o ref com `git archive`, põe nela o medidor (tools/measure_economy* e tools/measure/) e, só se pedido, liga o histórico do Ledger NA CÓPIA e instala
 # tools/fluxos.gd (a partir de fluxos.gd.txt; rode com: Godot --headless --path <copia> -s res://tools/fluxos.gd -- --days 12).
 # Variáveis: REPO (repositório com o ref; padrão: o do diretório atual), TOOLS_SRC (pasta com measure_economy e measure_economy.gd; padrão $REPO/tools),
-# GODOT_BIN (padrão do macOS do projeto), CACHE_SRC (pasta .godot já importada para copiar e pular a importação; opcional).
+# GODOT_BIN (padrão do macOS do projeto), CACHE_SRC (pasta .godot já importada, copiada para ACELERAR a importação, que roda mesmo assim para a cópia conhecer as classes do ref e do medidor; opcional).
 set -eu
 ref=$1
 dest=$2
@@ -17,6 +17,8 @@ mkdir -p "$dest"
 git -C "$repo" archive "$ref" | tar -x -C "$dest"
 cp "$tools_src/measure_economy" "$tools_src/measure_economy.gd" "$dest/tools/"
 chmod +x "$dest/tools/measure_economy"
+# LW-098h4: o medidor ganhou a classe das colunas de comerciantes em tools/measure/ (precisa de Caravan, CaravanArrived e peek_caravan: refs anteriores à 098c e à 098g não compilam o medidor novo)
+[ -d "$tools_src/measure" ] && cp -R "$tools_src/measure" "$dest/tools/"
 if [ "$history" = "--historico" ]; then
     sed -i.bak 's/EconomyModule.new(false, economy_setup.definitions)/EconomyModule.new(true, economy_setup.definitions)/' "$dest/src/app/game_modules.gd"
     rm -f "$dest/src/app/game_modules.gd.bak"
@@ -25,6 +27,6 @@ if [ "$history" = "--historico" ]; then
 fi
 if [ -n "${CACHE_SRC:-}" ] && [ -d "$CACHE_SRC" ]; then
     cp -R "$CACHE_SRC" "$dest/.godot"
-else
-    HOME="${EXP_HOME:-$dest/.home}" "$godot_bin" --headless --path "$dest" --import < /dev/null > /dev/null 2>&1
 fi
+# O import roda SEMPRE: com o cache copiado ele só atualiza o que mudou (a classe MerchantCells, por exemplo); sem ele um cache de antes da classe faz o medidor sair com 0 e imprimir 0 linhas, em silêncio.
+HOME="${EXP_HOME:-$dest/.home}" "$godot_bin" --headless --path "$dest" --import < /dev/null > /dev/null 2>&1
