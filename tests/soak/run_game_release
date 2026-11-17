@@ -9,7 +9,7 @@
 # AJUSTES: GODOT_BIN, RUNS (3), ENSAIOS (rota,parado,pausado; o POVOADO entra com ENSAIOS=rota,parado,pausado,povoado), KEEP_DOWNLOAD (0), LW_PROBE_COPY=worktree (só para DESENVOLVER: copia a árvore de trabalho),
 #          LW_ART_SAMPLES=1 (ART-12, 7c-1: copia a pasta LOCAL art_samples/, FORA do Git, para a cópia de medição: a rodada COM a figura do Ice Warrior; padrão 0, a rodada de hoje; sem a pasta o script FALHA).
 #          PERFIL=auto|bateria|tomada (ART-12, 7c-1b: o perfil de ENERGIA; a medição NÃO exige tomada. auto detecta e rotula; bateria ou tomada exigem essa fonte, senão o script RECUSA; os perfis NUNCA se misturam),
-#          BATERIA_MIN_INICIO (30, piso 20), BATERIA_MIN_PARADA (20, piso 10), BATERIA_QUEDA_MAX (5, teto 10) [HIP, só para ENDURECER; ver tests/soak/game_release_energy.sh], CURTA=1 (VALIDAÇÃO DO INSTRUMENTO: UM ensaio
+#          BATERIA_MIN_INICIO (30, piso 20), BATERIA_MIN_PARADA (20, piso 10), BATERIA_QUEDA_MAX (5, teto 10) [HIP, inteiros de 0 a 999, só para ENDURECER; ver tests/soak/game_release_energy.sh], CURTA=1 (VALIDAÇÃO DO INSTRUMENTO: UM ensaio
 #          povoado de 10 s, sem veredito DEC-119, 1 execução). Cada execução termina em "CLASSIFICAÇÃO: válida" ou "inconclusiva (motivos)". O script só LÊ a energia (pmset -g batt, -g e -g therm): nunca altera nada.
 # O projeto de medição ($HOME/lw-release-probe/projeto) é LOCAL e nunca é distribuído; toda build distribuível EXCLUI art_samples/* (docs/modules/presentation.md).
 set -eu
@@ -45,6 +45,7 @@ if [ "$LW_ART_SAMPLES" = 1 ] || { [ "$MODE" = editor ] && [ -f "$PROJECT_DIR/art
 PERFIL=${PERFIL:-auto}
 energy_start "$PERFIL" || fail "$E_MESSAGE"
 echo "perfil de energia: $E_LABEL (fonte $E_SOURCE, bateria ${E_PERCENT:-?}%, estado ${E_STATE:-?}, baixo consumo ${E_LOW:-?}); figura: $FIGURA; duração: $DURACAO"
+[ -z "$E_WARNING" ] || printf 'AVISO: %s\n' "$E_WARNING"
 [ -x "$GODOT_BIN" ] || fail "Godot não encontrado em '$GODOT_BIN'. Defina GODOT_BIN."
 "$GODOT_BIN" --version | grep -q "^$GODOT_VERSION_PREFIX" || fail "Exige o Godot $GODOT_VERSION_PREFIX; o seu informa: $("$GODOT_BIN" --version)"
 

@@ -2,8 +2,11 @@
 # SÓ LEITURA: lê `pmset -g batt`, `pmset -g` (lowpowermode) e `pmset -g therm`; nada aqui altera configuração de energia, desliga proteção do macOS nem liga o baixo consumo. Se o baixo consumo está LIGADO, o
 # medidor REGISTRA e o perfil vira outro ("bateria (baixo consumo LIGADO)"), que não se compara com o desligado. Os perfis bateria e tomada NUNCA se misturam: cada execução leva o seu rótulo.
 # PERFIL: auto detecta pela 1ª linha do `pmset -g batt` e rotula; bateria ou tomada exigem essa fonte, senão o script RECUSA (nunca rotula errado). Travas [HIP] na bateria, por variável, SÓ para endurecer
-# (valor mais frouxo que o piso/teto é RECUSADO, não ajustado em silêncio): BATERIA_MIN_INICIO=30 (piso 20, não começa abaixo disso, em %); BATERIA_MIN_PARADA=20 (piso 10, ao fim de uma execução abaixo
-# disso as que faltam NÃO rodam); BATERIA_QUEDA_MAX=5 (teto 10, pontos que UMA execução pode gastar; mais que isso ela é inconclusiva e as que faltam NÃO rodam).
+# (valor mais frouxo que o piso/teto é RECUSADO, não ajustado em silêncio; vazio vira o padrão e só vale inteiro de 0 a 999: número maior ou lixo também é RECUSADO, porque o `[ -lt/-gt ]` de um número enorme dá
+# erro e o `if` o trata como falso, o que DESLIGARIA a trava): BATERIA_MIN_INICIO=30 (piso 20, não começa abaixo disso, em %); BATERIA_MIN_PARADA=20 (piso 10, ao fim de uma execução abaixo disso as que
+# faltam NÃO rodam); BATERIA_QUEDA_MAX=5 (teto 10, pontos que UMA execução pode gastar; mais que isso ela é inconclusiva e as que faltam NÃO rodam).
+# FORMATO DESCONHECIDO NUNCA VIRA "válida": o `pmset -g therm` vazio ou com linha fora dos formatos conhecidos torna a execução inconclusiva; o lowpowermode ilegível vira o perfil "baixo consumo
+# DESCONHECIDO" (outra condição, nunca misturada com o desligado nem com o ligado), REGISTRADO com um AVISO, sem recusar e sem trocar a configuração.
 BATERIA_MIN_INICIO=${BATERIA_MIN_INICIO:-30}
 BATERIA_MIN_PARADA=${BATERIA_MIN_PARADA:-20}
 BATERIA_QUEDA_MAX=${BATERIA_QUEDA_MAX:-5}
@@ -11,7 +14,8 @@ PISO_MIN_INICIO=20
 PISO_MIN_PARADA=10
 TETO_QUEDA_MAX=10
 
-# Lê a energia AGORA: E_SOURCE (bateria|tomada|desconhecida), E_PERCENT, E_STATE, E_LOW (lowpowermode 0|1) e E_THERM (as linhas inteiras do `pmset -g therm`).
+# Lê a energia AGORA: E_SOURCE (bateria|tomada|desconhecida), E_PERCENT (vazio se ilegível ou de mais de 3 dígitos), E_STATE, E_LOW (lowpowermode: 0 ou 1; ausente, ilegível, 2 ou lixo = ?) e E_THERM (as
+# linhas inteiras do `pmset -g therm`).
 energy_read() {
     batt=$(pmset -g batt 2> /dev/null || true)
     case "$(printf '%s\n' "$batt" | head -1)" in
@@ -20,16 +24,21 @@ energy_read() {
         *) E_SOURCE=desconhecida;;
     esac
     E_PERCENT=$(printf '%s\n' "$batt" | sed -n 's/.*[^0-9]\([0-9][0-9]*\)%.*/\1/p' | head -1)
+    case "$E_PERCENT" in ????*) E_PERCENT='';; esac
     E_STATE=$(printf '%s\n' "$batt" | sed -n 's/.*%; *\([^;]*\);.*/\1/p' | head -1)
-    E_LOW=$(pmset -g 2> /dev/null | sed -n 's/^ *lowpowermode *\([01]\).*/\1/p' | head -1)
+    E_LOW=$(pmset -g 2> /dev/null | sed -n 's/^[[:space:]]*lowpowermode[[:space:]]\{1,\}\([01]\)[[:space:]]*$/\1/p' | head -1)
+    [ -n "$E_LOW" ] || E_LOW='?'
     E_THERM=$(pmset -g therm 2> /dev/null || true)
 }
 energy_before() { energy_read; B_SOURCE=$E_SOURCE; B_PERCENT=$E_PERCENT; B_STATE=$E_STATE; B_LOW=$E_LOW; B_THERM=$E_THERM; }
 energy_after() { energy_read; A_SOURCE=$E_SOURCE; A_PERCENT=$E_PERCENT; A_STATE=$E_STATE; A_LOW=$E_LOW; A_THERM=$E_THERM; }
 
+# Inteiro de 1 a 3 dígitos (0 a 999)? Vazio, lixo ou mais dígitos NÃO passa (um número enorme faz o `[ -lt/-gt ]` dar erro, e o `if` trata o erro como falso: a trava ficaria desligada).
+energy_small_int() { case "$1" in ''|*[!0-9]*|????*) return 1;; esac; return 0; }
+
 # Confere os números das travas; devolve 1 com E_MESSAGE se algum é inválido ou mais frouxo que o piso/teto.
 energy_check_limits() {
-    case "$BATERIA_MIN_INICIO$BATERIA_MIN_PARADA$BATERIA_QUEDA_MAX" in *[!0-9]*) E_MESSAGE="BATERIA_MIN_INICIO, BATERIA_MIN_PARADA e BATERIA_QUEDA_MAX devem ser inteiros (recebi '$BATERIA_MIN_INICIO', '$BATERIA_MIN_PARADA', '$BATERIA_QUEDA_MAX')."; return 1;; esac
+    if ! energy_small_int "$BATERIA_MIN_INICIO" || ! energy_small_int "$BATERIA_MIN_PARADA" || ! energy_small_int "$BATERIA_QUEDA_MAX"; then E_MESSAGE="BATERIA_MIN_INICIO, BATERIA_MIN_PARADA e BATERIA_QUEDA_MAX devem ser inteiros de 0 a 999 (recebi '$BATERIA_MIN_INICIO', '$BATERIA_MIN_PARADA', '$BATERIA_QUEDA_MAX'): um número maior ou inválido desligaria a trava."; return 1; fi
     if [ "$BATERIA_MIN_INICIO" -lt "$PISO_MIN_INICIO" ]; then E_MESSAGE="BATERIA_MIN_INICIO=$BATERIA_MIN_INICIO está abaixo do piso $PISO_MIN_INICIO: a variável só pode ENDURECER a trava."; return 1; fi
     if [ "$BATERIA_MIN_PARADA" -lt "$PISO_MIN_PARADA" ]; then E_MESSAGE="BATERIA_MIN_PARADA=$BATERIA_MIN_PARADA está abaixo do piso $PISO_MIN_PARADA: a variável só pode ENDURECER a trava."; return 1; fi
     if [ "$BATERIA_QUEDA_MAX" -gt "$TETO_QUEDA_MAX" ]; then E_MESSAGE="BATERIA_QUEDA_MAX=$BATERIA_QUEDA_MAX passa do teto $TETO_QUEDA_MAX: a variável só pode ENDURECER a trava."; return 1; fi
@@ -47,18 +56,33 @@ energy_start() {
         if [ -z "$E_PERCENT" ]; then E_MESSAGE="O Mac está na bateria, mas não consegui ler a porcentagem (pmset -g batt): sem ela as travas de segurança não valem."; return 1; fi
         if [ "$E_PERCENT" -lt "$BATERIA_MIN_INICIO" ]; then E_MESSAGE="A bateria está em $E_PERCENT%, abaixo do mínimo para começar ($BATERIA_MIN_INICIO%): carregue o Mac ou use o perfil tomada. Medir com a bateria baixa não vale e gasta o que falta."; return 1; fi
     fi
-    PROFILE_SOURCE=$E_SOURCE; PROFILE_LOW=$E_LOW; E_LABEL=$E_SOURCE
-    if [ "$E_LOW" = 1 ]; then E_LABEL="$E_SOURCE (baixo consumo LIGADO)"; fi
+    PROFILE_SOURCE=$E_SOURCE; PROFILE_LOW=$E_LOW; E_LABEL=$E_SOURCE; E_WARNING=''
+    case "$E_LOW" in
+        1) E_LABEL="$E_SOURCE (baixo consumo LIGADO)";;
+        '?') E_LABEL="$E_SOURCE (baixo consumo DESCONHECIDO)"; E_WARNING="não consegui ler o baixo consumo (lowpowermode 0 ou 1) no pmset -g: o perfil é '$E_LABEL', outra condição, que não se compara com o baixo consumo desligado nem com o ligado. O medidor continua e REGISTRA; ele nunca troca a configuração.";;
+    esac
     return 0
 }
 
-# O motivo se o texto do `pmset -g therm` ($1) registra aviso térmico ou de desempenho, ou CPU_Scheduler_Limit/CPU_Speed_Limit abaixo de 100; nada impresso = normal.
+# Os formatos CONHECIDOS do `pmset -g therm` (macOS 26.6.2): as três linhas "No ... has been recorded" (com ou sem "Note:", sem diferenciar maiúsculas) e os campos CPU_* com número de 1 a 3 dígitos.
+THERM_NORMAL_RE='^[[:space:]]*(note:[[:space:]]*)?no (thermal warning level|performance warning level|cpu power status) has been recorded[[:space:]]*$'
+THERM_FIELD_RE='^[[:space:]]*(CPU_Scheduler_Limit|CPU_Available_CPUs|CPU_Speed_Limit)[[:space:]]*=[[:space:]]*[0-9]{1,3}[[:space:]]*$'
+
+# O motivo se o texto do `pmset -g therm` ($1) NÃO é normal: aviso térmico ou de desempenho, CPU_Scheduler_Limit/CPU_Speed_Limit abaixo de 100, menos CPUs disponíveis que o `sysctl -n hw.ncpu` (sem ele,
+# não confere) ou FORMATO DESCONHECIDO (saída vazia ou qualquer linha fora dos formatos conhecidos: na dúvida, NÃO é normal); nada impresso = normal.
 energy_therm_issue() {
-    warn=$(printf '%s\n' "$1" | grep -i 'warning level' | grep -vi 'has been recorded' | head -1 || true)
+    therm_lines=$(printf '%s\n' "$1" | grep -v '^[[:space:]]*$' || true)
+    if [ -z "$therm_lines" ]; then printf 'estado térmico ilegível ou em formato desconhecido (saída vazia)'; return 0; fi
+    warn=$(printf '%s\n' "$therm_lines" | grep -i 'warning level' | grep -vi 'has been recorded' | head -1 || true)
     if [ -n "$warn" ]; then printf 'aviso térmico ou de desempenho (%s)' "$warn"; return 0; fi
-    for item in $(printf '%s\n' "$1" | sed -n -E 's/.*(CPU_Scheduler_Limit|CPU_Speed_Limit)[^0-9]*([0-9]+).*/\1=\2/p'); do
-        if [ "${item#*=}" -lt 100 ]; then printf 'limitação de CPU (%s)' "$item"; return 0; fi
+    for item in $(printf '%s\n' "$therm_lines" | sed -n -E 's/^[[:space:]]*(CPU_Scheduler_Limit|CPU_Available_CPUs|CPU_Speed_Limit)[[:space:]]*=[[:space:]]*([0-9]{1,3})[[:space:]]*$/\1=\2/p'); do
+        if [ "${item%%=*}" = CPU_Available_CPUs ]; then
+            ncpu=$(sysctl -n hw.ncpu 2> /dev/null || true)
+            if energy_small_int "$ncpu" && [ "${item#*=}" -lt "$ncpu" ]; then printf 'CPUs disponíveis (%s de %s)' "${item#*=}" "$ncpu"; return 0; fi
+        elif [ "${item#*=}" -lt 100 ]; then printf 'limitação de CPU (%s)' "$item"; return 0; fi
     done
+    unknown=$(printf '%s\n' "$therm_lines" | grep -v -i -E "$THERM_NORMAL_RE" | grep -v -E "$THERM_FIELD_RE" | head -1 || true)
+    if [ -n "$unknown" ]; then printf 'estado térmico ilegível ou em formato desconhecido (%s)' "$unknown"; return 0; fi
     return 0
 }
 
@@ -73,7 +97,7 @@ energy_classify() {
     if [ "$B_LOW" != "$PROFILE_LOW" ] || [ "$A_LOW" != "$PROFILE_LOW" ]; then energy_reason "o modo de baixo consumo mudou (lowpowermode ${PROFILE_LOW:-?} no começo; ${B_LOW:-?} antes, ${A_LOW:-?} depois)"; fi
     if [ "$PROFILE_SOURCE" = bateria ]; then
         if [ -z "$B_PERCENT" ] || [ -z "$A_PERCENT" ]; then
-            energy_reason "não consegui ler a porcentagem da bateria"
+            energy_reason "não consegui ler a porcentagem da bateria (sem ela as travas de segurança não valem: as execuções que faltam NÃO rodam)"; E_STOP=1
         else
             drop=$((B_PERCENT - A_PERCENT))
             if [ "$drop" -gt "$BATERIA_QUEDA_MAX" ]; then energy_reason "a bateria caiu $drop pontos (máximo $BATERIA_QUEDA_MAX)"; E_STOP=1; fi
@@ -119,12 +143,12 @@ run_trials() {
         energy_after
         energy_lines A >> "$out"
         energy_classify "$code" "$(grep -c '^ENSAIO ' "$out" || true)" "$expected"
-        echo "CLASSIFICAÇÃO: $E_CLASS" >> "$out"
+        printf 'CLASSIFICAÇÃO: %s\n' "$E_CLASS" >> "$out"
         [ "$code" = 0 ] || { cat "$out" >&2; fail "A execução $n terminou com erro (saída acima)."; }
         cat "$out"
         if [ "$E_CLASS" = 'válida' ]; then valid=$((valid + 1)); else inconclusive=$((inconclusive + 1)); listed="${listed:+$listed; }execução $n: ${E_CLASS#inconclusiva }"; fi
-        if [ "$E_STOP" = 1 ]; then echo "INTERROMPIDO após a execução $n: $E_CLASS. As execuções que faltam NÃO serão feitas."; break; fi
+        if [ "$E_STOP" = 1 ]; then printf 'INTERROMPIDO após a execução %s: %s. As execuções que faltam NÃO serão feitas.\n' "$n" "$E_CLASS"; break; fi
         n=$((n + 1))
     done
-    echo "RESUMO ($E_LABEL, FIGURA $FIGURA, duração $DURACAO): $((valid + inconclusive)) execução(ões), $valid válida(s) e $inconclusive inconclusiva(s)${listed:+ [$listed]}. As inconclusivas NÃO entram em nenhuma estatística; NÃO compare os perfis bateria e tomada como equivalentes."
+    printf 'RESUMO (%s, FIGURA %s, duração %s): %s execução(ões), %s válida(s) e %s inconclusiva(s)%s. As inconclusivas NÃO entram em nenhuma estatística; NÃO compare os perfis bateria e tomada como equivalentes.\n' "$E_LABEL" "$FIGURA" "$DURACAO" "$((valid + inconclusive))" "$valid" "$inconclusive" "${listed:+ [$listed]}"
 }
