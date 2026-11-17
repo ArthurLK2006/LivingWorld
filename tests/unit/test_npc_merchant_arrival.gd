@@ -17,11 +17,17 @@ const HOME_A: String = "a_home_01"
 const MERCHANT: String = "merchant"
 const HAUL: String = "haul"
 const SELL: String = "sell"
+const BUY: String = "buy"
 const BREAD: String = "bread"
+const GRAIN: String = "grain"
 const WOOL: String = "wool"
 const TOOL: String = "tool"
 const HUNGER: int = 0
 const INCOME: int = 3
+## O caso do `npc` 151 (098h0): mochila cheia (capacidade do comerciante), 505 moedas e as 72 horas em que ele morria de fome.
+const PACK: int = 120
+const CASE_BALANCE: int = 505
+const CASE_HOURS: int = 72
 const MINUTES_PER_HOUR: int = 60
 const MORNING: int = 7 * MINUTES_PER_HOUR
 const EVENING: int = 17 * MINUTES_PER_HOUR
@@ -329,6 +335,46 @@ func test_the_merchant_that_ate_from_its_cargo_in_transit_arrives_with_less_and_
 	var profit: int = maxi(0, arrived.revenue - arrived.cost_paid)
 	assert_eq([arrived.revenue, rig.npc.peek_npc(merchant).need_values[INCOME], rig.npc.peek_npc(merchant).settlement_id, _held(rig, merchant, BREAD)], [expected, maxi(0, 80 - profit), SETTLEMENT_B, 0], "Vendeu os 16 que restaram (`min(lote, inventário)`), o lucro (limitado a 0) alivia `income` e ele foi realocado.")
 	assert_true(_conserved(rig), "As duas conservações fecham com o consumo da carga.")
+
+
+# ---------------------------------------------------------------------------------------------------- comida: o caso dos 120 pães (LW-098h0)
+
+## Muda o saldo inicial do tipo de dono `merchant` (em memória, antes de o mundo começar) para o do caso do `npc` 151.
+func _fund_merchants(definitions: EconomyDefinitions) -> void:
+	for kind: OwnerKindDef in definitions.kinds:
+		if kind.id == MERCHANT:
+			kind.initial_balance = CASE_BALANCE
+
+
+func _destroyed(rig: Rig, good_id: String) -> int:
+	for row: Dictionary in rig.economy.peek_goods_conservation().rows:
+		if row["good_id"] == good_id:
+			return int(row["destroyed"])
+	return 0
+
+
+## O caso do `npc` 151 do diagnóstico da 098h0: comerciante no mercado com a mochila cheia de pão (120 de 120), 505 moedas, pão à venda (o grão esgotado: a melhor compra é de pão e vale mais que a refeição em casa) e a fome já crítica. Sem a correção a `buy` (que ignorava o
+## pão da mochila e a capacidade) vencia a `eat`, a conclusão falhava na capacidade e ele a repetia a cada 10 minutos até morrer de fome. Agora ele nunca escolhe `buy`, come da mochila e vive as 72 horas. Com 118 pães sobra lugar para a compra de 2: a `buy` caberia, mas ele já tem comida.
+func test_the_merchant_with_a_pack_of_bread_and_critical_hunger_eats_it_and_never_repeats_a_buy() -> void:
+	for packed: int in [PACK, PACK - 2]:
+		var rig: Rig = _rig(MORNING, false, -1, _fund_merchants, true)
+		var merchant: int = _spawn(rig, MERCHANT, SETTLEMENT_A, MARKET_A, MARKET_A)
+		assert_true(rig.economy.request_set_stock(rig.market_a, BREAD, 2 * PACK).ok and rig.economy.request_set_stock(rig.market_a, GRAIN, 0).ok and rig.economy.request_transfer_goods(rig.market_a, merchant, BREAD, packed).ok, "Pão à venda e o grão esgotado.")
+		assert_eq([_held(rig, merchant, BREAD), rig.economy.peek_inventory(merchant).weight, rig.economy.peek_inventory(merchant).capacity, rig.economy.peek_balance(merchant).balance, rig.economy.peek_stock(rig.market_a, BREAD).value], [packed, packed, PACK, CASE_BALANCE, 2 * PACK - packed], "O caso: %d pães na mochila de 120, 505 moedas e pão à venda." % packed)
+		assert_true(rig.npc.peek_npc(merchant).need_urgencies[HUNGER] >= NeedMath.URGENCY_CRITICAL, "A fome nasce em nível crítico.")
+		var destroyed: int = _destroyed(rig, BREAD)
+		var bought_minutes: int = 0
+		var first_meal: int = -1
+		for minute: int in CASE_HOURS * MINUTES_PER_HOUR:
+			rig.runner.step_once()
+			bought_minutes += 1 if _doing(rig, merchant, BUY) else 0
+			if first_meal < 0 and _held(rig, merchant, BREAD) < packed:
+				first_meal = minute
+		var now: NpcModule.NpcQuery = rig.npc.peek_npc(merchant)
+		assert_eq([now.is_alive, bought_minutes], [true, 0], "Com %d pães: vivo depois de 72 horas e nenhum minuto em `buy` (nenhuma conclusão de compra falhou na capacidade)." % packed)
+		assert_true(first_meal >= 0 and first_meal < MINUTES_PER_HOUR, "Com %d pães: comeu da mochila na primeira hora (ele só precisa chegar em casa)." % packed)
+		assert_true(_destroyed(rig, BREAD) > destroyed and _held(rig, merchant, BREAD) < packed and now.need_urgencies[HUNGER] < NeedMath.URGENCY_CRITICAL, "Com %d pães: o pão foi consumido e a fome saiu do nível crítico." % packed)
+		assert_true(_conserved(rig))
 
 
 # ---------------------------------------------------------------------------------------------------- corpo (S0) e escritores de `need_values`

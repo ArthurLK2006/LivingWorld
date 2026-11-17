@@ -45,12 +45,14 @@ func plan_food(npc_id: int) -> FoodPlan:
 	if not market.result.ok:
 		return plan
 	var balance: int = _economy.peek_balance(npc_id).balance
+	var pack: EconomyReplies.InventoryQuery = _economy.peek_inventory(npc_id)
 	for good: EconomyReplies.GoodQuery in _economy.peek_goods_for_need(FOOD_NEED_ID).goods:
 		var stock: int = _stock_of(market, good.good_id)
 		var units: int = mini(_buy_units, stock)
 		while units > 0:
 			var quote: EconomyReplies.QuoteQuery = _economy.peek_quote(npc_id, market.market_id, good.good_id, units, BUY_SIDE)
-			if quote.result.ok and quote.total <= balance:
+			## LW-098h0: só planeja o que cabe na mochila (a mesma conta de `GoodsStore._check_room`); com a mochila cheia a compra falhava ao terminar e o pensador a repetia a cada 10 minutos.
+			if quote.result.ok and quote.total <= balance and pack.weight + units * good.weight <= pack.capacity:
 				plan.consider(market.market_id, good, units, quote.total)
 				break
 			units -= 1
