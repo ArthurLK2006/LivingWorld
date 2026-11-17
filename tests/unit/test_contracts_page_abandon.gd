@@ -19,6 +19,9 @@ const LATE_MINUTES: int = 40
 const LIMIT: int = 3
 const ABANDON: String = "ContractsAbandon"
 const ACCEPT: String = "ContractsAccept"
+const CONFIRM: String = "ContractsConfirm"
+const CONFIRM_YES: String = "ContractsConfirmYes"
+const CONFIRM_BACK: String = "ContractsConfirmBack"
 
 var _host: SimulationHostNode
 var _app: GameAppNode
@@ -247,3 +250,91 @@ func test_each_finished_row_shows_its_own_label_and_note_and_the_abandon_is_neve
 	_show(_edited(func(row: BridgePlayerContractsReplies.ContractBoardRow) -> void: row.closed_reason = ""))
 	shown.append(_shown_of(ids["dropped"]))
 	assert_eq(shown, [[_say("state.abandoned"), [true, false, false, true, false]], [_say("state.expired"), [false, false, true, false, true]], [_say("state.failed"), [false, true, false, false, false]]], "Abandonado (com a nota de que não há multa), Vencido (com a nota do prazo) e Falhou (sem nota): cada um com o seu rótulo, na lista e no detalhe.")
+
+
+## LW-107f4b: a ligação do painel de confirmação (`AbandonConfirm`, testado a fundo em `test_abandon_confirm.gd`) na página. Mostra a página e a lê com o relógio andando.
+func _show_page() -> void:
+	_show(_bridge)
+	_page.set_shown(true)
+
+
+## Escolhe a linha do contrato e aperta o Abandonar da página (o botão, não o sinal).
+func _ask(contract_id: int) -> void:
+	_buttons_on(contract_id)
+	_press(ABANDON)
+
+
+func _press(button_name: String) -> void:
+	(_node(button_name) as Button).pressed.emit()
+
+
+func _is_asking() -> bool:
+	return (_node(CONFIRM) as Control).visible
+
+
+func test_asking_opens_the_panel_for_the_asked_contract_and_only_its_abandonar_makes_the_page_request_it() -> void:
+	var first: int = _hold(LONG_MINUTES)
+	var second: int = _hold(LONG_MINUTES)
+	_show_page()
+	var world: String = _host.runner.world.state_hash()
+	assert_false(_is_asking(), "O painel nasce fechado.")
+	_ask(second)
+	assert_eq([_is_asking(), get_signal_emit_count(_page, "abandon_asked"), get_signal_emit_count(_page, "abandon_requested")], [true, 1, 0], "Abandonar só abre o painel: nada é pedido ainda.")
+	_press(CONFIRM_BACK)
+	assert_eq([_is_asking(), get_signal_emit_count(_page, "abandon_requested")], [false, 0], "Voltar fecha o painel sem pedir nada.")
+	_ask(first)
+	_buttons_on(second)
+	_press(CONFIRM_YES)
+	assert_signal_emitted_with_parameters(_page, "abandon_requested", [first])
+	assert_eq([_is_asking(), get_signal_emit_count(_page, "abandon_requested")], [false, 1], "O \"Abandonar\" do painel pede UMA vez, com o contrato PERGUNTADO (a escolha da lista mudou depois).")
+	_press(CONFIRM_YES)
+	assert_eq(get_signal_emit_count(_page, "abandon_requested"), 1, "Fechado, o painel não reenvia.")
+	assert_eq([_economy.peek_contract(first).state, _economy.peek_contract(second).state, _host.runner.world.state_hash()], [ContractBook.STATE_ACCEPTED, ContractBook.STATE_ACCEPTED, world], "A página só pede: nenhum contrato mudou e o mundo é o mesmo (quem envia é a `MarketView`).")
+
+
+func test_the_refresh_closes_the_panel_without_requesting_when_the_line_stops_being_abandonable_and_hiding_the_page_or_the_screen_does_too() -> void:
+	var held: int = _hold(LONG_MINUTES)
+	var short: int = _hold(SHORT_MINUTES)
+	_show_page()
+	_ask(held)
+	_page.refresh(_market_a, false)
+	assert_true(_is_asking(), "Ainda abandonável: a leitura seguinte mantém o painel.")
+	_page.refresh(_market_a, true)
+	assert_false(_is_asking(), "Relógio pausado: o painel fecha sozinho.")
+	_page.refresh(_market_a, false)
+	_ask(held)
+	_drop(held)
+	_page.refresh(_market_a, false)
+	assert_false(_is_asking(), "Abandonado em outro lugar: fecha sozinho.")
+	_ask(short)
+	_host.runner.run_steps(LATE_MINUTES)
+	_page.refresh(_market_a, false)
+	assert_false(_is_asking(), "Prazo vencido: fecha sozinho.")
+	var again: int = _hold(LONG_MINUTES)
+	_page.refresh(_market_a, false)
+	_ask(again)
+	_page.set_shown(false)
+	assert_false(_is_asking(), "A página esconde: o painel fecha.")
+	_page.set_shown(true)
+	_ask(again)
+	_holder.visible = false
+	assert_false(_is_asking(), "A tela esconde: o painel fecha.")
+	_holder.visible = true
+	assert_false(_is_asking(), "E não reaparece quando ela volta.")
+	assert_signal_not_emitted(_page, "abandon_requested")
+
+
+func test_the_page_passes_escape_and_interact_to_the_panel_only_while_it_is_open() -> void:
+	var held: int = _hold(LONG_MINUTES)
+	_show_page()
+	var events: Array[InputEventAction] = []
+	for action: StringName in [&"ui_cancel", InputActions.INTERACT]:
+		var event: InputEventAction = InputEventAction.new()
+		event.action = action
+		event.pressed = true
+		events.append(event)
+	assert_eq([_page.consume_cancel(events[0]), _page.consume_cancel(events[1])], [false, false], "Sem painel aberto, a página não consome nada.")
+	for event: InputEventAction in events:
+		_ask(held)
+		assert_eq([_page.consume_cancel(event), _is_asking()], [true, false], "Com o painel aberto, Esc e `interact` o cancelam e a página consome o evento.")
+	assert_signal_not_emitted(_page, "abandon_requested")
