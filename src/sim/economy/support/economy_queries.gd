@@ -222,6 +222,7 @@ static func _contract_query(state: EconomyState, contract_id: int) -> EconomyRep
 	query.deadline = contract[ContractBook.KEY_DEADLINE]
 	query.state = contract[ContractBook.KEY_STATE]
 	query.acceptor_id = contract[ContractBook.KEY_ACCEPTOR]
+	query.closed_reason = str(contract.get(ContractBook.KEY_CLOSED_REASON, ""))
 	query.place_id = str(contract.get(ContractBook.KEY_PLACE, ""))
 	query.minutes = int(contract.get(ContractBook.KEY_MINUTES, 0))
 	query.worked_minutes = int(contract.get(ContractBook.KEY_WORKED, 0))
