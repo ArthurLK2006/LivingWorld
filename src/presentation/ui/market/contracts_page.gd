@@ -8,7 +8,7 @@ extends RefCounted
 ## sinal `abandon_asked` (ninguém o ouve ainda: a fiação e a confirmação são da 107f4b e da 107f4c); Aceitar fica desativado quando o jogador já está na capacidade (só dica: a ponte decide e recusa com `economy.contract.limit`); a linha da capacidade ("n de N") fica escondida sem limite definido;
 ## e as linhas terminadas mostram "Abandonado" (com a nota de que não há multa), "Falhou" ou "Vencido", sempre diferentes entre si.
 
-## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed` e `expired`).
+## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed`, `expired`, `abandoned` e `failed`).
 const KEY_CONTRACTS_TITLE: String = "ui.contracts.title"
 const KEY_SECTION_OPEN: String = "ui.contracts.section_open"
 const KEY_SECTION_MINE: String = "ui.contracts.section_mine"

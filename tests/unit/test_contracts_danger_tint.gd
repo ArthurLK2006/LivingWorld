@@ -1,7 +1,7 @@
 extends GutTest
 ## LW-107f4a, item (b): o botão "Abandonar" do `ContractsLayout` e o matiz LOCAL de perigo dele (docs/modules/presentation.md, "Encomendas por objetivo: abandonar, confirmar e capacidade"; o `MarketTheme` NÃO muda e o layout não usa `add_theme_*`: o `self_modulate` não é item de tema).
 ## O CONTRASTE: a razão de luminância relativa (a conta do WCAG 2.x, ≥ 4,5:1 [HIP]) do texto contra o fundo do botão em `normal`, `hover` e `pressed` (o `disabled`, inativo, não conta), calculada sobre `MarketTheme.COLOR_TEXT` e `COLOR_BUTTON*` MULTIPLICADAS por
-## `DANGER_TINT` (o `self_modulate` multiplica tudo que o botão desenha: o texto e o fundo), e a mesma conta nos botões comuns como REFERÊNCIA (o piso de 4,5:1 é o que o tema já cumpre; o matiz só escurece, então o do botão de perigo é MENOR que o do comum, e o teste
+## `DANGER_TINT` (o `self_modulate` multiplica tudo que o botão desenha: o texto e o fundo; as cores de fonte de `hover`, `pressed` e `focus` que o `MarketTheme` NÃO define caem no padrão do Godot 4.7.2, mais claras que `COLOR_TEXT`, então esta conta é a CONSERVADORA: a revisão conferiu por experimento que a real dá razões iguais ou maiores), e a mesma conta nos botões comuns como REFERÊNCIA (o piso de 4,5:1 é o que o tema já cumpre; o matiz só escurece, então o do botão de perigo é MENOR que o do comum, e o teste
 ## cobra o piso, não a igualdade). Depois, o botão no layout real: o nome, o lugar entre Entregar e Fechar (a ordem de Tab é a de criação), o espaçador fixo, o nascimento desativado, o matiz só nele, e `mark_as_danger` mexendo só no `self_modulate`. Sem janela.
 
 const MIN_RATIO: float = 4.5
