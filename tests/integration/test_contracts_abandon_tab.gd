@@ -391,3 +391,16 @@ func test_opening_switching_tabs_and_asking_do_not_change_the_state_hash_and_the
 		phrases[phrase] = true
 		assert_true(_texts.has_key("economy.contract." + key) and not phrase.is_empty() and not phrase.contains("{"), "A chave 'economy.contract.%s' existe, tem texto e não deixa campo por preencher." % key)
 	assert_eq(phrases.size(), REPLY_KEYS.size(), "Cada uma das 13 chaves tem a sua frase.")
+	assert_true(_text("economy.contract.abandoned").contains("abandonada") and _text("economy.contract.limit").contains("máximo"), "Cada uma das duas frases novas diz o que a sua chave é (o abandono e o limite não se trocam).")
+
+
+func test_a_closed_screen_sends_nothing_even_when_the_page_signals_are_emitted_by_code() -> void:
+	var contract_id: int = _hold()
+	await _open_contracts()
+	await _click_row(MINE_LIST, contract_id)
+	_view.close()
+	var page: ContractsPage = _view._contracts
+	page.abandon_requested.emit(contract_id)
+	page.accept_requested.emit(contract_id)
+	page.deliver_requested.emit(contract_id)
+	assert_eq([_bridge.sent, _state_of(contract_id)], [[] as Array[String], ContractBook.STATE_ACCEPTED], "Tela fechada: os três sinais da página, emitidos por código, não enviam nada e o contrato segue aceito.")
