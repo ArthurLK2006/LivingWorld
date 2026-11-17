@@ -89,6 +89,15 @@ func test_the_merchants_are_born_in_the_market_of_each_settlement_as_the_data_de
 	assert_eq(emulation.npc.peek_routine_action(MerchantEmulation.OCCUPATION, 8).action_id, "haul", "A agenda real do comerciante é `haul` nas horas de trabalho.")
 
 
+func test_six_merchants_are_two_per_settlement_in_order() -> void:
+	var emulation: MerchantEmulation = _start(SEED, MerchantEmulation.SPREAD_NONE, 6)
+	var order: Array = []
+	for settlement: String in emulation.settlements:
+		order.append(settlement)
+	order.append_array(order.duplicate())
+	assert_eq(emulation.rows.map(func(row: MerchantEmulation.Row) -> String: return row.settlement_id), order, "O cenário principal (6): 2 por povoado, na ordem A, B, C, A, B, C.")
+
+
 func test_a_day_with_the_q7_runs_the_agenda_keeps_everyone_alive_and_checks_the_conservation() -> void:
 	assert_eq(_report.alive_count(), MERCHANTS, "Os 3 vivos.")
 	assert_gt(_report.arrivals(), 0, "Com a Q7 há comércio: a agenda `haul` roda e as viagens terminam no dia.")
@@ -107,11 +116,8 @@ func test_the_same_seed_gives_the_same_hash_and_another_seed_another() -> void:
 	var second: MerchantEmulation.Report = again.run(1)
 	assert_eq(second.state_hash, _report.state_hash, "Mesma semente, mesmo hash depois de 1 dia.")
 	assert_eq(second.rows.map(func(row: MerchantEmulation.Row) -> String: return row.describe()), _report.rows.map(func(row: MerchantEmulation.Row) -> String: return row.describe()), "E a mesma contabilidade por comerciante.")
-	var same: MerchantEmulation = _start(SEED, MerchantEmulation.SPREAD_Q7, MERCHANTS)
 	var other: MerchantEmulation = _start(2, MerchantEmulation.SPREAD_Q7, MERCHANTS)
-	same.runner.run_steps(ONE_HOUR)
-	other.runner.run_steps(ONE_HOUR)
-	assert_ne(other.runner.world.state_hash(), same.runner.world.state_hash(), "Outra semente, outro mundo (comparados no mesmo ponto: depois de 1 hora de jogo).")
+	assert_ne(other.run(1).state_hash, _report.state_hash, "Outra semente, outro mundo (o hash do fim do dia 1, tomado dentro do `run`).")
 
 
 func test_the_q7_changes_the_initial_stocks_and_prices_and_none_changes_nothing() -> void:
@@ -163,13 +169,56 @@ func test_the_row_follows_the_hunger_and_counts_a_death_once() -> void:
 	assert_string_contains(report.summary(), "alive_merchants=0/1")
 
 
+func test_a_failed_conservation_check_fails_the_report_and_a_good_day_does_not_erase_it() -> void:
+	var good_money: EconomyReplies.ConservationQuery = EconomyReplies.ConservationQuery.new(100, 100, 0)
+	var bad_money: EconomyReplies.ConservationQuery = EconomyReplies.ConservationQuery.new(101, 100, 0)
+	var good_goods: EconomyReplies.GoodsConservationQuery = EconomyReplies.GoodsConservationQuery.new([{"good_id": BREAD, "in_stock": 5, "created": 5, "destroyed": 0, "ok": true}])
+	var bad_goods: EconomyReplies.GoodsConservationQuery = EconomyReplies.GoodsConservationQuery.new([{"good_id": BREAD, "in_stock": 6, "created": 5, "destroyed": 0, "ok": false}])
+	var report: MerchantEmulation.Report = MerchantEmulation.Report.new()
+	report.record_day_check(good_money, good_goods)
+	assert_eq([report.checks, report.money_ok, report.goods_ok, report.is_sound()], [1, true, true, true], "Dia bom: o relatório segue sólido.")
+	report.record_day_check(bad_money, good_goods)
+	report.record_day_check(good_money, good_goods)
+	assert_eq([report.checks, report.money_ok, report.goods_ok, report.is_sound()], [3, false, true, false], "O dinheiro que não fechou num dia reprova, e o dia bom seguinte não apaga.")
+	var other: MerchantEmulation.Report = MerchantEmulation.Report.new()
+	other.record_day_check(good_money, bad_goods)
+	other.record_day_check(good_money, good_goods)
+	assert_eq([other.checks, other.money_ok, other.goods_ok, other.is_sound()], [2, true, false, false], "Os bens que não fecharam num dia reprovam, e o dia bom seguinte não apaga.")
+
+
 func test_the_step_statistics_are_exact_on_known_series() -> void:
 	var report: MerchantEmulation.Report = MerchantEmulation.Report.new()
 	for milliseconds: int in range(100, 0, -1):
 		report.steps_usec.append(milliseconds * 1000)
 	assert_eq([report.percentile_usec(0.5), report.percentile_usec(0.95), report.percentile_usec(0.99), report.percentile_usec(1.0), report.total_usec()], [50000, 95000, 99000, 100000, 5050000], "Mediana, p95, p99, máximo e soma, pelo posto mais próximo.")
+	report.steps_usec = PackedInt64Array([4000, 9000, 1000, 10000, 2000, 8000, 3000, 7000, 5000, 6000])
+	assert_eq([report.percentile_usec(0.5), report.percentile_usec(0.95), report.percentile_usec(0.99), report.percentile_usec(1.0)], [5000, 10000, 10000, 10000], "Dez passos fora de ordem: o posto mais próximo (a mediana é o 5º, o p95 é o 10º e não o 9º).")
 	report.steps_usec = PackedInt64Array([MerchantEmulation.FRAME_USEC, MerchantEmulation.FRAME_USEC + 1, MerchantEmulation.PEAK_USEC, MerchantEmulation.PEAK_USEC + 1, 5])
 	assert_eq([report.steps_over(MerchantEmulation.FRAME_USEC), report.steps_over(MerchantEmulation.PEAK_USEC)], [3, 1], "Só conta o que passa do limite (o igual não conta).")
+
+
+func test_the_summary_and_steps_lines_are_exact_on_a_known_report() -> void:
+	var report: MerchantEmulation.Report = MerchantEmulation.Report.new()
+	for milliseconds: int in range(100, 0, -1):
+		report.steps_usec.append(milliseconds * 1000)
+	var first: MerchantEmulation.Row = MerchantEmulation.Row.new(7, "s")
+	first.arrivals = 3
+	first.profit = 120
+	var second: MerchantEmulation.Row = MerchantEmulation.Row.new(8, "t")
+	second.arrivals = 1
+	second.profit = 30
+	report.rows.append(first)
+	report.rows.append(second)
+	report.checks = 2
+	report.state_hash = "abc"
+	var lines: PackedStringArray = report.summary().split("\n")
+	assert_eq(lines.size(), 4, "Uma linha por comerciante, a SUMMARY e a STEPS.")
+	assert_eq(lines[2], "SUMMARY alive_merchants=2/2 arrivals=4 profit=150 money_conserved=true goods_conserved=true conservation_checks=2 validate_problems=0 state_hash=abc", "A linha SUMMARY inteira.")
+	assert_eq(lines[3], "STEPS n=100 total_s=5.050 median_ms=50.000 p95_ms=95.000 p99_ms=99.000 max_ms=100.000 over_16_7ms=84 over_33ms=67", "A linha STEPS inteira (é a que alimenta o aceite de desempenho): 100 passos de 1 a 100 ms, 84 acima de 16,7 ms e 67 acima de 33 ms.")
+	assert_true(report.is_sound(), "Sem falha de conservação nem de `validate()`.")
+	report.validate_problems = 1
+	assert_false(report.is_sound(), "`validate()` com problema reprova o relatório.")
+	assert_string_contains(report.summary(), "validate_problems=1")
 
 
 func test_the_step_is_timed_around_the_whole_step_and_the_summary_prints_the_requested_fields() -> void:
@@ -183,6 +232,7 @@ func test_the_step_is_timed_around_the_whole_step_and_the_summary_prints_the_req
 func test_the_entry_point_refuses_bad_arguments_and_runs_the_emulation() -> void:
 	var node: Node = load("res://tests/soak/merchant_emulation/merchant_emulation_main.tscn").instantiate()
 	assert_eq(node.call("_run", PackedStringArray(["--merchants", "x"])), 2, "Argumento inválido: código 2, sem montar o jogo.")
+	assert_eq([node.call("_run", PackedStringArray(["--days", "-1"])), node.call("_run", PackedStringArray(["--seed", "-3"]))], [2, 2], "Número negativo: código 2.")
 	assert_eq(node.call("_run", PackedStringArray(["--merchants", "1", "--days", "0", "--spread", "foo"])), 1, "Spread inválido: o jogo não monta (código 1).")
 	assert_eq(node.call("_run", PackedStringArray(["--merchants", "1", "--days", "0"])), 0, "Argumentos válidos: monta, roda e sai com 0.")
 	node.free()

@@ -109,6 +109,12 @@ class Report:
 			count += 1 if usec > limit_usec else 0
 		return count
 
+	## A conferência do fim de um dia: uma que falha uma vez reprova o relatório, e um dia bom depois dela NÃO a apaga.
+	func record_day_check(money: EconomyReplies.ConservationQuery, goods: EconomyReplies.GoodsConservationQuery) -> void:
+		checks += 1
+		money_ok = money_ok and money.ok
+		goods_ok = goods_ok and goods.ok
+
 	## A conferência passou: dinheiro e bens conservados a cada dia e `validate()` vazio.
 	func is_sound() -> bool:
 		return money_ok and goods_ok and validate_problems == 0
@@ -199,9 +205,7 @@ func run(days: int) -> Report:
 		for row: Row in rows:
 			row.observe(npc.peek_npc(row.npc_id), hunger, runner.world.context.clock.total_minutes())
 		if (step + 1) % SimClock.MINUTES_PER_DAY == 0:
-			report.checks += 1
-			report.money_ok = report.money_ok and economy.peek_conservation().ok
-			report.goods_ok = report.goods_ok and economy.peek_goods_conservation().ok
+			report.record_day_check(economy.peek_conservation(), economy.peek_goods_conservation())
 	report.validate_problems = runner.world.validate().size()
 	report.state_hash = runner.world.state_hash()
 	return report
