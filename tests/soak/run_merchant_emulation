@@ -1,0 +1,92 @@
+#!/bin/sh
+# LW-098h0a (docs/modules/economy.md 9.15): a EMULAÇÃO de comerciantes no jogo real e o custo do PASSO inteiro, sem janela. Cria N comerciantes (2 por povoado) pela API pública do `npc`, roda D dias e imprime, por comerciante, vivo ou
+# morto (dia e hora), fome máxima e horas em fome crítica, as chegadas e o lucro; as conservações de dinheiro e de bens de cada dia; e o custo do passo de 1 minuto (mediana, p95, p99, máximo, passos acima de 16,7 e de 33 ms).
+# O corredor só LÊ e imprime: nenhum arquivo do repositório muda (em release, a cópia e o .pck ficam em $PROBE/merchant_emulation/<data e hora>, FORA do projeto).
+# USO:   tests/soak/run_merchant_emulation [--merchants N] [--days D] [--seed S] [--spread none|q7] [--compare] [--release]
+#        Padrão: 0 comerciantes, 30 dias, semente 1, spread none (o preço real dos dados). q7 = a diferença de preço da medição de 17/11/2026, nos estoques iniciais em memória (vale nos dois binários).
+#        --compare: roda a MESMA semente com 0 comerciantes e com N (1 ou mais) e imprime a diferença do tempo total e dos passos acima de 16,7 e de 33 ms.
+#        --release: o binário de RELEASE (cópia do projeto com a cena principal trocada SÓ NA CÓPIA, .pck exportado UMA vez; o método do run_npc_year_release). NÃO baixa nada: sem o binário em $PROBE/bin, recusa.
+# AJUSTES (variáveis de ambiente): GODOT_BIN, PROBE ($HOME/lw-release-probe), LW_PROBE_COPY=worktree (só para DESENVOLVER: copia a árvore de trabalho em vez do HEAD). Em depuração o projeto precisa estar importado.
+# A fonte de energia (tomada ou bateria) é IMPRESSA e nunca recusa a execução (o perfil bateria vale); o corredor avisa se ela mudar no meio, porque aí o comparativo não vale.
+set -eu
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+probe=${PROBE:-$HOME/lw-release-probe}
+scene=res://tests/soak/merchant_emulation/merchant_emulation_main.tscn
+merchants=0 days=30 seed=1 spread=none compare=0 release=0
+fail() { printf 'ERRO: %s\n' "$1" >&2; exit 1; }
+count() { case "$2" in '' | *[!0-9]*) fail "$1 pede um inteiro de 0 em diante; veio '$2'." ;; esac; }
+power() { pmset -g batt 2> /dev/null | sed -n "1s/.*'\(.*\)'.*/\1/p"; }
+field() { sed -n "s/.* $2=\([^ ]*\).*/\1/p" "$1" | tail -n 1; }
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --compare) compare=1; shift; continue ;;
+        --release) release=1; shift; continue ;;
+        --merchants | --days | --seed | --spread) [ "$#" -ge 2 ] || fail "$1 pede um valor." ;;
+        *) fail "opção '$1' desconhecida. Uso: tests/soak/run_merchant_emulation [--merchants N] [--days D] [--seed S] [--spread none|q7] [--compare] [--release]" ;;
+    esac
+    case "$1" in
+        --merchants) count "$1" "$2"; merchants=$2 ;;
+        --days) count "$1" "$2"; days=$2 ;;
+        --seed) count "$1" "$2"; seed=$2 ;;
+        --spread) spread=$2 ;;
+    esac
+    shift 2
+done
+case "$spread" in none | q7) ;; *) fail "--spread '$spread' inválido; use none ou q7." ;; esac
+{ [ "$compare" = 0 ] || [ "$merchants" -ge 1 ]; } || fail "--compare compara 0 comerciantes com N: passe --merchants 1 ou mais."
+[ -x "$godot_bin" ] || fail "Godot não encontrado em '$godot_bin'. Defina GODOT_BIN."
+"$godot_bin" --version | grep -q '^4.7.2.stable' || fail "Exige o Godot 4.7.2.stable; o seu informa: $("$godot_bin" --version)"
+
+prepare_release() {
+    release_bin=$(ls "$probe"/bin/*release* 2> /dev/null | head -n 1 || true)
+    { [ -n "$release_bin" ] && [ -x "$release_bin" ]; } || fail "binário de release não encontrado em $probe/bin. Este corredor NÃO baixa nada: para obtê-lo rode antes tests/soak/run_game_release (ele baixa os modelos oficiais do Godot e confere o SHA-512, com a sua autorização)."
+    work=$probe/merchant_emulation/$(date +%Y%m%d-%H%M%S)
+    case "$work" in "$project_dir" | "$project_dir"/*) fail "a pasta de trabalho precisa ficar FORA do projeto ($project_dir)." ;; esac
+    mkdir -p "$work/projeto" "$work/execucao"
+    if [ "${LW_PROBE_COPY:-}" = worktree ]; then
+        (cd "$project_dir" && git ls-files -co --exclude-standard | tar -T - -cf -) | tar -x -C "$work/projeto"
+    else
+        git -C "$project_dir" archive HEAD | tar -x -C "$work/projeto"
+    fi
+    sed "s|^run/main_scene=.*|run/main_scene=\"$scene\"|" "$work/projeto/project.godot" > "$work/projeto/project.godot.novo"
+    mv "$work/projeto/project.godot.novo" "$work/projeto/project.godot"
+    grep -q "^run/main_scene=\"$scene\"" "$work/projeto/project.godot" || fail "a cena principal não foi trocada na cópia (o project.godot não tem a linha run/main_scene)."
+    printf '[preset.0]\n\nname="Pacote"\nplatform="Linux"\nrunnable=false\nexport_filter="all_resources"\ninclude_filter="*.json"\nexclude_filter="addons/*"\nexport_path=""\n\n[preset.0.options]\n\nbinary_format/embed_pck=false\n' > "$work/projeto/export_presets.cfg"
+    "$godot_bin" --headless --path "$work/projeto" --import > /dev/null 2>&1 < /dev/null || true
+    "$godot_bin" --headless --path "$work/projeto" --export-pack "Pacote" "$work/game.pck" > "$work/exportacao.txt" 2>&1 < /dev/null || true
+    [ -s "$work/game.pck" ] || { cat "$work/exportacao.txt" >&2; fail "a exportação do pacote falhou (saída acima)."; }
+    cp "$release_bin" "$work/execucao/emulation_release"
+    chmod +x "$work/execucao/emulation_release"
+    cp "$work/game.pck" "$work/execucao/emulation_release.pck"
+    ! command -v codesign > /dev/null || codesign --force --sign - "$work/execucao/emulation_release" 2> /dev/null || true
+}
+
+show() { # $1 = rótulo, $2 = comerciantes, $3 = arquivo de saída: roda UMA execução e imprime só as linhas do corredor
+    printf '\n== %s\n' "$1"
+    rc=0
+    if [ "$release" = 1 ]; then
+        "$work/execucao/emulation_release" --headless -- --merchants "$2" --days "$days" --seed "$seed" --spread "$spread" < /dev/null > "$3" 2>&1 || rc=$?
+    else
+        "$godot_bin" --headless --path "$project_dir" "$scene" -- --merchants "$2" --days "$days" --seed "$seed" --spread "$spread" < /dev/null > "$3" 2>&1 || rc=$?
+    fi
+    grep -aE '^(EMULATION |MERCHANT |SUMMARY |STEPS |ERRO:)' "$3" || true
+    [ "$rc" = 0 ] || { printf -- '--- saída completa:\n' >&2; cat "$3" >&2; fail "a execução terminou com código $rc (saída acima)."; }
+    grep -aq '^STEPS ' "$3" || fail "a saída não tem a linha STEPS."
+}
+
+out=$(mktemp -d "${TMPDIR:-/tmp}/lw_emulation.XXXXXX")
+trap 'rm -rf "$out"' EXIT HUP INT TERM
+power_before=$(power)
+printf 'ENERGIA fonte=%s (só impressa: o corredor não recusa por bateria)\n' "${power_before:-desconhecida}"
+[ "$release" = 0 ] || prepare_release
+if [ "$compare" = 1 ]; then
+    show "BASE: 0 comerciantes" 0 "$out/base.txt"
+    show "COM $merchants comerciantes" "$merchants" "$out/with.txt"
+    awk -v n="$merchants" -v s="$seed" -v sp="$spread" -v bt="$(field "$out/base.txt" total_s)" -v wt="$(field "$out/with.txt" total_s)" -v b16="$(field "$out/base.txt" over_16_7ms)" -v w16="$(field "$out/with.txt" over_16_7ms)" -v b33="$(field "$out/base.txt" over_33ms)" -v w33="$(field "$out/with.txt" over_33ms)" \
+        'BEGIN { printf "\nCOMPARE merchants=%d seed=%d spread=%s total_s: base=%s with=%s delta=%+.3f (%+.1f%%) | over_16_7ms: base=%d with=%d delta=%+d | over_33ms: base=%d with=%d delta=%+d\n", n, s, sp, bt, wt, wt - bt, (bt > 0 ? (wt - bt) * 100 / bt : 0), b16, w16, w16 - b16, b33, w33, w33 - b33 }'
+else
+    show "$merchants comerciante(s)" "$merchants" "$out/run.txt"
+fi
+power_after=$(power)
+[ "$power_before" = "$power_after" ] || printf 'AVISO: a fonte de energia mudou durante a execução (de %s para %s): o comparativo NÃO vale.\n' "${power_before:-?}" "${power_after:-?}"

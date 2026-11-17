@@ -81,3 +81,14 @@ A versão curta, `npc_year/test_npc_year_short.gd` (1 dia, 300 NPCs, cerca de 13
 tests/soak/run_npc_year_release base                 # 30 dias, 3 execuções, com controle (cerca de 9 minutos)
 DAYS=360 RUNS=1 CONTROL=0 tests/soak/run_npc_year_release base   # um ano sem controle (cerca de 15 minutos)
 ```
+
+## Emulação de comerciantes (LW-098h0a)
+
+`run_merchant_emulation` cria N comerciantes no jogo real (2 por povoado, no mercado, em casas que já existem, pela API pública do `npc`; o mundo real só os terá na LW-098h5), roda D dias sem janela e imprime, por comerciante, vivo ou morto (dia e hora), fome máxima, horas em fome crítica, chegadas e lucro, as conservações de dinheiro e de bens a cada dia e o custo do passo inteiro de 1 minuto (mediana, p95, p99, máximo, passos acima de 16,7 e de 33 ms). Só lê e imprime: nenhum arquivo do repositório muda.
+
+```bash
+tests/soak/run_merchant_emulation --merchants 6 --days 30 --seed 1 --compare   # a mesma semente com 0 e com 6, e a diferença
+tests/soak/run_merchant_emulation --merchants 3 --days 10 --spread q7 --release # a diferença de preço Q7 no binário de release
+```
+
+Opções: `--merchants N` (0), `--days D` (30), `--seed S` (1), `--spread none|q7` (none: o preço real dos dados; q7: a diferença de preço da medição de 17/11/2026, aplicada nos `initial_stock` em memória ANTES de o jogo começar, o que vale em depuração e em release; o `request_set_stock` só existe em depuração), `--compare` e `--release` (exporta o `.pck` UMA vez e usa o binário de `$HOME/lw-release-probe/bin`; NÃO baixa nada e recusa se ele não existir). A fonte de energia é impressa e nunca recusa a execução. Teste curto: `tests/unit/test_merchant_emulation.gd` (3 comerciantes, 1 dia) e `tests/test_merchant_emulation_runner.sh` (o corredor com um Godot e um binário de release falsos).
