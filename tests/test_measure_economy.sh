@@ -29,6 +29,18 @@ awk -F, -v header="$header" 'BEGIN { n = split(header, names, ",") ; for (i = 1;
              if (NR == 2) { total = $col["money_total"] } else if ($col["money_total"] != total) { bad += 1 } }
     END { exit (bad > 0) }' "$second" || { echo 'FALHA: algum dia com problema de validação, conservação quebrada ou dinheiro total variando'; exit 1; }
 echo 'OK: validate() vazio, dinheiro e bens conservados e dinheiro total constante em todos os dias'
+# Colunas de comerciantes (LW-098h4): os seis nomes, em ordem, no FIM e logo depois de goods_ok (as antigas não se mexem); contas coerentes em todo dia (em viagem mais held cabem
+# nos vivos, viagens e lucro nunca descem, sem vivos a maior fome é 0, sem viagem o lucro é 0); sem comerciante no dia 0 (o jogo de hoje) tudo vale 0 em todos os dias.
+tail_names='goods_ok,merchants_alive,merchants_travelling,merchants_held,merchants_trips,merchants_profit,merchants_hunger_max'
+[ "$(head -n 1 "$second" | awk -F, '{ for (i = NF - 6; i <= NF; i++) printf "%s%s", $i, (i < NF ? "," : "") }')" = "$tail_names" ] || { echo "FALHA: o cabeçalho deveria terminar em '$tail_names'"; head -n 1 "$second"; exit 1; }
+awk -F, -v header="$header" 'BEGIN { n = split(header, names, ",") ; for (i = 1; i <= n; i++) col[names[i]] = i }
+    NR > 1 { alive = $col["merchants_alive"]; trips = $col["merchants_trips"]; profit = $col["merchants_profit"]; hunger = $col["merchants_hunger_max"]
+             if ($col["merchants_travelling"] + $col["merchants_held"] > alive || (alive == 0 && hunger != 0) || (trips == 0 && profit != 0) || trips < last_trips || profit < last_profit) { bad += 1 }
+             if (NR == 2) { none_at_start = (alive == 0) }
+             if (none_at_start && alive + $col["merchants_travelling"] + $col["merchants_held"] + trips + profit + hunger != 0) { bad += 1 }
+             last_trips = trips; last_profit = profit }
+    END { exit (bad > 0) }' "$second" || { echo 'FALHA: colunas de comerciantes incoerentes (ou diferentes de 0 num jogo sem comerciante no dia 0)'; exit 1; }
+echo 'OK: colunas de comerciantes no fim, coerentes e todas 0 num jogo sem comerciante'
 "$runner" --days 3 --seed 1 < /dev/null > "$output" 2>&1
 table_of "$output" > "$second.again"
 cmp -s "$second" "$second.again" || { rm -f "$second.again"; echo 'FALHA: a mesma semente deveria dar a mesma tabela'; exit 1; }
@@ -60,4 +72,4 @@ if "$runner" --verbose < /dev/null > "$output" 2>&1; then
     echo 'FALHA: opção desconhecida deveria falhar'; exit 1
 fi
 echo 'OK: argumento inválido, dias negativos e opção desconhecida rejeitados'
-echo 'measure_economy: aprovado em 6 casos válidos e 3 inválidos.'
+echo 'measure_economy: aprovado em 7 casos válidos e 3 inválidos.'

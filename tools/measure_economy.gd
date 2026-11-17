@@ -6,7 +6,9 @@ extends SceneTree
 ## criado e destruído; dinheiro por tipo de dono (`money_*`: NPC vivo, NPC morto, local de produção, mercado e o resto, que é o
 ## que a conservação soma além disso, como jogador e contratos); locais de produção por estado (o motivo da parada) e postos;
 ## comida por povoado (no mercado e nos inventários dos NPCs vivos); maior e menor preço de tabela por bem entre os mercados;
-## e a conferência do dia (`validate`, conservação do dinheiro e dos bens). Com `--markets`, depois da tabela vêm linhas que
+## e a conferência do dia (`validate`, conservação do dinheiro e dos bens). No FIM vêm as colunas de comerciantes (`merchants_*`,
+## `MerchantCells`, LW-098h4: vivos, em viagem, `held`, viagens concluídas, lucro realizado e a maior fome; valem 0 sem comerciante e
+## nenhuma coluna antiga muda). Com `--markets`, depois da tabela vêm linhas que
 ## começam com `#`: o estado dos mercados no último dia, que serve para calcular a melhor viagem de um comerciante.
 ## Não grava nada em disco: tudo sai pelo stdout. Sai com 0 se todos os dias fecharam sem problema; com 1 se não ou se o
 ## argumento for inválido. A semente só é aceita por `SimulationHostNode.start_new_game`: o `start_default_game` usa sempre
@@ -22,6 +24,8 @@ var _app: GameAppNode
 var _settlements: Array[String] = []
 var _goods: Array[String] = []
 var _food_goods: Array[String] = []
+## As colunas de comerciantes (LW-098h4): criada logo depois de o jogo começar, antes do primeiro passo, para ouvir todos os `CaravanArrived`.
+var _merchants: MerchantCells
 
 
 func _initialize() -> void:
@@ -58,6 +62,7 @@ func _initialize() -> void:
 		_fail(start_error if not start_error.is_empty() else "o jogo começou sem os módulos economy e npc (terreno ou dados não carregaram)")
 		return
 	_discover_names()
+	_merchants = MerchantCells.new(_host.npc, _host.economy, _host.runner.world.context.events)
 	var header: PackedStringArray = _header()
 	print(COLUMN_SEPARATOR.join(header))
 	var is_valid: bool = true
@@ -133,6 +138,7 @@ func _header() -> PackedStringArray:
 		cells.append("made_" + good_id)
 		cells.append("used_" + good_id)
 	cells.append_array(PackedStringArray(["problems", "money_ok", "goods_ok"]))
+	cells.append_array(PackedStringArray(MerchantCells.COLUMNS))
 	return cells
 
 
@@ -158,6 +164,7 @@ func _row(day: int) -> PackedStringArray:
 	cells.append_array(_goods_cells())
 	var conservation: EconomyReplies.ConservationQuery = _host.economy.peek_conservation()
 	cells.append_array(PackedStringArray([str(_host.runner.world.validate().size()), "1" if conservation.ok else "0", "1" if _host.economy.peek_goods_conservation().ok else "0"]))
+	cells.append_array(_merchants.row())
 	return cells
 
 

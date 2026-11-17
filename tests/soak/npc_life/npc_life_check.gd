@@ -6,7 +6,8 @@ extends RefCounted
 ## `world.validate()` e o `validate()` do módulo limpos ao fim de cada dia; o máximo de pensamentos por passo dentro do teto (linha I5
 ## do backlog). Devolve um relatório com os problemas achados e com números para o relatório da tarefa (quanto tempo a comida ficou em zero,
 ## o maior tempo parado, o hash final). Usado pela versão curta (check_all) e pela de 30 dias (tests/soak). Código de teste: usa o relógio
-## do sistema só para medir o tempo de parede.
+## do sistema só para medir o tempo de parede. LW-098h1 (docs/modules/economy.md, 9.15.3): com `with_economy` o jogo leva a economia e as rotas reais e o
+## comerciante em trânsito legítimo (`is_transit_exempt`) não conta como parado; a isenção mora só aqui, nunca no `npc`, e sem `with_economy` nada muda.
 
 const DATA_DIR: String = "res://data"
 const WORLD_DIR: String = "res://data/world"
@@ -16,6 +17,11 @@ const SAMPLE_EVERY_MIN: int = 15
 ## [HIP] Maior tempo (minutos de jogo) que um NPC pode ficar sem NENHUMA ação: entre o fim de uma ação e o pensamento seguinte passam até
 ## o intervalo de pensamento (10 min) e a espera na fila; uma hora é folga larga. Parado por mais que isso é defeito.
 const MAX_IDLE_MIN: int = 60
+## [HIP] Folga (minutos de jogo) depois do ETA da caravana em que o comerciante em trânsito ainda não é acusado: uma amostra (contrato 9.15.3, D2; a 098h5 a reavalia
+## com a medição). A chegada é conferida a cada passo, então só um registro preso passa do ETA.
+const TRANSIT_MARGIN_MIN: int = 15
+## O ofício do comerciante (data/occupations.json): só quem o tem pode ser isento, e só com caravana (nunca por ofício).
+const MERCHANT_OCCUPATION: String = "merchant"
 ## Para não encher o relatório com o mesmo defeito repetido a cada passo.
 const MAX_PROBLEMS: int = 30
 ## Quantos NPCs devem estar vivos o tempo todo (a população do jogo, data/population.json).
@@ -55,12 +61,14 @@ class LifeReport:
 		]
 
 
-## O jogo em andamento: o runner e o módulo `npc` dele.
+## O jogo em andamento: o runner e o módulo `npc` dele; a `economy` e o `world` (as rotas) só com `with_economy` (senão nulos e o verificador não confere trânsito).
 class Game:
 	extends RefCounted
 
 	var runner: SimulationRunner
 	var npc: NpcModule
+	var economy: EconomyModule
+	var world: WorldModule
 
 
 static func load_game_data() -> GameData:
@@ -85,11 +93,12 @@ static func load_game_data() -> GameData:
 
 
 ## Anda `days` dias de jogo e confere os invariantes. `reload_after_days` maior que zero: nesse dia salva (codec JSON), carrega num runner NOVO
-## e segue dali (o hash final precisa ser o mesmo da execução direta).
-static func run(data: GameData, world_seed: int, days: int, reload_after_days: int = 0) -> LifeReport:
+## e segue dali (o hash final precisa ser o mesmo da execução direta). `with_economy` (LW-098h1; padrão falso: o jogo e o hash de sempre): monta como o jogo real,
+## com a economia e as rotas de data/ (`EconomySetup` e `WorldSetup`), e a amostra isenta o comerciante em trânsito legítimo.
+static func run(data: GameData, world_seed: int, days: int, reload_after_days: int = 0, with_economy: bool = false) -> LifeReport:
 	var report: LifeReport = LifeReport.new()
 	var started_usec: int = Time.get_ticks_usec()
-	var game: Game = _new_game(data, world_seed, report)
+	var game: Game = _new_game(data, world_seed, report, with_economy)
 	if game == null:
 		return report
 	var codec: JsonSaveCodec = JsonSaveCodec.new()
@@ -99,13 +108,13 @@ static func run(data: GameData, world_seed: int, days: int, reload_after_days: i
 	var idle_samples: Dictionary[int, int] = {}
 	for minute: int in days * SimClock.MINUTES_PER_DAY:
 		if reload_after_days > 0 and minute == reload_after_days * SimClock.MINUTES_PER_DAY:
-			game = _reload(game, data, world_seed, codec, report)
+			game = _reload(game, data, world_seed, codec, report, with_economy)
 			if game == null:
 				return report
 		game.runner.step_once()
 		check_food(game.npc, settlement_ids, report)
 		if (minute + 1) % SAMPLE_EVERY_MIN == 0:
-			check_npcs(game.npc, EXPECTED_POPULATION, idle_samples, report, minute + 1)
+			check_npcs(game.npc, EXPECTED_POPULATION, idle_samples, report, minute + 1, game.economy, game.world)
 		if (minute + 1) % SimClock.MINUTES_PER_DAY == 0:
 			_check_day_end(game, report, minute + 1)
 	report.minutes = game.runner.world.context.clock.total_minutes()
@@ -132,8 +141,9 @@ static func check_food(npc: NpcModule, settlement_ids: Array[String], report: Li
 
 
 ## Amostra os NPCs: todos vivos, necessidades de 0 a 100 e nenhum parado sem ação por mais de MAX_IDLE_MIN. `idle_samples` guarda, por NPC,
-## quantas amostras seguidas ele ficou sem ação.
-static func check_npcs(npc: NpcModule, expected_alive: int, idle_samples: Dictionary[int, int], report: LifeReport, minute: int) -> void:
+## quantas amostras seguidas ele ficou sem ação. LW-098h1: com `economy` (e o `world` das rotas), `minute` é o minuto de simulação (o relógio) e o comerciante em
+## trânsito legítimo (`is_transit_exempt`) não soma ociosidade e zera o contador; sem os dois (o padrão) a amostra é a de sempre.
+static func check_npcs(npc: NpcModule, expected_alive: int, idle_samples: Dictionary[int, int], report: LifeReport, minute: int, economy: EconomyModule = null, world: WorldModule = null) -> void:
 	var alive: int = 0
 	for npc_id: int in npc.peek_npc_ids():
 		var query: NpcModule.NpcQuery = npc.peek_npc(npc_id)
@@ -144,7 +154,7 @@ static func check_npcs(npc: NpcModule, expected_alive: int, idle_samples: Dictio
 		for position: int in query.need_values.size():
 			if query.need_values[position] < NpcState.VALUE_MIN or query.need_values[position] > NpcState.VALUE_MAX:
 				add_problem(report, "minuto %d: o NPC %d tem a necessidade %d em %d (fora de 0 a 100)" % [minute, npc_id, position, query.need_values[position]])
-		if query.action_id.is_empty():
+		if query.action_id.is_empty() and not is_transit_exempt(query, economy, world, minute):
 			idle_samples[npc_id] = int(idle_samples.get(npc_id, 0)) + 1
 			report.max_idle_min = maxi(report.max_idle_min, idle_samples[npc_id] * SAMPLE_EVERY_MIN)
 			if idle_samples[npc_id] * SAMPLE_EVERY_MIN > MAX_IDLE_MIN:
@@ -156,13 +166,33 @@ static func check_npcs(npc: NpcModule, expected_alive: int, idle_samples: Dictio
 		add_problem(report, "minuto %d: %d NPC(s) vivo(s); esperado %d" % [minute, alive, expected_alive])
 
 
+## O NPC sem ação (`query`) é um comerciante em trânsito LEGÍTIMO (docs/modules/economy.md, 9.15.3)? SÓ se TODAS valem: há `economy`; ele está vivo e tem o ofício `merchant`
+## (ser comerciante é UMA das condições, nunca basta); `peek_caravan` responde sem falha e com registro; a saída é de `minute` ou antes; e o registro está `travelling` com
+## `minute` até o ETA mais TRANSIT_MARGIN_MIN, ou `held` com alguma rota, do trecho atual em diante, FECHADA no `world`. Falha, registro inconsistente ou estado desconhecido: não
+## é isento. Só lê (`peek_*`).
+static func is_transit_exempt(query: NpcModule.NpcQuery, economy: EconomyModule, world: WorldModule, minute: int) -> bool:
+	if economy == null or not query.is_alive or query.occupation_id != MERCHANT_OCCUPATION:
+		return false
+	var caravan: CaravanReplies.CaravanQuery = economy.peek_caravan(query.npc_id)
+	if not caravan.result.ok or not caravan.found or caravan.departed_at > minute:
+		return false
+	if caravan.state == Caravan.STATE_TRAVELLING:
+		return minute <= caravan.eta_minute + TRANSIT_MARGIN_MIN
+	if caravan.state != Caravan.STATE_HELD or world == null or caravan.leg_index < 0:
+		return false
+	for leg: int in range(caravan.leg_index, caravan.route_ids.size()):
+		if world.peek_route(caravan.route_ids[leg]).state == WorldModule.STATE_CLOSED:
+			return true
+	return false
+
+
 static func add_problem(report: LifeReport, text: String) -> void:
 	if report.problems.size() < MAX_PROBLEMS:
 		report.problems.append(text)
 
 
 ## Jogo novo igual ao do jogo real: conjunto de dados do `npc` novo a cada execução (o FoodStub tem estado e não pode ser dividido).
-static func _new_game(data: GameData, world_seed: int, report: LifeReport) -> Game:
+static func _new_game(data: GameData, world_seed: int, report: LifeReport, with_economy: bool = false) -> Game:
 	if not data.problem.is_empty():
 		add_problem(report, "dados do jogo: %s" % data.problem)
 		return null
@@ -172,17 +202,33 @@ static func _new_game(data: GameData, world_seed: int, report: LifeReport) -> Ga
 		return null
 	var game: Game = Game.new()
 	game.runner = SimulationRunner.new(world_seed)
-	var modules: GameModules = GameModules.register(game.runner, data.terrain, data.points, setup)
+	var modules: GameModules = _register(game.runner, data, setup, with_economy)
 	if not modules.result.ok:
 		add_problem(report, "módulos do jogo: %s" % modules.result.message)
 		return null
-	game.npc = modules.npc
+	_attach(game, modules, with_economy)
 	game.runner.start_new_game()
 	return game
 
 
+## Registra os módulos no `runner`: `with_economy` falso, só o terreno e os pontos (a economia sem mercados e o `world` sem rotas, o jogo do verificador de sempre); verdadeiro,
+## também os dados da economia e das rotas, como o jogo real monta (`GameModules.register`).
+static func _register(runner: SimulationRunner, data: GameData, setup: NpcSetup, with_economy: bool) -> GameModules:
+	if not with_economy:
+		return GameModules.register(runner, data.terrain, data.points, setup)
+	return GameModules.register(runner, data.terrain, data.points, setup, EconomySetup.from_dir(EconomySetup.DEFAULT_DIR), WorldSetup.from_dir(WORLD_DIR, data.settlements))
+
+
+## O `npc` do jogo e, só com `with_economy`, a `economy` e o `world` (nulos sem ela: a amostra não confere trânsito).
+static func _attach(game: Game, modules: GameModules, with_economy: bool) -> void:
+	game.npc = modules.npc
+	if with_economy:
+		game.economy = modules.economy
+		game.world = modules.world
+
+
 ## Salva o jogo atual (codec JSON), carrega num runner NOVO com os mesmos módulos e dados novos, e descarta o antigo.
-static func _reload(old: Game, data: GameData, world_seed: int, codec: JsonSaveCodec, report: LifeReport) -> Game:
+static func _reload(old: Game, data: GameData, world_seed: int, codec: JsonSaveCodec, report: LifeReport, with_economy: bool = false) -> Game:
 	var hash_before: String = old.runner.world.state_hash()
 	var decoded: DecodedSave = codec.decode(codec.encode(old.runner.capture_game(), GAME_VERSION))
 	if not decoded.result.ok:
@@ -190,7 +236,7 @@ static func _reload(old: Game, data: GameData, world_seed: int, codec: JsonSaveC
 		return null
 	var setup: NpcSetup = NpcSetup.from_dir(DATA_DIR, SettlementService.new(data.settlements, data.places))
 	var restored: SimulationRunner = SimulationRunner.new(world_seed)
-	var modules: GameModules = GameModules.register(restored, data.terrain, data.points, setup)
+	var modules: GameModules = _register(restored, data, setup, with_economy)
 	if not modules.result.ok:
 		add_problem(report, "salvar e carregar, módulos: %s" % modules.result.message)
 		return null
@@ -203,7 +249,7 @@ static func _reload(old: Game, data: GameData, world_seed: int, codec: JsonSaveC
 	old.runner.finish()
 	var game: Game = Game.new()
 	game.runner = restored
-	game.npc = modules.npc
+	_attach(game, modules, with_economy)
 	return game
 
 
