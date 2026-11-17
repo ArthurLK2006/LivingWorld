@@ -108,6 +108,13 @@ func _hold(minutes: int) -> int:
 	return contract_id
 
 
+## O jogador leva o pão do mercado A e entrega o contrato que aceitou, só pela economia: ele termina `completed`.
+func _finish(contract_id: int) -> int:
+	assert_true(_economy.request_transfer_goods(_market_a, _actor_id, BREAD, QUANTITY).ok)
+	assert_true(_economy.request_deliver_contract(contract_id).ok)
+	return contract_id
+
+
 ## O jogador abandona pela ponte o contrato que aceitou.
 func _drop(contract_id: int) -> int:
 	var abandoned: BridgePlayerContractsReplies.ContractActionReply = _bridge.request_contract_abandon(_actor_id, contract_id)
@@ -125,12 +132,13 @@ func _show(bridge: SimBridge) -> void:
 	_page.refresh(_market_a, false)
 
 
-## Um quadro com um contrato de cada situação, lido 40 minutos depois da hora cheia e mostrado pela página: `held` (aceito, no prazo), `late` (aceito, com o prazo passado e ainda `accepted`), `dropped` (abandonado) e `fresh` (aberto).
+## Um quadro com um contrato de cada situação, lido 40 minutos depois da hora cheia e mostrado pela página: `held` (aceito, no prazo), `late` (aceito, com o prazo passado e ainda `accepted`), `dropped` (abandonado), `done` (entregue, `completed`) e `fresh` (aberto).
 func _build_board() -> Dictionary[String, int]:
 	var ids: Dictionary[String, int] = {}
 	ids["held"] = _hold(LONG_MINUTES)
 	ids["late"] = _hold(SHORT_MINUTES)
 	ids["dropped"] = _drop(_hold(LONG_MINUTES))
+	ids["done"] = _finish(_hold(LONG_MINUTES))
 	ids["fresh"] = _post(LONG_MINUTES)
 	_host.runner.run_steps(LATE_MINUTES)
 	_show(_bridge)
@@ -192,7 +200,7 @@ func _edited(edit: Callable) -> EditedBridge:
 func test_abandon_is_enabled_only_for_my_accepted_contract_in_time_with_the_clock_running_and_announces_that_contract() -> void:
 	var ids: Dictionary[String, int] = _build_board()
 	assert_eq([(_node(ABANDON) as Button).text, _say("abandon").is_empty()], [_say("abandon"), false], "O texto do botão vem da chave.")
-	assert_eq([_buttons_on(ids["held"]), _buttons_on(ids["late"]), _buttons_on(ids["dropped"]), _buttons_on(ids["fresh"])], [[false, true], [true, true], [true, true], [true, false]], "[Abandonar, Aceitar] desativados: só o aceito no prazo se abandona, e só o aberto se aceita.")
+	assert_eq([_buttons_on(ids["held"]), _buttons_on(ids["late"]), _buttons_on(ids["dropped"]), _buttons_on(ids["done"]), _buttons_on(ids["fresh"])], [[false, true], [true, true], [true, true], [true, true], [true, false]], "[Abandonar, Aceitar] desativados: só o aceito no prazo se abandona (o abandonado e o entregue não), e só o aberto se aceita.")
 	_buttons_on(ids["held"])
 	(_node(ABANDON) as Button).pressed.emit()
 	assert_signal_emitted_with_parameters(_page, "abandon_asked", [ids["held"]])
@@ -209,6 +217,7 @@ func test_abandon_is_enabled_only_for_my_accepted_contract_in_time_with_the_cloc
 func test_accept_is_held_back_at_the_capacity_and_the_capacity_line_counts_n_of_n_without_the_expired_one() -> void:
 	var ids: Dictionary[String, int] = _build_board()
 	assert_eq([_shown_capacity(), _buttons_on(ids["fresh"])[1]], [_expected_capacity(1), false], "Um aceito no prazo (o vencido não conta): 1 de 3, e Aceitar habilitado.")
+	assert_string_contains(_shown_capacity(), "1 de 3", "A frase da chave traz os dois números, aceitos e limite, nessa ordem (o esperado acima sai da mesma chave).")
 	_hold(LONG_MINUTES)
 	_hold(LONG_MINUTES)
 	_page.refresh(_market_a, false)
@@ -248,6 +257,7 @@ func test_each_finished_row_shows_its_own_label_and_note_and_the_abandon_is_neve
 	var ids: Dictionary[String, int] = _build_board()
 	var shown: Array = [_shown_of(ids["dropped"]), _shown_of(ids["late"])]
 	_show(_edited(func(row: BridgePlayerContractsReplies.ContractBoardRow) -> void: row.closed_reason = ""))
+	assert_eq(_buttons_on(ids["dropped"]), [true, true] as Array[bool], "O `failed` sem motivo (a falha real) também não se abandona.")
 	shown.append(_shown_of(ids["dropped"]))
 	assert_eq(shown, [[_say("state.abandoned"), [true, false, false, true, false]], [_say("state.expired"), [false, false, true, false, true]], [_say("state.failed"), [false, true, false, false, false]]], "Abandonado (com a nota de que não há multa), Vencido (com a nota do prazo) e Falhou (sem nota): cada um com o seu rótulo, na lista e no detalhe.")
 
