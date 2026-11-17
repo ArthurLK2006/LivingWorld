@@ -48,6 +48,7 @@ expect 'o --compare roda a base (0) E a execução com N, nessa ordem' "$(grep -
 expect_has 'a diferença do tempo total' "$out" 'total_s: base=10.000 with=15.000 delta=+5.000 (+50.0%)'
 expect_has 'a diferença dos passos acima de 16,7 ms' "$out" 'over_16_7ms: base=2 with=22 delta=+20'
 expect_has 'a diferença dos passos acima de 33 ms' "$out" 'over_33ms: base=0 with=5 delta=+5'
+expect_has 'a NOTA: o aceite vale como AUMENTO sobre a BASE' "$out" 'AUMENTO sobre a BASE'
 for bad in '--foo' '--merchants abc' '--days' '--spread foo' '--compare' '--seed -1'; do
     corridor $bad
     expect "recusa '$bad' com código 1, sem rodar o Godot" "$rc $(godot_runs)" '1 0'
@@ -63,10 +64,15 @@ expect 'exporta o .pck UMA vez' "$(grep -c -e '--export-pack' "$work/log")" 1
 expect 'roda o binário de release 2 vezes (base e N) e o Godot do editor nenhuma' "$(grep -c '^RELEASE --headless -- --merchants' "$work/log") $(godot_runs)" '2 0'
 expect_has 'a saída é do build de release' "$out" 'EMULATION build=release'; expect_has 'e traz a comparação' "$out" 'delta=+5.000 (+50.0%)'
 copy=$(ls -d "$work"/probe_cheio/merchant_emulation/*/projeto/project.godot)
+expect 'o .pck exportado fica ao lado do binário de release da cópia' "$(cat "$(ls -d "$work"/probe_cheio/merchant_emulation/*/execucao/emulation_release.pck)")" pck
 expect 'a cena principal é trocada na CÓPIA' "$(grep -c "^run/main_scene=\"$scene\"" "$copy")" 1
 expect 'e o projeto de mentira NÃO muda' "$(grep -c 'res://scenes/main.tscn' "$proj/project.godot")" 1
 expect 'nenhum curl nem wget no release' "$(wc -c < "$work/net" | tr -d ' ')" 0
+export FAKE_PM_SWITCH_AT=1
+corridor --merchants 1 --days 1
+expect 'na bateria desde o começo: roda e NÃO recusa' "$rc" 0; expect_has 'a fonte impressa é a bateria' "$out" 'ENERGIA fonte=Battery Power'
+expect_lacks 'sem aviso quando a bateria não muda' "$out" 'AVISO'
 export FAKE_PM_SWITCH_AT=2
 corridor --merchants 1 --days 1
 expect 'a fonte de energia mudou no meio: avisa e NÃO recusa' "$rc" 0; expect_has 'o aviso de energia' "$out" 'AVISO: a fonte de energia mudou'
-echo 'run_merchant_emulation: aprovado (depuração, --compare, 6 recusas, release sem e com binário, aviso de energia).'
+echo 'run_merchant_emulation: aprovado (depuração, --compare, 6 recusas, release sem e com binário, bateria sem recusa, aviso de energia).'

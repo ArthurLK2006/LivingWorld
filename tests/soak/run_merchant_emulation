@@ -1,5 +1,5 @@
 #!/bin/sh
-# LW-098h0a (docs/modules/economy.md 9.15): a EMULAÇÃO de comerciantes no jogo real e o custo do PASSO inteiro, sem janela. Cria N comerciantes (2 por povoado) pela API pública do `npc`, roda D dias e imprime, por comerciante, vivo ou
+# LW-098h0a (docs/modules/economy.md 9.15): a EMULAÇÃO de comerciantes no jogo real e o custo do PASSO inteiro, sem janela. Cria N comerciantes (um por povoado, em ordem; com 6, dois por povoado) pela API pública do `npc`, roda D dias e imprime, por comerciante, vivo ou
 # morto (dia e hora), fome máxima e horas em fome crítica, as chegadas e o lucro; as conservações de dinheiro e de bens de cada dia; e o custo do passo de 1 minuto (mediana, p95, p99, máximo, passos acima de 16,7 e de 33 ms).
 # O corredor só LÊ e imprime: nenhum arquivo do repositório muda (em release, a cópia e o .pck ficam em $PROBE/merchant_emulation/<data e hora>, FORA do projeto).
 # USO:   tests/soak/run_merchant_emulation [--merchants N] [--days D] [--seed S] [--spread none|q7] [--compare] [--release]
@@ -85,6 +85,7 @@ if [ "$compare" = 1 ]; then
     show "COM $merchants comerciantes" "$merchants" "$out/with.txt"
     awk -v n="$merchants" -v s="$seed" -v sp="$spread" -v bt="$(field "$out/base.txt" total_s)" -v wt="$(field "$out/with.txt" total_s)" -v b16="$(field "$out/base.txt" over_16_7ms)" -v w16="$(field "$out/with.txt" over_16_7ms)" -v b33="$(field "$out/base.txt" over_33ms)" -v w33="$(field "$out/with.txt" over_33ms)" \
         'BEGIN { printf "\nCOMPARE merchants=%d seed=%d spread=%s total_s: base=%s with=%s delta=%+.3f (%+.1f%%) | over_16_7ms: base=%d with=%d delta=%+d | over_33ms: base=%d with=%d delta=%+d\n", n, s, sp, bt, wt, wt - bt, (bt > 0 ? (wt - bt) * 100 / bt : 0), b16, w16, w16 - b16, b33, w33, w33 - b33 }'
+    printf 'NOTA: a regra de aceite de desempenho (docs/modules/economy.md, 9.15.4) vale como AUMENTO sobre a BASE acima, e não como valor absoluto: o corredor mede o passo INTEIRO e a base (0 comerciantes) já tem passos acima de 16,7 e de 33 ms; repita a comparação para separar o efeito do ruído.\n'
 else
     show "$merchants comerciante(s)" "$merchants" "$out/run.txt"
 fi
