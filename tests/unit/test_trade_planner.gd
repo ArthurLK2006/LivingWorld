@@ -522,13 +522,13 @@ func test_the_precheck_keeps_a_plan_that_reaches_the_minimum_gain_exactly() -> v
 
 func test_the_precheck_spares_the_curves_and_the_balance_search() -> void:
 	var stable: Rig = _rig(_spec(100, 100, 100), _funds())
-	assert_eq(_work_of(stable, _params(), false), [8, 0, 8], "Sem diferença de preço, cada um dos 2 candidatos custa só as 4 cotações da margem da 1ª unidade (8 unidades) e nenhuma curva.")
+	assert_eq(_work_of(stable, _params(), false), [3, 0, 3], "Sem diferença de preço, os 2 candidatos custam só as cotações da margem da 1ª unidade (3: a compra na origem, que a memória da chamada reparte entre os 2 destinos, e a venda em cada um; 3 unidades) e nenhuma curva.")
 	assert_eq(_work_of(stable, _params(), true), [0, 4, 200], "A busca completa pede as 2 curvas de cada candidato (50 unidades de custo e 50 de receita) e nenhuma cotação avulsa, no mesmo mundo.")
 	var small_gap: Rig = _rig(_spec(100, 70, 100), _funds())
 	var spread: int = _first_spread(small_gap, "bread")
 	assert_gt(spread, 0, "Controle: a 1ª unidade rende um pouco.")
 	var order: int = PriceMath.ceil_div(_params().min_net_profit, spread)
-	assert_eq(_work_of(small_gap, _params(), false, order), [8, 0, 8], "O maior lote (%d) cobre o lucro mínimo mas não o custo de tempo: também só as 4 cotações por candidato e nenhuma curva." % order)
+	assert_eq(_work_of(small_gap, _params(), false, order), [3, 0, 3], "O maior lote (%d) cobre o lucro mínimo mas não o custo de tempo: também só as cotações da 1ª unidade (3, a compra repartida) e nenhuma curva." % order)
 	assert_eq(_work_of(small_gap, _params(), true, order), [0, 4, 4 * order], "A busca completa pede as 2 curvas de cada candidato (%d unidades de custo e %d de receita), no mesmo mundo." % [order, order])
 	assert_eq(_work_of(_rig(_spec(100, 70, 100), _funds(30)), _params(), true), [0, 4, 104], "Com 30 de saldo o lote financiado é 2 (11 por unidade): cada candidato pede a curva de custo inteira (50 unidades) e a de receita só até 2.")
 	for test_case: Dictionary in _no_room_cases():

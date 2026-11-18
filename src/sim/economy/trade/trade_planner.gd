@@ -1,6 +1,6 @@
 class_name TradePlanner
 extends RefCounted
-## O planejador de lucro do comerciante (LW-098b; docs/modules/economy.md, 9.5): função PURA e compartilhada (o `TradeFlow` e o SP7 a reusam). Só LÊ (cotações, saldos, estoques, parâmetros): não move dinheiro nem bem, não cria estado e não publica evento; INTEIROS, sem sorteio.
+## O planejador de lucro do comerciante (LW-098b; docs/modules/economy.md, 9.5): função PURA e compartilhada (o `TradeFlow` e o SP7 a reusam). Só LÊ (cotações, saldos, estoques, parâmetros): não move dinheiro nem bem, não cria estado e não publica evento; INTEIROS, sem sorteio. Lembra as cotações e os lotes máximos só até o fim de cada chamada pública (LW-098h3c2, `_quote` e `_upper_quantity`): entre chamadas não guarda nada.
 ## Para o comerciante `T` na origem `O` e cada destino `D` (o caminho já resolvido e aberto, `RouteCost.Leg`), cada bem `g` negociado nos dois mercados é um candidato. `q_max` = o menor de: peso livre de T ÷ peso do bem; estoque de O menos a reserva (`origin_reserve_bp` do ALVO de O);
 ## teto de compra de D menos o estoque de D; `max_order_quantity`; e o que o saldo de T paga. `custo(q)` e `receita(q)` saem do `TradeEngine`: a cotação de UMA quantidade (`quote`) ou a curva de 1 a N unidades numa passada (`quote_curve`: as mesmas conferências e a mesma aritmética, `totals[q]` igual a `quote(q)`),
 ## sempre pelas regras (tarifa e `banned` entram sem mudar código); a receita não passa do saldo de D (a cotação não o confere).
@@ -11,6 +11,9 @@ extends RefCounted
 const UNPRICED: int = 1 << 40
 ## Folga da cota quando há tarifa: a tarifa é `ceil` por ORDEM, então a 1ª unidade paga até 1 moeda a mais em cada ponta que o lote (2 moedas na margem).
 const TARIFF_SLACK: int = 2
+## Os limites da chave inteira das memórias de UMA chamada (`_quote` e `_upper_quantity`): id de mercado de 0 a 2^31 − 1 e quantidade de 1 a 2^20 − 1 cabem na chave sem se misturar; fora deles a conta é direta, sem memória, então nenhum id (até `IdGenerator.MAX_ID`) nem quantidade colide.
+const MEMO_ID_LIMIT: int = 1 << 31
+const MEMO_QUANTITY_LIMIT: int = 1 << 20
 
 var _engine: TradeEngine
 var _markets: MarketBook
@@ -18,6 +21,9 @@ var _goods: GoodsStore
 var _ledger: Ledger
 var _params: CaravanParams
 var _max_order_quantity: int
+## As memórias de UMA chamada pública (bem -> chave inteira -> valor): `plan_all` e `plan_for` as esvaziam antes e depois, então ficam VAZIAS entre chamadas (nenhum estado e nenhuma referência guardados) e nada do histórico entra na chave.
+var _quotes: Dictionary = {}
+var _uppers: Dictionary = {}
 
 
 func _init(engine: TradeEngine, markets: MarketBook, goods: GoodsStore, ledger: Ledger, params: CaravanParams, price_params: PriceParams) -> void:
@@ -31,6 +37,7 @@ func _init(engine: TradeEngine, markets: MarketBook, goods: GoodsStore, ledger: 
 
 ## O melhor plano de cada destino que passa dos limiares, por `destination_market_id` crescente. `paths`: destino -> o caminho resolvido até ele (`Array` de `RouteCost.Leg`).
 func plan_all(trader_id: int, origin_id: int, paths: Dictionary[int, Array]) -> Array[Plan]:
+	_forget()
 	var plans: Array[Plan] = []
 	var destination_ids: Array[int] = []
 	destination_ids.assign(paths.keys())
@@ -38,14 +45,23 @@ func plan_all(trader_id: int, origin_id: int, paths: Dictionary[int, Array]) -> 
 	for destination_id: int in destination_ids:
 		var legs: Array[RouteCost.Leg] = []
 		legs.assign(paths[destination_id])
-		var plan: Plan = plan_for(trader_id, origin_id, destination_id, legs)
+		var plan: Plan = _plan_for(trader_id, origin_id, destination_id, legs)
 		if plan != null:
 			plans.append(plan)
+	_forget()
 	return plans
 
 
 ## O melhor plano para um destino (`null` se nenhum bem passa dos limiares, o caminho é vazio ou a origem é o destino). `legs`: o caminho aberto de O até D.
 func plan_for(trader_id: int, origin_id: int, destination_id: int, legs: Array[RouteCost.Leg]) -> Plan:
+	_forget()
+	var plan: Plan = _plan_for(trader_id, origin_id, destination_id, legs)
+	_forget()
+	return plan
+
+
+## `plan_for` sem esvaziar as memórias: o `plan_all` o usa para repartir as cotações da origem entre os destinos da mesma chamada.
+func _plan_for(trader_id: int, origin_id: int, destination_id: int, legs: Array[RouteCost.Leg]) -> Plan:
 	if legs.is_empty() or origin_id == destination_id or not _markets.has_market(origin_id) or not _markets.has_market(destination_id):
 		return null
 	var minutes: int = RouteCost.path_minutes(legs, _params)
@@ -134,8 +150,19 @@ func _funded_quantity(costs: TradeEngine.QuoteCurve, upper: int, funds: int) -> 
 	return low
 
 
-## O maior lote que NÃO depende de cotação (9.5): o menor dos limites de peso livre, estoque com reserva, teto do destino e ordem. Zero se o bem não pesa nada (`weight_per_unit < 1`); pode ser negativo (reserva acima do estoque); `q_max` nunca passa dele.
+## `_upper_quantity_raw` lembrado até o fim da chamada pública, por (bem, origem, destino): a pré-checagem e a busca pedem o mesmo lote máximo (o estado e o comerciante não mudam na chamada). Origem ou destino fora do limite da chave: conta direta.
 func _upper_quantity(trader_id: int, origin_id: int, destination_id: int, good_id: String) -> int:
+	if origin_id < 0 or origin_id >= MEMO_ID_LIMIT or destination_id < 0 or destination_id >= MEMO_ID_LIMIT:
+		return _upper_quantity_raw(trader_id, origin_id, destination_id, good_id)
+	var table: Dictionary = _table_of(_uppers, good_id)
+	var key: int = (origin_id << 31) | destination_id
+	if not table.has(key):
+		table[key] = _upper_quantity_raw(trader_id, origin_id, destination_id, good_id)
+	return int(table[key])
+
+
+## O maior lote que NÃO depende de cotação (9.5): o menor dos limites de peso livre, estoque com reserva, teto do destino e ordem. Zero se o bem não pesa nada (`weight_per_unit < 1`); pode ser negativo (reserva acima do estoque); `q_max` nunca passa dele.
+func _upper_quantity_raw(trader_id: int, origin_id: int, destination_id: int, good_id: String) -> int:
 	var unit_weight: int = _goods.weight_per_unit(good_id)
 	if unit_weight < 1:
 		return 0
@@ -166,8 +193,8 @@ func _best_quantity(risk_points: int, q_max: int, min_gain: int, costs: TradeEng
 
 ## Há tarifa na cotação de 1 unidade (compra na origem ou venda no destino)? Com a regra neutra da Fase 3, nunca.
 func _is_taxed(trader_id: int, origin_id: int, destination_id: int, good_id: String) -> bool:
-	var bought: TradeEngine.Outcome = _engine.quote(origin_id, good_id, 1, TradeEngine.SIDE_BUY, trader_id)
-	var sold: TradeEngine.Outcome = _engine.quote(destination_id, good_id, 1, TradeEngine.SIDE_SELL, trader_id)
+	var bought: TradeEngine.Outcome = _quote(origin_id, good_id, 1, TradeEngine.SIDE_BUY, trader_id)
+	var sold: TradeEngine.Outcome = _quote(destination_id, good_id, 1, TradeEngine.SIDE_SELL, trader_id)
 	return bought.tariff > 0 or sold.tariff > 0
 
 
@@ -194,14 +221,38 @@ func _curve_tariff(curve: TradeEngine.QuoteCurve, quantity: int) -> int:
 
 ## `custo(q)`: o total da compra na origem mais a tarifa (`UNPRICED` se a cotação falha).
 func _cost_of(trader_id: int, market_id: int, good_id: String, quantity: int) -> int:
-	var bought: TradeEngine.Outcome = _engine.quote(market_id, good_id, quantity, TradeEngine.SIDE_BUY, trader_id)
+	var bought: TradeEngine.Outcome = _quote(market_id, good_id, quantity, TradeEngine.SIDE_BUY, trader_id)
 	return bought.total + bought.tariff if bought.result.ok else UNPRICED
 
 
 ## `receita(q)`: o total da venda no destino menos a tarifa, sem passar do saldo do mercado (0 se a cotação falha).
 func _revenue_of(trader_id: int, market_id: int, good_id: String, quantity: int) -> int:
-	var sold: TradeEngine.Outcome = _engine.quote(market_id, good_id, quantity, TradeEngine.SIDE_SELL, trader_id)
+	var sold: TradeEngine.Outcome = _quote(market_id, good_id, quantity, TradeEngine.SIDE_SELL, trader_id)
 	return mini(sold.total - sold.tariff, _ledger.balance_of(market_id)) if sold.result.ok else 0
+
+
+## A mesma cotação de `TradeEngine.quote`, lembrada até o fim da chamada pública por (bem, mercado, lado, quantidade): o estado não muda na chamada e o comerciante é um só (ele não entra na chave), então o mesmo pedido dá o mesmo `Outcome`, cotado uma vez. O `Outcome` lembrado é COMPARTILHADO e SÓ DE LEITURA: quem o recebe lê `total`, `tariff` e `result.ok`, nunca o altera. Pedido fora do limite da chave (ou lado que não é `buy` nem `sell`): cotação direta.
+func _quote(market_id: int, good_id: String, quantity: int, side: String, trader_id: int) -> TradeEngine.Outcome:
+	if (side != TradeEngine.SIDE_BUY and side != TradeEngine.SIDE_SELL) or market_id < 0 or market_id >= MEMO_ID_LIMIT or quantity < 1 or quantity >= MEMO_QUANTITY_LIMIT:
+		return _engine.quote(market_id, good_id, quantity, side, trader_id)
+	var table: Dictionary = _table_of(_quotes, good_id)
+	var key: int = (market_id << 21) | ((1 if side == TradeEngine.SIDE_SELL else 0) << 20) | quantity
+	if not table.has(key):
+		table[key] = _engine.quote(market_id, good_id, quantity, side, trader_id)
+	return table[key] as TradeEngine.Outcome
+
+
+## A tabela do bem dentro de uma memória (criada na 1ª vez).
+func _table_of(memory: Dictionary, good_id: String) -> Dictionary:
+	if not memory.has(good_id):
+		memory[good_id] = {}
+	return memory[good_id]
+
+
+## Esvazia as memórias: nenhuma cotação nem referência a `Outcome` sobrevive à chamada pública.
+func _forget() -> void:
+	_quotes.clear()
+	_uppers.clear()
 
 
 ## Um plano de viagem: o que `peek_trade_plans` (LW-098d1) devolve por destino, mais o `time_cost` que entra no `net_profit`.
