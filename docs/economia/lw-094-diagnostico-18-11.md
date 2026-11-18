@@ -1,0 +1,69 @@
+# LW-094: o diagnóstico da escassez e do abastecimento sem o `FoodStub` (18/11/2026)
+
+**Status:** MEDIÇÃO e PROPOSTA (só documento): nenhuma regra, dado, código, referência ou hash mudou; os experimentos foram feitos em CÓPIAS descartáveis do `main` `721be98` (138 NPCs, com os 6 comerciantes reais). Pedido de Arthur (18/11/2026, decisões finais da LW-098h5, item 5): avançar a LW-094, resolver a escassez alimentar real do povoado C e tornar o abastecimento sustentável, **sem mascarar resultado de teste**, mantendo o Mandato 1. Complementa `docs/economia/bloqueadores-lw-094-095.md` (17/11) e `docs/economia/referencias-098h5-18-11.md`. Termos: **vivos d7 / d14 / d30** = quantos dos 138 estão vivos nos dias 7, 14 e 30 (faixa das 3 sementes); **mascara** = adia o colapso criando dinheiro ou comida fora do jogo, ou pagando a folha de quem não produz.
+
+## 1. Resultado (leia primeiro)
+1. **A hipótese B8 está CONFIRMADA por medição.** Cada NPC come em média **8,11 vezes por dia** (no dia 1, 86 dos 138 comem 9 vezes), contra uma necessidade de cerca de **2** (a fome sobe 5 por hora e cada refeição alivia 60); **64% das refeições começam com a fome abaixo de 20**. O consumo de comida do mundo é de 3 a 4 vezes o necessário. Corrigir isso é **regra de jogo** (decisão dele).
+2. **Remover o `FoodStub` sozinho derruba o mundo:** sem ele, vivos d7 / d14 / d30 = **46-60 / 0-7 / 0**. Corrigir o consumo (B8), dar os postos de serviço, lotes por trabalhador e a comida de 30 dias do C **não basta**: **138 / 67 / 26-50** (cenário e4). Os únicos cenários que chegam a 138 vivos em 30 dias são os que **mascaram** (folha das horas paradas paga pelo mercado, capital extra), e eles colapsam depois (seção 5.5).
+3. **A causa não é a falta física de comida: é a falta de RENDA.** Os que morrem de fome têm **saldo mediano de 2 moedas** e o mercado tem pão (A 60, B 66, C mais de 1.100 no dia 7 a 9). Sem o `FoodStub`, **todos os artesãos, lenhadores, mineiros e pastores morrem** (as cadeias de madeira, tábua, minério, metal, ferramenta, lã e tecido não têm comprador final); só sobrevivem os lavradores (em parte) e os guardas e estalajadeiros dos postos (pagos pelo mercado, que enriquecem).
+4. **O C morre por renda, não por comida:** o C não tem lavrador, vive do estoque inicial do mercado (200 pães hoje; 1.600 no cenário que cobre 30 dias) e de importação pelos comerciantes, que só paga se o C EXPORTAR algo que A e B comprem. A e B só compram esses bens até os alvos pequenos dos seus mercados (ferramenta 29, metal 10, minério 10), então a exportação do C satura logo e o C não tem como pagar o pão, mesmo com ele na prateleira.
+5. **Por que a LW-094 não fecha só com dados:** (a) o piso de 1 na margem do spread faz o `mill_flour` (-6 por lote) e o `saw_plank` (-8) darem prejuízo e o `smelt_metal` empatar; (b) o salário de 2 por hora (16 por dia) mal cobre a comida de 12 a 20 por dia; subir o salário a 3 é RECUSADO pelo carregador de dados (regra de margem: no `saw_plank` os produtos valem 32 e insumos mais salário custam 33); (c) a demanda final embutida (a manutenção dos locais) é de **cerca de 102 moedas por dia** contra a folha potencial dos **52 NPCs** das cadeias que não são de comida, de **cerca de 830** (16 cada): **cerca de 88% desse trabalho não tem comprador**, os locais enchem o estoque (`OUTPUT_FULL`) e param, e os 14 mil de capital ficam parados.
+6. **Proposta (seção 6):** a LW-094 precisa de uma **arquitetura de renda** (demanda final de bens que não são comida) além do fim do stub e da regra da refeição; recomendo o **consumo doméstico dos NPCs** (uma necessidade nova, comprada no mercado com o salário), depois da LW-095 (postos). São decisões de regra e de dados protegidos: **nada será feito sem a aprovação específica dele.**
+
+## 2. Método
+- **Cópias descartáveis** do `main` `721be98` (`git archive`; o corredor `docs/economia/experimentos/preparar_copia.sh` e `rodar_cenario.sh`, com cenários próprios fora do repositório), `tools/measure_economy --days 30 --seed S` (S = 1, 2 e 3), só `--headless`; só as cópias mudam (`jq` nos dados e, nos protótipos de regra, `sed` e Python no código da cópia).
+- **O fim do stub emulado por DADO:** `food_stub.json` com `start_stock` 0, `max_stock` 1 e `work_yield` 0 (o estoque é sempre 0 e o lavrador não rende comida ao trabalhar: a comida só vem do mercado e do inventário). **A regra da refeição por DADO:** `actions.json` com a `eat` de 60 minutos (um bloco `eat` de 1 hora = 1 refeição). Os cenários `est_*` e `regra_*` são os de `docs/economia/experimentos/cenarios.sh` (postos de serviço, lotes por trabalhador, comida do C, procura, folha das horas paradas, spread, capital).
+- **Leitura dos NPCs** (roteiros descartáveis `meals.gd`, `diag.gd` e `census.gd`, só leitura): refeições por NPC, estado dos críticos e censo por ofício.
+
+## 3. A hipótese B8 (medição do jogo real de hoje, 138 NPCs, 3 dias, passo de 1 minuto)
+| | Dia 1 | Dia 2 | Dia 3 |
+|---|---|---|---|
+| Refeições (ações `eat` iniciadas) | 1.119 (**8,11 por NPC**) | 754 (5,46) | 850 (6,16) |
+| Fome ao começar a refeição: 0-19 / 20-39 / 40-59 / 60 ou mais | **717** / 379 / 0 / 23 | 324 / 71 / 213 / 146 | 367 / 155 / 175 / 153 |
+| NPCs com 9 refeições | 86 | 24 | 23 |
+
+O bloco `eat` dura 1 hora, a ação 20 minutos e a **única** condição da `eat` é `has_food` (`action_conditions.json`): o NPC come 3 vezes seguidas por bloco, com a fome em 0. A falta de comida no A e no B (o `FoodStub` deles zera na 1ª manhã) já limita o consumo nos dias 2 e 3. Corrigir exige tipo novo de condição (limiar de fome) no `npc` ou uma regra do pensador; por dado, a `eat` de 60 minutos aproxima a regra.
+
+## 4. A matriz (30 dias, sementes 1 a 3; `main` `721be98`; vivos d7 / d14 / d30)
+| Cenário | O que é | Vivos d7 / d14 / d30 | Locais rodando d30 (de 14) |
+|---|---|---|---|
+| controle | o jogo de hoje (com `FoodStub`) | 138 / 138 / 138 | 0 |
+| e0 | sem stub | 46-60 / 0-7 / 0 | 0 |
+| e1 | e0 + refeição única (B8) | 85-92 / 16-21 / 0-1 | 0 |
+| e2 | e1 + comida de 30 dias no C | 114-123 / 27-29 / 1-2 | 0 |
+| e3 | e1 + postos + lotes | 128-131 / 64 / 11-29 | 0 |
+| **e4** | e1 + postos + lotes + comida do C | **138 / 67 / 26-50** | 0 |
+| e5 | e4 SEM a refeição única | 126-127 / 59-60 / 50 | 0 |
+| e6 | e4 + procura de bens que não são comida | 138 / 80-82 / 11-36 | 0-2 |
+| s0 | e4 + margem do spread sem piso de 1 (código) | 138 / 85-87 / 13-32 | 0 |
+| s1 | s0 + procura | 138 / 29-36 / 16-18 | 1 |
+| s3 | s0 + capital dos locais de 200 para 1.000 | 138 / 99-108 / 35-36 | 0 |
+| s5 | s0 sem os postos | 138 / 68-70 / 27-29 | 0 |
+| s2, s4 | salário 3 | **não carregam** (regra de margem do carregador) | n/a |
+| *e7 (mascara)* | e4 + o mercado paga a folha das horas paradas | 138 / 138 / 27-71 | 0 |
+| *e8 (mascara)* | e4 + procura + folha parada | 138 / 138 / 28-29 | 0 |
+| *e9 (mascara)* | e8 + salário 1 | **138 / 138 / 138** (90 dias: **0 vivos no dia 40**) | 3-4 |
+| *e10 (mascara)* | e4 + capital 1.000 (11.200 moedas a mais) | 138 / 74-75 / 54-55 (90 dias: 8 vivos no dia 60) | 0 |
+
+Conferência de dinheiro e bens: ok em TODAS as execuções.
+
+## 5. O que os experimentos mostram
+**5.1 Morrem sem dinheiro, com comida no mercado** (e4, semente 1): no dia 7 os NPCs em fome crítica (90 ou mais) são 13 no A (saldo mediano **2**, todos dormindo em casa, com 100 de fome), 6 no B e 4 no C; no dia 8, 24, 19 e 12; no dia 9, 36 no A. O mercado do A tem 60 pães (o alvo) a 11 de ask, o do B 66 a 7 e o do C **1.137** a 8. A onda de mortes vem entre os dias 9 e 14 (138 para 67). **Quem tem 2 moedas não compra.**
+**5.2 Quem sobrevive** (e5, censo por ofício, semente 1): no dia 20 **todos** os artesãos (A 12, B 8, C 12), lenhadores (18), mineiros (8) e pastores (4) estão mortos; os lavradores caem pela metade (A 12 de 24, B 8 de 16, saldo de 32 a 116); **os guardas e os estalajadeiros vivem todos e, no A e no B, enriquecem** (saldo de 276 a 406 nos dias 20 e 30; no C vivem, mas com 11 a 26), porque o posto é pago pelo caixa do mercado, que a comida que eles compram devolve: **o circuito mercado, salário, comida, mercado FECHA**. Os comerciantes morrem até o dia 30.
+**5.3 A demanda satura** (s3, semente 1: spread sem piso e capital 1.000): os locais ficam com **12 a 15 mil de capital PARADO** e, desde o dia 3, 8 a 10 dos 14 estão parados por `OUTPUT_FULL` (o mercado não compra mais acima do alvo); a produção acumulada praticamente para entre os dias 2 e 7 (madeira em cerca de 1.080, tábua em cerca de 180, farinha em 1.898, tecido em cerca de 250, ferramenta em cerca de 200 e minério em 500), só o grão e o pão continuam. **Sem comprador, o salário cessa, e quem não tem salário morre com dinheiro parado nos locais.**
+**5.4 A demanda final embutida é minúscula:** a manutenção dos locais (`site_upkeep.json`) pede por dia **2,6 ferramentas, 1,75 tábuas e 1,9 tecidos** (cerca de **102 moedas**), contra a folha potencial dos 52 NPCs dessas cadeias (lenhadores 18, artesãos de tábua, metal, ferramenta e tecido 22, mineiros 8 e pastores 4), de **cerca de 830 moedas por dia** (2 por hora, 8 horas). As margens por lote a preço de tabela, com o piso de 1 do spread (salário 2): `grow_grain` +16, `cut_wood` +10, `mine_ore` +12, `shear_wool` +8, `bake_bread` +6, `forge_tool` +8, `weave_fabric` +6, `smelt_metal` +1, **`mill_flour` -6, `saw_plank` -8**.
+**5.5 O que só mascara, e por quê:** a **folha das horas paradas** (e7, e8, e9) e o **capital extra** (e10) criam renda de quem não produz ou dinheiro novo; chegam aos 30 dias (o e9 com 138 vivos) esvaziando o caixa dos mercados (139, 131 e 747 moedas no dia 30) e, no e7 e no e8, deixando **10 a 17 mil moedas presas nas contas de NPCs mortos**; o cenário análogo de 12/11 (`est_postos_lotes_c_folha_salario1`, 90 dias) manteve os 132 até o dia 30, perdeu o C no dia 40 e ficou com 28 vivos no dia 90. A folha parada contraria `economy.md` §6 ("hora parada, ninguém recebe") e **não está autorizada**. **Os 90 dias (semente 1) confirmam o abismo:** o **e9**, com 138 vivos no dia 30, tem **0 vivos no dia 40** (o caixa dos mercados chega a 0 e **18.877 moedas ficam presas nas contas dos mortos**); o **e10** (capital 1.000) cai de 138 para 54 no dia 30, 26 no dia 40 e **8 no dia 60**, e fica nesses 8 (só o C) até o dia 90.
+**5.6 O spread sem piso e a procura não bastam:** o spread sem piso (s0) tira o dinheiro do mercado (1.325) e o leva para os locais (6.025), sem comprador; a procura financiada só pelo caixa do mercado (e6, s1) **piora**, porque destrói o estoque de ferramenta, tábua e tecido que a manutenção dos locais precisa e o caixa não se renova.
+
+## 6. O que a LW-094 precisa (proposta; nada disto está feito nem autorizado)
+**6.1 Remover o `FoodStub` é só uma parte.** O que o stub esconde é que o mundo de 138 NPCs, com 39% deles em cadeias sem comprador final, não tem renda para todos os ofícios. A LW-094 só fecha (o critério "30 dias verde, escassez visível e nunca comida mágica") com o pacote abaixo.
+**6.2 O pacote em ordem:** (a) **a regra da refeição (B8)**: uma refeição por bloco ou só com fome acima de um limiar; pequena, correta e de grande efeito (e4 contra e5: 138 contra 126 vivos no dia 7); (b) **a LW-095 primeiro** (os 6 postos de serviço e o código do salário, que já está no `main`), porque os postos são o único circuito de renda que fecha hoje; (c) **a arquitetura da renda**, com UMA das opções abaixo; (d) **a comida do C**: o estoque inicial de 1.600 (alvo 800) para os 30 dias do contrato (DEC-166), e só então remover o stub; (e) a remedição de 30 dias em 3 sementes e o rito da DEC-175 (valores antigos, novos e causa) antes de qualquer hash.
+**6.3 As opções para a renda (c):**
+- **D1, consumo doméstico dos NPCs (RECOMENDADA):** uma necessidade nova de urgência baixa (conforto e ferramentas) que o NPC satisfaz comprando tecido, tábua, ferramenta ou madeira no mercado com o próprio salário, pelo mesmo caminho de compra que já existe para comida (generalizado por necessidade). Fecha a demanda final: o salário vira consumo, o consumo vira receita dos locais e o salário volta. Escopo: `npc` (necessidades e pensador) e dados (`needs.json`, `goods.json`); médio; muda hashes; precisa de contrato próprio (como a 098h), com protótipo medido antes.
+- **D2, demanda do povoado (procura):** barata (módulo `economy`), mas SÓ funciona financiada por um fluxo de volta (um tributo ou gasto doméstico dos NPCs); sozinha piora (e6, s1). Na prática vira a D1 em nível agregado.
+- **D3, realocação do trabalho (LW-103, produtores adaptativos) mais dados de população:** os produtores se ajustam ao preço; inverte a ordem do roadmap (a LW-103 antes da LW-094) e ainda deixa sem renda o excedente de NPCs.
+- **D4, folha das horas paradas ou capital extra (NÃO recomendada):** mascara (seção 5.5).
+**6.4 Decisões que dependem de Arthur:** (1) aprovar a regra da refeição (B8) e a forma (condição nova no `npc` ou `eat` de 60 minutos por dado); (2) a arquitetura da renda (D1 recomendada); (3) a ordem LW-095, depois LW-094 (e a preparação do contrato dos postos, com `service_posts.json` e os valores); (4) o estoque inicial do C (1.600) como dado; (5) se o critério da LW-094 continua exigindo os 138 vivos em 30 dias (sem mascarar), o que depende da escolha em (2).
+
+## 7. Limites
+Medições em debug e em cópias (não em release); só as sementes 1 a 3 e 30 dias (mais 90 dias, semente 1, nos dois cenários que seguraram os 30); o protótipo de consumo doméstico (D1) **NÃO foi testado**: a recomendação vem do diagnóstico (renda e demanda), não de um cenário que a prove; a emulação do fim do stub por dado equivale ao fim real para o abastecimento, mas o código do stub (e `check_temp`) só some na LW-094. Os roteiros e as saídas ficam no scratchpad da sessão (fora do repositório); os cenários são reproduzíveis com `docs/economia/experimentos/` mais os ajustes descritos na seção 2.
