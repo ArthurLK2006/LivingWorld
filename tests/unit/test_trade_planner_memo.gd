@@ -295,13 +295,14 @@ func test_the_memory_changes_no_plan_in_the_limit_and_special_cases() -> void:
 
 
 func test_no_id_and_no_quantity_makes_two_different_requests_share_an_answer() -> void:
-	var ids: Array[int] = [MARKET_A, MARKET_B, (1 << 23) + MARKET_A, (1 << 31) - 1, 1 << 31, (1 << 31) + MARKET_B, (1 << 43) + MARKET_A, IdGenerator.MAX_ID - 1, IdGenerator.MAX_ID]
+	var ids: Array[int] = [MARKET_A, MARKET_B, (1 << 23) + MARKET_A, (1 << 31) - 2, (1 << 31) - 1, 1 << 31, (1 << 31) + MARKET_B, (1 << 43) + MARKET_A, IdGenerator.MAX_ID - 1, IdGenerator.MAX_ID]
 	var spec: Dictionary = {}
 	for at: int in ids.size():
 		spec[ids[at]] = {"bread": [100, 20 + 20 * at, 20000], "anvil": [100, 30 + 15 * at, 20000]}
 	var rig: Rig = _rig(spec)
 	var planner: TradePlanner = _real(rig)
-	var quantities: Array[int] = [1, 2, MAX_ORDER, MAX_ORDER + 1, TradePlanner.MEMO_QUANTITY_LIMIT - 1, TradePlanner.MEMO_QUANTITY_LIMIT, TradePlanner.MEMO_QUANTITY_LIMIT + 1, 2 * TradePlanner.MEMO_QUANTITY_LIMIT + 1, 1 << 40]
+	var quantities: Array[int] = [-1, 0, 1, 2, MAX_ORDER, MAX_ORDER + 1, (1 << 19) + 1, (1 << 20) - 1, 1 << 20, (1 << 20) + 1, (1 << 21) + 1, 1 << 40]
+	assert_eq([TradePlanner.MEMO_QUANTITY_LIMIT, TradePlanner.MEMO_ID_LIMIT], [1 << 20, 1 << 31], "Os limites da chave são os que a matriz abaixo usa (valores LITERAIS: o teste não acompanha a constante).")
 	var mixed: Array[String] = []
 	var answered: int = 0
 	for _round: int in 2:
@@ -332,6 +333,21 @@ func test_no_id_and_no_quantity_makes_two_different_requests_share_an_answer() -
 	for plan: TradePlanner.Plan in plans:
 		planned.append(plan.destination_market_id)
 	assert_eq(planned, [(1 << 31) + MARKET_B, (1 << 43) + MARKET_C, IdGenerator.MAX_ID] as Array[int], "Controle: B e C são descartados (sem lote e sem lucro) e os três mercados de ids enormes, que um id pequeno herdaria pela chave, têm plano.")
+
+
+func test_a_request_outside_the_key_limits_never_touches_the_memory() -> void:
+	var planner: TradePlanner = _real(_rig({MARKET_A: {"bread": [100, 200, 20000]}, MARKET_B: {"bread": [100, 40, 20000]}, (1 << 31): {"bread": [100, 40, 20000]}}))
+	for quantity: int in [-1, 0, 1 << 20, (1 << 20) + 1, 1 << 40]:
+		planner._quote(MARKET_A, "bread", quantity, TradeEngine.SIDE_BUY, TRADER)
+	for market_id: int in [-1, 1 << 31]:
+		planner._quote(market_id, "bread", 1, TradeEngine.SIDE_BUY, TRADER)
+	planner._quote(MARKET_A, "bread", 1, "swap", TRADER)
+	planner._upper_quantity(TRADER, 1 << 31, MARKET_B, "bread")
+	planner._upper_quantity(TRADER, MARKET_A, 1 << 31, "bread")
+	assert_eq([planner._quotes.size(), planner._uppers.size()], [0, 0], "Fora dos limites da chave (quantidade, id ou lado) a conta é direta e a memória não é tocada.")
+	planner._quote(MARKET_A, "bread", 1, TradeEngine.SIDE_BUY, TRADER)
+	planner._upper_quantity(TRADER, MARKET_A, MARKET_B, "bread")
+	assert_eq([planner._quotes.size(), planner._uppers.size()], [1, 1], "Controle: dentro dos limites o pedido entra na memória.")
 
 
 func _assert_forgotten(planner: Peeker, label: String) -> void:
