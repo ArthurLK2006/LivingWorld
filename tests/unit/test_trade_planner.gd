@@ -51,24 +51,45 @@ class FullSearchPlanner:
 		return false
 
 
-## O motor que conta as cotações pedidas: o custo que a pré-checagem existe para cortar.
+## O motor que conta o trabalho de cotação pedido (o custo que a pré-checagem existe para cortar): as chamadas a `quote`, as curvas pedidas (`quote_curve`) e as unidades que uma e outra precificam.
 class CountingEngine:
 	extends TradeEngine
 
 	var quotes: int = 0
+	var curves: int = 0
+	var priced: int = 0
 
 
 	func quote(market_id: int, good_id: String, quantity: int, side: String, actor_id: int = IdGenerator.NO_ID) -> TradeEngine.Outcome:
 		quotes += 1
-		return super.quote(market_id, good_id, quantity, side, actor_id)
+		var outcome: TradeEngine.Outcome = super.quote(market_id, good_id, quantity, side, actor_id)
+		priced += quantity if outcome.result.ok else 0
+		return outcome
 
 
-## Motor de teste com curvas NÃO côncavas: compra a 10 por unidade; a venda rende 5 na 1ª unidade e 100 por unidade a partir da 2ª.
+	func quote_curve(market_id: int, good_id: String, quantity: int, side: String, actor_id: int = IdGenerator.NO_ID) -> TradeEngine.QuoteCurve:
+		curves += 1
+		var curve: TradeEngine.QuoteCurve = super.quote_curve(market_id, good_id, quantity, side, actor_id)
+		priced += curve.ok_through
+		return curve
+
+
+## Motor de teste com curvas NÃO côncavas: compra a 10 por unidade; a venda rende 5 na 1ª unidade e 100 por unidade a partir da 2ª. O planejador lê a curva (não `quote`), então a curva sai da mesma cotação roteirizada.
 class ScriptedEngine:
 	extends TradeEngine
 
 	func quote(_market_id: int, _good_id: String, quantity: int, side: String, _actor_id: int = IdGenerator.NO_ID) -> TradeEngine.Outcome:
 		return TradeEngine.Outcome.new(Result.success(), quantity, 10 * quantity if side == TradeEngine.SIDE_BUY else (5 if quantity == 1 else 100 * quantity), 0)
+
+
+	func quote_curve(market_id: int, good_id: String, quantity: int, side: String, actor_id: int = IdGenerator.NO_ID) -> TradeEngine.QuoteCurve:
+		var curve: TradeEngine.QuoteCurve = TradeEngine.QuoteCurve.new()
+		curve.ok_through = maxi(quantity, 0)
+		curve.totals.resize(curve.ok_through + 1)
+		curve.tariffs.resize(curve.ok_through + 1)
+		for step: int in range(1, curve.ok_through + 1):
+			curve.totals[step] = quote(market_id, good_id, step, side, actor_id).total
+		return curve
 
 
 class Rig:
@@ -405,12 +426,12 @@ func _first_spread(rig: Rig, good_id: String) -> int:
 	return sold.total - sold.tariff - (bought.total + bought.tariff)
 
 
-## As cotações que o `plan_all` pede ao motor, com a pré-checagem ou (`full_search`) sem ela.
-func _quotes_of(rig: Rig, params: CaravanParams, full_search: bool, max_order: int = MAX_ORDER) -> int:
+## O trabalho de cotação que o `plan_all` pede ao motor, com a pré-checagem ou (`full_search`) sem ela: [chamadas a `quote`, curvas pedidas, unidades precificadas por uma e outra].
+func _work_of(rig: Rig, params: CaravanParams, full_search: bool, max_order: int = MAX_ORDER) -> Array[int]:
 	var engine: CountingEngine = CountingEngine.new(rig.book, rig.ledger, rig.goods, rig.markets, NeutralTradeRules.new(), PriceParams.new(PRICE_RECORD))
 	var paths: Dictionary[int, Array] = {MARKET_B: _legs(), MARKET_C: _legs(340, 15)}
 	_planners(rig, params, engine, max_order)[1 if full_search else 0].plan_all(TRADER, MARKET_A, paths)
-	return engine.quotes
+	return [engine.quotes, engine.curves, engine.priced]
 
 
 ## O pão a 5 no A (200) e a 25 no B (40): diferença grande; só A e B existem.
@@ -499,18 +520,19 @@ func test_the_precheck_keeps_a_plan_that_reaches_the_minimum_gain_exactly() -> v
 		assert_eq(plans.size(), 1 if min_net_profit <= first else 0, "Lucro mínimo %d, 1ª unidade %d: com lote de 1 e sem risco nem tempo, o plano existe se e só se a 1ª unidade alcança o mínimo." % [min_net_profit, first])
 
 
-func test_the_precheck_spares_the_balance_search() -> void:
+func test_the_precheck_spares_the_curves_and_the_balance_search() -> void:
 	var stable: Rig = _rig(_spec(100, 100, 100), _funds())
-	assert_eq(_quotes_of(stable, _params(), false), 8, "Sem diferença de preço, cada um dos 2 candidatos custa só as 4 cotações da margem da 1ª unidade.")
-	assert_gt(_quotes_of(stable, _params(), true), 8, "A busca completa pede mais cotações, no mesmo mundo.")
+	assert_eq(_work_of(stable, _params(), false), [8, 0, 8], "Sem diferença de preço, cada um dos 2 candidatos custa só as 4 cotações da margem da 1ª unidade (8 unidades) e nenhuma curva.")
+	assert_eq(_work_of(stable, _params(), true), [0, 4, 200], "A busca completa pede as 2 curvas de cada candidato (50 unidades de custo e 50 de receita) e nenhuma cotação avulsa, no mesmo mundo.")
 	var small_gap: Rig = _rig(_spec(100, 70, 100), _funds())
 	var spread: int = _first_spread(small_gap, "bread")
 	assert_gt(spread, 0, "Controle: a 1ª unidade rende um pouco.")
 	var order: int = PriceMath.ceil_div(_params().min_net_profit, spread)
-	assert_eq(_quotes_of(small_gap, _params(), false, order), 8, "O maior lote (%d) cobre o lucro mínimo mas não o custo de tempo: também só as 4 cotações por candidato." % order)
-	assert_gt(_quotes_of(small_gap, _params(), true, order), 8, "A busca completa pede mais cotações, no mesmo mundo.")
+	assert_eq(_work_of(small_gap, _params(), false, order), [8, 0, 8], "O maior lote (%d) cobre o lucro mínimo mas não o custo de tempo: também só as 4 cotações por candidato e nenhuma curva." % order)
+	assert_eq(_work_of(small_gap, _params(), true, order), [0, 4, 4 * order], "A busca completa pede as 2 curvas de cada candidato (%d unidades de custo e %d de receita), no mesmo mundo." % [order, order])
+	assert_eq(_work_of(_rig(_spec(100, 70, 100), _funds(30)), _params(), true), [0, 4, 104], "Com 30 de saldo o lote financiado é 2 (11 por unidade): cada candidato pede a curva de custo inteira (50 unidades) e a de receita só até 2.")
 	for test_case: Dictionary in _no_room_cases():
-		assert_eq(_quotes_of(_rig(test_case["spec"], _funds(), _params(), test_case.get("carried", {})), _params(), false), 0, "%s: sem lote possível, nada é cotado." % test_case["label"])
+		assert_eq(_work_of(_rig(test_case["spec"], _funds(), _params(), test_case.get("carried", {})), _params(), false), [0, 0, 0], "%s: sem lote possível, nada é cotado e nenhuma curva é pedida." % test_case["label"])
 
 
 func test_the_precheck_keeps_what_the_search_finds_behind_a_first_unit_that_loses_money() -> void:

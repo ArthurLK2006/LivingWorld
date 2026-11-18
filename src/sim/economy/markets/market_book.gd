@@ -152,6 +152,15 @@ func quote_sell(market_id: int, good_id: String, quantity: int) -> int:
 	return PriceMath.quote_sell(price_of(market_id, good_id), _goods[good_id].base_value, target_of(market_id, good_id), ref_stock_of(market_id, good_id), _store.quantity_of(market_id, good_id), quantity, _params)
 
 
+## Os totais acumulados de `quote_buy` e de `quote_sell` de 1 a `quantity` unidades (índice = quantidade; o índice 0 é 0), numa passada: `totals[q]` é exatamente a cotação de `q` unidades.
+func buy_curve(market_id: int, good_id: String, quantity: int) -> PackedInt64Array:
+	return PriceMath.buy_curve(price_of(market_id, good_id), _goods[good_id].base_value, target_of(market_id, good_id), ref_stock_of(market_id, good_id), _store.quantity_of(market_id, good_id), quantity, _params)
+
+
+func sell_curve(market_id: int, good_id: String, quantity: int) -> PackedInt64Array:
+	return PriceMath.sell_curve(price_of(market_id, good_id), _goods[good_id].base_value, target_of(market_id, good_id), ref_stock_of(market_id, good_id), _store.quantity_of(market_id, good_id), quantity, _params)
+
+
 ## Fim do dia: para cada mercado e bem (por ID e `good_id` crescentes), o preço anda em direção ao preço-alvo do estoque de agora, o estoque vira o de referência, o histórico cresce e a escassez é conferida.
 ## Devolve os eventos desse dia, na ordem, para quem chama publicar.
 func end_of_day() -> Array[SimEvent]:

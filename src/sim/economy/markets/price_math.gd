@@ -75,3 +75,25 @@ static func quote_sell(price: int, base: int, target: int, ref_stock: int, stock
 	for step: int in range(1, quantity + 1):
 		total += bid(price_at(price, base, target, ref_stock, stock + step, params), params.spread_bp)
 	return total
+
+
+## Os totais de `quote_buy` para 1 a `quantity` unidades numa passada só (índice = quantidade; o índice 0 é 0): `totals[q]` é exatamente `quote_buy(…, q)`.
+static func buy_curve(price: int, base: int, target: int, ref_stock: int, stock: int, quantity: int, params: PriceParams) -> PackedInt64Array:
+	var totals: PackedInt64Array = PackedInt64Array()
+	totals.resize(maxi(quantity, 0) + 1)
+	var total: int = 0
+	for step: int in quantity:
+		total += ask(price_at(price, base, target, ref_stock, stock - step, params), params.spread_bp)
+		totals[step + 1] = total
+	return totals
+
+
+## Os totais de `quote_sell` para 1 a `quantity` unidades numa passada só: `totals[q]` é exatamente `quote_sell(…, q)`.
+static func sell_curve(price: int, base: int, target: int, ref_stock: int, stock: int, quantity: int, params: PriceParams) -> PackedInt64Array:
+	var totals: PackedInt64Array = PackedInt64Array()
+	totals.resize(maxi(quantity, 0) + 1)
+	var total: int = 0
+	for step: int in quantity:
+		total += bid(price_at(price, base, target, ref_stock, stock + step + 1, params), params.spread_bp)
+		totals[step + 1] = total
+	return totals
