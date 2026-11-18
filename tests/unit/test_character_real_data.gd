@@ -1,7 +1,7 @@
 extends GutTest
-## ART-12, entrega 3: os DADOS REAIS (o catálogo da entrega 2 e as paletas da 3b) carregam sem erro, com a verificação de existência de verdade, e a aparência dos 132 NPCs do mundo sai válida e variada com eles.
+## ART-12, entrega 3: os DADOS REAIS (o catálogo da entrega 2 e as paletas da 3b) carregam sem erro, com a verificação de existência de verdade, e a aparência dos 138 NPCs do mundo sai válida e variada com eles.
 
-const WORLD_NPCS: int = 132
+const WORLD_NPCS: int = 138
 const MIN_DISTINCT_LOOKS: int = 40
 
 
@@ -53,5 +53,5 @@ func test_with_the_real_data_no_hair_is_a_beard_no_woman_has_one_and_the_eyebrow
 		else:
 			assert_has(_ids(catalog.beards_for(look.gender)), look.beard_id, "NPC %d: barba fora da tabela" % npc_id)
 			bearded += 1
-	assert_gt(bearded, 0, "há homens de barba entre os 132")
-	assert_gt(shaved, 0, "há homens sem barba entre os 132")
+	assert_gt(bearded, 0, "há homens de barba entre os 138")
+	assert_gt(shaved, 0, "há homens sem barba entre os 138")
