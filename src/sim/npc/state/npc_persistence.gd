@@ -4,6 +4,9 @@ extends RefCounted
 ## (TEMP-LW-065). LW-081a (passo 3): o código saiu do `NpcModule` sem mudar de comportamento; o módulo segue sendo a única porta e só delega aqui. A tabela de
 ## NPCs é a do módulo (a mesma, por referência; `on_load` a atualiza no lugar). As chaves e os códigos do save continuam sendo as constantes do `NpcModule`.
 
+## Quantas referências a local inexistente a mensagem do `on_load` lista (as primeiras, na ordem dos IDs e dos campos); as demais entram só na contagem (LW-098h5-G).
+const MAX_LISTED_MISSING_PLACES: int = 5
+
 var _npcs: Dictionary[int, NpcState]
 var _notables: NpcNotables
 var _bodies: NpcBodies
@@ -47,7 +50,8 @@ func serialize() -> Dictionary:
 
 
 ## Confere tudo antes de alterar o estado: se algo for inválido, o estado fica como estava. Só recusa o que não dá para converter
-## (estrutura, tipos, chave de ID); faixas e coerência ficam com validate() (mesmo critério do `character`).
+## (estrutura, tipos, chave de ID) e, desde a LW-098h5-G, o NPC VIVO que cita casa ou local que não existe nos dados do jogo (AGENTS 12.6: validar referências);
+## faixas e coerência ficam com validate() (mesmo critério do `character`).
 func on_load(data: Dictionary) -> Result:
 	# Variant: valor cru do save (JSON); o tipo é conferido na linha seguinte.
 	var raw_npcs: Variant = data.get(NpcModule.KEY_NPCS)
@@ -73,6 +77,10 @@ func on_load(data: Dictionary) -> Result:
 	var loaded_notables: NpcNotables.ParsedSave = _notables.parse_save(data.get(NpcModule.KEY_MEMORIES, {}), data.get(NpcModule.KEY_RELATIONS, []))
 	if not loaded_notables.error.is_empty():
 		return _invalid_save(loaded_notables.error)
+	# LW-098h5-G: a referência a local que não existe é recusada AQUI, antes de a tabela mudar (o módulo fica como estava); sem isso o NPC órfão carregaria em silêncio.
+	var places_problem: String = _place_reference_problem(loaded)
+	if not places_problem.is_empty():
+		return _invalid_save(places_problem)
 	_npcs.clear()
 	for loaded_id: int in loaded:
 		_npcs[loaded_id] = loaded[loaded_id]
@@ -162,6 +170,44 @@ func _next_issued_id() -> int:
 	var raw_next: Variant = _ctx.ids.serialize()[IdGenerator.KEY_NEXT_ID]
 	var next_id: int = raw_next
 	return next_id
+
+
+## LW-098h5-G (AGENTS 12.6): problema (texto vazio = pode carregar) das referências de local dos NPCs VIVOS lidos do save (`loaded`, ainda fora da tabela do módulo). Cada campo de local
+## NÃO vazio (`home_place_id`, `work_place_id`, `place_id`, `action_target_place_id`) tem de existir em `_definitions.places`; vazio é legítimo (em trânsito, sem alvo, sem local de trabalho).
+## O MORTO fica isento: o local que ele cita já não decide nada e um dado que mudou depois da morte não pode barrar o save. Sem `places` (módulo de teste sem definições) nada é conferido.
+## Só LÊ: nada do módulo muda. A mensagem traz a contagem e só as primeiras referências (ID, campo, local), em ordem crescente do ID e na ordem dos campos, e a causa provável.
+func _place_reference_problem(loaded: Dictionary[int, NpcState]) -> String:
+	if _definitions == null or _definitions.places == null:
+		return ""
+	var ids: Array[int] = []
+	ids.assign(loaded.keys())
+	ids.sort()
+	var missing: Array[String] = []
+	var affected_npcs: int = 0
+	for npc_id: int in ids:
+		var state: NpcState = loaded[npc_id]
+		if not state.is_alive:
+			continue
+		var found_before: int = missing.size()
+		_note_missing_place(missing, npc_id, NpcState.KEY_HOME_PLACE_ID, state.home_place_id)
+		_note_missing_place(missing, npc_id, NpcState.KEY_WORK_PLACE_ID, state.work_place_id)
+		_note_missing_place(missing, npc_id, NpcState.KEY_PLACE_ID, state.place_id)
+		_note_missing_place(missing, npc_id, NpcState.KEY_ACTION_TARGET_PLACE_ID, state.action_target_place_id)
+		if missing.size() > found_before:
+			affected_npcs += 1
+	if missing.is_empty():
+		return ""
+	var listed: Array[String] = []
+	listed.assign(missing.slice(0, MAX_LISTED_MISSING_PLACES))
+	var rest: String = "; e mais %d" % (missing.size() - MAX_LISTED_MISSING_PLACES) if missing.size() > MAX_LISTED_MISSING_PLACES else ""
+	return "o save cita local que não existe nos dados do jogo (%d referência(s) em %d NPC(s) vivo(s)): %s%s. Causa provável: o save foi feito com outros dados do jogo (faltam casas ou locais); restaure os dados com que o save foi criado" % [missing.size(), affected_npcs, "; ".join(listed), rest]
+
+
+## Acrescenta a `missing` a referência `place_id` do campo `field` do NPC se ela não for vazia e o local não existir nos dados do jogo.
+func _note_missing_place(missing: Array[String], npc_id: int, field: String, place_id: String) -> void:
+	if place_id.is_empty() or _definitions.places.peek_place(place_id).result.ok:
+		return
+	missing.append("NPC %d, campo '%s', local '%s'" % [npc_id, field, place_id])
 
 
 func _invalid_save(detail: String) -> Result:
