@@ -8,10 +8,10 @@ const BLOCKOUT_DIR: String = "res://data/world"
 const SETTLEMENT_A: String = "test_settlement_a"
 const SETTLEMENT_B: String = "test_settlement_b"
 const SETTLEMENT_C: String = "test_settlement_c"
-## Contrato [HIP]: A com 12 casas de capacidade 5, B com 9 (a nona veio com a LW-097d: 44 pessoas) e C com 8; locais de trabalho para os cinco ofícios; 1 a 2 de descanso e de convívio; 1 de mercado.
-const HOMES_A: int = 12
-const HOMES_B: int = 9
-const HOMES_C: int = 8
+## Contrato [HIP]: A com 14 casas de capacidade 5, B com 11 e C com 10 (a nona do B veio com a LW-097d; as 2 últimas de cada povoado, com a LW-098h5: os 6 comerciantes, 138 pessoas); locais de trabalho para os cinco ofícios; 1 a 2 de descanso e de convívio; 1 de mercado.
+const HOMES_A: int = 14
+const HOMES_B: int = 11
+const HOMES_C: int = 10
 const HOME_CAPACITY: int = 5
 const WORK_PLACES: int = 5
 ## LW-097a (docs/modules/world.md, Extensão da Fase 3; docs/economy/dados.md): um local `work` para cada local de produção e cada posto de
@@ -105,6 +105,7 @@ func test_each_settlement_has_the_places_the_contract_asks_for_and_room_for_the_
 		assert_between(_count_of_kind(settlement_id, Place.KIND_SOCIAL), 1, 2)
 		assert_eq(_count_of_kind(settlement_id, Place.KIND_MARKET), 1)
 	assert_gte(home_capacity, NPC_COUNT_OF_THE_SOAK, "As casas comportam os 100 NPCs da LW-068.")
+	assert_eq(home_capacity, 175, "As 35 casas de 5 vagas somam 175 (A 70, B 55 e C 50): as vagas de verdade, não só as de 100 pessoas.")
 
 
 func test_every_place_is_near_its_settlement_center_inside_the_map_and_at_ground_height() -> void:

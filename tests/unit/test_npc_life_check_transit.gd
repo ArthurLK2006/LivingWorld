@@ -330,7 +330,7 @@ func test_the_run_is_the_one_of_today_and_with_economy_builds_the_real_game_and_
 	runner.run_days(2)
 	assert_eq(plain.state_hash, runner.world.state_hash(), "Sem `with_economy` o `run` monta o mundo de sempre (sem economia nem rotas dos dados): mesmo hash.")
 	var direct: NpcLifeCheck.LifeReport = NpcLifeCheck.run(_data, SEED, 2, 0, true)
-	assert_eq([direct.problems, direct.min_alive], [[] as Array[String], NpcLifeCheck.EXPECTED_POPULATION], "Com `with_economy` os 132 vivem e nada é acusado.")
+	assert_eq([direct.problems, direct.min_alive], [[] as Array[String], NpcLifeCheck.EXPECTED_POPULATION], "Com `with_economy` os 138 vivem e nada é acusado.")
 	assert_ne(direct.state_hash, plain.state_hash, "A economia e as rotas dos dados entram no mundo, como no jogo real.")
 	var reloaded: NpcLifeCheck.LifeReport = NpcLifeCheck.run(_data, SEED, 2, 1, true)
 	assert_eq([reloaded.problems, reloaded.state_hash], [[] as Array[String], direct.state_hash], "Salvar e carregar no dia 1 com a economia não muda o resultado.")
