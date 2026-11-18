@@ -1,5 +1,5 @@
 extends GutTest
-## LW-084a: versão CURTA do soak longo (1 dia de jogo, 396 NPCs [HIP]: os 132 do jogo vezes a escala 3), que roda no tools/check_all; a de um ano é tests/soak/npc_year/soak_npc_year.gd (fora do
+## LW-084a: versão CURTA do soak longo (1 dia de jogo, 414 NPCs [HIP]: os 138 do jogo vezes a escala 3), que roda no tools/check_all; a de um ano é tests/soak/npc_year/soak_npc_year.gd (fora do
 ## check_all). Mesmo medidor das duas (NpcYearMeter): 300 NPCs nascem, 40 viram T2, o foco do ator alterna entre A, B e longe (corpos S1 <-> S0), nenhum erro de
 ## validate() e nenhuma morte contada como falha (a morte só é REGISTRADA, decisão de Arthur). Repetir dá o mesmo hash, e salvar e carregar com o foco longe também.
 ## Os últimos testes provam que o medidor ACUSA o que deve (dado ruim, padrão inválido) e que 0 dias não quebra nada.
@@ -37,7 +37,7 @@ func _config(leg_minutes: int, reload_at_minute: int = 0) -> NpcYearMeter.Config
 
 func test_one_day_with_300_npcs_and_alternating_bodies_keeps_every_invariant() -> void:
 	assert_eq(_base.problems.size(), 0, str(_base.problems))
-	assert_eq([_base.npcs, _base.minutes, _base.step_usec.size()], [NpcLifeCheck.EXPECTED_POPULATION * NpcYearMeter.SCALE, DAY, DAY], "132 NPCs vezes a escala (396) e 1 dia, um tempo por passo.")
+	assert_eq([_base.npcs, _base.minutes, _base.step_usec.size()], [NpcLifeCheck.EXPECTED_POPULATION * NpcYearMeter.SCALE, DAY, DAY], "138 NPCs vezes a escala (414) e 1 dia, um tempo por passo.")
 	assert_eq(_base.min_alive, _base.npcs, "Ninguém morreu neste dia (o número de mortos só é registrado: %d)." % _base.dead)
 	assert_true(_base.s0_peak > 0 and _base.s0_peak <= MAX_S0, "Houve corpos, no máximo %d (veio %d)." % [MAX_S0, _base.s0_peak])
 	assert_gt(_base.s0_entries, 0, "A alternância trouxe NPCs a S0.")

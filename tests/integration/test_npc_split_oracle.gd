@@ -17,6 +17,8 @@ extends GutTest
 ## Na Fase B da LW-097 (junção com o `main`, marco 3) os nove valores mudaram de novo, por autorização antecipada de Arthur (Bloco C v10, 11/11/2026): o `main` já trazia os valores da frente A (LW-093 a LW-096a; `intents` 8670b52b8ff6, `alarm` b62628f049b0, `resumed` 1251aaf06e2d, `switches` 6889619788b5,
 ## `talk` a8a97e95f464, `save` 781066cec584, `demote` ed884fc6fb21, `starved` f11a33ea9ab0 e `real_game` 76a65b9cfc8a), e a linha da LW-097 trazia os da população real (os da LW-097d, que seguem no histórico do git); os valores da junção são a soma das duas causas, com o estoque de comida do C trocado de 3.000 para 6.000 (autorizado por Arthur em 12/11/2026: com 3.000 os 28 NPCs do C morriam de fome entre os dias 19 e 21 do jogo real de 30 dias). Prova:
 ## com as causas da C neutralizadas na árvore da junção (FoodStub do C, população, ofícios, agendas, locais, povoados e o módulo `world`), os nove voltam exatamente aos da A.
+## Na LW-098h5 (opção A, aprovada por Arthur em 18/11/2026) o jogo real passou a nascer com 138 NPCs: os 6 comerciantes (2 por povoado; A 62, B 46, C 30). A contagem do teste do jogo real já é a de `NpcLifeCheck.EXPECTED_POPULATION` (138); a impressão `real_game` NÃO foi regravada
+## (DEC-175: o valor novo só entra com o aceite específico de Arthur), então só esse teste falha, só por essa impressão; as outras oito seguem as mesmas.
 
 const WORLD_SEED: int = 11
 const ACTOR_ID: int = 77
@@ -303,7 +305,7 @@ func test_the_five_responsibilities_of_the_module_behave_exactly_as_before_the_s
 func test_the_real_game_with_one_hundred_npcs_behaves_exactly_as_before_the_split() -> void:
 	var rig: Rig = _rig({}, true)
 	var ids: Array[int] = rig.npc.peek_npc_ids()
-	assert_eq(ids.size(), NpcLifeCheck.EXPECTED_POPULATION, "O jogo real nasce com os 132 NPCs.")
+	assert_eq(ids.size(), NpcLifeCheck.EXPECTED_POPULATION, "O jogo real nasce com os 138 NPCs.")
 	for index: int in REAL_GAME_NOTABLES:
 		assert_true(rig.npc.request_promote(ids[index], NpcState.TIER_NOTABLE).ok)
 	rig.watched.assign(ids.slice(0, REAL_GAME_NOTABLES))
