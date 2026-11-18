@@ -53,6 +53,8 @@ class LifeReport:
 	## Por assentamento: o menor estoque visto e quantos minutos o estoque ficou em zero.
 	var food_min: Dictionary = {}
 	var food_zero_minutes: Dictionary = {}
+	## LW-098h5 (V9): quantas amostras de NPC sem ação foram isentas por trânsito legítimo de comerciante (`is_transit_exempt`; só com `with_economy`). Prova que a isenção foi USADA.
+	var transit_exempt_samples: int = 0
 	var wall_ms: int = 0
 
 	func summary() -> String:
@@ -154,7 +156,11 @@ static func check_npcs(npc: NpcModule, expected_alive: int, idle_samples: Dictio
 		for position: int in query.need_values.size():
 			if query.need_values[position] < NpcState.VALUE_MIN or query.need_values[position] > NpcState.VALUE_MAX:
 				add_problem(report, "minuto %d: o NPC %d tem a necessidade %d em %d (fora de 0 a 100)" % [minute, npc_id, position, query.need_values[position]])
-		if query.action_id.is_empty() and not is_transit_exempt(query, economy, world, minute):
+		var idle: bool = query.action_id.is_empty()
+		if idle and is_transit_exempt(query, economy, world, minute):
+			report.transit_exempt_samples += 1
+			idle = false
+		if idle:
 			idle_samples[npc_id] = int(idle_samples.get(npc_id, 0)) + 1
 			report.max_idle_min = maxi(report.max_idle_min, idle_samples[npc_id] * SAMPLE_EVERY_MIN)
 			if idle_samples[npc_id] * SAMPLE_EVERY_MIN > MAX_IDLE_MIN:
