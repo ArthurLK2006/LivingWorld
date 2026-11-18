@@ -38,6 +38,21 @@ func test_seven_days_without_a_player_keep_every_invariant_and_the_run_is_reprod
 	assert_ne(other.state_hash, same_day.state_hash, "Outra semente, outro mundo.")
 
 
+## LW-098h5 (docs/modules/economy.md 9.15.3, V9): os mesmos 7 dias, agora com a economia e as rotas dos dados (`with_economy`) e os 6 comerciantes REAIS: os 138 vivem, nada é acusado
+## (o comerciante em trânsito legítimo é isento) e repetir dá o mesmo hash. `transit_exempt_samples` maior que 0 prova que a isenção foi usada, isto é, que houve viagem de verdade.
+func test_seven_days_with_the_economy_and_the_real_merchants_keep_everyone_alive_and_the_run_is_reproducible() -> void:
+	var first: NpcLifeCheck.LifeReport = NpcLifeCheck.run(_data, WORLD_SEED, DAYS, 0, true)
+	print(first.summary())
+	assert_eq(first.problems.size(), 0, str(first.problems))
+	assert_eq(first.min_alive, NpcLifeCheck.EXPECTED_POPULATION, "Todos vivos o tempo todo, os 6 comerciantes incluídos.")
+	assert_gt(first.transit_exempt_samples, 0, "Pelo menos um comerciante viajou: a isenção de trânsito legítimo foi usada.")
+	assert_true(first.max_idle_min <= NpcLifeCheck.MAX_IDLE_MIN, "Maior tempo parado: %d min." % first.max_idle_min)
+	var again: NpcLifeCheck.LifeReport = NpcLifeCheck.run(_data, WORLD_SEED, DAYS, 0, true)
+	assert_eq(again.problems.size(), 0, str(again.problems))
+	assert_eq(again.state_hash, first.state_hash, "Mesma semente, mesmo hash depois de 7 dias com a economia.")
+	assert_eq(again.transit_exempt_samples, first.transit_exempt_samples, "As mesmas amostras de trânsito nas duas execuções.")
+
+
 # ---------------------------------------------------------------------------------------------------- o verificador acusa
 
 ## Estoque de comida de teste: o assentamento "s" começa com 3, teto 10.
