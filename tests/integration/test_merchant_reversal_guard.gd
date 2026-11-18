@@ -118,8 +118,9 @@ func test_a_save_with_the_merchants_is_refused_clearly_by_the_original_data_with
 	for expected: String in ["módulo 'npc'", "%d referência(s) em %d NPC(s) vivo(s)" % [missing.references.size(), missing.npc_ids.size()], "restaure os dados com que o save foi criado"]:
 		assert_string_contains(result.message, expected, "A mensagem é clara: diz o módulo, as contagens e o que fazer.")
 	var listed: int = mini(missing.references.size(), NpcPersistence.MAX_LISTED_MISSING_PLACES)
-	for index: int in listed:
-		assert_string_contains(result.message, missing.references[index], "A mensagem diz o NPC, o campo e o local que não existe.")
+	var first_references: Array[String] = []
+	first_references.assign(missing.references.slice(0, listed))
+	assert_string_contains(result.message, "; ".join(first_references), "A mensagem diz, em ordem de NPC e de campo (casa, trabalho, onde está, alvo da ação), o NPC, o campo e o local que não existe; o NPC com ação em curso lista também o `place_id` e o alvo.")
 	if missing.references.size() > listed:
 		assert_string_contains(result.message, "e mais %d" % (missing.references.size() - listed), "O que passa do limite listado vira uma contagem.")
 	assert_eq(bytes, bytes_before, "Os bytes do save ficam intactos.")
