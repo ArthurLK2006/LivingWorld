@@ -440,7 +440,7 @@ func serialize() -> Dictionary:
 
 
 ## Confere tudo antes de alterar o estado: se algo for inválido, o estado fica como estava. Só recusa o que não dá para converter
-## (estrutura, tipos, chave de ID); faixas e coerência ficam com validate() (mesmo critério do `character`).
+## (estrutura, tipos, chave de ID) e o NPC VIVO que cita casa ou local inexistente (LW-098h5-G); faixas e coerência ficam com validate() (mesmo critério do `character`).
 func on_load(data: Dictionary) -> Result:
 	var loaded: Result = _persistence.on_load(data)
 	if loaded.ok:
