@@ -1,13 +1,16 @@
 extends GutTest
 ## LW-070a: a costura do LOD e dos Intents com o fluxo de decisão (LW-063), sem janela e com o jogo montado como o real: os dados reais de
-## res://data (NpcSetup.from_dir), os 100 NPCs da população inicial (60 no assentamento A e 40 no B), o mundo do SimulationRunner e o relógio
-## de verdade (1 passo = 1 minuto). O foco fica no centro do assentamento A (os 60 ficam a menos de 80 m; o limite de S0 é 50). O "corpo" é
+## res://data (NpcSetup.from_dir), os NPCs da população inicial (138: A 62, B 46 e C 30), o mundo do SimulationRunner e o relógio
+## de verdade (1 passo = 1 minuto). O foco fica no centro do assentamento A (os 62 ficam a menos de 80 m; o limite de S0 é 50). O "corpo" é
 ## o próprio teste: cumpre cada Intent no fim previsto ou o deixa sem resposta de propósito. À meia-noite a rotina real manda todos dormirem
 ## (`sleep`, 480 min, na casa, alivia `rest` em 100), então os primeiros Intents são ACT_AT_PLACE; os de ir a um local (MOVE_TO_PLACE) só
-## aparecem quando o sono acaba (cerca das 8h). ATENÇÃO: com 60 NPCs perto do foco e só 50 vagas, quem está em S0 oscila (o limite de S0 não
-## tem histerese): a partir das 7h os NPCs de fora andam, passam mais perto do foco que os de corpo parado e tomam a vaga deles (medido: 188
+## aparecem quando o sono acaba (cerca das 8h). ATENÇÃO: com 62 NPCs perto do foco e só 50 vagas, quem está em S0 oscila (o limite de S0 não
+## tem histerese): a partir das 7h os NPCs de fora andam, passam mais perto do foco que os de corpo parado e tomam a vaga deles (medido na LW-070a, com 60 NPCs no A: 188
 ## trocas de nível em 1 dia de corpos parados; o NPC 1 sai por volta das 7h30 e o mais perto do foco só às 19h30, na reunião do `talk`). Por
 ## isso os testes de UM NPC escolhem o mais perto do foco; os testes do dia inteiro só conferem as propriedades que valem sempre.
+## LW-098h5: o A tem 2 dos 6 comerciantes (ids 61 e 62), com agenda PRÓPRIA: descansam (`rest`, 60 min, em um local de descanso) de madrugada em
+## vez de dormir e, às 6h, vão a pé para casa (Intent de ir) antes de comer. Os testes de UM NPC escolhem entre os que NÃO são comerciantes (a
+## premissa deles é a rotina comum: `sleep` e depois `eat`) e cada comerciante ganha o teste IRMÃO com a asserção própria.
 
 const DATA_DIR: String = "res://data"
 const WORLD_SEED: int = 11
@@ -24,6 +27,12 @@ const FIRST_THINKS_DONE: int = 12
 const SLEEP: String = "sleep"
 const SLEEP_MIN: int = 480
 const REST: int = 1
+const MERCHANT: String = "merchant"
+const A_MERCHANT_IDS: Array[int] = [61, 62]
+const A_MERCHANT_HOME: String = "a_home_13"
+const A_REST_PLACE: String = "a_rest_02"
+const REST_ACTION: String = "rest"
+const EAT_ACTION: String = "eat"
 ## Valor inicial de `rest` e índice/efeito de `hunger` (data/needs.json e data/action_effects.json), escritos à mão.
 const REST_START_VALUE: int = 10
 const HUNGER: int = 0
@@ -117,22 +126,39 @@ func _closest_to_focus(rig: Rig, ids: Array[int]) -> int:
 	return closest_id
 
 
-## O Intent pendente do NPC mais perto do foco.
-func _closest_pending(rig: Rig) -> NpcIntent:
+func _is_merchant(rig: Rig, npc_id: int) -> bool:
+	return rig.npc.peek_npc(npc_id).occupation_id == MERCHANT
+
+
+## Os `ids` que são comerciantes (`merchant` verdadeiro) ou os que NÃO são (falso), na mesma ordem.
+func _of_kind(rig: Rig, ids: Array[int], merchant: bool) -> Array[int]:
+	var picked: Array[int] = []
+	for npc_id: int in ids:
+		if _is_merchant(rig, npc_id) == merchant:
+			picked.append(npc_id)
+	return picked
+
+
+func _merchants_in_s0(rig: Rig) -> Array[int]:
+	return _of_kind(rig, rig.npc.lod.s0_ids(), true)
+
+
+## O Intent pendente do NPC mais perto do foco, entre os que NÃO são comerciantes (padrão) ou, com `merchant`, entre os comerciantes.
+func _closest_pending(rig: Rig, merchant: bool = false) -> NpcIntent:
 	var waiting: Array[NpcIntent] = rig.npc.peek_pending_intents()
 	var ids: Array[int] = []
 	for intent: NpcIntent in waiting:
 		ids.append(intent.npc_id)
-	var closest_id: int = _closest_to_focus(rig, ids)
+	var closest_id: int = _closest_to_focus(rig, _of_kind(rig, ids, merchant))
 	for intent: NpcIntent in waiting:
 		if intent.npc_id == closest_id:
 			return intent
 	return null
 
 
-func _first_pending_of_kind(rig: Rig, kind: NpcIntent.Kind) -> NpcIntent:
+func _first_pending_of_kind(rig: Rig, kind: NpcIntent.Kind, merchant: bool = false) -> NpcIntent:
 	for intent: NpcIntent in rig.npc.peek_pending_intents():
-		if intent.kind == kind:
+		if intent.kind == kind and _is_merchant(rig, intent.npc_id) == merchant:
 			return intent
 	return null
 
@@ -171,7 +197,16 @@ func test_an_s0_npc_that_decides_an_action_emits_an_intent_and_nothing_is_applie
 	var rig: Rig = _rig_with_focus()
 	rig.runner.run_steps(FIRST_THINKS_DONE)
 	var s0: Array[int] = rig.npc.lod.s0_ids()
-	assert_eq(s0.size(), MAX_S0, "Dos 60 do assentamento A, 50 ganham corpo.")
+	assert_eq(s0.size(), MAX_S0, "Dos 62 do assentamento A, 50 ganham corpo.")
+	# A PREMISSA, explícita: o comerciante (agenda própria: `rest`, não `sleep`) está entre os 12 de fora do S0 neste minuto, ainda a caminho do
+	# descanso, com a caminhada começada ANTES de ter corpo (sem Intent). É só por isso que todo Intent abaixo é de sono: se a geometria mudar,
+	# este teste falha AQUI, dizendo o porquê, e não por um Intent de comerciante no meio da conferência do sono.
+	assert_eq(_merchants_in_s0(rig).size(), 0, "Os comerciantes (casa a 56 m do foco) estão entre os 12 de fora do S0 no minuto %d." % FIRST_THINKS_DONE)
+	for merchant_id: int in A_MERCHANT_IDS:
+		var walking: NpcModule.NpcQuery = rig.npc.peek_npc(merchant_id)
+		assert_eq([walking.action_id, walking.action_target_place_id, rig.npc.intents.has_pending(merchant_id)], [ActionRunner.GO_TO_PLACE_ID, A_REST_PLACE, false], "O comerciante caminha ao descanso, sem Intent.")
+	var sleepers: Array[int] = _of_kind(rig, s0, false)
+	assert_eq(sleepers.size(), s0.size(), "Quem está em S0 é gente comum, que dorme.")
 	var intents: Array[NpcIntent] = rig.npc.peek_pending_intents()
 	assert_eq(intents.size(), s0.size(), "Todo NPC em S0 que já pensou emitiu um Intent.")
 	for intent: NpcIntent in intents:
@@ -254,6 +289,42 @@ func test_a_success_result_applies_the_effects_once_and_the_npc_thinks_again_wit
 	assert_eq([unchanged.need_values, unchanged.action_id, unchanged.action_serial, unchanged.next_think_time], [thinking.need_values, thinking.action_id, thinking.action_serial, thinking.next_think_time], "Resultado descartado não muda o NPC.")
 
 
+## O irmão do teste acima para o comerciante: às 6h ele caminha para casa (Intent de ir), então o desfecho do corpo é ARRIVED; DONE é recusado.
+func test_a_merchants_walk_home_takes_arrived_and_refuses_done_and_the_npc_thinks_again_within_a_minute() -> void:
+	var rig: Rig = _rig_with_focus()
+	rig.runner.run_steps(AFTER_THE_ROUTINE_SWAP)
+	var intent: NpcIntent = _closest_pending(rig, true)
+	var before: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
+	assert_eq([before.action_id, intent.kind, intent.place_id], [ActionRunner.GO_TO_PLACE_ID, NpcIntent.Kind.MOVE_TO_PLACE, A_MERCHANT_HOME], "Sanidade: às 6h o comerciante caminha para casa, com Intent de ir.")
+	rig.runner.run_steps(before.action_ends_at - rig.now())
+	var at_the_end: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
+	var refused: Result = rig.npc.request_report_npc_result(_result_for(intent, NpcActionResult.Outcome.DONE))
+	assert_eq(refused.code, NpcIntentBoard.CODE_OUTCOME_MISMATCH, "DONE só vale para agir no local: para um Intent de ir é recusado.")
+	assert_true(rig.npc.intents.has_pending(intent.npc_id), "E o Intent segue esperando o resultado certo.")
+	var kept: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
+	assert_eq([kept.need_values, kept.action_id, kept.action_serial, kept.next_think_time], [at_the_end.need_values, at_the_end.action_id, at_the_end.action_serial, at_the_end.next_think_time], "Resultado recusado não muda o NPC.")
+	var arrived: NpcActionResult = _result_for(intent, NpcActionResult.Outcome.ARRIVED)
+	var reported: Result = rig.npc.request_report_npc_result(arrived)
+	assert_true(reported.ok, reported.message)
+	var after: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
+	assert_eq(after.action_id, before.action_id, "Logo depois do relato a caminhada só tem o fim marcado: o pensador ainda não a encerrou (LW-070d).")
+	assert_true(after.next_think_time <= rig.now() + 1, "Volta a pensar no minuto seguinte, no máximo.")
+	assert_false(rig.npc.intents.has_pending(intent.npc_id))
+	rig.runner.step_once()
+	var home: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
+	assert_eq([home.action_id, home.action_serial, home.place_id], [EAT_ACTION, intent.action_serial + 1, A_MERCHANT_HOME], "Pensou de novo no minuto seguinte, encerrou a caminhada (o comerciante está em casa) e começou a próxima ação: comer.")
+	assert_eq([home.x_cm, home.z_cm], [intent.destination_cm.x, intent.destination_cm.y], "E o corpo o deixou no destino.")
+	var level_at_home: int = rig.npc.lod.level_of(intent.npc_id)
+	assert_eq(level_at_home, NpcLod.LEVEL_S1, "Em casa, a 56 m do foco, o comerciante já está entre os 12 de fora do S0 (a regra de proximidade vale para ele como para todos).")
+	assert_eq(rig.npc.intents.has_pending(intent.npc_id), level_at_home == NpcLod.LEVEL_S0, "A próxima ação nasce com Intent se, e só se, o NPC tem corpo: sem corpo, o `eat` segue em modo abstrato.")
+	var discarded_before: int = _discarded(rig)
+	var again: Result = rig.npc.request_report_npc_result(arrived)
+	assert_eq(again.code, NpcIntentBoard.CODE_STALE_RESULT, "O mesmo ARRIVED, agora de uma ação velha, é descartado.")
+	assert_eq(_discarded(rig), discarded_before + 1, "E contado.")
+	var unchanged: NpcModule.NpcQuery = rig.npc.peek_npc(intent.npc_id)
+	assert_eq([unchanged.need_values, unchanged.action_id, unchanged.action_serial, unchanged.next_think_time], [home.need_values, home.action_id, home.action_serial, home.next_think_time], "Resultado descartado não muda o NPC.")
+
+
 func test_a_result_in_the_very_minute_the_intent_was_born_also_wakes_the_npc() -> void:
 	var rig: Rig = _rig_with_focus()
 	var born: NpcIntent = null
@@ -332,7 +403,7 @@ func test_entering_s0_in_the_middle_of_an_abstract_action_finishes_it_abstractly
 	var s0: Array[int] = rig.npc.lod.s0_ids()
 	assert_eq(s0.size(), MAX_S0, "Cinquenta NPCs entram em S0 no meio do sono.")
 	assert_eq(rig.npc.peek_pending_intents().size(), 0, "Nenhum Intent para a ação que já estava em curso.")
-	var npc_id: int = _closest_to_focus(rig, s0)
+	var npc_id: int = _closest_to_focus(rig, _of_kind(rig, s0, false))
 	var sleeping: NpcModule.NpcQuery = rig.npc.peek_npc(npc_id)
 	assert_eq([sleeping.action_id, sleeping.action_serial], [SLEEP, 1])
 	for _minute: int in DAY:
@@ -352,9 +423,37 @@ func test_entering_s0_in_the_middle_of_an_abstract_action_finishes_it_abstractly
 	assert_eq(next_intent.action_serial, 2)
 
 
+## O irmão do teste acima para o comerciante: ele não dorme, descansa (`rest`, 60 min) em um local de descanso a 17 m do foco.
+func test_entering_s0_in_the_middle_of_a_merchants_rest_finishes_it_abstractly_and_the_next_one_has_an_intent() -> void:
+	var rig: Rig = _rig()
+	rig.runner.run_steps(30)
+	assert_true(rig.npc.request_set_focus(ACTOR_ID, FOCUS_A_M).ok)
+	rig.runner.step_once()
+	assert_eq(_merchants_in_s0(rig), A_MERCHANT_IDS, "Os dois comerciantes, no descanso a 17 m do foco, estão entre os 50 que entram em S0.")
+	assert_eq(rig.npc.peek_pending_intents().size(), 0, "Nenhum Intent para a ação que já estava em curso.")
+	var npc_id: int = _closest_to_focus(rig, _merchants_in_s0(rig))
+	var resting: NpcModule.NpcQuery = rig.npc.peek_npc(npc_id)
+	assert_eq([resting.action_id, resting.action_serial, resting.place_id], [REST_ACTION, 2, A_REST_PLACE], "Série 1: a caminhada ao descanso; série 2: o 1º `rest`.")
+	for _minute: int in DAY:
+		rig.runner.step_once()
+		if rig.npc.peek_npc(npc_id).action_serial > 2:
+			break
+		assert_false(rig.npc.intents.has_pending(npc_id), "Enquanto o `rest` que já estava em curso não acaba, não há Intent para ele.")
+	var next: NpcModule.NpcQuery = rig.npc.peek_npc(npc_id)
+	assert_eq([next.action_id, next.action_serial], [REST_ACTION, 3], "O `rest` acabou em modo abstrato (série 2 para 3) e o comerciante começou o ciclo seguinte.")
+	assert_gte(rig.now(), resting.action_ends_at, "E foi o relógio que o terminou, no fim previsto: o `rest` não é trocado no meio pela rotina.")
+	assert_eq(next.need_values[REST], 0, "O alívio do `rest` (-20) entrou, pelo runner abstrato: a necessidade `rest` chegou a 0.")
+	var next_intent: NpcIntent = null
+	for waiting_intent: NpcIntent in rig.npc.peek_pending_intents():
+		if waiting_intent.npc_id == npc_id:
+			next_intent = waiting_intent
+	assert_not_null(next_intent, "O PRÓXIMO `rest` já nasce com Intent.")
+	assert_eq([next_intent.action_serial, next_intent.kind, next_intent.place_id], [3, NpcIntent.Kind.ACT_AT_PLACE, A_REST_PLACE], "Descansar no local de descanso: agir no local.")
+
+
 # ---------------------------------------------------------------------------------------------------- (h) limite de S0
 
-func test_the_closest_fifty_of_the_sixty_get_a_body() -> void:
+func test_the_closest_fifty_of_the_sixty_two_get_a_body() -> void:
 	var rig: Rig = _rig_with_focus()
 	rig.runner.step_once()
 	var ranked: Array = []
@@ -366,13 +465,21 @@ func test_the_closest_fifty_of_the_sixty_get_a_body() -> void:
 		if distance_sq <= ENTER_RADIUS_CM * ENTER_RADIUS_CM:
 			ranked.append([distance_sq, npc_id])
 	ranked.sort_custom(func(first: Array, second: Array) -> bool: return first[0] < second[0] or (first[0] == second[0] and first[1] < second[1]))
-	assert_eq(ranked.size(), 60, "Os 60 do assentamento A estão a menos de 80 m do foco.")
+	assert_eq(ranked.size(), 62, "Os 62 do assentamento A (60 moradores e 2 comerciantes) estão a menos de 80 m do foco.")
 	var expected: Array[int] = []
 	for index: int in MAX_S0:
 		expected.append(ranked[index][1])
 	expected.sort()
 	assert_eq(rig.npc.lod.s0_ids(), expected, "Ficam em S0 os 50 mais perto (empate pelo menor ID).")
 	assert_eq(rig.changes.size(), MAX_S0, "Um LodChanged por NPC que ganhou corpo.")
+	# Os comerciantes entram na MESMA regra de proximidade (nenhuma regra por ofício): a casa deles, a 56 m, é a mais longe do foco, então são os
+	# dois últimos do ranking e ficam entre os 12 de fora do S0.
+	var ranked_ids: Array[int] = []
+	for entry: Array in ranked:
+		ranked_ids.append(entry[1])
+	for merchant_id: int in A_MERCHANT_IDS:
+		assert_gte(ranked_ids.find(merchant_id), MAX_S0, "O comerciante %d está no ranking, entre os 12 mais longe do foco." % merchant_id)
+		assert_false(rig.npc.lod.s0_ids().has(merchant_id), "E por isso fica sem corpo.")
 
 
 # ---------------------------------------------------------------------------------------------------- (i) sem foco o LOD não muda o mundo
@@ -399,7 +506,7 @@ func test_the_same_sequence_with_a_focus_gives_the_same_world_and_the_module_val
 		assert_gt(rig.changes.size(), 0, "Houve trocas de nível com o foco.")
 		assert_eq(rig.npc.validate().size(), 0, str(rig.npc.validate()))
 		assert_eq(rig.runner.world.validate().size(), 0, str(rig.runner.world.validate()))
-		assert_eq(rig.npc.peek_counts()["alive"], 132, "Todos vivos.")
+		assert_eq(rig.npc.peek_counts()["alive"], 138, "Todos vivos.")
 	assert_gt(answered_per_run[0], MAX_S0, "O corpo perfeito cumpriu muitos Intents ao longo do dia (mais de uma ação por NPC).")
 	assert_eq(answered_per_run[0], answered_per_run[1])
 	assert_eq(hashes[0], hashes[1], "Mesma sequência com foco, mesmo hash.")
