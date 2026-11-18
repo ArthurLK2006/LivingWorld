@@ -428,6 +428,7 @@ func test_the_real_world_a_village_reacts_the_other_far_away_does_not_and_life_g
 	assert_true(modules.npc.request_raise_alarm(center_x, center_z, 1).ok)
 	runner.step_once()
 	var reacting: int = 0
+	var merchants_reacting: int = 0
 	var fleeing_or_helping: int = 0
 	var calm_ids: int = 0
 	for npc_id: int in modules.npc.peek_npc_ids():
@@ -436,6 +437,8 @@ func test_the_real_world_a_village_reacts_the_other_far_away_does_not_and_life_g
 		if query.settlement_id == "test_settlement_a":
 			if int(entry["alarm_until"]) > 0:
 				reacting += 1
+				if query.occupation_id == "merchant":
+					merchants_reacting += 1
 			if query.action_id == "flee" or query.action_id == "help" or (query.action_id == ActionRunner.GO_TO_PLACE_ID and query.need_values[SAFETY] > 0):
 				fleeing_or_helping += 1
 			else:
@@ -443,7 +446,8 @@ func test_the_real_world_a_village_reacts_the_other_far_away_does_not_and_life_g
 		else:
 			assert_eq(int(entry["alarm_until"]), NpcState.NO_TIME, "O NPC %d do povoado distante não reage." % npc_id)
 			assert_eq(query.need_values[SAFETY], 0)
-	assert_eq(reacting, 60, "O povoado inteiro está no raio do alarme.")
+	assert_eq(reacting, 62, "O povoado inteiro (62 moradores, com os 2 comerciantes) está no raio do alarme.")
+	assert_eq(merchants_reacting, 2, "Os 2 comerciantes do povoado estão entre os que reagem.")
 	assert_gt(fleeing_or_helping, 0, "Alguns fogem ou ajudam.")
 	assert_gt(calm_ids, 0, "Outros ignoram e seguem a vida.")
 	runner.run_steps(180)

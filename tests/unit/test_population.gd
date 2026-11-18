@@ -82,17 +82,17 @@ func _flat_all(specs: Array[NpcSpec]) -> Array:
 
 func test_the_real_file_has_the_provisional_scale_by_settlement_and_occupation() -> void:
 	var plan: PopulationPlan = _real_plan()
-	assert_eq(plan.total(), 132, "Escala provisória [HIP]: 132 NPCs (DEC-040 pendente).")
+	assert_eq(plan.total(), 138, "Escala provisória [HIP]: 138 NPCs (DEC-040 pendente; inclui os 6 comerciantes da LW-098h5).")
 	var per_settlement: Dictionary = {}
 	var per_pair: Dictionary = {}
 	for row: PopulationPlan.PopulationRow in plan.peek_rows():
 		per_settlement[row.settlement_id] = int(per_settlement.get(row.settlement_id, 0)) + row.count
 		per_pair["%s/%s" % [row.settlement_id, row.occupation_id]] = int(per_pair.get("%s/%s" % [row.settlement_id, row.occupation_id], 0)) + row.count
-	assert_eq(per_settlement, {SETTLEMENT_A: 60, SETTLEMENT_B: 44, SETTLEMENT_C: 28})
+	assert_eq(per_settlement, {SETTLEMENT_A: 62, SETTLEMENT_B: 46, SETTLEMENT_C: 30})
 	var expected: Dictionary = {
-		"test_settlement_a/farmer": 24, "test_settlement_a/lumberjack": 10, "test_settlement_a/artisan": 12, "test_settlement_a/guard": 8, "test_settlement_a/innkeeper": 6,
-		"test_settlement_b/farmer": 16, "test_settlement_b/lumberjack": 8, "test_settlement_b/artisan": 8, "test_settlement_b/shepherd": 4, "test_settlement_b/guard": 5, "test_settlement_b/innkeeper": 3,
-		"test_settlement_c/miner": 8, "test_settlement_c/artisan": 12, "test_settlement_c/guard": 5, "test_settlement_c/innkeeper": 3,
+		"test_settlement_a/farmer": 24, "test_settlement_a/lumberjack": 10, "test_settlement_a/artisan": 12, "test_settlement_a/guard": 8, "test_settlement_a/innkeeper": 6, "test_settlement_a/merchant": 2,
+		"test_settlement_b/farmer": 16, "test_settlement_b/lumberjack": 8, "test_settlement_b/artisan": 8, "test_settlement_b/shepherd": 4, "test_settlement_b/guard": 5, "test_settlement_b/innkeeper": 3, "test_settlement_b/merchant": 2,
+		"test_settlement_c/miner": 8, "test_settlement_c/artisan": 12, "test_settlement_c/guard": 5, "test_settlement_c/innkeeper": 3, "test_settlement_c/merchant": 2,
 	}
 	assert_eq(per_pair, expected, "As contagens do arquivo são as do cartão ([HIP] o C e os pastores do B: LW-097d).")
 	var used_places: Dictionary[String, bool] = {}
@@ -100,7 +100,7 @@ func test_the_real_file_has_the_provisional_scale_by_settlement_and_occupation()
 		assert_false(row.work_place_id.is_empty(), "Toda linha real cita o local de trabalho que ocupa (DEC-167): %s/%s." % [row.settlement_id, row.occupation_id])
 		assert_false(used_places.has(row.work_place_id), "Uma linha por local: '%s'." % row.work_place_id)
 		used_places[row.work_place_id] = true
-	assert_eq(used_places.size(), 20, "Os 20 locais de trabalho (A 7, B 8, C 5), um por linha.")
+	assert_eq(used_places.size(), 23, "Os 23 locais de trabalho (A 8, B 9, C 6, contando a banca de cada par de comerciantes), um por linha.")
 
 
 func test_rows_come_out_in_settlement_then_occupation_order_whatever_the_order_given() -> void:
@@ -183,7 +183,7 @@ func test_the_real_plan_builds_the_whole_population_with_valid_homes_and_work_pl
 	var places: SettlementService = _real_places()
 	var routine: RoutineTable = _real_routine()
 	var specs: Array[NpcSpec] = _real_specs(WORLD_SEED)
-	assert_eq(specs.size(), 132)
+	assert_eq(specs.size(), 138)
 	var per_pair: Dictionary = {}
 	var used: Dictionary = {}
 	for index: int in specs.size():
@@ -217,30 +217,43 @@ func test_each_npc_gets_the_first_home_with_room_and_the_work_place_of_its_row()
 	assert_eq(specs[0].home_place_id, "a_home_01")
 	assert_eq(specs[4].home_place_id, "a_home_01", "A casa 1 tem 5 vagas.")
 	assert_eq(specs[5].home_place_id, "a_home_02")
-	assert_eq(specs[59].home_place_id, "a_home_12", "O último do A enche a última casa.")
-	assert_eq(specs[60].home_place_id, "b_home_01", "O B recomeça nas casas dele.")
-	assert_eq(specs[99].home_place_id, "b_home_08")
-	assert_eq(specs[103].home_place_id, "b_home_09", "Os 44 do B passam das 8 casas de antes: a nona recebe os 4 últimos.")
-	assert_eq(specs[104].home_place_id, "c_home_01", "O C recomeça nas casas dele.")
-	assert_eq(specs[131].home_place_id, "c_home_06", "Os 28 do C enchem 5 casas e 3 vagas da sexta.")
+	assert_eq(specs[59].home_place_id, "a_home_12", "O último lenhador do A enche a última casa de antes dos comerciantes.")
+	assert_eq([specs[60].home_place_id, specs[61].home_place_id], ["a_home_13", "a_home_13"], "Os 2 comerciantes do A, os últimos, abrem a casa nova 13 (a 14 fica vazia).")
+	assert_eq(specs[62].home_place_id, "b_home_01", "O B recomeça nas casas dele.")
+	assert_eq(specs[101].home_place_id, "b_home_08")
+	assert_eq(specs[105].home_place_id, "b_home_09", "Os 46 do B passam das 9 casas de antes: a nona enche com os 2 comerciantes e 3 pastores.")
+	assert_eq(specs[107].home_place_id, "b_home_10", "O último pastor do B abre a casa nova 10 (a 11 fica vazia).")
+	assert_eq(specs[108].home_place_id, "c_home_01", "O C recomeça nas casas dele.")
+	assert_eq(specs[137].home_place_id, "c_home_06", "Os 30 do C enchem exatamente 6 casas.")
 	assert_eq(specs[0].work_place_id, "a_work_04", "A ordem é povoado, ofício e local: os artesãos do `a_work_04` vêm primeiro.")
 	assert_eq(specs[5].work_place_id, "a_work_04")
 	assert_eq(specs[6].work_place_id, "a_work_05")
 	assert_eq(specs[12].work_place_id, "a_work_01", "Os lavradores do `a_work_01`, com a equipe de 12 da linha.")
 	assert_eq(specs[24].work_place_id, "a_work_02")
-	assert_eq(specs[59].work_place_id, "a_work_03", "O último do A é lenhador, no `a_work_03`.")
-	assert_eq(specs[60].work_place_id, "b_work_04")
-	assert_eq(specs[103].work_place_id, "b_work_06", "O último do B é o pastor, no `b_work_06`.")
-	assert_eq(specs[104].work_place_id, "c_work_02")
-	assert_eq(specs[131].work_place_id, "c_work_01", "O último do C é mineiro, no `c_work_01`.")
+	assert_eq(specs[59].work_place_id, "a_work_03", "O último lenhador do A, no `a_work_03`, vem antes dos comerciantes.")
+	assert_eq(specs[62].work_place_id, "b_work_04")
+	assert_eq(specs[107].work_place_id, "b_work_06", "O último do B é o pastor, no `b_work_06`.")
+	assert_eq(specs[108].work_place_id, "c_work_02")
+	assert_eq(specs[137].work_place_id, "c_work_01", "O último do C é mineiro, no `c_work_01`.")
+	var places: SettlementService = _real_places()
+	var merchants: Array = [
+		[60, SETTLEMENT_A, "a_market_01", "a_home_13"], [61, SETTLEMENT_A, "a_market_01", "a_home_13"],
+		[102, SETTLEMENT_B, "b_market_01", "b_home_09"], [103, SETTLEMENT_B, "b_market_01", "b_home_09"],
+		[128, SETTLEMENT_C, "c_market_01", "c_home_05"], [129, SETTLEMENT_C, "c_market_01", "c_home_05"],
+	]
+	for expected_merchant: Array in merchants:
+		var merchant: NpcSpec = specs[int(expected_merchant[0])]
+		assert_eq([merchant.occupation_id, merchant.settlement_id, merchant.work_place_id, merchant.home_place_id], ["merchant", expected_merchant[1], expected_merchant[2], expected_merchant[3]], "O comerciante do índice %d: ofício, povoado, banca do mercado e a primeira casa com vaga." % int(expected_merchant[0]))
+		var home: SettlementService.PlaceQuery = places.peek_place(merchant.home_place_id)
+		assert_eq([home.place.kind, home.place.settlement_id], [Place.KIND_HOME, merchant.settlement_id], "A casa do comerciante %d é uma casa do próprio povoado." % int(expected_merchant[0]))
 	var occupations: Array[String] = []
-	for index: int in range(0, 60):
+	for index: int in range(0, 62):
 		if occupations.is_empty() or occupations[occupations.size() - 1] != specs[index].occupation_id:
 			occupations.append(specs[index].occupation_id)
-	var expected_order: Array[String] = ["artisan", "farmer", "guard", "innkeeper", "lumberjack"]
-	assert_eq(occupations, expected_order, "Dentro de um assentamento, os ofícios saem em ordem alfabética.")
-	assert_eq(specs[0].settlement_id, SETTLEMENT_A)
-	assert_eq(specs[60].settlement_id, SETTLEMENT_B)
+	var expected_order: Array[String] = ["artisan", "farmer", "guard", "innkeeper", "lumberjack", "merchant"]
+	assert_eq(occupations, expected_order, "Dentro de um assentamento, os ofícios saem em ordem alfabética (os comerciantes por último no A).")
+	assert_eq([specs[0].settlement_id, specs[61].settlement_id], [SETTLEMENT_A, SETTLEMENT_A])
+	assert_eq(specs[62].settlement_id, SETTLEMENT_B)
 
 
 func test_the_same_seed_gives_the_same_population_and_another_seed_other_traits() -> void:
@@ -272,15 +285,19 @@ func test_the_row_order_in_the_file_does_not_change_the_population() -> void:
 func test_a_plan_with_no_room_fails_as_a_data_error_and_spends_no_random_numbers() -> void:
 	var rng: WorldRng = WorldRng.new(WORLD_SEED)
 	var before: Dictionary = rng.serialize()
-	var too_many: Array[PopulationPlan.PopulationRow] = [_row(SETTLEMENT_A, "farmer", 61)]
+	var too_many: Array[PopulationPlan.PopulationRow] = [_row(SETTLEMENT_A, "farmer", 71)]
 	var no_home: PopulationPlan.BuildResult = _plan_of(too_many).build_specs(_real_places(), _real_routine(), rng)
 	assert_false(no_home.result.ok)
 	assert_eq(no_home.result.code, PopulationPlan.CODE_NO_ROOM)
 	assert_string_contains(no_home.result.message, "'test_settlement_a'")
-	assert_string_contains(no_home.result.message, "nº 61")
-	assert_string_contains(no_home.result.message, "60 vaga")
+	assert_string_contains(no_home.result.message, "nº 71")
+	assert_string_contains(no_home.result.message, "70 vaga")
 	assert_eq(no_home.specs.size(), 0)
 	assert_eq(rng.serialize(), before, "Plano recusado não gastou nenhum sorteio.")
+	var exactly_full: Array[PopulationPlan.PopulationRow] = [_row(SETTLEMENT_A, "farmer", 70)]
+	var fits: PopulationPlan.BuildResult = _plan_of(exactly_full).build_specs(_real_places(), _real_routine(), WorldRng.new(WORLD_SEED))
+	assert_true(fits.result.ok, "Caso-limite do outro lado: 70 lavradores cabem exatamente nas 70 vagas das 14 casas do A.")
+	assert_eq(fits.specs.size(), 70)
 	# Casas de sobra, mas poucos locais de trabalho: dois locais de 1 vaga e 3 NPCs.
 	var settlements: Array[Settlement] = [Settlement.new("s", "settlement.s", Vector3.ZERO)]
 	var places: Array[Place] = [
@@ -346,19 +363,20 @@ func test_a_new_game_creates_the_whole_population_in_order_and_it_is_valid() -> 
 	assert_eq(module.peek_counts()["total"], 0, "Antes do jogo novo ninguém existe.")
 	world.on_new_game(WORLD_SEED)
 	var counts: Dictionary = module.peek_counts()
-	assert_eq([counts["total"], counts["alive"], counts["dead"]], [132, 132, 0])
+	assert_eq([counts["total"], counts["alive"], counts["dead"]], [138, 138, 0])
 	var ids: Array[int] = module.peek_npc_ids()
-	assert_eq([ids[0], ids[131]], [1, 132], "IDs de 1 a 132, do contador do core.")
+	assert_eq([ids[0], ids[137]], [1, 138], "IDs de 1 a 138, do contador do core.")
 	var first: NpcModule.NpcQuery = module.peek_npc(1)
 	assert_eq([first.name_key, first.name_number, first.occupation_id, first.settlement_id], [PopulationPlan.NAME_KEY, 1, "artisan", SETTLEMENT_A])
 	assert_eq([first.home_place_id, first.work_place_id, first.place_id], ["a_home_01", "a_work_04", "a_home_01"])
 	assert_eq(first.need_values[0], 20, "Nasce com os valores iniciais de data/needs.json (fome 20).")
+	assert_eq([module.peek_npc(62).settlement_id, module.peek_npc(62).occupation_id, module.peek_npc(63).settlement_id], [SETTLEMENT_A, "merchant", SETTLEMENT_B], "O A termina nos 2 comerciantes (IDs 61 e 62) e o B começa no 63.")
 	assert_eq(module.peek_npc(100).settlement_id, SETTLEMENT_B)
-	assert_eq(module.peek_npc(105).settlement_id, SETTLEMENT_C)
+	assert_eq(module.peek_npc(109).settlement_id, SETTLEMENT_C, "O C começa no 109.")
 	assert_eq(module.validate().size(), 0, str(module.validate()))
 	assert_eq(world.validate().size(), 0, str(world.validate()))
 	assert_eq(module.debug_summary()["population_problem"], "")
-	assert_eq(module.debug_summary()["by_occupation"], {"artisan": 32, "farmer": 40, "guard": 18, "innkeeper": 12, "lumberjack": 18, "miner": 8, "shepherd": 4})
+	assert_eq(module.debug_summary()["by_occupation"], {"artisan": 32, "farmer": 40, "guard": 18, "innkeeper": 12, "lumberjack": 18, "merchant": 6, "miner": 8, "shepherd": 4})
 	world.teardown()
 
 
@@ -387,7 +405,7 @@ func test_the_populated_world_survives_a_save_and_load_without_creating_anyone_a
 	var other_world: World = _new_world(other, WORLD_SEED)
 	var loaded: Result = other_world.on_load(saved)
 	assert_true(loaded.ok, loaded.message)
-	assert_eq(other.peek_counts()["total"], 132, "Carregar não cria população de novo.")
+	assert_eq(other.peek_counts()["total"], 138, "Carregar não cria população de novo.")
 	assert_eq(other_world.state_hash(), world.state_hash(), "O mundo carregado é o mesmo que foi salvo.")
 	world.teardown()
 	other_world.teardown()
@@ -411,7 +429,7 @@ func test_no_plan_means_nobody_is_created() -> void:
 
 func test_a_plan_that_does_not_fit_creates_nobody_logs_the_error_and_reports_it() -> void:
 	var setup: NpcSetup = _setup()
-	var too_many: Array[PopulationPlan.PopulationRow] = [_row(SETTLEMENT_A, "farmer", 61)]
+	var too_many: Array[PopulationPlan.PopulationRow] = [_row(SETTLEMENT_A, "farmer", 71)]
 	setup.definitions.population = _plan_of(too_many)
 	var module: NpcModule = NpcModule.new(setup.need_defs, setup.routine, setup.definitions)
 	var world: World = _new_world(module, WORLD_SEED)
@@ -420,3 +438,12 @@ func test_a_plan_that_does_not_fit_creates_nobody_logs_the_error_and_reports_it(
 	assert_eq(module.peek_counts()["total"], 0, "Nenhum NPC nasce sem casa.")
 	assert_string_contains(module.debug_summary()["population_problem"], "sem casa com vaga")
 	world.teardown()
+	var fitting_setup: NpcSetup = _setup()
+	var exactly_full: Array[PopulationPlan.PopulationRow] = [_row(SETTLEMENT_A, "farmer", 70)]
+	fitting_setup.definitions.population = _plan_of(exactly_full)
+	var fitting: NpcModule = NpcModule.new(fitting_setup.need_defs, fitting_setup.routine, fitting_setup.definitions)
+	var fitting_world: World = _new_world(fitting, WORLD_SEED)
+	fitting_world.on_new_game(WORLD_SEED)
+	assert_eq(fitting.peek_counts()["total"], 70, "Caso-limite do outro lado: 70 lavradores cabem exatamente nas 70 vagas do A e nascem.")
+	assert_eq(fitting.debug_summary()["population_problem"], "")
+	fitting_world.teardown()

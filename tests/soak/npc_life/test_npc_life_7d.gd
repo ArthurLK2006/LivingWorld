@@ -1,5 +1,5 @@
 extends GutTest
-## LW-068: a vida dos 132 NPCs sem jogador, versão CURTA (7 dias de jogo), que roda no tools/check_all (a de 30 dias está em
+## LW-068: a vida dos 138 NPCs sem jogador, versão CURTA (7 dias de jogo), que roda no tools/check_all (a de 30 dias está em
 ## tests/soak/npc_life/soak_npc_life_30d.gd, fora do check_all porque leva cerca de um minuto). Mesmo verificador das duas (NpcLifeCheck):
 ## todos vivos; necessidades de 0 a 100; comida nunca negativa; ninguém parado sem ação por mais de uma hora; world.validate() e npc.validate()
 ## limpos ao fim de cada dia; pensamentos por passo dentro do teto. Repetido com a mesma semente dá o mesmo hash, e salvar e carregar no
