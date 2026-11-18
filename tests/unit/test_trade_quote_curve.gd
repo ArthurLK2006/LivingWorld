@@ -1,11 +1,12 @@
 extends GutTest
 ## LW-098h3c1: a curva de cotações (`TradeEngine.quote_curve`, `MarketBook.buy_curve` e `sell_curve`, `PriceMath.buy_curve` e `sell_curve`; docs/modules/economy.md, 9.5) é a MESMA aritmética de `quote` numa passada só, e o `TradePlanner` que a lê decide exatamente o que decidia com uma `quote` por quantidade.
-## A curva é conferida contra `quote` em CADA quantidade, nos dados reais (data/economy) com o estoque do vazio ao teto e acima dele, nos dois lados, com tarifa, bem banido e ator desconhecido ou fechado. O planejador é conferido, campo a campo, contra o `QuotePlanner` deste teste (a cópia do de antes da curva) numa grade de mundos, nos casos de limite e nos mercados reais.
+## A curva é conferida contra `quote` em CADA quantidade, nos dados reais (data/economy) com o estoque do vazio ao teto e acima dele, nos dois lados, com tarifa, bem banido e ator desconhecido ou fechado. O planejador é conferido, campo a campo, contra o `QuotePlanner` deste teste (a cópia do de antes da curva) numa grade de mundos e nos casos de limite (nos mercados reais, a equivalência do planejador fica com o `state_hash` de cada dia da emulação de 6 comerciantes).
 
 const MARKET_A: int = 1
 const MARKET_B: int = 2
 const MARKET_C: int = 3
 const TRADER: int = 10
+const OTHER_TRADER: int = 11
 const STRANGER: int = 99
 const CAPACITY: int = 120
 const MAX_ORDER: int = 50
@@ -44,6 +45,22 @@ class BanRules:
 
 	func peek_terms(good_id: String, market_id: int, _actor_id: int) -> TradeTerms:
 		return TradeTerms.new(market_id == banned_market and (banned_good.is_empty() or good_id == banned_good), 0, false)
+
+
+## Regra que depende do ATOR: só o `restricted_actor` paga tarifa (400 pontos-base) e fica proibido do grão; os demais negociam sem tarifa nem proibição.
+class ActorRules:
+	extends TradeRules
+
+	var restricted_actor: int
+
+
+	func _init(actor_id: int) -> void:
+		restricted_actor = actor_id
+
+
+	func peek_terms(good_id: String, _market_id: int, actor_id: int) -> TradeTerms:
+		var restricted: bool = actor_id == restricted_actor
+		return TradeTerms.new(restricted and good_id == "grain", 400 if restricted else 0, false)
 
 
 ## O planejador de REFERÊNCIA: o de antes da curva (LW-098h3b), com UMA `quote` por quantidade (cópia do `_candidate` e dos auxiliares de então, só renomeados `_old_`). `plan_for`, `plan_all`, `_upper_quantity` e a pré-checagem `_rules_out` (que não mudou e o `test_trade_planner.gd` já confere contra a busca completa) são os do planejador real.
@@ -176,7 +193,7 @@ func _rig(spec: Dictionary, funds: Dictionary, rules: TradeRules = null, carried
 
 
 ## Os três povoados dos dados reais (mercados 1 a 3), com o estoque inicial de `market_targets.json`.
-func _real_rig(rules: TradeRules = null, funds: Dictionary = {}) -> Rig:
+func _real_rig(rules: TradeRules = null) -> Rig:
 	var goods: GoodsLoader.LoadResult = GoodsLoader.load_dir(GoodsLoader.DEFAULT_DIR)
 	var loaded: MarketLoader.LoadResult = MarketLoader.load_dir(GoodsLoader.DEFAULT_DIR)
 	assert_true(goods.result.ok and loaded.result.ok, goods.result.message + loaded.result.message)
@@ -185,7 +202,7 @@ func _real_rig(rules: TradeRules = null, funds: Dictionary = {}) -> Rig:
 		var market_id: int = MARKET_A + ["test_settlement_a", "test_settlement_b", "test_settlement_c"].find(target.settlement_id)
 		spec[market_id] = spec.get(market_id, {})
 		spec[market_id][target.good_id] = [target.target_stock, target.initial_stock, target.buy_cap_bp]
-	return _rig(spec, funds if not funds.is_empty() else _funds(), rules, {}, goods.goods)
+	return _rig(spec, _funds(), rules, {}, goods.goods)
 
 
 func _funds(trader: int = 10000, market_b: int = 3000) -> Dictionary:
@@ -283,6 +300,17 @@ func test_the_curve_refuses_what_quote_refuses() -> void:
 	assert_true(rig.book.close_owner(TRADER).ok)
 	assert_eq(_check_curve(rig.engine, MARKET_A, "bread", MAX_ORDER, buy, TRADER, "ator fechado"), 0, "Ator fechado: sem curva.")
 	assert_eq(_check_curve(rig.engine, MARKET_A, "bread", MAX_ORDER, buy, IdGenerator.NO_ID, "ator fechado, sem ator na cotação"), MAX_ORDER, "Sem ator na cotação, o fechado não importa.")
+
+
+func test_the_curve_passes_the_actor_to_the_trade_rules() -> void:
+	var rig: Rig = _real_rig(ActorRules.new(TRADER))
+	assert_true(rig.book.open_owner(OTHER_TRADER, "merchant").ok)
+	var buy: String = TradeEngine.SIDE_BUY
+	assert_eq([_check_curve(rig.engine, MARKET_A, "bread", MAX_ORDER, buy, TRADER, "ator restrito"), _check_curve(rig.engine, MARKET_A, "bread", MAX_ORDER, buy, OTHER_TRADER, "outro ator")], [MAX_ORDER, MAX_ORDER], "Nos dois casos a curva do pão vai até a ordem máxima e confere com `quote`.")
+	var restricted: TradeEngine.QuoteCurve = rig.engine.quote_curve(MARKET_A, "bread", MAX_ORDER, buy, TRADER)
+	var free: TradeEngine.QuoteCurve = rig.engine.quote_curve(MARKET_A, "bread", MAX_ORDER, buy, OTHER_TRADER)
+	assert_true(restricted.tariffs[MAX_ORDER] > 0 and free.tariffs[MAX_ORDER] == 0, "A tarifa da curva é a do ATOR pedido.")
+	assert_eq([_check_curve(rig.engine, MARKET_A, "grain", MAX_ORDER, buy, TRADER, "restrito do grão"), _check_curve(rig.engine, MARKET_A, "grain", MAX_ORDER, buy, OTHER_TRADER, "livre do grão")], [0, MAX_ORDER], "A proibição também é por ator.")
 
 
 func test_the_price_math_curves_are_the_running_sums_of_the_quotes() -> void:
