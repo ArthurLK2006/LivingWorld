@@ -17,8 +17,9 @@ extends GutTest
 ## Na Fase B da LW-097 (junção com o `main`, marco 3) os nove valores mudaram de novo, por autorização antecipada de Arthur (Bloco C v10, 11/11/2026): o `main` já trazia os valores da frente A (LW-093 a LW-096a; `intents` 8670b52b8ff6, `alarm` b62628f049b0, `resumed` 1251aaf06e2d, `switches` 6889619788b5,
 ## `talk` a8a97e95f464, `save` 781066cec584, `demote` ed884fc6fb21, `starved` f11a33ea9ab0 e `real_game` 76a65b9cfc8a), e a linha da LW-097 trazia os da população real (os da LW-097d, que seguem no histórico do git); os valores da junção são a soma das duas causas, com o estoque de comida do C trocado de 3.000 para 6.000 (autorizado por Arthur em 12/11/2026: com 3.000 os 28 NPCs do C morriam de fome entre os dias 19 e 21 do jogo real de 30 dias). Prova:
 ## com as causas da C neutralizadas na árvore da junção (FoodStub do C, população, ofícios, agendas, locais, povoados e o módulo `world`), os nove voltam exatamente aos da A.
-## Na LW-098h5 (opção A, aprovada por Arthur em 18/11/2026) o jogo real passou a nascer com 138 NPCs: os 6 comerciantes (2 por povoado; A 62, B 46, C 30). A contagem do teste do jogo real já é a de `NpcLifeCheck.EXPECTED_POPULATION` (138); a impressão `real_game` NÃO foi regravada
-## (DEC-175: o valor novo só entra com o aceite específico de Arthur), então só esse teste falha, só por essa impressão; as outras oito seguem as mesmas.
+## Na LW-098h5 (opção A, aprovada por Arthur em 18/11/2026) o jogo real passou a nascer com 138 NPCs: os 6 comerciantes (2 por povoado; A 62, B 46, C 30) e as 6 casas novas. A contagem do teste do jogo real é a de
+## `NpcLifeCheck.EXPECTED_POPULATION` (138) e **SÓ a impressão `real_game` mudou**, por decisão EXPRESSA de Arthur em 18/11/2026 (DEC-175; ele aceitou esse valor e NENHUM outro): de `48857919c5ff` para `aaf2aed10ce4`. A causa é só a entrada dos 6 NPCs: os ids de quem vem depois
+## deles na ordem do plano (o A termina nos ids 61 e 62 e o B começa no 63), os nomes e traços e os pensamentos dos 6 no mesmo sorteio; o código (`src/`) não mudou. As outras oito impressões (5 NPCs de teste) seguem as mesmas.
 
 const WORLD_SEED: int = 11
 const ACTOR_ID: int = 77
@@ -64,7 +65,7 @@ const EXPECTED: Dictionary[String, String] = {
 	"save": "5c885dbc09eea1495b195c8d03e737d0317003015ec3d02e6ed4019b3af558c9",
 	"demote": "c5b515175b726d328fbe5b481c0474f08cfdbe8e0d6c251cc4b46c342c569895",
 	"starved": "d2533a12fd058d0eb1a41ce42b001782b8f9285f41bc7d68dac2fb6bc01502a6",
-	"real_game": "48857919c5ffce261b0bcfff4e933785adcd5085b6d63cb2f0802e0f81e5e1b4",
+	"real_game": "aaf2aed10ce460e57d38b05c6273fea5bffa837537655bf837f4d64cefff4e22",
 }
 
 var _data: NpcLifeCheck.GameData
