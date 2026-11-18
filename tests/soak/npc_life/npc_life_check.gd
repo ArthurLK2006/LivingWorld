@@ -25,7 +25,7 @@ const MERCHANT_OCCUPATION: String = "merchant"
 ## Para não encher o relatório com o mesmo defeito repetido a cada passo.
 const MAX_PROBLEMS: int = 30
 ## Quantos NPCs devem estar vivos o tempo todo (a população do jogo, data/population.json).
-const EXPECTED_POPULATION: int = 132
+const EXPECTED_POPULATION: int = 138
 
 
 ## Terreno, pontos e assentamentos reais, lidos uma vez (cerca de meio segundo) e reaproveitados por todas as execuções.
