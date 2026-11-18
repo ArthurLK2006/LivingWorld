@@ -1,6 +1,6 @@
 class_name TradeEngine
 extends RefCounted
-## O comércio entre um ator e um mercado (LW-091; docs/modules/economy.md, seção 5): `quote` (o total e a tarifa de uma ordem, sem executar) e `execute` (a ordem, ATÔMICA: toda conferência vem antes da primeira escrita, e só então o
+## O comércio entre um ator e um mercado (LW-091; docs/modules/economy.md, seção 5): `quote` (o total e a tarifa de uma ordem, sem executar), `quote_curve` (a mesma cotação de 1 a N unidades numa passada, para o planejador) e `execute` (a ordem, ATÔMICA: toda conferência vem antes da primeira escrita, e só então o
 ## `Ledger` move o dinheiro e o `GoodsStore` move os bens). `side` = `buy` (o ator compra do mercado, paga o `ask`) ou `sell` (o ator vende ao mercado, recebe o `bid`); o total é a soma por degrau da seção 4 (a ordem "anda pela
 ## curva"). Ordem das conferências (a primeira que falha devolve o erro): mercado, bem, lado, quantidade, regras (`TradeRules`), ator, teto de compra ou estoque, fundos, capacidade. A tarifa que a regra pedir é CALCULADA e
 ## devolvida, mas não é cobrada na Fase 3 (a cobrança é da LW-130 e para onde ela vai é decisão da Fase 4): com a regra neutra é sempre 0. A tarifa é o total vezes `tariff_bp`, arredondado PARA CIMA, o que já dá no mínimo 1 quando `tariff_bp` é maior que 0 (assim uma ordem pequena não escapa da tarifa, nem dividindo a compra em partes).
@@ -116,3 +116,35 @@ func _check_order(market_id: int, good_id: String, quantity: int, side: String) 
 	if quantity < 1 or quantity > _params.max_order_quantity:
 		return Result.failure(EconomyCodes.BAD_QUANTITY, "TradeEngine: quantidade %d inválida; esperado de 1 a %d por ordem." % [quantity, _params.max_order_quantity])
 	return Result.success()
+
+
+## As cotações de 1 a `quantity` unidades numa passada só (o `TradePlanner` as usa no lugar de uma cotação por quantidade): as MESMAS conferências de `quote` (ordem, regras, ator, estoque ou teto do destino) e a MESMA aritmética. `ok_through` é a maior quantidade (0 = nenhuma) que `quote` aceitaria, e
+## nos índices 1 a `ok_through` `totals[q]` e `tariffs[q]` são o `total` e a `tarifa` de `quote(…, q)`; a quantidade pedida acima de `max_order_quantity` fica de fora, como em `quote`.
+func quote_curve(market_id: int, good_id: String, quantity: int, side: String, actor_id: int = IdGenerator.NO_ID) -> QuoteCurve:
+	var curve: QuoteCurve = QuoteCurve.new()
+	if quantity < 1 or not _check_order(market_id, good_id, 1, side).ok:
+		return curve
+	var terms: TradeTerms = _rules.peek_terms(good_id, market_id, actor_id)
+	if terms.banned or (actor_id != IdGenerator.NO_ID and not _book.check_open(actor_id).ok):
+		return curve
+	var stock: int = _goods.quantity_of(market_id, good_id)
+	var limit: int = mini(quantity, _params.max_order_quantity)
+	limit = mini(limit, stock) if side == SIDE_BUY else mini(limit, _markets.buy_cap_of(market_id, good_id) - stock)
+	if limit < 1:
+		return curve
+	curve.ok_through = limit
+	curve.totals = _markets.buy_curve(market_id, good_id, limit) if side == SIDE_BUY else _markets.sell_curve(market_id, good_id, limit)
+	curve.tariffs.resize(limit + 1)
+	if terms.tariff_bp > 0:
+		for q: int in range(1, limit + 1):
+			curve.tariffs[q] = _tariff_of(curve.totals[q], terms.tariff_bp)
+	return curve
+
+
+## Resultado de `quote_curve`: indexado pela quantidade (o índice 0 é 0); só vale de 1 a `ok_through`.
+class QuoteCurve:
+	extends RefCounted
+
+	var ok_through: int = 0
+	var totals: PackedInt64Array = PackedInt64Array()
+	var tariffs: PackedInt64Array = PackedInt64Array()

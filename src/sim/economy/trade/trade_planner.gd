@@ -2,7 +2,8 @@ class_name TradePlanner
 extends RefCounted
 ## O planejador de lucro do comerciante (LW-098b; docs/modules/economy.md, 9.5): função PURA e compartilhada (o `TradeFlow` e o SP7 a reusam). Só LÊ (cotações, saldos, estoques, parâmetros): não move dinheiro nem bem, não cria estado e não publica evento; INTEIROS, sem sorteio.
 ## Para o comerciante `T` na origem `O` e cada destino `D` (o caminho já resolvido e aberto, `RouteCost.Leg`), cada bem `g` negociado nos dois mercados é um candidato. `q_max` = o menor de: peso livre de T ÷ peso do bem; estoque de O menos a reserva (`origin_reserve_bp` do ALVO de O);
-## teto de compra de D menos o estoque de D; `max_order_quantity`; e o que o saldo de T paga. `custo(q)` e `receita(q)` saem de `TradeEngine.quote` (a única porta: tarifa e `banned` entram sem mudar código); a receita não passa do saldo de D (o `quote` não o confere).
+## teto de compra de D menos o estoque de D; `max_order_quantity`; e o que o saldo de T paga. `custo(q)` e `receita(q)` saem do `TradeEngine`: a cotação de UMA quantidade (`quote`) ou a curva de 1 a N unidades numa passada (`quote_curve`: as mesmas conferências e a mesma aritmética, `totals[q]` igual a `quote(q)`),
+## sempre pelas regras (tarifa e `banned` entram sem mudar código); a receita não passa do saldo de D (a cotação não o confere).
 ## `net(q) = receita − risco − custo − tempo`. `q*` = a quantidade de maior `receita − risco − custo` entre 1 e `q_max` (empate: a menor): varredura linear EXATA, porque o `ceil` do risco acumulado deixa a margem não monotônica em até 1 moeda e a busca binária podia parar antes do pico (o teste confere contra a busca exaustiva, exatamente). Os limiares (`min_net_profit` e `min_margin_bp`)
 ## filtram os candidatos ANTES da escolha: por destino fica o bem de maior `net` (empate: menor `good_id`) e, no geral, o maior `net` (empate: menor `destination_market_id`). Uma mercadoria por viagem (Q6).
 
@@ -82,15 +83,20 @@ func _candidate(trader_id: int, origin_id: int, destination_id: int, good_id: St
 	var min_gain: int = _params.min_net_profit + time_cost
 	if _rules_out(trader_id, origin_id, destination_id, good_id, min_gain):
 		return null
-	var quantity: int = _best_quantity(trader_id, origin_id, destination_id, good_id, risk_points, _max_quantity(trader_id, origin_id, destination_id, good_id), min_gain)
+	var upper: int = _upper_quantity(trader_id, origin_id, destination_id, good_id)
+	var costs: TradeEngine.QuoteCurve = _engine.quote_curve(origin_id, good_id, upper, TradeEngine.SIDE_BUY, trader_id)
+	var q_max: int = _funded_quantity(costs, upper, _ledger.balance_of(trader_id))
+	var revenues: TradeEngine.QuoteCurve = _engine.quote_curve(destination_id, good_id, q_max, TradeEngine.SIDE_SELL, trader_id)
+	var market_funds: int = _ledger.balance_of(destination_id)
+	var quantity: int = _best_quantity(risk_points, q_max, min_gain, costs, revenues, market_funds)
 	if quantity < 1:
 		return null
 	var plan: Plan = Plan.new()
 	plan.destination_market_id = destination_id
 	plan.good_id = good_id
 	plan.quantity = quantity
-	plan.cost = _cost_of(trader_id, origin_id, good_id, quantity)
-	plan.revenue = _revenue_of(trader_id, destination_id, good_id, quantity)
+	plan.cost = _curve_cost(costs, quantity)
+	plan.revenue = _curve_revenue(revenues, quantity, market_funds)
 	plan.risk_discount = RouteCost.risk_discount(plan.revenue, risk_points, _params)
 	plan.time_cost = time_cost
 	plan.minutes = minutes
@@ -115,14 +121,13 @@ func _rules_out(trader_id: int, origin_id: int, destination_id: int, good_id: St
 	return min_gain > 0
 
 
-## `q_max` (9.5): o limite do `_upper_quantity` e depois o que o saldo paga (`custo` só cresce com `q`, então aqui a busca binária é exata). Menos de 1 = sem lote.
-func _max_quantity(trader_id: int, origin_id: int, destination_id: int, good_id: String) -> int:
-	var funds: int = _ledger.balance_of(trader_id)
+## `q_max` (9.5): o limite do `_upper_quantity` e depois o que o saldo paga (`custo` só cresce com `q`, então aqui a busca binária é exata), lida da curva de custo da origem. Menos de 1 = sem lote.
+func _funded_quantity(costs: TradeEngine.QuoteCurve, upper: int, funds: int) -> int:
 	var low: int = 0
-	var high: int = _upper_quantity(trader_id, origin_id, destination_id, good_id)
+	var high: int = upper
 	while low < high:
 		var middle: int = IntMath.floor_div(low + high + 1, 2)
-		if _cost_of(trader_id, origin_id, good_id, middle) <= funds:
+		if _curve_cost(costs, middle) <= funds:
 			low = middle
 		else:
 			high = middle - 1
@@ -141,18 +146,18 @@ func _upper_quantity(trader_id: int, origin_id: int, destination_id: int, good_i
 	return mini(mini(by_weight, by_stock), mini(by_cap, _max_order_quantity))
 
 
-## `q*`: a `q` de maior ganho entre 1 e `q_max` (empate: a menor). Varredura linear exata (no máximo `max_order_quantity` cotações duplas). Saída antecipada com COTA EXATA: a margem de cada unidade (receita menos custo) só decresce com a quantidade, então nenhuma `q` rende mais que `q_max` vezes a margem da 1ª unidade (o risco só diminui o ganho; com tarifa, que é `ceil` por ordem, a cota ganha a folga `TARIFF_SLACK`); se isso não chega a `min_gain` (o limiar de lucro mais o custo de tempo), não há plano e sai com 2 cotações. Passando da cota, varre tudo: uma curva plana pode esconder ganho atrás de uma 1ª unidade de 0 moeda depois do risco (a saída da 1ª versão, por "1ª unidade não rende", perdia esses planos).
-func _best_quantity(trader_id: int, origin_id: int, destination_id: int, good_id: String, risk_points: int, q_max: int, min_gain: int) -> int:
+## `q*`: a `q` de maior ganho entre 1 e `q_max` (empate: a menor), lida das curvas de custo e de receita: varredura linear exata, sem nenhuma cotação nova. Saída antecipada com COTA EXATA: a margem de cada unidade (receita menos custo) só decresce com a quantidade, então nenhuma `q` rende mais que `q_max` vezes a margem da 1ª unidade (o risco só diminui o ganho; com tarifa, que é `ceil` por ordem, a cota ganha a folga `TARIFF_SLACK`); se isso não chega a `min_gain` (o limiar de lucro mais o custo de tempo), não há plano. Passando da cota, varre tudo: uma curva plana pode esconder ganho atrás de uma 1ª unidade de 0 moeda depois do risco (a saída da 1ª versão, por "1ª unidade não rende", perdia esses planos).
+func _best_quantity(risk_points: int, q_max: int, min_gain: int, costs: TradeEngine.QuoteCurve, revenues: TradeEngine.QuoteCurve, market_funds: int) -> int:
 	if q_max < 1:
 		return 0
-	var first_spread: int = _revenue_of(trader_id, destination_id, good_id, 1) - _cost_of(trader_id, origin_id, good_id, 1)
-	var slack: int = TARIFF_SLACK if _is_taxed(trader_id, origin_id, destination_id, good_id) else 0
+	var first_spread: int = _curve_revenue(revenues, 1, market_funds) - _curve_cost(costs, 1)
+	var slack: int = TARIFF_SLACK if _curve_tariff(costs, 1) > 0 or _curve_tariff(revenues, 1) > 0 else 0
 	if (first_spread + slack) * q_max < min_gain:
 		return 0
-	var best_gain: int = _gain_at(trader_id, origin_id, destination_id, good_id, risk_points, 1)
+	var best_gain: int = _curve_gain(risk_points, 1, costs, revenues, market_funds)
 	var best_quantity: int = 1
 	for quantity: int in range(2, q_max + 1):
-		var gain: int = _gain_at(trader_id, origin_id, destination_id, good_id, risk_points, quantity)
+		var gain: int = _curve_gain(risk_points, quantity, costs, revenues, market_funds)
 		if gain > best_gain:
 			best_gain = gain
 			best_quantity = quantity
@@ -166,12 +171,25 @@ func _is_taxed(trader_id: int, origin_id: int, destination_id: int, good_id: Str
 	return bought.tariff > 0 or sold.tariff > 0
 
 
-## `receita − risco − custo` de `quantity` unidades (0 para 0 unidades).
-func _gain_at(trader_id: int, origin_id: int, destination_id: int, good_id: String, risk_points: int, quantity: int) -> int:
+## `receita − risco − custo` de `quantity` unidades (0 para 0 unidades), pelas curvas.
+func _curve_gain(risk_points: int, quantity: int, costs: TradeEngine.QuoteCurve, revenues: TradeEngine.QuoteCurve, market_funds: int) -> int:
 	if quantity < 1:
 		return 0
-	var revenue: int = _revenue_of(trader_id, destination_id, good_id, quantity)
-	return revenue - RouteCost.risk_discount(revenue, risk_points, _params) - _cost_of(trader_id, origin_id, good_id, quantity)
+	var revenue: int = _curve_revenue(revenues, quantity, market_funds)
+	return revenue - RouteCost.risk_discount(revenue, risk_points, _params) - _curve_cost(costs, quantity)
+
+
+## O mesmo que `_cost_of` e `_revenue_of`, lido da curva (`UNPRICED` e 0 onde a cotação falharia) e, para a tarifa, o que `quote` devolve nela (0 onde falharia).
+func _curve_cost(curve: TradeEngine.QuoteCurve, quantity: int) -> int:
+	return curve.totals[quantity] + curve.tariffs[quantity] if quantity >= 1 and quantity <= curve.ok_through else UNPRICED
+
+
+func _curve_revenue(curve: TradeEngine.QuoteCurve, quantity: int, market_funds: int) -> int:
+	return mini(curve.totals[quantity] - curve.tariffs[quantity], market_funds) if quantity >= 1 and quantity <= curve.ok_through else 0
+
+
+func _curve_tariff(curve: TradeEngine.QuoteCurve, quantity: int) -> int:
+	return curve.tariffs[quantity] if quantity >= 1 and quantity <= curve.ok_through else 0
 
 
 ## `custo(q)`: o total da compra na origem mais a tarifa (`UNPRICED` se a cotação falha).
