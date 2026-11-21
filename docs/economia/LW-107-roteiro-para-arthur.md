@@ -67,6 +67,7 @@ Siga de cima para baixo. O **13 (Vencido)** acontece sozinho: a 1ª encomenda ve
 - O botão **desativado** tem contraste **menor** que o dos outros, **por desenho** (a revisão citou cerca de 2,5 contra 3,8; número a conferir). **Diga se atrapalha a leitura.**
 - O **fundo do painel de confirmação NÃO escurece**, por desenho (escurecer pediria um estilo novo no tema do mercado).
 - **Sem o postador ligado não há encomendas** (o jogo real tem a tabela vazia): por isso a seção 2.
+- **A próxima encomenda de pão pode demorar (ou não aparecer) depois que você entrega** (acrescentado em 21/11/2026, verificado em `tests/integration/test_contract_cycle_poster.gd`): os 5 pães entregues sobem o estoque do mercado acima do alvo e o preço de compra cai; a regra anti-exploração (a recompensa nunca passa do custo do lote no mesmo mercado) segura a postagem até o estoque baixar (consumo dos habitantes ou uma compra sua). Quadro vazio nessa hora **não é defeito**; os outros dois mercados não são afetados.
 - **Só contratos de entrega**; o jogo **não mostra encomendas fora da tela de mercado** (nem no HUD).
 - **"Falhou"** não tem como aparecer hoje (nenhuma entrega produz essa falha): o item 11 só confere que "Abandonado" é uma palavra **diferente** dela e de "Vencido".
 - Cada entrega no mesmo mercado dá um **pequeno prejuízo** (seção 2); os textos são **provisórios** (a tela usa "contrato" e "encomenda" para a mesma coisa).
