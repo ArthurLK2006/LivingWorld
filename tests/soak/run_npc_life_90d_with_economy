@@ -1,0 +1,11 @@
+#!/bin/sh
+# Estabilidade de longo prazo: os 138 NPCs sem jogador por 90 dias de jogo, com a economia e os 6 comerciantes reais, sem janela. Três execuções de 90 dias (direta, com recarga no dia 45 e com recarga em
+# trânsito de caravana), de 12 a 20 minutos no total (com LW_SOAK_DAYS=30, cerca de 5); imprime o resumo de cada uma. Semente: padrão 11; `LW_SOAK_SEED=1 tests/soak/run_npc_life_90d_with_economy` usa outra.
+set -u
+project_dir=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
+godot_bin=${GODOT_BIN:-/Applications/Godot 2.app/Contents/MacOS/Godot}
+if [ ! -x "$godot_bin" ]; then
+    echo "ERRO: Godot não encontrado; defina GODOT_BIN." >&2
+    exit 1
+fi
+exec "$godot_bin" --headless --path "$project_dir" -s res://addons/gut/gut_cmdln.gd "-gtest=res://tests/soak/npc_life/soak_npc_life_90d_with_economy.gd" -gexit
