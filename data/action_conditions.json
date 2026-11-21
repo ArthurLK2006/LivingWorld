@@ -1,3 +1,4 @@
 [
-	{"id": "eat_has_food", "action_id": "eat", "kind": "has_food"}
+	{"id": "eat_has_food", "action_id": "eat", "kind": "has_food"},
+	{"id": "eat_hungry", "action_id": "eat", "kind": "need_at_least", "need_id": "hunger", "min_value": 40}
 ]
