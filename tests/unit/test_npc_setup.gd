@@ -56,7 +56,7 @@ func test_from_dir_assembles_everything_the_module_needs_from_the_real_data() ->
 		settlement_ids.append(settlement.id)
 		assert_true(food.has_food(settlement.id), "O assentamento '%s' começa com comida." % settlement.id)
 	assert_eq(food.settlement_ids().size(), settlement_ids.size())
-	assert_gt(definitions.income.peek_relief("farmer"), 0, "O IncomeStub (TEMP-LW-066) vem carregado.")
+	assert_false("income" in definitions, "A renda simbólica provisória saiu na LW-095: as definições não a têm (a `income` só cai pelo salário).")
 	assert_false(definitions.is_development_build, "Padrão: não é build de desenvolvimento.")
 	assert_true(_setup(true).definitions.is_development_build, "A flag que a fronteira do app entrega vai até as definições.")
 

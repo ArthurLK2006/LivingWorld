@@ -282,8 +282,6 @@ func test_optional_fields_default_to_no_consequence_and_the_rest_are_validated()
 # ---------------------------------------------------------------------------------------------------- o enfraquecido rende menos
 
 func test_a_weakened_npc_gets_the_weak_percent_of_a_work_and_a_healthy_one_gets_all() -> void:
-	var income_rules: Array[IncomeStub.IncomeRule] = [IncomeStub.IncomeRule.new("farmer", 30)]
-	var income: IncomeStub = IncomeStub.new(income_rules)
 	var results: Array[int] = []
 	for starving: bool in [false, true]:
 		var states: Dictionary[int, NpcState] = {}
@@ -297,7 +295,6 @@ func test_a_weakened_npc_gets_the_weak_percent_of_a_work_and_a_healthy_one_gets_
 		state.needs_updated_at = WEAKEN_HOURS * MINUTES_PER_HOUR + 100
 		states[1] = state
 		var provider: IncomeProviderForTest = IncomeProviderForTest.new()
-		provider.income = income
 		var runner: ActionRunner = ActionRunner.new(states, _catalog(), _need_defs(0), _places(), provider)
 		var start: int = state.needs_updated_at
 		assert_true(runner.begin(1, "work", WORK, start).ok)
@@ -308,14 +305,16 @@ func test_a_weakened_npc_gets_the_weak_percent_of_a_work_and_a_healthy_one_gets_
 	assert_eq(results, expected, "Saudável: renda 80 - 30 e cansaço 10 + 5. Enfraquecido (50%): renda 80 - 15 e cansaço 10 + 2.")
 
 
-## Provedor que repassa o alívio de renda do IncomeStub.
+## Provedor de teste com um efeito extra fixo (o gancho `extra_effects`): o `work` do agricultor tira 30 da `income`, como fazia a renda
+## simbólica provisória que saiu na LW-095 (o teste mede o enfraquecido, não a renda).
 class IncomeProviderForTest:
 	extends ActionConditionProvider
 
-	var income: IncomeStub
-
 	func extra_effects(action_id: String, occupation_id: String) -> Array[ActionDef.ActionEffect]:
-		return income.extra_effects(action_id, occupation_id)
+		var effects: Array[ActionDef.ActionEffect] = []
+		if action_id == "work" and occupation_id == "farmer":
+			effects.append(ActionDef.ActionEffect.new("income", -30))
+		return effects
 
 
 # ---------------------------------------------------------------------------------------------------- morrer de fome, ou não

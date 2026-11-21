@@ -509,7 +509,7 @@ func test_invalid_data_fails_pointing_at_file_item_and_field() -> void:
 		missing.erase(field)
 		_expect_failure("%s ausente" % field, [missing], [FILE_LABEL, "item 'food_a'", "campo '%s'" % field, "obrigatório ausente"])
 	var wrong_mark: Dictionary = _valid_record()
-	wrong_mark["temp_mark"] = "TEMP-LW-066"
+	wrong_mark["temp_mark"] = "OUTRA-MARCA"
 	_expect_failure("marca errada", [wrong_mark], [FILE_LABEL, "campo 'temp_mark'", "esperado exatamente 'TEMP-LW-065'"])
 	var empty_mark: Dictionary = _valid_record()
 	empty_mark["temp_mark"] = ""

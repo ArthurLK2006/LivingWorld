@@ -3,7 +3,7 @@ extends RefCounted
 ## O `npc` ouve o salário (LW-095; docs/modules/npc.md, 14.4; DEC-152): a cada `WagesPaid` (UM por local de trabalho e por hora, publicado pela economia) alivia a necessidade `income` DOS NPCs DELE que trabalham ali, em proporção ao
 ## salário de cada um (`amount_each`). A lista de trabalhadores vem da porta da economia (`peek_site` do local de produção ou `peek_post` do posto, em ordem de ID); NPC que o `npc` não conhece (ou morto) é ignorado. O alívio entra levando as
 ## necessidades até o minuto atual (`NeedMath.settle`) e somando a pressão negativa (`NeedMath.add_pressure`, limitada a 0..100), como o alarme faz com `safety`. O `npc` nunca cria nem move dinheiro: só lê a economia e mexe no que é dele.
-## Hora parada (sem folha) não gera evento e `income` volta a subir pela taxa da própria necessidade. Substitui o `IncomeStub` quando ele sair (LW-095, parte final).
+## Hora parada (sem folha) não gera evento e `income` volta a subir pela taxa da própria necessidade. Desde a LW-095f é o ÚNICO alívio da `income` (a renda simbólica provisória saiu).
 
 const NEED_ID: String = "income"
 ## [HIP] Pontos de `income` aliviados por moeda de salário. Com 1, o salário de 2 por hora anula a subida de 2 por hora da necessidade (data/needs.json). Passa para `data/` com a distribuição dos povoados.

@@ -285,7 +285,7 @@ static func _mean(measured: Run, cause: String) -> String:
 	return "%d; %.1f" % [n, float(measured.count.get("efeito:%s:sleep" % cause, 0)) / maxf(n, 1.0)]
 
 
-## "COM corpo / abstratas" das ações canceladas por reavaliação que não são sono (o efeito delas se mistura com o IncomeStub, então só se conta).
+## "COM corpo / abstratas" das ações canceladas por reavaliação que não são sono (o efeito delas se misturava com a renda simbólica provisória, que saiu na LW-095; só se conta).
 static func _others(measured: Run) -> String:
 	return "%d / %d" % [measured.total("reavaliacao_corpo") - measured.count.get("reavaliacao_corpo:sleep", 0), measured.total("reavaliacao_abstrata") - measured.count.get("reavaliacao_abstrata:sleep", 0)]
 

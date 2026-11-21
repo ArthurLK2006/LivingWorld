@@ -62,7 +62,7 @@ func test_an_action_that_would_fail_for_an_unknown_need_leaves_the_economy_and_t
 	var states: Dictionary[int, NpcState] = parts[2]
 	var spy: FoodSpy = FoodSpy.new()
 	var trade: NpcTrade = NpcTrade.new(economy, states, 2)
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, spy, null, trade)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, spy, trade)
 	var balance_before: int = economy.peek_balance(NPC).balance
 	var finished: ActionRunner.AdvanceResult = _finish_eating(_runner(NEEDS_WITHOUT_HUNGER, states, provider))
 	assert_eq([finished.outcome, finished.result.code], [ActionRunner.Outcome.FAILED, ActionRunner.CODE_UNKNOWN_NEED])
@@ -84,7 +84,7 @@ func test_with_the_need_in_the_definitions_the_same_action_eats_and_empties_the_
 	var world: World = parts[0]
 	var economy: EconomyModule = parts[1]
 	var states: Dictionary[int, NpcState] = parts[2]
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, FoodSpy.new(), null, NpcTrade.new(economy, states, 2))
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, FoodSpy.new(), NpcTrade.new(economy, states, 2))
 	var finished: ActionRunner.AdvanceResult = _finish_eating(_runner(NEEDS_WITH_HUNGER, states, provider))
 	assert_eq(finished.outcome, ActionRunner.Outcome.COMPLETED)
 	assert_eq(economy.peek_inventory(NPC).rows.size(), 0, "Comeu o grão.")
@@ -101,9 +101,9 @@ func test_the_question_the_runner_asks_names_the_need_of_the_food_and_nothing_el
 	assert_eq(trade.completion_need_id(NPC, "eat"), "hunger", "O `eat` consumiria o grão, que alivia a fome.")
 	assert_eq([trade.completion_need_id(NPC, "buy"), trade.completion_need_id(NPC, "sell"), trade.completion_need_id(NPC, "work")], ["", "", ""], "As outras ações não aliviam nada pela economia.")
 	assert_eq(trade.completion_need_id(999, "eat"), "", "NPC sem inventário: nada.")
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, null, null, trade)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, null, trade)
 	assert_eq(provider.completion_need_id(NPC, "eat"), "hunger")
-	assert_eq(NpcThinker.ConditionProvider.new(null, null, null, null, null).completion_need_id(NPC, "eat"), "", "Sem economia o provedor não alivia nada.")
+	assert_eq(NpcThinker.ConditionProvider.new(null, null, null, null).completion_need_id(NPC, "eat"), "", "Sem economia o provedor não alivia nada.")
 	assert_eq(ActionConditionProvider.new().completion_need_id(NPC, "eat"), "", "O provedor padrão também não.")
 	assert_eq(economy.peek_inventory(NPC).rows.size(), 1, "Perguntar não consome nada.")
 	world.teardown()
