@@ -41,7 +41,7 @@ Implementado (LW-088d, 11/11/2026, correções da revisão independente do ramo 
 
 Implementado (LW-095, parte a, 11/11/2026): a folha dos locais de produção, em `production/`: `WagePayer` (tudo ou nada, pelo `Ledger`, motivo `salary`) e o evento `WagesPaid` (um por local e por hora); sem o dinheiro da folha o local para por `NO_FUNDS`, que também vai no save.
 
-Implementado (LW-095, parte b, 11/11/2026): os postos de serviço, em `posts/` (`ServicePostBook`, `PostDef`): a folha sai da conta do mercado antes dos locais de produção, tudo ou nada por posto, com um `WagesPaid` por posto e por hora; o NPC com o `work_place_id` de um posto é atribuído a ele. As definições só vêm montadas à mão nos testes; sem `service_posts.json` ainda.
+Implementado (LW-095, parte b, 11/11/2026): os postos de serviço, em `posts/` (`ServicePostBook`, `PostDef`): a folha sai da conta do mercado antes dos locais de produção, tudo ou nada por posto, com um `WagesPaid` por posto e por hora; o NPC com o `work_place_id` de um posto é atribuído a ele. Os 6 postos do jogo vêm de `data/economy/service_posts.json` (LW-095e; salário de 1 por hora [HIP]).
 
 Implementado (LW-095, parte c, 11/11/2026): a consulta dos postos pela porta, `peek_post`, `peek_post_at` e `peek_posts_of`, com os mesmos nomes de `peek_site`.
 
