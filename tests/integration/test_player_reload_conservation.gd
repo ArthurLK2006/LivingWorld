@@ -6,8 +6,8 @@ extends GutTest
 ## gasta um ID) e a economia, que só conhece "dono novo", faz outro `mint` `game_start` do tipo `player`: o dinheiro total SOBE o saldo inicial, passa a haver DOIS donos `player` e DOIS personagens (a conta antiga fica órfã) e
 ## a conservação continua fechando, porque o `mint` é contabilizado (por isso o teste de ouro não vê). HOJE é inalcançável no jogo real: não há fluxo de carregar no `GameApp` (só o `SimulationRunner.load_game`, usado por testes)
 ## e o único `setup` do corpo é o de `MainWorldView._ready`. Passa a valer quando o carregar existir e a cena refizer as views (`docs/modules/app.md`, A4). A correção exige contrato e/ou save (como o mundo carregado identifica
-## "o jogador": opções no `docs/backlog.md`), então NÃO foi feita aqui: este teste afirma o comportamento ATUAL. Quando a decisão de Arthur for implementada, inverta as duas asserções marcadas com INVERTER (dinheiro e `mint`
-## iguais ao de antes, um dono `player` e um personagem só) e tire `known_gap` do nome.
+## "o jogador": opções no `docs/backlog.md`), então NÃO foi feita aqui: este teste afirma o comportamento ATUAL. Quando a decisão de Arthur for implementada o corpo passa a ADOTAR o personagem do save (outra chamada): troque
+## `_spawn_player` por ela neste segundo teste, inverta as asserções marcadas `LACUNA ATUAL` (dinheiro e `mint` iguais ao de antes, um dono `player`, um personagem, o MESMO ID) e tire `known_gap` do nome.
 
 const DATA_DIR: String = "res://data"
 const WORLD_DIR: String = "res://data/world"
@@ -164,7 +164,7 @@ func test_known_gap_spawning_the_player_again_on_a_loaded_world_mints_another_in
 	var reborn: int = _spawn_player(restored)
 	var after: Dictionary = _snapshot(restored)
 	assert_ne(reborn, player, "O `request_spawn` sempre gasta um ID: o corpo da cena refeita ganha um personagem NOVO, não o do save.")
-	# INVERTER (depois da decisão de Arthur): o dinheiro total e o `mint` ficam IGUAIS aos de antes (`before`), e `player_owners` e `characters` não mudam.
+	# INVERTER (depois da decisão de Arthur, ver o cabeçalho): as três asserções `LACUNA ATUAL` abaixo passam a exigir `after == before` (dinheiro, `mint`, donos `player` e personagens) e `reborn == player`.
 	assert_eq(after["money"], before["money"] + _kind.initial_balance, "LACUNA ATUAL: o dinheiro total sobe o saldo inicial do tipo `player` a cada novo nascimento.")
 	assert_eq(after["game_start_created"], before["game_start_created"] + _kind.initial_balance, "LACUNA ATUAL: o `mint` game_start do jogador se repete.")
 	assert_eq([after["player_owners"], after["characters"]], [2, [player, reborn]], "LACUNA ATUAL: dois donos `player` e dois personagens (a conta antiga fica órfã).")
