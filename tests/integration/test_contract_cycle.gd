@@ -10,6 +10,7 @@ extends GutTest
 const WORLD_DIR: String = "res://data/world"
 const SEED: int = 107
 const SETTLEMENT_A: String = "test_settlement_a"
+const POSTED_ESCROW: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B: 5 pães de valor-base 10 mais 5%): o mercado retém 53 na custódia enquanto o contrato dele está aberto.
 const SETTLEMENT_B: String = "test_settlement_b"
 const BREAD: String = "bread"
 const GAME_VERSION: String = "0.0.1-test"
@@ -268,10 +269,10 @@ func test_an_accepted_contract_left_to_expire_fails_the_custody_goes_back_to_the
 	assert_eq(_failed.size(), 1, "Sai UM `ContractFailed`.")
 	assert_eq([_failed[0].contract_id, _failed[0].issuer_id, _failed[0].reason], [contract_id, _market_b, "expired"])
 	assert_eq(_completed.size(), 0, "Nenhum `ContractCompleted`.")
-	assert_eq([_cash(contract_id), _cash(_market_b)], [0, cash_b], "A custódia voltou inteira ao emissor.")
+	assert_eq([_cash(contract_id), _cash(_market_b)], [0, cash_b - POSTED_ESCROW], "A custódia voltou inteira ao emissor (o caixa dele só está menor pelo pão que o postador pôs na 1ª hora).")
 	assert_eq([_moved(Ledger.REASON_CONTRACT_REFUND), _moved(Ledger.REASON_CONTRACT_PAYOUT)], [REWARD, 0], "No livro-razão: devolveu e não pagou.")
 	assert_eq([_funds(), _carried()], [funds_kept, QUANTITY], "O saldo do jogador está intacto (sem recompensa e sem multa) e os pães que ele comprou continuam com ele.")
-	assert_eq(_board_states(_market_b), [ContractBook.STATE_EXPIRED] as Array[String], "O quadro mostra o contrato vencido.")
+	assert_eq(_board_states(_market_b), [ContractBook.STATE_EXPIRED, ContractBook.STATE_OPEN] as Array[String], "O quadro mostra o contrato vencido e o pão aberto que o postador pôs no mercado.")
 	assert_eq(_money(), money, "Vencer só devolve dinheiro: nada criado nem destruído.")
 	_assert_books_closed("depois do vencimento")
 	_refused_deliver(_actor_id, contract_id, EconomyCodes.CONTRACT_NOT_OPEN, KEY_NOT_OPEN)
@@ -432,7 +433,7 @@ func test_buying_accepting_and_abandoning_sends_the_custody_back_to_the_issuer_a
 	assert_eq([_failed[0].contract_id, _failed[0].issuer_id, _failed[0].reason], [contract_id, _market_b, ABANDONED], "O motivo do `ContractFailed` é `abandoned`.")
 	_host.runner.run_steps(SHORT_MINUTES + MINUTES_PER_HOUR - _now())
 	assert_eq([_economy.peek_contract(contract_id).state, _economy.peek_contract(contract_id).closed_reason, _failed.size()], [ContractBook.STATE_FAILED, ABANDONED, 1], "Passado o prazo o abandonado não vence: segue `failed`, sem segundo `ContractFailed`.")
-	assert_eq([_funds(), _carried(), _cash(_market_b), _cash(contract_id)], [bought[0], bought[1], cash_b, 0], "E depois do prazo nada se moveu: o saldo, os pães e a custódia seguem como no abandono.")
+	assert_eq([_funds(), _carried(), _cash(_market_b), _cash(contract_id)], [bought[0], bought[1], cash_b - POSTED_ESCROW, 0], "E depois do prazo nada se moveu: o saldo, os pães e a custódia seguem como no abandono (o caixa do emissor só está menor pelo pão do postador).")
 
 
 func test_the_fourth_accept_is_refused_by_the_limit_and_abandoning_one_frees_exactly_one_slot() -> void:

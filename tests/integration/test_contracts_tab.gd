@@ -22,6 +22,7 @@ const MEDIUM_MINUTES: int = 90
 const LONG_MINUTES: int = 600
 const FAR_MINUTES: int = 1563
 const BOARD_MINUTE: int = 100
+const POSTED_REWARD: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B): 5 pães, recompensa 53; os contratos do teste pagam `REWARD`.
 const KEY_PREFIX: String = "ui.contracts."
 const KEY_FOR_MISSING_TEXT: String = "\\[[a-z_]+(\\.[a-z_]+)+\\]"
 ## As 22 chaves da aba, sem o prefixo.
@@ -250,6 +251,14 @@ func _shown_texts() -> Array[String]:
 	return shown
 
 
+## O contrato de pão que o POSTADOR pôs no mercado `market_id` (o `open` de entrega que o mercado emitiu com a recompensa do modelo; os do teste pagam `REWARD`): o ID, ou NO_ID se não há.
+func _posted_bread(market_id: int) -> int:
+	for contract: EconomyReplies.ContractQuery in _economy.peek_contracts().contracts:
+		if contract.kind == ContractBook.DELIVERY and contract.issuer_id == market_id and contract.reward == POSTED_REWARD:
+			return contract.contract_id
+	return IdGenerator.NO_ID
+
+
 ## Posta um contrato de entrega direto na economia: `issuer` paga a recompensa para a custódia e o prazo é `minutes` depois de agora.
 func _post(issuer: int, destination: int, minutes: int, good_id: String = BREAD, quantity: int = QUANTITY) -> int:
 	var now: int = _bridge.peek_time().total_minutes
@@ -332,9 +341,9 @@ func test_the_lists_show_the_boards_rows_with_their_reward_and_remaining_time_in
 	_open_contracts()
 	assert_eq(board.now, BOARD_MINUTE, "Pré-condição: o relógio da consulta.")
 	for source: BridgePlayerContractsReplies.ContractBoardRow in board.rows:
-		assert_eq([_row_of(source.contract_id).get_text(ContractsLayout.COLUMN_REWARD), source.deadline - board.now > 0], [_say("reward", {"reward": source.reward}), source.contract_id in [ids["carried"], ids["fresh_open"]]], "A recompensa é a da consulta; só `carried` e `fresh_open` têm prazo a correr.")
-	assert_eq([_ids_of(OPEN_LIST), _ids_of(MINE_LIST)], [[ids["late_open"], ids["fresh_open"]] as Array[int], [ids["late_accepted"], ids["carried"], ids["completed"], ids["failed"]] as Array[int]], "As duas seções, como o modelo as divide.")
-	assert_eq(_cells(OPEN_LIST), [[_p["line"], _p["reward"], _p["expired"]], [_p["wood_line"], _p["reward"], _p["left_500"]]], "Disponíveis: o vencido mostra \"Vencido\"; o outro, o prazo (500 min = 0 d 8 h 20 min).")
+		assert_eq([_row_of(source.contract_id).get_text(ContractsLayout.COLUMN_REWARD), source.deadline - board.now > 0], [_say("reward", {"reward": source.reward}), source.contract_id in [ids["carried"], ids["fresh_open"], _posted_bread(_market_a)]], "A recompensa é a da consulta; só `carried`, `fresh_open` e o pão do postador têm prazo a correr.")
+	assert_eq([_ids_of(OPEN_LIST), _ids_of(MINE_LIST)], [[ids["late_open"], ids["fresh_open"], _posted_bread(_market_a)] as Array[int], [ids["late_accepted"], ids["carried"], ids["completed"], ids["failed"]] as Array[int]], "As duas seções, como o modelo as divide (o pão do postador, o último ID, entre as disponíveis).")
+	assert_eq(_cells(OPEN_LIST), [[_p["line"], _p["reward"], _p["expired"]], [_p["wood_line"], _p["reward"], _p["left_500"]], [_say("line", {"quantity": 5, "good": _text("good.bread.name")}), _say("reward", {"reward": POSTED_REWARD}), _left(1, 23, 20)]], "Disponíveis: o vencido mostra \"Vencido\"; o outro, o prazo (500 min = 0 d 8 h 20 min); o pão do postador, 5 x Pão por 53 com o prazo de 48 h menos os 40 min desde que ele o pôs (2840 min = 1 d 23 h 20 min).")
 	assert_eq(_cells(MINE_LIST), [[_p["line"], _p["reward"], _p["expired"]], [_p["line"], _p["reward"], _p["left_500"]], [_p["line"], _p["reward"], _p["completed"]], [_p["line"], _p["reward"], _p["expired"]]], "Meus contratos: aceitos primeiro, depois os terminados.")
 	assert_true(_shown_texts().has(_say("title")) and _shown_texts().has(_say("section_open")) and _shown_texts().has(_say("section_mine")), "O título e os nomes das duas seções estão na tela.")
 	assert_eq(_tree(OPEN_LIST).get_selected().get_metadata(ContractsLayout.COLUMN_LINE), ids["late_open"], "Sem escolha, a primeira linha da primeira lista.")
@@ -348,8 +357,8 @@ func test_the_lists_show_the_boards_rows_with_their_reward_and_remaining_time_in
 
 func test_an_empty_board_shows_the_empty_messages_and_the_tab_stays_usable() -> void:
 	_open_contracts()
-	assert_eq(_say("empty"), "Nenhum contrato agora: os mercados estão abastecidos", "O texto do contrato.")
-	assert_eq([_cells(OPEN_LIST), _cells(MINE_LIST)], [[[_say("empty"), "", ""]], [[_say("empty_mine"), "", ""]]], "As duas listas vazias dizem por que, numa linha só.")
+	assert_eq(_say("empty"), "Nenhuma encomenda disponível agora.", "O texto do contrato: só o que o jogo sabe, sem causa.")
+	assert_eq([_cells(OPEN_LIST), _cells(MINE_LIST)], [[[_say("empty"), "", ""]], [[_say("empty_mine"), "", ""]]], "As duas listas vazias dizem que não há nada, numa linha só.")
 	assert_false(_items(_tree(OPEN_LIST))[0].is_selectable(ContractsLayout.COLUMN_LINE), "A mensagem não se escolhe.")
 	assert_eq([_ids_of(OPEN_LIST), _detail_text(), _result_text(), _is_off(ACCEPT), _is_off(DELIVER)], [[] as Array[int], "", "", true, true], "Quadro vazio não é erro: sem escolha, sem detalhe e sem aviso de indisponível.")
 	_press(TAB_MARKET)
@@ -435,7 +444,7 @@ func test_a_paused_clock_keeps_the_buttons_off_and_a_game_without_account_or_wit
 	_build_board()
 	assert_true(_bridge.request_pause(true).ok)
 	_open_contracts()
-	assert_eq([_ids_of(OPEN_LIST).size(), _ids_of(MINE_LIST).size(), _is_off(ACCEPT), _is_off(DELIVER)], [2, 4, true, true], "Pausado, a aba mostra o quadro e os botões seguem desativados.")
+	assert_eq([_ids_of(OPEN_LIST).size(), _ids_of(MINE_LIST).size(), _is_off(ACCEPT), _is_off(DELIVER)], [3, 4, true, true], "Pausado, a aba mostra o quadro (3 disponíveis: 2 do teste e o pão do postador) e os botões seguem desativados.")
 	_press(ACCEPT)
 	_press(DELIVER)
 	assert_true(_bridge.request_pause(false).ok)
@@ -444,7 +453,7 @@ func test_a_paused_clock_keeps_the_buttons_off_and_a_game_without_account_or_wit
 	assert_eq([_result_text(), _items(_tree(OPEN_LIST)).size(), _items(_tree(MINE_LIST)).size(), _detail_text()], [_say("unavailable"), 0, 0, ""], "A consulta passa a falhar: a aba apaga as linhas e o detalhe da leitura anterior.")
 	_host.economy = _economy
 	_view.open(_market_a)
-	assert_eq([_result_text(), _ids_of(OPEN_LIST).size(), _ids_of(MINE_LIST).size()], ["", 2, 4], "Abrir de novo limpa o aviso e a aba volta a mostrar o quadro.")
+	assert_eq([_result_text(), _ids_of(OPEN_LIST).size(), _ids_of(MINE_LIST).size()], ["", 3, 4], "Abrir de novo limpa o aviso e a aba volta a mostrar o quadro.")
 	var idle_host: SimulationHostNode = SimulationHostNode.new()
 	var unopened: int = _bridge.request_spawn_character().actor_id
 	for pair: Array in [[SimBridge.new(idle_host, _terrain, _places), _actor_id], [_bridge, unopened]]:
@@ -463,8 +472,8 @@ func test_the_tab_refreshes_by_itself_every_second_and_keeps_the_choice_and_the_
 	_tree(MINE_LIST).grab_focus()
 	_accept(ids["fresh_open"])
 	simulate(_view, 1, MarketView.REFRESH_INTERVAL_S * 0.4)
-	assert_eq(_ids_of(OPEN_LIST), [ids["late_open"], ids["fresh_open"]] as Array[int], "Dentro do intervalo a aba ainda mostra a leitura antiga.")
+	assert_eq(_ids_of(OPEN_LIST), [ids["late_open"], ids["fresh_open"], _posted_bread(_market_a)] as Array[int], "Dentro do intervalo a aba ainda mostra a leitura antiga.")
 	simulate(_view, 1, MarketView.REFRESH_INTERVAL_S * 0.7)
-	assert_eq([_ids_of(OPEN_LIST), _ids_of(MINE_LIST)], [[ids["late_open"]] as Array[int], [ids["late_accepted"], ids["carried"], ids["fresh_open"], ids["completed"], ids["failed"]] as Array[int]], "Passado o intervalo o contrato aceito de fora foi para Meus contratos.")
+	assert_eq([_ids_of(OPEN_LIST), _ids_of(MINE_LIST)], [[ids["late_open"], _posted_bread(_market_a)] as Array[int], [ids["late_accepted"], ids["carried"], ids["fresh_open"], ids["completed"], ids["failed"]] as Array[int]], "Passado o intervalo o contrato aceito de fora foi para Meus contratos; o pão do postador segue disponível.")
 	assert_eq([_tree(MINE_LIST).get_selected().get_metadata(ContractsLayout.COLUMN_LINE), _tree(OPEN_LIST).get_selected() == null, _tree(MINE_LIST).has_focus()], [ids["carried"], true, true], "A escolha (por contrato, uma só nas duas listas) e o foco sobrevivem.")
 	assert_string_contains(_detail_text(), _p["accepted"])

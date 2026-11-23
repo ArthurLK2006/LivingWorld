@@ -4,6 +4,7 @@ extends GutTest
 ## quem nasce é o comerciante que o teste cria (a montagem de `test_npc_merchant.gd`). O `consumed` é motivo de destruição do livro de bens (não é evento): sai do `serialize` da economia. A1 a A4 fecham com as duas conservações; A5 é a varredura do código de `src/` (sem mundo).
 
 const DATA_DIR: String = "res://data"
+const POSTED_ESCROW: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B: 5 pães de valor-base 10 mais 5%): o mercado retém 53 na custódia enquanto o contrato dele está aberto.
 const WORLD_DIR: String = "res://data/world"
 const SRC_DIR: String = "res://src"
 const FOOD_STUB_FILE: String = "res://src/sim/npc/food/food_stub.gd"
@@ -283,7 +284,8 @@ func test_a_merchant_dying_on_the_road_leaves_the_cargo_in_the_closed_account() 
 	assert_true(_run_until(rig, func() -> bool: return not rig.npc.peek_npc(merchant).is_alive, started.eta_minute - _now(rig) - 1), "Morre antes do ETA, com a caravana na estrada.")
 	assert_eq([rig.npc.peek_npc(merchant).death_cause, rig.economy.peek_caravan(merchant).found], ["hunger", false], "Morreu de fome e a caravana sumiu com o dono.")
 	rig.runner.run_steps(started.eta_minute - _now(rig) + 10)
-	assert_eq([rig.arrivals.size(), _destination(rig)], [0, market], "Nada chegou ao B: nem a carga, nem o dinheiro dela.")
+	var market_after_the_post: Array[int] = [market[0], market[1] - POSTED_ESCROW]
+	assert_eq([rig.arrivals.size(), _destination(rig)], [0, market_after_the_post], "Nada chegou ao B: nem a carga, nem o dinheiro dela (o saldo só está menor pelo pão do postador).")
 	assert_eq([_held(rig, merchant, BREAD), rig.economy.peek_balance(merchant).balance, _bread_book(rig)], [cargo, purse, book], "A carga e o saldo ficam na conta fechada do dono morto, sem criar nem destruir pão.")
 	assert_true(_conserved(rig), "As conservações de dinheiro e de bens fecham.")
 

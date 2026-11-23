@@ -91,7 +91,7 @@ func test_a_npc_with_a_work_place_the_economy_does_not_know_is_employed_and_the_
 	assert_false(economy.peek_site(_site_id(economy)).worker_ids.has(guard), "Vaga de 16 contra 20 de histerese: o guarda, que TEM `work_place_id`, não troca.")
 	assert_eq(npc.peek_npc(guard).work_place_id, UNKNOWN_PLACE, "O `work_place_id` dele não mudou.")
 	assert_eq(economy.peek_site(_site_id(economy)).worker_ids, [baker] as Array[int], "A vaga segue aberta, sem ninguém para pegá-la.")
-	assert_eq(economy.peek_contracts("open").contracts.size(), 1)
+	assert_eq(economy.peek_contracts("open").contracts.size(), 1 + 3, "A vaga e o pão que o postador de encomendas (LW-107c3) põe em cada um dos 3 mercados.")
 	world.teardown()
 
 

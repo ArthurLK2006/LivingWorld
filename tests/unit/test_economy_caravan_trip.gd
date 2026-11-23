@@ -6,6 +6,7 @@ const SEED: int = 98
 const WORLD_DIR: String = "res://data/world"
 const TRADER: int = 100
 const OTHER: int = 101
+const POSTED_ESCROW: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B: 5 pães de valor-base 10 mais 5%): o mercado retém 53 na custódia enquanto o contrato dele está aberto.
 const START_MINUTE: int = 1000
 const LOT: int = 20
 const SETTLEMENT_A: String = "test_settlement_a"
@@ -149,9 +150,9 @@ func test_the_arrival_sells_the_lot_and_publishes_one_event_after_the_sale() -> 
 	assert_eq([arrived.trader_id, arrived.route_id, arrived.destination_id, arrived.revenue, arrived.cost_paid, arrived.time], [TRADER, "route_a_b", SETTLEMENT_B, expected, started.cost_paid, started.eta_minute], "Os cinco campos de 9.7, publicados no passo da chegada.")
 	assert_gt(expected, 0, "O mercado paga pelo lote.")
 	assert_eq(seen, [false] as Array[bool], "Quem ouve vê o registro já apagado: o evento sai depois da venda.")
-	assert_eq([rig.module.peek_stock(rig.market_b, "bread").value, rig.module.peek_balance(rig.market_b).balance, rig.module.peek_balance(TRADER).balance, rig.module.peek_inventory(TRADER).rows.size()], [before["stock"] + LOT, before["funds"] - expected, 300 - started.cost_paid + expected, 0], "O lote todo foi vendido: o estoque do destino subiu e o saldo mudou só pela venda.")
+	assert_eq([rig.module.peek_stock(rig.market_b, "bread").value, rig.module.peek_balance(rig.market_b).balance, rig.module.peek_balance(TRADER).balance, rig.module.peek_inventory(TRADER).rows.size()], [before["stock"] + LOT, before["funds"] - expected - POSTED_ESCROW, 300 - started.cost_paid + expected, 0], "O lote todo foi vendido: o estoque do destino subiu e o saldo mudou só pela venda e pelo pão do postador.")
 	var reasons: Array = rig.module.peek_ledger_totals().rows.map(func(row: Dictionary) -> String: return row["reason"])
-	assert_eq([rig.module.peek_conservation().sum, _conserved(rig), reasons], [before["sum"], true, ["game_start", "trade"]], "Nenhum dinheiro nasce nem some, as duas conservações fecham e só `game_start` e `trade` mexeram.")
+	assert_eq([rig.module.peek_conservation().sum, _conserved(rig), reasons], [before["sum"], true, ["contract_escrow", "game_start", "trade"]], "Nenhum dinheiro nasce nem some, as duas conservações fecham e só `game_start`, `trade` e a custódia do pão do postador (`contract_escrow`) mexeram.")
 	_until(rig, START_MINUTE + 300)
 	assert_eq(rig.arrivals.size(), 1, "Um evento por viagem.")
 
@@ -172,7 +173,7 @@ func test_a_full_or_broke_destination_buys_only_what_it_can_and_the_rest_stays_w
 	var cases: Array[Dictionary] = [
 		{"label": "teto de compra", "stock": 72, "code": EconomyCodes.MARKET_FULL},
 		{"label": "capacidade de peso", "room": 7, "code": EconomyCodes.CAPACITY_EXCEEDED},
-		{"label": "saldo do mercado", "balance": 60, "code": EconomyCodes.MARKET_NO_FUNDS},
+		{"label": "saldo do mercado", "balance": 60 + POSTED_ESCROW, "code": EconomyCodes.MARKET_NO_FUNDS},
 		{"label": "mercado sem saldo", "balance": 0, "code": EconomyCodes.MARKET_NO_FUNDS},
 	]
 	for test_case: Dictionary in cases:
@@ -183,6 +184,7 @@ func test_a_full_or_broke_destination_buys_only_what_it_can_and_the_rest_stays_w
 		if test_case.has("room"):
 			_market_kind(rig).weight_capacity = rig.module.peek_inventory(rig.market_b).weight + test_case["room"]
 		var started: CaravanReplies.StartResult = _depart(rig)
+		_until(rig, started.eta_minute - 1)
 		var fits: int = _largest_order(rig)
 		var revenue: int = rig.module.peek_quote(TRADER, rig.market_b, "bread", fits, "sell").total if fits > 0 else 0
 		_until(rig, started.eta_minute)

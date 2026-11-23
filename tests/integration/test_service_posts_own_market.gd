@@ -10,6 +10,7 @@ const NPC_START_MONEY: int = 60
 const FIRST_WORKER: int = 100
 const FIRST_BUYER: int = 300
 const GOOD: String = "grain"
+const POSTED_ESCROW: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B: 5 pães de valor-base 10 mais 5%): o mercado retém 53 na custódia enquanto o contrato dele está aberto.
 ## Os três povoados e o mercado de cada um, na mesma ordem (os IDs 1 a 3 são dos mercados; tests/unit/test_game_economy_wiring.gd confere isso nos dados reais).
 const SETTLEMENTS: Array[String] = ["test_settlement_a", "test_settlement_b", "test_settlement_c"]
 const MARKETS: Array[int] = [1, 2, 3]
@@ -110,7 +111,7 @@ func test_only_the_market_of_the_posts_own_settlement_pays_its_payroll_and_the_m
 	_run_minutes(world, 2 * MINUTES_PER_HOUR)
 	var after: Array[int] = _balances(module, MARKETS)
 	for index: int in MARKETS.size():
-		assert_eq(before[index] - after[index], 2 * payroll[index], "O mercado %d (povoado %s) paga só a folha dos postos do povoado dele em 2 horas; saldos %s -> %s." % [MARKETS[index], SETTLEMENTS[index], str(before), str(after)])
+		assert_eq(before[index] - after[index], 2 * payroll[index] + POSTED_ESCROW, "O mercado %d (povoado %s) paga só a folha dos postos do povoado dele em 2 horas, mais a custódia do pão do postador; saldos %s -> %s." % [MARKETS[index], SETTLEMENTS[index], str(before), str(after)])
 	var workers_after: int = _balances(module, all_workers).reduce(func(sum: int, money: int) -> int: return sum + money, 0)
 	assert_eq(workers_after - workers_before, 2 * (payroll[0] + payroll[1] + payroll[2]), "Todo o dinheiro que saiu dos mercados chegou aos trabalhadores.")
 	assert_eq(paid.size(), 2 * CREWS.size(), "Um `WagesPaid` por posto e por hora.")

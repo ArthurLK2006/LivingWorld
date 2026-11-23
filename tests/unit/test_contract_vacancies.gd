@@ -6,6 +6,8 @@ extends GutTest
 
 const SEED: int = 89
 const MINUTES_PER_HOUR: int = 60
+## Os mercados do jogo real: cada um recebe o pão do postador de encomendas (LW-107c3, `max_open` 1) na 1ª hora cheia.
+const POSTED_BREADS: int = 3
 const SETTLEMENT_A: String = "test_settlement_a"
 const PLACE_SITE: String = "a_work_01"
 const PLACE_POST: String = "a_work_05"
@@ -59,6 +61,15 @@ func _offers(world: World) -> Array[ContractOffered]:
 	return offers
 
 
+## Só as ofertas de VAGA: o postador de encomendas (LW-107c3) também publica `ContractOffered`, um pão por mercado, e estes testes contam as vagas.
+func _vacancy_offers(offers: Array[ContractOffered]) -> Array[ContractOffered]:
+	var vacancies: Array[ContractOffered] = []
+	for offer: ContractOffered in offers:
+		if offer.kind == ContractBook.VACANCY:
+			vacancies.append(offer)
+	return vacancies
+
+
 func _vacancy_of(economy: EconomyModule, workplace_id: int, state_name: String = "open") -> EconomyReplies.ContractQuery:
 	for row: EconomyReplies.ContractQuery in economy.peek_contracts(state_name).contracts:
 		if row.kind == "vacancy" and row.workplace_id == workplace_id:
@@ -73,7 +84,7 @@ func test_a_workplace_with_missing_staff_offers_one_vacancy_that_shows_the_names
 	var offers: Array[ContractOffered] = _offers(world)
 	_hire(economy, NPC_BASE, PLACE_SITE)
 	_run_hours(world, 1)
-	assert_eq(offers.size(), 2, "O local de produção (1 de 4) e o posto (0 de 1): uma vaga cada.")
+	assert_eq([_vacancy_offers(offers).size(), offers.size() - _vacancy_offers(offers).size()], [2, POSTED_BREADS], "O local de produção (1 de 4) e o posto (0 de 1): uma vaga cada, e o pão do postador em cada um dos 3 mercados.")
 	assert_eq([offers[0].kind, offers[0].issuer_id, offers[0].reward, offers[0].deadline, offers[1].issuer_id], ["vacancy", SITE, 0, 0, POST], "Em ordem: local de produção, depois posto; emissor é o local.")
 	var site_vacancy: EconomyReplies.ContractQuery = _vacancy_of(economy, SITE)
 	assert_not_null(site_vacancy)
@@ -83,7 +94,7 @@ func test_a_workplace_with_missing_staff_offers_one_vacancy_that_shows_the_names
 	assert_eq([post_vacancy.place_id, post_vacancy.occupation_id, post_vacancy.wage_per_hour, post_vacancy.workers_wanted, post_vacancy.workers_assigned], [PLACE_POST, "guard", POST_WAGE, 1, 0])
 	assert_eq(economy.peek_balance(site_vacancy.contract_id).result.ok, false, "A vaga não tem custódia: nenhuma conta foi aberta.")
 	_run_hours(world, 3)
-	assert_eq(offers.size(), 2, "Uma vaga aberta por local: as horas seguintes não postam outra.")
+	assert_eq([_vacancy_offers(offers).size(), offers.size() - _vacancy_offers(offers).size()], [2, POSTED_BREADS], "Uma vaga aberta por local e um pão por mercado: as horas seguintes não postam outra.")
 	assert_true(economy.peek_conservation().ok)
 	assert_eq(economy.validate(), [] as Array[String])
 	world.teardown()
@@ -98,12 +109,12 @@ func test_a_full_workplace_offers_nothing_and_a_death_opens_a_vacancy_in_the_nex
 	_hire(economy, NPC_BASE + 10, PLACE_POST)
 	var offers: Array[ContractOffered] = _offers(world)
 	_run_hours(world, 2)
-	assert_eq(offers.size(), 0, "Equipes completas: nenhuma vaga.")
+	assert_eq(_vacancy_offers(offers).size(), 0, "Equipes completas: nenhuma vaga.")
 	world.context.events.publish(NpcDied.new(NPC_BASE + 1, "test", 0))
 	world.context.events.dispatch()
-	assert_eq(offers.size(), 0, "A conferência é por hora: a vaga ainda não nasceu.")
+	assert_eq(_vacancy_offers(offers).size(), 0, "A conferência é por hora: a vaga ainda não nasceu.")
 	_run_hours(world, 1)
-	assert_eq([offers.size(), offers[0].issuer_id], [1, SITE], "Depois da morte falta um e a vaga nasce na hora seguinte.")
+	assert_eq([_vacancy_offers(offers).size(), _vacancy_offers(offers).map(func(offer: ContractOffered) -> int: return offer.issuer_id)], [1, [SITE]], "Depois da morte falta um e a vaga nasce na hora seguinte.")
 	world.teardown()
 
 
@@ -195,8 +206,8 @@ func test_a_workplace_without_money_for_the_payroll_stops_but_keeps_its_staff_an
 	_run_hours(world, 4)
 	var site: EconomyReplies.SiteQuery = economy.peek_site(SITE)
 	assert_eq([site.running, site.workers_assigned], [false, SITE_WANTED], "Parado por falta de dinheiro, sem demitir ninguém.")
-	assert_eq(economy.peek_contracts("open").contracts.size(), 1, "Só a vaga do posto sem guarda; o local parado não gera vaga porque ninguém saiu.")
-	assert_eq(offers.size(), 1)
+	assert_eq(economy.peek_contracts("open").contracts.size(), 1 + POSTED_BREADS, "Só a vaga do posto sem guarda (mais o pão do postador em cada mercado); o local parado não gera vaga porque ninguém saiu.")
+	assert_eq(_vacancy_offers(offers).size(), 1)
 	world.teardown()
 
 

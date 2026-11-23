@@ -12,6 +12,8 @@ const SAVE_AT_STEPS: int = 1000
 const AFTER_SAVE_STEPS: int = 500
 ## As chaves do bloco da economia nesse ponto do jogo real (as mesmas do ramo de partida: `EconomyPersistence` não muda nesta tarefa).
 const ECONOMY_KEYS: Array[String] = ["goods", "ledger", "markets", "owners", "posts", "production"]
+## O mesmo bloco quando o livro de contratos tem contrato: a chave `contracts` só aparece com contrato (a opção B da LW-107c3 liga o postador); não é estado novo da LW-094b.
+const ECONOMY_KEYS_WITH_CONTRACTS: Array[String] = ["contracts", "goods", "ledger", "markets", "owners", "posts", "production"]
 
 
 func _farm_world() -> Array:
@@ -92,7 +94,7 @@ func test_the_real_game_is_deterministic_and_a_save_in_the_middle_of_a_rotation_
 	var keys: Array[String] = []
 	keys.assign(economy_block.keys())
 	keys.sort()
-	assert_eq(keys, ECONOMY_KEYS, "O bloco da economia tem as chaves de antes: nenhum estado novo no save.")
+	assert_true(keys == ECONOMY_KEYS or keys == ECONOMY_KEYS_WITH_CONTRACTS, "O bloco da economia tem as chaves de antes (com ou sem a chave `contracts`, que só existe com contrato): nenhum estado novo no save; veio %s." % str(keys))
 	var bytes: PackedByteArray = codec.encode(payload, "0.0.1-test")
 	direct.run_steps(AFTER_SAVE_STEPS)
 	var direct_hash: String = direct.world.state_hash()

@@ -1,6 +1,6 @@
 extends GutTest
-## LW-107, verificação do ciclo das encomendas (21/11/2026): a ACEITAÇÃO é voluntária e o jogo real não posta encomenda. Jogo REAL (população inteira, produção e consumo, os carregadores do `GameApp`) por 2 dias.
-## (1) Com o dado real (tabela de modelos VAZIA: a LW-107c3 NÃO está ativada) nenhuma entrega é postada e o quadro de cada mercado fica vazio. (2) Com os 3 modelos iniciais ligados SÓ em memória, o postador publica encomendas, mas ninguém as aceita sozinho (o `npc` só lê vagas até a LW-104:
+## LW-107, verificação do ciclo das encomendas (21/11/2026): a ACEITAÇÃO é voluntária e o jogo real só posta o pão (LW-107c3, opção B). Jogo REAL (população inteira, produção e consumo, os carregadores do `GameApp`) por 2 dias.
+## (1) Com o dado real (os 2 modelos da opção B, pão e farinha, sem o grão) o postador põe no 1º dia só o pão de 5 por 53, nos mercados dos povoados A e C, e o quadro de cada mercado mostra só o que ele pôs. (2) Com os 3 modelos iniciais ligados SÓ em memória, o postador publica encomendas, mas ninguém as aceita sozinho (o `npc` só lê vagas até a LW-104:
 ## `npc_employment.gd` e docs/modules/economy.md, seção 8): ficam `open` ou `expired`; só o pedido do jogador pela ponte aceita uma, e só ela. Se a LW-104 fizer NPCs aceitarem entregas, o item (2) deve ser revisto de propósito, não ajustado em silêncio.
 
 const WORLD_SEED: int = 1
@@ -37,7 +37,7 @@ func _templates() -> Array[ContractTemplateDef]:
 	return templates
 
 
-## O jogo novo como o do jogo, com o jogador nascido e com a conta aberta; `templates` null = o dado real (tabela vazia), senão os modelos dados no lugar dos do arquivo padrão.
+## O jogo novo como o do jogo, com o jogador nascido e com a conta aberta; `templates` null = o dado real (os 2 modelos da opção B), senão os modelos dados no lugar dos do arquivo padrão.
 func _start(templates: Variant) -> void:
 	var terrain: TerrainLoader.LoadResult = TerrainLoader.load_dir(GameAppNode.TERRAIN_DIR)
 	var points: PointOfInterestLoader.LoadResult = PointOfInterestLoader.load_dir(GameAppNode.TERRAIN_DIR, terrain.terrain)
@@ -81,15 +81,25 @@ func _center_of(market_id: int) -> Vector3:
 	return Vector3.ZERO
 
 
-func test_with_the_real_data_no_delivery_is_posted_in_a_day_and_every_board_is_empty() -> void:
+func test_with_the_real_data_the_poster_posts_only_the_bread_in_a_day_and_each_board_shows_what_it_posted() -> void:
 	_start(null)
 	_host.runner.run_steps(DAYS * DAY_MINUTES)
-	assert_eq(_deliveries().size(), 0, "O jogo real não posta entrega nem trabalho avulso (a tabela do postador está vazia): só vagas.")
 	var markets: Array[int] = _markets()
 	assert_gt(markets.size(), 0, "Pré-condição: o jogo tem mercados.")
+	var posted: Array[EconomyReplies.ContractQuery] = _deliveries()
+	var shape: Array = posted.map(func(contract: EconomyReplies.ContractQuery) -> Array: return [contract.kind, contract.good_id, contract.quantity, contract.reward, contract.state, contract.acceptor_id, contract.issuer_id])
+	assert_eq(shape, [[ContractBook.DELIVERY, "bread", 5, 53, ContractBook.STATE_OPEN, IdGenerator.NO_ID, markets[0]], [ContractBook.DELIVERY, "bread", 5, 53, ContractBook.STATE_OPEN, IdGenerator.NO_ID, markets[2]]], "O jogo real põe no 1º dia só 5 pães por 53, abertos, nos mercados dos povoados A e C (o B não pôs nada); sem farinha, sem grão, sem trabalho avulso.")
 	for market_id: int in markets:
+		var own: Array[int] = []
+		for contract: EconomyReplies.ContractQuery in posted:
+			if contract.issuer_id == market_id:
+				own.append(contract.contract_id)
 		var board: BridgePlayerContractsReplies.ContractBoardReply = _bridge.peek_contract_board(_actor_id, market_id)
-		assert_true(board.result.ok and board.rows.is_empty(), "O quadro do mercado %d está vazio." % market_id)
+		var shown: Array[int] = []
+		for row: BridgePlayerContractsReplies.ContractBoardRow in board.rows:
+			shown.append(row.contract_id)
+		assert_true(board.result.ok, "A consulta do quadro do mercado %d é sucesso." % market_id)
+		assert_eq(shown, own, "O quadro do mercado %d mostra só o que o postador pôs nele (nenhuma vaga)." % market_id)
 	assert_true(_economy.peek_conservation().ok and _economy.peek_goods_conservation().ok, "As conservações valem depois do dia.")
 
 

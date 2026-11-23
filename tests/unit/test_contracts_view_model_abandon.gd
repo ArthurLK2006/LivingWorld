@@ -8,6 +8,7 @@ extends GutTest
 const WORLD_DIR: String = "res://data/world"
 const SEED: int = 107
 const SETTLEMENT_A: String = "test_settlement_a"
+const POSTED_REWARD: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B): 5 pães, recompensa 53; os contratos do teste pagam `REWARD`.
 const SETTLEMENT_B: String = "test_settlement_b"
 const BREAD: String = "bread"
 const MINUTES_PER_HOUR: int = 60
@@ -135,6 +136,14 @@ func _build_board() -> Dictionary[String, int]:
 	return ids
 
 
+## O contrato de pão que o POSTADOR pôs no mercado `market_id` (o `open` de entrega que o mercado emitiu com a recompensa do modelo; os do teste pagam `REWARD`): o ID, ou NO_ID se não há.
+func _posted_bread(market_id: int) -> int:
+	for contract: EconomyReplies.ContractQuery in _economy.peek_contracts().contracts:
+		if contract.kind == ContractBook.DELIVERY and contract.issuer_id == market_id and contract.reward == POSTED_REWARD:
+			return contract.contract_id
+	return IdGenerator.NO_ID
+
+
 func _row(contract_id: int) -> ContractsViewModel.Row:
 	for row: ContractsViewModel.Row in _model.rows():
 		if row.contract_id == contract_id:
@@ -188,7 +197,7 @@ func test_the_abandoned_rows_are_listed_in_my_contracts_after_the_accepted_ones_
 	var available: Array[int] = []
 	for row: ContractsViewModel.Row in _model.available():
 		available.append(row.contract_id)
-	assert_eq([mine, available], [[ids["held"], ids["late"], ids["dropped"], ids["dropped_late"], ids["done"]], [ids["fresh"]]], "As aceitas primeiro, depois as terminadas (os abandonos entre elas); só a `open` está entre as disponíveis.")
+	assert_eq([mine, available], [[ids["held"], ids["late"], ids["dropped"], ids["dropped_late"], ids["done"]], [_posted_bread(_market_a), ids["fresh"]]], "As aceitas primeiro, depois as terminadas (os abandonos entre elas); só as `open` estão entre as disponíveis: o pão do postador e a do teste.")
 
 
 func test_accepted_count_leaves_out_the_expired_row_and_is_the_count_the_bridge_uses_for_the_limit() -> void:
@@ -204,7 +213,8 @@ func test_accepted_count_leaves_out_the_expired_row_and_is_the_count_the_bridge_
 
 func test_capacity_is_the_limit_of_the_real_game_zero_without_a_line_in_the_data_and_zero_after_a_refusal() -> void:
 	assert_true(_model.refresh(_bridge, _actor_id, _market_a))
-	assert_eq([_model.capacity(), _model.accepted_count(), _model.rows().size()], [LIMIT, 0, 0], "O dado real traz 3 e o quadro novo está vazio.")
+	assert_eq([_model.capacity(), _model.accepted_count(), _model.rows().size()], [LIMIT, 0, 1], "O dado real traz 3 e o quadro novo só tem uma linha, nenhuma aceita.")
+	assert_eq(_model.rows()[0].contract_id, _posted_bread(_market_a), "A única linha é o pão que o postador pôs no mercado A.")
 	assert_eq(_model.capacity(), _economy.peek_contract_limit(ContractBook.DELIVERY), "A capacidade é o número do dado, lido pela ponte: o modelo não tem número nenhum.")
 	_hold(LONG_MINUTES)
 	assert_true(_model.refresh(_bridge, _actor_id, _market_a))
