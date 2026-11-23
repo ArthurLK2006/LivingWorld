@@ -20,6 +20,9 @@ const MERCHANT: String = "merchant"
 const HAUL: String = "haul"
 const BREAD: String = "bread"
 const HUNGER: int = 0
+## Fome com que nasce o comerciante que PRECISA comer no teste (`_rig(..., hungry)`). Desde a regra da refeição (LW-094/B8: condição `eat_hungry`, `need_at_least` na fome, em `data/action_conditions.json`) a `eat` só começa com fome de 40 ou mais, e a fome de partida dos dados é 20:
+## o comerciante nasceria sem poder comer ao meio-dia e o T2 (que trata de ONDE ele come, não de quanta fome tem) não teria o que provar. 50 = 10 pontos acima do limiar de 40 (a fome sobe 5 por hora) e abaixo do nível urgente (65).
+const HUNGRY_START: int = 50
 const SAFETY: int = 2
 const MINUTES_PER_HOUR: int = 60
 ## 17:00: a viagem do A ao B (143 minutos) atravessa as 18h (refeição) e as 19h (conversa) da agenda.
@@ -60,8 +63,8 @@ func after_each() -> void:
 
 # ---------------------------------------------------------------------------------------------------- montagem
 
-## O jogo como o real, sem população. `spread`: o cenário de lucro (pão 120 no A e 15 no B); falso = preços iguais. `percent`: o `haul_value_percent` (-1 = o dos dados). `routine`: a tabela de rotina (nulo = a real). `starving`: a fome já nasce crítica e letal em 2 h (a real leva dias; a viagem dura 143 min).
-func _rig(start_minute: int, spread: bool = true, percent: int = -1, routine: RoutineTable = null, starving: bool = false) -> Rig:
+## O jogo como o real, sem população. `spread`: o cenário de lucro (pão 120 no A e 15 no B); falso = preços iguais. `percent`: o `haul_value_percent` (-1 = o dos dados). `routine`: a tabela de rotina (nulo = a real). `starving`: a fome já nasce crítica e letal em 2 h (a real leva dias; a viagem dura 143 min). `hungry`: a fome nasce em `HUNGRY_START` (a `eat` exige fome de 40 ou mais).
+func _rig(start_minute: int, spread: bool = true, percent: int = -1, routine: RoutineTable = null, starving: bool = false, hungry: bool = false) -> Rig:
 	var setup: NpcSetup = NpcSetup.from_dir(DATA_DIR, _places, true)
 	assert_true(setup.result.ok, setup.result.message)
 	setup.definitions.population = null
@@ -73,6 +76,8 @@ func _rig(start_minute: int, spread: bool = true, percent: int = -1, routine: Ro
 		setup.need_defs[HUNGER].start_value = 95
 		setup.need_defs[HUNGER].weaken_after_hours = 1
 		setup.need_defs[HUNGER].lethal_after_hours = 2
+	if hungry:
+		setup.need_defs[HUNGER].start_value = HUNGRY_START
 	var rig: Rig = Rig.new()
 	rig.runner = SimulationRunner.new(SEED, start_minute)
 	_runners.append(rig.runner)
@@ -339,13 +344,13 @@ func test_t2_away_from_home_the_merchant_rests_where_it_is_and_heads_home_to_eat
 		night.runner.step_once()
 		places.append(night.npc.peek_npc(merchant).settlement_id)
 	assert_eq([places.filter(func(settlement_id: String) -> bool: return settlement_id != SETTLEMENT_B), night.npc.peek_npc(merchant).place_id], [[], REST_B], "À noite a agenda manda `rest`, que vale no povoado onde ele está: não anda até a casa em outro povoado.")
-	var meal: Rig = _rig(12 * MINUTES_PER_HOUR - 5, false)
+	var meal: Rig = _rig(12 * MINUTES_PER_HOUR - 5, false, -1, null, false, true)
 	var away: int = _spawn(meal, MERCHANT, SETTLEMENT_B, MARKET_B, MARKET_B)
 	assert_true(meal.economy.request_transfer_goods(meal.market_b, away, BREAD, 3).ok)
 	assert_true(_run_until(meal, _doing.bind(meal, away, "go_to_place"), 30))
 	assert_eq(meal.npc.peek_npc(away).action_target_place_id, HOME_A, "`eat` exige a casa: longe dela o comerciante parte para lá pelo `go_to_place` (o runner serve a qualquer local), sem contrato novo.")
 	assert_true(_run_until(meal, func() -> bool: return meal.npc.peek_npc(away).settlement_id == SETTLEMENT_A, 150), "A caminhada atravessa o povoado e a chegada o põe no A.")
-	var home: Rig = _rig(12 * MINUTES_PER_HOUR - 5, false)
+	var home: Rig = _rig(12 * MINUTES_PER_HOUR - 5, false, -1, null, false, true)
 	var local: int = _spawn(home, MERCHANT, SETTLEMENT_A, MARKET_A, MARKET_A)
 	assert_true(home.economy.request_transfer_goods(home.market_a, local, BREAD, 3).ok)
 	var hunger: int = home.npc.peek_npc(local).need_values[HUNGER]
