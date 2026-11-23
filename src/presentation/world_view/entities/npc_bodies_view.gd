@@ -1,6 +1,6 @@
 class_name NpcBodiesView
 extends Node3D
-## Os corpos dos NPCs em S0 (LW-072c). A cada quadro CONSULTA a ponte (`peek_npc_bodies`, sem sinal) e mantém um `NpcView` por NPC em S0, nem
+## Os corpos dos NPCs em S0 (LW-072c). A cada quadro CONSULTA a ponte (`peek_npc_bodies`, sem sinal) e mantém um `NpcView` por NPC em S0 que não está em viagem, nem
 ## mais nem menos. As SAÍDAS vêm antes das ENTRADAS: o corpo de quem saiu (afastou-se ou morreu) volta à reserva antes de o próximo pegar um, e
 ## uma troca grande de uma vez (o jogador salta de um povoado a outro) nunca faz a reserva crescer. O corpo nasce na posição da ponte e fica
 ## ESCONDIDO enquanto o terreno do seu chunk não está desenhado (`TerrainView.has_chunk`). `setup` liga o interruptor de corpos da simulação e
