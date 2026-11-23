@@ -1,0 +1,28 @@
+{
+	"version": 1,
+	"view": {
+		"enter_m": 80,
+		"exit_m": 120,
+		"lateral_offset_m": 1.2,
+		"pool_size": 8,
+		"max_pitch_deg": 25,
+		"pitch_spacing_m": 1.5
+	},
+	"routes": [
+		{"route_id": "route_a_b"},
+		{"route_id": "route_a_c"},
+		{"route_id": "route_b_c"}
+	],
+	"cargo": [
+		{"good_id": "grain", "color": "#C4A24C", "shape": "sack"},
+		{"good_id": "flour", "color": "#E8E2D2", "shape": "barrel"},
+		{"good_id": "bread", "color": "#B07847", "shape": "box"},
+		{"good_id": "wood", "color": "#6B4A2E", "shape": "bundle"},
+		{"good_id": "plank", "color": "#DDC48A", "shape": "bundle"},
+		{"good_id": "ore", "color": "#48535E", "shape": "box"},
+		{"good_id": "metal", "color": "#9FB0C2", "shape": "barrel"},
+		{"good_id": "tool", "color": "#A04A40", "shape": "box"},
+		{"good_id": "wool", "color": "#A59C88", "shape": "sack"},
+		{"good_id": "fabric", "color": "#7E5A8C", "shape": "bundle"}
+	]
+}
