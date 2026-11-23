@@ -35,6 +35,14 @@ tests/soak/run_sp6
 tests/soak/run_npc_life_30d
 ```
 
+## Estabilidade de longo prazo: 90 dias com a economia e os comerciantes reais
+
+`run_npc_life_90d_with_economy` roda, sem janela, os **138 NPCs do jogo por 90 dias de jogo com a ECONOMIA e os 6 comerciantes reais** (`with_economy` do `npc_life_check.gd`: dados de `data/`, rotas, caravanas, `FoodStub` ainda presente) e confere os mesmos invariantes do soak de 30 dias, mais as chegadas de caravana. O `world.validate()` ao fim de cada dia inclui a conservação do dinheiro e dos bens e o livro de caravanas. São **três execuções** de 90 dias (de 4 a 7 minutos cada, conforme a carga do Mac; de 12 a 20 no total; com `LW_SOAK_DAYS=30`, cerca de 5): **direta**; com **salvar e carregar no dia 45**; e com **salvar e carregar no primeiro minuto depois do dia 10 com caravana em viagem** (`reload_in_transit_after_days`; o comércio real para por volta do dia 21; o resumo diz o minuto e quantas caravanas viajavam). As duas recargas precisam dar o **mesmo hash final, as mesmas chegadas, as mesmas amostras de trânsito e os mesmos mortos** que a direta. Fora do `tools/check_all` (o arquivo `npc_life/soak_npc_life_90d_with_economy.gd` não começa com `test_`); o teste curto da recarga em trânsito (1 dia) está em `npc_life/test_npc_life_7d.gd`. Semente padrão 11 (`LW_SOAK_SEED=1` troca); `LW_SOAK_DAYS=30` encurta o horizonte. **Falha conhecida até a LW-094 (medida em 21/11/2026, sementes 11 e 1):** em 90 dias morrem 30 NPCs de fome, a população inteira do povoado C, entre os dias 31 e 40, então as asserções de SOBREVIVÊNCIA (todos vivos, nenhum problema) falham hoje, enquanto as de ESTABILIDADE (conservação, determinismo, recarga, caravanas) passam; nunca afrouxe a sobrevivência para "passar".
+
+```bash
+tests/soak/run_npc_life_90d_with_economy
+```
+
 ## Detector de impasse em 30 dias (LW-073c)
 
 `run_npc_impasse_30d` roda os mesmos 100 NPCs por 30 dias de jogo (semente 11, sem corpos e sem personagem) e confere que o detector de impasse (LW-073) **não recupera ninguém** em vida normal: nenhum evento `NpcImpasseRecovered`, registro vazio e `validate()` limpo. Imprime o hash do mundo, que é o mesmo do `run_npc_life_30d`. A versão de 7 dias está em `tests/unit/test_impasse.gd`, no `check_all`.
