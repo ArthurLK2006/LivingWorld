@@ -2,7 +2,7 @@ extends Node3D
 ## Script da cena principal: entrega a ponte à TerrainView e à DecorationView, faz o PlayerBody nascer, liga a câmera de terceira
 ## pessoa ao jogador (e o jogador à câmera, que é a referência de direção dele) e informa o foco do terreno: a posição do
 ## PlayerBody; se ele não nascer, a da câmera, que fica onde a cena a pôs (D1 de Arthur: direto, sem passar pela ponte). Carrega os
-## textos de jogo (UiText) e os entrega ao HUD (LW-051) e à InteractionView (LW-050). Cria em código os corpos dos NPCs em S0 (LW-072f), a tela de mercado (LW-106e) e as praças dos mercados (ART-2b). Sem regra de jogo.
+## textos de jogo (UiText) e os entrega ao HUD (LW-051) e à InteractionView (LW-050). Cria em código os corpos dos NPCs em S0 (LW-072f), a tela de mercado (LW-106e) e as praças dos mercados (ART-2b), e, só com o interruptor `caravans_visible` ligado (nasce DESLIGADO), os corpos das caravanas (LW-099b2b). Sem regra de jogo.
 
 ## Árvores e pedras de blockout (LW-043): dados em data/world, só visuais.
 const DECORATIONS_PATH: String = "res://data/world/decorations.json"
@@ -11,8 +11,12 @@ const GAME_NAME_SETTING: String = "application/config/name"
 const PLACE_VIEW_NAME: String = "PlaceBoxesView"
 const PLAZA_VIEW_NAME: String = "MarketPlazaView"
 const BODIES_VIEW_NAME: String = "NpcBodiesView"
+const CARAVANS_VIEW_NAME: String = "CaravanBodiesView"
 const BODY_DRIVER_NAME: String = "NpcBodyDriver"
 const MARKET_VIEW_NAME: String = "MarketView"
+
+## Viagem visível dos comerciantes (LW-099b2b): com ele ligado a cena cria a reserva e a vista dos corpos das caravanas (`CaravanBodiesView`); DESLIGADO por padrão (nada é criado nem lido) até Arthur ver o resultado na janela.
+@export var caravans_visible: bool = false
 
 @onready var _terrain_view: TerrainView = $TerrainView
 @onready var _decoration_view: DecorationView = $DecorationView
@@ -29,6 +33,8 @@ var _texts: UiText
 ## Os corpos dos NPCs em S0 (LW-072f) e o motorista que os leva até os Intents, criados em código como as caixas dos locais.
 var _bodies_view: NpcBodiesView
 var _body_driver: NpcBodyDriver
+## Os corpos das caravanas (LW-099b2b): só existe com `caravans_visible` ligado e a vista montada (nulo fora disso).
+var _caravans_view: CaravanBodiesView
 ## A tela de mercado (LW-106e), criada em código como as outras views: só existe se o jogador nasceu; a tecla `interact` a abre pela `InteractionView`.
 var _market_view: MarketView
 ## O painel de depuração de NPC (LW-082g): só existe em build de desenvolvimento (nulo fora dele).
@@ -69,6 +75,7 @@ func _ready() -> void:
 		_setup_market_view(bridge)
 	_setup_npc_bodies(bridge)
 	_interaction_view.set_npc_bodies(_bodies_view)
+	_setup_caravans(bridge)
 	_terrain_view.set_focus(_focus_position())
 	_is_terrain_ready = true
 	set_process(true)
@@ -139,6 +146,23 @@ func _setup_npc_bodies(bridge: SimBridge) -> void:
 	var bodies_ready: bool = _bodies_view.setup(bridge, _terrain_view) if source == null else _bodies_view.setup(bridge, _terrain_view, area, source.make)
 	if bodies_ready and not _body_driver.setup(bridge, _bodies_view):
 		_bodies_view.release()
+
+
+## Os corpos das caravanas (LW-099b2b), SÓ com `caravans_visible` ligado: lê o dado de apresentação (`data/presentation/caravan_routes.json`) e liga a vista à ponte e ao terreno (que dá o foco do jogador); a vista só lê da ponte
+## e cria a própria reserva de corpos. Desligado, nada é criado nem lido. Dado inválido ou `setup` que falha (a view já registrou o motivo): a vista é descartada e a cena segue sem caravanas.
+func _setup_caravans(bridge: SimBridge) -> void:
+	if not caravans_visible:
+		return
+	var loaded: CaravanRoutesReader.LoadResult = CaravanRoutesReader.from_file()
+	if not loaded.result.ok:
+		push_error("MainWorldView: %s As caravanas não serão desenhadas." % loaded.result.message)
+		return
+	_caravans_view = CaravanBodiesView.new()
+	_caravans_view.name = CARAVANS_VIEW_NAME
+	add_child(_caravans_view)
+	if not _caravans_view.setup(bridge, _terrain_view, loaded.data):
+		_caravans_view.queue_free()
+		_caravans_view = null
 
 
 ## A fonte das figuras (7b-2) só se a área tem entrada; null = tudo cápsula. Catálogo ou figura que falha: UM aviso com o motivo, e o `make` da fonte devolve null (cápsula).
