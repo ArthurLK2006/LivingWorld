@@ -25,12 +25,17 @@ const INVALID: Array = [
 	["campo desconhecido na vista", '"pool_size": 8,', '"pool_size": 8, "extra": 1,', "view", "extra"],
 	["campo da vista ausente", ', "pitch_spacing_m": 1.5', "", "view", "pitch_spacing_m"],
 	["enter_m negativo", '"enter_m": 80', '"enter_m": -5', "view", "enter_m"],
+	["enter_m zero", '"enter_m": 80', '"enter_m": 0', "view", "enter_m"],
 	["enter_m texto", '"enter_m": 80', '"enter_m": "80"', "view", "enter_m"],
 	["enter_m acima do teto", '"enter_m": 80', '"enter_m": 99999', "view", "enter_m"],
 	["exit_m não passa de enter_m", '"exit_m": 120', '"exit_m": 80', "view", "exit_m"],
+	["exit_m zero", '"exit_m": 120', '"exit_m": 0', "view", "exit_m"],
 	["pool_size fracionário", '"pool_size": 8', '"pool_size": 8.5', "view", "pool_size"],
 	["pool_size zero", '"pool_size": 8', '"pool_size": 0', "view", "pool_size"],
 	["max_pitch_deg vertical", '"max_pitch_deg": 25', '"max_pitch_deg": 90', "view", "max_pitch_deg"],
+	["max_pitch_deg negativo", '"max_pitch_deg": 25', '"max_pitch_deg": -1', "view", "max_pitch_deg"],
+	["lateral_offset_m negativo", '"lateral_offset_m": 1.2', '"lateral_offset_m": -1.2', "view", "lateral_offset_m"],
+	["pitch_spacing_m zero", '"pitch_spacing_m": 1.5', '"pitch_spacing_m": 0', "view", "pitch_spacing_m"],
 	["rotas vazias", '"routes": ' + ROUTES_OK, '"routes": []', "", "routes"],
 	["route_id repetido", '{"route_id": "r2"}', '{"route_id": "r1"}', "r1", "route_id"],
 	["route_id que não é texto", '{"route_id": "r2"}', '{"route_id": 7}', "routes[1]", "route_id"],
@@ -156,14 +161,22 @@ func test_every_invalid_file_is_a_handled_failure_with_file_item_and_field_and_a
 		assert_true(not loaded.data.is_ready() and loaded.data.route_ids().is_empty() and loaded.data.cargo_ids().is_empty(), "dado vazio, nunca pela metade (" + why + ")")
 
 
-## Só um literal como 1e999 estoura o real do JSON e vira infinito; o motor AVISA disso ao ler (o GUT conta o aviso como erro do motor, então ele é declarado aqui).
+## Zero só vale para o deslocamento lateral e o limite de inclinação (desligam o efeito por dado); nos outros números a tabela acima recusa o zero.
+func test_zero_turns_off_the_lateral_offset_and_the_pitch_limit() -> void:
+	var loaded: CaravanRoutesReader.LoadResult = CaravanRoutesReader.from_json(MINIMAL.replace('"lateral_offset_m": 1.2', '"lateral_offset_m": 0').replace('"max_pitch_deg": 25', '"max_pitch_deg": 0'), LABEL)
+	assert_true(loaded.result.ok, loaded.result.message)
+	assert_eq([loaded.data.lateral_offset_m, loaded.data.max_pitch_deg, loaded.data.enter_m], [0.0, 0.0, 80.0], "os dois zeros são lidos; o resto da vista fica como estava")
+
+
+## Só um literal como 1e999 estoura o real do JSON e vira infinito; o motor AVISA disso ao ler, um aviso por literal (o GUT conta o aviso como erro do motor: ele é declarado
+## por CONTAGEM, sem depender do texto do aviso, que é do motor).
 func test_a_number_too_big_for_a_real_is_refused_as_not_finite() -> void:
 	var cases: Array = [['"enter_m": 80', '"enter_m": 1e999', "view", "enter_m"], ["[10, 20]", "[1e999, 20]", "r1", "points_m"]]
 	for row: Array in cases:
 		var loaded: CaravanRoutesReader.LoadResult = CaravanRoutesReader.from_json(MINIMAL.replace(str(row[0]), str(row[1])), LABEL)
-		assert_engine_error("Exponent too high", "o motor avisa do estouro do número")
 		assert_false(loaded.result.ok, "recusado (%s)" % row[1])
 		assert_true(loaded.result.message.contains("item '%s'" % row[2]) and loaded.result.message.contains("campo '%s'" % row[3]), loaded.result.message)
+	assert_engine_error_count(cases.size(), "o motor avisa do estouro de cada número")
 
 
 func test_a_missing_file_is_a_handled_failure() -> void:

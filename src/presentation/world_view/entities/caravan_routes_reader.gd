@@ -1,11 +1,12 @@
 class_name CaravanRoutesReader
 extends RefCounted
 ## LW-099a (viagem visível dos comerciantes; só apresentação): lê e VALIDA data/presentation/caravan_routes.json, o dado de apresentação da caravana
-## (contrato técnico da LW-099, PR #158: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2 e 3). Três blocos: `view` (os números da vista: raio de entrada e de saída do alcance,
+## (contrato técnico da LW-099: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2 e 3). Três blocos: `view` (os números da vista: raio de entrada e de saída do alcance,
 ## deslocamento lateral, tamanho da reserva de corpos, inclinação máxima do carrinho e distância entre as duas amostras de altura), `routes` (por `route_id`,
 ## os pontos de passagem OPCIONAIS `points_m`: pares [x, z] em metros, do povoado `settlement_a_id` para o `settlement_b_id`, SEM as pontas, que vêm dos
 ## mercados; sem pontos a estrada é a reta) e `cargo` (por `good_id`, a cor `#RRGGBB` e a forma do volume, de um conjunto fechado). TODOS os valores são
-## [HIP] PROVISÓRIOS: a afinação é visual, na janela de Arthur. Este leitor não conhece a simulação (a apresentação só fala com ela pela ponte): conferir
+## [HIP] PROVISÓRIOS: a afinação é visual, na janela de Arthur; `lateral_offset_m` e `max_pitch_deg` aceitam ZERO (desligam o deslocamento lateral e a inclinação por
+## dado) e os demais números são estritamente positivos. Este leitor não conhece a simulação (a apresentação só fala com ela pela ponte): conferir
 ## que os ids existem em routes.json e goods.json é do teste. Falha tratada, nunca erro: todo problema vira UMA falha com arquivo, item e campo e o dado
 ## devolvido fica VAZIO (nunca pela metade); o leitor não escreve no log e nada do arquivo é executado.
 
@@ -106,9 +107,9 @@ func _read_view(reader: CharacterDataReader, view: Dictionary) -> void:
 	var problems: int = reader.bundle.issues.size()
 	enter_m = _number(reader, view, "enter_m", MAX_METERS)
 	exit_m = _number(reader, view, "exit_m", MAX_METERS)
-	lateral_offset_m = _number(reader, view, "lateral_offset_m", MAX_METERS)
+	lateral_offset_m = _number(reader, view, "lateral_offset_m", MAX_METERS, true)
 	pool_size = reader.whole(view, "pool_size", VIEW, 1, MAX_POOL_SIZE)
-	max_pitch_deg = _number(reader, view, "max_pitch_deg", MAX_PITCH_DEG)
+	max_pitch_deg = _number(reader, view, "max_pitch_deg", MAX_PITCH_DEG, true)
 	pitch_spacing_m = _number(reader, view, "pitch_spacing_m", MAX_METERS)
 	if reader.bundle.issues.size() == problems and exit_m <= enter_m:
 		reader.fail(VIEW, "exit_m", "exit_m (%s) deve ser maior que enter_m (%s): a diferença é a histerese contra o piscar" % [exit_m, enter_m])
@@ -167,15 +168,16 @@ static func _identify(reader: CharacterDataReader, row: Dictionary, table: Strin
 	return id
 
 
-## Número obrigatório da vista: finito, maior que zero e até `high` (teto de segurança). Zero, com o problema registrado, se faltar ou não prestar.
-static func _number(reader: CharacterDataReader, view: Dictionary, field: String, high: float) -> float:
+## Número obrigatório da vista: finito e até `high` (teto de segurança), maior que zero ou, com `allow_zero`, maior ou igual a zero (zero DESLIGA o efeito por
+## dado: o deslocamento lateral e o limite de inclinação). Zero, com o problema registrado, se faltar ou não prestar.
+static func _number(reader: CharacterDataReader, view: Dictionary, field: String, high: float, allow_zero: bool = false) -> float:
 	var value: Variant = view.get(field)  # Variant: fronteira com o JSON, conferido logo abaixo
 	if typeof(value) != TYPE_FLOAT and typeof(value) != TYPE_INT:
 		reader.fail(VIEW, field, "campo obrigatório ausente" if typeof(value) == TYPE_NIL else "tipo inválido: esperado um número")
 		return 0.0
 	var number: float = float(value)
-	if not is_finite(number) or number <= 0.0 or number > high:
-		reader.fail(VIEW, field, "esperado um número finito maior que zero, de até %s" % high)
+	if not is_finite(number) or number < 0.0 or (number == 0.0 and not allow_zero) or number > high:
+		reader.fail(VIEW, field, "esperado um número finito %s zero, de até %s" % ["maior ou igual a" if allow_zero else "maior que", high])
 		return 0.0
 	return number
 

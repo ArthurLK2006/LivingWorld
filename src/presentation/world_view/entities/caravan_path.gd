@@ -18,14 +18,6 @@ var _along: PackedFloat64Array = PackedFloat64Array()
 var _length_m: float = 0.0
 
 
-## Posição (x, z) e giro (rad, em torno de Y) de uma amostra; o chamador cria UMA e a reaproveita a cada quadro.
-class Pose:
-	extends RefCounted
-
-	var position: Vector2 = Vector2.ZERO
-	var yaw: float = 0.0
-
-
 ## A polilinha ordenada (ponta A, pontos de passagem, ponta B). Ponto repetido é ignorado; ponto não finito deixa o caminho VAZIO (comprimento zero),
 ## nunca um valor não finito na tela.
 func _init(polyline: PackedVector2Array = PackedVector2Array()) -> void:
@@ -90,3 +82,11 @@ func _at(distance: float, forward: bool) -> Vector2:
 		index += 1
 	var fraction: float = clampf((stored - _along[index]) / (_along[index + 1] - _along[index]), 0.0, 1.0)
 	return _points[index].lerp(_points[index + 1], fraction)
+
+
+## Posição (x, z) e giro (rad, em torno de Y) de uma amostra; o chamador cria UMA e a reaproveita a cada quadro.
+class Pose:
+	extends RefCounted
+
+	var position: Vector2 = Vector2.ZERO
+	var yaw: float = 0.0
