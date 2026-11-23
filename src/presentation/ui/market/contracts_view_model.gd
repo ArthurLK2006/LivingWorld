@@ -5,6 +5,7 @@ extends RefCounted
 ## não calcula recompensa, custo nem regra de prazo, só SUBTRAI e COMPARA com o `now` que veio na MESMA resposta da ponte (nunca outro relógio; o modelo não lê relógio nenhum). Falhou? O modelo fica VAZIO e inválido, com o
 ## código da recusa em `error_code()`: um número da leitura anterior nunca aparece como se fosse atual. Quem decide QUANDO atualizar é a tela; ela mostra `ui.contracts.unavailable` quando o modelo é inválido.
 ## LW-107f4a (docs/modules/presentation.md, "Encomendas por objetivo: abandonar, confirmar e capacidade"): a linha ganha `closed_reason` e `can_abandon`, o `display_state` distingue o abandono, e o modelo expõe `accepted_count()` e `capacity()` (o `accepted_limit` da ponte).
+## LW-107h (custo e resultado estimados, contrato de interface da aba Contratos): `refresh_estimates` e `estimate_of` dão, por linha ativa, o custo estimado de COMPRAR o que falta no mercado mostrado e o resultado (recompensa menos custo). O custo vem da economia, pela ponte (`peek_trade_quote`, a cotação real das unidades que faltam, nunca `ask x N`): o modelo só SUBTRAI e COMPARA e não promete nada.
 
 ## Os estados do contrato com o texto da ponte (o da economia; um teste confere). Em `Row.display_state` são os estados que a tela MOSTRA: `expired` é o "Vencido". `STATE_ABANDONED` só existe em `display_state` (LW-107f4a): é o
 ## `failed` cujo `closed_reason` é `REASON_ABANDONED` (o texto da economia); o `failed` sem motivo (a falha real) segue `failed`.
@@ -15,6 +16,10 @@ const STATE_EXPIRED: String = "expired"
 const STATE_FAILED: String = "failed"
 const STATE_ABANDONED: String = "abandoned"
 const REASON_ABANDONED: String = "abandoned"
+## Os tipos da estimativa de uma linha (LW-107h): `NONE` (linha terminada, vencida, sem leitura ou sem estimativa pedida: nenhum número), `HELD` (já tem todas as unidades: sem custo de compra e SEM veredito, porque o que o jogador pagou antes não está salvo), `UNKNOWN` (a cotação foi recusada: o custo é DESCONHECIDO, nunca zero) e `KNOWN`.
+enum EstimateKind { NONE, HELD, UNKNOWN, KNOWN }
+## [HIP] A faixa única da "margem pequena": o resultado estimado de 0 até esta porcentagem da recompensa.
+const SMALL_MARGIN_PERCENT: int = 10
 
 
 ## Uma linha da aba: um contrato de entrega do quadro. `state` é o da ponte; `display_state` é o que a tela MOSTRA (`expired` para todo contrato `open` ou `accepted` com o prazo passado, ainda que a economia só o encerre na hora
@@ -43,11 +48,26 @@ class Row:
 	var can_abandon: bool = false
 
 
+## A estimativa de uma linha ativa (LW-107h). `missing` é quantas unidades faltam COMPRAR (a quantidade menos as livres em mãos); `cost` é o `total` da cotação de COMPRA de `missing` unidades no mercado mostrado; `result` é a recompensa menos `cost` (negativo = possível prejuízo); `funds_short` é quanto falta do saldo para o `cost` (0 se o saldo cobre);
+## `is_small_margin` é o `result` de 0 até `SMALL_MARGIN_PERCENT` da recompensa. Só `KNOWN` tem `cost`, `result`, `funds_short` e `is_small_margin` (nos outros tipos ficam em zero e não devem ser lidos); `missing` vale também para `HELD` (zero) e `UNKNOWN`.
+class Estimate:
+	extends RefCounted
+
+	var kind: ContractsViewModel.EstimateKind = ContractsViewModel.EstimateKind.NONE
+	var missing: int = 0
+	var cost: int = 0
+	var result: int = 0
+	var funds_short: int = 0
+	var is_small_margin: bool = false
+
+
 var _is_valid: bool = false
 var _error_code: String = ""
 var _market_id: int = IdGenerator.NO_ID
 var _accepted_limit: int = 0
+var _funds: int = 0
 var _rows: Array[Row] = []
+var _estimates: Dictionary[int, Estimate] = {}
 
 
 ## Refaz o modelo inteiro (nunca soma à leitura anterior) para o jogador `actor_id` diante do mercado `market_id`. Devolve falso, com o modelo vazio e o código em `error_code()`, se a ponte é nula (`BRIDGE_NO_GAME`) ou se qualquer
@@ -78,6 +98,7 @@ func refresh(bridge: SimBridge, actor_id: int, market_id: int) -> bool:
 		_rows.append(_row_of(source, board.now, board.market_id, owned, settlement_id))
 	_market_id = board.market_id
 	_accepted_limit = board.accepted_limit
+	_funds = player.funds
 	_is_valid = true
 	return true
 
@@ -133,17 +154,68 @@ func capacity() -> int:
 	return _accepted_limit
 
 
+## LW-107h: refaz as estimativas das linhas ATIVAS (`display_state` `open` ou `accepted`, isto é, no prazo; as terminadas e as vencidas nunca têm), para o jogador `actor_id` e o mercado mostrado, A PARTIR da leitura do último `refresh` (mesmas linhas, mesmo `owned`, mesmo saldo): a única consulta nova é a cotação de COMPRA (`peek_trade_quote`)
+## das unidades que FALTAM de cada linha, no máximo uma por linha ativa. As unidades em mãos NÃO contam duas vezes: as encomendas `accepted` (minhas, no prazo) as consomem primeiro, por `contract_id` crescente; as `open` só veem a sobra (cada uma a mesma, pois nenhuma está aceita). Nada a comprar: `HELD`, sem consulta. Cotação recusada (sem estoque, lote acima do limite
+## por ordem, bem banido, qualquer outra): `UNKNOWN`, nunca zero. Modelo inválido ou ponte nula: nenhuma estimativa. O `refresh` apaga as estimativas, então quem as quer chama este método depois dele; só a tela decide quando (só com a aba visível).
+func refresh_estimates(bridge: SimBridge, actor_id: int) -> void:
+	_estimates.clear()
+	if not _is_valid or bridge == null:
+		return
+	var spare: Dictionary[String, int] = {}
+	for row: Row in _rows:
+		spare[row.good_id] = row.owned
+	var in_hand: Dictionary[int, int] = {}
+	for row: Row in _rows:
+		if row.display_state == STATE_ACCEPTED and row.is_mine:
+			in_hand[row.contract_id] = mini(row.quantity, spare[row.good_id])
+			spare[row.good_id] -= in_hand[row.contract_id]
+	for row: Row in _rows:
+		if row.display_state == STATE_OPEN:
+			in_hand[row.contract_id] = mini(row.quantity, spare[row.good_id])
+	for row: Row in _rows:
+		if in_hand.has(row.contract_id):
+			_estimates[row.contract_id] = _estimate_of_row(bridge, actor_id, row, row.quantity - in_hand[row.contract_id])
+
+
+## A estimativa da linha `contract_id` na última chamada de `refresh_estimates`; de tipo `NONE` (nenhum número) se a linha não tem (terminada, vencida, inexistente), se `refresh_estimates` não rodou depois do último `refresh` ou se o modelo é inválido.
+func estimate_of(contract_id: int) -> Estimate:
+	if _estimates.has(contract_id):
+		return _estimates[contract_id]
+	return Estimate.new()
+
+
 func _clear() -> void:
 	_is_valid = false
 	_error_code = ""
 	_market_id = IdGenerator.NO_ID
 	_accepted_limit = 0
+	_funds = 0
 	_rows.clear()
+	_estimates.clear()
 
 
 func _refuse(refused: Result) -> bool:
 	_error_code = refused.code
 	return false
+
+
+## A estimativa de uma linha com `missing` unidades por comprar: `HELD` se não falta nenhuma (sem consulta), `UNKNOWN` se a cotação de compra é recusada e `KNOWN` com o total dela. Só subtrai (recompensa menos custo, custo menos saldo) e compara (a faixa da margem pequena, em inteiros: sem divisão).
+func _estimate_of_row(bridge: SimBridge, actor_id: int, row: Row, missing: int) -> Estimate:
+	var estimate: Estimate = Estimate.new()
+	estimate.missing = missing
+	if missing <= 0:
+		estimate.kind = EstimateKind.HELD
+		return estimate
+	var quoted: BridgePlayerEconomyReplies.TradeQuoteReply = bridge.peek_trade_quote(actor_id, _market_id, row.good_id, missing, BridgePlayerEconomyReplies.SIDE_BUY)
+	if not quoted.result.ok:
+		estimate.kind = EstimateKind.UNKNOWN
+		return estimate
+	estimate.kind = EstimateKind.KNOWN
+	estimate.cost = quoted.total
+	estimate.result = row.reward - quoted.total
+	estimate.funds_short = maxi(0, quoted.total - _funds)
+	estimate.is_small_margin = estimate.result >= 0 and estimate.result * 100 <= row.reward * SMALL_MARGIN_PERCENT
+	return estimate
 
 
 ## Copia a linha da ponte e acrescenta só o que sai de uma subtração ou comparação com o `now` da MESMA resposta.

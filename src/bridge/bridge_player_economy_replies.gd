@@ -61,6 +61,25 @@ class PlayerTradeReply:
 			text_key = FAILURE_KEYS.get(reply_result.code, FALLBACK_KEY)
 
 
+## `peek_trade_quote` (LW-107h; contrato de interface da cotação na aba Contratos): a cotação de uma ordem do jogador, SÓ LEITURA, repasse fino do `EconomyModule.peek_quote` (a mesma conta de `request_trade` no mesmo instante, sem executar; não confere fundos nem peso). `quantity` (a pedida), `total`,
+## `average_price` (o total dividido pela quantidade, para baixo) e `tariff` só valem se `result.ok`. SEM `text_key` (é consulta, não ordem): a recusa vai com o código de quem recusou (a ponte ou a economia), sem tradução, e quem mostra o aviso escolhe o texto.
+class TradeQuoteReply:
+	extends RefCounted
+
+	var result: Result
+	var quantity: int
+	var total: int
+	var average_price: int
+	var tariff: int
+
+	func _init(reply_result: Result, quoted_quantity: int = 0, quoted_total: int = 0, quoted_average: int = 0, quoted_tariff: int = 0) -> void:
+		result = reply_result
+		quantity = quoted_quantity
+		total = quoted_total
+		average_price = quoted_average
+		tariff = quoted_tariff
+
+
 ## `peek_market_in_reach` (LW-106b; contrato em docs/modules/bridge.md, "Mercado ao alcance"): o mercado ao alcance do ator, na posição GUARDADA no `character`. `market_id` e `settlement_id` (o assentamento dele) só valem se `result.ok`.
 ## SEM `place_id` (o `MarketReach` do `world` devolve só um `Result`: a ponte não escolhe local nem mede distância) e SEM `text_key` (é consulta, não ordem: quem mostra o aviso escolhe o texto).
 class MarketInReachReply:
