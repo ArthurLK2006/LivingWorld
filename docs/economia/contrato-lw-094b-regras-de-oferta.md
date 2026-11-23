@@ -60,7 +60,7 @@ Hoje o `WagesPaid` é UM por local e hora (`workplace_id`, `amount_each`) e o `n
 - A folha parcial relativiza o "tudo ou nada" do local (R8-M1/DEC-169: o tudo ou nada passa a valer POR EQUIPE; ninguém é demitido).
 - A pergunta aberta da folha cheia dos excedentes e da equipe ociosa por falta de insumo (seção 3.P).
 - **Mudança de significado NÃO listada antes (revisão R3):** `OUTPUT_FULL` passa a significar também "sem comprador" em `peek_site`, na ponte e no painel econômico (LW-108), que hoje o leem como "inventário cheio".
-- **Limitação:** conta fechada ou no teto de saldo dentro da equipe é tratada tentando as outras janelas do rodízio; não há teste que a alcance pela porta (a morte tira o trabalhador do local antes de fechar a conta, `economy_module.gd`), então o caminho é coberto só por leitura.
+- **Conta fechada ou no teto de saldo dentro da equipe:** tratada tentando as outras janelas do rodízio. No jogo a morte tira o trabalhador do local antes de fechar a conta (`economy_module.gd`), mas o caminho tem teste: `test_n8_…` carrega pela porta (`serialize` e `on_load`) um save com a conta do trabalhador 100 fechada e ainda na equipe, e confere 6 horas pagas, nenhuma em `NO_FUNDS` e nenhum pagamento a ele. Os testes `test_n2_n3_…` (limite de D1 pelo espaço, receita sem insumo) e `test_n7_…` (caixa do mercado exatamente igual ao lote) completam a cobertura; os mutantes N2, N3, N7 e N8 da segunda revisão R3 derrubam esses testes numa cópia.
 
 ### 6.1 Texto que os documentos protegidos teriam de ganhar (NÃO editados aqui; só com o aceite de Arthur)
 - `docs/events.md`, linha do `WagesPaid`, coluna dos campos, acrescentar: "`paid_worker_ids` (lista crescente dos que receberam nesta hora; o local de produção sempre preenche, e na folha parcial só as equipes pagas; vazia = todos os do local de trabalho, o caso dos postos); quem ouve alivia só esses". Coluna de quem ouve: "o `npc` alivia `income` só dos pagos".
@@ -84,6 +84,7 @@ Cada regra é um commit: reverter o commit da regra (`git revert`) a desliga sem
 - As regras sozinhas NÃO fecham a LW-094 (o estudo mediu 50 a 52 vivos sem o stub); falta o sumidouro (estudo, seção 7.3).
 - A folha parcial cria uma descontinuidade com a cheia (3.P).
 - A equidade do rodízio é por janela de `2n` horas; num horizonte curto pode haver vantagem de 1 hora.
+- **Limitação conhecida (R3, risco menor e latente):** o teste de comprador (`_has_buyer`) não confere o teto de saldo da conta do próprio local VENDEDOR; se ela estivesse no teto, a venda falharia e o local seria contado como tendo comprador.
 - O passo de várias horas (cadência > 1 minuto) usa a hora de cada hora atrasada (o mesmo `_last_hour`), então a ordem é a mesma; não medido além dos testes.
 
 ## 11. Comparação com o comportamento anterior (medição funcional, 23/11/2026)

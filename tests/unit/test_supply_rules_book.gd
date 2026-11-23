@@ -13,13 +13,13 @@ const FIRST_WORKER: int = 100
 const SITE_KEYS: Array[String] = ["batch_progress_bp", "efficiency_bp", "place_id", "reason", "recipe_id", "settlement_id", "stopped", "upkeep_days", "worker_ids", "workers_wanted"]
 
 
-func _definitions(site_money: int, wanted: int, max_batches: int) -> EconomyDefinitions:
+func _definitions(site_money: int, wanted: int, max_batches: int, recipe_id: String = "bake_bread") -> EconomyDefinitions:
 	var setup: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR)
 	assert_true(setup.result.ok, setup.result.message)
 	var definitions: EconomyDefinitions = setup.definitions
-	var sites: Array[SiteDef] = [SiteDef.new("site_bread", SETTLEMENT_A, PLACE_BREAD, "bake_bread", wanted)]
+	var sites: Array[SiteDef] = [SiteDef.new("site_bread", SETTLEMENT_A, PLACE_BREAD, recipe_id, wanted)]
 	definitions.production_sites = sites
-	definitions.recipes["bake_bread"].max_batches_per_hour = max_batches
+	definitions.recipes[recipe_id].max_batches_per_hour = max_batches
 	for kind: OwnerKindDef in definitions.kinds:
 		if kind.id == ProductionBook.KIND_SITE:
 			kind.initial_balance = site_money
@@ -205,8 +205,8 @@ func test_without_a_buyer_and_with_a_batch_held_the_site_keeps_its_money_and_res
 
 
 ## Revisão R3 (23/11/2026): os cenários A a E dela, como testes que matam os mutantes M2, M12, M14 e M16 e cobrem os defeitos D1 e D2.
-func _rig(site_money: int, workers: int, max_batches: int, market_money: int) -> Array:
-	var definitions: EconomyDefinitions = _definitions(site_money, workers, max_batches)
+func _rig(site_money: int, workers: int, max_batches: int, market_money: int, recipe_id: String = "bake_bread") -> Array:
+	var definitions: EconomyDefinitions = _definitions(site_money, workers, max_batches, recipe_id)
 	definitions.is_development_build = true
 	for kind: OwnerKindDef in definitions.kinds:
 		if kind.id == MarketBook.KIND_MARKET:
@@ -300,4 +300,69 @@ func test_d2_a_market_without_money_is_not_a_buyer() -> void:
 	assert_eq([module.peek_site(SITE_BREAD).running, module.peek_site(SITE_BREAD).reason], [false, ProductionBook.OUTPUT_FULL])
 	assert_eq(module.peek_balance(SITE_BREAD).balance, 100 - WAGE * TEAM, "Guarda o capital (antes pagava 5 horas e juntava 30 pães).")
 	assert_eq(_held(module, "bread"), 6)
+	world.teardown()
+
+
+## Segunda revisão R3 (23/11/2026): cenários F, G e H, que matam os mutantes N2 e N3 (limite de D1 pelo espaço), N7 (fronteira do caixa do mercado) e N8 (conta fechada na janela do rodízio).
+func test_n2_n3_without_inputs_the_room_limits_the_paid_teams() -> void:
+	var parts: Array = _rig(17, 12, 3, 3000, "grow_grain")
+	var world: World = parts[0]
+	var module: EconomyModule = parts[1]
+	var paid: Array[WagesPaid] = parts[3]
+	assert_true(module.request_set_stock(parts[2], "grain", 188).ok)
+	assert_true(module.request_transfer_goods(parts[2], SITE_BREAD, "grain", 188).ok, "188 grãos guardados: o inventário só tem espaço para mais UM lote de 8.")
+	assert_true(module.request_set_stock(parts[2], "grain", 0).ok, "O mercado compra (há comprador).")
+	_run_hour(world)
+	assert_eq(paid.size(), 1)
+	assert_eq(paid[0].paid_worker_ids.size(), 4, "17 pagariam 2 equipes de 4, mas o espaço só deixa 1 lote: paga só 1 equipe.")
+	assert_eq(module.peek_site(SITE_BREAD).batch_progress_bp, 0, "Nenhum trabalho pago preso no teto do progresso.")
+	assert_true(module.peek_conservation().ok and module.peek_goods_conservation().ok)
+	world.teardown()
+
+
+func test_n7_a_market_with_exactly_the_price_of_a_batch_is_a_buyer_and_one_coin_less_is_not() -> void:
+	var probe: Array = _rig(100, 3, 1, 3000)
+	var probe_module: EconomyModule = probe[1]
+	assert_true(probe_module.request_set_stock(probe[2], "bread", 60).ok)
+	var quote: EconomyReplies.QuoteQuery = probe_module.peek_quote(SITE_BREAD, probe[2], "bread", 6, TradeEngine.SIDE_SELL)
+	assert_true(quote.result.ok and quote.total > 0, quote.result.message)
+	(probe[0] as World).teardown()
+	for market_money: int in [quote.total - 1, quote.total]:
+		var parts: Array = _rig(100, 3, 1, market_money)
+		var world: World = parts[0]
+		var module: EconomyModule = parts[1]
+		var paid: Array[WagesPaid] = parts[3]
+		assert_true(module.request_set_stock(parts[2], "flour", 60).ok)
+		assert_true(module.request_set_stock(parts[2], "bread", 66).ok)
+		assert_true(module.request_transfer_goods(parts[2], SITE_BREAD, "bread", 6).ok, "Um lote parado; o mercado fica com 60, a mesma cotação.")
+		_run_hour(world)
+		var site: EconomyReplies.SiteQuery = module.peek_site(SITE_BREAD)
+		if market_money < quote.total:
+			assert_eq([site.running, site.reason, paid.size()], [false, ProductionBook.OUTPUT_FULL, 0], "Caixa %d contra o lote de %d: sem comprador, sem folha." % [market_money, quote.total])
+		else:
+			assert_eq([site.running, paid.size()], [true, 1], "Caixa igual ao lote (%d): há comprador, roda." % quote.total)
+		world.teardown()
+
+
+func test_n8_a_closed_account_in_the_rotation_window_moves_the_team_to_the_next_window() -> void:
+	var parts: Array = _rig(40, 6, 1, 3000)
+	var world: World = parts[0]
+	var module: EconomyModule = parts[1]
+	var paid: Array[WagesPaid] = parts[3]
+	var data: Dictionary = module.serialize()
+	((data[EconomyPersistence.KEY_OWNERS] as Dictionary)[str(FIRST_WORKER)] as Dictionary)[OwnerBook.KEY_CLOSED] = true
+	var parsed: Variant = JSON.parse_string(JSON.stringify(data))
+	assert_true(module.on_load(parsed).ok, "Um save em que o trabalhador 100 tem a conta fechada e ainda está na equipe (o único jeito de chegar a esse estado pela porta).")
+	var no_funds_hours: int = 0
+	for _hour: int in 6:
+		assert_true(module.request_set_stock(parts[2], "flour", 30).ok)
+		assert_true(module.request_transfer_goods(parts[2], SITE_BREAD, "flour", 6).ok)
+		assert_true(module.request_set_stock(parts[2], "bread", 0).ok)
+		_run_hour(world)
+		if module.peek_site(SITE_BREAD).reason == ProductionBook.NO_FUNDS:
+			no_funds_hours += 1
+	assert_eq([paid.size(), no_funds_hours], [6, 0], "A folha inteira nunca cabe (uma conta fechada), mas toda hora há uma janela de 3 sem ela: 6 horas pagas.")
+	for event: WagesPaid in paid:
+		assert_false(event.paid_worker_ids.has(FIRST_WORKER), "Nenhum pagamento à conta fechada.")
+	assert_true(module.peek_conservation().ok and module.peek_goods_conservation().ok)
 	world.teardown()
