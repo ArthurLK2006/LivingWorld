@@ -5,6 +5,10 @@ extends GutTest
 const TRADER: int = 100
 const OTHER: int = 101
 const THIRD: int = 102
+## Donos extras só para a faixa de carga: a capacidade de peso vem do tipo (NPC 40, jogador 60, custódia de contrato 0).
+const NPC_OWNER: int = 200
+const PLAYER_OWNER: int = 201
+const NO_ROOM_OWNER: int = 202
 const TRADERS: Array[int] = [TRADER, OTHER, THIRD]
 const START: int = CaravanRig.START_MINUTE
 const SETTLEMENT_A: String = CaravanRig.SETTLEMENT_A
@@ -138,26 +142,26 @@ func test_progress_of_clamps_to_zero_and_one_and_ignores_the_step_fraction_when_
 	assert_eq(BridgeCaravans.progress_of(row, 0.5), 0.0, "Sem a duração do trecho (economia sem a porta de rotas): 0.")
 	row.state = Caravan.STATE_TRAVELLING
 	row.leg_minutes = 100
-	for case: Array in [[0, 0.0, 0.0], [0, 0.5, 0.005], [99, 0.999, 0.99999], [100, 0.0, 1.0], [100, 0.9, 1.0]]:
+	for case: Array in [[0, 0.0, 0.0], [0, 0.5, 0.005], [99, 0.999, 0.99999], [100, 0.0, 1.0], [100, 0.9, 1.0], [0, -0.5, 0.0], [1, -3.0, 0.0], [99, 1.0, 1.0], [99, 5.0, 1.0]]:
 		row.leg_walked_min = case[0]
-		assert_almost_eq(BridgeCaravans.progress_of(row, case[1]), case[2], EPSILON, "%d de 100 minutos andados e fração %s." % [case[0], str(case[1])])
+		assert_almost_eq(BridgeCaravans.progress_of(row, case[1]), case[2], EPSILON, "%d de 100 minutos andados e fração %s (a fração do relógio é sempre de 0 a menos de 1; fora disso a razão satura em [0, 1])." % [case[0], str(case[1])])
 	row.state = Caravan.STATE_HELD
 	row.leg_walked_min = 40
 	assert_eq([BridgeCaravans.progress_of(row, 0.0), BridgeCaravans.progress_of(row, 0.99)], [0.4, 0.4], "`held`: minutos andados ÷ duração, a fração de passo não vale.")
 
 
-func test_the_load_band_comes_from_the_economy_weights_and_is_cut_at_a_full_cart() -> void:
+func test_the_load_band_comes_from_the_economy_weights_and_capacity_rounds_down_and_is_cut_at_a_full_cart() -> void:
 	var rig: CaravanRig = _rig()
+	for opened: Array in [[NPC_OWNER, "npc"], [PLAYER_OWNER, "player"], [NO_ROOM_OWNER, "contract"]]:
+		assert_true(rig.module.request_open_owner(opened[0], opened[1]).ok)
+	assert_eq([TRADER, NPC_OWNER, PLAYER_OWNER, NO_ROOM_OWNER].map(func(id: int) -> int: return rig.module.peek_inventory(id).capacity), [120, 40, 60, 0], "As capacidades da economia real: comerciante 120, NPC 40, jogador 60 e custódia de contrato 0.")
 	var row: CaravanReplies.CaravanQuery = CaravanReplies.CaravanQuery.new(Result.success())
-	row.trader_id = TRADER
-	for lot: Array in [["bread", 12, 100], ["bread", 120, 1000], ["wood", 12, 500], ["wood", 24, 1000], ["wood", 50, 1000], ["bread", 0, 0], ["no_such_good", 12, 0]]:
-		row.good_id = lot[0]
-		row.quantity = lot[1]
-		assert_eq(BridgeCaravans.load_permille_of(rig.module, row), lot[2], "%d de '%s' sobre a capacidade 120: peso unitário da economia (pão 1, madeira 5)." % [lot[1], lot[0]])
-	row.trader_id = 999
-	row.good_id = "bread"
-	row.quantity = 12
-	assert_eq(BridgeCaravans.load_permille_of(rig.module, row), 0, "Comerciante que a economia não conhece: 0.")
+	for lot: Array in [[TRADER, "bread", 12, 100], [TRADER, "wood", 12, 500], [TRADER, "bread", 7, 58], [TRADER, "wood", 7, 291], [TRADER, "bread", 120, 1000], [TRADER, "wood", 24, 1000], [TRADER, "wood", 50, 1000], [TRADER, "bread", 0, 0], [TRADER, "no_such_good", 12, 0],
+			[NPC_OWNER, "bread", 12, 300], [PLAYER_OWNER, "bread", 7, 116], [PLAYER_OWNER, "wood", 11, 916], [NO_ROOM_OWNER, "bread", 12, 0], [999, "bread", 12, 0]]:
+		row.trader_id = lot[0]
+		row.good_id = lot[1]
+		row.quantity = lot[2]
+		assert_eq(BridgeCaravans.load_permille_of(rig.module, row), lot[3], "%d de '%s' no dono %d: peso unitário e capacidade da economia (pão 1, madeira 5), em milésimos para BAIXO (7 pães sobre 120 = 58,3 vira 58), cortado em 1000; dono sem capacidade ou desconhecido, bem desconhecido, lote 0: 0." % [lot[2], lot[1], lot[0]])
 
 
 ## `values` repetido `times` vezes, em sequência (a lista esperada das paradas).

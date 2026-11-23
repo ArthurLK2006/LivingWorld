@@ -544,7 +544,4 @@ func peek_caravan_bodies() -> BridgeReplies.CaravanBodiesReply:
 	var economy: EconomyModule = _economy()
 	if economy == null:
 		return BridgeReplies.CaravanBodiesReply.new(_missing_economy("peek_caravan_bodies"), [])
-	var clock: SimClock = _clock()
-	if clock == null:
-		return BridgeReplies.CaravanBodiesReply.new(_missing_game("peek_caravan_bodies"), [])
-	return BridgeCaravans.bodies(economy, clock.step_fraction())
+	return BridgeCaravans.bodies(economy, _clock().step_fraction())

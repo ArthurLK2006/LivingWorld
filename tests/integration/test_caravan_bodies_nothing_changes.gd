@@ -1,11 +1,13 @@
 extends GutTest
 ## LW-099b1: NADA MUDA (contrato da LW-099, seções 5 e 6; AGENTS 9): as consultas novas (`peek_caravans`, os campos `leg_minutes` e `leg_walked_min`, `peek_caravan_bodies` e a fração de passo do relógio) só LEEM. Com elas chamadas a cada quadro, a viagem de dois trechos (A-B fechada: A-C e C-B, 220 minutos) com a economia
-## conferida a cada 1, 7, 60 e 180 minutos dá o MESMO `state_hash` e o mesmo save de uma execução sem chamá-las; salvar e carregar no meio da viagem (andando e parada) devolve as mesmas caravanas e o mesmo `u` (a fração de passo volta a 0 e o corpo reaparece até 1 passo atrás, nunca à frente); o save não ganha chave.
+## conferida a cada 1, 7, 60 e 180 minutos dá o MESMO `state_hash` e o mesmo save de uma execução sem chamá-las, NO MEIO da viagem (com a caravana no registro) e no fim; salvar e carregar no meio da viagem (andando e parada) devolve as mesmas caravanas e o mesmo `u` (a fração de passo volta a 0 e o corpo reaparece até 1 passo atrás, nunca à frente); o save não ganha chave.
 ## O jogo anda por QUADROS de 100 ms (`advance_frame`), então a fração de passo assume muitos valores. Economia e `world` REAIS pelo `CaravanRig`.
 
 const TRADER: int = 100
 const START: int = CaravanRig.START_MINUTE
 const END: int = START + 300
+## Marcos NO MEIO da viagem, em minutos desde a partida: no trecho A-C (50), no C-B (130) e perto do fim dele (215). Com o registro da caravana ainda vivo: no minuto final ele já sumiu (a chegada o apaga) e uma consulta que o corrompesse passaria sem ser vista.
+const MARKS: Array[int] = [50, 130, 215]
 const FRAME_MS: int = 100
 const CADENCES: Array[int] = [1, 7, 60, 180]
 ## As 13 chaves do registro salvo da caravana (docs/modules/economy.md, 9.3), em ordem alfabética: nenhuma a mais por causa das consultas novas.
@@ -46,16 +48,25 @@ func _query(rig: CaravanRig) -> int:
 	return rig.bridge.peek_caravan_bodies().bodies.size()
 
 
-## A viagem até o minuto `END`, em quadros de 100 ms; `watch`: com as consultas a cada quadro. Devolve o hash do estado, o save da economia e quantos corpos as consultas viram.
+## O hash do estado e o save da economia (texto) agora.
+func _snapshot(rig: CaravanRig) -> Array:
+	return [rig.runner.world.state_hash(), JSON.stringify(rig.module.serialize(), "", true, true)]
+
+
+## A viagem até o minuto `END`, em quadros de 100 ms; `watch`: com as consultas a cada quadro. Devolve os retratos (hash e save) em cada marco de `MARKS` e no fim, e quantos corpos as consultas viram.
 func _trip(cadence: int, watch: bool) -> Array:
 	var rig: CaravanRig = _rig(cadence)
 	_depart(rig)
+	var snapshots: Array = []
 	var seen: int = 0
 	while rig.clock().total_minutes() < END:
 		rig.runner.advance_frame(FRAME_MS)
 		if watch:
 			seen += _query(rig)
-	return [rig.runner.world.state_hash(), JSON.stringify(rig.module.serialize(), "", true, true), seen]
+		if snapshots.size() < MARKS.size() and rig.clock().total_minutes() >= START + MARKS[snapshots.size()]:
+			snapshots.append(_snapshot(rig))
+	snapshots.append(_snapshot(rig))
+	return [snapshots, seen]
 
 
 func test_the_queries_change_neither_the_state_hash_nor_the_save_whatever_the_step() -> void:
@@ -63,9 +74,15 @@ func test_the_queries_change_neither_the_state_hash_nor_the_save_whatever_the_st
 	for cadence: int in CADENCES:
 		var silent: Array = _trip(cadence, false)
 		var watched: Array = _trip(cadence, true)
-		assert_eq(watched.slice(0, 2), silent.slice(0, 2), "Passo de %d minutos: o mesmo hash e o mesmo save com e sem as consultas." % cadence)
-		assert_gt(watched[2], 0, "Passo de %d minutos: as consultas viram a caravana andando (não rodaram no vazio)." % cadence)
-		finals.append(silent[0])
+		assert_eq([silent[0].size(), watched[0].size()], [MARKS.size() + 1, MARKS.size() + 1], "Passo de %d minutos: todos os marcos foram alcançados." % cadence)
+		for index: int in silent[0].size():
+			var label: String = "Passo de %d minutos, %s" % [cadence, "minuto %d da viagem" % MARKS[index] if index < MARKS.size() else "no fim"]
+			assert_eq(watched[0][index][0], silent[0][index][0], "%s: o mesmo hash com e sem as consultas." % label)
+			assert_true(watched[0][index][1] == silent[0][index][1], "%s: o mesmo save da economia com e sem as consultas." % label)
+			if index < MARKS.size():
+				assert_true(str(silent[0][index][1]).contains("\"caravans\""), "%s: a caravana está no registro (o teste não é cego a ele)." % label)
+		assert_gt(watched[1], 0, "Passo de %d minutos: as consultas viram a caravana andando (não rodaram no vazio)." % cadence)
+		finals.append(silent[0][-1][0])
 	assert_eq([finals[1], finals[2], finals[3]], [finals[0], finals[0], finals[0]], "Passos de 1, 7, 60 e 180 minutos: o mesmo hash do estado (a propriedade do `test_economy_caravan_trip.gd`, agora com o jogo andando por quadros).")
 
 
