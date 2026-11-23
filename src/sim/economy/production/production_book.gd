@@ -34,6 +34,7 @@ var _goods: GoodsStore
 var _markets: MarketBook
 var _engine: TradeEngine
 var _payer: WagePayer
+var _ledger: Ledger
 var _sites: Dictionary[int, Dictionary] = {}
 
 
@@ -46,6 +47,7 @@ func _init(book: OwnerBook, goods: GoodsStore, markets: MarketBook, engine: Trad
 	_params = params
 	_max_order = max_order_quantity
 	_payer = null if ledger == null else WagePayer.new(book, ledger)
+	_ledger = ledger
 
 
 ## Registra o local `site_id` (dono do tipo `site` já aberto): produzindo, eficiência cheia, sem equipe, nenhuma regra paga ainda.
@@ -211,18 +213,20 @@ func _batches_by_workers(state: Dictionary, recipe: RecipeDef) -> int:
 	return mini(recipe.max_batches_per_hour, IntMath.floor_div((state[KEY_WORKERS] as Array).size(), recipe.workers_per_batch))
 
 
-## (0) LW-094b, regra E (PROPOSTA): o local tem comprador? Não tem quando, para TODO bem de saída, já guarda a saída de um lote sem vender e o mercado do povoado não tem espaço no teto de compra para mais um lote (`SupplyRules.has_buyer`).
-## Sem mercado a regra não se aplica. Sem comprador o local não compra insumo, não paga folha nem produz (motivo `OUTPUT_FULL`) e ainda tenta vender o que tem.
+## (0) LW-094b, regra E (PROPOSTA): o local tem comprador? Não tem quando, para TODO bem de saída, já guarda a saída de um lote sem vender e o mercado do povoado não COMPRARIA mais um lote agora (`SupplyRules.has_buyer`): a cotação
+## de venda de um lote (`TradeEngine.quote`, a mesma conferência da venda: teto de compra, regras, ordem) falha, ou o saldo do mercado não paga o total cotado (o `MARKET_NO_FUNDS` da venda). Sem mercado a regra não se aplica. Sem
+## comprador o local não compra insumo, não paga folha nem produz (motivo `OUTPUT_FULL`) e ainda tenta vender o que tem.
 func _has_buyer(site_id: int, state: Dictionary, recipe: RecipeDef) -> bool:
 	var market_id: int = _market_of(state)
 	if market_id == IdGenerator.NO_ID:
 		return true
 	var held: Dictionary[String, int] = {}
-	var space: Dictionary[String, int] = {}
+	var sellable: Dictionary[String, bool] = {}
 	for good_id: String in recipe.outputs:
 		held[good_id] = _goods.quantity_of(site_id, good_id)
-		space[good_id] = _markets.buy_cap_of(market_id, good_id) - _goods.quantity_of(market_id, good_id)
-	return SupplyRules.has_buyer(recipe.outputs, held, space)
+		var quoted: TradeEngine.Outcome = _engine.quote(market_id, good_id, mini(recipe.outputs[good_id], _max_order), TradeEngine.SIDE_SELL, site_id)
+		sellable[good_id] = quoted.result.ok and (_ledger == null or _ledger.balance_of(market_id) >= quoted.total)
+	return SupplyRules.has_buyer(recipe.outputs, held, sellable)
 
 
 ## (1) Compra o que falta: os insumos dos `batches` lotes que a equipe faz (0 sem comprador) e o bem de uma regra de manutenção vencida.

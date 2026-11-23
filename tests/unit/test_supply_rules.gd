@@ -56,12 +56,12 @@ func test_the_paid_team_is_a_rotating_window_of_the_workers_in_ascending_order()
 		assert_eq(int(times[worker_id]), 12, "Em 24 horas cada um entra na equipe paga 12 vezes (metade).")
 
 
-func test_there_is_no_buyer_only_with_a_batch_held_and_no_room_for_another() -> void:
+func test_there_is_no_buyer_only_with_a_batch_held_and_a_market_that_would_not_buy_another() -> void:
 	var outputs: Dictionary[String, int] = {"bread": 6}
-	assert_false(SupplyRules.has_buyer(outputs, {"bread": 6}, {"bread": 5}), "Um lote parado e espaço para menos de um lote: sem comprador.")
-	assert_true(SupplyRules.has_buyer(outputs, {"bread": 6}, {"bread": 6}), "Espaço para um lote: há comprador.")
-	assert_true(SupplyRules.has_buyer(outputs, {"bread": 5}, {"bread": 0}), "Sem lote parado ainda: produz (o primeiro lote não é barrado).")
+	assert_false(SupplyRules.has_buyer(outputs, {"bread": 6}, {"bread": false}), "Um lote parado e o mercado não compraria outro (teto ou dinheiro): sem comprador.")
+	assert_true(SupplyRules.has_buyer(outputs, {"bread": 6}, {"bread": true}), "O mercado compraria um lote: há comprador.")
+	assert_true(SupplyRules.has_buyer(outputs, {"bread": 5}, {"bread": false}), "Sem lote parado ainda: produz (o primeiro lote não é barrado).")
 	var two: Dictionary[String, int] = {"a": 2, "b": 3}
-	assert_true(SupplyRules.has_buyer(two, {"a": 2, "b": 3}, {"a": 0, "b": 3}), "Um dos bens ainda tem comprador: produz.")
-	assert_false(SupplyRules.has_buyer(two, {"a": 9, "b": 9}, {"a": 1, "b": 2}), "Nenhum bem tem comprador.")
-	assert_true(SupplyRules.has_buyer({} as Dictionary[String, int], {} as Dictionary[String, int], {} as Dictionary[String, int]), "Receita sem saída.")
+	assert_true(SupplyRules.has_buyer(two, {"a": 2, "b": 3}, {"a": false, "b": true}), "Um dos bens ainda tem comprador: produz.")
+	assert_false(SupplyRules.has_buyer(two, {"a": 9, "b": 9}, {"a": false, "b": false}), "Nenhum bem tem comprador.")
+	assert_true(SupplyRules.has_buyer({} as Dictionary[String, int], {} as Dictionary[String, int], {} as Dictionary[String, bool]), "Receita sem saída.")
