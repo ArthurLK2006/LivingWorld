@@ -77,3 +77,30 @@ Cada regra é um commit: reverter o commit da regra (`git revert`) a desliga sem
 - A folha parcial cria uma descontinuidade com a cheia (3.P).
 - A equidade do rodízio é por janela de `2n` horas; num horizonte curto pode haver vantagem de 1 hora.
 - O passo de várias horas (cadência > 1 minuto) usa a hora de cada hora atrasada (o mesmo `_last_hour`), então a ordem é a mesma; não medido além dos testes.
+
+## 11. Comparação com o comportamento anterior (medição funcional, 23/11/2026)
+Método: cópias com `git archive` e `docs/economia/experimentos/preparar_copia.sh`, só `--headless`, `tools/measure_economy --days 30 --seed S --markets`, um processo por vez com `nice`. ANTES = `lw-095-postos` (`6a5da27`); R = `20b5eb3`; TODAS = `6fc37ae`; P sozinha e E sozinha = `6fc37ae` com as outras duas desligadas por troca de UMA linha na cópia (R: `site_ids()` no lugar do rodízio; E: `has_buyer = true`; P: o laço das equipes vazio). "Sem stub" = `food_stub.json` com `start_stock` 0, `max_stock` 1 e `work_yield` 0 (os 6 postos e a regra da refeição já estão no ramo; SEM os "lotes por trabalhador" e a comida de 30 dias do C do t1 do estudo, então não é o t1). Valores do dia 30 (estado dos 14 locais no instante da medição); dinheiro total 21.520 em todos; `money_ok` e `goods_ok` verdadeiros em TODOS os dias de TODAS as execuções.
+| Execução | Vivos d7/d14/d30 | Locais: NO_FUNDS / OUTPUT_FULL / NO_INPUT | Folha (`led_salary`) | Comércio (`led_trade`) | Dinheiro locais / mercados | Comida (mercados + NPCs) |
+|---|---|---|---|---|---|---|
+| ANTES s1 | 138/138/138 | 13 / 0 / 1 | 17.031 | 23.056 | 44 / 371 | 659 |
+| TODAS s1 | 138/138/138 | 4 / 9 / 1 | 16.572 | 23.845 | 181 / 367 | 660 |
+| ANTES s2 | 138/138/138 | 14 / 0 / 0 | 18.556 | 25.063 | 33 / 349 | 531 |
+| TODAS s2 | 138/138/138 | 5 / 9 / 0 | 16.281 | 22.718 | 183 / 409 | 665 |
+| ANTES s3 | 138/138/138 | 13 / 0 / 1 | 18.504 | 22.871 | 45 / 7 | 531 |
+| TODAS s3 | 138/138/138 | 5 / 9 / 0 | 17.896 | 24.286 | 186 / 218 | 540 |
+| só R s1 | 138/138/138 | 12 / 0 / 2 | 16.997 | 23.518 | 28 / 457 | 653 |
+| só P s1 | 138/138/138 | 12 / 0 / 2 | 17.217 | 22.522 | 36 / 287 | 633 |
+| só E s1 | 138/138/138 | 5 / 8 / 1 | 16.473 | 24.097 | 210 / 464 | 669 |
+| ANTES sem stub s1 | 73/14/0 | (todos mortos) | 14.693 | 35.922 | 35 / 12.817 | 0 |
+| TODAS sem stub s1 | 137/32/0 | (todos mortos) | 19.958 | 50.958 | 223 / 13.452 | 0 |
+Leitura: com o stub, os vivos não mudam (138). A regra E é a que move o estado dos locais: em vez de 13 a 14 locais quebrados em `NO_FUNDS` no dia 30, 4 a 5 ficam em `NO_FUNDS` e 8 a 9 param SEM comprador guardando o capital (o dinheiro dos locais vai de 33 a 45 para 181 a 210). A folha total cai de 3% a 12% (menos folha paga para estoque sem comprador) e o comércio varia de −9% a +6%. R e P sozinhas mudam pouco no agregado. Sem o stub as regras atrasam o colapso (137 contra 73 no d7, 32 contra 14 no d14) mas NÃO o evitam (0 no d30 nos dois), como o estudo previa (seção 1.4): falta o sumidouro, e o caixa dos mercados (12.817 e 13.452) continua sendo o destino do dinheiro. Saídas: `missao/agente_j/cmp/out_*.csv` no scratchpad da sessão (fora do repositório).
+
+## 12. Lista DEC-175 (executada uma vez, 23/11/2026, no `6fc37ae`; NENHUM hash regravado)
+| Teste ou hash | Antes (`lw-095-postos`) | Depois (as três regras) | Por quê |
+|---|---|---|---|
+| Suíte inteira (`tools/run_tests`) | — | 2.369 testes, 2.361 passando, 0 falhas, 8 pendentes (testes de ativo de personagem; não conferi se também ficam pendentes no ramo de partida) | — |
+| Oráculo (`test_npc_split_oracle.gd`, as 9 impressões, inclusive `real_game` `f9da6f1a8616`) | passa | passa, MESMOS valores | o horizonte do oráculo não chega a uma hora em que a ordem, a folha parcial ou o comprador mudem o estado |
+| `tests/soak/run_npc_life_30d` (sem economia) | hash `647c5f4dea03`, 138 vivos | `647c5f4dea03`, 138 vivos | sem economia não há locais de produção |
+| `run_npc_life_90d_with_economy` com `LW_SOAK_DAYS=30`, semente 11 (impressão, sem valor fixado em teste) | `035a2e963832`; 13 chegadas de caravana; comida mínima do C 4.536 | `e6cd1cd8a64c` nas três execuções (direta, recarga no dia 15 e recarga em trânsito); 16 chegadas; comida mínima do C 4.516; 138 vivos; 0 problemas | as três regras mudam a ordem das vendas, a folha e as paradas dos locais; o hash igual nas três execuções confirma o determinismo com recarga |
+| `test_production.gd`, `test_the_stop_reason_is_published_once_on_the_change_and_the_resume_once_when_it_runs_again` (ADAPTADO, commit `183450a`) | depois do inventário cheio o local vendia ao mercado até o teto e voltava (`ProductionResumed`) | com o mercado no teto e lotes parados ele CONTINUA em `OUTPUT_FULL` (asserção nova, mais forte); volta quando o pão do mercado é consumido | a regra E contradiz de propósito a retomada sem comprador; a asserção da retomada foi mantida, agora com o comprador presente |
+Nenhum outro teste existente mudou. Os testes novos são `tests/unit/test_supply_rules.gd`, `tests/unit/test_supply_rules_book.gd`, `tests/integration/test_supply_rules_world.gd` e um teste a mais em `tests/unit/test_wage_income.gd`.
