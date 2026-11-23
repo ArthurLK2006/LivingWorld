@@ -1,6 +1,6 @@
 # Contrato de interface LW-107h (proposta): custo e resultado estimados das encomendas, com aviso de possível prejuízo
 
-**PROPOSTA, NÃO APROVADA por Arthur.** Só documento: nenhum `src/`, dado, texto, teste ou arquivo protegido mudou, e nada foi executado no Godot (só leitura com `rg`). Pedido de Arthur (23/11/2026, LW-107c3): um contrato de UI para exibir **estimativas de custo e margem**, com **aviso claro de prejuízo possível e sem prometer lucro, porque os preços mudam**; sem ativar nem integrar o #152 antes da validação visual e da autorização dele. Ramo `lw107c3-contrato-ui-custo` (de `origin/main` 89d935d). O postador segue DESLIGADO (`data/economy/contract_templates.json` = `[]`) e o #152 segue rascunho. Os documentos `docs/economia/lw-107c3-opcao-b-condicoes.md` e `docs/economia/LW-107-validacao-local-opcao-b.md` estão no ramo `lw107c3-opcao-b` e nas pastas locais `validacao-107c3-*`, ainda fora do `main`; os números deles NÃO foram refeitos aqui.
+**PROPOSTA, NÃO APROVADA por Arthur.** Só documento: nenhum `src/`, dado, texto, teste ou arquivo protegido mudou, e nada foi executado no Godot (só leitura com `rg`). Pedido de Arthur (23/11/2026, LW-107c3): um contrato de UI para exibir **estimativas de custo e margem**, com **aviso claro de prejuízo possível e sem prometer lucro, porque os preços mudam**; sem ativar nem integrar o #152 antes da validação visual e da autorização dele. Ramo `lw107c3-contrato-ui-custo` (de `origin/main` 89d935d). O postador segue DESLIGADO (`data/economy/contract_templates.json` = `[]`) e o #152 segue rascunho. Os documentos `docs/economia/lw-107c3-opcao-b-condicoes.md` e `docs/economia/LW-107-validacao-local-opcao-b.md` estão no ramo `lw107c3-opcao-b` e nas pastas locais `validacao-107c3-*`, ainda fora do `main`. Os números do pão e da escassez usados abaixo foram conferidos pelo Maestro em 23/11/2026 contra os testes automáticos no jogo real (`tests/integration/test_contract_option_b_real_world.gd`, no `lw107c3-opcao-b`): pão do A a 11 (5 pães por 55), do B a uns 10 (5 por 48) e, na escassez, a 32 em cada mercado (160 por 5 pães).
 
 ## 1. Decisões propostas (resumo)
 1. **Onde:** no detalhe da linha escolhida da aba Contratos (abertas, antes de aceitar; aceitas ainda no prazo): 3 rótulos novos, sem mexer nas listas.
@@ -24,12 +24,12 @@
 
 **Alternativa L2 (não recomendo agora):** 4ª coluna "Estimativa" nas listas, só com a palavra do aviso (visível sem escolher a linha). Muda `COLUMN_COUNT` de 3 para 4 e a linha 49 de `tests/unit/test_contracts_layout.gd` (`[0, 1, 2, 3]`): decisão dele (pergunta 6).
 
-## 3. Como ficaria (exemplos ILUSTRATIVOS, com números aproximados da opção B, não medidos aqui)
+## 3. Como ficaria (exemplos com os números medidos em 23/11/2026 nos testes automáticos da opção B; recompensa 53, saldo inicial 100)
 | Situação | Linha 7 | Linha 8 |
 |---|---|---|
-| Pão normal, encomenda aberta no A | Custo estimado aqui: 57 · Resultado estimado: -4 | Possível prejuízo: 4. Os preços mudam. |
-| A mesma, já aceita, com a tela aberta no B (pão mais barato) | Custo estimado aqui: 40 · Resultado estimado: 13 | Margem estimada: 13. Os preços mudam. |
-| Escassez, aberta no A, saldo 100 | Custo estimado aqui: 155 · Resultado estimado: -102 | Possível prejuízo: 102. Os preços mudam. Saldo insuficiente para comprar: faltam 55. |
+| Pão normal, encomenda aberta no A | Custo estimado aqui: 55 · Resultado estimado: -2 | Possível prejuízo: 2. Os preços mudam. |
+| A mesma, já aceita, com a tela aberta no B (pão mais barato) | Custo estimado aqui: 48 · Resultado estimado: 5 | Margem estimada: 5. Os preços mudam. (com a pergunta 3 em "sim", 5 é menos de 10% de 53 e a linha vira "Margem estimada pequena...") |
+| Escassez, aberta no A, saldo 100 | Custo estimado aqui: 160 · Resultado estimado: -107 | Possível prejuízo: 107. Os preços mudam. Saldo insuficiente para comprar: faltam 60. |
 | Ele já carrega os 5 pães | Você já tem os itens: sem custo de compra | (sem aviso) |
 | O mercado não tem pão suficiente | Custo indisponível neste mercado: resultado não estimado | (sem aviso) |
 
@@ -40,7 +40,7 @@
 - não revela preço de mercado que ele não visitou e não exige memória salva; em "Meus contratos" o número muda com o mercado onde ele está, o que mostra onde comprar sem prometer nada.
 
 **Alternativas:** (b) o mais barato dos 3 mercados: leria `peek_economy_markets` (já chega à tela) com 3 cotações por encomenda; "mercados que o jogador conhece" exigiria memória salva (estado novo, classe 3 ou 4) ou uma leitura onisciente (decisão de jogo); e embute uma viagem que o custo não cobre. (c) os dois números: duas linhas por encomenda, para depois da pergunta 1.
-**Consequência que Arthur precisa saber:** pela regra (b) do postador (`contract_poster.gd` l.51-52, recompensa no máximo `ask × quantidade`), comprar no emissor nunca dá lucro na hora de postar. Logo a encomenda ABERTA no mercado emissor mostrará quase sempre "Possível prejuízo": pequeno no pão normal (5 pães no A custam uns 55 a 60 contra 53) e grande na escassez (uns 150 a 160, com saldo inicial 100). A "Margem estimada" aparece em "Meus contratos" diante de um mercado mais barato (no B, uns +13 nas primeiras semanas, segundo a opção B) ou se o preço do emissor cair depois da postagem. É verdade e é o aviso pedido, mas muda a primeira impressão do "pão normal do A".
+**Consequência que Arthur precisa saber:** pela regra (b) do postador (`contract_poster.gd` l.51-52, recompensa no máximo `ask × quantidade`), comprar no emissor nunca dá lucro na hora de postar. Logo a encomenda ABERTA no mercado emissor mostrará quase sempre "Possível prejuízo": pequeno no pão normal (5 pães no A custam 55 contra 53: −2, medido) e grande na escassez (160 contra 53: −107, com saldo inicial 100, que nem cobre a compra). A "Margem estimada" aparece em "Meus contratos" diante de um mercado mais barato (no B, 48 contra 53: +5, medido no 1º dia) ou se o preço do emissor cair depois da postagem. É verdade e é o aviso pedido, mas muda a primeira impressão do "pão normal do A".
 
 | Caso | Custo mostrado |
 |---|---|
@@ -115,4 +115,4 @@ O postador e a regra de postagem; a recompensa; as regras (b) e de 14/11 (recomp
 | 7 | Itens já em mãos | "sem custo", sem margem; mostrar margem | "sem custo" |
 
 ## 12. O que NÃO foi verificado
-Nada rodou no Godot (nem teste, nem lint); os números do pão e da escassez vêm dos documentos da opção B, sem repetição; o contraste do matiz sobre o rótulo, o tamanho do texto na janela e o desempenho de até 6 cotações por segundo NÃO foram medidos; a existência dos nomes citados foi conferida por `rg` no `origin/main` 89d935d, e a dos dois documentos da opção B, no ramo `lw107c3-opcao-b`.
+Nada rodou no Godot (nem teste, nem lint); os números do pão e da escassez foram conferidos contra os testes automáticos da opção B (23/11/2026), mas nenhum cálculo de estimativa foi implementado nem rodado; o contraste do matiz sobre o rótulo, o tamanho do texto na janela e o desempenho de até 6 cotações por segundo NÃO foram medidos; a existência dos nomes citados foi conferida por `rg` no `origin/main` 89d935d, e a dos dois documentos da opção B, no ramo `lw107c3-opcao-b`.
