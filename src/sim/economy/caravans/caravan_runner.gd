@@ -98,8 +98,8 @@ func route_state_changed(route_id: String, new_state: String, now: int) -> void:
 			_state.caravans.add(caravan)
 
 
-## A linha de `peek_caravan` e de `peek_caravans_on` (cópia) com os CINCO campos derivados do trecho e do relógio (9.3), nenhum salvo: `leg_from_settlement_id` e `leg_to_settlement_id`, `leg_length_m`, `progress_m` (`floor_div(comprimento × min(minutos andados, leg_minutes), leg_minutes)`;
-## parada: `elapsed_at_hold` no lugar de `agora − leg_started_at`) e `eta_minute` (a saída do trecho atual mais os minutos dos trechos que faltam; 0 em `held`). Sem a porta, sem os parâmetros ou com rota que o `world` não conhece, ficam vazios ou 0.
+## A linha de `peek_caravan`, de `peek_caravans_on` e de `peek_caravans` (cópia) com os SETE campos derivados do trecho e do relógio (9.3), nenhum salvo: `leg_from_settlement_id` e `leg_to_settlement_id`, `leg_length_m`, `progress_m` (`floor_div(comprimento × min(minutos andados, leg_minutes), leg_minutes)`;
+## parada: `elapsed_at_hold` no lugar de `agora − leg_started_at`) e `eta_minute` (a saída do trecho atual mais os minutos dos trechos que faltam; 0 em `held`) e, na LW-099b1, `leg_minutes` (a duração do trecho atual) e `leg_walked_min` (os minutos andados, cortados em [0, `leg_minutes`], os mesmos da conta de `progress_m`). Sem a porta, sem os parâmetros ou com rota que o `world` não conhece, ficam vazios ou 0.
 func row_of(caravan: Caravan, now: int) -> CaravanReplies.CaravanQuery:
 	var row: CaravanReplies.CaravanQuery = CaravanReplies.CaravanQuery.new(Result.success(), caravan)
 	var legs: Array[RouteCost.Leg] = []
@@ -110,8 +110,10 @@ func row_of(caravan: Caravan, now: int) -> CaravanReplies.CaravanQuery:
 	row.leg_from_settlement_id = _settlement_at(caravan, caravan.leg_index)
 	row.leg_to_settlement_id = _settlement_at(caravan, caravan.leg_index + 1)
 	row.leg_length_m = legs[caravan.leg_index].length_m
-	var walked: int = caravan.elapsed_at_hold if caravan.state == Caravan.STATE_HELD else now - caravan.leg_started_at
-	row.progress_m = IntMath.floor_div(row.leg_length_m * clampi(walked, 0, caravan.leg_minutes), caravan.leg_minutes)
+	var walked: int = clampi(caravan.elapsed_at_hold if caravan.state == Caravan.STATE_HELD else now - caravan.leg_started_at, 0, caravan.leg_minutes)
+	row.leg_minutes = caravan.leg_minutes
+	row.leg_walked_min = walked
+	row.progress_m = IntMath.floor_div(row.leg_length_m * walked, caravan.leg_minutes)
 	if caravan.state == Caravan.STATE_TRAVELLING:
 		var remaining: Array[RouteCost.Leg] = legs.slice(caravan.leg_index + 1)
 		row.eta_minute = caravan.leg_started_at + caravan.leg_minutes + RouteCost.path_minutes(remaining, _params)
