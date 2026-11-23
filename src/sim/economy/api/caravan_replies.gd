@@ -4,7 +4,8 @@ extends RefCounted
 
 
 ## `peek_caravan` e cada linha de `peek_caravans_on`: a caravana de um comerciante. `found` falso = parado (sem registro; os outros campos não valem); `result` falha com `ECON_UNKNOWN_OWNER` se o dono não existe. `trader_id` é o dono do registro (as linhas de
-## `peek_caravans_on` precisam dele). Os CINCO campos derivados da rota e do relógio (a geometria do trecho, a posição e o ETA, 9.3) são preenchidos pelo `CaravanRunner` (LW-098d1) quando a economia tem a porta de rotas do `world` e os parâmetros da caravana; sem eles, ou com rota que o `world` não conhece, ficam vazios ou 0.
+## `peek_caravans_on` precisam dele). Os SETE campos derivados da rota e do relógio (a geometria do trecho, a posição e o ETA, 9.3; mais, na LW-099b1, `leg_minutes` e `leg_walked_min`) são preenchidos pelo `CaravanRunner` (LW-098d1) quando a economia tem a porta de rotas do `world` e os parâmetros da caravana;
+## sem eles, ou com rota que o `world` não conhece, ficam vazios ou 0. LW-099b1: `leg_minutes` é a duração do trecho atual e `leg_walked_min` os minutos já andados nele (`agora − leg_started_at`, ou `elapsed_at_hold` se parada), cortados em [0, `leg_minutes`]: a apresentação deriva a fração do trecho sem tocar no `progress_m`, que é inteiro e muda uma vez por minuto.
 class CaravanQuery:
 	extends RefCounted
 
@@ -22,6 +23,8 @@ class CaravanQuery:
 	var leg_length_m: int = 0
 	var progress_m: int = 0
 	var eta_minute: int = 0
+	var leg_minutes: int = 0
+	var leg_walked_min: int = 0
 	var good_id: String = ""
 	var quantity: int = 0
 	var cost_paid: int = 0
@@ -46,7 +49,7 @@ class CaravanQuery:
 		departed_at = caravan.departed_at
 
 
-## `peek_caravans_on`: as caravanas na estrada cujo trecho atual é a rota, por `trader_id` crescente.
+## `peek_caravans_on`: as caravanas na estrada cujo trecho atual é a rota, por `trader_id` crescente. `peek_caravans` (LW-099b1) devolve este mesmo tipo com TODAS as caravanas, inclusive a parada num povoado.
 class CaravansQuery:
 	extends RefCounted
 

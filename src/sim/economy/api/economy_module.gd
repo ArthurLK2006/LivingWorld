@@ -15,6 +15,7 @@ extends SimModule
 ## LW-098d1: a PARTIDA (`request_start_caravan`) e os planos (`peek_trade_plans`), feitos pelo `CaravanRunner`, e a porta de rotas do `world` pelo construtor (parâmetro OPCIONAL, 9.2); sem ela, ou sem os parâmetros da caravana nas definições, não há caravana (`ECON_NO_ROUTE`) e nada muda. O jogo real segue sem comerciante.
 ## LW-098d2: a CHEGADA: o `tick` confere as caravanas a cada passo (`EconomyRuntime.check_arrivals`); ao fim do último trecho o `CaravanRunner` vende o lote, apaga o registro e a economia publica o `CaravanArrived` (em `api/`). Sem caravana no livro nada muda.
 ## LW-098e: a economia OUVE `RouteStateChanged` pelo NOME do evento (como o `NpcDied`; não publica evento novo): rota fechada sob a caravana a segura (`held`), rota reaberta a retoma e o fim de trecho com a rota seguinte fechada desvia (`CaravanRunner`). Sem caravana no livro nada muda.
+## LW-099b1: a porta ganha `peek_caravans` (TODAS as caravanas, para a viagem visível) e a linha da caravana ganha `leg_minutes` e `leg_walked_min`; só leitura, nada novo no save nem no hash.
 
 const CODE_INVALID_SAVE: String = EconomyCodes.INVALID_SAVE
 const KEY_OWNERS: String = EconomyPersistence.KEY_OWNERS
@@ -310,6 +311,15 @@ func peek_caravans_on(route_id: String) -> CaravanReplies.CaravansQuery:
 		var caravan: Caravan = _state.caravans.caravan_of(trader_id)
 		if caravan.is_on_road() and caravan.current_route_id() == route_id:
 			rows.append(runner.row_of(caravan, _now()))
+	return CaravanReplies.CaravansQuery.new(rows)
+
+
+## TODAS as caravanas (LW-099b1; 9.8): andando, paradas no meio do trecho e paradas num povoado (a que `peek_caravans_on` não conta), em cópias e por `trader_id` crescente (no máximo uma por comerciante). Cada linha é a mesma de `peek_caravan`. Só leitura: não muda estado, save nem hash.
+func peek_caravans() -> CaravanReplies.CaravansQuery:
+	var runner: CaravanRunner = _caravan_runner()
+	var rows: Array[CaravanReplies.CaravanQuery] = []
+	for trader_id: int in _state.caravans.trader_ids():
+		rows.append(runner.row_of(_state.caravans.caravan_of(trader_id), _now()))
 	return CaravanReplies.CaravansQuery.new(rows)
 
 
