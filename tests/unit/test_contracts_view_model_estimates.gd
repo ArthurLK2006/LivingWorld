@@ -168,6 +168,15 @@ func test_a_negative_result_and_the_funds_shortfall_are_plain_subtractions() -> 
 	assert_eq(_model.estimate_of(contract_id).funds_short, 0, "Custo menor que o saldo: nada falta.")
 
 
+func test_the_funds_shortfall_does_not_depend_on_the_sign_of_the_result() -> void:
+	var funds: int = _bridge.peek_player_economy(_actor_id).funds
+	var contract_id: int = _post(_market_a, _market_a, 4 * funds)
+	_bridge.forced_total = funds + 50
+	_read(_market_a)
+	var estimate: ContractsViewModel.Estimate = _model.estimate_of(contract_id)
+	assert_eq([estimate.result, estimate.funds_short, estimate.is_small_margin], [3 * funds - 50, 50, false], "A recompensa cobre o custo (resultado positivo e grande), mas o saldo não: faltam 50.")
+
+
 func test_the_small_margin_band_is_zero_to_ten_percent_of_the_reward_in_integers() -> void:
 	var small: int = _post(_market_a, _market_a, REWARD)
 	var large: int = _post(_market_a, _market_a, 100)

@@ -12,6 +12,7 @@ const SETTLEMENT_C: String = "test_settlement_c"
 const BREAD: String = "bread"
 const REWARD: int = 53
 const QUANTITY: int = 5
+const BIG_QUANTITY: int = 15
 const LONG_MINUTES: int = 600
 const SCARCE_STOCK: int = 5
 const FLOODED_STOCK: int = 100
@@ -134,8 +135,8 @@ func _select(contract_id: int) -> void:
 
 
 ## Posta o pão de 5 por 53 do emissor A ao destino `destination` direto na economia (o postador está desligado).
-func _post(destination: int, reward: int = REWARD) -> int:
-	var posted: EconomyReplies.PostContractResult = _economy.request_post_contract(ContractBook.DELIVERY, _market_a, reward, _bridge.peek_time().total_minutes + LONG_MINUTES, {"good_id": BREAD, "quantity": QUANTITY, "destination_id": destination})
+func _post(destination: int, reward: int = REWARD, quantity: int = QUANTITY) -> int:
+	var posted: EconomyReplies.PostContractResult = _economy.request_post_contract(ContractBook.DELIVERY, _market_a, reward, _bridge.peek_time().total_minutes + LONG_MINUTES, {"good_id": BREAD, "quantity": quantity, "destination_id": destination})
 	assert_true(posted.result.ok, posted.result.message)
 	return posted.contract_id
 
@@ -199,6 +200,24 @@ func test_the_same_order_accepted_with_the_screen_at_a_cheaper_market_shows_the_
 	assert_eq(_label("ContractsVerdict").text, _say("verdict_margin", {"margin": REWARD - cost}), "Voltar à primeira linha refaz o aviso e tira o matiz.")
 
 
+func test_missing_funds_with_a_positive_margin_still_warns_with_the_funds_sentence_and_the_danger_tint() -> void:
+	var funds: int = _bridge.peek_player_economy(_actor_id).funds
+	var cost: int = _quote(_market_a, BIG_QUANTITY)
+	assert_gt(cost, funds, "Com os dados de hoje, 15 pães custam mais que o saldo inicial.")
+	_post(_market_a, 2 * cost, BIG_QUANTITY)
+	_open_contracts(_market_a)
+	var warning: String = _say("verdict_margin", {"margin": cost}) + ContractsPage.SENTENCE_SEPARATOR + _say("verdict_funds", {"short": cost - funds})
+	assert_eq(_shown(), [_numbers(cost, cost), warning, _say("hint_estimate"), [true, true, true], ContractsLayout.DANGER_TINT], "A margem é positiva e grande (não é prejuízo nem margem pequena), mas o saldo não cobre a compra: a frase do saldo e o matiz de perigo vão no aviso.")
+
+
+func test_a_result_of_exactly_zero_is_a_small_margin_without_the_danger_tint() -> void:
+	var cost: int = _quote(_market_a)
+	assert_lte(cost, _bridge.peek_player_economy(_actor_id).funds, "O saldo cobre a compra: nenhuma frase de saldo.")
+	_post(_market_a, cost)
+	_open_contracts(_market_a)
+	assert_eq(_shown(), [_numbers(cost, 0), _say("verdict_margin_small", {"margin": 0}), _say("hint_estimate"), [true, true, true], Color.WHITE], "Recompensa igual ao custo: resultado 0 não é prejuízo (cai na margem pequena) e não leva o matiz de perigo.")
+
+
 func test_already_holding_the_items_shows_no_cost_and_no_warning_and_asks_nothing() -> void:
 	var contract_id: int = _post(_market_a)
 	_accept(contract_id)
@@ -245,6 +264,17 @@ func test_quotes_are_asked_only_while_the_contracts_page_is_visible_once_on_swit
 	_view.close()
 	_view.refresh()
 	assert_eq(_bridge.asked.size(), 3, "Com a tela fechada na aba Mercado, nenhuma consulta nova de cotação.")
+
+
+func test_a_closed_screen_asks_no_quotes_even_with_the_contracts_tab_still_chosen() -> void:
+	_post(_market_a)
+	_open_contracts(_market_a)
+	assert_eq(_bridge.asked.size(), 1, "Aberta na aba Contratos: a cotação da encomenda.")
+	_view.close()
+	_view.refresh()
+	simulate(_view, 2, MarketView.REFRESH_INTERVAL_S)
+	_press(TAB_CONTRACTS)
+	assert_eq([_bridge.asked.size(), _node("ContractsPage").visible], [1, true], "A tela fechada deixa o `visible` da página ligado, mas nada se vê: nem a atualização nem o clique na aba pedem cotação (a guarda é `is_visible_in_tree`).")
 
 
 func test_opening_refreshing_pausing_and_switching_tabs_never_change_the_state_hash_and_send_nothing() -> void:

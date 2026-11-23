@@ -9,7 +9,7 @@ extends RefCounted
 ## e as linhas terminadas mostram "Abandonado" (com a nota de que não há multa), "Falhou" ou "Vencido", sempre diferentes entre si. LW-107f4b: só o "Abandonar" do painel faz a página emitir `abandon_requested` (a `MarketView` o liga a `request_contract_abandon`, 107f4c); o `refresh` fecha o painel
 ## sozinho se a linha deixa de ser abandonável ou o relógio para (`keep_if`), e a tela ou a página que escondem o fecham (o próprio painel ouve o `hidden`); a página continua SÓ consultando a ponte.
 ## LW-107h (custo e resultado estimados): abaixo do detalhe, três linhas só da linha escolhida: os números (custo estimado de comprar o que falta AQUI, e o resultado), o aviso (possível prejuízo, margem pequena ou margem, SEMPRE com a frase de que os preços podem mudar, e o saldo insuficiente) e a nota do que a estimativa não cobre. Só INFORMAM: nenhum botão muda por elas
-## (aceitar é livre e o jogador pode ter outros motivos). As consultas de cotação (`ContractsViewModel.refresh_estimates`, no máximo uma por encomenda ativa) rodam SÓ com a página visível, junto de cada `refresh`, e uma vez ao trocar para ela (`set_shown`): negociando na aba Mercado, nenhuma cotação é pedida.
+## (aceitar é livre e o jogador pode ter outros motivos). As consultas de cotação (`ContractsViewModel.refresh_estimates`, no máximo uma por encomenda ativa) rodam SÓ com a página visível NA ÁRVORE (aba Contratos escolhida E tela aberta: `is_visible_in_tree`, não só o `visible` dela), junto de cada `refresh`, e uma vez ao trocar para ela (`set_shown`): negociando na aba Mercado, nenhuma cotação é pedida.
 
 ## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed`, `expired`, `abandoned` e `failed`).
 const KEY_CONTRACTS_TITLE: String = "ui.contracts.title"
@@ -106,10 +106,10 @@ func open() -> void:
 	_layout.result.text = ""
 
 
-## Mostra ou esconde a página. Só `visible` muda: nenhum nó muda de pai. LW-107h: ao MOSTRAR, refaz UMA vez as estimativas (a leitura do último `refresh` basta) para o jogador não ver as linhas da estimativa vazias até o próximo `refresh`; ao esconder, nenhuma cotação é pedida.
+## Mostra ou esconde a página. Só `visible` muda: nenhum nó muda de pai. LW-107h: ao MOSTRAR, com a tela aberta (visível na árvore), refaz UMA vez as estimativas (a leitura do último `refresh` basta) para o jogador não ver as linhas da estimativa vazias até o próximo `refresh`; ao esconder, nenhuma cotação é pedida.
 func set_shown(is_shown: bool) -> void:
 	_layout.page.visible = is_shown
-	if is_shown:
+	if is_shown and _layout.page.is_visible_in_tree():
 		_model.refresh_estimates(_bridge, _actor_id)
 		_show_estimate()
 
@@ -130,7 +130,7 @@ func consume_cancel(event: InputEvent) -> bool:
 func refresh(market_id: int, is_paused: bool) -> void:
 	_is_paused = is_paused
 	var is_valid: bool = _model.refresh(_bridge, _actor_id, market_id)
-	if _layout.page.visible:
+	if _layout.page.is_visible_in_tree():
 		_model.refresh_estimates(_bridge, _actor_id)
 	var open_rows: Array[ContractsViewModel.Row] = _model.available()
 	var mine_rows: Array[ContractsViewModel.Row] = _model.mine()
