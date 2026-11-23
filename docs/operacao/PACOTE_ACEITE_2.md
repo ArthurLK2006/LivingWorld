@@ -1,6 +1,6 @@
 # Pacote de aceite 2 — LW-098, LW-107, LW-108 e arte da praça: já no `main`, esperando o seu aceite
 
-Preparado em 23/11/2026 sobre o `main` 8b88d7a. **Nenhuma tarefa foi marcada como aceita e o ROADMAP_STATUS não foi alterado:** o aceite formal é seu. Cada tarefa abaixo está **pronta para o seu aceite** ou diz o que falta. Levantei roadmap, contratos, fila, backlog e testes por leitura. O CI do `main` está verde no 699c345 (23/11); a execução do 8b88d7a, que só soma um teste e o backlog, estava em andamento quando conferi. Reexecutei 3 testes isolados (última seção). Nada foi medido em release nem visto na janela.
+Preparado em 23/11/2026 sobre o `main` 8b88d7a. **Nenhuma tarefa foi marcada como aceita e o ROADMAP_STATUS não foi alterado:** o aceite formal é seu. Cada tarefa abaixo está **pronta para o seu aceite** ou diz o que falta. Levantei roadmap, contratos, fila, backlog e testes por leitura. O CI do `main` está verde no 8b88d7a (23/11, conferido pelo Maestro depois do relatório do agente). Reexecutei 3 testes isolados (última seção). Nada foi medido em release nem visto na janela.
 
 **Como o placar conta (leia antes das contas).** O ROADMAP_STATUS conta **tarefa numerada**; subtarefas com letra (098b, 107e2, 098h5…) **não entram**. Aceitar subtarefas não mexe no 98 de 192 (51,0%) até uma tarefa numerada inteira fechar: LW-098, LW-107 e LW-108 valem **1 cada**. ART-5b1 e ART-6a são da trilha de arte e **não estão nas 192**. Conferi a lista do levantamento de 21/11: está certa (nada daqui foi aceito; o último aceite registrado é o de 14/11, PR #40), mas ela listava subtarefas como se fossem tarefas.
 
@@ -74,7 +74,7 @@ Subtarefas por grupo: A 6 (10 PRs) · B 9 (10 PRs) · C 1 · D 11 · E 6 · F 1 
 G não conta no placar (arte).
 
 ## Fora deste pacote
-LW-107c3 (decisão à parte, em PR: `docs/economia/lw-107c3-decisao-23-11.md`), LW-094, LW-095, LW-098h6, LW-100, LW-103, ART-12 (a figura segue desligada) e ART-6b e ART-7 (suspensas).
+LW-107c3 (decisão à parte, no mesmo PR deste pacote: `docs/economia/lw-107c3-decisao-23-11.md`), LW-094, LW-095, LW-098h6, LW-100, LW-103, ART-12 (a figura segue desligada) e ART-6b e ART-7 (suspensas).
 
 ## Como aceitar
 - **Agora (sugestão):** "APROVADO LW-098b a 098g, LW-098h0a a 098h4 (o aceite de desempenho da 9.15.4 segue comigo) e as subtarefas da LW-107 sem tela (107b, 107c1, 107c2a, 107c2b, 107d, 107f1, 107f2, 107f3, 107f5 e 107g)".
@@ -82,4 +82,4 @@ LW-107c3 (decisão à parte, em PR: `docs/economia/lw-107c3-decisao-23-11.md`), 
 - Com o aceite, o Maestro atualiza o ROADMAP_STATUS. Nenhum valor de referência é regravado por este pacote: A, B, D, E, F e G não mudam hash; só a 098h5 mudou o `real_game`, que você já aprovou em 18/11.
 
 ## O que não verifiquei
-Reexecutei só `test_contract_cycle` (8 de 8, 212 asserções), `test_economy_debug_panel` (6 de 6, 67) e `test_economy_caravan_trip` (8 de 8, 203), com `--headless` e `nice -n 10`. **Não rodei** a suíte inteira, o `check_all`, o `run_npc_life_30d` (falha conhecida; só li os documentos), nenhuma medição em release e nada na janela. Não achei teste específico de "texto por chaves" (a regra é do `check_literal_text`, dentro do `check_all`). `lw-107c3-decisao-23-11.md` ainda não está no `main`; não li.
+Reexecutei só `test_contract_cycle` (8 de 8, 212 asserções), `test_economy_debug_panel` (6 de 6, 67) e `test_economy_caravan_trip` (8 de 8, 203), com `--headless` e `nice -n 10`. **Não rodei** a suíte inteira, o `check_all`, o `run_npc_life_30d` (falha conhecida; só li os documentos), nenhuma medição em release e nada na janela. Não achei teste específico de "texto por chaves" (a regra é do `check_literal_text`, dentro do `check_all`). O pacote de decisão da 107c3 é outro documento (`lw-107c3-decisao-23-11.md`) e não foi lido por quem escreveu este.
