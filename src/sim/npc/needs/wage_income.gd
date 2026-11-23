@@ -1,7 +1,7 @@
 class_name WageIncome
 extends RefCounted
-## O `npc` ouve o salário (LW-095; docs/modules/npc.md, 14.4; DEC-152): a cada `WagesPaid` (UM por local de trabalho e por hora, publicado pela economia) alivia a necessidade `income` DOS NPCs DELE que trabalham ali, em proporção ao
-## salário de cada um (`amount_each`). A lista de trabalhadores vem da porta da economia (`peek_site` do local de produção ou `peek_post` do posto, em ordem de ID); NPC que o `npc` não conhece (ou morto) é ignorado. O alívio entra levando as
+## O `npc` ouve o salário (LW-095; docs/modules/npc.md, 14.4; DEC-152): a cada `WagesPaid` (UM por local de trabalho e por hora, publicado pela economia) alivia a necessidade `income` DOS NPCs DELE que foram pagos ali, em proporção ao
+## salário de cada um (`amount_each`). Só os PAGOS: a lista `paid_worker_ids` do evento quando preenchida (LW-094b, PROPOSTA: na folha parcial só as equipes pagas); vazia (os postos), a da porta da economia (`peek_site` do local de produção ou `peek_post` do posto, em ordem de ID); NPC que o `npc` não conhece (ou morto) é ignorado. O alívio entra levando as
 ## necessidades até o minuto atual (`NeedMath.settle`) e somando a pressão negativa (`NeedMath.add_pressure`, limitada a 0..100), como o alarme faz com `safety`. O `npc` nunca cria nem move dinheiro: só lê a economia e mexe no que é dele.
 ## Hora parada (sem folha) não gera evento e `income` volta a subir pela taxa da própria necessidade. Desde a LW-095f é o ÚNICO alívio da `income` (a renda simbólica provisória saiu).
 
