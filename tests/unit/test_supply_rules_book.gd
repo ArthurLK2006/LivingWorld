@@ -202,3 +202,102 @@ func test_without_a_buyer_and_with_a_batch_held_the_site_keeps_its_money_and_res
 	assert_eq(paid.size(), 1, "E paga a folha da hora em que produziu.")
 	assert_true(module.peek_conservation().ok and module.peek_goods_conservation().ok)
 	world.teardown()
+
+
+## Revisão R3 (23/11/2026): os cenários A a E dela, como testes que matam os mutantes M2, M12, M14 e M16 e cobrem os defeitos D1 e D2.
+func _rig(site_money: int, workers: int, max_batches: int, market_money: int) -> Array:
+	var definitions: EconomyDefinitions = _definitions(site_money, workers, max_batches)
+	definitions.is_development_build = true
+	for kind: OwnerKindDef in definitions.kinds:
+		if kind.id == MarketBook.KIND_MARKET:
+			kind.initial_balance = market_money
+	var module: EconomyModule = EconomyModule.new(false, definitions)
+	var world: World = _world(module, workers)
+	var paid: Array[WagesPaid] = []
+	world.context.events.subscribe("WagesPaid", func(event: SimEvent) -> void: paid.append(event))
+	return [world, module, module.peek_market_of(SETTLEMENT_A).market_id, paid]
+
+
+func _bread_made(module: EconomyModule, market_id: int, market_bread_before: int) -> int:
+	var in_market: int = 0
+	for row: Dictionary in module.peek_inventory(market_id).rows:
+		if row["good_id"] == "bread":
+			in_market = int(row["quantity"])
+	return in_market - market_bread_before + _held(module, "bread")
+
+
+func test_d1_the_partial_payroll_pays_only_the_teams_the_inputs_let_run() -> void:
+	var parts: Array = _rig(13, 9, 3, 3000)
+	var world: World = parts[0]
+	var module: EconomyModule = parts[1]
+	var paid: Array[WagesPaid] = parts[3]
+	_give_flour(module, 6)
+	assert_true(module.request_set_stock(parts[2], "flour", 0).ok, "O mercado sem farinha: o local só tem a de UM lote.")
+	assert_true(module.request_set_stock(parts[2], "bread", 0).ok)
+	var before: Array[int] = _balances(module, 9)
+	_run_hour(world)
+	assert_eq(paid.size(), 1)
+	assert_eq(paid[0].paid_worker_ids.size(), TEAM, "13 pagariam 2 equipes, mas a farinha só deixa 1 rodar: paga só 1 (antes pagava 2 e o trabalho da 2ª se perdia).")
+	var gained: int = 0
+	for offset: int in 9:
+		gained += _balances(module, 9)[offset] - before[offset]
+	assert_eq(gained, WAGE * TEAM)
+	assert_eq(_bread_made(module, parts[2], 0), 6, "Um lote.")
+	assert_eq(module.peek_site(SITE_BREAD).batch_progress_bp, 0, "Nenhum trabalho pago ficou preso no teto do progresso.")
+	assert_true(module.peek_conservation().ok and module.peek_goods_conservation().ok)
+	world.teardown()
+
+
+func test_m2_m14_the_largest_number_of_paid_teams_runs_and_no_unpaid_team_works() -> void:
+	var parts: Array = _rig(13, 9, 3, 3000)
+	var world: World = parts[0]
+	var module: EconomyModule = parts[1]
+	var paid: Array[WagesPaid] = parts[3]
+	assert_true(module.request_set_stock(parts[2], "bread", 0).ok)
+	_give_flour(module, 18)
+	_run_hour(world)
+	assert_eq(paid.size(), 1)
+	assert_eq(paid[0].paid_worker_ids.size(), 2 * TEAM, "13 cobrem 2 equipes (12) de 3 possíveis: paga o MAIOR número que cabe.")
+	assert_eq(_bread_made(module, parts[2], 0), 2 * 6, "Só as 2 equipes pagas trabalham: 2 lotes, não 3.")
+	assert_true(module.peek_balance(SITE_BREAD).balance >= 0)
+	assert_true(module.peek_conservation().ok and module.peek_goods_conservation().ok)
+	world.teardown()
+
+
+func test_m12_a_site_without_a_crew_and_without_a_buyer_is_still_no_worker() -> void:
+	var parts: Array = _rig(100, 2, 1, 3000)
+	var world: World = parts[0]
+	var module: EconomyModule = parts[1]
+	assert_true(module.request_transfer_goods(parts[2], SITE_BREAD, "bread", 6).ok)
+	assert_true(module.request_set_stock(parts[2], "bread", 120).ok)
+	_run_hour(world)
+	assert_eq(module.peek_site(SITE_BREAD).reason, ProductionBook.NO_WORKER, "Sem equipe o motivo é a equipe, mesmo sem comprador.")
+	world.teardown()
+
+
+func test_m16_the_full_payroll_still_pays_every_assigned_worker() -> void:
+	var parts: Array = _rig(100, 4, 1, 3000)
+	var world: World = parts[0]
+	var module: EconomyModule = parts[1]
+	var paid: Array[WagesPaid] = parts[3]
+	_give_flour(module, 6)
+	_run_hour(world)
+	assert_eq(paid.size(), 1)
+	assert_eq(paid[0].paid_worker_ids.size(), 4, "A folha cheia (regra antiga, DEC-151) paga os 4 atribuídos, não só a equipe de 3 (pergunta aberta de classe 3).")
+	world.teardown()
+
+
+func test_d2_a_market_without_money_is_not_a_buyer() -> void:
+	var parts: Array = _rig(100, 3, 1, 0)
+	var world: World = parts[0]
+	var module: EconomyModule = parts[1]
+	var paid: Array[WagesPaid] = parts[3]
+	assert_true(module.request_set_stock(parts[2], "bread", 0).ok, "Espaço no teto de compra, mas o mercado tem saldo 0.")
+	assert_true(module.request_transfer_goods(parts[2], SITE_BREAD, "flour", 30).ok)
+	for _hour: int in 6:
+		_run_hour(world)
+	assert_eq(paid.size(), 1, "Só o primeiro lote (ainda sem lote parado); depois o mercado não pagaria a venda: sem comprador.")
+	assert_eq([module.peek_site(SITE_BREAD).running, module.peek_site(SITE_BREAD).reason], [false, ProductionBook.OUTPUT_FULL])
+	assert_eq(module.peek_balance(SITE_BREAD).balance, 100 - WAGE * TEAM, "Guarda o capital (antes pagava 5 horas e juntava 30 pães).")
+	assert_eq(_held(module, "bread"), 6)
+	world.teardown()
