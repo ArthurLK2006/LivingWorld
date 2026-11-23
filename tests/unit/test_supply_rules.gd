@@ -41,3 +41,16 @@ func test_every_site_is_first_twice_and_every_pair_is_even_in_each_window() -> v
 func test_one_or_no_site_is_returned_as_is() -> void:
 	assert_eq(SupplyRules.rotated_order([] as Array[int], 5), [] as Array[int])
 	assert_eq(SupplyRules.rotated_order([3] as Array[int], 5), [3] as Array[int])
+
+
+func test_the_paid_team_is_a_rotating_window_of_the_workers_in_ascending_order() -> void:
+	var workers: Array[int] = [10, 11, 12, 13, 14, 15]
+	assert_eq(SupplyRules.rotated_team(workers, 0, 3), [10, 11, 12] as Array[int])
+	assert_eq(SupplyRules.rotated_team(workers, 5, 3), [10, 11, 15] as Array[int], "Circular e devolvida em ordem crescente.")
+	assert_eq(SupplyRules.rotated_team(workers, 7, 9), workers, "Equipe maior que a lista: todos.")
+	var times: Dictionary[int, int] = {}
+	for hour: int in workers.size() * 4:
+		for worker_id: int in SupplyRules.rotated_team(workers, hour, 3):
+			times[worker_id] = int(times.get(worker_id, 0)) + 1
+	for worker_id: int in workers:
+		assert_eq(int(times[worker_id]), 12, "Em 24 horas cada um entra na equipe paga 12 vezes (metade).")

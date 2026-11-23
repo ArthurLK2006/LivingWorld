@@ -16,3 +16,17 @@ static func rotated_order(ids: Array[int], hour: int) -> Array[int]:
 	for offset: int in count:
 		order.append(ids[posmod(start + step * offset, count)])
 	return order
+
+
+## P. Os `size` trabalhadores que recebem na folha parcial da hora `hour`: a lista `workers` (crescente) começando no índice `h mod trabalhadores`, circular, devolvida em ordem crescente (a ordem dos pagamentos). Em `trabalhadores` horas
+## seguidas cada trabalhador entra o mesmo número de vezes. `size` maior que a lista devolve a lista toda.
+static func rotated_team(workers: Array[int], hour: int, size: int) -> Array[int]:
+	var count: int = workers.size()
+	if size >= count:
+		return workers.duplicate()
+	var team: Array[int] = []
+	var start: int = posmod(hour, count)
+	for offset: int in maxi(size, 0):
+		team.append(workers[(start + offset) % count])
+	team.sort()
+	return team

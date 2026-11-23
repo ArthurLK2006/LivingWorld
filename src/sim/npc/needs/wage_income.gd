@@ -20,12 +20,13 @@ func _init(npcs: Dictionary[int, NpcState], need_defs: Array[NeedDef], economy: 
 	_economy = economy
 
 
-## Reação ao `WagesPaid`; `now` é o minuto atual da simulação. Evento de outro tipo, sem economia ou sem a necessidade `income` nas definições: não faz nada.
+## Reação ao `WagesPaid`; `now` é o minuto atual da simulação. Desde a LW-094b (PROPOSTA) alivia só os da lista dos pagos do evento quando ela vem preenchida (folha parcial); vazia, todos os do local, como antes. Evento de outro tipo, sem economia ou sem a necessidade `income` nas definições: não faz nada.
 func on_wages_paid(event: SimEvent, now: int) -> void:
 	var paid: WagesPaid = event as WagesPaid
 	if paid == null or _economy == null:
 		return
-	for worker_id: int in _workers_of(paid.workplace_id):
+	var workers: Array[int] = paid.paid_worker_ids if not paid.paid_worker_ids.is_empty() else _workers_of(paid.workplace_id)
+	for worker_id: int in workers:
 		var state: NpcState = _npcs.get(worker_id)
 		relieve_coins(state, paid.amount_each, now)
 
