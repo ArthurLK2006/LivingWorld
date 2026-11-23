@@ -214,6 +214,8 @@ func test_without_sites_in_the_data_nothing_changes_and_validate_finds_a_site_th
 	assert_true(setup.result.ok, setup.result.message)
 	var no_sites: Array[SiteDef] = []
 	setup.definitions.production_sites = no_sites
+	var no_posts: Array[PostDef] = []
+	setup.definitions.service_posts = no_posts
 	var module: EconomyModule = EconomyModule.new(false, setup.definitions)
 	var world: World = _world(module)
 	_run_minutes(world, MINUTES_PER_DAY * 2)
@@ -224,7 +226,7 @@ func test_without_sites_in_the_data_nothing_changes_and_validate_finds_a_site_th
 	var real_module: EconomyModule = EconomyModule.new(false, real_setup.definitions)
 	var real_world: World = _world(real_module)
 	_run_minutes(real_world, MINUTES_PER_DAY * 2)
-	assert_eq([real_module.peek_sites_of(SETTLEMENT_A).sites.size(), real_module.serialize().has("production"), real_world.context.ids.next_id()], [5, true, 32], "A lista real de locais (LW-097) tem 5 no A: 3 mercados, 14 locais e as 14 vagas que a economia posta (LW-096e) gastam 31 IDs e o save ganha o bloco.")
+	assert_eq([real_module.peek_sites_of(SETTLEMENT_A).sites.size(), real_module.serialize().has("production"), real_world.context.ids.next_id()], [5, true, 44], "A lista real de locais (LW-097) tem 5 no A: 3 mercados, 14 locais, 6 postos (LW-095e) e as 20 vagas que a economia posta (LW-096e) gastam 43 IDs e o save ganha o bloco.")
 	assert_eq(real_module.validate(), [] as Array[String])
 	real_world.teardown()
 	var loaded: ProductionLoader.LoadResult = ProductionLoader.load_dir(GoodsLoader.DEFAULT_DIR)

@@ -42,14 +42,14 @@ func test_the_debug_summary_shows_the_accounts_the_conservation_and_the_sites_wi
 	var module: EconomyModule = EconomyModule.new(false, _definitions())
 	var world: World = _world(module)
 	var before: Dictionary = module.serialize()
-	assert_eq(module.debug_summary(), {"owners": 17, "balances_sum": 11800, "money_created": 11800, "money_destroyed": 0, "money_conserved": true, "goods_conserved": true, "production_sites": 14}, "Três mercados de 3000 e 14 locais de produção de 200 nos dados reais.")
+	assert_eq(module.debug_summary(), {"owners": 17, "balances_sum": 11800, "money_created": 11800, "money_destroyed": 0, "money_conserved": true, "goods_conserved": true, "production_sites": 14, "service_posts": 6}, "Três mercados de 3000, 14 locais de produção de 200 e os 6 postos (sem conta; LW-095e) nos dados reais.")
 	assert_eq(module.serialize(), before, "O resumo só olha: o estado fica igual.")
 	assert_true(module.request_open_owner(100, "npc").ok)
 	assert_eq(module.debug_summary()["owners"], 18, "O resumo acompanha o cadastro.")
 	world.teardown()
 	var with_site: EconomyModule = EconomyModule.new(false, _definitions(true))
 	var site_world: World = _world(with_site)
-	assert_eq(with_site.debug_summary(), {"owners": 4, "balances_sum": 14000, "money_created": 14000, "money_destroyed": 0, "money_conserved": true, "goods_conserved": true, "production_sites": 1}, "O local de produção injetado entra: o dono 4, com 5000, depois dos três mercados.")
+	assert_eq(with_site.debug_summary(), {"owners": 4, "balances_sum": 14000, "money_created": 14000, "money_destroyed": 0, "money_conserved": true, "goods_conserved": true, "production_sites": 1, "service_posts": 6}, "O local de produção injetado entra: o dono 4, com 5000, depois dos três mercados.")
 	site_world.teardown()
 
 

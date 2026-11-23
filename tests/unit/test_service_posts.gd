@@ -158,6 +158,9 @@ func test_the_state_of_the_posts_survives_the_save_and_a_bad_block_is_refused_wi
 func test_a_world_without_posts_keeps_the_save_block_free_of_the_posts_key() -> void:
 	var setup: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR)
 	assert_true(setup.result.ok, setup.result.message)
+	## LW-095e: os dados reais agora têm postos; o mundo SEM postos é montado tirando-os.
+	var no_posts: Array[PostDef] = []
+	setup.definitions.service_posts = no_posts
 	var module: EconomyModule = EconomyModule.new(false, setup.definitions)
 	var world: World = _world(module)
 	assert_false(module.serialize().has("posts"), "Sem postos nada muda no bloco do save (nem no hash).")

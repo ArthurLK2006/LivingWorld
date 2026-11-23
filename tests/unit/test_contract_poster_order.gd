@@ -10,6 +10,9 @@ func test_the_vacancy_of_the_hour_gets_a_smaller_id_than_the_delivery_the_poster
 	assert_true(setup.result.ok, setup.result.message)
 	var sites: Array[SiteDef] = [SiteDef.new("site_bread", "test_settlement_a", "a_work_01", "bake_bread", 4)]
 	setup.definitions.production_sites = sites
+	## LW-095e: os 6 postos reais abririam 6 vagas a mais na mesma hora; este teste é da ordem entre a vaga do local e a entrega.
+	var no_posts: Array[PostDef] = []
+	setup.definitions.service_posts = no_posts
 	var templates: Array[ContractTemplateDef] = [ContractTemplateDef.new("bread_standing", ContractBook.DELIVERY, "bread", 5, ContractTemplateDef.TRIGGER_STANDING, 500, 48, 1)]
 	setup.definitions.contract_templates = templates
 	var economy: EconomyModule = EconomyModule.new(false, setup.definitions)
