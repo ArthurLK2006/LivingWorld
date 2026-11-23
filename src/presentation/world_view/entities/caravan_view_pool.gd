@@ -11,6 +11,7 @@ var created: int = 0
 var taken: int = 0
 var returned: int = 0
 var peak_active: int = 0
+## `empty_hits` e `duplicate_requests` NÃO têm o sentido dos de mesmo nome do `NpcViewPool` (lá a reserva cresce e o pedido repetido é recusado; aqui vazia = nulo e repetido = o mesmo corpo): o chamador deve usar `body_of` ANTES de `take` (como o `NpcBodiesView.reconcile`), senão o contador incha.
 ## Pedidos feitos com a reserva vazia: devolveram nulo, sem criar corpo.
 var empty_hits: int = 0
 ## Pedidos de corpo para comerciante que já tinha um: devolveram o corpo que ele já tinha.

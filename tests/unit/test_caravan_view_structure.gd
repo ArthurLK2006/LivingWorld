@@ -7,6 +7,8 @@ const SOURCE: String = "res://src/presentation/world_view/entities/caravan_view.
 const POINT: Vector3 = Vector3(320.0, 12.5, 540.0)
 const OTHER: Vector3 = Vector3(341.0, 11.0, 560.0)
 const FAR: Vector3 = Vector3(900.0, 10.0, 100.0)
+## Passo (m) da 2ª pose do corpo religado: uns 2 rad de roda.
+const STEP_M: float = 0.76
 const EPS: float = 0.001
 ## Quem, na apresentação, conversa com a simulação: o corpo não pode citar nenhum deles.
 const FORBIDDEN: PackedStringArray = ["SimBridge", "SimulationHost", "EventBus", "peek_", "request_", "res://src/sim", "res://src/bridge"]
@@ -115,17 +117,42 @@ func test_a_free_body_ignores_pose_and_state_and_a_bad_id_changes_nothing() -> v
 	assert_false(view.is_bound(), "ID inválido não liga o corpo")
 
 
-func test_a_recycled_body_starts_clean_and_a_second_bind_starts_over() -> void:
+## Um corpo já ligado ao comerciante 7 que andou, com carga e rodas giradas.
+func _used_view() -> CaravanView:
 	var view: CaravanView = _new_view()
 	view.bind(7)
 	view.apply_state(true, "grain", 1000)
 	view.apply_pose(POINT, 0.5, 0.2)
 	view.apply_pose(OTHER, 0.5, 0.2)
-	var wheel: Node3D = _part(view, "%s/%s" % [CaravanView.CART_NAME, CaravanView.WHEEL_NAMES[0]])
-	assert_ne(wheel.rotation, Vector3.ZERO, "o corpo velho andou: a roda girou")
-	view.bind(9)
+	assert_ne(_wheel_of(view).rotation, Vector3.ZERO, "o corpo velho andou: a roda girou")
+	return view
+
+
+func _wheel_of(view: CaravanView) -> Node3D:
+	return _part(view, "%s/%s" % [CaravanView.CART_NAME, CaravanView.WHEEL_NAMES[0]])
+
+
+## O comerciante novo recomeça do zero: sem pose, carga nem andar herdados e, ao andar, a pisada liga de novo e a roda gira -passo/raio A PARTIR DE ZERO (nenhum ângulo velho).
+func _assert_starts_over(view: CaravanView) -> void:
+	var wheel: Node3D = _wheel_of(view)
 	assert_eq([view.trader_id, view.visible, view.position, view.rotation], [9, false, Vector3.ZERO, Vector3.ZERO], "religar a outro comerciante não herda a pose")
 	assert_eq([view.volume_count(), view.merchant().is_walking(), wheel.rotation], [0, false, Vector3.ZERO], "nem a carga, nem o andar, nem a volta das rodas")
 	view.apply_state(true, "grain", 500)
+	assert_true(view.merchant().is_walking(), "andando de novo: o comerciante da caravana nova volta a pisar (o `release` esqueceu o 'andava' da velha)")
 	view.apply_pose(FAR, 0.0, 0.0)
 	assert_eq([wheel.rotation, view.visible], [Vector3.ZERO, true], "a primeira pose do corpo religado não gira as rodas: o 'quadro anterior' do comerciante velho não vale")
+	view.apply_pose(FAR + Vector3(0.0, 0.0, -STEP_M), 0.0, 0.0)
+	assert_almost_eq(angle_difference(wheel.rotation.x, -STEP_M / CaravanView.WHEEL_RADIUS_M), 0.0, EPS, "a segunda pose gira exatamente -passo/raio: o ângulo da caravana velha não sobra")
+
+
+func test_a_released_body_bound_again_starts_over() -> void:
+	var view: CaravanView = _used_view()
+	view.release()
+	view.bind(9)
+	_assert_starts_over(view)
+
+
+func test_a_body_bound_again_without_a_release_starts_over() -> void:
+	var view: CaravanView = _used_view()
+	view.bind(9)
+	_assert_starts_over(view)
