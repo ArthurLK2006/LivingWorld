@@ -2,7 +2,7 @@ class_name PostLoader
 extends RefCounted
 ## Lê e valida data/economy/service_posts.json pelo módulo `data` (LW-095; docs/economy/dados.md): `settlement_id`, `place_id` e `occupation_id` (texto não vazio), `workers_wanted` (1 ou mais) e `wage_per_hour` (0 ou mais). O arquivo é OPCIONAL por enquanto:
 ## sem ele não há posto (lista vazia); a tabela, se existe, pode estar vazia. O que o esquema não vê é conferido aqui: texto em branco e um posto por `place_id`. Falha com `ECON_DATA_INVALID`, arquivo, item e campo. Nunca carrega recurso nem executa nada do arquivo.
-## O arquivo `service_posts.json` (6 linhas) é da LW-095 e só entra depois da LW-097 no `main`, com o aviso de Arthur por escrito; esta classe só lê.
+## O arquivo `service_posts.json` (6 linhas, LW-095e; autorização de Arthur de 21/11/2026, salário de 1 por hora [HIP]) está em `data/economy`; esta classe só lê.
 
 const POSTS_TABLE: String = "service_posts"
 const POSTS_FILE: String = "service_posts.json"

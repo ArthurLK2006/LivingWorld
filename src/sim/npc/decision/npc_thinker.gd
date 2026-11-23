@@ -479,15 +479,13 @@ class ConditionProvider:
 	var _places: SettlementService
 	var _occupancy: PlaceOccupancy
 	var _food: ActionConditionProvider
-	var _income: IncomeStub
 	var _trade: NpcTrade
 	var _merchant: MerchantTrade
 
-	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, income: IncomeStub = null, trade: NpcTrade = null, merchant: MerchantTrade = null) -> void:
+	func _init(places: SettlementService, occupancy: PlaceOccupancy, food: ActionConditionProvider, trade: NpcTrade = null, merchant: MerchantTrade = null) -> void:
 		_places = places
 		_occupancy = occupancy
 		_food = food
-		_income = income
 		_trade = trade
 		_merchant = merchant
 
@@ -544,12 +542,6 @@ class ConditionProvider:
 	func on_action_completed(action_id: String, settlement_id: String, occupation_id: String) -> void:
 		if _food != null:
 			_food.on_action_completed(action_id, settlement_id, occupation_id)
-
-	## Efeitos extras da ação para o ofício (hoje só o alívio de renda do IncomeStub, TEMP-LW-066); sem IncomeStub, nenhum.
-	func extra_effects(action_id: String, occupation_id: String) -> Array[ActionDef.ActionEffect]:
-		if _income == null:
-			return []
-		return _income.extra_effects(action_id, occupation_id)
 
 	func place_has_room(place_id: String) -> bool:
 		var found: SettlementService.PlaceQuery = _places.peek_place(place_id)

@@ -29,7 +29,7 @@ func test_the_default_game_has_the_markets_and_every_npc_has_an_account_with_the
 	assert_eq([market_a.market_id, market_b.market_id, market_c.market_id], [1, 2, 3], "A economia vem antes do `npc` e gasta os primeiros IDs: os três mercados e, depois, os 14 locais de produção.")
 	var npc_ids: Array[int] = _host.npc.peek_npc_ids()
 	assert_true(npc_ids.size() > 0)
-	assert_eq(npc_ids[0], 18, "O primeiro NPC é o 18: os IDs 1 a 3 são dos mercados e 4 a 17, dos locais de produção.")
+	assert_eq(npc_ids[0], 24, "O primeiro NPC é o 24: os IDs 1 a 3 são dos mercados, 4 a 17 dos locais de produção e 18 a 23 dos postos (LW-095e).")
 	var owners: Dictionary = economy.serialize()["owners"]
 	var ordinary: int = 0
 	var merchants: int = 0

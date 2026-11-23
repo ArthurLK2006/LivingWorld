@@ -159,17 +159,10 @@ func _build_decision_runtime() -> String:
 		var food_problem: String = food_stub.check_references(_definitions.places, _routine.peek_occupation_ids())
 		if not food_problem.is_empty():
 			return "FoodStub (TEMP-LW-065): %s" % food_problem
-	if _definitions.income != null:
-		var need_ids: Array[String] = []
-		for def: NeedDef in _need_defs:
-			need_ids.append(def.id)
-		var income_problem: String = _definitions.income.check_references(need_ids, _routine.peek_occupation_ids())
-		if not income_problem.is_empty():
-			return "IncomeStub (TEMP-LW-066): %s" % income_problem
 	var occupancy: PlaceOccupancy = PlaceOccupancy.new(_npcs)
 	var trade: NpcTrade = null if _economy == null else NpcTrade.new(_economy, _npcs, _definitions.params.buy_units, _definitions.params.buy_price_percent, _definitions.params.sell_value_percent, _routine)
 	var merchant: MerchantTrade = null if _economy == null else MerchantTrade.new(_economy, _npcs, _definitions.params.haul_value_percent)
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food, _definitions.income, trade, merchant)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(_definitions.places, occupancy, _definitions.food, trade, merchant)
 	# LW-070b: o runner do jogo respeita o corpo (ver EmbodiedActionRunner); quem tem Intent pendente é o quadro de Intents que diz.
 	var runner: ActionRunner = EmbodiedActionRunner.new(_npcs, _definitions.actions, _need_defs, _definitions.places, provider, _definitions.walk_speed_cm_per_min, _intents.has_pending)
 	if not runner.peek_problem().is_empty():

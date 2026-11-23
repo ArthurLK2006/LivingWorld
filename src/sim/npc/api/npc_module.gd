@@ -522,8 +522,6 @@ class Definitions:
 	## Opcional: responde `has_food`. Sem ele nenhuma ação que exija comida começa. Em produção é o FoodStub (TEMP-LW-065), com estoque salvo
 	## junto com o módulo; os testes de decisão podem pôr um provedor falso, sem estado.
 	var food: ActionConditionProvider
-	## Opcional (TEMP-LW-066): a renda simbólica de quem trabalha (IncomeStub). Sem ele o trabalho não alivia a necessidade `income`.
-	var income: IncomeStub
 	## Opcional (LW-067): quantos NPCs de cada ofício nascem em cada assentamento. Sem ele `on_new_game` não cria ninguém.
 	var population: PopulationPlan
 	## Opcional (LW-070a): parâmetros do LOD lógico (data/lod_params.json). Nulo = LOD desligado: ninguém ganha corpo (S0).

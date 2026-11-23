@@ -1,0 +1,8 @@
+[
+	{"id": "post_a_guard", "settlement_id": "test_settlement_a", "place_id": "a_work_06", "occupation_id": "guard", "workers_wanted": 8, "wage_per_hour": 1},
+	{"id": "post_a_inn", "settlement_id": "test_settlement_a", "place_id": "a_work_07", "occupation_id": "innkeeper", "workers_wanted": 6, "wage_per_hour": 1},
+	{"id": "post_b_guard", "settlement_id": "test_settlement_b", "place_id": "b_work_07", "occupation_id": "guard", "workers_wanted": 5, "wage_per_hour": 1},
+	{"id": "post_b_inn", "settlement_id": "test_settlement_b", "place_id": "b_work_08", "occupation_id": "innkeeper", "workers_wanted": 3, "wage_per_hour": 1},
+	{"id": "post_c_guard", "settlement_id": "test_settlement_c", "place_id": "c_work_04", "occupation_id": "guard", "workers_wanted": 5, "wage_per_hour": 1},
+	{"id": "post_c_inn", "settlement_id": "test_settlement_c", "place_id": "c_work_05", "occupation_id": "innkeeper", "workers_wanted": 3, "wage_per_hour": 1}
+]

@@ -182,7 +182,7 @@ func test_the_food_stub_only_consumes_when_the_food_did_not_come_from_the_invent
 	var module: EconomyModule = pair[0]
 	var trade: NpcTrade = NpcTrade.new(module, _states, 2)
 	var spy: FoodSpy = FoodSpy.new()
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, spy, null, trade)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, spy, trade)
 	assert_false(provider.can_buy_food(BROKE), "Sem dinheiro o provedor diz que não dá para comprar.")
 	assert_true(provider.can_buy_food(NPC) and not provider.npc_has_food(NPC, "nowhere"), "Com dinheiro dá para comprar; comida só no inventário ou no estoque provisório.")
 	_states[NPC].need_values = PackedInt64Array([80, 0, 0, 0, 0])
@@ -228,7 +228,7 @@ func test_food_in_the_settlement_stub_alone_does_not_stop_the_merchant_from_buyi
 	_states[MERCHANT].settlement_id = SETTLEMENT_A
 	_states[MERCHANT].occupation_id = "merchant"
 	var trade: NpcTrade = NpcTrade.new(module, _states, 2, 100, 100, RoutineLoader.load_dir().table)
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, StockedSettlement.new(), null, trade)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, StockedSettlement.new(), trade)
 	provider.subject = _states[MERCHANT]
 	assert_true(provider.has_food(SETTLEMENT_A) and provider.npc_has_food(MERCHANT, SETTLEMENT_A), "O povoado tem comida no estoque provisório (e `npc_has_food` a conta).")
 	assert_true(not trade.has_food(MERCHANT) and provider.can_buy_food(MERCHANT) and provider.can_buy_food(NPC), "Sem comida NA MOCHILA o comerciante compra, mesmo com comida no estoque do povoado.")
@@ -243,7 +243,7 @@ func test_the_merchant_with_food_in_the_pack_cannot_buy_food_until_it_eats_and_t
 	_states[MERCHANT].settlement_id = SETTLEMENT_A
 	_states[MERCHANT].occupation_id = "merchant"
 	var trade: NpcTrade = NpcTrade.new(module, _states, 2, 100, 100, RoutineLoader.load_dir().table)
-	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, null, null, trade)
+	var provider: NpcThinker.ConditionProvider = NpcThinker.ConditionProvider.new(null, null, null, trade)
 	assert_true(trade.is_merchant(MERCHANT) and not trade.is_merchant(NPC), "O ofício decide: o NPC 100 é comum.")
 	assert_true(provider.can_buy_food(MERCHANT) and provider.can_buy_food(NPC), "Sem comida na mochila os dois podem comprar.")
 	assert_true(module.request_transfer_goods(MARKET, MERCHANT, "wool", 1).ok)

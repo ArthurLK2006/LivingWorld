@@ -1,6 +1,6 @@
 extends GutTest
 ## LW-059: catálogo de ações em dados (docs/modules/npc.md, seção 3), sem janela. Os quatro arquivos reais carregam com as sete ações
-## iniciais (propriedades estruturais ESCRITAS À MÃO a partir do contrato; as grandezas [HIP] dos dados NÃO são fixadas aqui);
+## iniciais (propriedades estruturais ESCRITAS À MÃO a partir do contrato; as grandezas [HIP] dos dados NÃO são fixadas aqui, salvo o limiar de fome da `eat`, LW-094/B8);
 ## referência a necessidade, traço ou ação inexistente, tipo de local ou de condição fora do vocabulário e as demais falhas apontam
 ## arquivo, item e campo; e uma ação nova SÓ por dados passa na validação. Casos inválidos usam tabelas em memória (nada é gravado).
 
@@ -85,14 +85,19 @@ func test_each_initial_action_has_the_place_and_effects_the_contract_describes()
 		assert_gt(_action(actions, action_id).duration_min, 0, "%s tem duração fixa." % action_id)
 
 
-func test_eating_requires_food_and_nothing_else_has_conditions_yet() -> void:
+## LW-094 (B8, regra da refeição por dado): além da comida a `eat` exige FOME (`eat_hungry`, `need_at_least` na fome, mínimo 40, sem máximo), por isso são duas condições. A da comida segue como estava e nenhuma outra ação tem condição. O 40 é [HIP] e fica fixado aqui DE PROPÓSITO: é a regra de jogo decidida por Arthur (mudar o dado exige mudar este teste e `test_eat_hunger_rule.gd`).
+func test_eating_requires_food_and_hunger_and_nothing_else_has_conditions_yet() -> void:
 	var actions: Array[ActionDef] = ActionCatalogLoader.load_dir().actions
 	var eat: ActionDef = _action(actions, "eat")
-	assert_eq(eat.conditions.size(), 1)
+	assert_eq(eat.conditions.size(), 2)
 	assert_eq(eat.conditions[0].kind, ActionDef.CONDITION_HAS_FOOD)
 	assert_eq(eat.conditions[0].need_id, "")
 	assert_eq(eat.conditions[0].min_value, ActionDef.ABSENT)
 	assert_eq(eat.conditions[0].max_value, ActionDef.ABSENT)
+	assert_eq(eat.conditions[1].kind, ActionDef.CONDITION_NEED_AT_LEAST)
+	assert_eq(eat.conditions[1].need_id, "hunger")
+	assert_eq(eat.conditions[1].min_value, 40)
+	assert_eq(eat.conditions[1].max_value, ActionDef.ABSENT, "Só há mínimo: comer não tem fome máxima.")
 	for action: ActionDef in actions:
 		if action.id != "eat":
 			assert_eq(action.conditions.size(), 0, "%s não tem condição no catálogo inicial." % action.id)

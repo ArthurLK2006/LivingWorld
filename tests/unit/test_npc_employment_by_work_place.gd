@@ -37,6 +37,9 @@ func _world() -> Array:
 	var definitions: EconomyDefinitions = setup.definitions
 	var sites: Array[SiteDef] = [SiteDef.new("site_bread", SETTLEMENT_A, SITE_PLACE, "bake_bread", 2)]
 	definitions.production_sites = sites
+	## LW-095e: sem os 6 postos reais (abririam 6 vagas a mais); o teste é do local desconhecido e da vaga do único local.
+	var no_posts: Array[PostDef] = []
+	definitions.service_posts = no_posts
 	var economy: EconomyModule = EconomyModule.new(false, definitions)
 	var npc_definitions: NpcModule.Definitions = NpcModule.Definitions.new()
 	npc_definitions.params = NpcParams.new()
