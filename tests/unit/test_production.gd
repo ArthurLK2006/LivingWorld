@@ -124,7 +124,9 @@ func test_the_stop_reason_is_published_once_on_the_change_and_the_resume_once_wh
 	assert_true(rig.goods.create(SITE, "flour", 6, GoodsStore.REASON_PRODUCED).ok and rig.goods.create(SITE, "bread", 388, GoodsStore.REASON_PRODUCED).ok, "O inventário do local enche: 6 de farinha (12 de peso) e 388 de pão (388), os 400 da capacidade.")
 	var full: Array[SimEvent] = rig.production.hour_step()
 	assert_eq([_types(full), (full[0] as ProductionStopped).reason], [["ProductionStopped"], ProductionBook.OUTPUT_FULL])
-	assert_eq(_types(rig.production.hour_step()), ["ProductionResumed"], "O local vendeu o excedente ao mercado e abriu espaço.")
+	assert_eq([_types(rig.production.hour_step()), rig.production.state_of(SITE)["reason"]], [[] as Array[String], ProductionBook.OUTPUT_FULL], "LW-094b, regra E (PROPOSTA): o local vendeu ao mercado até o teto e abriu espaço no inventário, mas ainda guarda lotes sem comprador e o mercado está no teto: continua parado.")
+	assert_true(rig.goods.destroy(MARKET, "bread", rig.goods.quantity_of(MARKET, "bread"), GoodsStore.REASON_CONSUMED).ok, "O pão do mercado foi comprado: o comprador voltou.")
+	assert_eq(_types(rig.production.hour_step()), ["ProductionResumed"], "Com espaço no inventário e comprador, volta a produzir.")
 	assert_true(rig.goods.is_conserved())
 
 

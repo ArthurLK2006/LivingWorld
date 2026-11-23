@@ -1,7 +1,7 @@
 class_name ProductionBook
 extends RefCounted
 ## Os locais de produção da economia (LW-092b; docs/modules/economy.md, seção 6). O `site_id` é o ID do dono do tipo `site` (a conta e o inventário dele são do `Ledger` e do `GoodsStore`). Aqui mora o que é do local: a receita, a equipe
-## (`worker_ids`, em ordem crescente), a eficiência, o progresso do lote, o estado (produzindo ou parado, com o MOTIVO) e há quantos dias cada regra de manutenção foi paga. A cada HORA (`hour_step`), por local na ordem do rodízio pela hora absoluta (LW-094b, regra R, PROPOSTA; com a hora 0, em ordem de ID): (1) compra do mercado
+## (`worker_ids`, em ordem crescente), a eficiência, o progresso do lote, o estado (produzindo ou parado, com o MOTIVO) e há quantos dias cada regra de manutenção foi paga. A cada HORA (`hour_step`), por local na ordem do rodízio pela hora absoluta (LW-094b, regra R, PROPOSTA; com a hora 0, em ordem de ID): (0) sem comprador (regra E, PROPOSTA) para em `OUTPUT_FULL` sem comprar, pagar nem produzir; (1) compra do mercado
 ## do povoado o que falta (insumos dos lotes que a equipe faz e o bem de uma regra vencida), pelo mesmo `TradeEngine`; (2) confere a equipe (`NO_WORKER`), os insumos (`NO_INPUT`) e o espaço (`OUTPUT_FULL`); (4) faz os lotes (`consumed` e `produced`);
 ## (3) paga a folha (`WagePayer`: o local paga `wage_per_hour` a cada trabalhador, motivo `salary`; sem o dinheiro todo, a regra P da LW-094b, PROPOSTA, paga as equipes inteiras que cabem e só elas rodam; sem nenhuma, `NO_FUNDS` e ninguém recebe; um `WagesPaid` por local e por hora, com a lista dos pagos), (5) vende ao mercado o produto, até o espaço do teto de compra. Sem `Ledger` (testes antigos) não há folha. Ao FIM DO DIA (`end_of_day`) cada regra de manutenção cujo prazo venceu e cujas peças o local tem é
 ## paga (as peças são destruídas com o motivo `maintenance`); com regra vencida e não paga a eficiência cai um degrau (nunca abaixo do piso, que é maior que 0), senão sobe um degrau. Eventos só na MUDANÇA de estado. Nunca sorteia nem olha o relógio. O save (`serialize`, `load_from`, `validate`) é do módulo: o bloco `production` da economia.
@@ -120,8 +120,11 @@ func hour_step(hour: int = 0) -> Array[SimEvent]:
 	for site_id: int in SupplyRules.rotated_order(site_ids(), hour):
 		var state: Dictionary = _sites[site_id]
 		var recipe: RecipeDef = _recipes[state[KEY_RECIPE]]
-		_buy_what_is_missing(site_id, state, recipe)
+		var has_buyer: bool = _has_buyer(site_id, state, recipe)
+		_buy_what_is_missing(site_id, state, recipe, _batches_by_workers(state, recipe) if has_buyer else 0)
 		var reason: String = _stop_reason(site_id, state, recipe)
+		if not has_buyer and reason != NO_WORKER:
+			reason = OUTPUT_FULL
 		if reason.is_empty():
 			var plan: Array = _payroll_plan(site_id, state, recipe, hour)
 			if int(plan[0]) < 1:
@@ -208,12 +211,25 @@ func _batches_by_workers(state: Dictionary, recipe: RecipeDef) -> int:
 	return mini(recipe.max_batches_per_hour, IntMath.floor_div((state[KEY_WORKERS] as Array).size(), recipe.workers_per_batch))
 
 
-## (1) Compra o que falta: os insumos dos lotes que a equipe faz e o bem de uma regra de manutenção vencida.
-func _buy_what_is_missing(site_id: int, state: Dictionary, recipe: RecipeDef) -> void:
+## (0) LW-094b, regra E (PROPOSTA): o local tem comprador? Não tem quando, para TODO bem de saída, já guarda a saída de um lote sem vender e o mercado do povoado não tem espaço no teto de compra para mais um lote (`SupplyRules.has_buyer`).
+## Sem mercado a regra não se aplica. Sem comprador o local não compra insumo, não paga folha nem produz (motivo `OUTPUT_FULL`) e ainda tenta vender o que tem.
+func _has_buyer(site_id: int, state: Dictionary, recipe: RecipeDef) -> bool:
+	var market_id: int = _market_of(state)
+	if market_id == IdGenerator.NO_ID:
+		return true
+	var held: Dictionary[String, int] = {}
+	var space: Dictionary[String, int] = {}
+	for good_id: String in recipe.outputs:
+		held[good_id] = _goods.quantity_of(site_id, good_id)
+		space[good_id] = _markets.buy_cap_of(market_id, good_id) - _goods.quantity_of(market_id, good_id)
+	return SupplyRules.has_buyer(recipe.outputs, held, space)
+
+
+## (1) Compra o que falta: os insumos dos `batches` lotes que a equipe faz (0 sem comprador) e o bem de uma regra de manutenção vencida.
+func _buy_what_is_missing(site_id: int, state: Dictionary, recipe: RecipeDef, batches: int) -> void:
 	var market_id: int = _market_of(state)
 	if market_id == IdGenerator.NO_ID:
 		return
-	var batches: int = _batches_by_workers(state, recipe)
 	for good_id: String in _sorted(recipe.inputs):
 		_buy(site_id, market_id, good_id, recipe.inputs[good_id] * batches - _goods.quantity_of(site_id, good_id))
 	var upkeep: Dictionary = state[KEY_UPKEEP]

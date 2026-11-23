@@ -1,6 +1,6 @@
 extends GutTest
 ## LW-094b (PROPOSTA; docs/economia/contrato-lw-094b-regras-de-oferta.md): as regras de oferta no livro de produção, com a economia REAL (data/economy) e um local de `bake_bread` no povoado A (3 por equipe, 2 de salário por hora).
-## Regra P: sem a folha inteira o local paga as equipes inteiras que cabem, só elas rodam, e o `WagesPaid` leva a lista dos pagos; nenhuma equipe sem pagamento, nenhum pagamento sem equipe; dinheiro e bens conservados em toda hora.
+## Regra E: sem comprador e com um lote parado o local não compra, não paga e não produz, e volta quando o comprador reaparece. Regra P: sem a folha inteira o local paga as equipes inteiras que cabem, só elas rodam, e o `WagesPaid` leva a lista dos pagos; nenhuma equipe sem pagamento, nenhum pagamento sem equipe; dinheiro e bens conservados em toda hora.
 
 const SEED: int = 59
 const MINUTES_PER_HOUR: int = 60
@@ -51,6 +51,13 @@ func _give_flour(module: EconomyModule, quantity: int) -> void:
 		assert_true(module.request_transfer_goods(market_id, SITE_BREAD, "flour", quantity).ok)
 
 
+func _held(module: EconomyModule, good_id: String) -> int:
+	for row: Dictionary in module.peek_inventory(SITE_BREAD).rows:
+		if row["good_id"] == good_id:
+			return int(row["quantity"])
+	return 0
+
+
 func _balances(module: EconomyModule, workers: int) -> Array[int]:
 	var money: Array[int] = []
 	for offset: int in workers:
@@ -94,6 +101,9 @@ func test_the_paid_team_rotates_with_the_absolute_hour() -> void:
 	var hours: Array[int] = []
 	for _hour: int in 3:
 		_run_hour(world)
+		var made: int = _held(module, "bread")
+		if made > 0:
+			assert_true(module.request_transfer_goods(SITE_BREAD, module.peek_market_of(SETTLEMENT_A).market_id, "bread", made).ok, "O pão feito sai do local sem dinheiro (só o isolamento da regra P da regra E).")
 		hours.append(IntMath.floor_div(world.context.clock.total_minutes(), MINUTES_PER_HOUR))
 	assert_eq(paid.size(), 2, "17 pagam uma equipe (6) duas vezes e na terceira hora sobram 5: NO_FUNDS.")
 	assert_eq(module.peek_site(SITE_BREAD).reason, ProductionBook.NO_FUNDS)
@@ -165,4 +175,30 @@ func test_the_save_keys_of_the_production_book_do_not_change() -> void:
 	keys.assign(site.keys())
 	keys.sort()
 	assert_eq(keys, SITE_KEYS, "Nenhuma chave nova no local: a rotação vem só da hora do relógio.")
+	world.teardown()
+
+
+func test_without_a_buyer_and_with_a_batch_held_the_site_keeps_its_money_and_resumes_with_the_buyer() -> void:
+	var definitions: EconomyDefinitions = _definitions(100, 3, 1)
+	definitions.is_development_build = true
+	var module: EconomyModule = EconomyModule.new(false, definitions)
+	var world: World = _world(module, 3)
+	var market_id: int = module.peek_market_of(SETTLEMENT_A).market_id
+	assert_true(module.request_transfer_goods(market_id, SITE_BREAD, "bread", 6).ok, "Um lote de pão parado no local.")
+	assert_true(module.request_set_stock(market_id, "bread", 120).ok, "O mercado no teto de compra do pão: ninguém compra.")
+	var paid: Array[WagesPaid] = []
+	world.context.events.subscribe("WagesPaid", func(event: SimEvent) -> void: paid.append(event))
+	var money: int = module.peek_balance(SITE_BREAD).balance
+	_run_hour(world)
+	var site: EconomyReplies.SiteQuery = module.peek_site(SITE_BREAD)
+	assert_eq([site.running, site.reason], [false, ProductionBook.OUTPUT_FULL], "Sem comprador: para.")
+	assert_eq(paid.size(), 0, "Sem folha.")
+	assert_eq(module.peek_balance(SITE_BREAD).balance, money, "Guarda o capital: nem folha nem compra de farinha.")
+	assert_eq([_held(module, "flour"), _held(module, "bread")], [0, 6], "Nada comprado, nada produzido.")
+	assert_true(module.request_set_stock(market_id, "bread", 100).ok, "O comprador volta: espaço para 20 pães.")
+	_run_hour(world)
+	site = module.peek_site(SITE_BREAD)
+	assert_eq([site.running, site.reason], [true, ""], "Com comprador volta a produzir na mesma hora.")
+	assert_eq(paid.size(), 1, "E paga a folha da hora em que produziu.")
+	assert_true(module.peek_conservation().ok and module.peek_goods_conservation().ok)
 	world.teardown()

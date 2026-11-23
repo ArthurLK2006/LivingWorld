@@ -1,5 +1,5 @@
 extends GutTest
-## LW-094b (PROPOSTA; docs/economia/contrato-lw-094b-regras-de-oferta.md): as funções puras das regras de oferta. Regra R: a ordem dos locais gira pela hora absoluta, com a mesma resposta para a mesma hora e equidade por janela de 2n horas.
+## LW-094b (PROPOSTA; docs/economia/contrato-lw-094b-regras-de-oferta.md): as funções puras das regras de oferta. Regra R: a ordem dos locais gira pela hora absoluta, com a mesma resposta para a mesma hora e equidade por janela de 2n horas. Regra P: a equipe paga gira. Regra E: o comprador.
 
 const IDS: Array[int] = [4, 7, 9, 12, 20]
 
@@ -54,3 +54,14 @@ func test_the_paid_team_is_a_rotating_window_of_the_workers_in_ascending_order()
 			times[worker_id] = int(times.get(worker_id, 0)) + 1
 	for worker_id: int in workers:
 		assert_eq(int(times[worker_id]), 12, "Em 24 horas cada um entra na equipe paga 12 vezes (metade).")
+
+
+func test_there_is_no_buyer_only_with_a_batch_held_and_no_room_for_another() -> void:
+	var outputs: Dictionary[String, int] = {"bread": 6}
+	assert_false(SupplyRules.has_buyer(outputs, {"bread": 6}, {"bread": 5}), "Um lote parado e espaço para menos de um lote: sem comprador.")
+	assert_true(SupplyRules.has_buyer(outputs, {"bread": 6}, {"bread": 6}), "Espaço para um lote: há comprador.")
+	assert_true(SupplyRules.has_buyer(outputs, {"bread": 5}, {"bread": 0}), "Sem lote parado ainda: produz (o primeiro lote não é barrado).")
+	var two: Dictionary[String, int] = {"a": 2, "b": 3}
+	assert_true(SupplyRules.has_buyer(two, {"a": 2, "b": 3}, {"a": 0, "b": 3}), "Um dos bens ainda tem comprador: produz.")
+	assert_false(SupplyRules.has_buyer(two, {"a": 9, "b": 9}, {"a": 1, "b": 2}), "Nenhum bem tem comprador.")
+	assert_true(SupplyRules.has_buyer({} as Dictionary[String, int], {} as Dictionary[String, int], {} as Dictionary[String, int]), "Receita sem saída.")

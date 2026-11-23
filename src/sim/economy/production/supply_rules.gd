@@ -30,3 +30,14 @@ static func rotated_team(workers: Array[int], hour: int, size: int) -> Array[int
 		team.append(workers[(start + offset) % count])
 	team.sort()
 	return team
+
+
+## E. Há comprador para a produção? `outputs` é a saída de um lote por bem, `held` o que o local já guarda e `space` o espaço do teto de compra do mercado do povoado (`buy_cap − estoque`). Sem comprador só quando, para TODO bem de saída,
+## o local já tem um lote parado (`held ≥ saída`) E o espaço é menor que um lote. Receita sem saída sempre tem comprador.
+static func has_buyer(outputs: Dictionary[String, int], held: Dictionary[String, int], space: Dictionary[String, int]) -> bool:
+	if outputs.is_empty():
+		return true
+	for good_id: String in outputs:
+		if int(held.get(good_id, 0)) < outputs[good_id] or int(space.get(good_id, 0)) >= outputs[good_id]:
+			return true
+	return false
