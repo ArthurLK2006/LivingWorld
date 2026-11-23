@@ -261,18 +261,36 @@ func _stop_reason(site_id: int, state: Dictionary, recipe: RecipeDef) -> String:
 
 
 ## (3) Quantas equipes rodam e quem recebe: `[equipes, pagos]`. Se a folha inteira cabe na conta do local (ou não há `Ledger` ou salário), todas as equipes rodam e todos recebem, como antes. Senão (LW-094b, regra P, PROPOSTA: folha parcial
-## por equipe), o MAIOR número de equipes inteiras que cabe, com os trabalhadores girados pela hora absoluta (`SupplyRules.rotated_team`); 0 equipes = `NO_FUNDS` (ninguém recebe, nada roda, ninguém é demitido: DEC-169).
+## por equipe), o MAIOR número de equipes inteiras que cabe no dinheiro E que o local consegue rodar nesta hora (no máximo os lotes que os insumos e o espaço permitem, `_batches_possible`: assim nenhum trabalho pago se perde no teto do
+## progresso), com os trabalhadores girados pela hora absoluta (`SupplyRules.rotated_team`); se a janela da hora tem uma conta fechada ou no teto de saldo, tenta as janelas seguintes. 0 equipes = `NO_FUNDS` (ninguém recebe, nada roda,
+## ninguém é demitido: DEC-169).
 func _payroll_plan(site_id: int, state: Dictionary, recipe: RecipeDef, hour: int) -> Array:
 	var teams: int = _batches_by_workers(state, recipe)
 	var workers: Array[int] = []
 	workers.assign(state[KEY_WORKERS])
 	if _payer == null or _payer.can_pay(site_id, recipe.wage_per_hour, workers):
 		return [teams, workers]
-	for paid_teams: int in range(teams, 0, -1):
-		var team: Array[int] = SupplyRules.rotated_team(workers, hour, paid_teams * recipe.workers_per_batch)
-		if _payer.can_pay(site_id, recipe.wage_per_hour, team):
-			return [paid_teams, team]
+	for paid_teams: int in range(mini(teams, _batches_possible(site_id, recipe)), 0, -1):
+		var size: int = paid_teams * recipe.workers_per_batch
+		for shift: int in workers.size() if size < workers.size() else 0:
+			var team: Array[int] = SupplyRules.rotated_team(workers, hour + shift, size)
+			if _payer.can_pay(site_id, recipe.wage_per_hour, team):
+				return [paid_teams, team]
 	return [0, [] as Array[int]]
+
+
+## Quantos lotes os insumos que o local tem e o espaço do inventário dele permitem fazer em seguida (a mesma conta de `_batch_is_possible`, lote após lote, sem mexer em nada).
+func _batches_possible(site_id: int, recipe: RecipeDef) -> int:
+	var batches: int = recipe.max_batches_per_hour
+	var delta: int = 0
+	for good_id: String in recipe.inputs:
+		batches = mini(batches, IntMath.floor_div(_goods.quantity_of(site_id, good_id), recipe.inputs[good_id]))
+		delta -= recipe.inputs[good_id] * _goods_weight(good_id)
+	for good_id: String in recipe.outputs:
+		delta += recipe.outputs[good_id] * _goods_weight(good_id)
+	if delta > 0:
+		batches = mini(batches, IntMath.floor_div(_goods.capacity_of(site_id) - _goods.weight_of(site_id), delta))
+	return maxi(batches, 0)
 
 
 ## (3) Paga a folha de `payees` (só depois de `_payroll_plan`) e anuncia UM `WagesPaid` do local nesta hora, com a lista dos pagos.
