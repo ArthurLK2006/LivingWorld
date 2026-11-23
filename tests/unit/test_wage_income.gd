@@ -149,6 +149,24 @@ func test_the_wage_income_ignores_the_dead_the_unknown_and_other_events() -> voi
 	world.teardown()
 
 
+## LW-094b (PROPOSTA): com a lista dos pagos preenchida (folha parcial) só eles têm a `income` aliviada; quem está no local e não recebeu, não.
+func test_only_the_paid_workers_of_the_event_get_the_relief() -> void:
+	var parts: Array = _world()
+	var world: World = parts[0]
+	var economy: EconomyModule = parts[1]
+	var site_id: int = economy.peek_site_at(PLACE_SITE).workplace_id
+	var paid_one: NpcState = NpcState.new(100)
+	var unpaid_one: NpcState = NpcState.new(101)
+	for state: NpcState in [paid_one, unpaid_one]:
+		state.need_values = PackedInt64Array([0, 0, 0, START_INCOME, 0])
+		state.need_remainders = PackedInt64Array([0, 0, 0, 0, 0])
+		assert_true(economy.request_open_owner(state.npc_id, "npc", PLACE_SITE).ok)
+	var npcs: Dictionary[int, NpcState] = {100: paid_one, 101: unpaid_one}
+	WageIncome.new(npcs, _need_defs(), economy).on_wages_paid(WagesPaid.new(site_id, SITE_WAGE, [100] as Array[int]), 0)
+	assert_eq([paid_one.need_values[INCOME], unpaid_one.need_values[INCOME]], [START_INCOME - SITE_WAGE, START_INCOME], "Só o pago é aliviado.")
+	world.teardown()
+
+
 func test_a_module_without_an_economy_does_not_listen_to_wages() -> void:
 	var npc: NpcModule = NpcModule.new(_need_defs())
 	var clock: SimClock = SimClock.new()

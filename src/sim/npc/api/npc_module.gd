@@ -250,7 +250,7 @@ func on_alarm_raised(event: SimEvent) -> void:
 	_runtime.react_to_alarm(event, _sorted_ids())
 
 
-## Reação ao evento `WagesPaid` (LW-095): alivia `income` dos trabalhadores do local que foi pago, em ordem de ID. Sem economia o módulo nem ouve o evento.
+## Reação ao evento `WagesPaid` (LW-095): alivia `income` dos trabalhadores PAGOS, em ordem de ID: os da lista `paid_worker_ids` do evento quando ela vem preenchida (LW-094b, folha parcial, PROPOSTA), senão todos os do local. Sem economia o módulo nem ouve o evento.
 func on_wages_paid(event: SimEvent) -> void:
 	if _wage_income != null and _ctx != null:
 		_wage_income.on_wages_paid(event, _ctx.clock.total_minutes())

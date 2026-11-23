@@ -1,9 +1,9 @@
 class_name ProductionBook
 extends RefCounted
 ## Os locais de produção da economia (LW-092b; docs/modules/economy.md, seção 6). O `site_id` é o ID do dono do tipo `site` (a conta e o inventário dele são do `Ledger` e do `GoodsStore`). Aqui mora o que é do local: a receita, a equipe
-## (`worker_ids`, em ordem crescente), a eficiência, o progresso do lote, o estado (produzindo ou parado, com o MOTIVO) e há quantos dias cada regra de manutenção foi paga. A cada HORA (`hour_step`), por local em ordem de ID: (1) compra do mercado
+## (`worker_ids`, em ordem crescente), a eficiência, o progresso do lote, o estado (produzindo ou parado, com o MOTIVO) e há quantos dias cada regra de manutenção foi paga. A cada HORA (`hour_step`), por local na ordem do rodízio pela hora absoluta (LW-094b, regra R, PROPOSTA; com a hora 0, em ordem de ID): (0) sem comprador (regra E, PROPOSTA) para em `OUTPUT_FULL` sem comprar, pagar nem produzir; (1) compra do mercado
 ## do povoado o que falta (insumos dos lotes que a equipe faz e o bem de uma regra vencida), pelo mesmo `TradeEngine`; (2) confere a equipe (`NO_WORKER`), os insumos (`NO_INPUT`) e o espaço (`OUTPUT_FULL`); (4) faz os lotes (`consumed` e `produced`);
-## (3) paga a folha (`WagePayer`: o local paga `wage_per_hour` a cada trabalhador, tudo ou nada, motivo `salary`; sem o dinheiro todo o local para por `NO_FUNDS` e ninguém recebe; um `WagesPaid` por local e por hora), (5) vende ao mercado o produto, até o espaço do teto de compra. Sem `Ledger` (testes antigos) não há folha. Ao FIM DO DIA (`end_of_day`) cada regra de manutenção cujo prazo venceu e cujas peças o local tem é
+## (3) paga a folha (`WagePayer`: o local paga `wage_per_hour` a cada trabalhador, motivo `salary`; sem o dinheiro todo, a regra P da LW-094b, PROPOSTA, paga as equipes inteiras que cabem e só elas rodam; sem nenhuma, `NO_FUNDS` e ninguém recebe; um `WagesPaid` por local e por hora, com a lista dos pagos), (5) vende ao mercado o produto, até o espaço do teto de compra. Sem `Ledger` (testes antigos) não há folha. Ao FIM DO DIA (`end_of_day`) cada regra de manutenção cujo prazo venceu e cujas peças o local tem é
 ## paga (as peças são destruídas com o motivo `maintenance`); com regra vencida e não paga a eficiência cai um degrau (nunca abaixo do piso, que é maior que 0), senão sobe um degrau. Eventos só na MUDANÇA de estado. Nunca sorteia nem olha o relógio. O save (`serialize`, `load_from`, `validate`) é do módulo: o bloco `production` da economia.
 
 const NO_WORKER: String = "NO_WORKER"
@@ -34,6 +34,7 @@ var _goods: GoodsStore
 var _markets: MarketBook
 var _engine: TradeEngine
 var _payer: WagePayer
+var _ledger: Ledger
 var _sites: Dictionary[int, Dictionary] = {}
 
 
@@ -46,6 +47,7 @@ func _init(book: OwnerBook, goods: GoodsStore, markets: MarketBook, engine: Trad
 	_params = params
 	_max_order = max_order_quantity
 	_payer = null if ledger == null else WagePayer.new(book, ledger)
+	_ledger = ledger
 
 
 ## Registra o local `site_id` (dono do tipo `site` já aberto): produzindo, eficiência cheia, sem equipe, nenhuma regra paga ainda.
@@ -113,19 +115,25 @@ func state_of(site_id: int) -> Dictionary:
 	return state
 
 
-## A HORA de produção de todos os locais; devolve os eventos (`ProductionStopped` e `ProductionResumed`, só na mudança) para quem chama publicar.
-func hour_step() -> Array[SimEvent]:
+## A HORA de produção de todos os locais; devolve os eventos (`ProductionStopped` e `ProductionResumed`, só na mudança) para quem chama publicar. `hour` é a hora absoluta que a economia processa (LW-094b, regra R, PROPOSTA): a ordem dos
+## locais gira por ela (`SupplyRules.rotated_order`); com 0 (o padrão dos testes de livro) é a ordem crescente de antes.
+func hour_step(hour: int = 0) -> Array[SimEvent]:
 	var events: Array[SimEvent] = []
-	for site_id: int in site_ids():
+	for site_id: int in SupplyRules.rotated_order(site_ids(), hour):
 		var state: Dictionary = _sites[site_id]
 		var recipe: RecipeDef = _recipes[state[KEY_RECIPE]]
-		_buy_what_is_missing(site_id, state, recipe)
+		var has_buyer: bool = _has_buyer(site_id, state, recipe)
+		_buy_what_is_missing(site_id, state, recipe, _batches_by_workers(state, recipe) if has_buyer else 0)
 		var reason: String = _stop_reason(site_id, state, recipe)
-		if reason.is_empty() and not _can_pay_wages(site_id, state, recipe):
-			reason = NO_FUNDS
+		if not has_buyer and reason != NO_WORKER:
+			reason = OUTPUT_FULL
 		if reason.is_empty():
-			_pay_wages(site_id, state, recipe, events)
-			_run_batches(site_id, state, recipe)
+			var plan: Array = _payroll_plan(site_id, state, recipe, hour)
+			if int(plan[0]) < 1:
+				reason = NO_FUNDS
+			else:
+				_pay_wages(site_id, recipe, plan[1], events)
+				_run_batches(site_id, state, recipe, int(plan[0]))
 		_sell_surplus(site_id, state, recipe)
 		var was_stopped: bool = state[KEY_STOPPED]
 		state[KEY_STOPPED] = not reason.is_empty()
@@ -205,12 +213,27 @@ func _batches_by_workers(state: Dictionary, recipe: RecipeDef) -> int:
 	return mini(recipe.max_batches_per_hour, IntMath.floor_div((state[KEY_WORKERS] as Array).size(), recipe.workers_per_batch))
 
 
-## (1) Compra o que falta: os insumos dos lotes que a equipe faz e o bem de uma regra de manutenção vencida.
-func _buy_what_is_missing(site_id: int, state: Dictionary, recipe: RecipeDef) -> void:
+## (0) LW-094b, regra E (PROPOSTA): o local tem comprador? Não tem quando, para TODO bem de saída, já guarda a saída de um lote sem vender e o mercado do povoado não COMPRARIA mais um lote agora (`SupplyRules.has_buyer`): a cotação
+## de venda de um lote (`TradeEngine.quote`, a mesma conferência da venda: teto de compra, regras, ordem) falha, ou o saldo do mercado não paga o total cotado (o `MARKET_NO_FUNDS` da venda). Sem mercado a regra não se aplica. Sem
+## comprador o local não compra insumo, não paga folha nem produz (motivo `OUTPUT_FULL`) e ainda tenta vender o que tem.
+func _has_buyer(site_id: int, state: Dictionary, recipe: RecipeDef) -> bool:
+	var market_id: int = _market_of(state)
+	if market_id == IdGenerator.NO_ID:
+		return true
+	var held: Dictionary[String, int] = {}
+	var sellable: Dictionary[String, bool] = {}
+	for good_id: String in recipe.outputs:
+		held[good_id] = _goods.quantity_of(site_id, good_id)
+		var quoted: TradeEngine.Outcome = _engine.quote(market_id, good_id, mini(recipe.outputs[good_id], _max_order), TradeEngine.SIDE_SELL, site_id)
+		sellable[good_id] = quoted.result.ok and (_ledger == null or _ledger.balance_of(market_id) >= quoted.total)
+	return SupplyRules.has_buyer(recipe.outputs, held, sellable)
+
+
+## (1) Compra o que falta: os insumos dos `batches` lotes que a equipe faz (0 sem comprador) e o bem de uma regra de manutenção vencida.
+func _buy_what_is_missing(site_id: int, state: Dictionary, recipe: RecipeDef, batches: int) -> void:
 	var market_id: int = _market_of(state)
 	if market_id == IdGenerator.NO_ID:
 		return
-	var batches: int = _batches_by_workers(state, recipe)
 	for good_id: String in _sorted(recipe.inputs):
 		_buy(site_id, market_id, good_id, recipe.inputs[good_id] * batches - _goods.quantity_of(site_id, good_id))
 	var upkeep: Dictionary = state[KEY_UPKEEP]
@@ -241,25 +264,53 @@ func _stop_reason(site_id: int, state: Dictionary, recipe: RecipeDef) -> String:
 	return ""
 
 
-## (3) A folha da hora cabe na conta do local? Sem `Ledger` nunca há folha.
-func _can_pay_wages(site_id: int, state: Dictionary, recipe: RecipeDef) -> bool:
-	return _payer == null or _payer.can_pay(site_id, recipe.wage_per_hour, state[KEY_WORKERS])
+## (3) Quantas equipes rodam e quem recebe: `[equipes, pagos]`. Se a folha inteira cabe na conta do local (ou não há `Ledger` ou salário), todas as equipes rodam e todos recebem, como antes. Senão (LW-094b, regra P, PROPOSTA: folha parcial
+## por equipe), o MAIOR número de equipes inteiras que cabe no dinheiro E que o local consegue rodar nesta hora (no máximo os lotes que os insumos e o espaço permitem, `_batches_possible`: assim nenhum trabalho pago se perde no teto do
+## progresso), com os trabalhadores girados pela hora absoluta (`SupplyRules.rotated_team`); se a janela da hora tem uma conta fechada ou no teto de saldo, tenta as janelas seguintes. 0 equipes = `NO_FUNDS` (ninguém recebe, nada roda,
+## ninguém é demitido: DEC-169).
+func _payroll_plan(site_id: int, state: Dictionary, recipe: RecipeDef, hour: int) -> Array:
+	var teams: int = _batches_by_workers(state, recipe)
+	var workers: Array[int] = []
+	workers.assign(state[KEY_WORKERS])
+	if _payer == null or _payer.can_pay(site_id, recipe.wage_per_hour, workers):
+		return [teams, workers]
+	for paid_teams: int in range(mini(teams, _batches_possible(site_id, recipe)), 0, -1):
+		var size: int = paid_teams * recipe.workers_per_batch
+		for shift: int in workers.size() if size < workers.size() else 0:
+			var team: Array[int] = SupplyRules.rotated_team(workers, hour + shift, size)
+			if _payer.can_pay(site_id, recipe.wage_per_hour, team):
+				return [paid_teams, team]
+	return [0, [] as Array[int]]
 
 
-## (3) Paga a folha (só depois de `_can_pay_wages`) e anuncia UM `WagesPaid` do local nesta hora.
-func _pay_wages(site_id: int, state: Dictionary, recipe: RecipeDef, events: Array[SimEvent]) -> void:
+## Quantos lotes os insumos que o local tem e o espaço do inventário dele permitem fazer em seguida (a mesma conta de `_batch_is_possible`, lote após lote, sem mexer em nada).
+func _batches_possible(site_id: int, recipe: RecipeDef) -> int:
+	var batches: int = recipe.max_batches_per_hour
+	var delta: int = 0
+	for good_id: String in recipe.inputs:
+		batches = mini(batches, IntMath.floor_div(_goods.quantity_of(site_id, good_id), recipe.inputs[good_id]))
+		delta -= recipe.inputs[good_id] * _goods_weight(good_id)
+	for good_id: String in recipe.outputs:
+		delta += recipe.outputs[good_id] * _goods_weight(good_id)
+	if delta > 0:
+		batches = mini(batches, IntMath.floor_div(_goods.capacity_of(site_id) - _goods.weight_of(site_id), delta))
+	return maxi(batches, 0)
+
+
+## (3) Paga a folha de `payees` (só depois de `_payroll_plan`) e anuncia UM `WagesPaid` do local nesta hora, com a lista dos pagos.
+func _pay_wages(site_id: int, recipe: RecipeDef, payees: Array[int], events: Array[SimEvent]) -> void:
 	if _payer == null or recipe.wage_per_hour <= 0:
 		return
-	var paid: Result = _payer.pay(site_id, recipe.wage_per_hour, state[KEY_WORKERS])
+	var paid: Result = _payer.pay(site_id, recipe.wage_per_hour, payees)
 	if not paid.ok:
-		push_error("ProductionBook.hour_step: a folha do local %d não foi paga por inteiro: %s" % [site_id, paid.message])
+		push_error("ProductionBook.hour_step: a folha do local %d não foi paga: %s" % [site_id, paid.message])
 		return
-	events.append(WagesPaid.new(site_id, recipe.wage_per_hour))
+	events.append(WagesPaid.new(site_id, recipe.wage_per_hour, payees))
 
 
-## (4) Soma `eficiência × lotes por hora` ao progresso e faz um lote por 10000 acumulados, até onde os insumos e o espaço deixam; o resto passa para a hora seguinte.
-func _run_batches(site_id: int, state: Dictionary, recipe: RecipeDef) -> void:
-	var progress: int = int(state[KEY_PROGRESS]) + int(state[KEY_EFFICIENCY]) * _batches_by_workers(state, recipe)
+## (4) Soma `eficiência × equipes que rodam` (as pagas) ao progresso e faz um lote por 10000 acumulados, até onde os insumos e o espaço deixam; o resto passa para a hora seguinte.
+func _run_batches(site_id: int, state: Dictionary, recipe: RecipeDef, teams: int) -> void:
+	var progress: int = int(state[KEY_PROGRESS]) + int(state[KEY_EFFICIENCY]) * teams
 	while progress >= FULL_EFFICIENCY_BP and _batch_is_possible(site_id, recipe):
 		for good_id: String in recipe.inputs:
 			_goods.destroy(site_id, good_id, recipe.inputs[good_id], GoodsStore.REASON_CONSUMED)

@@ -166,7 +166,7 @@
 	"tools.economy_inspector.limit_scarcity": "Limitação: as causas das faltas (cadeias de causa de escassez) ainda não aparecem; dependem da LW-104, que não existe.",
 	"tools.economy_inspector.stop.no_worker": "sem trabalhador",
 	"tools.economy_inspector.stop.no_input": "falta insumo",
-	"tools.economy_inspector.stop.output_full": "depósito de saída cheio",
+	"tools.economy_inspector.stop.output_full": "saída parada: depósito cheio ou sem comprador",
 	"tools.economy_inspector.stop.no_funds": "sem dinheiro para pagar a equipe",
 	"tools.economy_inspector.ledger.game_start": "dinheiro inicial do jogo",
 	"tools.economy_inspector.ledger.trade": "compra e venda",
