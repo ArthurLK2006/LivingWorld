@@ -1,7 +1,7 @@
 class_name ProductionBook
 extends RefCounted
 ## Os locais de produção da economia (LW-092b; docs/modules/economy.md, seção 6). O `site_id` é o ID do dono do tipo `site` (a conta e o inventário dele são do `Ledger` e do `GoodsStore`). Aqui mora o que é do local: a receita, a equipe
-## (`worker_ids`, em ordem crescente), a eficiência, o progresso do lote, o estado (produzindo ou parado, com o MOTIVO) e há quantos dias cada regra de manutenção foi paga. A cada HORA (`hour_step`), por local em ordem de ID: (1) compra do mercado
+## (`worker_ids`, em ordem crescente), a eficiência, o progresso do lote, o estado (produzindo ou parado, com o MOTIVO) e há quantos dias cada regra de manutenção foi paga. A cada HORA (`hour_step`), por local na ordem do rodízio pela hora absoluta (LW-094b, regra R, PROPOSTA; com a hora 0, em ordem de ID): (1) compra do mercado
 ## do povoado o que falta (insumos dos lotes que a equipe faz e o bem de uma regra vencida), pelo mesmo `TradeEngine`; (2) confere a equipe (`NO_WORKER`), os insumos (`NO_INPUT`) e o espaço (`OUTPUT_FULL`); (4) faz os lotes (`consumed` e `produced`);
 ## (3) paga a folha (`WagePayer`: o local paga `wage_per_hour` a cada trabalhador, tudo ou nada, motivo `salary`; sem o dinheiro todo o local para por `NO_FUNDS` e ninguém recebe; um `WagesPaid` por local e por hora), (5) vende ao mercado o produto, até o espaço do teto de compra. Sem `Ledger` (testes antigos) não há folha. Ao FIM DO DIA (`end_of_day`) cada regra de manutenção cujo prazo venceu e cujas peças o local tem é
 ## paga (as peças são destruídas com o motivo `maintenance`); com regra vencida e não paga a eficiência cai um degrau (nunca abaixo do piso, que é maior que 0), senão sobe um degrau. Eventos só na MUDANÇA de estado. Nunca sorteia nem olha o relógio. O save (`serialize`, `load_from`, `validate`) é do módulo: o bloco `production` da economia.
@@ -113,10 +113,11 @@ func state_of(site_id: int) -> Dictionary:
 	return state
 
 
-## A HORA de produção de todos os locais; devolve os eventos (`ProductionStopped` e `ProductionResumed`, só na mudança) para quem chama publicar.
-func hour_step() -> Array[SimEvent]:
+## A HORA de produção de todos os locais; devolve os eventos (`ProductionStopped` e `ProductionResumed`, só na mudança) para quem chama publicar. `hour` é a hora absoluta que a economia processa (LW-094b, regra R, PROPOSTA): a ordem dos
+## locais gira por ela (`SupplyRules.rotated_order`); com 0 (o padrão dos testes de livro) é a ordem crescente de antes.
+func hour_step(hour: int = 0) -> Array[SimEvent]:
 	var events: Array[SimEvent] = []
-	for site_id: int in site_ids():
+	for site_id: int in SupplyRules.rotated_order(site_ids(), hour):
 		var state: Dictionary = _sites[site_id]
 		var recipe: RecipeDef = _recipes[state[KEY_RECIPE]]
 		_buy_what_is_missing(site_id, state, recipe)
