@@ -22,6 +22,7 @@ const EXPIRED: String = ContractBook.STATE_EXPIRED
 ## Os números dos contratos do teste (os do jogo são [HIP]): recompensa, quantidade e prazos em minutos depois de agora. O curto vence ANTES da primeira hora cheia, o médio entre a primeira e a segunda, e o longo bem depois.
 const REWARD: int = 12
 const QUANTITY: int = 2
+const POSTED_REWARD: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B): 5 pães, recompensa 53; os contratos do teste pagam `REWARD`.
 const SHORT_MINUTES: int = 40
 const MEDIUM_MINUTES: int = 90
 const LONG_MINUTES: int = 600
@@ -80,8 +81,13 @@ func before_all() -> void:
 
 ## Um jogo só com o personagem e a economia (sem NPCs), com o jogador junto ao mercado A e com a conta aberta; o relógio está no minuto 0.
 func before_each() -> void:
+	_start(_setup)
+
+
+## O jogo novo com a economia `setup`, o jogador nascido junto ao mercado A e a conta aberta.
+func _start(setup: EconomySetup) -> void:
 	_host = SimulationHostNode.new()
-	_host.start_new_game(SEED, _terrain, [], null, 0, _setup)
+	_host.start_new_game(SEED, _terrain, [], null, 0, setup)
 	_bridge = SimBridge.new(_host, _terrain, _places)
 	_economy = _host.economy
 	_actor_id = _bridge.request_spawn_character().actor_id
@@ -143,9 +149,27 @@ func _build_board() -> Dictionary[String, int]:
 	ids["late_open"] = _post(_market_a, _market_b, MEDIUM_MINUTES)
 	ids["fresh_open"] = _post(_market_c, _market_a, LONG_MINUTES, WOOD, 1)
 	_host.runner.run_steps(BOARD_MINUTE)
-	var economy_states: Array[String] = [_state_of(ids["completed"]), _state_of(ids["failed"]), _state_of(ids["late_accepted"]), _state_of(ids["carried"]), _state_of(ids["late_open"]), _state_of(ids["fresh_open"])]
-	assert_eq([_now(), economy_states], [BOARD_MINUTE, [COMPLETED, EXPIRED, ACCEPTED, ACCEPTED, OPEN, OPEN] as Array[String]], "Pré-condição: o que a economia já venceu e o que ela ainda chama de aberto ou aceito.")
+	ids["posted"] = _posted_bread(_market_a)
+	var economy_states: Array[String] = [_state_of(ids["completed"]), _state_of(ids["failed"]), _state_of(ids["late_accepted"]), _state_of(ids["carried"]), _state_of(ids["late_open"]), _state_of(ids["fresh_open"]), _state_of(ids["posted"])]
+	assert_eq([_now(), economy_states], [BOARD_MINUTE, [COMPLETED, EXPIRED, ACCEPTED, ACCEPTED, OPEN, OPEN, OPEN] as Array[String]], "Pré-condição: o que a economia já venceu e o que ela ainda chama de aberto ou aceito (o último é o pão que o postador pôs no mercado A).")
 	return ids
+
+
+## O contrato de pão que o POSTADOR pôs no mercado `market_id` (o `open` de entrega que o mercado emitiu com a recompensa do modelo; os do teste pagam `REWARD`): o ID, ou NO_ID se não há.
+func _posted_bread(market_id: int) -> int:
+	for contract: EconomyReplies.ContractQuery in _economy.peek_contracts().contracts:
+		if contract.kind == ContractBook.DELIVERY and contract.issuer_id == market_id and contract.reward == POSTED_REWARD:
+			return contract.contract_id
+	return IdGenerator.NO_ID
+
+
+## O mesmo jogo SEM a tabela do postador (o jogo de antes da LW-107c3): o quadro só tem o que o teste posta. Para os testes cuja premissa é o quadro SEM entrega nenhuma.
+func _restart_without_the_poster() -> void:
+	_host.runner.finish()
+	_host.free()
+	var quiet: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR)
+	quiet.definitions.contract_templates.clear()
+	_start(quiet)
 
 
 func _row(contract_id: int) -> ContractsViewModel.Row:
@@ -213,7 +237,7 @@ func test_the_rows_are_the_bridges_in_its_order_with_the_remaining_time_taken_fr
 	assert_true(_model.refresh(_bridge, _actor_id, _market_a))
 	var shown: Array[ContractsViewModel.Row] = _model.rows()
 	assert_eq([_model.is_valid(), _model.error_code(), _model.shown_market_id(), board.now], [true, "", _market_a, BOARD_MINUTE], "O `now` da resposta é o relógio de `peek_time()`.")
-	assert_eq([_ids(shown), board.rows.size()], [[ids["completed"], ids["failed"], ids["late_accepted"], ids["carried"], ids["late_open"], ids["fresh_open"]] as Array[int], 6], "Seis linhas, na ordem crescente de contrato.")
+	assert_eq([_ids(shown), board.rows.size()], [[ids["completed"], ids["failed"], ids["late_accepted"], ids["carried"], ids["late_open"], ids["fresh_open"], ids["posted"]] as Array[int], 7], "Sete linhas (as seis do teste e o pão do postador), na ordem crescente de contrato.")
 	for index: int in mini(shown.size(), board.rows.size()):
 		var row: ContractsViewModel.Row = shown[index]
 		var source: BridgePlayerContractsReplies.ContractBoardRow = board.rows[index]
@@ -254,7 +278,7 @@ func test_the_display_state_is_expired_for_every_contract_past_its_deadline_exce
 func test_the_rows_split_into_available_and_mine_with_the_accepted_ones_first() -> void:
 	var ids: Dictionary[String, int] = _build_board()
 	assert_true(_model.refresh(_bridge, _actor_id, _market_a))
-	assert_eq(_ids(_model.available()), [ids["late_open"], ids["fresh_open"]] as Array[int], "Disponíveis: os `open`, inclusive o de prazo passado, na ordem da ponte.")
+	assert_eq(_ids(_model.available()), [ids["late_open"], ids["fresh_open"], ids["posted"]] as Array[int], "Disponíveis: os `open`, inclusive o de prazo passado, na ordem da ponte (o pão do postador por último).")
 	assert_eq(_ids(_model.mine()), [ids["late_accepted"], ids["carried"], ids["completed"], ids["failed"]] as Array[int], "Meus contratos: os `accepted` (inclusive o de prazo passado) e depois os terminados, cada grupo na ordem da ponte.")
 	assert_eq(_model.available().size() + _model.mine().size(), _model.rows().size(), "Toda linha cai numa seção, uma vez só.")
 
@@ -265,14 +289,14 @@ func test_owned_is_how_much_the_player_has_of_the_rows_good() -> void:
 	var held: Array = []
 	for row: ContractsViewModel.Row in _model.rows():
 		held.append(row.owned)
-	assert_eq(held, [0, 0, 0, 0, 0, 0], "Sem bem nenhum, `owned` é 0 em toda linha.")
+	assert_eq(held, [0, 0, 0, 0, 0, 0, 0], "Sem bem nenhum, `owned` é 0 em toda linha.")
 	_give(BREAD, 3)
 	_give(WOOD, 1)
 	assert_true(_model.refresh(_bridge, _actor_id, _market_a))
 	held = []
 	for row: ContractsViewModel.Row in _model.rows():
 		held.append([row.good_id, row.owned])
-	assert_eq(held, [[BREAD, 3], [BREAD, 3], [BREAD, 3], [BREAD, 3], [BREAD, 3], [WOOD, 1]], "Cada linha mostra quanto o jogador tem do bem DELA.")
+	assert_eq(held, [[BREAD, 3], [BREAD, 3], [BREAD, 3], [BREAD, 3], [BREAD, 3], [WOOD, 1], [BREAD, 3]], "Cada linha mostra quanto o jogador tem do bem DELA (a última é o pão do postador).")
 
 
 func test_can_deliver_is_true_only_for_my_accepted_contract_to_this_market_with_enough_goods_and_time() -> void:
@@ -311,10 +335,20 @@ func test_the_destination_settlement_comes_from_the_markets_and_is_empty_when_th
 	assert_eq([_row(to_b).destination_settlement_id, _row(to_c).destination_settlement_id, _row(to_player).destination_settlement_id], [SETTLEMENT_B, SETTLEMENT_C, ""])
 
 
+## A premissa é o quadro SEM entrega nenhuma: roda o jogo SEM a tabela do postador (como era antes da LW-107c3); o quadro do jogo real, com o pão do postador, é o teste seguinte.
 func test_an_empty_board_is_a_valid_model_with_no_rows() -> void:
+	_restart_without_the_poster()
 	_host.runner.run_steps(MINUTES_PER_HOUR)
 	assert_true(_model.refresh(_bridge, _actor_id, _market_a), "Quadro vazio é sucesso, não erro: o jogo ainda não tem contrato de entrega nenhum.")
 	assert_eq([_model.is_valid(), _model.error_code(), _model.shown_market_id(), _model.rows().size(), _model.available().size(), _model.mine().size()], [true, "", _market_a, 0, 0, 0])
+
+
+func test_the_board_of_the_real_game_has_the_bread_the_poster_posted_as_its_only_row() -> void:
+	_host.runner.run_steps(MINUTES_PER_HOUR)
+	var posted: int = _posted_bread(_market_a)
+	assert_ne(posted, IdGenerator.NO_ID, "Pré-condição: na hora cheia o postador pôs o pão no mercado A.")
+	assert_true(_model.refresh(_bridge, _actor_id, _market_a), "O quadro com o pão do postador é sucesso.")
+	assert_eq([_model.is_valid(), _model.error_code(), _model.shown_market_id(), _ids(_model.rows()), _ids(_model.available()), _ids(_model.mine())], [true, "", _market_a, [posted] as Array[int], [posted] as Array[int], [] as Array[int]], "Uma linha só, disponível, e nenhuma é minha.")
 
 
 func test_every_refusal_returns_false_with_the_bridges_code_and_leaves_the_model_empty() -> void:

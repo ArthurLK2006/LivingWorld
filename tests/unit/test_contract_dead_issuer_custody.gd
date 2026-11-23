@@ -6,6 +6,7 @@ extends GutTest
 const SEED: int = 109
 const MINUTES_PER_HOUR: int = 60
 const SETTLEMENT_A: String = "test_settlement_a"
+const POSTED_ESCROW: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B: 5 pães de valor-base 10 mais 5%): o mercado retém 53 na custódia enquanto o contrato dele está aberto.
 const SETTLEMENT_B: String = "test_settlement_b"
 const PLACE_B: String = "b_work_01"
 const PLACE_B_OTHER: String = "b_work_02"
@@ -90,7 +91,7 @@ func test_a_live_issuer_still_gets_the_custody_back_and_the_markets_do_not_move(
 	var contract_id: int = _labor(economy, PLACE_B)
 	_run_minutes(world, DEADLINE_HOURS * MINUTES_PER_HOUR)
 	assert_eq([economy.peek_contract(contract_id).state, _balance(economy, contract_id), _balance(economy, ISSUER)], ["expired", 0, NPC_START_MONEY], "A custódia voltou inteira ao emissor vivo.")
-	assert_eq([_balance(economy, market_a), _balance(economy, market_b)], markets_before, "Nenhum mercado recebeu nada.")
+	assert_eq([_balance(economy, market_a), _balance(economy, market_b)], [markets_before[0] - POSTED_ESCROW, markets_before[1] - POSTED_ESCROW], "Nenhum mercado recebeu nada (só pagaram o pão do postador).")
 	_assert_books_close(economy)
 	world.teardown()
 
@@ -107,7 +108,7 @@ func test_a_dead_issuer_labor_custody_goes_to_the_market_of_the_work_place_settl
 	_kill_issuer(world)
 	_run_minutes(world, DEADLINE_HOURS * MINUTES_PER_HOUR)
 	assert_eq([economy.peek_contract(contract_id).state, _balance(economy, contract_id), failed.size()], ["expired", 0, 1], "O contrato vence, o evento de sempre sai e a custódia esvazia.")
-	assert_eq([_balance(economy, market_a), _balance(economy, market_b)], [markets_before[0], markets_before[1] + REWARD], "O mercado do povoado B (o do local de trabalho) recebeu a recompensa; o do A não.")
+	assert_eq([_balance(economy, market_a), _balance(economy, market_b)], [markets_before[0] - POSTED_ESCROW, markets_before[1] - POSTED_ESCROW + REWARD], "O mercado do povoado B (o do local de trabalho) recebeu a recompensa; o do A não (os dois pagaram o pão do postador).")
 	_assert_books_close(economy)
 	world.teardown()
 
@@ -123,7 +124,7 @@ func test_a_dead_issuer_delivery_custody_goes_to_the_market_of_the_destination_s
 	_kill_issuer(world)
 	_run_minutes(world, DEADLINE_HOURS * MINUTES_PER_HOUR)
 	assert_eq([economy.peek_contract(contract_id).state, _balance(economy, contract_id)], ["expired", 0])
-	assert_eq([_balance(economy, market_a), _balance(economy, market_b)], [markets_before[0], markets_before[1] + REWARD], "O destino é o mercado do povoado B: a recompensa fica lá.")
+	assert_eq([_balance(economy, market_a), _balance(economy, market_b)], [markets_before[0] - POSTED_ESCROW, markets_before[1] - POSTED_ESCROW + REWARD], "O destino é o mercado do povoado B: a recompensa fica lá (os dois pagaram o pão do postador).")
 	_assert_books_close(economy)
 	world.teardown()
 
@@ -138,7 +139,7 @@ func test_a_dead_issuer_delivery_to_a_production_site_goes_to_the_market_of_the_
 	var contract_id: int = _delivery(economy, site_id)
 	_kill_issuer(world)
 	_run_minutes(world, DEADLINE_HOURS * MINUTES_PER_HOUR)
-	assert_eq([_balance(economy, contract_id), _balance(economy, market_b)], [0, before + REWARD], "O local de produção de destino é do povoado B.")
+	assert_eq([_balance(economy, contract_id), _balance(economy, market_b)], [0, before - POSTED_ESCROW + REWARD], "O local de produção de destino é do povoado B (que também pagou o pão do postador).")
 	_assert_books_close(economy)
 	world.teardown()
 
@@ -153,7 +154,7 @@ func test_a_dead_issuer_accepted_contract_that_expires_also_goes_to_the_market()
 	assert_true(economy.request_accept_contract(contract_id, WORKER).ok)
 	_kill_issuer(world)
 	_run_minutes(world, DEADLINE_HOURS * MINUTES_PER_HOUR)
-	assert_eq([economy.peek_contract(contract_id).state, _balance(economy, contract_id), _balance(economy, market_b), _balance(economy, WORKER)], ["expired", 0, before + REWARD, NPC_START_MONEY], "Aceito e vencido: o trabalhador não recebe e a recompensa vai para o mercado.")
+	assert_eq([economy.peek_contract(contract_id).state, _balance(economy, contract_id), _balance(economy, market_b), _balance(economy, WORKER)], ["expired", 0, before - POSTED_ESCROW + REWARD, NPC_START_MONEY], "Aceito e vencido: o trabalhador não recebe e a recompensa vai para o mercado (que também pagou o pão do postador).")
 	_assert_books_close(economy)
 	world.teardown()
 
@@ -169,7 +170,7 @@ func test_a_dead_issuer_delivery_to_an_npc_keeps_the_custody_because_the_settlem
 	_kill_issuer(world)
 	_run_minutes(world, DEADLINE_HOURS * MINUTES_PER_HOUR)
 	assert_eq([economy.peek_contract(contract_id).state, _balance(economy, contract_id)], ["expired", REWARD], "[LIM] A economia não sabe o povoado de um NPC: a recompensa continua na conta do contrato.")
-	assert_eq([_balance(economy, market_a), _balance(economy, market_b)], markets_before, "Nenhum mercado recebeu nada.")
+	assert_eq([_balance(economy, market_a), _balance(economy, market_b)], [markets_before[0] - POSTED_ESCROW, markets_before[1] - POSTED_ESCROW], "Nenhum mercado recebeu nada (só pagaram o pão do postador).")
 	_assert_books_close(economy)
 	world.teardown()
 

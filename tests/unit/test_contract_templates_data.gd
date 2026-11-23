@@ -1,6 +1,6 @@
 extends GutTest
 ## LW-107c1: data/economy/contract_templates.json, os modelos do postador de contratos de entrega (docs/economy/dados.md; docs/modules/economy.md, seção 8), lidos e validados pelo `ContractTemplateLoader` (a proteção (a) do contrato: as faixas). O arquivo real
-## é `[]` (o padrão do jogo não tem modelo, LW-107c2) e o exemplo `contract_templates.initial.json` tem os 3 modelos de partida; dado inválido falha apontando arquivo, item e campo, com tabelas montadas em memória (3 bens de teste, para os limites do lote não dependerem dos números [HIP] do `goods.json`). Só dado e carregador: nenhum código lê os modelos ainda.
+## tem os 2 modelos da opção B (pão e farinha, sem o grão; LW-107c3) e o exemplo `contract_templates.initial.json` guarda os 3 modelos de partida da proposta de 15/11; dado inválido falha apontando arquivo, item e campo, com tabelas montadas em memória (3 bens de teste, para os limites do lote não dependerem dos números [HIP] do `goods.json`). Só dado e carregador: nenhum código lê os modelos ainda.
 
 const DATA_DIR: String = "res://data/economy"
 const EXAMPLE_FILE: String = "contract_templates.initial.json"
@@ -74,11 +74,14 @@ func _setup_with(templates_json: String) -> EconomySetup:
 	return setup
 
 
-## O padrão do jogo é SEM modelo (`[]`, LW-107c2): o postador não posta nada até Arthur decidir ativá-lo (cada modelo postado muda valores de referência, DEC-175). Os 3 modelos iniciais ficam no arquivo de exemplo, que este teste carrega como se fosse o ativo.
-func test_the_default_file_has_no_template_and_the_example_file_has_the_three_initial_templates_in_file_order() -> void:
+## O padrão do jogo traz os 2 modelos da opção B (LW-107c3): o pão fixo e a farinha de escassez, SEM o grão, que o jogo não consegue cumprir. Os 3 modelos iniciais da proposta de 15/11 (com o `grain_shortage`) ficam no arquivo de exemplo, que este teste carrega como se fosse o ativo.
+func test_the_default_file_has_the_bread_and_flour_templates_and_the_example_file_has_the_three_initial_templates_in_file_order() -> void:
 	var loaded: ContractTemplateLoader.LoadResult = ContractTemplateLoader.load_dir(DATA_DIR)
 	assert_true(loaded.result.ok, loaded.result.message)
-	assert_eq(loaded.templates.size(), 0, "O arquivo ativo do jogo não traz modelo.")
+	assert_eq(_as_rows(loaded.templates), [
+		["bread_standing", "delivery", "bread", 5, "standing", 500, 48, 1],
+		["flour_shortage", "delivery", "flour", 10, "shortage", 2500, 48, 1],
+	], "O arquivo ativo do jogo traz os 2 modelos da opção B, nesta ordem, sem o `grain_shortage`.")
 	assert_eq(_as_rows(_example_templates()), [
 		["bread_standing", "delivery", "bread", 5, "standing", 500, 48, 1],
 		["flour_shortage", "delivery", "flour", 10, "shortage", 2500, 48, 1],
@@ -189,7 +192,7 @@ func test_the_setup_carries_the_templates_to_the_definitions_and_refuses_an_inva
 	var real: EconomySetup = EconomySetup.from_dir(DATA_DIR)
 	assert_true(real.result.ok, real.result.message)
 	assert_eq(_as_rows(real.definitions.contract_templates), _as_rows(ContractTemplateLoader.load_dir(DATA_DIR).templates))
-	assert_eq(real.definitions.contract_templates.size(), 0, "O jogo padrão não tem modelo (LW-107c2).")
+	assert_eq(real.definitions.contract_templates.map(func(template: ContractTemplateDef) -> String: return template.id), ["bread_standing", "flour_shortage"], "O jogo padrão tem os 2 modelos da opção B (LW-107c3), nesta ordem.")
 	assert_eq(_example_templates().size(), 3, "O setup leva os modelos de um arquivo ativo às definições.")
 	for text: String in ["", "[]"]:
 		var none: EconomySetup = _setup_with(text)

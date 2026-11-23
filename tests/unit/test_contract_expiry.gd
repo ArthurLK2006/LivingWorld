@@ -6,6 +6,7 @@ extends GutTest
 const SEED: int = 83
 const MINUTES_PER_HOUR: int = 60
 const SETTLEMENT_A: String = "test_settlement_a"
+const POSTED_ESCROW: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B: 5 pães de valor-base 10 mais 5%): o mercado retém 53 na custódia enquanto o contrato dele está aberto.
 const PLACE_POST: String = "a_work_05"
 const ISSUER: int = 100
 const WORKER: int = 101
@@ -140,7 +141,7 @@ func test_a_dead_issuer_custody_goes_to_the_market_of_the_contract_settlement() 
 	world.context.events.dispatch()
 	_run_minutes(world, 2 * MINUTES_PER_HOUR)
 	assert_eq([economy.peek_contract(contract_id).state, economy.peek_balance(contract_id).balance, failed.size()], ["expired", 0, 1], "O contrato vence e o evento sai; o emissor morto não recebe e a custódia esvazia.")
-	assert_eq(economy.peek_balance(market_id).balance, market_before + REWARD, "A custódia foi para o mercado do povoado do contrato (o do posto de `a_work_05`).")
+	assert_eq(economy.peek_balance(market_id).balance, market_before - POSTED_ESCROW + REWARD, "A custódia foi para o mercado do povoado do contrato (o do posto de `a_work_05`); ele também pagou o pão do postador.")
 	assert_true(economy.peek_conservation().ok, "O dinheiro continua contado.")
 	assert_eq(economy.validate(), [] as Array[String], "Nenhuma inconsistência.")
 	world.teardown()

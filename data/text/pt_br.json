@@ -43,7 +43,7 @@
 	"ui.contracts.title": "Contratos",
 	"ui.contracts.section_open": "Disponíveis neste mercado",
 	"ui.contracts.section_mine": "Meus contratos",
-	"ui.contracts.empty": "Nenhum contrato agora: os mercados estão abastecidos",
+	"ui.contracts.empty": "Nenhuma encomenda disponível agora.",
 	"ui.contracts.empty_mine": "Você ainda não aceitou nenhum contrato.",
 	"ui.contracts.line": "Entregar {quantity} x {good}",
 	"ui.contracts.reward": "Recompensa: {reward}",

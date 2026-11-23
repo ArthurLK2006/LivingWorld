@@ -15,6 +15,7 @@ const MINUTES_PER_HOUR: int = 60
 ## Os números dos contratos do teste (os do jogo são [HIP]): recompensa e quantidade; o prazo longo (minutos depois de agora) só os testes do prazo encurtam.
 const REWARD: int = 12
 const QUANTITY: int = 2
+const POSTED_REWARD: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B): 5 pães, recompensa 53; os contratos do teste pagam `REWARD`.
 const LONG_MINUTES: int = 600
 const SHORT_MINUTES: int = 90
 ## Distância (m) do centro do mercado, além do alcance [HIP] de 3 m do `world`.
@@ -77,8 +78,13 @@ func before_all() -> void:
 
 ## Um jogo só com o personagem e a economia (sem NPCs), com o jogador já nascido, com a conta aberta e junto ao centro do mercado A. Os contratos concluídos ficam em `_completed`.
 func before_each() -> void:
+	_start(_setup)
+
+
+## O jogo novo com a economia `setup`, o jogador nascido junto ao mercado A e a conta aberta.
+func _start(setup: EconomySetup) -> void:
 	_host = SimulationHostNode.new()
-	_host.start_new_game(SEED, _terrain, [], null, 0, _setup)
+	_host.start_new_game(SEED, _terrain, [], null, 0, setup)
 	_bridge = SimBridge.new(_host, _terrain, _places)
 	_economy = _host.economy
 	_completed = []
@@ -150,6 +156,23 @@ func _new_npc() -> int:
 	return npc_id
 
 
+## O contrato de pão que o POSTADOR pôs no mercado `market_id` (o `open` de entrega que o mercado emitiu com a recompensa do modelo; os do teste pagam `REWARD`): o ID, ou NO_ID se não há.
+func _posted_bread(market_id: int) -> int:
+	for contract: EconomyReplies.ContractQuery in _economy.peek_contracts().contracts:
+		if contract.kind == ContractBook.DELIVERY and contract.issuer_id == market_id and contract.reward == POSTED_REWARD:
+			return contract.contract_id
+	return IdGenerator.NO_ID
+
+
+## O mesmo jogo SEM a tabela do postador (o jogo de antes da LW-107c3): o quadro só tem o que o teste posta. Para os testes cuja premissa é o quadro SEM entrega nenhuma.
+func _restart_without_the_poster() -> void:
+	_host.runner.finish()
+	_host.free()
+	var quiet: EconomySetup = EconomySetup.from_dir(EconomySetup.DEFAULT_DIR)
+	quiet.definitions.contract_templates.clear()
+	_start(quiet)
+
+
 func _ids(board: BridgePlayerContractsReplies.ContractBoardReply) -> Array[int]:
 	var ids: Array[int] = []
 	for row: BridgePlayerContractsReplies.ContractBoardRow in board.rows:
@@ -217,7 +240,9 @@ func test_the_board_lists_the_open_deliveries_of_the_market_in_ascending_order_w
 	assert_eq(_economy.peek_contract(first).reward, REWARD, "A linha é cópia: mexer nela não mexe na economia.")
 
 
+## Sem entrega nenhuma o quadro é sucesso e vazio, mesmo com as vagas postadas: por isso este teste roda o jogo SEM a tabela do postador (como era antes da LW-107c3); o quadro do jogo real, com o pão do postador, é o teste seguinte.
 func test_an_empty_board_is_a_success_even_with_vacancies_and_the_board_needs_no_reach() -> void:
+	_restart_without_the_poster()
 	_host.runner.run_steps(MINUTES_PER_HOUR)
 	assert_false(_ids_of_kind(ContractBook.VACANCY).is_empty(), "Pré-condição: na hora cheia a economia posta as vagas, e elas ficam fora do quadro.")
 	_go(_far_from(_center_a))
@@ -226,6 +251,19 @@ func test_an_empty_board_is_a_success_even_with_vacancies_and_the_board_needs_no
 	assert_eq([board.rows.size(), board.now], [0, MINUTES_PER_HOUR], "Sem contrato de entrega o quadro é sucesso e vazio, mesmo a 3,5 m do mercado.")
 	var contract_id: int = _post(_market_a, _market_b)
 	assert_eq(_ids(_board(_market_a)), [contract_id] as Array[int], "A consulta não exige alcance do mercado.")
+
+
+func test_the_board_of_the_real_game_lists_the_bread_the_poster_posted_and_no_vacancy_and_needs_no_reach() -> void:
+	_host.runner.run_steps(MINUTES_PER_HOUR)
+	assert_false(_ids_of_kind(ContractBook.VACANCY).is_empty(), "Pré-condição: na hora cheia a economia posta as vagas, e elas ficam fora do quadro.")
+	var posted: int = _posted_bread(_market_a)
+	assert_ne(posted, IdGenerator.NO_ID, "Pré-condição: na hora cheia o postador pôs o pão no mercado A.")
+	_go(_far_from(_center_a))
+	var board: BridgePlayerContractsReplies.ContractBoardReply = _board(_market_a)
+	assert_true(board.result.ok, board.result.message)
+	assert_eq([_ids(board), board.now], [[posted] as Array[int], MINUTES_PER_HOUR], "O quadro só tem o pão do postador (as vagas ficam fora), mesmo a 3,5 m do mercado.")
+	var contract_id: int = _post(_market_a, _market_b)
+	assert_eq(_ids(_board(_market_a)), [posted, contract_id] as Array[int], "A consulta não exige alcance do mercado.")
 
 
 func test_the_board_shows_what_the_actor_carries_in_any_market_and_only_the_five_most_recent_finished_ones() -> void:
@@ -247,15 +285,18 @@ func test_the_board_shows_what_the_actor_carries_in_any_market_and_only_the_five
 	assert_true(_economy.request_accept_contract(_post(_market_a, _market_b, SHORT_MINUTES), other).ok)
 	_host.runner.run_steps(2 * MINUTES_PER_HOUR)
 	assert_eq(_economy.peek_contract(unaccepted).state, ContractBook.STATE_EXPIRED, "Pré-condição: na hora cheia depois do prazo a economia venceu os que sobraram.")
+	var from_the_poster: int = _posted_bread(_market_a)
+	assert_ne(from_the_poster, IdGenerator.NO_ID, "Pré-condição: o postador pôs o pão no mercado A.")
 	var expected: Array[int] = [carried]
 	expected.append_array(posted.slice(2))
+	expected.append(from_the_poster)
 	var board: BridgePlayerContractsReplies.ContractBoardReply = _board(_market_a)
-	assert_eq(_ids(board), expected, "Só os 5 terminados mais recentes do ator (maiores IDs): os 2 mais velhos saem, o de outro ator e o sem aceitante nunca entram; o que ele carrega continua.")
+	assert_eq(_ids(board), expected, "Só os 5 terminados mais recentes do ator (maiores IDs): os 2 mais velhos saem, o de outro ator e o sem aceitante nunca entram; o que ele carrega continua e o pão aberto do postador (o maior ID) fecha a lista.")
 	var states: Array[String] = []
 	for row: BridgePlayerContractsReplies.ContractBoardRow in board.rows:
 		states.append(row.state)
 		_assert_row_matches_the_economy(row)
-	assert_eq(states, [ContractBook.STATE_ACCEPTED, ContractBook.STATE_EXPIRED, ContractBook.STATE_EXPIRED, ContractBook.STATE_EXPIRED, ContractBook.STATE_COMPLETED, ContractBook.STATE_EXPIRED] as Array[String], "`completed` e `expired` contam, na ordem dos IDs.")
+	assert_eq(states, [ContractBook.STATE_ACCEPTED, ContractBook.STATE_EXPIRED, ContractBook.STATE_EXPIRED, ContractBook.STATE_EXPIRED, ContractBook.STATE_COMPLETED, ContractBook.STATE_EXPIRED, ContractBook.STATE_OPEN] as Array[String], "`completed` e `expired` contam, na ordem dos IDs, e o pão do postador segue `open`.")
 
 
 func test_the_board_refusals_come_with_the_codes_and_change_nothing() -> void:
@@ -320,7 +361,7 @@ func test_a_contract_past_its_deadline_is_refused_by_the_bridge_at_the_boundary_
 	_host.runner.run_steps(1)
 	assert_eq(_now(), _economy.peek_contract(second).deadline, "O relógio chega ao prazo, antes da hora cheia que o venceria.")
 	_refused_accept(second, BridgePlayerContracts.CODE_EXPIRED, KEY_EXPIRED)
-	assert_eq([_economy.peek_contract(second).state, _ids(_board(_market_a))], [ContractBook.STATE_OPEN, [first, second] as Array[int]], "O `open` vencido segue `open` e no quadro (a tela o mostra como vencido).")
+	assert_eq([_economy.peek_contract(second).state, _ids(_board(_market_a))], [ContractBook.STATE_OPEN, [first, second, _posted_bread(_market_a)] as Array[int]], "O `open` vencido segue `open` e no quadro (a tela o mostra como vencido), junto do pão aberto do postador.")
 	_go(_far_from(_center_a))
 	_refused_accept(second, MarketReach.CODE_PLACE_TOO_FAR, KEY_TOO_FAR)
 	_go(_center_a)

@@ -6,6 +6,7 @@ extends GutTest
 const SEED: int = 61
 const MINUTES_PER_HOUR: int = 60
 const SETTLEMENT_A: String = "test_settlement_a"
+const POSTED_ESCROW: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B: 5 pães de valor-base 10 mais 5%): o mercado retém 53 na custódia enquanto o contrato dele está aberto.
 const PLACE_POST: String = "a_work_05"
 const PLACE_BREAD: String = "a_work_01"
 const MARKET_A: int = 1
@@ -75,7 +76,7 @@ func test_the_market_pays_every_guard_each_hour_and_one_event_comes_out_per_post
 	assert_eq(paid.size(), 2, "Um evento por hora, não um por guarda.")
 	assert_eq([paid[0].workplace_id, paid[0].amount_each], [POST - 1, WAGE], "O posto leva o ID depois dos mercados (1 a 3): sem local de produção é o 4.")
 	assert_eq(_money(module, GUARDS), [NPC_START_MONEY + 2 * WAGE, NPC_START_MONEY + 2 * WAGE, NPC_START_MONEY + 2 * WAGE] as Array[int])
-	assert_eq(module.peek_balance(MARKET_A).balance, market_before - 2 * WAGE * GUARDS.size(), "O dinheiro saiu da conta do mercado, pelo `Ledger`.")
+	assert_eq(module.peek_balance(MARKET_A).balance, market_before - POSTED_ESCROW - 2 * WAGE * GUARDS.size(), "O dinheiro saiu da conta do mercado, pelo `Ledger`: a folha dos guardas e a custódia do pão do postador.")
 	assert_true(module.peek_conservation().ok)
 	assert_eq(module.validate(), [] as Array[String])
 	world.teardown()

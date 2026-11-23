@@ -1,6 +1,6 @@
 extends GutTest
 ## LW-107f3: a PONTE das encomendas por objetivo (docs/modules/bridge.md, "Encomendas por objetivo: abandonar e limite", itens (i) a (iii); economy.md, seção 8, itens (c), (d) e (g)): `request_contract_abandon`, o limite por categoria no `accept` (`BRIDGE_CONTRACT_LIMIT`) e o que o quadro ganha (`accepted_limit`, `closed_reason` e o `failed` entre os terminados).
-## O jogo é o REAL, montado como o `GameApp` monta (`GameApp.start_default_game`: terreno, NPCs, locais e economia de `res://data`, só `--headless`) e o limite de 3 chega do `data/economy/contract_limits.json` pela fiação do jogo; só o caso "categoria sem linha no dado" monta o jogo à mão, com a tabela do limite vazia. Os contratos são postados DIRETO na economia (o jogador não posta e o postador está desligado) e o relógio
+## O jogo é o REAL, montado como o `GameApp` monta (`GameApp.start_default_game`: terreno, NPCs, locais e economia de `res://data`, só `--headless`) e o limite de 3 chega do `data/economy/contract_limits.json` pela fiação do jogo; só o caso "categoria sem linha no dado" monta o jogo à mão, com a tabela do limite vazia. Os contratos são postados DIRETO na economia (o jogador não posta; o postador de encomendas (LW-107c3) põe só o pão de cada mercado, e o teste o conta) e o relógio
 ## anda pelo `runner`. O `before_each` leva o jogo à hora cheia, para o prazo curto (30 minutos) vencer SEM a economia o encerrar (ela só o faz na hora cheia seguinte). As chaves são só chaves: o texto delas é da LW-107f4c.
 
 const WORLD_DIR: String = "res://data/world"
@@ -9,6 +9,7 @@ const SETTLEMENT_A: String = "test_settlement_a"
 const SETTLEMENT_B: String = "test_settlement_b"
 const BREAD: String = "bread"
 const WORK_PLACE: String = "a_work_01"
+const POSTED_REWARD: int = 53 ## O pão que o postador de encomendas põe em cada mercado (LW-107c3, opção B): 5 pães, recompensa 53; os contratos do teste pagam `REWARD`.
 const UNKNOWN_ID: int = 999999
 const MINUTES_PER_HOUR: int = 60
 ## Os números dos contratos do teste (os do jogo são [HIP]) e o limite do dado real (`delivery_limit`: 3, provisório do primeiro recorte).
@@ -140,6 +141,14 @@ func _complete(contract_id: int) -> void:
 	assert_true(_economy.request_accept_contract(contract_id, _actor_id).ok)
 	assert_true(_economy.request_transfer_goods(_market_a, _actor_id, BREAD, QUANTITY).ok)
 	assert_true(_economy.request_deliver_contract(contract_id).ok)
+
+
+## O contrato de pão que o POSTADOR pôs no mercado `market_id` (o `open` de entrega que o mercado emitiu com a recompensa do modelo; os do teste pagam `REWARD`): o ID, ou NO_ID se não há.
+func _posted_bread(market_id: int) -> int:
+	for contract: EconomyReplies.ContractQuery in _economy.peek_contracts().contracts:
+		if contract.kind == ContractBook.DELIVERY and contract.issuer_id == market_id and contract.reward == POSTED_REWARD:
+			return contract.contract_id
+	return IdGenerator.NO_ID
 
 
 func _ids(board: BridgePlayerContractsReplies.ContractBoardReply) -> Array[int]:
@@ -343,15 +352,18 @@ func test_the_board_shows_the_limit_the_closed_reason_and_the_abandoned_deliveri
 	var board: BridgePlayerContractsReplies.ContractBoardReply = _bridge.peek_contract_board(_actor_id, _market_a)
 	assert_true(board.result.ok, board.result.message)
 	assert_eq(board.accepted_limit, LIMIT, "O limite de `delivery` do dado real, para a tela mostrar \"n de N\".")
-	var expected: Array[int] = []
+	var posted: int = _posted_bread(_market_a)
+	assert_ne(posted, IdGenerator.NO_ID, "Pré-condição: o postador pôs o pão no mercado A na 1ª hora.")
+	var expected: Array[int] = [posted]
 	expected.append_array(abandoned.slice(1))
 	expected.append_array([open, carried])
-	assert_eq(_ids(board), expected, "Os 5 `failed` mais recentes (o mais velho sai, no mesmo limite dos terminados), o aberto e o que ele carrega.")
+	assert_eq(_ids(board), expected, "O pão do postador (o ID mais velho), os 5 `failed` mais recentes (o mais velho sai, no mesmo limite dos terminados), o aberto e o que ele carrega.")
 	for row: BridgePlayerContractsReplies.ContractBoardRow in board.rows:
 		var contract: EconomyReplies.ContractQuery = _economy.peek_contract(row.contract_id)
 		assert_eq([row.state, row.closed_reason, row.is_mine], [contract.state, contract.closed_reason, contract.acceptor_id == _actor_id], "A linha do contrato %d tem o estado e o motivo da economia." % row.contract_id)
-	assert_eq([board.rows[0].state, board.rows[0].closed_reason, board.rows[0].is_mine], [ContractBook.STATE_FAILED, ABANDONED, true], "O abandonado é `failed` com o motivo CRU, e é do jogador.")
-	assert_eq([board.rows[5].closed_reason, board.rows[6].closed_reason], ["", ""], "Sem abandono, o motivo é vazio.")
+	assert_eq([board.rows[0].state, board.rows[0].closed_reason, board.rows[0].is_mine, board.rows[0].reward], [ContractBook.STATE_OPEN, "", false, POSTED_REWARD], "A 1ª linha é o pão do postador: aberto, de ninguém, 53.")
+	assert_eq([board.rows[1].state, board.rows[1].closed_reason, board.rows[1].is_mine], [ContractBook.STATE_FAILED, ABANDONED, true], "O abandonado é `failed` com o motivo CRU, e é do jogador.")
+	assert_eq([board.rows[6].closed_reason, board.rows[7].closed_reason], ["", ""], "Sem abandono, o motivo é vazio.")
 	assert_eq(_snapshot(), before, "A consulta só lê.")
 
 
@@ -365,4 +377,6 @@ func test_a_finished_labor_of_the_actor_does_not_take_one_of_the_finished_slots_
 	assert_true(_economy.request_accept_contract(labor, _actor_id).ok)
 	_host.runner.run_steps(LONG_MINUTES + MINUTES_PER_HOUR)
 	assert_eq(_economy.peek_contract(labor).state, ContractBook.STATE_EXPIRED, "Pré-condição: o `labor` do ator venceu, com o id maior que o dos 5 abandonos.")
-	assert_eq(_ids(_bridge.peek_contract_board(_actor_id, _market_a)), abandoned, "O `labor` terminado não ocupa uma vaga dos terminados (só entrega conta): os 5 `failed` seguem na lista.")
+	var expected: Array[int] = [_posted_bread(_market_a)]
+	expected.append_array(abandoned)
+	assert_eq(_ids(_bridge.peek_contract_board(_actor_id, _market_a)), expected, "O `labor` terminado não ocupa uma vaga dos terminados (só entrega conta): os 5 `failed` seguem na lista, depois do pão aberto do postador.")
