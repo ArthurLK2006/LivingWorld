@@ -95,6 +95,18 @@ No b4, os NPCs vivos têm 12.530 moedas no d30 e 14.166 no d40, concentradas nos
 
 **M8. Becos sem comprador local:** a farinha do A (o A não tem padaria) e a lenha do B (o B não tem serraria) dependem só dos comerciantes, que morrem até o d30 na maior parte dos cenários.
 
+## 4.1 Defeito de regra ou escolha de design? (pedido de Arthur de 23/11/2026)
+| Mecanismo | Natureza | Corrige com | Muda save? |
+|---|---|---|---|
+| (a) ordem fixa dos locais por ID na hora | **defeito de regra** (viés determinístico: o de ID menor sempre vende primeiro) | rodízio pela hora absoluta do relógio (H-R) | não |
+| (b) `NO_FUNDS` absorvente (folha inteira ou nada) | **escolha de design** (DEC-169: parar e não demitir) com efeito colateral não previsto (armadilha de liquidez) | folha parcial por equipe de lote (H-P), rodízio pela hora | não |
+| (c) o local produz e paga folha para o próprio estoque, sem comprador | **defeito de regra** (produção incondicional à procura) | produzir só com comprador (H-E) | não |
+| (d) folha de 1 moeda por grão (25% do valor-base) | **escolha de dado** (receitas e valores-base; a regra de margem do carregador limita o salário) | recalibração conjunta de valores e salários (não basta sozinha) | não |
+| (e) o mercado é sumidouro de mão única (vende estoque inicial, embolsa o spread, só os postos devolvem) | **limitação estrutural de design** (falta o sumidouro de consumo e a circulação do caixa; Fase 4 prevê tributo e sumidouros) | sumidouro de consumo (6ª necessidade ou LW-103) e equilíbrio do caixa | a 6ª necessidade sim |
+| (f) vaga só abre com morte e o NPC compara o salário nominal | **defeito de regra** (`npc_employment.gd` avalia o que o local promete, não o que paga) | avaliar o salário efetivo | não |
+| (g) becos sem comprador local (farinha do A, lenha do B) | **escolha de dado** (cadeias e povoados) | dados de produção e rotas | não |
+**Resumo:** quatro itens são defeitos de regra ou de rotação (a, c, f, e a armadilha de b), corrigíveis sem estado novo no save e com o rito da DEC-175; dois são escolhas de dado (d, g); um é estrutural (e) e é decisão de design de Arthur.
+
 ## 5. As 9 perguntas de Arthur (respondidas para o finalista b4 e, em seguida, para o pacote estrutural da seção 7)
 1. **Quem compra o produto?**
    - b4: os NPCs compram a comida; os locais compram insumos e manutenção; o "povoado" consome tábua, ferramenta e tecido com o excedente do caixa do mercado.
