@@ -296,3 +296,35 @@ class NpcBodiesReply:
 	func _init(reply_result: Result, copies: Array[NpcBodyReply]) -> void:
 		result = reply_result
 		bodies = copies
+
+
+## Uma caravana a desenhar (LW-099b1), em CÓPIA e só com tipos da ponte: o comerciante, a rota e os povoados de saída e de chegada do TRECHO ATUAL (no sentido da marcha), o estado, a fração `u` do trecho já andada, o bem e a faixa de carga. O ponto no mundo, a altura e o alcance são da apresentação.
+## `state` é `STATE_TRAVELLING` ou `STATE_HELD` (os mesmos textos do registro da economia; um teste confere). `u` vai de 0 (a saída do trecho) a 1 (o fim) e já traz a fração de passo do relógio; em `held` é fixo, sem ela. Sem geometria (economia sem a porta de rotas do `world`) os dois povoados vêm vazios e `u` vale 0.
+## `load_permille` (de 0 a 1000): o peso do lote (`quantity` vezes o peso unitário do bem) sobre a capacidade de peso do comerciante, em milésimos; é a faixa da carga, a contagem exata está em `quantity`.
+class CaravanBodyReply:
+	extends RefCounted
+
+	const STATE_TRAVELLING: String = "travelling"
+	const STATE_HELD: String = "held"
+
+	var trader_id: int = IdGenerator.NO_ID
+	var route_id: String = ""
+	var from_settlement_id: String = ""
+	var to_settlement_id: String = ""
+	var state: String = STATE_TRAVELLING
+	var u: float = 0.0
+	var good_id: String = ""
+	var quantity: int = 0
+	var load_permille: int = 0
+
+
+## Resposta de `peek_caravan_bodies` (LW-099b1): `bodies` só vale se `result.ok`; em ordem crescente de `trader_id` (no máximo uma por comerciante), vazia se ninguém viaja.
+class CaravanBodiesReply:
+	extends RefCounted
+
+	var result: Result
+	var bodies: Array[CaravanBodyReply]
+
+	func _init(reply_result: Result, copies: Array[CaravanBodyReply]) -> void:
+		result = reply_result
+		bodies = copies
