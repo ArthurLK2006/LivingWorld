@@ -51,7 +51,7 @@ static func run_production_hour(state: EconomyState, events: EventBus, ids: IdGe
 		for event: SimEvent in state.posts.hour_step():
 			events.publish(event)
 	if state.production != null:
-		for event: SimEvent in state.production.hour_step():
+		for event: SimEvent in state.production.hour_step(IntMath.floor_div(now, SimClock.MINUTES_PER_HOUR)):
 			events.publish(event)
 	for expired: ContractBook.Expired in state.contracts.expire(now):
 		events.publish(ContractFailed.new(expired.contract_id, expired.issuer_id, ContractFailed.REASON_EXPIRED))
