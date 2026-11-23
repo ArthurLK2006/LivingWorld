@@ -8,6 +8,9 @@ const EPS: float = 0.0001
 ## Perto da origem de propósito: com coordenadas pequenas o float de 32 bits da Godot erra menos de 1e-5 m por posição, e a conta distância ÷ raio fecha na tolerância.
 const GROUND: Vector3 = Vector3(20.0, 10.0, 40.0)
 const FRAME_STEPS: int = 600
+const CODE: String = "res://src/presentation/world_view/entities/caravan_view.gd"
+## Os caminhos quentes (por quadro, ou a cada mudança de estado): a pose, o estado, o passo das rodas e da pisada, o andar do comerciante e a troca de carga.
+const HOT_PATHS: PackedStringArray = ["apply_pose", "apply_state", "_roll", "_set_merchant_walking", "_refresh_cargo", "volumes_for"]
 
 var _routes: CaravanRoutesReader
 
@@ -185,7 +188,8 @@ func test_the_frames_of_the_game_do_not_advance_the_stride_of_a_standing_caravan
 	assert_eq(_animated_state(view), frozen, "os quadros reais passam, a pose não: o corpo fica como estava (pausa)")
 
 
-func test_the_hot_path_creates_no_object_at_all() -> void:
+## O monitor de objetos só vê o que FICA retido: uma alocação que nasce e morre no mesmo quadro passa por ele. Quem a pega é a varredura do texto, logo abaixo.
+func test_the_hot_path_leaves_no_object_or_node_retained() -> void:
 	var view: CaravanView = _walking_view()
 	var objects_before: int = int(Performance.get_monitor(Performance.OBJECT_COUNT))
 	var nodes_before: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
@@ -193,5 +197,28 @@ func test_the_hot_path_creates_no_object_at_all() -> void:
 		var along: float = float(step) * 0.05
 		view.apply_pose(GROUND + Vector3(along, 0.0, 0.0), 0.5 + along * 0.001, 0.1)
 		view.apply_state(step % 100 < 50, "grain" if step % 7 < 4 else "wood", (step * 37) % 1001)
-	assert_eq(int(Performance.get_monitor(Performance.OBJECT_COUNT)), objects_before, "nenhum objeto (nó, recurso ou outro) nasceu por quadro")
-	assert_eq(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), nodes_before, "nenhum nó também")
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_COUNT)), objects_before, "nenhum objeto ficou retido depois de 600 quadros (alocação temporária: ver a varredura do texto)")
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), nodes_before, "nenhum nó ficou retido")
+
+
+## O corpo (sem comentários) de cada função de `names` que cria objeto ou coleção: `.new(`, `Array(`, `Dictionary(`, `Packed...Array(`, `[` de construção (depois de `=`, `(`, `,`, `%` ou `return`) e `{`.
+## O corpo vai da linha `func` até as duas linhas em branco que separam as funções. Função não achada também conta como achado (a varredura não passa em branco).
+func _allocations_in(source: String, names: PackedStringArray) -> PackedStringArray:
+	var found: PackedStringArray = PackedStringArray()
+	var builds: RegEx = RegEx.create_from_string("\\.new\\(|\\b(Array|Dictionary|Packed\\w+Array)\\(|(=|\\(|,|%|return)\\s*\\[|\\{")
+	var comment: RegEx = RegEx.create_from_string("#[^\\n]*")
+	for function_name: String in names:
+		var start: int = source.find("func %s(" % function_name)
+		var end: int = source.find("\n\n\n", start)
+		var hit: RegExMatch = null if start < 0 else builds.search(comment.sub(source.substr(start, end - start if end > start else -1), "", true))
+		if start < 0 or hit != null:
+			found.append("%s: %s" % [function_name, "função não achada" if start < 0 else hit.get_string()])
+	return found
+
+
+func test_the_text_of_the_hot_paths_builds_no_object_or_collection_and_the_scan_can_fail() -> void:
+	assert_eq(_allocations_in(FileAccess.get_file_as_string(CODE), HOT_PATHS), PackedStringArray(), "o texto dos caminhos quentes não cria objeto nem coleção")
+	for planted: String in ["var tmp: RefCounted = RefCounted.new()", "var tmp: Array[int] = [1]", "var tmp: Array = Array()", "var tmp: Dictionary = {}", "var tmp: String = \"%d\" % [1]"]:
+		assert_eq(_allocations_in("func apply_pose(a: int) -> void:\n\t%s\n\n\n" % planted, ["apply_pose"]).size(), 1, "a varredura pega: %s" % planted)
+	assert_eq(_allocations_in("func apply_pose(a: int) -> void:\n\tvar v: Vector3 = Vector3(a, 0.0, 0.0)  # Array() e .new( em comentário não contam\n\t_wheels[a].rotation.x = _shapes[\"x\"]\n\n\n", ["apply_pose"]).size(), 0, "valores (Vector3), índices e comentários passam")
+	assert_eq(_allocations_in("func outra() -> void:\n\tpass\n", ["apply_pose"]).size(), 1, "função que sumiu do texto reprova, não passa em branco")
