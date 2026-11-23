@@ -1,6 +1,6 @@
 extends GutTest
 ## LW-107c1: data/economy/contract_templates.json, os modelos do postador de contratos de entrega (docs/economy/dados.md; docs/modules/economy.md, seção 8), lidos e validados pelo `ContractTemplateLoader` (a proteção (a) do contrato: as faixas). O arquivo real
-## tem os 2 modelos da opção B (pão e farinha, sem o grão; LW-107c3) e o exemplo `contract_templates.initial.json` guarda os 3 modelos de partida da proposta de 15/11; dado inválido falha apontando arquivo, item e campo, com tabelas montadas em memória (3 bens de teste, para os limites do lote não dependerem dos números [HIP] do `goods.json`). Só dado e carregador: nenhum código lê os modelos ainda.
+## tem os 2 modelos da opção B (pão e farinha, sem o grão; LW-107c3) e o exemplo `contract_templates.initial.json` guarda os 3 modelos de partida da proposta de 15/11; dado inválido falha apontando arquivo, item e campo, com tabelas montadas em memória (3 bens de teste, para os limites do lote não dependerem dos números [HIP] do `goods.json`). Só dado e carregador (quem lê os modelos é o postador, LW-107c2; os testes dele estão em `test_contract_poster*.gd`).
 
 const DATA_DIR: String = "res://data/economy"
 const EXAMPLE_FILE: String = "contract_templates.initial.json"

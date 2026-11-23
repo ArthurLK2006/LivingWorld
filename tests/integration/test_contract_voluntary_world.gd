@@ -37,7 +37,7 @@ func _templates() -> Array[ContractTemplateDef]:
 	return templates
 
 
-## O jogo novo como o do jogo, com o jogador nascido e com a conta aberta; `templates` null = o dado real (tabela vazia), senão os modelos dados no lugar dos do arquivo padrão.
+## O jogo novo como o do jogo, com o jogador nascido e com a conta aberta; `templates` null = o dado real (os 2 modelos da opção B), senão os modelos dados no lugar dos do arquivo padrão.
 func _start(templates: Variant) -> void:
 	var terrain: TerrainLoader.LoadResult = TerrainLoader.load_dir(GameAppNode.TERRAIN_DIR)
 	var points: PointOfInterestLoader.LoadResult = PointOfInterestLoader.load_dir(GameAppNode.TERRAIN_DIR, terrain.terrain)

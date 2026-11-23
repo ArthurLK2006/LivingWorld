@@ -251,7 +251,6 @@ func _shown_texts() -> Array[String]:
 	return shown
 
 
-## Posta um contrato de entrega direto na economia: `issuer` paga a recompensa para a custódia e o prazo é `minutes` depois de agora.
 ## O contrato de pão que o POSTADOR pôs no mercado `market_id` (o `open` de entrega que o mercado emitiu com a recompensa do modelo; os do teste pagam `REWARD`): o ID, ou NO_ID se não há.
 func _posted_bread(market_id: int) -> int:
 	for contract: EconomyReplies.ContractQuery in _economy.peek_contracts().contracts:
@@ -260,6 +259,7 @@ func _posted_bread(market_id: int) -> int:
 	return IdGenerator.NO_ID
 
 
+## Posta um contrato de entrega direto na economia: `issuer` paga a recompensa para a custódia e o prazo é `minutes` depois de agora.
 func _post(issuer: int, destination: int, minutes: int, good_id: String = BREAD, quantity: int = QUANTITY) -> int:
 	var now: int = _bridge.peek_time().total_minutes
 	var posted: EconomyReplies.PostContractResult = _economy.request_post_contract(ContractBook.DELIVERY, issuer, REWARD, now + minutes, {"good_id": good_id, "quantity": quantity, "destination_id": destination})
