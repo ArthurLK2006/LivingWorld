@@ -40,7 +40,7 @@
 - Quem pagou os 8.631 de taxa: P 2.649 (31%), O 3.336 (39%), M 1.968 (23%) e F 678 (8%). As 1.238 recusas vêm quase todas de O e M; P teve 8.
 - Para onde foi: caixa dos mercados +4.182; salário dos postos +5.674, que por construção vai só a P; o salário dos locais não mudou (F 952 contra 920, O 2.634 contra 2.650); o mercado não comprou mais dos locais (os 14 locais param até o dia 14 nos dois lados).
 - Saldo final por grupo: P +1.408, O −3.322 (−72%), M −1.675, F −604, mercados +4.182, locais +11; a soma dá 0.
-- A taxa tira dinheiro de O, M e F e o leva aos mercados e a P; **não volta a quem vive dos locais**, e a sobra guardada de P (cerca de 280 por dia: 2.137 no dia 1, 12.835 no dia 30) não foi tocada. No S-B o efeito é o mesmo.
+- A taxa tira dinheiro de O, M e F e o leva aos mercados e a P; **não volta a quem vive dos locais**, e a sobra guardada de P não foi tocada (na base o dinheiro de P vai de 2.137 no dia 1 a 11.427 no dia 30, cerca de 320 por dia na média e 250 nos dias 20 a 30; com o H-K chega a 12.835). No S-B o efeito é o mesmo.
 
 ## 5. Conservação, determinismo e save
 - `money_ok` e `goods_ok` deram 1 em todos os dias das 8 rodadas, com `problems` 0; o dinheiro total ficou em 21.520, constante.
