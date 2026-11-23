@@ -20,6 +20,7 @@ extends GutTest
 ## Na LW-098h5 (opção A, aprovada por Arthur em 18/11/2026) o jogo real passou a nascer com 138 NPCs: os 6 comerciantes (2 por povoado; A 62, B 46, C 30) e as 6 casas novas. A contagem do teste do jogo real é a de
 ## `NpcLifeCheck.EXPECTED_POPULATION` (138) e **SÓ a impressão `real_game` mudou**, por decisão EXPRESSA de Arthur em 18/11/2026 (DEC-175; ele aceitou esse valor e NENHUM outro): de `48857919c5ff` para `aaf2aed10ce4`. A causa é só a entrada dos 6 NPCs: os ids de quem vem depois
 ## deles na ordem do plano (o A termina nos ids 61 e 62 e o B começa no 63), os nomes e traços e os pensamentos dos 6 no mesmo sorteio; o código (`src/`) não mudou. As outras oito impressões (5 NPCs de teste) seguem as mesmas.
+## Na LW-095f (fim do `IncomeStub`) e na regra da refeição (`eat_hungry`, fome mínima 40; uma linha de dado em `action_conditions.json`), integradas JUNTAS por decisão EXPRESSA de Arthur em 23/11/2026 (DEC-175), mudaram só `talk`, `save`, `demote`, `starved` e `real_game`, com os valores da COMBINAÇÃO das duas mudanças, regravados uma única vez; `intents`, `alarm`, `resumed` e `switches` seguem os mesmos. De `a96d78a9a82f` para `84ae6fc4884f`, de `5c885dbc09ee` para `cb4486a8d776`, de `c5b515175b72` para `b50ed798982f`, de `d2533a12fd05` para `623f9be855d1` e de `aaf2aed10ce4` para `f9da6f1a8616`. Causas: (1) sem o stub o trabalho não tira mais 30 pontos da `income`, e o valor da necessidade entra no save e no resumo (muda o valor, não o comportamento); (2) com a regra, o NPC só começa a comer com fome de 40 ou mais (no minuto 384 dois NPCs que comiam com fome 1 passam a esperar; no jogo real, oito NPCs que comiam com fome 0 no minuto 380 também). Os valores de cada causa isolada estão nos PRs 146 e 149 e foram reproduzidos de forma independente; os combinados foram obtidos em duas execuções iguais e conferidos com os medidos antes da regravação. A sustentabilidade econômica dos postos segue PENDENTE (o `FoodStub` fica).
 
 const WORLD_SEED: int = 11
 const ACTOR_ID: int = 77
@@ -61,11 +62,11 @@ const EXPECTED: Dictionary[String, String] = {
 	"alarm": "916683019e46cf83bad1c75127c5370d7bb1403a8107a0def7956617f3832bd7",
 	"resumed": "a2b476e37a0c5462173369c3ee89c93170b2e18d1fdc3a3815e53e14607e62ff",
 	"switches": "b4c379eaad55b668e299a969761aad1191213f95292d3b2c6a0447ed95890dcd",
-	"talk": "a96d78a9a82fde4b81225e97d0c0778ed6c1525b03af5c3909789302986e2e8f",
-	"save": "5c885dbc09eea1495b195c8d03e737d0317003015ec3d02e6ed4019b3af558c9",
-	"demote": "c5b515175b726d328fbe5b481c0474f08cfdbe8e0d6c251cc4b46c342c569895",
-	"starved": "d2533a12fd058d0eb1a41ce42b001782b8f9285f41bc7d68dac2fb6bc01502a6",
-	"real_game": "aaf2aed10ce460e57d38b05c6273fea5bffa837537655bf837f4d64cefff4e22",
+	"talk": "84ae6fc4884faf66daae92b88b59d234ccf7cfedd37a0621f2c6aeb56e7282f1",
+	"save": "cb4486a8d776d60dd30d56ea24fb5b352dc071764a4d9bc2aa77d84f264a3f2c",
+	"demote": "b50ed798982ff3c3c9fa99dbcc538b3d6141a9e04c560d454c7a9ba378e12747",
+	"starved": "623f9be855d1b06df24398a7458a78648a1a3e85723692bbe63d4c98c8649ce8",
+	"real_game": "f9da6f1a8616bf1c5b0f72fb99b23c5fcbe2a4abea1f14027ce720c5221cd20c",
 }
 
 var _data: NpcLifeCheck.GameData
