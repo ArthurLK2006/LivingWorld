@@ -55,12 +55,31 @@ class LifeReport:
 	var food_zero_minutes: Dictionary = {}
 	## LW-098h5 (V9): quantas amostras de NPC sem ação foram isentas por trânsito legítimo de comerciante (`is_transit_exempt`; só com `with_economy`). Prova que a isenção foi USADA.
 	var transit_exempt_samples: int = 0
+	## Estabilidade de longo prazo (só com `with_economy`): quantos `CaravanArrived` a execução inteira viu (a escuta é refeita a cada recarga); e a recarga em TRÂNSITO (`reload_in_transit_after_days`):
+	## o minuto em que houve (-1 se não houve) e quantas caravanas viajavam nele.
+	var caravan_arrivals: int = 0
+	var reload_minute: int = -1
+	var reload_travelling: int = 0
+	## Contas que NÃO dependem do teto MAX_PROBLEMS (uma mortandade enche a lista em minutos e esconderia o resto): os mortos vistos (`npc_id` e o minuto da primeira amostra em que estava morto) e quantos problemas de
+	## validação (`world.validate()` e `npc.validate()`, o que inclui a conservação do dinheiro e dos bens) o fim de dia achou.
+	var dead_seen: Dictionary[int, int] = {}
+	var first_death_minute: int = -1
+	var day_end_problem_count: int = 0
+	## Verdadeiro se o hash do mundo carregado diferiu do salvo em alguma recarga (também sem teto, pelo mesmo motivo).
+	var reload_hash_differs: bool = false
 	var wall_ms: int = 0
 
 	func summary() -> String:
-		return "vida sem jogador: %d min | vivos no mínimo %d | maior tempo parado %d min | pensamentos por passo no máximo %d | comida mínima %s | minutos com comida zero %s | hash %s | %d ms | problemas %d" % [
+		var text: String = "vida sem jogador: %d min | vivos no mínimo %d | maior tempo parado %d min | pensamentos por passo no máximo %d | comida mínima %s | minutos com comida zero %s | hash %s | %d ms | problemas %d" % [
 			minutes, min_alive, max_idle_min, max_thinks_in_a_step, str(food_min), str(food_zero_minutes), state_hash.left(12), wall_ms, problems.size(),
 		]
+		if caravan_arrivals > 0:
+			text += " | chegadas de caravana %d | amostras de trânsito %d" % [caravan_arrivals, transit_exempt_samples]
+		if reload_minute >= 0:
+			text += " | recarga em trânsito no minuto %d com %d caravana(s) em viagem" % [reload_minute, reload_travelling]
+		if not dead_seen.is_empty():
+			text += " | mortos %d (o primeiro visto no minuto %d)" % [dead_seen.size(), first_death_minute]
+		return text
 
 
 ## O jogo em andamento: o runner e o módulo `npc` dele; a `economy` e o `world` (as rotas) só com `with_economy` (senão nulos e o verificador não confere trânsito).
@@ -96,10 +115,14 @@ static func load_game_data() -> GameData:
 
 ## Anda `days` dias de jogo e confere os invariantes. `reload_after_days` maior que zero: nesse dia salva (codec JSON), carrega num runner NOVO
 ## e segue dali (o hash final precisa ser o mesmo da execução direta). `with_economy` (LW-098h1; padrão falso: o jogo e o hash de sempre): monta como o jogo real,
-## com a economia e as rotas de data/ (`EconomySetup` e `WorldSetup`), e a amostra isenta o comerciante em trânsito legítimo.
-static func run(data: GameData, world_seed: int, days: int, reload_after_days: int = 0, with_economy: bool = false) -> LifeReport:
+## com a economia e as rotas de data/ (`EconomySetup` e `WorldSetup`), e a amostra isenta o comerciante em trânsito legítimo. `reload_in_transit_after_days` maior ou igual a zero (só com `with_economy`; estabilidade de longo
+## prazo): a recarga acontece no PRIMEIRO minuto dali em diante com pelo menos uma caravana em viagem (`travelling`; `report.reload_minute` e `reload_travelling` dizem onde); sem esse minuto a execução acusa o problema.
+static func run(data: GameData, world_seed: int, days: int, reload_after_days: int = 0, with_economy: bool = false, reload_in_transit_after_days: int = -1) -> LifeReport:
 	var report: LifeReport = LifeReport.new()
 	var started_usec: int = Time.get_ticks_usec()
+	if reload_in_transit_after_days >= 0 and not with_economy:
+		add_problem(report, "a recarga em trânsito exige a economia (with_economy)")
+		return report
 	var game: Game = _new_game(data, world_seed, report, with_economy)
 	if game == null:
 		return report
@@ -107,9 +130,12 @@ static func run(data: GameData, world_seed: int, days: int, reload_after_days: i
 	var settlement_ids: Array[String] = []
 	for settlement: Settlement in data.settlements:
 		settlement_ids.append(settlement.id)
+	var traders: Array[int] = []
+	if reload_in_transit_after_days >= 0:
+		traders = _merchant_ids(game.npc)
 	var idle_samples: Dictionary[int, int] = {}
 	for minute: int in days * SimClock.MINUTES_PER_DAY:
-		if reload_after_days > 0 and minute == reload_after_days * SimClock.MINUTES_PER_DAY:
+		if _reload_due(game, report, minute, reload_after_days, reload_in_transit_after_days, traders):
 			game = _reload(game, data, world_seed, codec, report, with_economy)
 			if game == null:
 				return report
@@ -119,6 +145,8 @@ static func run(data: GameData, world_seed: int, days: int, reload_after_days: i
 			check_npcs(game.npc, EXPECTED_POPULATION, idle_samples, report, minute + 1, game.economy, game.world)
 		if (minute + 1) % SimClock.MINUTES_PER_DAY == 0:
 			_check_day_end(game, report, minute + 1)
+	if reload_in_transit_after_days >= 0 and report.reload_minute < 0:
+		add_problem(report, "nenhuma caravana em viagem depois do dia %d: a recarga em trânsito não foi exercitada" % reload_in_transit_after_days)
 	report.minutes = game.runner.world.context.clock.total_minutes()
 	report.max_thinks_in_a_step = int(game.npc.debug_summary().get("max_thinks_in_a_step", 0))
 	report.state_hash = game.runner.world.state_hash()
@@ -150,6 +178,10 @@ static func check_npcs(npc: NpcModule, expected_alive: int, idle_samples: Dictio
 	for npc_id: int in npc.peek_npc_ids():
 		var query: NpcModule.NpcQuery = npc.peek_npc(npc_id)
 		if not query.is_alive:
+			if not report.dead_seen.has(npc_id):
+				report.dead_seen[npc_id] = minute
+				if report.first_death_minute < 0:
+					report.first_death_minute = minute
 			add_problem(report, "minuto %d: o NPC %d está morto (causa '%s')" % [minute, npc_id, query.death_cause])
 			continue
 		alive += 1
@@ -213,6 +245,8 @@ static func _new_game(data: GameData, world_seed: int, report: LifeReport, with_
 		add_problem(report, "módulos do jogo: %s" % modules.result.message)
 		return null
 	_attach(game, modules, with_economy)
+	if with_economy:
+		_listen_arrivals(game, report)
 	game.runner.start_new_game()
 	return game
 
@@ -251,17 +285,61 @@ static func _reload(old: Game, data: GameData, world_seed: int, codec: JsonSaveC
 		add_problem(report, "salvar e carregar: %s" % loaded.message)
 		return null
 	if restored.world.state_hash() != hash_before:
+		report.reload_hash_differs = true
 		add_problem(report, "salvar e carregar: o hash do mundo carregado difere do salvo")
 	old.runner.finish()
 	var game: Game = Game.new()
 	game.runner = restored
 	_attach(game, modules, with_economy)
+	if with_economy:
+		_listen_arrivals(game, report)
 	return game
+
+
+## A recarga é deste minuto? Por dia (`reload_after_days`) ou, com `transit_after_days` maior ou igual a zero, no primeiro minuto dali em diante com ao menos uma caravana em viagem (uma vez só; o minuto e a conta
+## ficam no relatório). Só lê (`peek_*`).
+static func _reload_due(game: Game, report: LifeReport, minute: int, reload_after_days: int, transit_after_days: int, traders: Array[int]) -> bool:
+	if reload_after_days > 0 and minute == reload_after_days * SimClock.MINUTES_PER_DAY:
+		return true
+	if transit_after_days < 0 or report.reload_minute >= 0 or minute < transit_after_days * SimClock.MINUTES_PER_DAY:
+		return false
+	var travelling: int = _travelling_count(game.economy, traders)
+	if travelling == 0:
+		return false
+	report.reload_minute = minute
+	report.reload_travelling = travelling
+	return true
+
+
+## Quantos dos comerciantes (`traders`) têm a caravana em viagem agora (`travelling`; parada em `held` não conta).
+static func _travelling_count(economy: EconomyModule, traders: Array[int]) -> int:
+	var count: int = 0
+	for trader_id: int in traders:
+		var caravan: CaravanReplies.CaravanQuery = economy.peek_caravan(trader_id)
+		if caravan.result.ok and caravan.found and caravan.state == Caravan.STATE_TRAVELLING:
+			count += 1
+	return count
+
+
+## Os NPCs com o ofício de comerciante (data/occupations.json), por ID crescente.
+static func _merchant_ids(npc: NpcModule) -> Array[int]:
+	var ids: Array[int] = []
+	for npc_id: int in npc.peek_npc_ids():
+		if npc.peek_npc(npc_id).occupation_id == MERCHANT_OCCUPATION:
+			ids.append(npc_id)
+	return ids
+
+
+## Conta no relatório cada `CaravanArrived` do jogo. A escuta é do `runner` de agora (por isso refeita a cada recarga); o evento chega depois da venda do lote, e ouvir não escreve no mundo.
+static func _listen_arrivals(game: Game, report: LifeReport) -> void:
+	game.runner.world.context.events.subscribe(NpcModule.CARAVAN_ARRIVED_EVENT_TYPE, func(_event: SimEvent) -> void: report.caravan_arrivals += 1)
 
 
 ## Ao fim de cada dia: o mundo e o módulo sem nenhum problema de validação.
 static func _check_day_end(game: Game, report: LifeReport, minute: int) -> void:
 	for problem: String in game.runner.world.validate():
+		report.day_end_problem_count += 1
 		add_problem(report, "fim do dia (minuto %d): world.validate: %s" % [minute, problem])
 	for problem: String in game.npc.validate():
+		report.day_end_problem_count += 1
 		add_problem(report, "fim do dia (minuto %d): npc.validate: %s" % [minute, problem])

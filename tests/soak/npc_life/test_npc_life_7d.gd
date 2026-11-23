@@ -53,6 +53,27 @@ func test_seven_days_with_the_economy_and_the_real_merchants_keep_everyone_alive
 	assert_eq(again.transit_exempt_samples, first.transit_exempt_samples, "As mesmas amostras de trânsito nas duas execuções.")
 
 
+## Estabilidade de longo prazo (o soak manual de 90 dias é tests/soak/npc_life/soak_npc_life_90d_with_economy.gd): salvar e carregar COM caravana em viagem (`reload_in_transit_after_days`) não muda nada. Em 1 dia com a
+## economia, a recarga no primeiro minuto com caravana em viagem dá o MESMO hash, as mesmas chegadas e as mesmas amostras de trânsito que a execução direta. Casos de erro: sem a economia, e sem viagem até o fim do horizonte, o verificador ACUSA.
+func test_a_reload_with_a_caravan_travelling_changes_nothing_and_the_option_flags_its_misuse() -> void:
+	var direct: NpcLifeCheck.LifeReport = NpcLifeCheck.run(_data, WORLD_SEED, 1, 0, true)
+	assert_gt(direct.caravan_arrivals, 0, "Já no primeiro dia os comerciantes viajam e chegam.")
+	var reloaded: NpcLifeCheck.LifeReport = NpcLifeCheck.run(_data, WORLD_SEED, 1, 0, true, 0)
+	assert_eq(reloaded.problems.size(), 0, str(reloaded.problems))
+	assert_gt(reloaded.reload_travelling, 0, "A recarga aconteceu com caravana em viagem.")
+	assert_true(reloaded.reload_minute > 0 and reloaded.reload_minute < SimClock.MINUTES_PER_DAY, "No dia 0 (minuto %d)." % reloaded.reload_minute)
+	assert_false(reloaded.reload_hash_differs, "O mundo carregado tem o hash do salvo.")
+	assert_eq(reloaded.state_hash, direct.state_hash, "Salvar e carregar com caravana em viagem não muda o hash.")
+	assert_eq(reloaded.caravan_arrivals, direct.caravan_arrivals, "Nem as chegadas de caravana.")
+	assert_eq(reloaded.transit_exempt_samples, direct.transit_exempt_samples, "Nem as amostras de trânsito.")
+	assert_string_contains(reloaded.summary(), "recarga em trânsito no minuto %d" % reloaded.reload_minute)
+	var without_economy: NpcLifeCheck.LifeReport = NpcLifeCheck.run(_data, WORLD_SEED, 1, 0, false, 0)
+	assert_string_contains(str(without_economy.problems), "exige a economia")
+	var no_horizon: NpcLifeCheck.LifeReport = NpcLifeCheck.run(_data, WORLD_SEED, 0, 0, true, 0)
+	assert_string_contains(str(no_horizon.problems), "nenhuma caravana em viagem depois do dia 0")
+	assert_eq(no_horizon.reload_minute, -1, "Sem viagem, sem recarga.")
+
+
 # ---------------------------------------------------------------------------------------------------- o verificador acusa
 
 ## Estoque de comida de teste: o assentamento "s" começa com 3, teto 10.
@@ -147,6 +168,47 @@ func test_the_checker_flags_a_food_stock_outside_its_range_and_counts_the_zero_m
 	var unknown: Array[String] = ["nowhere"]
 	NpcLifeCheck.check_food(module, unknown, report)
 	assert_eq(report.problems.size(), 3, "Assentamento sem regra de comida também é acusado.")
+
+
+## Estabilidade de longo prazo: as contas SEM teto. Uma mortandade enche `problems` (teto MAX_PROBLEMS) e esconderia o resto, mas os mortos vistos, o minuto do primeiro e os problemas de validação do fim de dia continuam contando.
+func test_the_uncapped_counts_keep_counting_when_the_problem_list_is_full() -> void:
+	var module: NpcModule = _tiny_module(_tiny_food())
+	var report: NpcLifeCheck.LifeReport = NpcLifeCheck.LifeReport.new()
+	for index: int in NpcLifeCheck.MAX_PROBLEMS:
+		NpcLifeCheck.add_problem(report, "problema %d" % index)
+	var saved: Dictionary = module.serialize()
+	var entries: Dictionary = saved["npcs"]
+	var dead: Dictionary = entries["1"]
+	dead["is_alive"] = false
+	dead["death_cause"] = "hunger"
+	dead["died_at"] = 10
+	var living: Dictionary = entries["2"]
+	var values: Array = living["need_values"]
+	values[0] = 101
+	assert_true(module.on_load(saved).ok, "O módulo carrega; quem aponta a faixa é o validate().")
+	var idle: Dictionary[int, int] = {}
+	NpcLifeCheck.check_npcs(module, 2, idle, report, 30)
+	NpcLifeCheck.check_npcs(module, 2, idle, report, 45)
+	assert_eq(report.problems.size(), NpcLifeCheck.MAX_PROBLEMS, "A lista continua no teto.")
+	assert_eq(report.dead_seen.size(), 1, "O morto conta uma vez, mesmo visto em duas amostras.")
+	assert_eq(int(report.dead_seen[1]), 30, "No minuto da primeira amostra em que estava morto.")
+	assert_eq(report.first_death_minute, 30)
+	var game: NpcLifeCheck.Game = NpcLifeCheck.Game.new()
+	game.runner = SimulationRunner.new(1)
+	game.npc = module
+	NpcLifeCheck._check_day_end(game, report, SimClock.MINUTES_PER_DAY)
+	assert_gt(report.day_end_problem_count, 0, "O fim de dia acusou a necessidade fora da faixa.")
+	assert_eq(report.problems.size(), NpcLifeCheck.MAX_PROBLEMS, "Mesmo com a lista cheia.")
+	assert_string_contains(report.summary(), "mortos 1 (o primeiro visto no minuto 30)")
+	game.runner.finish()
+	var healthy: NpcLifeCheck.LifeReport = NpcLifeCheck.LifeReport.new()
+	var healthy_game: NpcLifeCheck.Game = NpcLifeCheck.Game.new()
+	healthy_game.runner = SimulationRunner.new(1)
+	healthy_game.npc = _tiny_module(_tiny_food())
+	NpcLifeCheck._check_day_end(healthy_game, healthy, SimClock.MINUTES_PER_DAY)
+	assert_eq(healthy.day_end_problem_count, 0, "Mundo são, nenhuma conta.")
+	assert_false(healthy.summary().contains("mortos"), "Sem mortos, o resumo não os cita.")
+	healthy_game.runner.finish()
 
 
 func test_the_problem_list_is_capped_so_the_report_stays_readable() -> void:
