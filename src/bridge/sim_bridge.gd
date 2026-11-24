@@ -11,6 +11,7 @@ extends RefCounted
 ## LW-072a: o interruptor de corpos e a consulta dos corpos a manter (os NPCs em S0 que não estão em viagem), para a apresentação desenhar os NPCs.
 ## LW-108b: três consultas de leitura da economia (`peek_economy_*`) para o painel econômico de depuração; a conta fica em `BridgeEconomyInspect`.
 ## LW-107b: o quadro de contratos do jogador (`peek_contract_board`, `request_contract_accept` e `request_contract_deliver`); a lógica fica em `BridgePlayerContracts` e só se delega aqui. LW-107f3: também `request_contract_abandon`.
+## LW-099b1: `peek_caravan_bodies`, a consulta só de leitura das caravanas para a viagem visível (a conta fica em `BridgeCaravans`; só se delega aqui).
 
 const CODE_NO_GAME: String = "BRIDGE_NO_GAME"
 const CODE_NO_TERRAIN: String = "BRIDGE_NO_TERRAIN"
@@ -543,3 +544,15 @@ func peek_economy_sites() -> BridgeEconomyReplies.EconomySitesReply:
 	if economy == null:
 		return BridgeEconomyReplies.EconomySitesReply.new(_missing_economy("peek_economy_sites"))
 	return BridgeEconomyInspect.sites(economy, BridgeEconomyInspect.settlement_ids_of(_places))
+
+
+# ---------------------------------------------------------------------------------------------------- Viagem visível (LW-099b1)
+# Consulta só de leitura das caravanas, para a apresentação desenhar o comerciante em viagem (contrato da LW-099, seção 6, PROPOSTO no PR #158: docs/economia/contrato-lw-099-viagem-visivel.md). A conta fica em `BridgeCaravans`; aqui só se confere a ponte sem jogo ou sem economia e se delega. Nenhuma escrita, nenhum `request_*`, nenhum evento.
+
+## As caravanas a desenhar agora (todas as da economia: andando, paradas no meio do trecho e paradas num povoado), em CÓPIAS e em ordem crescente de `trader_id`, cada uma com a fração `u` do trecho já pronta (a fração de passo do relógio dentro dela, só para quem anda) e a faixa de carga. A apresentação CONSULTA a cada quadro (sem sinal);
+## o ponto no mundo, a altura e o alcance são dela. Não exige terreno nem `npc`. Sem jogo: BRIDGE_NO_GAME; sem economia: BRIDGE_NO_ECONOMY.
+func peek_caravan_bodies() -> BridgeReplies.CaravanBodiesReply:
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgeReplies.CaravanBodiesReply.new(_missing_economy("peek_caravan_bodies"), [])
+	return BridgeCaravans.bodies(economy, _clock().step_fraction())

@@ -58,6 +58,12 @@ func steps_for_frame(frame_delta_ms: int) -> int:
 	return steps
 
 
+## A FRAÇÃO DE PASSO (LW-099b1): a parte do minuto simulado em curso que já correu em tempo real, em [0, 1) (o acúmulo pendente dividido por `real_ms_per_minute`). SÓ LEITURA, para a apresentação interpolar entre dois passos: não anda o relógio, não muda o ritmo e não entra no save nem no hash.
+## Pausado, o acúmulo não anda (`steps_for_frame`), então a fração fica onde estava; `on_load` zera o acúmulo e a fração volta a 0.
+func step_fraction() -> float:
+	return float(_pending_scaled_ms) / float(_real_ms_per_minute)
+
+
 func set_paused(paused: bool) -> void:
 	_is_paused = paused
 
