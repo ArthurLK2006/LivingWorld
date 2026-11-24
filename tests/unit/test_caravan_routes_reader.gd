@@ -2,7 +2,7 @@ extends GutTest
 ## LW-099a: o dado de apresentação da viagem visível (data/presentation/caravan_routes.json) e o leitor `CaravanRoutesReader`, sem janela. O dado REAL carrega, tem
 ## uma entrada por rota de data/world/routes.json e por bem de data/economy/goods.json (esta conferência é DO TESTE: o leitor, da apresentação, não conhece a
 ## simulação), e as pontas nos mercados de data/world/places.json dão uma polilinha entre 90% e 110% do `length_m` da rota. Todo arquivo inválido (um caso por
-## regra) vira falha tratada com arquivo, item e campo e o dado devolvido fica vazio. TODOS os valores do dado (80 e 120 m, 1,2 m, reserva de 8, 25 graus, 1,5 m,
+## regra) vira falha tratada com arquivo, item e campo e o dado devolvido fica vazio. TODOS os valores do dado (80 e 120 m, 1,2 m, reserva de 8, 25 graus,
 ## cores e formas) são [HIP] PROVISÓRIOS: Arthur os ajusta na janela, por isso o teste confere só faixas e propriedades, não os números.
 
 const ROUTES_FILE: String = "res://data/world/routes.json"
@@ -10,7 +10,7 @@ const GOODS_FILE: String = "res://data/economy/goods.json"
 const PLACES_FILE: String = "res://data/world/places.json"
 const POPULATION_FILE: String = "res://data/population.json"
 const LABEL: String = CaravanRoutesReader.DEFAULT_PATH
-const VIEW_OK: String = '{"enter_m": 80, "exit_m": 120, "lateral_offset_m": 1.2, "pool_size": 8, "max_pitch_deg": 25, "pitch_spacing_m": 1.5}'
+const VIEW_OK: String = '{"enter_m": 80, "exit_m": 120, "lateral_offset_m": 1.2, "pool_size": 8, "max_pitch_deg": 25}'
 const ROUTES_OK: String = '[{"route_id": "r1", "points_m": [[10, 20], [30.5, 40]]}, {"route_id": "r2"}]'
 const CARGO_OK: String = '[{"good_id": "g1", "color": "#C4A24C", "shape": "sack"}, {"good_id": "g2", "color": "#48535E", "shape": "box"}]'
 const MINIMAL: String = '{"version": 1, "view": ' + VIEW_OK + ', "routes": ' + ROUTES_OK + ', "cargo": ' + CARGO_OK + "}"
@@ -23,7 +23,8 @@ const INVALID: Array = [
 	["campo desconhecido na raiz", '"version": 1,', '"version": 1, "extra": 1,', "", "extra"],
 	["bloco view ausente", '"view": ' + VIEW_OK + ", ", "", "", "view"],
 	["campo desconhecido na vista", '"pool_size": 8,', '"pool_size": 8, "extra": 1,', "view", "extra"],
-	["campo da vista ausente", ', "pitch_spacing_m": 1.5', "", "view", "pitch_spacing_m"],
+	["campo da vista ausente", ', "max_pitch_deg": 25', "", "view", "max_pitch_deg"],
+	["pitch_spacing_m (campo removido na LW-099c) é desconhecido", '"pool_size": 8,', '"pool_size": 8, "pitch_spacing_m": 1.5,', "view", "pitch_spacing_m"],
 	["enter_m negativo", '"enter_m": 80', '"enter_m": -5', "view", "enter_m"],
 	["enter_m zero", '"enter_m": 80', '"enter_m": 0', "view", "enter_m"],
 	["enter_m texto", '"enter_m": 80', '"enter_m": "80"', "view", "enter_m"],
@@ -35,7 +36,6 @@ const INVALID: Array = [
 	["max_pitch_deg vertical", '"max_pitch_deg": 25', '"max_pitch_deg": 90', "view", "max_pitch_deg"],
 	["max_pitch_deg negativo", '"max_pitch_deg": 25', '"max_pitch_deg": -1', "view", "max_pitch_deg"],
 	["lateral_offset_m negativo", '"lateral_offset_m": 1.2', '"lateral_offset_m": -1.2', "view", "lateral_offset_m"],
-	["pitch_spacing_m zero", '"pitch_spacing_m": 1.5', '"pitch_spacing_m": 0', "view", "pitch_spacing_m"],
 	["rotas vazias", '"routes": ' + ROUTES_OK, '"routes": []', "", "routes"],
 	["route_id repetido", '{"route_id": "r2"}', '{"route_id": "r1"}', "r1", "route_id"],
 	["route_id que não é texto", '{"route_id": "r2"}', '{"route_id": 7}', "routes[1]", "route_id"],
@@ -141,7 +141,7 @@ func test_a_valid_file_is_read_completely() -> void:
 	assert_eq(data.cargo_ids(), PackedStringArray(["g1", "g2"]), "cargas, na ordem do arquivo")
 	assert_eq(data.cargo_color("g1"), Color.html("#C4A24C"), "cor lida")
 	assert_eq(data.cargo_shape("g2"), "box", "forma lida")
-	assert_eq([data.enter_m, data.exit_m, data.lateral_offset_m, data.pool_size, data.max_pitch_deg, data.pitch_spacing_m], [80.0, 120.0, 1.2, 8, 25.0, 1.5], "vista lida")
+	assert_eq([data.enter_m, data.exit_m, data.lateral_offset_m, data.pool_size, data.max_pitch_deg], [80.0, 120.0, 1.2, 8, 25.0], "vista lida")
 	assert_true(data.cargo_color("faltou") == Color.MAGENTA and data.cargo_shape("faltou") == "", "bem sem entrada: a cor de 'faltou' e nenhuma forma")
 	var copy: PackedVector2Array = data.points_of("r1")
 	copy.append(Vector2.ZERO)
