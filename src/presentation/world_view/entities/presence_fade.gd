@@ -3,8 +3,9 @@ extends RefCounted
 ## LW-099d (viagem visível; SÓ apresentação): a DISSOLUÇÃO de 0,4 s com que um corpo desaparece ou aparece na partida da caravana (opção A de Arthur, 24/11/2026): o comerciante parado some suavemente onde estava e a
 ## caravana surge suave no ponto de saída, sem deslocamento lateral e sem tocar no tempo nem na posição lógica da simulação. O tempo é REAL (`_process(delta)`; o projeto não usa `Engine.time_scale`).
 ## `transparency` é a propriedade de INSTÂNCIA do `GeometryInstance3D` (0 = opaco, 1 = invisível): não duplica material, vale para todo corpo de primitivas e para uma figura, e mantém as sombras. Pela documentação do Godot 4.x (NÃO conferida
-## no 4.7.2: a documentação não vem no binário usado aqui) ela só vale no Forward+ e no Mobile, o renderer oficial do projeto; no Compatibility seria ignorada. Só estáticos: quem guarda o tempo decorrido é o dono do corpo
-## (`NpcBodiesView` na despedida, `CaravanView` na aparição).
+## no 4.7.2: a documentação não vem no binário usado aqui) ela só vale no Forward+ e no Mobile, o renderer oficial do projeto; no Compatibility seria ignorada. Numa figura com shader próprio, pela mesma documentação o padrão de `ALPHA` num shader espacial é `1 - transparency`
+## (também NÃO conferido no 4.7.2): só um shader que escreva `ALPHA` por conta própria ignora a dissolução; as figuras reais usam `CharacterPaintShaders`, que não escreve `ALPHA` (conferido por busca no texto; a aparência é da janela).
+## Só estáticos: quem guarda o tempo decorrido é o dono do corpo (`NpcBodiesView` na despedida, `CaravanView` na aparição).
 
 ## [HIP] Duração da dissolução (s): a que Arthur escolheu ("aproximadamente 0,4 segundo"); afinar na janela dele.
 const DURATION_S: float = 0.4
