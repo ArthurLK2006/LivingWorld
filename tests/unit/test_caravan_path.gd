@@ -152,3 +152,29 @@ func test_through_joins_the_two_ends_with_the_waypoints() -> void:
 	var bent: CaravanPath = CaravanPath.through(Vector2(0, 0), PackedVector2Array([Vector2(30, 0)]), Vector2(30, 40))
 	assert_almost_eq(bent.length_m(), 70.0, EPS, "30 + 40 m")
 	_near(_pose(bent, 30.0 / 70.0).position, Vector2(30, 0), "passa pelo ponto de passagem")
+
+
+func test_the_ramp_takes_the_lateral_offset_from_zero_at_both_ends_and_moves_nothing_else() -> void:
+	var path: CaravanPath = CaravanPath.new(EAST)
+	var ramp_m: float = 12.0
+	for forward: bool in [true, false]:
+		for walked_m: float in [0.0, 3.0, 6.0, 12.0, 50.0, 88.0, 94.0, 97.0, 100.0]:
+			var u: float = walked_m / path.length_m()
+			var ramped: CaravanPath.Pose = CaravanPath.Pose.new()
+			path.sample_into(u, forward, LATERAL_M, ramped, ramp_m)
+			var full: CaravanPath.Pose = _pose(path, u, forward, LATERAL_M)
+			var share: float = clampf(minf(walked_m, path.length_m() - walked_m) / ramp_m, 0.0, 1.0)
+			assert_almost_eq(absf(ramped.position.y - _pose(path, u, forward).position.y), LATERAL_M * share, EPS, "a %s m da ponta (forward %s): a fração %s do deslocamento" % [walked_m, forward, share])
+			assert_almost_eq(ramped.position.x, full.position.x, EPS, "a rampa só mexe de lado: o ponto ao longo da estrada é o mesmo")
+			assert_eq(ramped.yaw, full.yaw, "e o giro é o mesmo")
+
+
+func test_a_ramp_longer_than_half_the_road_never_reaches_the_full_offset_and_zero_or_bad_ramps_change_nothing() -> void:
+	var short: CaravanPath = CaravanPath.new(PackedVector2Array([Vector2(0, 0), Vector2(10, 0)]))
+	var pose: CaravanPath.Pose = CaravanPath.Pose.new()
+	short.sample_into(0.5, true, LATERAL_M, pose, 12.0)
+	assert_almost_eq(pose.position.y, LATERAL_M * 5.0 / 12.0, EPS, "numa estrada de 10 m a rampa de 12 m nunca chega ao deslocamento cheio (no meio, 5 de 12)")
+	var path: CaravanPath = CaravanPath.new(EAST)
+	for ramp_m: float in [0.0, -3.0, NAN, INF]:
+		path.sample_into(0.0, true, LATERAL_M, pose, ramp_m)
+		assert_almost_eq(pose.position.y, LATERAL_M, EPS, "rampa %s: o deslocamento fica cheio até na ponta (o comportamento antigo)" % ramp_m)
