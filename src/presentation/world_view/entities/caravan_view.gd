@@ -10,6 +10,9 @@ extends Node3D
 ## seguidas (roda: distância ÷ raio; pisada: a do `NpcView` na velocidade em que foi calibrada) e só com a caravana andando: parada, ou em pausa (a mesma
 ## pose), nada anima. O corpo nasce ESCONDIDO e só aparece na primeira pose depois de `bind`; esconder por falta de terreno é com quem o usa (`visible`).
 ## Os números são [HIP] PROVISÓRIOS, a afinar na janela de Arthur. Contrato: docs/economia/contrato-lw-099-viagem-visivel.md, seção 2.
+## APARIÇÃO (LW-099d, opção A de Arthur em 24/11/2026; só apresentação): a primeira pose depois de `bind` (a partida, ou a entrada no alcance do jogador) começa uma dissolução de `PresenceFade.DURATION_S` (0,4 s de tempo REAL): o corpo todo (comerciante, carrinho, rodas e
+## carga) nasce invisível (`transparency` = 1) e fica opaco (0) linearmente. O `_process` só roda ENQUANTO aparece (e `advance_fade(delta)` é o mesmo passo, para os testes); a troca de trecho não começa outra (o corpo é o mesmo) e `release` volta o corpo a opaco e sem aparição pendente,
+## então o corpo reaproveitado da reserva não herda nada. A pose, o tempo e a velocidade não mudam.
 
 ## Nomes dos nós.
 const MERCHANT_NAME: String = "Merchant"
@@ -85,6 +88,10 @@ var _last_yaw: float = 0.0
 var _last_pitch: float = 0.0
 ## Ângulo das rodas em torno de X (rad, de 0 a TAU): rolar para a frente (-Z) gira no sentido negativo de X, então o ângulo diminui com o deslocamento.
 var _wheel_angle: float = 0.0
+## A aparição (LW-099d): se está em curso, os segundos desde a primeira pose e a transparência posta por último (0 = opaco, 1 = invisível).
+var _is_appearing: bool = false
+var _appear_s: float = 0.0
+var _fade: float = PresenceFade.OPAQUE
 
 
 ## `routes` é o dado de apresentação (a tabela de cor e forma da carga); este corpo só o lê.
@@ -101,9 +108,14 @@ func _init(routes: CaravanRoutesReader) -> void:
 
 
 ## O `NpcView` religa o próprio `_process` (tempo real) ao entrar na árvore já andando; aqui a pisada só anda com o deslocamento. Os filhos entram antes do pai,
-## então este desligar vem depois do dele.
+## então este desligar vem depois do dele. O `_process` deste corpo só roda enquanto ele aparece (a Godot o liga sozinha ao entrar na árvore; um corpo que já começou a aparecer fora da árvore o mantém ligado).
 func _ready() -> void:
 	_merchant.set_process(false)
+	set_process(_is_appearing)
+
+
+func _process(delta: float) -> void:
+	advance_fade(delta)
 
 
 ## Quantos volumes a faixa do peso do lote mostra: 0 = nenhum; até 333 um; até 666 dois; acima, três. Fora de 0 a 1000 vale o extremo mais próximo.
@@ -126,9 +138,13 @@ func bind(new_trader_id: int) -> void:
 	trader_id = new_trader_id
 
 
-## Solta a caravana: o corpo some e volta ao estado de novo (nada é apagado), pronto para a reserva. O corpo reciclado não herda pose, rodas, carga nem pisada.
+## Solta a caravana: o corpo some e volta ao estado de novo (nada é apagado), pronto para a reserva. O corpo reciclado não herda pose, rodas, carga, pisada nem aparição (volta opaco e sem aparição pendente).
 func release() -> void:
 	trader_id = IdGenerator.NO_ID
+	_is_appearing = false
+	_appear_s = 0.0
+	set_process(false)
+	_set_fade(PresenceFade.OPAQUE)
 	visible = false
 	position = Vector3.ZERO
 	rotation = Vector3.ZERO
@@ -157,6 +173,28 @@ func volume_count() -> int:
 	return _volume_count
 
 
+## Avança a aparição em `delta` segundos de tempo REAL (o `_process` chama com o `delta` do quadro): a transparência vai de 1 a 0 em `PresenceFade.DURATION_S` e, ao chegar a 0, a aparição acaba e o `_process` desliga. Sem aparição em curso,
+## ou com `delta` NaN, não faz nada; `delta` negativo conta como 0 e um `delta` enorme termina a aparição de uma vez.
+func advance_fade(delta: float) -> void:
+	if not _is_appearing or is_nan(delta):
+		return
+	_appear_s += maxf(delta, 0.0)
+	_set_fade(PresenceFade.in_amount(_appear_s))
+	if _appear_s >= PresenceFade.DURATION_S:
+		_is_appearing = false
+		set_process(false)
+
+
+## A transparência do corpo agora (0 = opaco, 1 = invisível).
+func fade() -> float:
+	return _fade
+
+
+## Se a aparição está em curso (da primeira pose até completar `PresenceFade.DURATION_S` de tempo avançado).
+func is_appearing() -> bool:
+	return _is_appearing
+
+
 ## Põe o corpo na pose pedida: pés do comerciante em `ground_position` (metros, mundo), giro `yaw` (rad, em torno de Y; a frente é -Z local) e inclinação `pitch`
 ## (rad, em torno de X; positiva = frente mais alta). A primeira pose depois de `bind` mostra o corpo e não anima (não há "quadro anterior"); as seguintes giram as
 ## rodas e movem a pisada pela distância andada, mas só com a caravana andando (`apply_state`). A mesma pose de novo não faz nada. Valor não finito, ou corpo livre: ignorado.
@@ -175,6 +213,7 @@ func apply_pose(ground_position: Vector3, yaw: float, pitch: float) -> void:
 	if not _has_pose:
 		_has_pose = true
 		visible = true
+		_begin_appearing()
 
 
 ## Põe o corpo no estado da caravana: `travelling` falso (rota fechada, parada no meio do trecho) para o comerciante e as rodas; `good_id` e `load_permille` (0 a 1000, o
@@ -191,6 +230,27 @@ func apply_state(travelling: bool, good_id: String, load_permille: int) -> void:
 	_good_id = good_id
 	_volume_count = count
 	_refresh_cargo()
+
+
+## Começa a aparição na primeira pose: o corpo todo (comerciante, carrinho, rodas e carga) invisível e o `_process` ligado.
+func _begin_appearing() -> void:
+	_is_appearing = true
+	_appear_s = 0.0
+	_set_fade(PresenceFade.in_amount(0.0))
+	set_process(true)
+
+
+## Põe a transparência `amount` em todo o corpo (o comerciante pelo `NpcView.set_fade`, que guarda a conta dele; o carrinho e a carga pelo `PresenceFade`), mas só percorre a árvore se o valor mudou (o corpo opaco que volta à reserva não custa nada).
+func _set_fade(amount: float) -> void:
+	if amount == _fade:
+		return
+	_fade = amount
+	for index: int in get_child_count():
+		var part: Node = get_child(index)
+		if part == _merchant:
+			_merchant.set_fade(_fade)
+		else:
+			PresenceFade.apply(part, _fade)
 
 
 ## Gira as rodas (distância ÷ raio, para a frente) e adianta a pisada do comerciante pelo tempo que o NPC levaria para andar essa distância (a cadência do `NpcView` é a de 4 m/s).
