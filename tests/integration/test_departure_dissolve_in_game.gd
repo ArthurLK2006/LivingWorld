@@ -254,10 +254,10 @@ func test_the_body_dissolves_where_it_stood_while_the_caravan_appears_and_then_o
 		return
 	assert_eq([game.npc_bodies.fading_ids(), game.npc_bodies.active_ids().has(trip.trader), trip.returned_in_frame], [[trip.trader] as Array[int], true, 0], "Em despedida, ainda ativo, e nada voltou à reserva no quadro da partida.")
 	assert_true(npc.visible and caravan.visible, "Os dois estão na tela no quadro da partida.")
-	var pending: Array[int] = []
+	var waiting_ids: Array[int] = []
 	for intent: BridgeReplies.NpcIntentReply in game.bridge.peek_pending_npc_intents().intents:
-		pending.append(intent.npc_id)
-	assert_false(trip.trader in pending, "O comerciante que parte não tem Intent pendente: o motorista dos corpos não tem o que fazer com o corpo em despedida (a simulação não é tocada).")
+		waiting_ids.append(intent.npc_id)
+	assert_false(trip.trader in waiting_ids, "O comerciante que parte não tem Intent pendente: o motorista dos corpos não tem o que fazer com o corpo em despedida (a simulação não é tocada).")
 	assert_eq([npc.fade(), caravan.fade(), _capsule(npc).transparency, _tire(caravan).transparency], [0.0, 1.0, 0.0, 1.0], "O começo da dissolução: o NPC ainda opaco, a caravana ainda invisível.")
 	var stand: Vector3 = npc.position
 	var elapsed: float = 0.0
