@@ -121,7 +121,7 @@ func _init(need_defs: Array[NeedDef] = [], routine: RoutineTable = null, definit
 	_wage_income = null if economy == null else WageIncome.new(_npcs, _need_defs, economy)
 	_employment = null if economy == null else NpcEmployment.new(_npcs, economy, _definitions.places if _definitions != null else null, _definitions.params if _definitions != null else null, _routine)
 	_arrival = null if economy == null else MerchantArrival.new(_npcs, _definitions.places if _definitions != null else null, _wage_income, _runtime.cancel_action, _bodies.is_embodied, _bodies.release_body)
-	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null)
+	_player_talk = NpcPlayerTalk.new(_npcs, lod, _runtime.begin_talk_player, _notables.relation_values, _unknown, _notables, _definitions.params if _definitions != null else null, economy)
 
 
 func setup(ctx: SimContext) -> void:
@@ -196,7 +196,7 @@ func request_adjust_relation(a_id: int, b_id: int, deltas: PackedInt64Array) -> 
 
 
 ## O jogador (`actor_id`, em `actor_position_m`) pede para conversar com o NPC (LW-083b). Confere, nesta ordem: NPC inexistente, morto, sem corpo (`NPC_NOT_IN_S0`),
-## posição inválida (`NPC_INVALID_POSITION`), longe (`NPC_TALK_TOO_FAR`, até 3 m do corpo), ocupado (`NPC_TALK_BUSY`: dormindo, fugindo, ajudando ou em alarme) e cooldown
+## posição inválida (`NPC_INVALID_POSITION`), longe (`NPC_TALK_TOO_FAR`, até 3 m do corpo), ocupado (`NPC_TALK_BUSY`: dormindo, fugindo, ajudando, em alarme ou em viagem, com caravana na economia) e cooldown
 ## (`NPC_TALK_COOLDOWN`, 60 min). Recusado, NADA muda. Aceito: o NPC interrompe o que fazia, para onde está e conversa (ação `talk_player`), e `text_key` é a chave do
 ## texto: `first` ou `known`. Na mesma chamada (LW-083c) o NPC é promovido a T2 se houver vaga (`was_promoted`), a relação com o jogador sobe e, sendo T2, a memória `conversation`
 ## é gravada. Antes de tudo o ator é conferido: ID fora da faixa ou NPC é recusado. Módulo sem `setup()`: `NPC_NOT_READY`.
