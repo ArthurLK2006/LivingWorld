@@ -30,22 +30,26 @@ var _unknown_npc: Callable
 var _notables: NpcNotables
 ## Só para a conta `capped_gain` da conversa entre NPCs (mesmos `talk_gain` e `talk_limit`): a conversa com o jogador soma o mesmo ganho, sem número novo.
 var _gain: SocialActions
+## A economia (a mesma porta que o `npc` já usa, `economy/api`), só para saber quem está em VIAGEM: quem tem caravana (`peek_caravan(id).found`, o critério de `MerchantTrade.in_transit`) segue em S0 no mercado de partida, mas sem corpo na tela, e não atende
+## (diagnóstico de 23/11/2026). Nula (as bancadas e o jogo sem economia), ninguém está em viagem e a porta se comporta como antes.
+var _economy: EconomyModule
 
 
-func _init(npcs: Dictionary[int, NpcState], lod: NpcLod, begin_talk: Callable, relation_values: Callable, unknown_npc: Callable, notables: NpcNotables = null, params: NpcParams = null) -> void:
+func _init(npcs: Dictionary[int, NpcState], lod: NpcLod, begin_talk: Callable, relation_values: Callable, unknown_npc: Callable, notables: NpcNotables = null, params: NpcParams = null, economy: EconomyModule = null) -> void:
 	_npcs = npcs
 	_lod = lod
 	_begin_talk = begin_talk
 	_relation_values = relation_values
 	_unknown_npc = unknown_npc
 	_notables = notables
+	_economy = economy
 	if notables != null and params != null:
 		_gain = SocialActions.new(npcs, params.talk_gain, params.talk_limit, notables.relation_values, notables.adjust_relation, notables.record_memory)
 
 
 ## O `actor_id`, em `actor_position_m`, pede para conversar com `npc_id` no minuto `now`. Confere nesta ordem (a primeira que falha recusa e NADA muda): ator
 ## inválido (ID fora da faixa ou que é um NPC), NPC inexistente, morto, sem corpo (NPC_NOT_IN_S0), posição inválida, longe (NPC_TALK_TOO_FAR), ocupado
-## (NPC_TALK_BUSY) e cooldown (NPC_TALK_COOLDOWN). Aceito: o NPC para e conversa, o minuto fica gravado e a chave é `first` (nunca se conheceram, decidido
+## (NPC_TALK_BUSY: dormindo, fugindo, ajudando, com alarme aberto ou EM VIAGEM, isto é, com caravana na economia) e cooldown (NPC_TALK_COOLDOWN). Aceito: o NPC para e conversa, o minuto fica gravado e a chave é `first` (nunca se conheceram, decidido
 ## ANTES de a relação nascer) ou `known`. Depois (LW-083c) vêm as consequências; se uma delas falhar, a conversa CONTINUA e o resultado leva a falha.
 func converse(actor_id: int, actor_position_m: Vector3, npc_id: int, now: int) -> NpcModule.ConverseResult:
 	var refusal: Result = _refusal(actor_id, actor_position_m, npc_id, now)
@@ -110,6 +114,8 @@ func _refusal(actor_id: int, actor_position_m: Vector3, npc_id: int, now: int) -
 	var reach_cm: int = TALK_REACH_M * CM_PER_METER
 	if delta_x * delta_x + delta_z * delta_z > reach_cm * reach_cm:
 		return Result.failure(NpcModule.CODE_TALK_TOO_FAR, "NpcModule.request_converse: o ator está longe do NPC %d (corpo em %s cm); esperado no máximo %d m na horizontal." % [npc_id, str(body_cm), TALK_REACH_M])
+	if _economy != null and _economy.peek_caravan(npc_id).found:
+		return Result.failure(NpcModule.CODE_TALK_BUSY, "NpcModule.request_converse: o NPC %d está em viagem (tem caravana na economia; a posição lógica dele só muda na chegada) e não atende." % npc_id)
 	if state.alarm_until > now or BUSY_ACTION_IDS.has(state.action_id):
 		return Result.failure(NpcModule.CODE_TALK_BUSY, "NpcModule.request_converse: o NPC %d está ocupado ('%s', alarme até o minuto %d) e não atende." % [npc_id, state.action_id, state.alarm_until])
 	if state.last_player_talk_at != NpcState.NO_TIME and now - state.last_player_talk_at < TALK_COOLDOWN_MIN:
