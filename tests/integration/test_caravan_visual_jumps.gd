@@ -2,9 +2,10 @@ extends GutTest
 ## LW-099c: os SALTOS VISUAIS da caravana no JOGO REAL, sem janela: dados reais, a ponte real, as duas vistas de corpos e o MOTORISTA dos corpos (`NpcBodyDriver`, que para o `NpcView` na borda da caixa do mercado: sem ele o corpo "perfeito" nunca move o `NpcView`, que
 ## ficaria parado onde nasceu, e a medição da partida não valeria). O foco do jogador fica a 10 m do mercado de partida e depois acompanha a caravana; quadros de 250 ms, e de 16 ms (o de um jogo a 60 por segundo) nos últimos 2 minutos, para a última pose ser a de quase `u` = 1.
 ## MEDIDAS em metros no plano (24/11/2026, o 1º comerciante que parte no jogo novo, B para C, semente padrão). ANTES da rampa do deslocamento lateral: PARTIDA 3,70 m (o `NpcView` em pé a 2,55 m do centro do mercado e a caravana nascendo a 1,20 m à direita do centro, não no eixo);
-## CHEGADA 1,20 m (a última pose a 1,20 m do centro, onde o `NpcView` reaparece); maior passo entre poses 0,65 m. DEPOIS: PARTIDA 2,55 m, só o ponto onde o `NpcView` ficava em pé (a vista não sabe de que lado do mercado ele estava; fechar isso pede a posição lógica do
-## comerciante, fora do alcance desta tarefa) e 0,00 m de lateral; CHEGADA 0,01 m; maior passo 0,65 m (a rampa não mexe em `u`, no tempo nem na velocidade). Giro nas trocas com o `NpcView` (não corrigido: o giro do `NpcView` é do `NpcBodiesView` e do motorista): ele estava a
+## CHEGADA 1,20 m (a última pose a 1,20 m do centro, onde o `NpcView` reaparece); maior passo entre poses 0,65 m. DEPOIS DA RAMPA: PARTIDA 2,55 m, só o ponto onde o `NpcView` ficava em pé (o `peek_npc_detail` dá o centro LÓGICO do mercado, 807,00 e 653,00, e não o do corpo, 807,86 e 655,40: medido) e 0,00 m de lateral; CHEGADA 0,01 m; maior passo 0,65 m (a rampa não mexe em `u`, no tempo nem na velocidade). Giro nas trocas com o `NpcView` (não corrigido: o giro do `NpcView` é do `NpcBodiesView` e do motorista): ele estava a
 ## 19,7 graus e a caravana parte a 129,8; a caravana chega a 129,8 e ele reaparece a 0. A troca de TRECHO está em `tests/unit/test_caravan_bodies_view_joints.gd`.
+## COM A ÂNCORA DA PARTIDA (a `NpcBodiesView` passada ao `setup`, como a cena faz; ela guarda onde cada corpo ficou em pé ao ser devolvido): PARTIDA 0,00 m (a 1ª pose sai do ponto onde o `NpcView` estava em pé, a 2,55 m do centro, e o deslocamento some em linha reta nos primeiros 12 m); CHEGADA 0,01 m e
+## maior passo 0,65 m (iguais); o corpo nunca recua ao longo da estrada e a largura máxima ao eixo é 2,39 m (o deslocamento inicial, que desce até os 1,2 m). Sem a âncora (`Mode.VIEW`, o `setup` de antes) a partida segue a de antes: 2,55 m.
 
 const DATA_DIR: String = "res://data"
 const WORLD_DIR: String = "res://data/world"
@@ -29,6 +30,19 @@ const AXIS_M: float = 0.1
 const STAND_MAX_M: float = 3.5
 ## O maior passo entre duas poses de quadros de 250 ms (a 2,9 m/s são 0,73 m).
 const STEP_MAX_M: float = 0.8
+const LATERAL_M: float = 1.2
+## O corpo nunca anda para trás ao longo da estrada: a folga é só de arredondamento.
+const BACK_TOLERANCE_M: float = 0.001
+## A 1ª pose da âncora está no ponto onde o `NpcView` estava em pé: só arredondamento.
+const ON_SPOT_M: float = 0.001
+## Mais que a maior viagem (143 minutos).
+const TRIP_MINUTES_MAX: int = 400
+const HASH_EVERY: int = 10
+const HASH_FRAME_MS: int = 500
+const RUN_FRAME_LIMIT: int = 20000
+
+## Como o jogo é montado: sem a vista das caravanas, com ela e sem a âncora da partida (o `setup` de antes), e com ela e a âncora (a `NpcBodiesView` passada ao `setup`, como a cena faz).
+enum Mode { NO_VIEW, VIEW, ANCHORED }
 
 var _data: NpcLifeCheck.GameData
 var _routes: CaravanRoutesReader
@@ -70,6 +84,9 @@ class Trip:
 	var back_spot: Vector2 = NO_SPOT
 	var frames: int = 0
 	var biggest_step_m: float = 0.0
+	var axis: Vector2 = Vector2.ZERO
+	var worst_back_m: float = 0.0
+	var widest_m: float = 0.0
 
 
 func before_all() -> void:
@@ -123,7 +140,7 @@ func _build() -> Game:
 
 
 ## As duas vistas e o motorista ligados ao mesmo terreno, como a cena os liga (o motorista só anda quando o teste manda: `advance`).
-func _new_game() -> Game:
+func _new_game(mode: Mode = Mode.ANCHORED) -> Game:
 	var game: Game = _build()
 	game.runner.start_new_game()
 	game.root = Node3D.new()
@@ -138,9 +155,10 @@ func _new_game() -> Game:
 	for place: BridgeReplies.PlaceReply in game.bridge.peek_places().places:
 		if place.kind == PlacePalette.KIND_MARKET:
 			game.markets[place.settlement_id] = Vector2(place.x, place.z)
-	game.caravan_bodies = CaravanBodiesView.new()
-	game.root.add_child(game.caravan_bodies)
-	assert_true(game.caravan_bodies.setup(game.bridge, game.terrain_view, _routes))
+	if mode != Mode.NO_VIEW:
+		game.caravan_bodies = CaravanBodiesView.new()
+		game.root.add_child(game.caravan_bodies)
+		assert_true(game.caravan_bodies.setup(game.bridge, game.terrain_view, _routes, game.npc_bodies if mode == Mode.ANCHORED else null))
 	game.driver = NpcBodyDriver.new()
 	game.root.add_child(game.driver)
 	assert_true(game.driver.setup(game.bridge, game.npc_bodies))
@@ -188,11 +206,15 @@ func _road_point(game: Game, row: BridgeReplies.CaravanBodyReply) -> Vector2:
 	return game.markets[row.from_settlement_id].lerp(game.markets[row.to_settlement_id], row.u)
 
 
-func _refresh(game: Game) -> void:
+## O que o quadro faz: a vista dos NPCs e depois a das caravanas (a ordem da cena); `caravans_first` inverte (a das caravanas consulta ANTES da dos NPCs devolverem o corpo de quem partiu).
+func _refresh(game: Game, caravans_first: bool = false) -> void:
 	for row: BridgeReplies.CaravanBodyReply in game.bridge.peek_caravan_bodies().bodies:
 		_draw_terrain_around(game, _road_point(game, row))
+	if caravans_first and game.caravan_bodies != null:
+		game.caravan_bodies.reconcile()
 	game.npc_bodies.reconcile()
-	game.caravan_bodies.reconcile()
+	if not caravans_first and game.caravan_bodies != null:
+		game.caravan_bodies.reconcile()
 
 
 func _row_of(game: Game, trader: int) -> BridgeReplies.CaravanBodyReply:
@@ -207,9 +229,9 @@ func _plane(view: Node3D) -> Vector2:
 
 
 ## O jogo novo com as vistas, o foco a 10 m do mercado de partida, andado minuto a minuto até um comerciante do povoado de partida ter caravana; guarda onde o `NpcView` dele estava no último minuto antes e a 1ª pose do corpo da caravana.
-func _start_trip() -> Trip:
+func _start_trip(mode: Mode = Mode.ANCHORED, caravans_first: bool = false) -> Trip:
 	var trip: Trip = Trip.new()
-	trip.game = _new_game()
+	trip.game = _new_game(mode)
 	var game: Game = trip.game
 	_focus(game, _origin_m + Vector2(NEAR_M, 0.0))
 	_draw_terrain_around(game, _origin_m)
@@ -231,8 +253,9 @@ func _start_trip() -> Trip:
 			trip.to_id = row.to_settlement_id
 			trip.origin = game.markets[trip.from_id]
 			trip.destination = game.markets[trip.to_id]
+			trip.axis = (trip.destination - trip.origin).normalized()
 			trip.npc_spot = seen.get(trader, NO_SPOT)
-			_refresh(game)
+			_refresh(game, caravans_first)
 			var body: CaravanView = game.caravan_bodies.body_of(trader)
 			trip.first_spot = _plane(body)
 			return trip
@@ -244,6 +267,7 @@ func _start_trip() -> Trip:
 func _follow(trip: Trip) -> void:
 	var game: Game = trip.game
 	var before: Vector2 = trip.first_spot
+	var progress_m: float = (before - trip.origin).dot(trip.axis)
 	for _index: int in FRAME_LIMIT:
 		var row: BridgeReplies.CaravanBodyReply = _row_of(game, trip.trader)
 		if row == null:
@@ -255,6 +279,10 @@ func _follow(trip: Trip) -> void:
 			trip.last_spot = _plane(body)
 			trip.biggest_step_m = maxf(trip.biggest_step_m, trip.last_spot.distance_to(before))
 			before = trip.last_spot
+			var along_m: float = (before - trip.origin).dot(trip.axis)
+			trip.worst_back_m = maxf(trip.worst_back_m, progress_m - along_m)
+			progress_m = along_m
+			trip.widest_m = maxf(trip.widest_m, absf((before - trip.origin).cross(trip.axis)))
 		trip.frames += 1
 		var left: int = game.economy.peek_caravan(trip.trader).eta_minute - game.runner.world.context.clock.total_minutes()
 		_frame(game, FINE_MS if left <= FINE_LAST_MINUTES else COARSE_MS)
@@ -267,17 +295,84 @@ func _follow(trip: Trip) -> void:
 		_frame(game, FINE_MS)
 
 
-func test_the_caravan_leaves_and_arrives_on_the_market_axis_and_every_step_stays_small() -> void:
-	var trip: Trip = _start_trip()
+## Uma execução inteira até o fim da 1ª viagem, por quadros de 500 ms com o motorista, no `mode` pedido; devolve o `state_hash` a cada 10 minutos e no fim, os contadores da reserva dos NPCs e quantos corpos de caravana a vista retirou.
+func _run(mode: Mode) -> Array:
+	var game: Game = _new_game(mode)
+	_focus(game, _origin_m + Vector2(NEAR_M, 0.0))
+	_draw_terrain_around(game, _origin_m)
+	var rows: Array[String] = []
+	var last_minute: int = -HASH_EVERY
+	var has_travelled: bool = false
+	for _index: int in RUN_FRAME_LIMIT:
+		_frame(game, HASH_FRAME_MS)
+		_refresh(game)
+		var minute: int = game.runner.world.context.clock.total_minutes()
+		if minute >= last_minute + HASH_EVERY:
+			last_minute = minute
+			rows.append("%d %s" % [minute, game.runner.world.state_hash()])
+		var is_travelling: bool = not game.economy.peek_caravans().caravans.is_empty()
+		has_travelled = has_travelled or is_travelling
+		if has_travelled and not is_travelling:
+			break
+	rows.append("fim " + game.runner.world.state_hash())
+	var pool: NpcViewPool = game.npc_bodies.pool()
+	return [rows, [pool.created, pool.taken, pool.returned, pool.peak_active, pool.empty_hits, pool.duplicate_requests], game.caravan_bodies.pool().taken if game.caravan_bodies != null else 0]
+
+
+func test_with_the_anchor_the_caravan_leaves_from_where_the_merchant_stood_arrives_on_the_axis_and_never_walks_backwards() -> void:
+	var trip: Trip = _start_trip(Mode.ANCHORED)
 	assert_ne(trip.npc_spot, NO_SPOT, "Premissa: o comerciante tinha o seu `NpcView` na praça antes de partir (foco a 10 m).")
 	assert_ne(trip.first_spot, NO_SPOT, "Premissa: a caravana ganhou corpo no passo da partida.")
+	assert_eq(trip.game.npc_bodies.standing_spot_of(trip.trader), NpcBodiesView.NO_SPOT, "O ponto em pé do comerciante foi lido UMA vez e esquecido: depois da partida não sobra entrada dele.")
 	_follow(trip)
 	assert_ne(trip.back_spot, NO_SPOT, "Premissa: o `NpcView` do comerciante volta depois da chegada.")
 	var stand_m: float = trip.npc_spot.distance_to(trip.origin)
-	assert_lt(stand_m, STAND_MAX_M, "O `NpcView` fica em pé na borda da caixa do mercado (`NpcRoute.stop_point`).")
-	assert_lt(trip.first_spot.distance_to(trip.origin), AXIS_M, "PARTIDA: a caravana nasce no EIXO da estrada, o centro do mercado, sem o deslocamento lateral de 1,2 m (antes 1,20 m de lado).")
-	assert_lt(trip.npc_spot.distance_to(trip.first_spot), stand_m + AXIS_M, "PARTIDA: o que sobra do salto é só a distância do ponto onde o `NpcView` estava ao centro do mercado (antes 3,70 m, agora 2,55 m); nunca mais que a borda da caixa.")
+	assert_between(stand_m, SMALL_JUMP_M, STAND_MAX_M, "Premissa: o `NpcView` ficou em pé a mais de 0,5 m do centro, na borda da caixa do mercado: sem a âncora o salto da partida seria deste tamanho (2,55 m).")
+	assert_lt(trip.npc_spot.distance_to(trip.first_spot), ON_SPOT_M, "PARTIDA: a 1ª pose da caravana está no ponto onde o `NpcView` estava em pé, muito dentro dos 0,5 m (sem âncora 2,55 m; antes da rampa 3,70 m).")
 	assert_lt(trip.back_spot.distance_to(trip.destination), AXIS_M, "CHEGADA: o `NpcView` reaparece no centro do mercado de destino (`MerchantArrival`).")
-	assert_lt(trip.last_spot.distance_to(trip.back_spot), SMALL_JUMP_M, "CHEGADA: a última pose da caravana fica a menos de 0,5 m de onde o `NpcView` reaparece (antes 1,20 m).")
-	assert_lt(trip.biggest_step_m, STEP_MAX_M, "Entre quadros de 250 ms a caravana nunca anda mais que a velocidade x o quadro (a rampa não mexe em `u`).")
+	assert_lt(trip.last_spot.distance_to(trip.back_spot), SMALL_JUMP_M, "CHEGADA: a última pose da caravana fica a menos de 0,5 m de onde o `NpcView` reaparece (não piora com a âncora).")
+	assert_lt(trip.biggest_step_m, STEP_MAX_M, "Entre quadros de 250 ms a caravana nunca anda mais que a velocidade x o quadro (a âncora e a rampa não mexem em `u`).")
+	assert_lt(trip.worst_back_m, BACK_TOLERANCE_M, "A rampa lateral e a âncora juntas nunca fazem o corpo andar para trás ao longo da estrada.")
+	assert_lt(trip.widest_m, LATERAL_M + stand_m + AXIS_M, "E o corpo nunca passa de 1,2 m + o deslocamento inicial do eixo da estrada.")
 	assert_gt(trip.frames, 500, "A viagem inteira foi acompanhada, quadro a quadro.")
+
+
+func test_without_the_npc_bodies_view_in_setup_the_caravan_leaves_from_the_market_axis_as_before() -> void:
+	var trip: Trip = _start_trip(Mode.VIEW)
+	assert_ne(trip.npc_spot, NO_SPOT, "Premissa: o comerciante tinha o seu `NpcView` na praça antes de partir.")
+	var stand_m: float = trip.npc_spot.distance_to(trip.origin)
+	assert_lt(trip.first_spot.distance_to(trip.origin), AXIS_M, "Sem a `NpcBodiesView` no `setup` (o padrão): sem âncora, a caravana sai do EIXO, o centro do mercado, como antes.")
+	assert_almost_eq(trip.npc_spot.distance_to(trip.first_spot), stand_m, AXIS_M, "E o salto da partida é o de antes: a distância do ponto em pé ao centro (2,55 m).")
+	assert_false(trip.game.npc_bodies.tracks_last_spots(), "Sem a âncora a `NpcBodiesView` não rastreia nada: o caminho dos NPCs é o de sempre.")
+
+
+func test_the_view_and_the_tracking_change_nothing_the_state_hash_and_the_npc_counters_are_the_same() -> void:
+	var anchored: Array = _run(Mode.ANCHORED)
+	var viewing: Array = _run(Mode.VIEW)
+	var silent: Array = _run(Mode.NO_VIEW)
+	assert_gt(anchored[2], 0, "A vista retirou corpos de caravana durante a viagem (o teste não rodou no vazio).")
+	assert_gt(anchored[0].size(), 3, "Vários instantes conferidos, a viagem inteira.")
+	assert_eq(anchored[0], silent[0], "O mesmo `state_hash` a cada 10 minutos e no fim, com a vista e o rastreio e sem a vista.")
+	assert_eq(viewing[0], silent[0], "E com a vista sem o rastreio.")
+	assert_eq(anchored[1], silent[1], "Os contadores da reserva dos NPCs (criados, retirados, devolvidos, pico, reserva vazia, duplicados) são os mesmos com e sem o rastreio.")
+	assert_eq(viewing[1], silent[1], "E com a vista sem o rastreio.")
+
+
+func test_a_spot_stored_after_the_caravan_was_first_seen_still_anchors_it_and_goes_away_when_it_arrives() -> void:
+	var trip: Trip = _start_trip(Mode.ANCHORED, true)
+	var game: Game = trip.game
+	assert_ne(trip.npc_spot, NO_SPOT, "Premissa: o comerciante tinha o seu `NpcView` na praça antes de partir.")
+	assert_lt(trip.npc_spot.distance_to(trip.first_spot), ON_SPOT_M, "Na ordem inversa (a vista das caravanas consulta ANTES da dos NPCs) a âncora vale do mesmo jeito: lê o corpo que ainda existe.")
+	assert_eq(game.npc_bodies.standing_spot_of(trip.trader), trip.npc_spot, "Depois de a vista dos NPCs devolver o corpo, o ponto em pé ficou guardado (a vista das caravanas já tinha passado).")
+	var arrived: bool = false
+	for _minute: int in TRIP_MINUTES_MAX:
+		_tick(game)
+		if _row_of(game, trip.trader) == null:
+			arrived = true
+			break
+		_refresh(game)
+	assert_true(arrived, "Premissa: a viagem terminou (com o foco parado no mercado de partida: o destino fica a mais de 120 m e o NPC não volta a ter corpo).")
+	assert_eq(game.npc_bodies.standing_spot_of(trip.trader), trip.npc_spot, "No passo da chegada, antes de a vista das caravanas passar, a entrada da partida ainda está lá.")
+	game.caravan_bodies.reconcile()
+	assert_eq(game.npc_bodies.standing_spot_of(trip.trader), NpcBodiesView.NO_SPOT, "Assim que a vista das caravanas vê a chegada a entrada some (só esta chamada a apaga: o NPC chegou longe e não ganha corpo).")
+	assert_null(game.npc_bodies.pool().body_of(trip.trader), "E ele não tem corpo: nada mais teria apagado a entrada.")

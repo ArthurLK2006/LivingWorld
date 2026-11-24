@@ -124,3 +124,16 @@ func test_on_the_scene_creates_the_view_with_its_hidden_pool_and_a_working_query
 	for child: Node in view.get_children():
 		assert_false((child as Node3D).visible, "Todo corpo da reserva nasce escondido.")
 	assert_not_null(_main.get_node_or_null(NPC_VIEW_NAME), "E o resto da cena segue como sempre.")
+
+
+func test_with_the_switch_off_the_npc_view_does_not_track_where_bodies_stood() -> void:
+	_start()
+	var npc_view: NpcBodiesView = _main.get_node_or_null(NPC_VIEW_NAME) as NpcBodiesView
+	assert_not_null(npc_view, "A vista dos NPCs está lá.")
+	assert_eq([npc_view.tracks_last_spots(), npc_view.remembered_spots()], [false, 0], "Desligado (o padrão) a vista dos NPCs não rastreia nada: o caminho dos NPCs é o de sempre.")
+
+
+func test_with_the_switch_on_the_scene_hands_the_npc_view_to_the_caravans_view_and_it_tracks() -> void:
+	_start(true)
+	var npc_view: NpcBodiesView = _main.get_node_or_null(NPC_VIEW_NAME) as NpcBodiesView
+	assert_true(npc_view.tracks_last_spots(), "Ligado, a vista das caravanas liga o rastreio dos pontos em pé na vista dos NPCs (a âncora da partida).")
