@@ -6,7 +6,11 @@ extends Node3D
 ## ESCONDIDO enquanto o terreno do seu chunk não está desenhado (`TerrainView.has_chunk`). `setup` liga o interruptor de corpos da simulação e
 ## `release` o desliga; ponte que falha = nenhum corpo e interruptor desligado, até outro `setup`. O corpo fica parado onde nasceu (o andar é da
 ## LW-072d) e a cena ainda não cria a view (LW-072f). Contrato: docs/modules/presentation.md.
+## PONTO EM PÉ (LW-099c): com o rastreio LIGADO (`track_last_spots`; só a `CaravanBodiesView` o liga, e a cena só a cria com `caravans_visible`) a view guarda, a cada corpo devolvido, o ponto (x, z) onde ele estava em pé, para a caravana do comerciante sair dali; desligado (o padrão) nada é guardado e nada muda no caminho dos NPCs. A entrada some quando o NPC volta a ter corpo, quando quem a leu manda esquecer ou ao desligar.
 ## FIGURA INTEIRA (ART-12, 7b-2): com uma área de figuras (`CharacterArea`, não vazia) e uma fábrica (`figure_factory(figure_id) -> Node3D`), o NPC da área que ENTRA em S0 recebe a figura no corpo que acaba de sair da reserva (`NpcView.attach_figure`); fábrica que devolve null deixa a cápsula e dá UM aviso por NPC. Sair de S0 e o `release` devolvem a cápsula (o `give_back` do pool chama `detach`, que libera a figura); a reserva não guarda figura. Sem área, com área vazia ou sem fábrica a view é a de sempre.
+
+## Sem ponto guardado nem corpo.
+const NO_SPOT: Vector2 = Vector2(INF, INF)
 
 var _bridge: SimBridge
 var _terrain: TerrainView
@@ -20,6 +24,9 @@ var _figure_factory: Callable
 ## O DONO da fábrica: um `Callable` de método de um `RefCounted` (a `source.make` da cena) NÃO segura o objeto, e a fonte, local na cena, morreria ao fim do preparo com a fábrica já inválida. Quem a segura é esta view, até o próximo `setup`.
 var _figure_owner: RefCounted
 var _warned_npcs: Dictionary[int, bool] = {}
+## Rastreio ligado e os pontos (x, z em metros) onde os corpos devolvidos estavam em pé; no máximo um por NPC (os IDs não se repetem), e vazio com o rastreio desligado.
+var _tracks_spots: bool = false
+var _last_spots: Dictionary[int, Vector2] = {}
 
 
 ## Liga a view à ponte e ao terreno, cria a reserva de corpos e liga o interruptor de corpos da simulação. Ponte ou terreno nulo, ponte sem
@@ -62,10 +69,13 @@ func reconcile() -> void:
 		wanted[body.npc_id] = true
 	for npc_id: int in _pool.active_ids():
 		if not wanted.has(npc_id):
+			_note_spot(npc_id)
 			_pool.give_back(npc_id)
 	for body: BridgeReplies.NpcBodyReply in reply.bodies:
 		if _pool.body_of(body.npc_id) == null:
 			var entered: NpcView = _pool.take(body.npc_id, body.position)
+			if _tracks_spots:
+				_last_spots.erase(body.npc_id)
 			if entered != null and _area != null:
 				_attach_figure_of(entered, body.npc_id)
 	for npc_id: int in _pool.active_ids():
@@ -80,6 +90,7 @@ func release() -> void:
 	_is_active = false
 	for npc_id: int in _pool.active_ids():
 		_pool.give_back(npc_id)
+	_last_spots.clear()
 	var switched: Result = _bridge.request_set_bodies_available(false)
 	if not switched.ok:
 		push_warning("NpcBodiesView.release: interruptor de corpos não desligado (%s): %s" % [switched.code, switched.message])
@@ -102,12 +113,49 @@ func pool() -> NpcViewPool:
 	return _pool
 
 
+## Liga ou desliga o rastreio dos pontos em que os corpos estavam em pé ao serem devolvidos (desligado por padrão). Desligar esquece tudo o que foi guardado.
+func track_last_spots(enabled: bool) -> void:
+	_tracks_spots = enabled
+	if not enabled:
+		_last_spots.clear()
+
+
+func tracks_last_spots() -> bool:
+	return _tracks_spots
+
+
+## Onde o NPC está em pé (x, z em metros): o corpo que ele tem agora ou, com o rastreio ligado, o ponto onde o corpo devolvido por último estava; `NO_SPOT` se não há nenhum dos dois.
+func standing_spot_of(npc_id: int) -> Vector2:
+	var view: NpcView = _pool.body_of(npc_id) if _pool != null else null
+	if view != null:
+		return Vector2(view.position.x, view.position.z)
+	return _last_spots.get(npc_id, NO_SPOT)
+
+
+## Esquece o ponto guardado do NPC (quem precisava dele já o leu).
+func forget_last_spot(npc_id: int) -> void:
+	_last_spots.erase(npc_id)
+
+
+## Quantos pontos estão guardados agora (zero com o rastreio desligado).
+func remembered_spots() -> int:
+	return _last_spots.size()
+
+
 func _process(_delta: float) -> void:
 	reconcile()
 
 
 func _exit_tree() -> void:
 	release()
+
+
+## Guarda onde o corpo do NPC está em pé, ANTES de devolvê-lo (só com o rastreio ligado: uma escrita de dicionário por devolução).
+func _note_spot(npc_id: int) -> void:
+	if not _tracks_spots:
+		return
+	var view: NpcView = _pool.body_of(npc_id)
+	_last_spots[npc_id] = Vector2(view.position.x, view.position.z)
 
 
 func _chunk_of(point: Vector3) -> Vector2i:
@@ -139,6 +187,7 @@ func _clear() -> void:
 		remove_child(child)
 		child.free()
 	_pool = null
+	_last_spots.clear()
 	_area = null
 	_figure_factory = Callable()
 	_figure_owner = null

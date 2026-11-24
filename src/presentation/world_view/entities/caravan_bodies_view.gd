@@ -14,12 +14,16 @@ extends Node3D
 ## falhas). Trecho sem mercado conhecido numa das pontas: sem estrada e sem corpo (`unplaced`). Pontos de passagem (`points_m`) no dado: ver `_via_of` (lacuna aberta). Contrato: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2, 3 e 6.
 ## JUNTAS (LW-099c; medidas em tests/integration/test_caravan_visual_jumps.gd e tests/unit/test_caravan_bodies_view_joints.gd): o deslocamento lateral sobe de 0 nos primeiros `LATERAL_RAMP_M` metros e desce a 0 nos últimos, então a caravana sai e chega no
 ## EIXO da estrada (o mercado), onde o `NpcView` reaparece na chegada, e a troca de trecho não salta de lado; o giro anda no máximo `TURN_RAD_PER_M` radianos por metro andado entre duas poses (a primeira pose de uma caravana é o giro da estrada, sem limite), então a
-## quina no povoado de passagem vira uma curva de poucos metros em vez de um estalo. Só a pose mostrada muda: a fração `u`, o tempo e a velocidade são os da simulação.
+## quina no povoado de passagem vira uma curva de poucos metros em vez de um estalo. Só a pose mostrada muda: a fração `u`, o tempo e a velocidade são os da simulação. ÂNCORA DA PARTIDA (opcional: `setup` com a `NpcBodiesView`, que passa a rastrear onde cada corpo
+## ficou em pé): a caravana RECÉM-NASCIDA (vista pela 1ª vez depois da primeira consulta, andando, nos primeiros `LATERAL_RAMP_M` metros) sai do ponto onde o `NpcView` do comerciante estava em pé (a borda da caixa do mercado, não o centro lógico) e o deslocamento até o eixo some em linha
+## reta na MESMA rampa, por distância andada; o ponto é lido UMA vez por caravana. Sem a view, sem ponto, parada, adiantada ou carregada no meio da viagem: sem âncora (a partida no eixo).
 
 ## [HIP] Metros andados (a partir de cada ponta do trecho) em que o deslocamento lateral sobe de 0 ao valor do dado e desce de volta: 4 s a 1x.
 const LATERAL_RAMP_M: float = 12.0
 ## [HIP] Giro máximo (rad) por metro andado entre duas poses: 0,5 é uma curva de cerca de 2 m de raio (uma quina de 90 graus leva uns 3 m).
 const TURN_RAD_PER_M: float = 0.5
+## [HIP] Até onde (m) do começo da estrada o ponto em pé ainda vale como âncora: a borda da caixa do mercado fica a até 3,4 m do centro; mais longe não é "em pé no mercado" e a caravana sai do eixo. Abaixo da rampa (12 m), a âncora nunca faz o corpo recuar.
+const ANCHOR_MAX_M: float = 6.0
 
 ## Consultas que falharam (os corpos ficaram como estavam).
 var failed_queries: int = 0
@@ -33,6 +37,10 @@ var ground_misses: int = 0
 var _bridge: SimBridge
 var _terrain: TerrainView
 var _routes: CaravanRoutesReader
+## A vista dos NPCs, que guarda onde cada corpo ficou em pé (nula: sem âncora). Ela é ligada ao rastreio aqui e desligada no `release`.
+var _npc_bodies: NpcBodiesView
+## A view já fez uma consulta que deu certo: as caravanas da PRIMEIRA (ao ligar a vista ou carregar um jogo) não são recém-nascidas.
+var _has_queried: bool = false
 var _pool: CaravanViewPool
 var _chunk_size_m: float = 0.0
 var _chunk_count: Vector2i = Vector2i.ZERO
@@ -50,9 +58,9 @@ var _is_active: bool = false
 var _is_failing: bool = false
 
 
-## Liga a view à ponte, ao terreno (o foco do jogador e os chunks desenhados) e ao dado de apresentação (`routes`, já carregado), lê os mercados e cria a reserva de corpos (`routes.pool_size`, escondidos). Nenhum pedido à simulação.
+## Liga a view à ponte, ao terreno (o foco do jogador e os chunks desenhados) e ao dado de apresentação (`routes`, já carregado), lê os mercados e cria a reserva de corpos (`routes.pool_size`, escondidos). Nenhum pedido à simulação. `npc_bodies` (opcional) liga a âncora da partida e o rastreio dos pontos em pé da `NpcBodiesView`.
 ## Qualquer um dos três nulo (ou o dado não carregado), terreno ou locais indisponíveis, ou nenhum mercado: push_error, nenhum corpo e a view fica inativa (devolve falso).
-func setup(bridge: SimBridge, terrain: TerrainView, routes: CaravanRoutesReader) -> bool:
+func setup(bridge: SimBridge, terrain: TerrainView, routes: CaravanRoutesReader, npc_bodies: NpcBodiesView = null) -> bool:
 	_clear()
 	if bridge == null or terrain == null or routes == null or not routes.is_ready():
 		push_error("CaravanBodiesView.setup: ponte, TerrainView ou dado de apresentação nulo ou não carregado; esperado os três.")
@@ -75,6 +83,9 @@ func setup(bridge: SimBridge, terrain: TerrainView, routes: CaravanRoutesReader)
 	_chunk_size_m = float(layout.chunk_cells) * layout.cell_size_m
 	_chunk_count = layout.chunk_count
 	_pool = CaravanViewPool.new(self, routes)
+	_npc_bodies = npc_bodies
+	if _npc_bodies != null:
+		_npc_bodies.track_last_spots(true)
 	_is_active = true
 	return true
 
@@ -98,6 +109,7 @@ func reconcile() -> void:
 	_give_back_leavers()
 	_take_newcomers(reply)
 	_apply_to_active(reply)
+	_has_queried = true
 
 
 ## Devolve todos os corpos à reserva e deixa a view inativa (a reserva e os corpos escondidos seguem como filhos). Não faz nada se a view está inativa.
@@ -108,6 +120,7 @@ func release() -> void:
 	for trader_id: int in _pool.active_ids():
 		_pool.give_back(trader_id)
 	_tracks.clear()
+	_stop_tracking()
 
 
 func is_active() -> bool:
@@ -143,15 +156,21 @@ func _exit_tree() -> void:
 ## Acha ou cria o registro da caravana, garante a estrada do trecho e decide o alcance com histerese a partir do ponto DERIVADO. Sem estrada a caravana não entra no alcance.
 func _locate(row: BridgeReplies.CaravanBodyReply, focus_m: Vector2) -> void:
 	var track: Track = _tracks.get(row.trader_id) as Track
+	var is_newborn: bool = false
 	if track == null:
 		track = Track.new()
 		_tracks[row.trader_id] = track
+		is_newborn = _has_queried
 	track.seen = _stamp
 	if not _follow_leg(track, row):
 		track.inside = false
 		unplaced += 1
 		return
+	if is_newborn:
+		_anchor_at_standing_spot(track, row)
 	track.path.sample_into(row.u, true, _routes.lateral_offset_m, _pose, LATERAL_RAMP_M)
+	if track.anchor != Vector2.ZERO:
+		_fade_anchor(track, row.u)
 	track.yaw = _turned(track.yaw, _pose.yaw, track.position.distance_to(_pose.position)) if track.has_yaw else _pose.yaw
 	track.has_yaw = true
 	track.position = _pose.position
@@ -171,6 +190,8 @@ func _give_back_leavers() -> void:
 	for trader_id: int in _gone:
 		_pool.give_back(trader_id)
 		_tracks.erase(trader_id)
+		if _npc_bodies != null:
+			_npc_bodies.forget_last_spot(trader_id)
 
 
 ## As entradas, em ordem crescente de comerciante (a da consulta): quem está no alcance e não tem corpo pega um. Reserva vazia: sem erro, `waiting` conta e o próximo quadro tenta de novo.
@@ -220,6 +241,7 @@ func _ground_at(point: Vector2) -> float:
 func _follow_leg(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
 	if track.path != null and track.route_id == row.route_id and track.from_id == row.from_settlement_id and track.to_id == row.to_settlement_id:
 		return true
+	track.anchor = Vector2.ZERO
 	track.route_id = row.route_id
 	track.from_id = row.from_settlement_id
 	track.to_id = row.to_settlement_id
@@ -229,6 +251,35 @@ func _follow_leg(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
 	var road: CaravanPath = CaravanPath.through(_markets[row.from_settlement_id], _via_of(row.route_id), _markets[row.to_settlement_id])
 	track.path = road if road.length_m() > 0.0 else null
 	return track.path != null
+
+
+## A âncora de uma caravana RECÉM-NASCIDA: o ponto onde o `NpcView` do comerciante ficou em pé, a até `ANCHOR_MAX_M` do começo da estrada, vira o deslocamento que a 1ª pose carrega e que some na rampa (`_fade_anchor`). Só vale andando e nos primeiros `LATERAL_RAMP_M` metros (a que o jogador encontra
+## adiantada na estrada não tem âncora); o ponto é lido UMA vez e esquecido, com ou sem âncora. Sem `NpcBodiesView`, sem ponto ou longe demais do mercado: sem âncora, sem erro.
+func _anchor_at_standing_spot(track: Track, row: BridgeReplies.CaravanBodyReply) -> void:
+	if _npc_bodies == null:
+		return
+	var spot: Vector2 = NpcBodiesView.NO_SPOT
+	if row.state == BridgeReplies.CaravanBodyReply.STATE_TRAVELLING and row.u * track.path.length_m() < LATERAL_RAMP_M:
+		spot = _npc_bodies.standing_spot_of(row.trader_id)
+	_npc_bodies.forget_last_spot(row.trader_id)
+	if spot.is_finite() and spot.distance_to(_markets[track.from_id]) <= ANCHOR_MAX_M:
+		track.anchor = spot - _markets[track.from_id]
+
+
+## Soma à pose o que resta da âncora: ela some em linha reta com a distância andada (a mesma rampa do deslocamento lateral) e é esquecida ao zerar.
+func _fade_anchor(track: Track, u: float) -> void:
+	var left: float = 1.0 - clampf(u * track.path.length_m() / LATERAL_RAMP_M, 0.0, 1.0)
+	if left > 0.0:
+		_pose.position += track.anchor * left
+	else:
+		track.anchor = Vector2.ZERO
+
+
+## Desliga o rastreio da `NpcBodiesView` (se ela ainda existe) e solta a referência.
+func _stop_tracking() -> void:
+	if _npc_bodies != null and is_instance_valid(_npc_bodies):
+		_npc_bodies.track_last_spots(false)
+	_npc_bodies = null
 
 
 ## Os pontos de passagem da estrada, no sentido da marcha. LACUNA ABERTA: o dado os guarda de `settlement_a_id` para `settlement_b_id`, e a ponte (`peek_caravan_bodies`) só diz de onde para onde o trecho vai, não qual povoado é o `a` da rota,
@@ -272,8 +323,10 @@ func _clear() -> void:
 	for child: Node in get_children():
 		remove_child(child)
 		child.free()
+	_stop_tracking()
 	_pool = null
 	_tracks.clear()
+	_has_queried = false
 	_markets.clear()
 	_warned_routes.clear()
 	_is_failing = false
@@ -293,6 +346,8 @@ class Track:
 	var posed: bool = false
 	## O giro já tem um valor de uma amostra anterior (a primeira amostra de uma caravana não é limitada).
 	var has_yaw: bool = false
+	## O que falta da âncora da partida (m, do eixo ao ponto onde o `NpcView` estava em pé): zero = sem âncora ou já extinta.
+	var anchor: Vector2 = Vector2.ZERO
 	var route_id: String = ""
 	var from_id: String = ""
 	var to_id: String = ""
