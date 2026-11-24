@@ -8,7 +8,7 @@ const FORBIDDEN: PackedStringArray = ["SimBridge", "SimulationHost", "EventBus",
 const POINT: Vector3 = Vector3(20.0, 10.0, 40.0)
 const ROUNDS: int = 100
 ## Dado mínimo com reserva de 3 corpos, para o teste que não depende do arquivo real.
-const SMALL: String = '{"version": 1, "view": {"enter_m": 80, "exit_m": 120, "lateral_offset_m": 1.2, "pool_size": 3, "max_pitch_deg": 25, "pitch_spacing_m": 1.5}, "routes": [{"route_id": "r1"}], "cargo": [{"good_id": "g1", "color": "#C4A24C", "shape": "sack"}]}'
+const SMALL: String = '{"version": 1, "view": {"enter_m": 80, "exit_m": 120, "lateral_offset_m": 1.2, "pool_size": 3, "max_pitch_deg": 25}, "routes": [{"route_id": "r1"}], "cargo": [{"good_id": "g1", "color": "#C4A24C", "shape": "sack"}]}'
 
 var _real: CaravanRoutesReader
 var _parent: Node3D

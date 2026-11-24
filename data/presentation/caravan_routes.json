@@ -5,8 +5,7 @@
 		"exit_m": 120,
 		"lateral_offset_m": 1.2,
 		"pool_size": 8,
-		"max_pitch_deg": 25,
-		"pitch_spacing_m": 1.5
+		"max_pitch_deg": 25
 	},
 	"routes": [
 		{"route_id": "route_a_b"},
