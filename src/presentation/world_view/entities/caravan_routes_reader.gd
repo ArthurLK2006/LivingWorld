@@ -2,7 +2,7 @@ class_name CaravanRoutesReader
 extends RefCounted
 ## LW-099a (viagem visível dos comerciantes; só apresentação): lê e VALIDA data/presentation/caravan_routes.json, o dado de apresentação da caravana
 ## (contrato técnico da LW-099: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2 e 3). Três blocos: `view` (os números da vista: raio de entrada e de saída do alcance,
-## deslocamento lateral, tamanho da reserva de corpos, inclinação máxima do carrinho e distância entre as duas amostras de altura), `routes` (por `route_id`,
+## deslocamento lateral, tamanho da reserva de corpos e inclinação máxima do carrinho), `routes` (por `route_id`,
 ## os pontos de passagem OPCIONAIS `points_m`: pares [x, z] em metros, do povoado `settlement_a_id` para o `settlement_b_id`, SEM as pontas, que vêm dos
 ## mercados; sem pontos a estrada é a reta) e `cargo` (por `good_id`, a cor `#RRGGBB` e a forma do volume, de um conjunto fechado). TODOS os valores são
 ## [HIP] PROVISÓRIOS: a afinação é visual, na janela de Arthur; `lateral_offset_m` e `max_pitch_deg` aceitam ZERO (desligam o deslocamento lateral e a inclinação por
@@ -20,7 +20,7 @@ const ROUTE_ID: String = "route_id"
 const GOOD_ID: String = "good_id"
 const POINTS: String = "points_m"
 const ROOT_FIELDS: PackedStringArray = ["version", VIEW, ROUTES, CARGO]
-const VIEW_FIELDS: PackedStringArray = ["enter_m", "exit_m", "lateral_offset_m", "pool_size", "max_pitch_deg", "pitch_spacing_m"]
+const VIEW_FIELDS: PackedStringArray = ["enter_m", "exit_m", "lateral_offset_m", "pool_size", "max_pitch_deg"]
 const ROUTE_FIELDS: PackedStringArray = [ROUTE_ID, POINTS]
 const CARGO_FIELDS: PackedStringArray = [GOOD_ID, "color", "shape"]
 ## O volume da carga é desenhado com primitivas: o conjunto de formas é FECHADO (forma nova pede código na vista, não só dado).
@@ -37,7 +37,6 @@ var exit_m: float = 0.0
 var lateral_offset_m: float = 0.0
 var pool_size: int = 0
 var max_pitch_deg: float = 0.0
-var pitch_spacing_m: float = 0.0
 var _points: Dictionary[String, PackedVector2Array] = {}
 var _colors: Dictionary[String, Color] = {}
 var _shapes: Dictionary[String, String] = {}
@@ -110,7 +109,6 @@ func _read_view(reader: CharacterDataReader, view: Dictionary) -> void:
 	lateral_offset_m = _number(reader, view, "lateral_offset_m", MAX_METERS, true)
 	pool_size = reader.whole(view, "pool_size", VIEW, 1, MAX_POOL_SIZE)
 	max_pitch_deg = _number(reader, view, "max_pitch_deg", MAX_PITCH_DEG, true)
-	pitch_spacing_m = _number(reader, view, "pitch_spacing_m", MAX_METERS)
 	if reader.bundle.issues.size() == problems and exit_m <= enter_m:
 		reader.fail(VIEW, "exit_m", "exit_m (%s) deve ser maior que enter_m (%s): a diferença é a histerese contra o piscar" % [exit_m, enter_m])
 
