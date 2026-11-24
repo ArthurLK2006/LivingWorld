@@ -1,8 +1,8 @@
 extends GutTest
 ## LW-099d: a DISSOLUÇÃO CRUZADA DE 0,4 s na partida da caravana no JOGO REAL, sem janela: dados reais, a ponte real, as duas vistas de corpos e o motorista dos corpos (como em `test_caravan_visual_jumps.gd`), com o foco do jogador a 10 m do mercado de saída do primeiro comerciante
 ## que parte no jogo novo. O tempo da vista é avançado pelo teste (`advance_departures` e `advance_fade`), em passos de 0,1 s. Só se confere o VALOR de `transparency`; como ela aparece (e as sombras) é da janela de Arthur.
-## MEDIDO em 24/11/2026 ANTES da dissolução (base 91de893, o 1º comerciante que parte; minuto 804 do dia 1, 13:24): u = 0,0000, state_hash 2e6642dc... No quadro da partida o corpo do `NpcView` JÁ tinha voltado à reserva (devolvidos no quadro: 1) e a caravana aparecia opaca a 2,549 m do ponto onde
-## ele estava: o "pulo". DEPOIS (opção ligada): no mesmo quadro o corpo AINDA existe (transparência 0, 0 devolvidos) e a caravana começa invisível (1); aos 0,2 s os dois estão a 0,5; aos 0,4 s só resta a caravana, opaca. Com a opção desligada o quadro da partida é o de antes (2,549 m, 1 devolvido).
+## MEDIDO em 24/11/2026 ANTES da dissolução (só história: nenhum assert usa estes números, que valem para os dados de hoje; base 91de893, o 1º comerciante que parte; minuto 804 do dia 1, 13:24): u = 0,0000, state_hash 2e6642dc... No quadro da partida o corpo do `NpcView` JÁ tinha voltado à reserva (devolvidos no quadro: 1) e a caravana aparecia opaca a 2,549 m do ponto onde
+## ele estava: o "pulo". DEPOIS (opção ligada): no mesmo quadro o corpo AINDA existe (transparência 0, 0 devolvidos) e a caravana começa invisível (1); aos 0,2 s os dois estão a 0,5; aos 0,4 s só resta a caravana, opaca. Com a opção desligada o quadro da partida é o de antes (o pulo de antes e 1 corpo devolvido).
 
 const DATA_DIR: String = "res://data"
 const WORLD_DIR: String = "res://data/world"
@@ -18,9 +18,8 @@ const MINUTE_S: float = 1.25
 const STEP_S: float = 0.1
 const EPS: float = 0.001
 const NO_SPOT: Vector2 = Vector2(INF, INF)
-## O pulo medido antes (m) e a folga com que a pose da caravana tem de continuar a mesma.
-const POP_BEFORE_M: float = 2.549
-const POP_TOLERANCE_M: float = 0.01
+## Premissa folgada (m): sem a despedida o corpo do NPC (em pé na borda da caixa do mercado) e a 1ª pose da caravana (no eixo da estrada) ficam a mais que isto um do outro, o "pulo". O número exato vale só para os dados de hoje e fica no RESULTADO, não num assert.
+const POP_MIN_M: float = 1.0
 ## Minutos depois da partida em que a simulação com e sem a despedida é comparada (a caravana ainda está na estrada).
 const COMPARE_MINUTES: Array[int] = [30, 60]
 
@@ -290,7 +289,7 @@ func test_with_the_option_off_the_departure_is_the_pop_of_today_and_the_simulati
 	assert_null(off.game.npc_bodies.pool().body_of(off.trader), "Desligada: o corpo do NPC já voltou à reserva no quadro da partida, como antes.")
 	assert_eq([off.game.npc_bodies.fading_ids(), off.returned_in_frame], [[] as Array[int], 1], "Sem despedida, e um corpo devolvido nesse quadro (medido antes: 1).")
 	assert_true(off.game.caravan_bodies.body_of(off.trader).visible, "E a caravana já está na tela.")
-	assert_almost_eq(off.npc_spot.distance_to(off.first_spot), POP_BEFORE_M, POP_TOLERANCE_M, "O pulo é o de antes (2,549 m): a pose da caravana não mudou.")
+	assert_gt(off.npc_spot.distance_to(off.first_spot), POP_MIN_M, "Premissa: sem a despedida há o pulo de antes (o corpo do NPC e a 1ª pose da caravana a mais de 1 m um do outro).")
 	assert_eq(on.first_spot, off.first_spot, "A primeira pose da caravana é a mesma com a despedida ligada.")
 	assert_eq([on.minute, on.u, on.state_hash], [off.minute, off.u, off.state_hash], "O instante da partida, o `u` e o `state_hash` são os mesmos com a despedida ligada e desligada.")
 	var walked: int = 0
