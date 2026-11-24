@@ -33,6 +33,10 @@ const STEP_MAX_M: float = 0.8
 const LATERAL_M: float = 1.2
 ## O corpo nunca anda para trás ao longo da estrada: a folga é só de arredondamento.
 const BACK_TOLERANCE_M: float = 0.001
+## A 1ª pose da âncora está no ponto onde o `NpcView` estava em pé: só arredondamento.
+const ON_SPOT_M: float = 0.001
+## Mais que a maior viagem (143 minutos).
+const TRIP_MINUTES_MAX: int = 400
 const HASH_EVERY: int = 10
 const HASH_FRAME_MS: int = 500
 const RUN_FRAME_LIMIT: int = 20000
@@ -202,11 +206,14 @@ func _road_point(game: Game, row: BridgeReplies.CaravanBodyReply) -> Vector2:
 	return game.markets[row.from_settlement_id].lerp(game.markets[row.to_settlement_id], row.u)
 
 
-func _refresh(game: Game) -> void:
+## O que o quadro faz: a vista dos NPCs e depois a das caravanas (a ordem da cena); `caravans_first` inverte (a das caravanas consulta ANTES da dos NPCs devolverem o corpo de quem partiu).
+func _refresh(game: Game, caravans_first: bool = false) -> void:
 	for row: BridgeReplies.CaravanBodyReply in game.bridge.peek_caravan_bodies().bodies:
 		_draw_terrain_around(game, _road_point(game, row))
+	if caravans_first and game.caravan_bodies != null:
+		game.caravan_bodies.reconcile()
 	game.npc_bodies.reconcile()
-	if game.caravan_bodies != null:
+	if not caravans_first and game.caravan_bodies != null:
 		game.caravan_bodies.reconcile()
 
 
@@ -222,7 +229,7 @@ func _plane(view: Node3D) -> Vector2:
 
 
 ## O jogo novo com as vistas, o foco a 10 m do mercado de partida, andado minuto a minuto até um comerciante do povoado de partida ter caravana; guarda onde o `NpcView` dele estava no último minuto antes e a 1ª pose do corpo da caravana.
-func _start_trip(mode: Mode = Mode.ANCHORED) -> Trip:
+func _start_trip(mode: Mode = Mode.ANCHORED, caravans_first: bool = false) -> Trip:
 	var trip: Trip = Trip.new()
 	trip.game = _new_game(mode)
 	var game: Game = trip.game
@@ -248,7 +255,7 @@ func _start_trip(mode: Mode = Mode.ANCHORED) -> Trip:
 			trip.destination = game.markets[trip.to_id]
 			trip.axis = (trip.destination - trip.origin).normalized()
 			trip.npc_spot = seen.get(trader, NO_SPOT)
-			_refresh(game)
+			_refresh(game, caravans_first)
 			var body: CaravanView = game.caravan_bodies.body_of(trader)
 			trip.first_spot = _plane(body)
 			return trip
@@ -316,11 +323,12 @@ func test_with_the_anchor_the_caravan_leaves_from_where_the_merchant_stood_arriv
 	var trip: Trip = _start_trip(Mode.ANCHORED)
 	assert_ne(trip.npc_spot, NO_SPOT, "Premissa: o comerciante tinha o seu `NpcView` na praça antes de partir (foco a 10 m).")
 	assert_ne(trip.first_spot, NO_SPOT, "Premissa: a caravana ganhou corpo no passo da partida.")
+	assert_eq(trip.game.npc_bodies.standing_spot_of(trip.trader), NpcBodiesView.NO_SPOT, "O ponto em pé do comerciante foi lido UMA vez e esquecido: depois da partida não sobra entrada dele.")
 	_follow(trip)
 	assert_ne(trip.back_spot, NO_SPOT, "Premissa: o `NpcView` do comerciante volta depois da chegada.")
 	var stand_m: float = trip.npc_spot.distance_to(trip.origin)
 	assert_between(stand_m, SMALL_JUMP_M, STAND_MAX_M, "Premissa: o `NpcView` ficou em pé a mais de 0,5 m do centro, na borda da caixa do mercado: sem a âncora o salto da partida seria deste tamanho (2,55 m).")
-	assert_lt(trip.npc_spot.distance_to(trip.first_spot), SMALL_JUMP_M, "PARTIDA: a 1ª pose da caravana sai do ponto onde o `NpcView` estava em pé (sem âncora 2,55 m; antes da rampa 3,70 m).")
+	assert_lt(trip.npc_spot.distance_to(trip.first_spot), ON_SPOT_M, "PARTIDA: a 1ª pose da caravana está no ponto onde o `NpcView` estava em pé, muito dentro dos 0,5 m (sem âncora 2,55 m; antes da rampa 3,70 m).")
 	assert_lt(trip.back_spot.distance_to(trip.destination), AXIS_M, "CHEGADA: o `NpcView` reaparece no centro do mercado de destino (`MerchantArrival`).")
 	assert_lt(trip.last_spot.distance_to(trip.back_spot), SMALL_JUMP_M, "CHEGADA: a última pose da caravana fica a menos de 0,5 m de onde o `NpcView` reaparece (não piora com a âncora).")
 	assert_lt(trip.biggest_step_m, STEP_MAX_M, "Entre quadros de 250 ms a caravana nunca anda mais que a velocidade x o quadro (a âncora e a rampa não mexem em `u`).")
@@ -348,3 +356,23 @@ func test_the_view_and_the_tracking_change_nothing_the_state_hash_and_the_npc_co
 	assert_eq(viewing[0], silent[0], "E com a vista sem o rastreio.")
 	assert_eq(anchored[1], silent[1], "Os contadores da reserva dos NPCs (criados, retirados, devolvidos, pico, reserva vazia, duplicados) são os mesmos com e sem o rastreio.")
 	assert_eq(viewing[1], silent[1], "E com a vista sem o rastreio.")
+
+
+func test_a_spot_stored_after_the_caravan_was_first_seen_still_anchors_it_and_goes_away_when_it_arrives() -> void:
+	var trip: Trip = _start_trip(Mode.ANCHORED, true)
+	var game: Game = trip.game
+	assert_ne(trip.npc_spot, NO_SPOT, "Premissa: o comerciante tinha o seu `NpcView` na praça antes de partir.")
+	assert_lt(trip.npc_spot.distance_to(trip.first_spot), ON_SPOT_M, "Na ordem inversa (a vista das caravanas consulta ANTES da dos NPCs) a âncora vale do mesmo jeito: lê o corpo que ainda existe.")
+	assert_eq(game.npc_bodies.standing_spot_of(trip.trader), trip.npc_spot, "Depois de a vista dos NPCs devolver o corpo, o ponto em pé ficou guardado (a vista das caravanas já tinha passado).")
+	var arrived: bool = false
+	for _minute: int in TRIP_MINUTES_MAX:
+		_tick(game)
+		if _row_of(game, trip.trader) == null:
+			arrived = true
+			break
+		_refresh(game)
+	assert_true(arrived, "Premissa: a viagem terminou (com o foco parado no mercado de partida: o destino fica a mais de 120 m e o NPC não volta a ter corpo).")
+	assert_eq(game.npc_bodies.standing_spot_of(trip.trader), trip.npc_spot, "No passo da chegada, antes de a vista das caravanas passar, a entrada da partida ainda está lá.")
+	game.caravan_bodies.reconcile()
+	assert_eq(game.npc_bodies.standing_spot_of(trip.trader), NpcBodiesView.NO_SPOT, "Assim que a vista das caravanas vê a chegada a entrada some (só esta chamada a apaga: o NPC chegou longe e não ganha corpo).")
+	assert_null(game.npc_bodies.pool().body_of(trip.trader), "E ele não tem corpo: nada mais teria apagado a entrada.")

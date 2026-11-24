@@ -12,6 +12,7 @@ const ROUTE_A_B: String = "route_a_b"
 const ROUTE_A_C: String = "route_a_c"
 const ROUTE_B_C: String = "route_b_c"
 const TRADER: int = 100
+const OTHER: int = 101
 const MARKETS: Dictionary[String, Vector2] = {A: Vector2(313.0, 556.0), B: Vector2(807.0, 653.0), C: Vector2(567.0, 853.0)}
 const GROUND_M: float = 10.0
 const CHUNK_M: float = 64.0
@@ -42,13 +43,15 @@ class StandingBodies:
 	var spots: Dictionary[int, Vector2] = {}
 	var asked: int = 0
 	var forgotten: int = 0
+	var forgotten_ids: Array[int] = []
 
 	func standing_spot_of(npc_id: int) -> Vector2:
 		asked += 1
 		return spots.get(npc_id, NpcBodiesView.NO_SPOT)
 
-	func forget_last_spot(_npc_id: int) -> void:
+	func forget_last_spot(npc_id: int) -> void:
 		forgotten += 1
+		forgotten_ids.append(npc_id)
 
 
 func before_all() -> void:
@@ -210,3 +213,38 @@ func test_no_anchor_for_a_caravan_found_mid_road_in_the_first_query_held_or_with
 	assert_eq(unknown[1].asked, 1, "...e a pergunta foi uma só.")
 	var far: Array = _born(MARKETS[A] + FAR_SPOT_M)
 	assert_lt((far[0] as Vector2).distance_to(MARKETS[A]), POSE_TOLERANCE_M, "Ponto longe demais do mercado (20 m): não vale como \"em pé no mercado\"; sai do eixo.")
+
+
+func test_the_anchor_accepts_the_corner_of_the_market_box_and_refuses_a_point_just_beyond_it() -> void:
+	var corner: Vector2 = MARKETS[A] + Vector2(2.4, 2.4)
+	var inside: Array = _born(corner)
+	assert_almost_eq((inside[0] as Vector2).distance_to(corner), 0.0, POSE_TOLERANCE_M, "O canto da caixa do mercado (2,4 m por eixo, 3,4 m do centro) ainda é âncora: a 1ª pose sai dele.")
+	var beyond: Array = _born(MARKETS[A] + Vector2(3.5, 1.0))
+	assert_lt((beyond[0] as Vector2).distance_to(MARKETS[A]), POSE_TOLERANCE_M, "A 3,6 m do centro já passa do teto de 3,5 m: sai do eixo.")
+
+
+func test_two_newborn_caravans_leaving_the_same_market_each_keep_their_own_anchor() -> void:
+	var bodies: StandingBodies = StandingBodies.new()
+	autofree(bodies)
+	_start(bodies)
+	var ids: Array[int] = [TRADER, OTHER]
+	var routes: Array[String] = [ROUTE_A_B, ROUTE_A_C]
+	var ends: Array[String] = [B, C]
+	var stands: Array[Vector2] = [MARKETS[A] + Vector2(-1.5, 2.0), MARKETS[A] + Vector2(2.0, -1.0)]
+	for index: int in ids.size():
+		bodies.spots[ids[index]] = stands[index]
+	_consult_empty()
+	_draw_terrain_around(MARKETS[A])
+	_terrain_view.set_focus(Vector3(MARKETS[A].x, GROUND_M, MARKETS[A].y))
+	for walked_m: float in [0.0, 3.0, 6.0, 12.0]:
+		var rows: Array[BridgeReplies.CaravanBodyReply] = []
+		for index: int in ids.size():
+			rows.append(ScriptedCaravanBridge.row_of(ids[index], walked_m / MARKETS[A].distance_to(MARKETS[ends[index]]), routes[index], A, ends[index]))
+		_bridge.rows.assign(rows)
+		_view.reconcile()
+		for index: int in ids.size():
+			var heading: Vector2 = (MARKETS[ends[index]] - MARKETS[A]).normalized()
+			var share: float = clampf(walked_m / CaravanBodiesView.LATERAL_RAMP_M, 0.0, 1.0)
+			var expected: Vector2 = MARKETS[A] + heading * walked_m + Vector2(-heading.y, heading.x) * LATERAL_M * share + (stands[index] - MARKETS[A]) * (1.0 - share)
+			assert_almost_eq(_spot_of(_view.body_of(ids[index])).distance_to(expected), 0.0, POSE_TOLERANCE_M, "Comerciante %d, a %.0f m andados: a âncora é a dele, não a do outro." % [ids[index], walked_m])
+	assert_eq([bodies.asked, bodies.forgotten_ids], [2, [TRADER, OTHER] as Array[int]], "Uma pergunta e um esquecimento por caravana, cada um com o seu comerciante.")

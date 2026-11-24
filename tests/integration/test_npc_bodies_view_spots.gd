@@ -112,6 +112,7 @@ func test_with_the_tracking_on_a_returned_body_leaves_its_last_spot_until_the_np
 	for npc_id: int in _view.active_ids():
 		var body: NpcView = _view.pool().body_of(npc_id)
 		assert_eq(_view.standing_spot_of(npc_id), Vector2(body.position.x, body.position.z), "Quem tem corpo está em pé onde o corpo está.")
+	assert_true(_view.remembered_spots() <= _host.npc.peek_npc_ids().size(), "Limite documentado: no máximo uma entrada por NPC (os IDs não se repetem); quem morre ou sai do alcance fora de uma viagem deixa a sua até voltar a ter corpo, desligar o rastreio ou soltar a view.")
 	_view.forget_last_spot(expected.keys()[0] if not expected.is_empty() else UNKNOWN_NPC)
 	assert_eq(_view.remembered_spots(), maxi(expected.size() - 1, 0), "`forget_last_spot` esquece o ponto de quem o leu.")
 

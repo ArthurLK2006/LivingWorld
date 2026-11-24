@@ -24,7 +24,7 @@ var _figure_factory: Callable
 ## O DONO da fábrica: um `Callable` de método de um `RefCounted` (a `source.make` da cena) NÃO segura o objeto, e a fonte, local na cena, morreria ao fim do preparo com a fábrica já inválida. Quem a segura é esta view, até o próximo `setup`.
 var _figure_owner: RefCounted
 var _warned_npcs: Dictionary[int, bool] = {}
-## Rastreio ligado e os pontos (x, z em metros) onde os corpos devolvidos estavam em pé; no máximo um por NPC (os IDs não se repetem), e vazio com o rastreio desligado.
+## Rastreio ligado e os pontos (x, z em metros) onde os corpos devolvidos estavam em pé; vazio com o rastreio desligado. LIMITE: a view não sabe por que o corpo voltou (saiu do alcance, morreu ou o comerciante partiu em viagem), então guarda um ponto para TODO corpo devolvido; a entrada sai quando o NPC volta a ter corpo, quando a `CaravanBodiesView` a lê ou a caravana chega, ao desligar o rastreio e no `release`. Quem morre, ou fica fora do alcance sem viagem, deixa a sua até uma dessas saídas: no máximo uma por NPC (os IDs não se repetem), nunca mais que a população.
 var _tracks_spots: bool = false
 var _last_spots: Dictionary[int, Vector2] = {}
 

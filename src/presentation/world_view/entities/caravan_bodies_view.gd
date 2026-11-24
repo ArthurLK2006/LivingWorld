@@ -22,8 +22,8 @@ extends Node3D
 const LATERAL_RAMP_M: float = 12.0
 ## [HIP] Giro máximo (rad) por metro andado entre duas poses: 0,5 é uma curva de cerca de 2 m de raio (uma quina de 90 graus leva uns 3 m).
 const TURN_RAD_PER_M: float = 0.5
-## [HIP] Até onde (m) do começo da estrada o ponto em pé ainda vale como âncora: a borda da caixa do mercado fica a até 3,4 m do centro; mais longe não é "em pé no mercado" e a caravana sai do eixo. Abaixo da rampa (12 m), a âncora nunca faz o corpo recuar.
-const ANCHOR_MAX_M: float = 6.0
+## [HIP] Até onde (m) do começo da estrada o ponto em pé ainda vale como âncora: o canto da caixa do mercado, a 3,4 m do centro (2,4 m por eixo: meia caixa de 2 m mais o raio da cápsula, como em `NpcRoute.stop_point`); mais longe não é "em pé no mercado" e a caravana sai do eixo. Nos 12 m da rampa a figura anda, no pior caso (o canto), 1 + 3,4 ÷ 12 = 1,28x o passo da estrada (com o teto antigo de 6 m seriam até 1,5x), e a âncora nunca a faz recuar.
+const ANCHOR_MAX_M: float = 3.5
 
 ## Consultas que falharam (os corpos ficaram como estavam).
 var failed_queries: int = 0

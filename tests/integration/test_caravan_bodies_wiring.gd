@@ -126,7 +126,6 @@ func test_on_the_scene_creates_the_view_with_its_hidden_pool_and_a_working_query
 	assert_not_null(_main.get_node_or_null(NPC_VIEW_NAME), "E o resto da cena segue como sempre.")
 
 
-
 func test_with_the_switch_off_the_npc_view_does_not_track_where_bodies_stood() -> void:
 	_start()
 	var npc_view: NpcBodiesView = _main.get_node_or_null(NPC_VIEW_NAME) as NpcBodiesView
