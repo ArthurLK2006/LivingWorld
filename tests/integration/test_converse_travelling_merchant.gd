@@ -20,6 +20,8 @@ const CLOSE_M: float = 1.5
 const HELD_MINUTES: int = 30
 const PROBE_EVERY: int = 10
 const COOLDOWN: int = NpcPlayerTalk.TALK_COOLDOWN_MIN
+## Minutos ANTES da partida natural em que o ator conversa no teste da precedência sobre o cooldown (medido: entre 30 e 58 a conversa não atrasa a partida e ela vem 28 a 50 minutos depois; com menos de 25 o comerciante perde o plano).
+const EARLY_TALK_MIN: int = 40
 
 var _data: NpcLifeCheck.GameData
 var _runners: Array[SimulationRunner] = []
@@ -273,6 +275,32 @@ func test_before_the_departure_and_after_the_arrival_the_merchant_converses_as_u
 	var again: BridgeReplies.ConverseReply = game.bridge.request_converse(game.actor_id, trader)
 	assert_true(again.result.ok, "Depois da chegada (e do cooldown) ele conversa de novo: %s" % again.result.message)
 	assert_eq([again.text_key, again.was_promoted], [NpcPlayerTalk.TEXT_KEY_KNOWN, false], "Já se conhecem: `known`, sem promover de novo.")
+
+
+func test_the_travel_refusal_takes_precedence_over_the_cooldown() -> void:
+	# A ordem das recusas fica fixada: "em viagem" vale ANTES do cooldown. Passo 1: sem conversa nenhuma, anota quem parte e quando. Passo 2: o mesmo jogo (determinista), com o ator conversando com ele `EARLY_TALK_MIN` minutos antes dessa partida
+	# (ele espera em casa, em S0, e a conversa não atrasa a partida; conversar na própria `haul` o faria perder o plano e só partir dias depois). Durante a viagem, ainda dentro dos 60 minutos do começo da conversa, o pedido volta
+	# `NPC_TALK_BUSY` (mensagem com "viagem") e não `NPC_TALK_COOLDOWN`, sem escrever nada.
+	var probe: Game = _new_game()
+	var trader: int = _depart(probe)
+	var departure_at: int = probe.now()
+	var game: Game = _new_game()
+	while game.now() < departure_at - EARLY_TALK_MIN:
+		_tick(game)
+	_next_to(game, trader)
+	var first: BridgeReplies.ConverseReply = game.bridge.request_converse(game.actor_id, trader)
+	assert_true(first.result.ok, "Antes da partida ele conversa: %s" % first.result.message)
+	var talked_at: int = game.now()
+	assert_eq(game.bridge.request_converse(game.actor_id, trader).result.code, NpcModule.CODE_TALK_COOLDOWN, "Controle: logo depois da conversa, o pedido cai no cooldown (o relógio de 60 minutos está correndo).")
+	var departed: bool = false
+	for _minute: int in COOLDOWN:
+		_tick(game)
+		if game.economy.peek_caravan(trader).found:
+			departed = true
+			break
+	assert_true(departed, "O mesmo comerciante parte em menos de 60 minutos depois da conversa (premissa).")
+	assert_lt(game.now() - talked_at, COOLDOWN, "Premissa: a viagem começou a menos de 60 minutos do começo da conversa, com o cooldown ainda aberto.")
+	_assert_refused_as_busy(game, trader, _next_to(game, trader), "Em viagem, dentro do cooldown")
 
 
 func test_a_non_merchant_still_converses_while_a_merchant_travels() -> void:
