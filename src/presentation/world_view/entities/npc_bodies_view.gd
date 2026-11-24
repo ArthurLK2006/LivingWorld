@@ -9,7 +9,7 @@ extends Node3D
 ## FIGURA INTEIRA (ART-12, 7b-2): com uma área de figuras (`CharacterArea`, não vazia) e uma fábrica (`figure_factory(figure_id) -> Node3D`), o NPC da área que ENTRA em S0 recebe a figura no corpo que acaba de sair da reserva (`NpcView.attach_figure`); fábrica que devolve null deixa a cápsula e dá UM aviso por NPC. Sair de S0 e o `release` devolvem a cápsula (o `give_back` do pool chama `detach`, que libera a figura); a reserva não guarda figura. Sem área, com área vazia ou sem fábrica a view é a de sempre.
 ## DESPEDIDA (LW-099d, opção A de Arthur em 24/11/2026; só apresentação; DESLIGADA por padrão): com `set_departure_fade(true)`, o NPC que sai de `peek_npc_bodies` POR TER CARAVANA (a partida do comerciante) NÃO volta à reserva na hora: o corpo fica ONDE ESTÁ por
 ## `PresenceFade.DURATION_S` (0,4 s de tempo real, avançado pelo `_process` e por `advance_departures(delta)`), cada vez mais transparente (`NpcView.set_fade`), enquanto a `CaravanView` surge no ponto de saída: uma dissolução cruzada em vez do "pulo". É a EXCEÇÃO
-## DELIBERADA à regra "o NPC em viagem não tem corpo" (o filtro da ponte segue valendo: a consulta nunca o lista); durante a despedida o corpo conta em `active_ids()` (também em `fading_ids()`), no laço de visibilidade por chunk e na reserva (não é devolvido antes).
+## DELIBERADA à regra "o NPC em viagem não tem corpo" (o filtro da ponte segue valendo: a consulta nunca o lista); durante a despedida o corpo conta em `active_ids()` (também em `fading_ids()` e `is_departing`), no laço de visibilidade por chunk e na reserva (não é devolvido antes), mas NÃO é interativo (a `InteractionView` o ignora).
 ## Quem sai por OUTRO motivo (alcance, morte) volta NA HORA, como sempre: a reserva nunca cresce numa troca grande. Como saber o motivo: só quando alguém fica sem lugar na lista há UMA consulta `peek_caravan_bodies` por quadro (o `trader_id` de cada linha, em
 ## viagem ou parada, é o id do NPC); quem já está em despedida não consulta de novo, e consulta que falha manda todos de volta na hora. Se o NPC volta à lista durante a despedida, ela é cancelada e o corpo volta opaco. `release`, `setup` e o desligar da opção
 ## encerram as despedidas (os corpos voltam à reserva, opacos). Desligada, nada disto existe e a view é a de sempre: nenhuma consulta a mais.
@@ -129,6 +129,11 @@ func fading_ids() -> Array[int]:
 	ids.assign(_departing.keys())
 	ids.sort()
 	return ids
+
+
+## Se o NPC está em despedida (o corpo ainda na tela, sumindo): consulta O(1) no dicionário, sem alocar. O corpo em despedida NÃO é interativo: a `InteractionView` o ignora ao escolher o alvo.
+func is_departing(npc_id: int) -> bool:
+	return _departing.has(npc_id)
 
 
 ## Avança as despedidas em `delta` segundos de tempo REAL: cada corpo fica mais transparente (`PresenceFade.out_amount`) e, ao completar `PresenceFade.DURATION_S`, volta à reserva (opaco e escondido). Sem despedida, ou com `delta` NaN, não faz nada;

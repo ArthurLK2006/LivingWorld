@@ -222,13 +222,13 @@ func _horizontal_distance_m(point: BridgeReplies.PointReply) -> float:
 	return Vector2(_player.global_position.x - point.x, _player.global_position.z - point.z).length()
 
 
-## O alvo da tecla agora: o ponto ou o NPC mais perto dentro do alcance (o NPC ganha o empate). Só entram corpos visíveis (com terreno desenhado).
+## O alvo da tecla agora: o ponto ou o NPC mais perto dentro do alcance (o NPC ganha o empate). Só entram corpos visíveis (com terreno desenhado) e que NÃO estão em despedida (LW-099d: o corpo que some na partida da caravana, por 0,4 s, não é interativo).
 func _choose_target() -> InteractionTarget:
 	var bodies: Dictionary[int, Vector3] = {}
 	if _bodies != null:
 		for npc_id: int in _bodies.active_ids():
 			var view: NpcView = _bodies.pool().body_of(npc_id)
-			if view.visible:
+			if view.visible and not _bodies.is_departing(npc_id):
 				bodies[npc_id] = view.global_position
 	return InteractionTarget.choose(Vector2(_player.global_position.x, _player.global_position.z), _points, bodies)
 
