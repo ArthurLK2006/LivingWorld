@@ -21,6 +21,7 @@ const LATERAL_M: float = 1.2
 const POSE_TOLERANCE_M: float = 0.01
 const POOL_DATA: String = "\"pool_size\": 8"
 const POOL_OF_ONE: String = "\"pool_size\": 1"
+const FADE_EPS: float = 0.0001
 
 var _terrain: TerrainData
 var _places: Array[Place] = []
@@ -263,3 +264,33 @@ func test_the_view_only_reads_the_bridge_and_never_requests_anything() -> void:
 	assert_false(source.is_empty(), "O arquivo da vista foi lido.")
 	assert_false(source.contains("request_"), "Nenhuma chamada `request_*`: a vista só lê (`peek_*`).")
 	assert_true(source.contains("peek_caravan_bodies"), "E a consulta de que depende está lá.")
+
+
+## LW-099d (revisão R8): o corpo devolvido no MEIO da aparição de 0,4 s volta opaco e sem aparição pendente, e o próximo `take` (reserva de um só: o MESMO corpo) começa uma aparição completa, sem herdar nem a transparência nem o tempo.
+func test_a_body_given_back_in_the_middle_of_the_appearance_comes_back_opaque_and_the_next_take_inherits_nothing() -> void:
+	var small: CaravanRoutesReader.LoadResult = CaravanRoutesReader.from_json(FileAccess.get_file_as_string(CaravanRoutesReader.DEFAULT_PATH).replace(POOL_DATA, POOL_OF_ONE), "reserva de um corpo")
+	assert_true(small.result.ok, small.result.message)
+	_start(small.data)
+	_draw_terrain_around(_road_at(MIDDLE))
+	_show([_row(TRADER, MIDDLE)])
+	_focus_at(MIDDLE, 10.0)
+	_view.reconcile()
+	var body: CaravanView = _view.body_of(TRADER)
+	assert_not_null(body, "Premissa: a caravana no alcance tem corpo.")
+	if body == null:
+		return
+	assert_eq([body.visible, body.is_appearing(), body.fade()], [true, true, 1.0], "A 1ª pose começa a aparição: visível e ainda invisível.")
+	body.advance_fade(0.1)
+	assert_almost_eq(body.fade(), 0.75, FADE_EPS, "No meio da aparição.")
+	_show([_row(TRADER, 0.95)])
+	_view.reconcile()
+	assert_null(_view.body_of(TRADER), "A caravana saiu do alcance e o corpo voltou à reserva.")
+	assert_eq([body.fade(), body.is_appearing(), body.is_processing(), body.visible], [0.0, false, false, false], "Devolvido no meio da aparição: opaco, sem aparição pendente, sem `_process` e escondido.")
+	body.advance_fade(0.3)
+	assert_eq(body.fade(), 0.0, "E o tempo que passa depois não muda nada.")
+	_show([_row(OTHER, MIDDLE + 0.02)])
+	_view.reconcile()
+	assert_same(_view.body_of(OTHER), body, "A reserva de um só entrega o MESMO corpo à outra caravana.")
+	assert_eq([body.fade(), body.is_appearing(), body.visible], [1.0, true, true], "Uma aparição NOVA, completa: começa invisível.")
+	body.advance_fade(0.1)
+	assert_almost_eq(body.fade(), 0.75, FADE_EPS, "E com o relógio zerado (nada herdado dos 0,1 s da aparição anterior).")

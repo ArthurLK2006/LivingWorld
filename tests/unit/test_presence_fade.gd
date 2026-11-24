@@ -129,3 +129,4 @@ func test_a_recycled_body_never_comes_back_transparent() -> void:
 	again.set_fade(0.4)
 	again.detach()
 	assert_eq([again.fade(), _values(again), again.visible], [0.0, [0.0, 0.0] as Array[float], false], "`detach` também (e o corpo fica escondido)")
+	await wait_process_frames(1)

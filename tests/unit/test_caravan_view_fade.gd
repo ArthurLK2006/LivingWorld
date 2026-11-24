@@ -134,3 +134,18 @@ func test_real_frames_advance_the_appearance_and_the_process_stops_when_it_ends(
 	assert_lt(view.fade(), 1.0, "os quadros reais (delta > 0) já fizeram o corpo aparecer um pouco")
 	view.advance_fade(1.0)
 	assert_eq([view.fade(), view.is_processing()], [0.0, false], "e ao completar o `_process` desliga")
+
+
+func test_the_appearance_ends_exactly_at_0_4_seconds_and_not_a_moment_before() -> void:
+	var early: CaravanView = _bound()
+	early.apply_pose(GROUND, 0.0, 0.0)
+	early.advance_fade(0.2)
+	early.advance_fade(0.19)
+	assert_eq([early.is_appearing(), early.is_processing()], [true, true], "aos 0,39 s ainda aparece")
+	assert_almost_eq(early.fade(), 0.025, EPS, "quase opaco, mas ainda não")
+	var exact: CaravanView = _bound()
+	exact.apply_pose(GROUND, 0.0, 0.0)
+	exact.advance_fade(0.2)
+	exact.advance_fade(0.2)
+	assert_eq([exact.is_appearing(), exact.is_processing(), exact.fade()], [false, false, 0.0], "aos 0,4 s EXATOS (dois passos de 0,2 s, soma exata em double) a aparição acabou e o `_process` desligou")
+	assert_true(_all_are(exact, 0.0), "toda a geometria opaca")

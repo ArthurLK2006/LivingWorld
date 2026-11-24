@@ -56,8 +56,8 @@ func after_each() -> void:
 	_view = null
 
 
-## A view ligada à ponte do teste, sem `_process` (o teste avança o tempo). `fade`: a opção da despedida.
-func _start(fade: bool = true) -> void:
+## A view ligada à ponte do teste, sem `_process` (o teste avança o tempo) e SEM tocar na opção da despedida: o que o teste vê é o PADRÃO.
+func _start_default() -> void:
 	_bridge = ScriptedBridge.new(null, _data.terrain, _data.places)
 	_terrain = DrawnTerrain.new()
 	add_child_autofree(_terrain)
@@ -65,6 +65,11 @@ func _start(fade: bool = true) -> void:
 	add_child_autofree(_view)
 	_view.set_process(false)
 	assert_true(_view.setup(_bridge, _terrain))
+
+
+## O mesmo, com a opção da despedida posta em `fade`.
+func _start(fade: bool = true) -> void:
+	_start_default()
 	_view.set_departure_fade(fade)
 
 
@@ -91,8 +96,8 @@ func _capsule_fade(view: NpcView) -> float:
 
 
 func test_off_by_default_a_leaver_goes_back_in_the_same_frame_and_the_caravans_are_never_asked() -> void:
-	_start(false)
-	assert_false(_view.departure_fade_enabled(), "nasce desligada")
+	_start_default()
+	assert_false(_view.departure_fade_enabled(), "nasce desligada (o teste não tocou na opção)")
 	_travelling([2])
 	_list([1, 2, 3])
 	_list([1, 3])
@@ -248,3 +253,77 @@ func test_odd_deltas_are_ignored_and_the_real_process_advances_the_departure() -
 	_view.set_process(true)
 	await wait_process_frames(3)
 	assert_true(not _view.fading_ids().has(2) or body.fade() > 0.0, "os quadros reais (delta > 0) fazem a despedida andar")
+
+
+func test_the_departure_ends_exactly_at_0_4_seconds_and_not_a_moment_before() -> void:
+	_start()
+	_travelling([2])
+	_list([1, 2, 3])
+	var early: NpcView = _view.pool().body_of(2)
+	_list([1, 3])
+	_view.advance_departures(0.2)
+	_view.advance_departures(0.19)
+	assert_eq([_view.fading_ids(), _view.active_ids()], [[2] as Array[int], [1, 2, 3] as Array[int]], "aos 0,39 s o corpo ainda está em despedida")
+	assert_almost_eq(early.fade(), 0.975, EPS, "quase invisível, mas ainda ali")
+	_start()
+	_travelling([2])
+	_list([1, 2, 3])
+	var exact: NpcView = _view.pool().body_of(2)
+	_list([1, 3])
+	_view.advance_departures(0.2)
+	_view.advance_departures(0.2)
+	assert_eq([_view.fading_ids(), _view.active_ids(), _view.pool().returned, exact.visible, exact.fade()], [[] as Array[int], [1, 3] as Array[int], 1, false, 0.0], "aos 0,4 s EXATOS (dois passos de 0,2 s, soma exata em double) o corpo já voltou à reserva, opaco e escondido")
+
+
+func test_a_departure_whose_caravan_row_vanishes_but_who_is_not_listed_again_still_ends_at_0_4_seconds() -> void:
+	_start()
+	_travelling([2])
+	_list([1, 2, 3])
+	var body: NpcView = _view.pool().body_of(2)
+	_list([1, 3])
+	assert_eq([_view.is_departing(2), _view.is_departing(1), _view.is_departing(99)], [true, false, false], "`is_departing` só vale para quem está em despedida")
+	var asked: int = _bridge.caravan_queries
+	_travelling([])
+	_list([1, 3])
+	assert_eq([_view.fading_ids(), _bridge.caravan_queries], [[2] as Array[int], asked], "a linha da caravana sumiu da consulta, mas o NPC não voltou à lista: a despedida segue e ninguém é consultado de novo")
+	_view.advance_departures(0.1)
+	assert_almost_eq(body.fade(), 0.25, EPS, "a despedida segue na curva")
+	_view.advance_departures(0.4)
+	assert_eq([_view.active_ids(), _view.fading_ids(), body.fade(), body.visible, _view.pool().returned, _view.pool().lost_count()], [[1, 3] as Array[int], [] as Array[int], 0.0, false, 1, 0], "no fim dos 0,4 s o corpo volta, opaco e escondido, sem vazar")
+	assert_eq([_view.pool().free_count(), _view.is_departing(2)], [NpcViewPool.PREWARM_COUNT - 2, false], "e a reserva fica com ele de volta")
+
+
+func test_the_same_npc_departing_again_after_a_cancel_starts_a_new_departure_from_zero() -> void:
+	_start()
+	_travelling([2])
+	_list([1, 2, 3])
+	var body: NpcView = _view.pool().body_of(2)
+	_list([1, 3])
+	_view.advance_departures(0.2)
+	assert_almost_eq(body.fade(), 0.5, EPS, "a primeira despedida está na metade")
+	_list([1, 2, 3])
+	assert_eq([_view.fading_ids(), body.fade()], [[] as Array[int], 0.0], "cancelada: opaco de novo")
+	_list([1, 3])
+	assert_eq([_view.fading_ids(), body.fade(), _bridge.caravan_queries], [[2] as Array[int], 0.0, 2], "partiu de novo: nova despedida, do ZERO (opaco), com nova consulta")
+	_view.advance_departures(0.1)
+	assert_almost_eq(body.fade(), 0.25, EPS, "a conta de tempo também recomeçou (nada herdado dos 0,2 s da primeira)")
+	assert_same(_view.pool().body_of(2), body)
+	_view.advance_departures(0.4)
+	assert_eq([_view.active_ids(), _view.pool().returned, _view.pool().lost_count(), _view.pool().duplicate_requests], [[1, 3] as Array[int], 1, 0, 0], "e a segunda despedida termina no prazo, devolvendo UM corpo")
+
+
+func test_leaving_the_tree_in_the_middle_of_a_departure_returns_every_body_opaque_and_leaves_no_orphan() -> void:
+	_start()
+	_travelling([2])
+	_list([1, 2, 3])
+	var pool: NpcViewPool = _view.pool()
+	var body: NpcView = pool.body_of(2)
+	_list([1, 3])
+	_view.advance_departures(0.1)
+	assert_gt(body.fade(), 0.0, "premissa: o corpo está no meio da despedida")
+	var orphans_before: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+	remove_child(_view)
+	assert_eq([_view.is_active(), _view.fading_ids(), body.fade(), body.visible, pool.active_count(), pool.returned, pool.lost_count()], [false, [] as Array[int], 0.0, false, 0, 3, 0], "`_exit_tree` no meio da despedida: tudo volta à reserva, opaco e escondido")
+	_view.free()
+	_view = null
+	assert_eq(int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)), orphans_before, "liberada a view, nenhum órfão novo")
