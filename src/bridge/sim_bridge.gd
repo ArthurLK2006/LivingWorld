@@ -224,6 +224,17 @@ func request_trade(actor_id: int, market_id: int, good_id: String, quantity: int
 	return BridgePlayerEconomy.trade(character, economy, _places, actor_id, market_id, good_id, quantity, side)
 
 
+## LW-107h: a cotação de uma ordem do jogador (SÓ LEITURA, SEM exigir alcance; `BridgePlayerEconomyReplies.TradeQuoteReply`), repasse fino do `EconomyModule.peek_quote`: a mesma conta de `request_trade` no mesmo instante, sem executar (não confere fundos nem peso). Só para um ator que o `character` conhece; a recusa, da ponte ou da economia, vai sem tradução e sem chave de texto. Serve só à aba Contratos (a aba Mercado segue sem cotação por quantidade).
+func peek_trade_quote(actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> BridgePlayerEconomyReplies.TradeQuoteReply:
+	var character: CharacterModule = _character()
+	if character == null:
+		return BridgePlayerEconomyReplies.TradeQuoteReply.new(_missing_character("peek_trade_quote"))
+	var economy: EconomyModule = _economy()
+	if economy == null:
+		return BridgePlayerEconomyReplies.TradeQuoteReply.new(_missing_economy("peek_trade_quote"))
+	return BridgePlayerEconomy.quote(character, economy, actor_id, market_id, good_id, quantity, side)
+
+
 ## LW-106b: o mercado ao alcance do jogador (SÓ LEITURA), pela posição GUARDADA no `character`. A ponte só delega: a regra e o alcance são do `world` (`MarketReach`); nenhum ao alcance: `PLACE_TOO_FAR` do `world`, sem tradução.
 func peek_market_in_reach(actor_id: int) -> BridgePlayerEconomyReplies.MarketInReachReply:
 	var character: CharacterModule = _character()

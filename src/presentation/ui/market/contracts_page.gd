@@ -8,6 +8,8 @@ extends RefCounted
 ## sinal `abandon_asked` (LW-107f4b: a própria página o ouve e abre o painel de confirmação, `AbandonConfirm`); Aceitar fica desativado quando o jogador já está na capacidade (só dica: a ponte decide e recusa com `economy.contract.limit`); a linha da capacidade ("n de N") fica escondida sem limite definido;
 ## e as linhas terminadas mostram "Abandonado" (com a nota de que não há multa), "Falhou" ou "Vencido", sempre diferentes entre si. LW-107f4b: só o "Abandonar" do painel faz a página emitir `abandon_requested` (a `MarketView` o liga a `request_contract_abandon`, 107f4c); o `refresh` fecha o painel
 ## sozinho se a linha deixa de ser abandonável ou o relógio para (`keep_if`), e a tela ou a página que escondem o fecham (o próprio painel ouve o `hidden`); a página continua SÓ consultando a ponte.
+## LW-107h (custo e resultado estimados): abaixo do detalhe, três linhas só da linha escolhida: os números (custo estimado de comprar o que falta AQUI, e o resultado), o aviso (possível prejuízo, margem pequena ou margem, SEMPRE com a frase de que os preços podem mudar, e o saldo insuficiente) e a nota do que a estimativa não cobre. Só INFORMAM: nenhum botão muda por elas
+## (aceitar é livre e o jogador pode ter outros motivos). As consultas de cotação (`ContractsViewModel.refresh_estimates`, no máximo uma por encomenda ativa) rodam SÓ com a página visível NA ÁRVORE (aba Contratos escolhida E tela aberta: `is_visible_in_tree`, não só o `visible` dela), junto de cada `refresh`, e uma vez ao trocar para ela (`set_shown`): negociando na aba Mercado, nenhuma cotação é pedida.
 
 ## Chaves de texto da página (as frases moram em data/text/pt_br.json); o estado mostrado entra pelo prefixo (`ui.contracts.state.open`, `accepted`, `completed`, `expired`, `abandoned` e `failed`).
 const KEY_CONTRACTS_TITLE: String = "ui.contracts.title"
@@ -26,6 +28,16 @@ const KEY_DELIVER: String = "ui.contracts.deliver"
 const KEY_ABANDON: String = "ui.contracts.abandon"
 const KEY_CAPACITY: String = "ui.contracts.capacity"
 const KEY_CONTRACTS_UNAVAILABLE: String = "ui.contracts.unavailable"
+## As nove chaves da estimativa (LW-107h): os números, o aviso (com a frase dos preços) e a nota.
+const KEY_ESTIMATE_COST: String = "ui.contracts.estimate_cost"
+const KEY_ESTIMATE_RESULT: String = "ui.contracts.estimate_result"
+const KEY_ESTIMATE_HAVE: String = "ui.contracts.estimate_have"
+const KEY_ESTIMATE_UNKNOWN: String = "ui.contracts.estimate_unknown"
+const KEY_VERDICT_LOSS: String = "ui.contracts.verdict_loss"
+const KEY_VERDICT_MARGIN: String = "ui.contracts.verdict_margin"
+const KEY_VERDICT_MARGIN_SMALL: String = "ui.contracts.verdict_margin_small"
+const KEY_VERDICT_FUNDS: String = "ui.contracts.verdict_funds"
+const KEY_HINT_ESTIMATE: String = "ui.contracts.hint_estimate"
 const KEY_CLOSE: String = "ui.market.close"
 ## A nota do detalhe de cada estado mostrado que a tem: o "Vencido" e o "Abandonado" (o "Falhou" não tem nota).
 const KEY_NOTES: Dictionary[String, String] = {ContractsViewModel.STATE_EXPIRED: "ui.contracts.expired_note", ContractsViewModel.STATE_ABANDONED: "ui.contracts.abandoned_note"}
@@ -38,6 +50,8 @@ const KEY_GOOD_NAME: String = "good.%s.name"
 const KEY_SETTLEMENT_NAME: String = "settlement.%s.name"
 ## Separador das informações do detalhe da linha escolhida (como na linha de dicas do mercado).
 const FACT_SEPARATOR: String = " · "
+## Separador das frases do aviso da estimativa (a de prejuízo ou margem e a de saldo insuficiente).
+const SENTENCE_SEPARATOR: String = " "
 
 ## Sai quando o botão "Fechar" da página é apertado; quem fecha a tela é a `MarketView`.
 signal close_requested
@@ -84,6 +98,7 @@ func setup(bridge: SimBridge, texts: UiText, actor_id: int, parent: Control) -> 
 	_layout.open_list.item_selected.connect(_choose.bind(_layout.open_list))
 	_layout.mine_list.item_selected.connect(_choose.bind(_layout.mine_list))
 	_update_actions()
+	_show_estimate()
 
 
 ## Abre a página: apaga o aviso da linha de resultado (o `refresh` que vem em seguida o refaz se a consulta falhar).
@@ -91,9 +106,12 @@ func open() -> void:
 	_layout.result.text = ""
 
 
-## Mostra ou esconde a página. Só `visible` muda: nenhum nó muda de pai.
+## Mostra ou esconde a página. Só `visible` muda: nenhum nó muda de pai. LW-107h: ao MOSTRAR, com a tela aberta (visível na árvore), refaz UMA vez as estimativas (a leitura do último `refresh` basta) para o jogador não ver as linhas da estimativa vazias até o próximo `refresh`; ao esconder, nenhuma cotação é pedida.
 func set_shown(is_shown: bool) -> void:
 	_layout.page.visible = is_shown
+	if is_shown and _layout.page.is_visible_in_tree():
+		_model.refresh_estimates(_bridge, _actor_id)
+		_show_estimate()
 
 
 ## A lista que recebe o foco quando a página é escolhida (a primeira, "Disponíveis neste mercado").
@@ -112,6 +130,8 @@ func consume_cancel(event: InputEvent) -> bool:
 func refresh(market_id: int, is_paused: bool) -> void:
 	_is_paused = is_paused
 	var is_valid: bool = _model.refresh(_bridge, _actor_id, market_id)
+	if _layout.page.is_visible_in_tree():
+		_model.refresh_estimates(_bridge, _actor_id)
 	var open_rows: Array[ContractsViewModel.Row] = _model.available()
 	var mine_rows: Array[ContractsViewModel.Row] = _model.mine()
 	var listed: Array[ContractsViewModel.Row] = open_rows + mine_rows
@@ -206,6 +226,47 @@ func _choose(tree: Tree) -> void:
 func _show_detail() -> void:
 	var row: ContractsViewModel.Row = _contract_rows.get(_chosen_contract) as ContractsViewModel.Row
 	_layout.detail.text = "" if row == null else _facts_of(row)
+	_show_estimate()
+
+
+## LW-107h: as três linhas da estimativa da linha escolhida, SÓ a partir do que o modelo já tem (nenhuma consulta aqui; quem pede a cotação é `refresh_estimates`). Sem estimativa (linha terminada, vencida, sem escolha, modelo inválido ou página escondida): as três vazias e escondidas. `HELD` e `UNKNOWN`: só a linha dos números, sem aviso nem nota
+## (não há resultado). `KNOWN`: os números, o aviso e a nota. O matiz de perigo só REFORÇA o texto (que já diz "prejuízo" ou "saldo insuficiente"): fica no aviso quando o resultado é negativo ou falta saldo e sai nos demais casos.
+func _show_estimate() -> void:
+	var estimate: ContractsViewModel.Estimate = _model.estimate_of(_chosen_contract)
+	var is_known: bool = estimate.kind == ContractsViewModel.EstimateKind.KNOWN
+	_layout.estimate.text = _numbers_of(estimate)
+	_layout.verdict.text = _verdict_of(estimate) if is_known else ""
+	_layout.estimate_hint.text = _texts.get_text(KEY_HINT_ESTIMATE) if is_known else ""
+	for label: Label in [_layout.estimate, _layout.verdict, _layout.estimate_hint]:
+		label.visible = not label.text.is_empty()
+	if is_known and (estimate.result < 0 or estimate.funds_short > 0):
+		ContractsLayout.mark_as_danger(_layout.verdict)
+	else:
+		ContractsLayout.clear_danger(_layout.verdict)
+
+
+## A linha dos números: custo e resultado (`KNOWN`), "já tem os itens" (`HELD`) ou "custo indisponível" (`UNKNOWN`, nunca um zero); vazia sem estimativa.
+func _numbers_of(estimate: ContractsViewModel.Estimate) -> String:
+	match estimate.kind:
+		ContractsViewModel.EstimateKind.HELD:
+			return _texts.get_text(KEY_ESTIMATE_HAVE)
+		ContractsViewModel.EstimateKind.UNKNOWN:
+			return _texts.get_text(KEY_ESTIMATE_UNKNOWN)
+		ContractsViewModel.EstimateKind.KNOWN:
+			return FACT_SEPARATOR.join(PackedStringArray([_texts.get_text(KEY_ESTIMATE_COST, {"cost": estimate.cost}), _texts.get_text(KEY_ESTIMATE_RESULT, {"result": estimate.result})]))
+	return ""
+
+
+## O aviso de uma estimativa conhecida: resultado negativo = "possível prejuízo" (o valor da perda, sem sinal); de 0 à faixa pequena = "margem estimada pequena"; acima = "margem estimada". Toda frase traz que os preços podem mudar (o texto das chaves). Falta saldo para o custo: a frase de saldo insuficiente vai junto.
+func _verdict_of(estimate: ContractsViewModel.Estimate) -> String:
+	var sentence: String = _texts.get_text(KEY_VERDICT_MARGIN, {"margin": estimate.result})
+	if estimate.result < 0:
+		sentence = _texts.get_text(KEY_VERDICT_LOSS, {"loss": -estimate.result})
+	elif estimate.is_small_margin:
+		sentence = _texts.get_text(KEY_VERDICT_MARGIN_SMALL, {"margin": estimate.result})
+	if estimate.funds_short > 0:
+		sentence += SENTENCE_SEPARATOR + _texts.get_text(KEY_VERDICT_FUNDS, {"short": estimate.funds_short})
+	return sentence
 
 
 ## As informações do detalhe da linha escolhida, na ordem do contrato: bem e quantidade, recompensa, prazo restante (só se há), destino (só se é um mercado), "você tem X de Y", estado e a nota do estado (no vencido, a do prazo; no abandonado, a de que não há multa).

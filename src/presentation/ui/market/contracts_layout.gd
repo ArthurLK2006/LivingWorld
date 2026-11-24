@@ -4,7 +4,8 @@ extends RefCounted
 ## mercado, onde a página é IRMÃ da do mercado), monta a página (`VBoxContainer`, ESCONDIDA ao nascer) com o título, a linha da capacidade (LW-107f4a: quem a escreve e a mostra é a página), as listas `Tree` "Disponíveis neste mercado" e "Meus contratos", o detalhe da linha escolhida, os botões
 ## Aceitar, Entregar, Abandonar (LW-107f4a, desativado ao nascer e separado do Entregar pelo espaçador `ContractsActionGap`) e Fechar, a linha de resultado e a de dicas (esta nasce vazia: quem a preenche é a LW-107e2), e os entrega por CAMPOS nomeados e tipados. NÃO escreve texto (a tela escreve, por chave), NÃO lê a ponte, NÃO tem regra de jogo e NÃO define estilo: só aponta o papel
 ## de cada nó por `theme_type_variation`, com os nomes do `MarketTheme` (o único lugar do estilo); o `Theme` vem do `Control` raiz da tela. A ÚNICA exceção é o matiz local de perigo do botão Abandonar (`DANGER_TINT`, aplicado por `mark_as_danger` em `self_modulate`, que não é item de tema: nota de projeto de
-## docs/modules/presentation.md, "Encomendas por objetivo"). Quem liga e desliga os botões é a tela. A ordem de Tab é a ordem de criação.
+## docs/modules/presentation.md, "Encomendas por objetivo"; LW-107h: o aviso de possível prejuízo da estimativa usa o mesmo matiz). Quem liga e desliga os botões é a tela. A ordem de Tab é a ordem de criação.
+## LW-107h (custo e resultado estimados): entre o detalhe e os botões nascem três rótulos filhos da PÁGINA (não da coluna do painel), sem texto: `ContractsEstimate` (os números), `ContractsVerdict` (o aviso, no papel RESULT) e `ContractsEstimateHint` (a nota, no papel HINT); a página os escreve, os mostra e os esconde.
 
 ## Colunas das listas, sem títulos (cada texto já traz a sua palavra): o bem e a quantidade, a recompensa e o prazo (ou o estado, quando não há prazo a mostrar).
 const COLUMN_LINE: int = 0
@@ -27,6 +28,9 @@ var open_list: Tree
 var mine_title: Label
 var mine_list: Tree
 var detail: Label
+var estimate: Label
+var verdict: Label
+var estimate_hint: Label
 var accept_button: Button
 var deliver_button: Button
 var action_gap: Control
@@ -51,6 +55,9 @@ func build(parent: Control) -> void:
 	mine_title = _label(page, "ContractsMineTitle", MarketTheme.STATUS)
 	mine_list = _list(page, "ContractsMine")
 	detail = _label(page, "ContractsDetail", MarketTheme.STATUS)
+	estimate = _label(page, "ContractsEstimate", MarketTheme.STATUS)
+	verdict = _label(page, "ContractsVerdict", MarketTheme.RESULT)
+	estimate_hint = _label(page, "ContractsEstimateHint", MarketTheme.HINT)
 	var action_row: Node = _add(page, HBoxContainer.new(), "ContractsActionRow")
 	accept_button = _button(action_row, "ContractsAccept")
 	deliver_button = _button(action_row, "ContractsDeliver")
@@ -64,9 +71,14 @@ func build(parent: Control) -> void:
 	hints = _label(page, "ContractsHints", MarketTheme.HINT)
 
 
-## O matiz local de perigo (`DANGER_TINT`) no botão: só o `self_modulate` muda, nenhum item de tema (o estilo continua só do `MarketTheme`). Pública e estática para o "Abandonar" do painel de confirmação (LW-107f4b) usar o mesmo matiz.
-static func mark_as_danger(button: Button) -> void:
-	button.self_modulate = DANGER_TINT
+## O matiz local de perigo (`DANGER_TINT`) no botão ou no rótulo: só o `self_modulate` muda, nenhum item de tema (o estilo continua só do `MarketTheme`). Pública e estática para o "Abandonar" do painel de confirmação (LW-107f4b) e, desde a LW-107h, o aviso de possível prejuízo da estimativa usarem o mesmo matiz.
+static func mark_as_danger(item: CanvasItem) -> void:
+	item.self_modulate = DANGER_TINT
+
+
+## Tira o matiz de perigo: o `self_modulate` volta ao neutro (a cor do papel do `MarketTheme`). Só o aviso da estimativa o usa, quando o resultado deixa de ser de perigo.
+static func clear_danger(item: CanvasItem) -> void:
+	item.self_modulate = Color.WHITE
 
 
 ## Dá o nome fixo ao nó, pendura-o no pai e o devolve.

@@ -54,6 +54,18 @@ static func trade(character: CharacterModule, economy: EconomyModule, places: Ar
 	return BridgePlayerEconomyReplies.PlayerTradeReply.new(traded.result, traded.quantity, traded.total, side)
 
 
+## A cotação da ordem de compra (`buy`) ou de venda (`sell`) do jogador (LW-107h), SÓ LEITURA: repasse fino do `EconomyModule.peek_quote`, a mesma conta de `request_trade` no mesmo instante, sem executar. (1) O ator é um personagem do `character` (ID solto ou de NPC: o código dele). (2) A economia confere ator, mercado, bem, lado, quantidade (1 a `max_order_quantity` por ordem),
+## regras e estoque; NÃO confere fundos nem peso, e a ponte NÃO exige alcance (consultar não é negociar: como `peek_contract_board`). Toda recusa volta SEM tradução e sem chave de texto; nada muda, nada é publicado.
+static func quote(character: CharacterModule, economy: EconomyModule, actor_id: int, market_id: int, good_id: String, quantity: int, side: String) -> BridgePlayerEconomyReplies.TradeQuoteReply:
+	var known: CharacterQuery = character.peek_character(actor_id)
+	if not known.result.ok:
+		return BridgePlayerEconomyReplies.TradeQuoteReply.new(known.result)
+	var quoted: EconomyReplies.QuoteQuery = economy.peek_quote(actor_id, market_id, good_id, quantity, side)
+	if not quoted.result.ok:
+		return BridgePlayerEconomyReplies.TradeQuoteReply.new(quoted.result)
+	return BridgePlayerEconomyReplies.TradeQuoteReply.new(quoted.result, quantity, quoted.total, quoted.average_price, quoted.tariff)
+
+
 ## O mercado ao alcance do jogador (LW-106b; contrato em docs/modules/bridge.md, "Mercado ao alcance"), SÓ LEITURA: nada muda e nada é publicado. (1) O ator é um personagem do `character` (ID solto ou de NPC: o código do `character`, como no `trade`), e dele
 ## vem a posição GUARDADA, nunca a da apresentação. (2) Os mercados são os de `peek_economy_markets` (a mesma lista: `BridgeEconomyInspect.markets`, em ordem crescente de `market_id`); para cada um a ponte faz ao `world` (`MarketReach`, dono da regra e do alcance) a
 ## mesma pergunta do `trade` sobre o assentamento dele, e vale o PRIMEIRO que passa: a ponte não tem constante de alcance nem conta de distância. (3) Nenhum ao alcance (inclusive sem mercado algum): `PLACE_TOO_FAR` do `world`, sem tradução e sem chave de texto.
