@@ -4,6 +4,7 @@ extends Node3D
 ## A origem fica nos pés, como no `PlayerBody`. SÓ VISUAL: sem colisão, sem física e sem regra de jogo. Parado fica imóvel; andando quica na
 ## vertical e se inclina um pouco para a frente. Não conhece o `npc`: guarda só o ID do NPC a que está ligado. Contrato: docs/modules/presentation.md.
 ## FIGURA INTEIRA (ART-12, 7b-1): `attach_figure` põe uma figura montada (`CharacterFigure.build`) no lugar da cápsula, como filha do corpo e não da parte que balança; com figura a cápsula fica escondida e sem quique nem inclinação, e `set_walking` e `set_speed_mps` escolhem o clipe (idle, walk ou jog) e a escala pelo `CharacterLocomotion`; `clear_figure` (que o `detach` chama) solta e libera a figura. Quem monta a figura e a entrega ao corpo é a 7b-2; aqui o corpo só a recebe, e sem figura ele é a cápsula de sempre.
+## DISSOLUÇÃO (LW-099d): `set_fade(amount)` põe a transparência de instância (`PresenceFade`) na cápsula, no nariz e na figura, se houver; quem o faz sumir é a `NpcBodiesView` na partida da caravana. `attach`, `detach` e `clear_figure` voltam o corpo a OPACO: o corpo reaproveitado da reserva nunca nasce transparente.
 
 ## Cápsula [HIP] (m): a mesma do jogador, com poucos segmentos (até 50 corpos na tela; estilo low-poly).
 const CAPSULE_RADIUS_M: float = 0.4
@@ -46,6 +47,8 @@ var _figure_player: AnimationPlayer
 var _figure_speeds: Dictionary[String, float] = {}
 var _played_clip: String = ""
 var _played_scale: float = NEUTRAL_PLAY_SCALE
+## A transparência que `set_fade` pôs por último (0 = opaco, 1 = invisível).
+var _fade: float = PresenceFade.OPAQUE
 
 
 func _init() -> void:
@@ -69,8 +72,9 @@ func _ready() -> void:
 	set_process(_capsule_bounces())
 
 
-## Liga o corpo ao NPC, parado, olhando para -Z, com os pés em `ground_position` (metros, mundo), e o mostra.
+## Liga o corpo ao NPC, parado, olhando para -Z, com os pés em `ground_position` (metros, mundo), OPACO, e o mostra.
 func attach(new_npc_id: int, ground_position: Vector3) -> void:
+	set_fade(PresenceFade.OPAQUE)
 	set_walking(false)
 	npc_id = new_npc_id
 	position = ground_position
@@ -78,7 +82,7 @@ func attach(new_npc_id: int, ground_position: Vector3) -> void:
 	visible = true
 
 
-## Solta o NPC: o corpo some e fica livre para o pool. O corpo reciclado NÃO herda a figura nem a velocidade (todo `give_back` do pool passa por aqui).
+## Solta o NPC: o corpo some e fica livre para o pool. O corpo reciclado NÃO herda a figura, a velocidade nem a transparência da dissolução (todo `give_back` do pool passa por aqui).
 func detach() -> void:
 	clear_figure()
 	set_walking(false)
@@ -113,12 +117,32 @@ func attach_figure(figure: Node3D) -> void:
 	_figure_player = players[0] as AnimationPlayer if not players.is_empty() else null
 	_apply_capsule_pose()
 	_apply_figure_clip()
+	if _fade > PresenceFade.OPAQUE:
+		PresenceFade.apply(_figure, _fade)
 
 
-## Solta a figura do corpo NA HORA (`remove_child`: sai da lista de filhos) e a libera (`queue_free` se estava na árvore; `free` se não estava); a cápsula volta. Zera a velocidade do corpo, a tabela de velocidades, o player e o clipe lembrado. Sem figura só zera a velocidade (nada visível muda).
+## Solta a figura do corpo NA HORA (`remove_child`: sai da lista de filhos) e a libera (`queue_free` se estava na árvore; `free` se não estava); a cápsula volta. Zera a velocidade do corpo, a tabela de velocidades, o player e o clipe lembrado, e volta o corpo a OPACO (`set_fade(0)`).
+## Sem figura e opaco só zera a velocidade (nada visível muda).
 func clear_figure() -> void:
 	_speed_mps = 0.0
 	_drop_figure()
+	set_fade(PresenceFade.OPAQUE)
+
+
+## Dissolução (LW-099d): põe a transparência `amount` (presa entre 0 = opaco e 1 = invisível; NaN é ignorado) na cápsula, no nariz e na figura, se houver. Repetir o mesmo valor não faz nada. É SÓ visual: não mexe em `visible`, na posição nem na pisada.
+func set_fade(amount: float) -> void:
+	if is_nan(amount):
+		return
+	var value: float = clampf(amount, PresenceFade.OPAQUE, PresenceFade.INVISIBLE)
+	if value == _fade:
+		return
+	_fade = value
+	PresenceFade.apply(self, _fade)
+
+
+## A transparência que o corpo tem agora (0 = opaco, 1 = invisível).
+func fade() -> float:
+	return _fade
 
 
 func has_figure() -> bool:
