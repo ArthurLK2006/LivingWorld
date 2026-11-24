@@ -149,7 +149,7 @@ func _setup_npc_bodies(bridge: SimBridge) -> void:
 
 
 ## Os corpos das caravanas (LW-099b2b), SÓ com `caravans_visible` ligado: lê o dado de apresentação (`data/presentation/caravan_routes.json`) e liga a vista à ponte e ao terreno (que dá o foco do jogador); a vista só lê da ponte
-## e cria a própria reserva de corpos. Desligado, nada é criado nem lido. Dado inválido ou `setup` que falha (a view já registrou o motivo): a vista é descartada e a cena segue sem caravanas.
+## e cria a própria reserva de corpos. Desligado, nada é criado nem lido. Dado inválido ou `setup` que falha (a view já registrou o motivo): a vista é descartada e a cena segue sem caravanas. Montada a vista, liga a despedida dos corpos dos NPCs (`NpcBodiesView.set_departure_fade`).
 func _setup_caravans(bridge: SimBridge) -> void:
 	if not caravans_visible:
 		return
@@ -163,6 +163,10 @@ func _setup_caravans(bridge: SimBridge) -> void:
 	if not _caravans_view.setup(bridge, _terrain_view, loaded.data):
 		_caravans_view.queue_free()
 		_caravans_view = null
+		return
+	# A partida vira uma dissolução cruzada de 0,4 s (LW-099d): o comerciante some onde estava enquanto a caravana surge. Só com as caravanas montadas; sem elas o corpo sai na hora, como sempre.
+	if _bodies_view != null:
+		_bodies_view.set_departure_fade(true)
 
 
 ## A fonte das figuras (7b-2) só se a área tem entrada; null = tudo cápsula. Catálogo ou figura que falha: UM aviso com o motivo, e o `make` da fonte devolve null (cápsula).

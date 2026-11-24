@@ -124,3 +124,13 @@ func test_on_the_scene_creates_the_view_with_its_hidden_pool_and_a_working_query
 	for child: Node in view.get_children():
 		assert_false((child as Node3D).visible, "Todo corpo da reserva nasce escondido.")
 	assert_not_null(_main.get_node_or_null(NPC_VIEW_NAME), "E o resto da cena segue como sempre.")
+
+
+func test_off_the_npc_bodies_keep_leaving_in_the_same_frame() -> void:
+	_start()
+	assert_false((_main.get_node_or_null(NPC_VIEW_NAME) as NpcBodiesView).departure_fade_enabled(), "Com as caravanas desligadas (o padrão) a despedida dos corpos dos NPCs também: nada muda na partida.")
+
+
+func test_on_the_scene_turns_the_departure_fade_of_the_npc_bodies_on() -> void:
+	_start(true)
+	assert_true((_main.get_node_or_null(NPC_VIEW_NAME) as NpcBodiesView).departure_fade_enabled(), "Com as caravanas montadas, a partida vira a dissolução cruzada de 0,4 s (LW-099d).")
