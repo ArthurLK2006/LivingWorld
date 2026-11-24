@@ -8,7 +8,7 @@ extends RefCounted
 ## (bridge_replies.gd), fora deste arquivo, para ele não passar do limite de tamanho (LW-053B).
 ## LW-070: repasses finos do protocolo de NPC em S0 (intenções pendentes, resultado e posições do corpo) ao `NpcModule`, que a ponte recebe
 ## no construtor (opcional), e a entrega do foco do LOD a cada relato de posição do ator. Nenhuma regra de jogo aqui.
-## LW-072a: o interruptor de corpos e a consulta dos corpos a manter (os NPCs em S0), para a apresentação desenhar os NPCs.
+## LW-072a: o interruptor de corpos e a consulta dos corpos a manter (os NPCs em S0 que não estão em viagem), para a apresentação desenhar os NPCs.
 ## LW-108b: três consultas de leitura da economia (`peek_economy_*`) para o painel econômico de depuração; a conta fica em `BridgeEconomyInspect`.
 ## LW-107b: o quadro de contratos do jogador (`peek_contract_board`, `request_contract_accept` e `request_contract_deliver`); a lógica fica em `BridgePlayerContracts` e só se delega aqui. LW-107f3: também `request_contract_abandon`.
 
