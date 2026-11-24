@@ -160,7 +160,7 @@ func _setup_caravans(bridge: SimBridge) -> void:
 	_caravans_view = CaravanBodiesView.new()
 	_caravans_view.name = CARAVANS_VIEW_NAME
 	add_child(_caravans_view)
-	if not _caravans_view.setup(bridge, _terrain_view, loaded.data):
+	if not _caravans_view.setup(bridge, _terrain_view, loaded.data, _bodies_view):
 		_caravans_view.queue_free()
 		_caravans_view = null
 
