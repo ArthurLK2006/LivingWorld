@@ -100,7 +100,8 @@ func test_the_body_walks_the_straight_road_from_market_to_market_facing_the_dest
 		var on_road: Vector2 = MARKETS[A].lerp(MARKETS[B], u)
 		_watch([ScriptedCaravanBridge.row_of(TRADER, u, ROUTE_A_B, A, B)], on_road)
 		var body: CaravanView = _view.body_of(TRADER)
-		assert_almost_eq(_spot_of(body).distance_to(on_road + _right_of(heading) * LATERAL_M), 0.0, POSE_TOLERANCE_M, "u=%s: sobre a reta entre os mercados, 1,2 m à direita da marcha." % u)
+		var side_m: float = 0.0 if u == 0.0 or u == 1.0 else LATERAL_M
+		assert_almost_eq(_spot_of(body).distance_to(on_road + _right_of(heading) * side_m), 0.0, POSE_TOLERANCE_M, "u=%s: sobre a reta entre os mercados, 1,2 m à direita da marcha (a LW-099c leva o deslocamento a 0 nas duas pontas: a caravana sai e chega no eixo)." % u)
 		assert_almost_eq(_facing_of(body).distance_to(heading), 0.0, ANGLE_TOLERANCE, "u=%s: de frente para o mercado de chegada." % u)
 		assert_eq(body.position.y, GROUND_M, "u=%s: na altura do terreno (chão plano de 10 m)." % u)
 	assert_eq(_view.pool().active_count(), 1, "Sempre o mesmo corpo da caravana.")

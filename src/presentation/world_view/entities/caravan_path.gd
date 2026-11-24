@@ -5,7 +5,7 @@ extends RefCounted
 ## rota (contrato LW-099, seção 3), então a tela usa a FRAÇÃO `u` de 0 a 1 do comprimento da POLILINHA (não do `length_m`). A polilinha vem guardada no
 ## sentido de `settlement_a_id` para `settlement_b_id`; `forward` falso é o trecho no sentido contrário. A altura (y) e a inclinação vêm do terreno, na vista.
 ## O giro segue a direção da CORDA do ponto até `LOOKAHEAD_M` à frente (a tangente média dos próximos metros): contínuo nas quinas e sem estado. O
-## deslocamento lateral usa essa MESMA direção, à direita da marcha (a esquerda de quem vai e de quem volta não se cruza). Convenção do giro: a de
+## deslocamento lateral usa essa MESMA direção, à direita da marcha (a esquerda de quem vai e de quem volta não se cruza) e pode SUBIR de zero nos primeiros metros e DESCER a zero nos últimos (`ramp_m`, LW-099c: a caravana sai e chega no eixo, onde o `NpcView` está e reaparece, sem saltar de lado). Convenção do giro: a de
 ## `NpcRoute.facing_yaw` (a frente do corpo é -Z local, como no `look_at`). `sample_into` preenche a `Pose` do chamador: sem alocação por chamada.
 
 ## [HIP] Até onde (m) o giro olha à frente.
@@ -59,9 +59,10 @@ func length_m() -> float:
 
 
 ## Preenche `out` com a posição e o giro a `u` (de 0 a 1; fora disso é cortado, e NaN conta como 0) do comprimento da polilinha, no sentido da marcha
-## (`forward` falso: da ponta B para a A), com `lateral_m` metros à DIREITA da marcha (negativo, à esquerda). Sem trecho, fica no único ponto (ou na origem).
+## (`forward` falso: da ponta B para a A), com `lateral_m` metros à DIREITA da marcha (negativo, à esquerda). `ramp_m` maior que zero faz esse deslocamento crescer em linha reta de 0 a `lateral_m` ao longo
+## dos primeiros `ramp_m` metros andados e voltar a 0 nos últimos `ramp_m` (a rampa só mexe na posição: a fração `u` e o giro são os mesmos); zero (o padrão), ou valor não finito, deixa o deslocamento cheio em todo o trecho. Sem trecho, fica no único ponto (ou na origem).
 ## Meia-volta de 180 graus em menos de `LOOKAHEAD_M` tem corda nula: giro 0 e sem deslocamento lateral (o dado de estrada não deve ter isso).
-func sample_into(u: float, forward: bool, lateral_m: float, out: Pose) -> void:
+func sample_into(u: float, forward: bool, lateral_m: float, out: Pose, ramp_m: float = 0.0) -> void:
 	if _points.size() < 2:
 		out.position = _points[0] if _points.size() == 1 else Vector2.ZERO
 		out.yaw = 0.0
@@ -70,6 +71,8 @@ func sample_into(u: float, forward: bool, lateral_m: float, out: Pose) -> void:
 	var reach: float = minf(travelled + LOOKAHEAD_M, _length_m)
 	var heading: Vector2 = (_at(reach, forward) - _at(maxf(reach - LOOKAHEAD_M, 0.0), forward)).normalized()
 	var offset: float = lateral_m if is_finite(lateral_m) else 0.0
+	if ramp_m > 0.0 and is_finite(ramp_m):
+		offset *= clampf(minf(travelled, _length_m - travelled) / ramp_m, 0.0, 1.0)
 	out.position = _at(travelled, forward) + Vector2(-heading.y, heading.x) * offset
 	out.yaw = atan2(-heading.x, -heading.y) if heading != Vector2.ZERO else 0.0
 
