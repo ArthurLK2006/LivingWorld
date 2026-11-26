@@ -11,6 +11,14 @@ Preparado em 26/11/2026 sobre o `main` f8a720c, com o CI do `main` verde (execu�
 
 **O que o aceite faz e não faz.** Registra no ROADMAP_STATUS que essas subtarefas estão formalmente aceitas. **Não muda o placar:** o roadmap conta tarefa numerada, e subtarefa com letra não entra; segue 98 de 192 (51,0%) e a Fase 3 em 11 de 30 (36,7%). A LW-098 só fecha com a 098h5 e a 098h6 (grupo C); a LW-107 só fecha com o grupo E e a decisão da 107c3.
 
+## Conferência objetiva (26/11/2026): o que é plenamente elegível e o que depende de quê
+| Classe | Itens | Por quê |
+|---|---|---|
+| **Plenamente elegíveis agora** (critério por teste, refeito no `main`; sem medição nova e sem janela) | **A:** 098b, 098c, 098d, 098e, 098f, 098g. **B:** 098h0a, 098h0, 098h1, 098h2, 098h4 (ferramentas, correção e testes) e as otimizações exatas 098h3a, 098h3b, 098h3c1 e 098h3c2 (critério: mesmas decisões e mesmos hashes, provado por teste). **D:** 107b1, 107b2, 107c1, 107c2a, 107c2b, 107d, 107f1, 107f2, 107f3, 107f5 e 107g | todos passam hoje (111, 62 e 123 testes, 0 falhas), nenhum hash muda, nada aparece na tela |
+| **Dependem de DESEMPENHO** (medição em release, leitura sua) | o critério 9.15.4 da 098h (nenhum passo acima de 33 ms e no máximo 5 acima de 16,7 ms, "lido como aumento sobre a base") e, junto, a 098h5 e a 098h6 (grupo C) | a medição de 18/11 não afirma "atendido" nem "não atendido" (as faixas se sobrepõem e a base já passa do limite absoluto); **não impede aceitar as 9 subtarefas do B por teste** |
+| **Dependem de VALIDAÇÃO VISUAL** (a janela; fora deste pacote) | grupo E (107e1, 107e2a, 107e2b, 107f4a a 107f4c e a interface de custo e margem da 107h), grupo F (LW-108), grupo G (ART-5b1 e ART-6a) e a LW-099 inteira (viagem visível: nada aceito) | só a janela prova que a tela está certa |
+| **Dependem de DECISÃO sua** (nem janela nem medição) | 098h5 e 098h6 (a sustentabilidade da economia: `FoodStub` como resposta da Fase 3 ou LW-103 e LW-094), 107c3 (ligar o postador de encomendas) | são escolhas de design e de dados protegidos |
+
 ## Como eu verifiquei hoje
 Reexecutei cada arquivo de teste dos três grupos no `main` f8a720c, **só em modo `--headless`**, um arquivo por vez. Resultado: **todos passam, nenhum falha, nenhum ficou pendente, nenhum erro de script.** O CI do `main` (a suíte inteira, `check_all`) está verde na mesma versão. **Não fiz:** nenhuma medição de desempenho nova, nada na janela e nenhuma regravação de valor de referência (nenhum hash muda por A, B ou D; DEC-175 intacta).
 
