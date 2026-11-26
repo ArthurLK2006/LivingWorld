@@ -102,6 +102,7 @@ func test_the_axis_is_continuous_in_position_and_in_tangent_through_both_junctio
 	assert_almost_eq(total_turn, PI * 0.5, 1e-3, "e a janela inteira gira os 90 graus da quina")
 	for junction: float in [290.0, 290.0 + ARC_90_R10]:
 		assert_lt(absf(road.axis_tangent(junction - 1e-6).angle_to(road.axis_tangent(junction + 1e-6))), 1e-5, "mesma tangente dos dois lados da junção em s = %s" % junction)
+		assert_lt(road.axis_point(junction - 1e-6).distance_to(road.axis_point(junction + 1e-6)), 1e-3, "e o ponto não salta (menos de 1 mm) em s = %s" % junction)
 
 
 func test_a_short_leg_shrinks_the_radius_and_the_corner_no_longer_fits() -> void:
