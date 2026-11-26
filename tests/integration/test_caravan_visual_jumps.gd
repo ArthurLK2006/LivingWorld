@@ -28,7 +28,8 @@ const SMALL_JUMP_M: float = 0.5
 const AXIS_M: float = 0.1
 const STAND_MAX_M: float = 3.5
 ## O maior passo entre duas poses de quadros de 250 ms (a 2,9 m/s são 0,73 m).
-const STEP_MAX_M: float = 0.8
+## (doca, quinas) 0,8 -> 1,1 m: com pontos de passagem o deslocamento lateral de 1,2 m varre a quina e a pose anda até uns 0,3 m além da velocidade x o quadro (medido 0,96 m; antes 0,65 m); um salto de verdade seria de metros.
+const STEP_MAX_M: float = 1.1
 
 var _data: NpcLifeCheck.GameData
 var _routes: CaravanRoutesReader
@@ -64,6 +65,9 @@ class Trip:
 	var to_id: String = ""
 	var origin: Vector2 = Vector2.ZERO
 	var destination: Vector2 = Vector2.ZERO
+	## (doca) As docas do povoado de saída e do de chegada (o mercado, se o povoado não tem doca).
+	var dock: Vector2 = Vector2.ZERO
+	var arrival_dock: Vector2 = Vector2.ZERO
 	var npc_spot: Vector2 = NO_SPOT
 	var first_spot: Vector2 = NO_SPOT
 	var last_spot: Vector2 = NO_SPOT
@@ -184,8 +188,12 @@ func _frame(game: Game, frame_ms: int) -> void:
 	game.driver.advance(float(frame_ms) / 1000.0)
 
 
+## O ponto do caminho MOSTRADO do trecho (a polilinha do dado: doca, pontos de passagem, doca; sem o deslocamento lateral) na fração `u` da linha (doca: antes era a reta entre os mercados).
 func _road_point(game: Game, row: BridgeReplies.CaravanBodyReply) -> Vector2:
-	return game.markets[row.from_settlement_id].lerp(game.markets[row.to_settlement_id], row.u)
+	var line: PackedVector2Array = _routes.leg_line(row.route_id, row.from_settlement_id, row.to_settlement_id, game.markets[row.from_settlement_id], game.markets[row.to_settlement_id])
+	var pose: CaravanPath.Pose = CaravanPath.Pose.new()
+	CaravanPath.new(line).sample_into(row.u, true, 0.0, pose)
+	return pose.position
 
 
 func _refresh(game: Game) -> void:
@@ -231,6 +239,8 @@ func _start_trip() -> Trip:
 			trip.to_id = row.to_settlement_id
 			trip.origin = game.markets[trip.from_id]
 			trip.destination = game.markets[trip.to_id]
+			trip.dock = _routes.dock_of(trip.from_id) if _routes.has_dock(trip.from_id) else trip.origin
+			trip.arrival_dock = _routes.dock_of(trip.to_id) if _routes.has_dock(trip.to_id) else trip.destination
 			trip.npc_spot = seen.get(trader, NO_SPOT)
 			_refresh(game)
 			var body: CaravanView = game.caravan_bodies.body_of(trader)
@@ -275,9 +285,12 @@ func test_the_caravan_leaves_and_arrives_on_the_market_axis_and_every_step_stays
 	assert_ne(trip.back_spot, NO_SPOT, "Premissa: o `NpcView` do comerciante volta depois da chegada.")
 	var stand_m: float = trip.npc_spot.distance_to(trip.origin)
 	assert_lt(stand_m, STAND_MAX_M, "O `NpcView` fica em pé na borda da caixa do mercado (`NpcRoute.stop_point`).")
-	assert_lt(trip.first_spot.distance_to(trip.origin), AXIS_M, "PARTIDA: a caravana nasce no EIXO da estrada, o centro do mercado, sem o deslocamento lateral de 1,2 m (antes 1,20 m de lado).")
-	assert_lt(trip.npc_spot.distance_to(trip.first_spot), stand_m + AXIS_M, "PARTIDA: o que sobra do salto é só a distância do ponto onde o `NpcView` estava ao centro do mercado (antes 3,70 m, agora 2,55 m); nunca mais que a borda da caixa.")
+	var dock_gap_m: float = trip.dock.distance_to(trip.origin)
+	var arrival_gap_m: float = trip.arrival_dock.distance_to(trip.destination)
+	assert_lt(trip.first_spot.distance_to(trip.dock), AXIS_M, "PARTIDA (doca): a caravana nasce na DOCA do povoado de saída, no eixo da estrada e sem o deslocamento lateral de 1,2 m (antes, o eixo era o centro do mercado).")
+	assert_lt(trip.npc_spot.distance_to(trip.first_spot), stand_m + dock_gap_m + AXIS_M, "PARTIDA (doca): o salto é no máximo a distância do ponto onde o `NpcView` estava ao centro do mercado mais a do centro à doca (antes só a primeira: 2,55 m).")
 	assert_lt(trip.back_spot.distance_to(trip.destination), AXIS_M, "CHEGADA: o `NpcView` reaparece no centro do mercado de destino (`MerchantArrival`).")
-	assert_lt(trip.last_spot.distance_to(trip.back_spot), SMALL_JUMP_M, "CHEGADA: a última pose da caravana fica a menos de 0,5 m de onde o `NpcView` reaparece (antes 1,20 m).")
+	assert_lt(trip.last_spot.distance_to(trip.arrival_dock), AXIS_M, "CHEGADA (doca): a caravana TERMINA na doca do povoado de destino.")
+	assert_almost_eq(trip.last_spot.distance_to(trip.back_spot), arrival_gap_m, AXIS_M, "CHEGADA (doca): o salto da chegada é a distância da doca ao centro do mercado, onde o `NpcView` reaparece (antes 0,01 m; agora de 5,7 a 6,0 m).")
 	assert_lt(trip.biggest_step_m, STEP_MAX_M, "Entre quadros de 250 ms a caravana nunca anda mais que a velocidade x o quadro (a rampa não mexe em `u`).")
 	assert_gt(trip.frames, 500, "A viagem inteira foi acompanhada, quadro a quadro.")

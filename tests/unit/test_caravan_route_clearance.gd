@@ -14,13 +14,20 @@ const STEP_M: float = 0.25
 ## O piso (nunca menos) e o alvo da folga entre o carrinho e qualquer obstáculo, em metros.
 const FLOOR_M: float = 0.3
 const TARGET_M: float = 0.5
+## O deslocamento lateral da caravana (o do dado de apresentação).
+const LATERAL_M: float = 1.2
 const MAX_DOCK_FROM_CENTER_M: float = 6.0
+## Tolerância de 1 mm na distância da doca ao centro (a doca de B fica a EXATOS 6,00 m: o limite vale com a conta de ponto flutuante).
+const DOCK_TOLERANCE_M: float = 0.001
 const CENTER_PIECE_MARGIN_M: float = 0.3
 const MIN_RATIO: float = 0.9
 const MAX_RATIO: float = 1.1
 const REPORTED_TOUCHES: int = 3
 const MUTANT_ROUTE: String = "route_a_b"
 const MUTANT_HOUSE: String = "a_home_05"
+## O caso do limiar: um caminho reto, indo para oeste, que passa a 0,2 m da parede sul da fileira de casas de a_home_05 (o carrinho anda 1,2 m à direita do eixo, que indo para oeste é o norte).
+const NEAR_GAP_M: float = 0.2
+const NEAR_REACH_M: float = 20.0
 
 var _terrain: TerrainData
 var _places: Array[Place] = []
@@ -157,7 +164,7 @@ func test_each_dock_is_near_its_market_and_outside_the_center_piece() -> void:
 	for settlement_id: String in _markets:
 		assert_true(_real.has_dock(settlement_id), "%s: tem doca" % settlement_id)
 		var dock: Vector2 = _real.dock_of(settlement_id)
-		assert_lte(dock.distance_to(_markets[settlement_id]), MAX_DOCK_FROM_CENTER_M, "%s: a doca fica a no máximo 6 m do centro do mercado" % settlement_id)
+		assert_lte(dock.distance_to(_markets[settlement_id]), MAX_DOCK_FROM_CENTER_M + DOCK_TOLERANCE_M, "%s: a doca fica a no máximo 6 m do centro do mercado" % settlement_id)
 		var center_name: String = PlazaVariants.CENTER_NAMES[PlazaVariants.for_market(_market_ids[settlement_id]).center]
 		var center: RouteObstacles.Item = _obstacles.item("%s/%s" % [_market_ids[settlement_id], center_name])
 		assert_not_null(center, "%s: a praça tem a peça central %s" % [settlement_id, center_name])
@@ -213,6 +220,32 @@ func test_the_clearance_check_catches_a_point_moved_into_a_house() -> void:
 	assert_lt(walk.gap_m, 0.0, "O carrinho atravessa a casa: folga negativa. " + _tell(walk))
 	assert_true(walk.touched.has(MUTANT_HOUSE) and float(walk.touched[MUTANT_HOUSE]) < 0.0, "E o teste diz QUAL é a casa: %s. %s" % [MUTANT_HOUSE, _tell(walk)])
 	assert_lt(walk.gap_m, FLOOR_M, "Abaixo do piso: o teste de folga reprovaria este dado.")
+
+
+## O LIMIAR: um caminho que passa a 0,2 m da parede de uma casa (sem encostar) fica ABAIXO do piso de 0,3 m e NÃO é colisão (folga positiva). Com o piso trocado por 0 este teste reprova (o piso é o que separa 0,2 m de 0,5 m).
+func test_a_path_that_passes_0_2_m_from_a_house_is_below_the_floor_but_is_not_a_collision() -> void:
+	var house: Vector2 = Vector2.ZERO
+	for row: Dictionary in _place_rows:
+		if str(row["id"]) == MUTANT_HOUSE:
+			house = Vector2(float(row["x_cm"]), float(row["z_cm"])) / RouteObstacles.CM_PER_M
+	var south_wall_z: float = house.y + PlacePalette.SIZES[PlacePalette.KIND_HOME].z * 0.5
+	var axis_z: float = south_wall_z + NEAR_GAP_M + LATERAL_M + RouteObstacles.CART_HALF_WIDTH_M
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CaravanRoutesReader.DEFAULT_PATH))  # Variant: fronteira com o JSON, conferido abaixo
+	var root: Dictionary = parsed
+	var a_id: String = ""
+	for row: Dictionary in _route_rows:
+		if str(row["id"]) == MUTANT_ROUTE:
+			a_id = str(row["settlement_a_id"])
+	for row: Dictionary in root["routes"]:
+		if str(row["route_id"]) == MUTANT_ROUTE:
+			row["settlement_a_id"] = a_id
+			row["points_m"] = [[house.x + NEAR_REACH_M, axis_z], [house.x - NEAR_REACH_M, axis_z]]
+	var loaded: CaravanRoutesReader.LoadResult = CaravanRoutesReader.from_json(JSON.stringify(root), "dado com um caminho a 0,2 m de %s" % MUTANT_HOUSE)
+	assert_true(loaded.result.ok, loaded.result.message)
+	_start()
+	var walk: Walk = _walk(loaded.data, MUTANT_ROUTE, a_id, _other_end(MUTANT_ROUTE, a_id))
+	assert_true(walk.touched.has(MUTANT_HOUSE), "O caminho a 0,2 m de %s fica abaixo do piso de %.1f m e o teste diz qual é a casa. %s" % [MUTANT_HOUSE, FLOOR_M, _tell(walk)])
+	assert_between(float(walk.touched.get(MUTANT_HOUSE, -1.0)), NEAR_GAP_M - 0.05, NEAR_GAP_M + 0.05, "E a folga medida é a construída (0,2 m), positiva: não é colisão.")
 
 
 func _other_end(route_id: String, settlement_id: String) -> String:

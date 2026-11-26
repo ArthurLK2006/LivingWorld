@@ -4,13 +4,19 @@ extends RefCounted
 ## (retângulos alinhados aos eixos e centrados no local, de `PlacePalette.SIZES`; o mercado fica de fora, porque a praça esconde a caixa dele) e (ii) os objetos de cada praça de mercado, tal como a PRÓPRIA praça os põe: o casco convexo do rastro no chão de cada peça (barracas com a
 ## peça de pano e as varas, peça central, postes de lampião, tochas, árvores e rochas; sem grama, flores nem bandeirolas) do `MarketPlazaView` montado com a escala de encaixe dele. A peça é o que a praça desenha (nada a mais, nada a menos), e `test_route_obstacles.gd` prova que as POSIÇÕES batem
 ## com as constantes de `plaza_data.gd` e `plaza_variants.gd` e que o casco bate com o que elas dizem (a copa da tenda, o toldo, as pedras da peça central). Os adereços das barracas (caixotes, barris, sacos) e os arbustos de C ficam à parte (`is_minor`): a folga contra eles é só informativa.
+## (iii) as DECORAÇÕES do mundo (data/world/decorations.json, lidas por `DecorationReader`): cada árvore é um CÍRCULO do raio da copa (`DecorationShapes.CROWN_RADIUS_M` x `scale_pct`/100) e cada pedra um círculo de `ROCK_RADIUS_M` x `scale_pct`/100, no centro (`x_cm`, `z_cm`)/100, conservadores; `test_route_obstacles.gd` prova que são as que a `DecorationView` desenha.
+## Uma grade de células de CELL_M metros guarda os obstáculos (são milhares) para `nearest` olhar só os vizinhos.
 ## O CARRINHO é o retângulo `cart_polygon` (0,30 m à frente dos pés a 2,90 m atrás deles, meia largura do centro da roda à ponta do raio dela, 0,625 m), girado pelo giro do corpo; `gap_between` dá a folga: 0 ou negativa = toca ou atravessa (o negativo é a menor penetração).
 
 ## Prefixos dos nós da praça que contam como obstáculo (o nome da peça mais o número dela) e os que só informam.
 const MAJOR_PREFIXES: PackedStringArray = ["Stall", "LampPost", "Torch", "Well", "Fountain", "Rotunda", "Tree", "Rock"]
 const MINOR_PREFIXES: PackedStringArray = ["Crate", "Barrel", "Sack", "Bush"]
 const PLACES_FILE: String = "res://data/world/places.json"
+const DECORATIONS_FILE: String = "res://data/world/decorations.json"
 const CM_PER_M: float = 100.0
+const PERCENT: float = 100.0
+## Lado das células da grade de busca (m): maior que a maioria dos obstáculos, menor que o alcance da busca.
+const CELL_M: float = 16.0
 ## O retângulo do carrinho no quadro do corpo (origem nos pés, a frente é -Z, o carrinho vem atrás): [HIP] da missão, 0,30 m à frente dos pés (a cápsula do comerciante) e até o fim do leito atrás.
 const CART_AHEAD_M: float = 0.30
 const CART_BEHIND_M: float = CaravanView.CART_BACK_M + CaravanView.BED_SIZE_M.z * 0.5
@@ -24,6 +30,8 @@ var items: Array[Item] = []
 ## A escala de encaixe de cada praça (por id do local mercado).
 var plaza_scale: Dictionary[String, float] = {}
 var _by_id: Dictionary[String, Item] = {}
+var _grid: Dictionary[Vector2i, Array] = {}
+var _query: int = 0
 
 
 ## Monta os obstáculos: as caixas dos locais e as peças das praças que o `MarketPlazaView` monta sobre `bridge` (uma ponte com o terreno e os locais reais, como a `ScriptedCaravanBridge`).
@@ -35,6 +43,7 @@ static func build(bridge: SimBridge) -> RouteObstacles:
 		for row: Variant in places:
 			if typeof(row) == TYPE_DICTIONARY:
 				built._add_place(row)
+	built._add_decorations()
 	var plazas: MarketPlazaView = MarketPlazaView.new()
 	if plazas.setup(bridge):
 		for place: BridgeReplies.PlaceReply in bridge.peek_places().places:
@@ -92,18 +101,34 @@ func item(item_id: String) -> Item:
 	return _by_id.get(item_id) as Item
 
 
-## O obstáculo mais perto do polígono dentro de SEARCH_RANGE_M, entre os principais (`minor` falso) ou entre os que só informam (`minor` verdadeiro): `Hit.gap_m` é a folga, INF e `item` nulo se nenhum está ao alcance.
+## O obstáculo mais perto do polígono dentro de SEARCH_RANGE_M, entre os principais (`minor` falso) ou entre os que só informam (`minor` verdadeiro): `Hit.gap_m` é a folga, INF e `item` nulo se nenhum está ao alcance. Só olha as células da grade que o alcance cobre.
 func nearest(polygon: PackedVector2Array, minor: bool = false) -> Hit:
 	var hit: Hit = Hit.new()
 	var reach: Rect2 = _bounds_of(polygon).grow(SEARCH_RANGE_M)
-	for entry: Item in items:
-		if entry.is_minor != minor or not reach.intersects(entry.bounds, true):
-			continue
-		var gap: float = gap_between(polygon, entry.hull)
-		if gap < hit.gap_m:
-			hit.gap_m = gap
-			hit.item = entry
+	var low: Vector2i = Vector2i((reach.position / CELL_M).floor())
+	var high: Vector2i = Vector2i((reach.end / CELL_M).floor())
+	_query += 1
+	for cell_x: int in range(low.x, high.x + 1):
+		for cell_z: int in range(low.y, high.y + 1):
+			for entry: Item in _grid.get(Vector2i(cell_x, cell_z), []):
+				if entry.last_query == _query or entry.is_minor != minor:
+					continue
+				entry.last_query = _query
+				if not reach.intersects(entry.bounds, true):
+					continue
+				var gap: float = gap_to(entry, polygon)
+				if gap < hit.gap_m:
+					hit.gap_m = gap
+					hit.item = entry
 	return hit
+
+
+## A folga (m) entre o polígono convexo e o obstáculo (casco ou círculo): positiva se há espaço, 0 se se encostam, negativa se se cruzam.
+static func gap_to(entry: Item, polygon: PackedVector2Array) -> float:
+	if not entry.is_circle:
+		return gap_between(polygon, entry.hull)
+	var centre_gap: float = _boundary_gap(PackedVector2Array([entry.origin]), polygon)
+	return -(entry.radius + centre_gap) if contains(polygon, entry.origin) else centre_gap - entry.radius
 
 
 func _add_place(row: Dictionary) -> void:
@@ -132,16 +157,49 @@ func _add_plaza(market_id: String, plaza: Node3D) -> void:
 		_register("%s/%s" % [market_id, node_name], major if minor.is_empty() else minor, Vector2(placement.origin.x, placement.origin.z), _hull_of(mesh_node.mesh, placement), not minor.is_empty())
 
 
-func _register(item_id: String, type: String, origin: Vector2, hull: PackedVector2Array, is_minor: bool) -> void:
+## As árvores e pedras do mundo, na ordem do arquivo (o id é o tipo e o número dentro do tipo: "tree612"): círculos conservadores com a escala de cada uma.
+func _add_decorations() -> void:
+	var read: DecorationReader.ReadResult = DecorationReader.read_file(DECORATIONS_FILE)
+	if not read.result.ok:
+		push_error("RouteObstacles: decorações ilegíveis: %s" % read.result.message)
+		return
+	var counts: Dictionary[String, int] = {}
+	for entry: DecorationReader.Item in read.items:
+		var number: int = counts.get(entry.kind, 0)
+		counts[entry.kind] = number + 1
+		var base_m: float = DecorationShapes.CROWN_RADIUS_M if entry.kind == DecorationReader.KIND_TREE else DecorationShapes.ROCK_RADIUS_M
+		var circle: Item = _register("%s%d" % [entry.kind, number], entry.kind, Vector2(entry.x_cm, entry.z_cm) / CM_PER_M, PackedVector2Array(), false)
+		circle.is_circle = true
+		circle.radius = base_m * float(entry.scale_pct) / PERCENT
+		circle.bounds = Rect2(circle.origin - Vector2.ONE * circle.radius, Vector2.ONE * circle.radius * 2.0)
+		_index(circle)
+
+
+func _register(item_id: String, type: String, origin: Vector2, hull: PackedVector2Array, is_minor: bool) -> Item:
 	var entry: Item = Item.new()
 	entry.id = item_id
 	entry.type = type
 	entry.origin = origin
 	entry.hull = hull
-	entry.bounds = _bounds_of(hull)
+	entry.bounds = _bounds_of(hull) if not hull.is_empty() else Rect2(origin, Vector2.ZERO)
 	entry.is_minor = is_minor
 	items.append(entry)
 	_by_id[item_id] = entry
+	if not hull.is_empty():
+		_index(entry)
+	return entry
+
+
+## Põe o obstáculo em todas as células da grade que a caixa dele toca.
+func _index(entry: Item) -> void:
+	var low: Vector2i = Vector2i((entry.bounds.position / CELL_M).floor())
+	var high: Vector2i = Vector2i((entry.bounds.end / CELL_M).floor())
+	for cell_x: int in range(low.x, high.x + 1):
+		for cell_z: int in range(low.y, high.y + 1):
+			var cell: Vector2i = Vector2i(cell_x, cell_z)
+			if not _grid.has(cell):
+				_grid[cell] = []
+			_grid[cell].append(entry)
 
 
 ## O prefixo de `allowed` com que o nome começa (e que só é seguido de dígitos), ou "".
@@ -212,6 +270,11 @@ class Item:
 	var hull: PackedVector2Array = PackedVector2Array()
 	var bounds: Rect2 = Rect2()
 	var is_minor: bool = false
+	## Decoração (árvore ou pedra): um CÍRCULO de `radius` metros em `origin`, sem casco.
+	var is_circle: bool = false
+	var radius: float = 0.0
+	## Número da última busca que olhou este obstáculo (para não contá-lo duas vezes quando ele ocupa várias células).
+	var last_query: int = 0
 
 
 ## A menor folga achada (`gap_m` INF se nenhum obstáculo está ao alcance) e o obstáculo dela.

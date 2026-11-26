@@ -5,6 +5,7 @@ extends GutTest
 
 const WORLD_DIR: String = "res://data/world"
 const PLACES_FILE: String = "res://data/world/places.json"
+const DECORATIONS_FILE: String = "res://data/world/decorations.json"
 const POSITION_TOLERANCE_M: float = 0.01
 const HALF: float = 0.5
 const CART_YAWS: Array[float] = [0.0, 0.7, -2.0, 3.0]
@@ -155,7 +156,7 @@ func test_the_place_boxes_are_the_axis_aligned_rectangles_of_places_json_without
 		assert_not_null(entry, "%s: tem caixa" % row["id"])
 		var half: Vector2 = Vector2(PlacePalette.SIZES[kind].x, PlacePalette.SIZES[kind].z) * HALF
 		assert_eq([entry.origin, entry.bounds.size, entry.hull.size()], [_origin_of(row), half * 2.0, 4], "%s: centro, tamanho e quatro cantos" % row["id"])
-	assert_eq(_obstacles.items.filter(func(entry: RouteObstacles.Item) -> bool: return entry.id.find("/") < 0).size(), boxes, "uma caixa por local desenhado, nem uma a mais")
+	assert_eq(_obstacles.items.filter(func(entry: RouteObstacles.Item) -> bool: return entry.id.find("/") < 0 and not entry.is_circle).size(), boxes, "uma caixa por local desenhado, nem uma a mais")
 
 
 func test_the_plaza_pieces_are_where_the_plaza_constants_put_them_in_the_right_number() -> void:
@@ -216,3 +217,30 @@ func test_nearest_finds_the_closest_main_obstacle_with_its_id_and_gap() -> void:
 	assert_almost_eq(hit.gap_m, 0.7, 0.0001, "a 0,7 m da parede")
 	var far: RouteObstacles.Hit = _obstacles.nearest(RouteObstacles.cart_polygon(Vector2(5.0, 5.0), 0.0))
 	assert_true(far.item == null and is_inf(far.gap_m), "longe de tudo: nenhum obstáculo ao alcance")
+
+
+## As árvores e pedras do mundo: os obstáculos são as MESMAS que a `DecorationView` desenha (a conta e todas as posições e escalas, no centímetro), com o raio da copa e o da pedra.
+func test_the_decorations_are_the_same_ones_the_decoration_view_draws() -> void:
+	var read: DecorationReader.ReadResult = DecorationReader.read_file(DECORATIONS_FILE)
+	assert_true(read.result.ok, read.result.message)
+	var view: DecorationView = DecorationView.new()
+	view.setup(ScriptedCaravanBridge.new(null, _terrain, _places), read.items)
+	var drawn: PackedStringArray = PackedStringArray()
+	for instance: MultiMeshInstance3D in view.multimesh_instances():
+		var base_m: float = DecorationShapes.CROWN_RADIUS_M if str(instance.name).begins_with("Deco_" + DecorationReader.KIND_TREE) else DecorationShapes.ROCK_RADIUS_M
+		for placement: Transform3D in view.transforms_of(instance):
+			drawn.append("%d,%d,%d" % [roundi(placement.origin.x * RouteObstacles.CM_PER_M), roundi(placement.origin.z * RouteObstacles.CM_PER_M), roundi(base_m * placement.basis.get_scale().x * 1000.0)])
+	var listed: PackedStringArray = PackedStringArray()
+	var trees: int = 0
+	var rocks: int = 0
+	for entry: RouteObstacles.Item in _obstacles.items:
+		if entry.is_circle:
+			trees += 1 if entry.type == DecorationReader.KIND_TREE else 0
+			rocks += 1 if entry.type == DecorationReader.KIND_ROCK else 0
+			listed.append("%d,%d,%d" % [roundi(entry.origin.x * RouteObstacles.CM_PER_M), roundi(entry.origin.y * RouteObstacles.CM_PER_M), roundi(entry.radius * 1000.0)])
+	assert_eq([trees, rocks], [view.instance_count(DecorationReader.KIND_TREE), view.instance_count(DecorationReader.KIND_ROCK)], "a mesma conta de árvores e de pedras que a vista desenha")
+	assert_gt(trees + rocks, 1000, "e são milhares (o teste não olhou para o vazio)")
+	drawn.sort()
+	listed.sort()
+	assert_eq(listed, drawn, "mesmas posições (ao centímetro) e mesmos raios (ao milímetro): copa 1,3 m e pedra 0,9 m vezes a escala de cada uma")
+	view.free()
