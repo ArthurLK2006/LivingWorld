@@ -166,6 +166,18 @@ static func poses_into(road: CaravanRoad, spec: Spec, s: float, out: Array[Rigid
 		_place(pose, front, rear, road, reach)
 
 
+## Quanto o veículo se apoia à frente da origem do líder (m): o maior `ref_front_m` entre os corpos, no mínimo 0 (0 para o carrinho, 1,2 para o veículo comprido). É o `straight_m` que
+## `CaravanRoad.entering` precisa dar ao trecho de saída: o arco só pode começar depois do apoio da frente, senão a troca de trecho pela ORIGEM do líder deixa um salto no corpo da frente.
+static func front_extent_m(spec: Spec) -> float:
+	var extent: float = 0.0
+	if spec == null:
+		return extent
+	for body: Body in spec.bodies:
+		if is_finite(body.ref_front_m):
+			extent = maxf(extent, body.ref_front_m)
+	return extent
+
+
 ## O ângulo (rad, de 0 a PI) entre o giro de dois corpos: a articulação do engate.
 static func articulation_rad(front: RigidPose, back: RigidPose) -> float:
 	return absf(atan2(front.dir.cross(back.dir), front.dir.dot(back.dir)))

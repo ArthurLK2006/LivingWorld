@@ -262,3 +262,21 @@ func test_articulation_swept_corners_and_axis_offset_helpers() -> void:
 		assert_almost_eq(CaravanChain.max_axis_offset_m(lane_road, cart, 40.0, 60.0, 1.0), lane_m + half, TOL_M, "carrinho: afastamento = faixa + meia-largura")
 		var wagon_half: float = CaravanChain.WAGON_HALF_WIDTH_M
 		assert_almost_eq(CaravanChain.max_axis_offset_m(lane_road, CaravanChain.wagon_spec(), 40.0, 60.0, 1.0), lane_m + wagon_half, TOL_M, "veículo comprido: faixa + 1,005 m")
+
+
+func test_front_extent_is_the_largest_front_support_and_never_negative() -> void:
+	assert_almost_eq(CaravanChain.front_extent_m(CaravanChain.cart_spec()), 0.0, 1e-12, "carrinho: o comerciante está na origem do líder")
+	assert_almost_eq(CaravanChain.front_extent_m(CaravanChain.wagon_spec()), CaravanChain.HORSE_SUPPORT_M, 1e-12, "veículo comprido: o apoio da frente do cavalo, 1,2 m")
+	assert_almost_eq(CaravanChain.front_extent_m(CaravanChain.wagon_spec_with(6.0, 4.0, true)), 1.2, 1e-12, "outro entre-eixos e timão: o cavalo não muda")
+	var behind: CaravanChain.Spec = CaravanChain.Spec.new()
+	var body: CaravanChain.Body = CaravanChain.Body.new()
+	body.ref_front_m = -3.0
+	body.ref_rear_m = -5.0
+	behind.bodies.append(body)
+	assert_eq(CaravanChain.front_extent_m(behind), 0.0, "todos os apoios atrás da origem: 0, nunca negativo")
+	var other: CaravanChain.Body = CaravanChain.Body.new()
+	other.ref_front_m = NAN
+	behind.bodies.append(other)
+	assert_eq(CaravanChain.front_extent_m(behind), 0.0, "apoio não finito é ignorado")
+	assert_eq(CaravanChain.front_extent_m(CaravanChain.Spec.new()), 0.0, "veículo sem corpo: 0")
+	assert_eq(CaravanChain.front_extent_m(null), 0.0, "veículo nulo: 0")

@@ -219,10 +219,11 @@ static func axis_radius(passage: Passage, path_radius_m: float) -> float:
 	return path_radius_m + LANE_M if passage.turn_deg > 0.0 else path_radius_m
 
 
-## Os dois trechos de uma passagem, ambos com a faixa e a rampa suave: a chegada reta (X, Y) e a saída com arco, que começa na direção de chegada em Y.
-static func legs(passage: Passage, path_radius_m: float) -> Array[CaravanRoad]:
+## Os dois trechos de uma passagem, ambos com a faixa e a rampa suave: a chegada reta (X, Y) e a saída, que segue reta por `straight_m` metros na direção de chegada depois de Y e só então faz o
+## arco (`CaravanChain.front_extent_m` do veículo: assim a troca de trecho pela ORIGEM do líder é exata; 0 é o comportamento de antes).
+static func legs(passage: Passage, path_radius_m: float, straight_m: float = 0.0) -> Array[CaravanRoad]:
 	var arrival: CaravanRoad = CaravanRoad.through(PackedVector2Array([passage.from_point, passage.corner]), 0.0).with_lane(LANE_M, RAMP_M)
-	var leave: CaravanRoad = CaravanRoad.entering(arrival.end_tangent(), passage.corner, passage.to_point, axis_radius(passage, path_radius_m)).with_lane(LANE_M, RAMP_M)
+	var leave: CaravanRoad = CaravanRoad.entering(arrival.end_tangent(), passage.corner, passage.to_point, axis_radius(passage, path_radius_m), straight_m).with_lane(LANE_M, RAMP_M)
 	var roads: Array[CaravanRoad] = [arrival, leave]
 	return roads
 
