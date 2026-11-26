@@ -7,6 +7,12 @@ extends GutTest
 const EPS: float = 0.0001
 const RADIUS_M: float = 10.0
 const LEG_OUT_M: float = 150.0
+const LANE_M: float = 1.2
+const RAMP_M: float = 12.0
+## O trecho reto depois do mercado: o apoio da frente do cavalo anda a +1,2 m da origem do líder.
+const RUN_M: float = 1.2
+## Os três cantos reais da viagem de 2 trechos (~89, ~129 e ~142 graus), para a direita ou a esquerda.
+const REAL_CORNERS: Array = [[89.3, true], [129.1, true], [141.6, false]]
 ## [virada em graus, para a direita?]: o ângulo na quina entre a chegada e a saída (os três cantos reais da viagem de 2 trechos são ~89, ~129 e ~142 graus).
 const CORNERS: Array = [[55.0, true], [90.0, true], [90.0, false], [129.1, true], [141.6, false]]
 
@@ -139,3 +145,107 @@ func test_entering_falls_back_to_the_plain_road_when_there_is_no_arrival_or_no_r
 	assert_eq(CaravanRoad.entering(Vector2.RIGHT, start, Vector2(0, 0.0005), RADIUS_M).length_m(), 0.0, "start e end a 0,5 mm: estrada vazia")
 	assert_eq(CaravanRoad.entering(Vector2.RIGHT, Vector2(NAN, 0), end, RADIUS_M).length_m(), 0.0, "start não finito: vazia")
 	assert_eq(CaravanRoad.entering(Vector2.RIGHT, start, Vector2(INF, 0), RADIUS_M).length_m(), 0.0, "end não finito: vazia")
+	assert_eq(CaravanRoad.entering(Vector2.RIGHT, start, end, 0.0, RUN_M).length_m(), 100.0, "raio 0 com trecho reto: nada a atrasar, a reta de start a end")
+	assert_eq(CaravanRoad.entering(Vector2.ZERO, start, end, RADIUS_M, RUN_M).corners().size(), 0, "chegada nula com trecho reto: a reta de start a end")
+
+
+## O `end` que dá a virada `turn_deg` no vértice quando o arco só começa depois de `RUN_M` metros de reta: o vértice fica a RUN_M + R tan(θ/2) de `start`.
+func _end_with_run(dir_in: Vector2, turn_deg: float, right: bool) -> Vector2:
+	var vertex: Vector2 = dir_in.normalized() * (RUN_M + RADIUS_M * tan(deg_to_rad(turn_deg) * 0.5))
+	return vertex + dir_in.rotated((1.0 if right else -1.0) * deg_to_rad(turn_deg)) * LEG_OUT_M
+
+
+## De 1 cm em 1 cm: [o maior passo do ponto, a maior virada da tangente por passo, a virada total].
+func _sweep(road: CaravanRoad, from_s: float, to_s: float) -> Array[float]:
+	var previous_point: Vector2 = road.axis_point(from_s)
+	var previous_dir: Vector2 = road.axis_tangent(from_s)
+	var worst_step: float = 0.0
+	var worst_turn: float = 0.0
+	var total_turn: float = 0.0
+	for index: int in range(1, int((to_s - from_s) / 0.01) + 1):
+		var s: float = from_s + float(index) * 0.01
+		var point: Vector2 = road.axis_point(s)
+		var dir: Vector2 = road.axis_tangent(s)
+		var turn: float = absf(previous_dir.angle_to(dir))
+		worst_step = maxf(worst_step, point.distance_to(previous_point))
+		worst_turn = maxf(worst_turn, turn)
+		total_turn += turn
+		previous_point = point
+		previous_dir = dir
+	return [worst_step, worst_turn, total_turn]
+
+
+func test_a_zero_or_invalid_straight_run_is_exactly_the_road_without_the_parameter() -> void:
+	var dir_in: Vector2 = Vector2.from_angle(deg_to_rad(37.0))
+	for spec: Array in CORNERS:
+		var end: Vector2 = _end_for(Vector2.ZERO, dir_in, float(spec[0]), bool(spec[1]))
+		var base: CaravanRoad = CaravanRoad.entering(dir_in, Vector2.ZERO, end, RADIUS_M).with_lane(LANE_M, RAMP_M)
+		var base_corner: CaravanRoad.Corner = base.corners()[0]
+		for run: float in [0.0, -2.5, NAN, INF, -INF]:
+			var other: CaravanRoad = CaravanRoad.entering(dir_in, Vector2.ZERO, end, RADIUS_M, run).with_lane(LANE_M, RAMP_M)
+			var corner: CaravanRoad.Corner = other.corners()[0]
+			var why: String = "virada %s, trecho reto %s" % [spec[0], run]
+			assert_true(other.length_m() == base.length_m() and corner.tangent_m == base_corner.tangent_m and corner.apex_s == base_corner.apex_s and corner.radius_eff_m == base_corner.radius_eff_m, "comprimento e quina idênticos (%s)" % why)
+			for step: int in 40:
+				var s: float = -6.0 + float(step) * (base.length_m() + 12.0) / 39.0
+				assert_true(other.sample(s) == base.sample(s) and other.axis_tangent(s) == base.axis_tangent(s) and other.tangent(s) == base.tangent(s), "mesmos bits em s = %s (%s)" % [s, why])
+
+
+func test_a_straight_run_keeps_the_road_on_the_arrival_line_and_starts_the_arc_after_it() -> void:
+	for dir_in: Vector2 in [Vector2.RIGHT, Vector2.from_angle(deg_to_rad(37.0))]:
+		var unit: Vector2 = dir_in.normalized()
+		for spec: Array in REAL_CORNERS:
+			var end: Vector2 = _end_with_run(dir_in, float(spec[0]), bool(spec[1]))
+			var road: CaravanRoad = CaravanRoad.entering(dir_in, Vector2.ZERO, end, RADIUS_M, RUN_M)
+			var corner: CaravanRoad.Corner = road.corners()[0]
+			var why: String = "virada %s, direita %s, chegada %s" % [spec[0], spec[1], dir_in]
+			for step: int in 25:
+				var s: float = -5.0 + float(step) * (RUN_M + 5.0) / 24.0
+				_near(road.sample(s), unit * s, "de -5 a 1,2 m o ponto está na reta de chegada (s = %s, %s)" % [s, why], 1e-5)
+				_near(road.axis_tangent(s), unit, "com a tangente de chegada (s = %s, %s)" % [s, why], 1e-6)
+			_near(road.axis_point(RUN_M), unit * RUN_M, "o arco começa em s = 1,2 (%s)" % why, 1e-5)
+			assert_almost_eq(corner.apex_s, RUN_M + 0.5 * corner.arc_m, EPS, "e o meio do arco vem logo depois dos 1,2 m de reta (%s)" % why)
+			assert_almost_eq(absf(unit.angle_to(road.axis_tangent(RUN_M + 0.5))), 0.5 / RADIUS_M, 1e-3, "0,5 m depois a tangente já virou 0,5 / R (%s)" % why)
+			assert_almost_eq(rad_to_deg(corner.turn_rad), float(spec[0]), 1e-3, "a virada pedida (%s)" % why)
+			assert_true(corner.fits, "cabe (%s)" % why)
+			assert_almost_eq(corner.radius_eff_m, RADIUS_M, 1e-6, "raio efetivo = pedido (%s)" % why)
+			assert_almost_eq(corner.tangent_m, RADIUS_M * tan(corner.turn_rad * 0.5), 1e-6, "tangente R tan(θ/2) (%s)" % why)
+			assert_almost_eq(corner.tangent_m, _closed_form_tangent(unit * RUN_M, unit, end), 1e-6, "e igual à forma fechada vista de onde o arco começa (%s)" % why)
+			var vertex: Vector2 = unit * (RUN_M + corner.tangent_m)
+			assert_almost_eq(road.length_m(), RUN_M + corner.arc_m + (end - vertex).length() - corner.tangent_m, EPS, "comprimento = reta + arco + saída - tangente (%s)" % why)
+			_near(road.axis_point(road.length_m()), end, "e termina em end (%s)" % why)
+			_near(road.end_tangent(), (end - vertex).normalized(), "na direção da reta de saída (%s)" % why, 1e-5)
+			var sweep: Array[float] = _sweep(road, -2.0, RUN_M + corner.arc_m + 3.0)
+			assert_lt(sweep[0], 0.01 + EPS, "de 1 cm em 1 cm o ponto nunca anda mais que 1 cm (%s)" % why)
+			assert_lt(sweep[1], 0.01 / RADIUS_M + 1e-5, "e a tangente gira no máximo 1 cm / R por passo: sem salto em s = 1,2 (%s)" % why)
+			assert_almost_eq(sweep[2], corner.turn_rad, 2e-3, "e a janela inteira gira só a virada da quina (%s)" % why)
+	var ahead: CaravanRoad = CaravanRoad.entering(Vector2.RIGHT, Vector2.ZERO, Vector2(200, 0), RADIUS_M, RUN_M)
+	assert_eq(ahead.corners().size(), 0, "em frente (0 graus): sem quina, a reta")
+	assert_almost_eq(ahead.length_m(), 200.0, EPS, "de comprimento 200")
+	_near(ahead.axis_point(RUN_M), Vector2(RUN_M, 0), "passando pelo ponto de 1,2 m")
+	var turned_back: CaravanRoad = CaravanRoad.entering(Vector2.RIGHT, Vector2(2, 3), Vector2(2, 3) + Vector2.from_angle(deg_to_rad(175.0)) * 100.0, RADIUS_M, RUN_M)
+	_near(turned_back.axis_point(0.0), Vector2(2, 3), "175 graus: passa por start", 1e-5)
+	_near(turned_back.axis_point(RUN_M), Vector2(2 + RUN_M, 3), "segue reto 1,2 m", 1e-5)
+	_near(turned_back.axis_tangent(0.6), Vector2.RIGHT, "com a tangente de chegada", 1e-6)
+	_near(turned_back.axis_point(turned_back.length_m()), Vector2(2, 3) + Vector2.from_angle(deg_to_rad(175.0)) * 100.0, "termina em end", 1e-3)
+	assert_false(turned_back.corners()[0].fits, "não cabe")
+	for step: int in 60:
+		var s: float = -5.0 + float(step) * (turned_back.length_m() + 10.0) / 59.0
+		assert_true(turned_back.axis_point(s).is_finite() and turned_back.axis_tangent(s).is_finite(), "valores finitos em s = %s" % s)
+
+
+func test_a_straight_run_removes_the_jump_at_the_handoff_for_a_body_ahead_of_the_leader() -> void:
+	var leg_a: CaravanRoad = CaravanRoad.through(PackedVector2Array([Vector2(-60, 0), Vector2(0, 0)]), RADIUS_M).with_lane(LANE_M, RAMP_M)
+	var end: Vector2 = _end_with_run(Vector2.RIGHT, 129.1, true)
+	var with_run: CaravanRoad = CaravanRoad.entering(leg_a.end_tangent(), Vector2.ZERO, end, RADIUS_M, RUN_M).with_lane(LANE_M, RAMP_M)
+	var without_run: CaravanRoad = CaravanRoad.entering(leg_a.end_tangent(), Vector2.ZERO, end, RADIUS_M).with_lane(LANE_M, RAMP_M)
+	for ahead_m: float in [0.0, 0.3, 0.6, 0.9, 1.2]:
+		_near(leg_a.sample(60.0 + ahead_m), with_run.sample(ahead_m), "um corpo %s m à frente do líder está no mesmo ponto no trecho que chega e no que sai" % ahead_m, 1e-5)
+		if ahead_m > 0.1 and ahead_m < 1.1:
+			_near(leg_a.tangent(60.0 + ahead_m), with_run.tangent(ahead_m), "e com a mesma tangente (%s m)" % ahead_m, 1e-5)
+	assert_gt(leg_a.sample(61.2).distance_to(without_run.sample(1.2)), 0.05, "sem o trecho reto a troca daria um salto de uns 7 cm a 1,2 m (o problema que o parâmetro resolve)")
+	var capped: CaravanRoad = CaravanRoad.entering(Vector2.RIGHT, Vector2.ZERO, Vector2(200, 100), RADIUS_M, 1000000.0)
+	var half: CaravanRoad = CaravanRoad.entering(Vector2.RIGHT, Vector2.ZERO, Vector2(200, 100), RADIUS_M, 0.5 * Vector2(200, 100).length())
+	assert_true(capped.length_m() == half.length_m() and capped.axis_point(80.0) == half.axis_point(80.0), "o trecho reto passa no máximo da metade da distância de start a end")
+	_near(capped.axis_point(100.0), Vector2(100, 0), "e ainda é reta até lá", 1e-4)
+	_near(capped.axis_point(capped.length_m()), Vector2(200, 100), "e a estrada termina em end", 1e-3)

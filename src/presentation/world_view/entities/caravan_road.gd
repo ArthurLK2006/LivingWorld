@@ -68,13 +68,20 @@ static func through(points: PackedVector2Array, radius_m: float) -> CaravanRoad:
 ## NO VÉRTICE (que depende de T): ponto fixo em `ENTRY_ITERATIONS` passos no máximo, em duplas. T nunca passa da METADE do trecho de saída (a regra de `through`) e θ vale
 ## no máximo 175 graus NESSA conta: a volta de 180 graus não gera tangente infinita; o arco encolhe (raio efetivo menor, `fits` falso) e a estrada segue passando por `start`.
 ## Virada que dá tangente de 1 mm ou menos fica sem arco (a estrada reta de `start` a `end`).
-static func entering(arrival_dir: Vector2, start: Vector2, end: Vector2, radius_m: float) -> CaravanRoad:
+## `straight_m` > 0 faz o trecho seguir RETO na direção de chegada por `straight_m` metros depois do mercado (s = 0 continua no mercado) e só então começar o arco: serve a um
+## corpo que anda à FRENTE da origem do líder (o apoio da frente do cavalo, a +1,2 m), que na troca de trecho ainda estaria na reta de chegada. O vértice passa a ser
+## `start + arrival_dir * (straight_m + T)`, com a mesma iteração e os mesmos limites vistos do ponto onde o arco começa (T não passa da metade do trecho de saída e o arco nunca
+## começa antes dele). `straight_m` não finito ou <= 0 vale 0 (o comportamento sem o parâmetro, bit a bit) e o teto é a METADE da distância de `start` a `end`.
+static func entering(arrival_dir: Vector2, start: Vector2, end: Vector2, radius_m: float, straight_m: float = 0.0) -> CaravanRoad:
 	var radius: float = _sane_radius(radius_m)
 	var dir_in: Vector2 = arrival_dir.normalized() if arrival_dir.is_finite() else Vector2.ZERO
 	var plain: PackedVector2Array = PackedVector2Array([start, end])
 	if radius <= 0.0 or dir_in == Vector2.ZERO or not start.is_finite() or not end.is_finite() or start.distance_to(end) <= MIN_SEGMENT_M:
 		return through(plain, radius)
-	var rel: Vector2 = end - start
+	var anchor: Vector2 = start
+	if is_finite(straight_m) and straight_m > 0.0:
+		anchor = start + dir_in * minf(straight_m, 0.5 * start.distance_to(end))
+	var rel: Vector2 = end - anchor
 	var cross: float = dir_in.x * rel.y - dir_in.y * rel.x
 	var ahead: float = dir_in.x * rel.x + dir_in.y * rel.y
 	var reach_m: float = 0.0
@@ -86,7 +93,7 @@ static func entering(arrival_dir: Vector2, start: Vector2, end: Vector2, radius_
 		reach_m = next_m
 		if settled:
 			break
-	var vertex: Vector2 = start + dir_in * reach_m
+	var vertex: Vector2 = anchor + dir_in * reach_m
 	var leg_out: Vector2 = end - vertex
 	if reach_m <= MIN_SEGMENT_M or leg_out.length() <= MIN_SEGMENT_M:
 		return through(plain, radius)
