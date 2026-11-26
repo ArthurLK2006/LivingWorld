@@ -9,6 +9,11 @@ extends RefCounted
 ## negativo atrás); o giro é o do jogo, `atan2(-dir.x, -dir.y)` (a frente do corpo é -Z local); lateral positiva = DIREITA da marcha (a faixa da `CaravanRoad`
 ## também é à direita). Sem alocação por quadro: quem usa cria as poses UMA vez (`make_poses`) e `poses_into` as preenche. Entrada ruim (estrada nula ou vazia,
 ## veículo sem corpo): poses neutras e finitas, nunca NaN; `s` não finito conta como 0 (a mesma regra da `CaravanRoad`).
+## PRÉ-CONDIÇÃO DA TROCA DE TRECHO: o trecho novo (`CaravanRoad.entering`) estende para TRÁS uma RETA (a direção de chegada), não o caminho verdadeiro do trecho anterior. Por isso, ao trocar de trecho
+## pela ORIGEM do líder, a pose de TODOS os corpos só é igual dos dois lados se (1) a saída segue reta por `front_extent_m(spec)` metros depois do mercado (`entering(..., straight_m)`) e (2) a última reta do
+## trecho de CHEGADA cobre o alcance do apoio mais ATRÁS do veículo (carrinho 2,1 m; veículo comprido 7,243 m). Medido em `test_caravan_chain_corners.gd` (chegada com uma quina, R 6, faixa 1,2 m e rampa 12 m):
+## reta final de 10 m, salto 0; de 6 m, o veículo comprido salta 0,079 m e 3,7 graus; de 4 m, 0,81 m e 34 graus; de 2 m, 4,05 m e 90 graus; o carrinho só falha com 2 m (menos que os 2,1 m): 1,5 mm. Os 3
+## mercados reais têm chegada RETA e ficam fora desse limite; um dado novo (mercado de passagem com curva logo antes) deve ser conferido contra ele.
 
 ## Medidas [HIP] do veículo comprido de referência (cavalo e carroça de 4 rodas, 9,1 m), em metros. O cavalo apoia-se a 1,2 m para a frente e para trás da origem do líder.
 const HORSE_SUPPORT_M: float = 1.2
@@ -36,10 +41,9 @@ const MIN_STEP_M: float = 0.001
 const MAX_SAMPLES: int = 200000
 
 
-## Um corpo rígido do veículo. `ref_front_m` e `ref_rear_m` são os DOIS apoios sobre a faixa (o da frente primeiro). `hitch_m` é o `z` do engate, no corpo
-## ANTERIOR, onde este corpo se prende (ignorado no líder); `tongue_m` é a distância do engate ao apoio da frente deste corpo (ignorada no líder e no `is_pivot`).
-## `is_pivot`: corpo de 2 rodas preso no engate (a frente é o próprio engate, que não está na estrada; só o eixo de trás é achado na faixa, a `ref_front_m - ref_rear_m`
-## do engate). `boxes`: caixas de varredura, cada uma `Vector3(z de trás, z da frente, meia-largura)`, no referencial do líder.
+## Um corpo rígido do veículo. `ref_front_m` e `ref_rear_m` são os DOIS apoios sobre a faixa (o da frente primeiro). `hitch_m` é o `z` do engate, no corpo ANTERIOR, onde este corpo se
+## prende (ignorado no líder); `tongue_m` é a distância do engate ao apoio da frente deste corpo (ignorada no líder). `boxes`: caixas de varredura, cada uma `Vector3(z de trás, z da frente,
+## meia-largura)`, no referencial do líder.
 class Body:
 	extends RefCounted
 
@@ -47,7 +51,6 @@ class Body:
 	var ref_rear_m: float = 0.0
 	var hitch_m: float = 0.0
 	var tongue_m: float = 0.0
-	var is_pivot: bool = false
 	var boxes: Array[Vector3] = []
 
 
@@ -156,12 +159,8 @@ static func poses_into(road: CaravanRoad, spec: Spec, s: float, out: Array[Rigid
 			front = road.sample(reach)
 		else:
 			var hitch: Vector2 = out[index - 1].at_lead_frame(body.hitch_m)
-			reach = lead_s + body.hitch_m
-			if body.is_pivot:
-				front = hitch
-			else:
-				reach = _behind(road, hitch, body.tongue_m, reach)
-				front = road.sample(reach)
+			reach = _behind(road, hitch, body.tongue_m, lead_s + body.hitch_m)
+			front = road.sample(reach)
 		var rear: Vector2 = road.sample(_behind(road, front, body.ref_front_m - body.ref_rear_m, reach))
 		_place(pose, front, rear, road, reach)
 

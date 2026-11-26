@@ -140,9 +140,8 @@ static func walk(arrival: CaravanRoad, leave: CaravanRoad, spec: CaravanChain.Sp
 			if i > 0:
 				art = maxf(art, CaravanChain.articulation_rad(poses[i - 1], pose))
 				var body: CaravanChain.Body = spec.bodies[i]
-				if not body.is_pivot:
-					var hitch_gap: float = pose.at_lead_frame(body.ref_front_m).distance_to(poses[i - 1].at_lead_frame(body.hitch_m))
-					result.max_hitch_error_m = maxf(result.max_hitch_error_m, absf(hitch_gap - body.tongue_m))
+				var hitch_gap: float = pose.at_lead_frame(body.ref_front_m).distance_to(poses[i - 1].at_lead_frame(body.hitch_m))
+				result.max_hitch_error_m = maxf(result.max_hitch_error_m, absf(hitch_gap - body.tongue_m))
 			if k > 0:
 				result.max_center_step_m = maxf(result.max_center_step_m, pose.mid.distance_to(before_mid[i]))
 				result.max_yaw_step_rad = maxf(result.max_yaw_step_rad, absf(atan2(before_dir[i].cross(pose.dir), before_dir[i].dot(pose.dir))))

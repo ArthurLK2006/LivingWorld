@@ -9,6 +9,8 @@ const STRAIGHT_TOL_M: float = 3e-5
 const LANE: float = CaravanChainProbe.LANE_M
 const RAMP: float = CaravanChainProbe.RAMP_M
 const LANES: PackedFloat64Array = [0.0, CaravanChainProbe.LANE_M]
+## Sem faixa, com a faixa à DIREITA e com a faixa à ESQUERDA (negativa): `max_axis_offset_m` é um valor ABSOLUTO.
+const LANES_BOTH_SIDES: PackedFloat64Array = [0.0, CaravanChainProbe.LANE_M, -CaravanChainProbe.LANE_M]
 const RADII: PackedFloat64Array = [6.0, 8.0, 10.0]
 const CART_CHORD_M: float = 2.1
 const HORSE_CHORD_M: float = 2.4
@@ -257,11 +259,11 @@ func test_articulation_swept_corners_and_axis_offset_helpers() -> void:
 	assert_almost_eq(corners[0].distance_to(Vector2(back, -half)), 0.0, TOL_M, "canto de trás, à esquerda")
 	assert_almost_eq(corners[1].distance_to(Vector2(back, half)), 0.0, TOL_M, "canto de trás, à direita (+Z é a direita de quem anda para +X)")
 	assert_almost_eq(corners[2].distance_to(Vector2(0.3, half)), 0.0, TOL_M, "canto da frente, à direita")
-	for lane_m: float in LANES:
+	for lane_m: float in LANES_BOTH_SIDES:
 		var lane_road: CaravanRoad = CaravanChainProbe.line_road(Vector2.RIGHT, 300.0, lane_m, 0.0)
-		assert_almost_eq(CaravanChain.max_axis_offset_m(lane_road, cart, 40.0, 60.0, 1.0), lane_m + half, TOL_M, "carrinho: afastamento = faixa + meia-largura")
+		assert_almost_eq(CaravanChain.max_axis_offset_m(lane_road, cart, 40.0, 60.0, 1.0), absf(lane_m) + half, TOL_M, "carrinho: afastamento ABSOLUTO = |faixa| + meia-largura (a faixa pode ser à esquerda)")
 		var wagon_half: float = CaravanChain.WAGON_HALF_WIDTH_M
-		assert_almost_eq(CaravanChain.max_axis_offset_m(lane_road, CaravanChain.wagon_spec(), 40.0, 60.0, 1.0), lane_m + wagon_half, TOL_M, "veículo comprido: faixa + 1,005 m")
+		assert_almost_eq(CaravanChain.max_axis_offset_m(lane_road, CaravanChain.wagon_spec(), 40.0, 60.0, 1.0), absf(lane_m) + wagon_half, TOL_M, "veículo comprido: |faixa| + 1,005 m (também com a faixa à esquerda)")
 
 
 func test_front_extent_is_the_largest_front_support_and_never_negative() -> void:

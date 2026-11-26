@@ -33,6 +33,16 @@ const RATIO_MIN: float = 0.90
 const RATIO_MAX: float = 1.10
 ## A meia-largura de estrada [HIP] do estudo (m).
 const STUDY_HALF_WIDTH_M: float = 2.0
+## PRÉ-CONDIÇÃO da troca de trecho (ver o cabeçalho de `caravan_chain.gd`): a chegada tem UMA quina perto do mercado, `through([(0, 0), (60, 0), (60, L)], 6)` com a faixa e a rampa; para `L` de 16, 12, 8 e 4 m
+## o `through` encurta o arco (o raio efetivo é L/2 quando L/2 < 6 m) e a reta FINAL da chegada fica em 10, 6, 4 e 2 m. A saída é `entering(chegada.end_tangent(), mercado, destino, 6, front_extent_m)`.
+const PRECONDITION_LEG_M: PackedFloat64Array = [16.0, 12.0, 8.0, 4.0]
+const PRECONDITION_FINAL_M: PackedFloat64Array = [10.0, 6.0, 4.0, 2.0]
+## Salto MEDIDO por mim (esta suíte, `gut.p` acima) na troca quando a reta final não cobre o alcance do apoio de trás (m e graus; 0 = exato; o revisor R9a mediu os mesmos valores): veículo comprido (alcance 7,243 m) e carrinho (2,1 m). É geometria pura (R 6, faixa 1,2, rampa 12): a
+## faixa de +-15% só garante que o salto existe e tem esta ordem de grandeza, sem prender o teste a casas decimais.
+const WAGON_GAP_M: PackedFloat64Array = [0.0, 0.0786, 0.8118, 4.0499]
+const WAGON_GAP_DEG: PackedFloat64Array = [0.0, 3.66, 34.25, 89.86]
+const CART_GAP_M: PackedFloat64Array = [0.0, 0.0, 0.0, 0.00147]
+const GAP_SPREAD: float = 0.15
 
 
 ## Tudo o que se mede numa passagem, num veículo e num raio. `gap` e `jump` são com o trecho reto (`straight_m`); `gap_plain` e `jump_plain` (só no veículo comprido) são SEM ele (a contraprova).
@@ -148,6 +158,42 @@ func test_without_the_straight_run_the_horse_still_jumps_at_the_leg_change() -> 
 	assert_between(worst_m, 0.08, 0.10, "o pior salto sem o trecho reto é o medido: 0,088 m")
 	assert_between(rad_to_deg(worst_rad), 4.0, 4.4, "e 4,2 graus")
 	assert_gt(worst_jump, JUMP_MARGIN, "o passo no quadro da troca passa de 1,02 x v x dt x fator real (medido 1,59)")
+
+
+## O salto da pose na troca de trecho (m e rad) com a chegada de uma quina a `L` do mercado: a de `leg_m` metros no fim, e a saída reta por `front_extent_m` antes do arco.
+func _precondition_gap(spec: CaravanChain.Spec, leg_m: float) -> Vector3:
+	var market: Vector2 = Vector2(60.0, leg_m)
+	var arrival: CaravanRoad = CaravanRoad.through(PackedVector2Array([Vector2.ZERO, Vector2(60.0, 0.0), market]), 6.0).with_lane(CaravanChainProbe.LANE_M, CaravanChainProbe.RAMP_M)
+	var leave: CaravanRoad = CaravanRoad.entering(arrival.end_tangent(), market, market + Vector2(-150.0, 30.0), 6.0, CaravanChain.front_extent_m(spec)).with_lane(CaravanChainProbe.LANE_M, CaravanChainProbe.RAMP_M)
+	var gap: Vector2 = CaravanChainProbe.junction_gap(arrival, leave, spec, 0.0)
+	return Vector3(gap.x, gap.y, leg_m - arrival.corners()[0].tangent_m)
+
+
+func test_the_leg_change_needs_the_last_straight_of_the_arrival_to_cover_the_rearmost_support() -> void:
+	var cart: CaravanChain.Spec = CaravanChain.cart_spec()
+	var wagon: CaravanChain.Spec = CaravanChain.wagon_spec()
+	var cart_reach_m: float = -cart.bodies[0].ref_rear_m
+	var wagon_reach_m: float = -wagon.bodies[1].ref_rear_m
+	gut.p("Pré-condição da troca (alcance do apoio de trás: carrinho %.3f m, comprido %.3f m):" % [cart_reach_m, wagon_reach_m])
+	for index: int in PRECONDITION_LEG_M.size():
+		var with_cart: Vector3 = _precondition_gap(cart, PRECONDITION_LEG_M[index])
+		var with_wagon: Vector3 = _precondition_gap(wagon, PRECONDITION_LEG_M[index])
+		var label: String = "reta final da chegada de %.0f m" % PRECONDITION_FINAL_M[index]
+		gut.p("  %s: carrinho %.5f m e %.3f graus; comprido %.4f m e %.2f graus" % [label, with_cart.x, rad_to_deg(with_cart.y), with_wagon.x, rad_to_deg(with_wagon.y)])
+		assert_almost_eq(with_wagon.z, PRECONDITION_FINAL_M[index], 1e-6, label + ": a reta final é a esperada")
+		if PRECONDITION_FINAL_M[index] >= cart_reach_m:
+			assert_lte(with_cart.x, POSITION_TOL_M, label + ": o carrinho (alcance 2,1 m) troca de trecho sem salto")
+			assert_lte(with_cart.y, YAW_TOL_RAD, label + ": o carrinho, giro")
+		else:
+			assert_gt(with_cart.x, POSITION_TOL_M, label + ": abaixo do alcance do carrinho a troca salta")
+			assert_between(with_cart.x, CART_GAP_M[index] * (1.0 - GAP_SPREAD), CART_GAP_M[index] * (1.0 + GAP_SPREAD), label + ": o salto do carrinho é o medido")
+		if PRECONDITION_FINAL_M[index] >= wagon_reach_m:
+			assert_lte(with_wagon.x, POSITION_TOL_M, label + ": o veículo comprido (alcance 7,243 m) troca de trecho sem salto")
+			assert_lte(with_wagon.y, YAW_TOL_RAD, label + ": o veículo comprido, giro")
+		else:
+			assert_gt(with_wagon.x, POSITION_TOL_M, label + ": abaixo do alcance do veículo comprido a troca salta")
+			assert_between(with_wagon.x, WAGON_GAP_M[index] * (1.0 - GAP_SPREAD), WAGON_GAP_M[index] * (1.0 + GAP_SPREAD), label + ": o salto do veículo comprido é o medido")
+			assert_between(rad_to_deg(with_wagon.y), WAGON_GAP_DEG[index] * (1.0 - GAP_SPREAD), WAGON_GAP_DEG[index] * (1.0 + GAP_SPREAD), label + ": o giro do salto é o medido")
 
 
 func test_articulation_and_the_hitch_stay_within_the_limit_of_the_radius_on_the_real_corners() -> void:
