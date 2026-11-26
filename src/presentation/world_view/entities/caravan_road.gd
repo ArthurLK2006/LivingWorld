@@ -7,11 +7,16 @@ extends RefCounted
 ## Convenções: `s` (m) é a distância sobre o EIXO desde o começo do trecho (0 = o mercado de saída). Antes de 0 e depois do fim a estrada CONTINUA em reta (as partes de trás
 ## de um veículo comprido e as medidas pedem isso; o corpo da frente anda de 0 a `length_m()`). A FAIXA fica à DIREITA da marcha, o mesmo `Vector2(-t.y, t.x)` do
 ## `CaravanPath` (para quem vai a +X, a direita é +Z). O giro (`atan2(-t.x, -t.y)`: a frente do corpo é -Z local) é de quem usa: aqui só saem PONTOS e TANGENTES.
-## `s` não finito (NaN, INF) vale 0 em toda consulta; nenhuma consulta devolve valor não finito, guarda estado ou aloca (só `corners()` devolve a lista da estrada).
+## `s` não finito (NaN, INF) vale 0 e |s| acima de `S_LIMIT_M` é cortado nele, em toda consulta; nenhuma consulta devolve valor não finito, guarda estado ou aloca (só `corners()` devolve a lista da estrada).
 ## Precisão: o `Vector2` do Godot é float32 (perto de 300 m a resolução é de uns 3e-5 m); os escalares (comprimentos, tangentes, `s`, o ponto fixo de `entering`) são em duplas.
+## PRÉ-CONDIÇÃO da troca de trecho: a pose do fim de um trecho só é IGUAL à do começo do seguinte se a última reta do trecho de CHEGADA cobrir o alcance do apoio mais atrás do veículo
+## (carrinho ~2,1 m; veículo comprido ~7,3 m), porque o trecho novo estende para trás uma RETA (a de chegada), não o caminho de verdade. Os 3 mercados de passagem reais cumprem (retas de
+## centenas de metros); um dado novo de estrada (`points_m`) tem de respeitá-la. A faixa também precisa ser MENOR que o raio efetivo dos arcos (ver `with_lane`).
 
 ## Dois pontos mais perto que isto (m) são o mesmo ponto: o trecho nulo sai da polilinha (a mesma regra do `CaravanPath`).
 const MIN_SEGMENT_M: float = 0.001
+## Limite (m) de |s| em toda consulta: o `Vector2` é float32 e `s` perto de 1e300 estouraria para INF; nenhum trecho chega perto de 1e6 m e `s` maior é cortado nele.
+const S_LIMIT_M: float = 1e6
 ## Virada (rad) até a qual a quina conta como reta: sem arco.
 const FLAT_TURN_RAD: float = 1e-6
 ## O raio efetivo pode ficar este tanto (m) abaixo do pedido e ainda assim "caber".
@@ -68,6 +73,8 @@ static func through(points: PackedVector2Array, radius_m: float) -> CaravanRoad:
 ## NO VÉRTICE (que depende de T): ponto fixo em `ENTRY_ITERATIONS` passos no máximo, em duplas. T nunca passa da METADE do trecho de saída (a regra de `through`) e θ vale
 ## no máximo 175 graus NESSA conta: a volta de 180 graus não gera tangente infinita; o arco encolhe (raio efetivo menor, `fits` falso) e a estrada segue passando por `start`.
 ## Virada que dá tangente de 1 mm ou menos fica sem arco (a estrada reta de `start` a `end`).
+## PRÉ-CONDIÇÃO: antes de 0 a estrada é uma RETA (a extensão da chegada), não o caminho verdadeiro do trecho anterior: a pose do fim do trecho anterior só é IGUAL à do começo deste se a
+## última reta do anterior cobrir o alcance do apoio mais atrás do veículo (carrinho ~2,1 m; veículo comprido ~7,3 m). Os 3 mercados reais cumprem; um dado novo de estrada (`points_m`) tem de respeitá-la.
 ## `straight_m` > 0 faz o trecho seguir RETO na direção de chegada por `straight_m` metros depois do mercado (s = 0 continua no mercado) e só então começar o arco: serve a um
 ## corpo que anda à FRENTE da origem do líder (o apoio da frente do cavalo, a +1,2 m), que na troca de trecho ainda estaria na reta de chegada. O vértice passa a ser
 ## `start + arrival_dir * (straight_m + T)`, com a mesma iteração e os mesmos limites vistos do ponto onde o arco começa (T não passa da metade do trecho de saída e o arco nunca
@@ -107,6 +114,9 @@ static func entering(arrival_dir: Vector2, start: Vector2, end: Vector2, radius_
 ## metros a partir de cada ponta do trecho (s = 0 e s = `length_m()`), em SMOOTHSTEP (derivada 0 nas pontas: sem dobra, a "rampa suave"). Fora de 0..`length_m()` o fator
 ## é o de min(|s|, |s - length|): simétrico, então a pose do fim de um trecho é IGUAL à do começo do trecho seguinte. `ramp_m` <= 0 ou não finito: faixa cheia em todo o trecho.
 ## Trecho menor que 2 rampas: o fator nunca chega a 1 e tem uma crista (dobra) no meio; quem usa deve limitar a rampa à metade do trecho.
+## A igualdade entre o fim de um trecho e o começo do seguinte vale desde que a última reta do trecho de chegada cubra o alcance do apoio mais atrás do veículo (ver `entering`). A faixa
+## precisa ser MENOR que o raio efetivo do arco pelo lado de dentro, senão a faixa forma laço e o ponto salta: os dados reais cumprem (raio efetivo do eixo de 7,2 m contra faixa de 1,2 m);
+## `with_lane` não limita nem avisa.
 func with_lane(offset_m: float, ramp_m: float) -> CaravanRoad:
 	_lane_m = offset_m if is_finite(offset_m) else 0.0
 	_ramp_m = ramp_m if is_finite(ramp_m) and ramp_m > 0.0 else 0.0
@@ -232,8 +242,9 @@ func axis_offset(point: Vector2) -> Vector2:
 	return Vector2(best_m, signed_m) if is_finite(best_m) else Vector2.ZERO
 
 
+## `s` (ou `hi`) pronto para uso: NaN e INF viram 0 e o valor é cortado em +-`S_LIMIT_M`; dentro do limite sai igual, bit a bit.
 static func _finite(value: float) -> float:
-	return value if is_finite(value) else 0.0
+	return clampf(value, -S_LIMIT_M, S_LIMIT_M) if is_finite(value) else 0.0
 
 
 static func _sane_radius(radius_m: float) -> float:

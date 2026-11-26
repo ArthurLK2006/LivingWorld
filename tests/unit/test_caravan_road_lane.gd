@@ -110,6 +110,20 @@ func test_the_closed_form_lane_tangent_matches_a_fine_difference_better_than_a_c
 	assert_lt(straight.tangent(397.0).y, 0.0, "e na de chegada volta ao eixo: aponta um pouco para a esquerda")
 
 
+func test_the_closed_form_tangent_also_matches_inside_the_ramp_on_the_exit_from_a_market() -> void:
+	var road: CaravanRoad = CaravanRoad.entering(Vector2.RIGHT, Vector2.ZERO, Vector2(7.2, 120.0), 6.0, 1.2).with_lane(LANE_M, RAMP_M)
+	var corner: CaravanRoad.Corner = road.corners()[0]
+	assert_almost_eq(corner.radius_eff_m, 6.0, 1e-6, "a saída real: 1,2 m de reta e um arco de R 6 que dobra à direita")
+	var worst: float = 0.0
+	for s: float in [3.0, 6.0, 9.0]:
+		assert_true(s > 1.2 and s < 1.2 + corner.arc_m, "s = %s está dentro do arco" % s)
+		assert_lt(road.axis_offset(road.sample(s)).x, LANE_M - 0.1, "e dentro da rampa de 12 m: a faixa ainda não está cheia (s = %s)" % s)
+		var fine: Vector2 = (road.sample(s + 0.01) - road.sample(s - 0.01)).normalized()
+		worst = maxf(worst, absf(road.tangent(s).angle_to(fine)))
+	assert_lt(worst, 2e-4, "a forma fechada concorda com a diferença fina (ruído float32 dela: ~7e-5 rad a 10 m da origem): o sinal do arco e o termo da rampa certos")
+	assert_gt(absf(road.tangent(6.0).angle_to(road.axis_tangent(6.0))), 0.1, "e a rampa muda a direção da faixa em ~0,16 rad ali: um sinal errado em qualquer dos dois termos passaria longe de 2e-4")
+
+
 func test_solve_behind_returns_the_point_at_the_exact_chord_on_straights_arcs_and_corners() -> void:
 	var roads: Array[CaravanRoad] = [CaravanRoad.through(PackedVector2Array([Vector2(-30, 0), Vector2(30, 0)]), 10.0), CaravanRoad.through(RIGHT_SMALL, 10.0), CaravanRoad.through(LEFT_SMALL, 10.0),
 		CaravanRoad.through(RIGHT_SMALL, 0.0), CaravanRoad.through(PackedVector2Array([Vector2(-30, 0), Vector2(0, 0), Vector2.from_angle(deg_to_rad(129.1)) * 30.0]), 8.0)]

@@ -212,3 +212,14 @@ func test_axis_offset_gives_the_distance_and_the_side_with_the_right_positive() 
 	var left_radial: Vector2 = Vector2(1, 1).normalized()
 	_near(left.axis_offset(Vector2(290, -10) + left_radial * 8.0), Vector2(2, -2), "dentro da curva à esquerda: sinal -", 1e-4)
 	_near(left.axis_offset(Vector2(290, -10) + left_radial * 13.0), Vector2(3, 3), "fora da curva à esquerda: sinal +", 1e-4)
+
+
+func test_a_huge_s_is_clamped_so_the_float32_point_never_overflows() -> void:
+	var road: CaravanRoad = CaravanRoad.through(RIGHT_90, 10.0).with_lane(1.2, 12.0)
+	for huge: float in [1e300, -1e300, 1e38, -1e38]:
+		for value: Vector2 in [road.axis_point(huge), road.sample(huge), road.axis_tangent(huge), road.tangent(huge)]:
+			assert_true(value.is_finite(), "s = %s: valor finito (%s)" % [huge, value])
+		assert_true(is_finite(road.solve_behind(Vector2(1, 1), 2.0, huge)), "e solve_behind com hi = %s" % huge)
+	assert_eq(road.sample(1e300), road.sample(CaravanRoad.S_LIMIT_M), "s acima do limite vale o limite")
+	assert_eq(road.sample(-1e300), road.sample(-CaravanRoad.S_LIMIT_M), "e abaixo de menos o limite também")
+	assert_ne(road.sample(0.5 * CaravanRoad.S_LIMIT_M), road.sample(CaravanRoad.S_LIMIT_M), "dentro do limite nada é cortado")
