@@ -1,7 +1,7 @@
 extends GutTest
 ## LW-099b2b: ONDE a vista põe o corpo da caravana (`CaravanBodiesView`), sem janela e com a ponte roteirizada (`ScriptedCaravanBridge`; o jogo real está em `tests/integration/test_caravan_bodies_in_game.gd`): o corpo anda a estrada RETA do mercado de
 ## saída ao de chegada (as pontas vêm de `peek_places`), 1,2 m à DIREITA da marcha (quem vai e quem volta não se atravessam), de frente para o destino, na altura do terreno sob os pés e inclinado pelo declive entre os pés e o eixo do carrinho (limitado a 25 graus); a altura que a ponte não dá
-## deixa o corpo escondido e sem pose; a troca de trecho (viagem de vários trechos) não salta; e uma rota com pontos de passagem no dado, que a ponte ainda não consegue orientar, cai na reta com UM aviso.
+## deixa o corpo escondido e sem pose; a troca de trecho (viagem de vários trechos) não salta; e uma rota com ponto de passagem no dado (com o `settlement_a_id` que dá o sentido, LW-099g) passa por ele nos dois sentidos, sem aviso (antes da LW-099g caía na reta com UM aviso).
 
 const WORLD_DIR: String = "res://data/world"
 const A: String = "test_settlement_a"
@@ -23,8 +23,7 @@ const ANGLE_TOLERANCE: float = 0.0001
 const GENTLE_SLOPE: float = 0.2
 const STEEP_SLOPE: float = 1.0
 const WAYPOINT_JUMP_M: float = 2.5
-const VIA_ROUTE: String = "{\"route_id\": \"route_a_b\"}"
-const VIA_ROUTE_WITH_POINT: String = "{\"route_id\": \"route_a_b\", \"points_m\": [[500, 700]]}"
+const WAYPOINT: Vector2 = Vector2(500.0, 700.0)
 
 var _terrain: TerrainData
 var _places: Array[Place] = []
@@ -161,16 +160,25 @@ func test_a_trip_of_two_legs_does_not_jump_where_one_leg_ends_and_the_next_begin
 	assert_almost_eq(_spot_of(body).distance_to(MARKETS[C].lerp(MARKETS[B], 0.5)), LATERAL_M, POSE_TOLERANCE_M, "E segue pela estrada nova (C a B), não pela velha.")
 
 
-func test_a_route_with_waypoints_falls_back_to_the_straight_road_with_one_warning_per_route() -> void:
-	var text: String = FileAccess.get_file_as_string(CaravanRoutesReader.DEFAULT_PATH)
-	assert_true(text.contains(VIA_ROUTE), "Premissa: a rota A-B do dado real não tem pontos de passagem.")
-	var loaded: CaravanRoutesReader.LoadResult = CaravanRoutesReader.from_json(text.replace(VIA_ROUTE, VIA_ROUTE_WITH_POINT), "rota com ponto de passagem")
+func test_a_route_with_a_waypoint_is_walked_through_it_in_both_directions_with_no_warning() -> void:
+	# O dado de apresentação do jogo, só que com UM ponto de passagem na rota A-B e sem docas (assim o teste vale com o dado de hoje ou com o novo).
+	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(CaravanRoutesReader.DEFAULT_PATH))  # Variant: fronteira com o JSON, conferido logo abaixo
+	var root: Dictionary = parsed
+	root.erase("docks")
+	for row: Dictionary in root["routes"]:
+		row.erase("points_m")
+		row.erase("settlement_a_id")
+		if str(row["route_id"]) == ROUTE_A_B:
+			row["settlement_a_id"] = A
+			row["points_m"] = [[WAYPOINT.x, WAYPOINT.y]]
+	var loaded: CaravanRoutesReader.LoadResult = CaravanRoutesReader.from_json(JSON.stringify(root), "rota com ponto de passagem")
 	assert_true(loaded.result.ok, loaded.result.message)
 	_start(loaded.data)
-	var middle: Vector2 = MARKETS[A].lerp(MARKETS[B], 0.5)
-	_watch([ScriptedCaravanBridge.row_of(TRADER, 0.5, ROUTE_A_B, A, B)], middle)
-	_watch([ScriptedCaravanBridge.row_of(TRADER, 0.5, ROUTE_A_B, B, A)], middle)
-	assert_push_warning("pontos de passagem")
-	assert_push_warning_count(1, "UM aviso por rota, mesmo com as duas direções e vários quadros.")
-	var heading: Vector2 = (MARKETS[B] - MARKETS[A]).normalized()
-	assert_almost_eq(_spot_of(_view.body_of(TRADER)).distance_to(middle - _right_of(heading) * LATERAL_M), 0.0, POSE_TOLERANCE_M, "A estrada fica reta (nunca desenhada de trás para a frente).")
+	for leg: Array in [[A, B], [B, A]]:
+		var from_id: String = leg[0]
+		var to_id: String = leg[1]
+		var first_m: float = MARKETS[from_id].distance_to(WAYPOINT)
+		var u: float = first_m / (first_m + WAYPOINT.distance_to(MARKETS[to_id]))
+		_watch([ScriptedCaravanBridge.row_of(TRADER, u, ROUTE_A_B, from_id, to_id)], WAYPOINT)
+		assert_almost_eq(_spot_of(_view.body_of(TRADER)).distance_to(WAYPOINT), LATERAL_M, POSE_TOLERANCE_M, "%s para %s: na fração do ponto de passagem o corpo está nele (a 1,2 m, pelo deslocamento lateral), nos dois sentidos." % [from_id, to_id])
+	assert_push_warning_count(0, "Sem aviso: o sentido dos pontos vem do `settlement_a_id` do dado.")
