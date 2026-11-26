@@ -154,3 +154,54 @@ func test_with_sharp_corners_radius_zero_the_body_still_turns_by_the_rope_and_st
 		assert_lt(walk.joint_gap_m, JOINT_GAP_M, "%s: a posição não salta (a quina é viva, o giro estala)." % label)
 		assert_gt(walk.joint_turn_deg, 30.0, "%s: sem arco o giro estala na quina (%.1f graus): é o 'hoje' sem o limite por metro." % [label, walk.joint_turn_deg])
 		assert_lte(walk.step_excess_m, 0.0, "%s: nenhum passo passa do andado vezes o fator da faixa." % label)
+
+
+## A volta de 180 graus no povoado de passagem (A para B e depois B para A, e um 3º trecho A para C): a estrada herdada não tem arco, então a caravana usa o caminho de HOJE (giro limitado por metro) pelo RESTO da viagem, sem estalo e com o mesmo corpo.
+func test_a_u_turn_at_the_passage_settlement_goes_back_to_the_limited_turn_of_today_for_the_rest_of_the_trip() -> void:
+	assert_true(_rig.start(self))
+	var legs: Array = [[A, B, 0.85, 1.0, 0.5], [B, A, 0.0, 1.0, NaturalCurvesRig.WALK_MPS], [A, C, 0.0, 0.1, 0.5]]
+	var body: CaravanView = null
+	var last_spot: Vector2 = Vector2.ZERO
+	var last_yaw: float = 0.0
+	var healthy: bool = true
+	var wheels: bool = true
+	var worst_excess: float = -INF
+	var joints: Array[Vector2] = []
+	var natural: Array[bool] = []
+	var end_yaw: float = 0.0
+	for index: int in legs.size():
+		var leg: Array = legs[index]
+		var length_m: float = MARKETS[leg[0]].distance_to(MARKETS[leg[1]])
+		var count: int = ceili((float(leg[3]) - float(leg[2])) * length_m / float(leg[4]))
+		for k: int in count + 1:
+			var current: CaravanView = _rig.go(leg[0], leg[1], lerpf(float(leg[2]), float(leg[3]), float(k) / float(count)))
+			if current == null or (body != null and current != body) or not (NaturalCurvesRig.spot_of(current).is_finite() and is_finite(current.rotation.y)):
+				healthy = false
+				continue
+			body = current
+			var spot: Vector2 = NaturalCurvesRig.spot_of(current)
+			var moved: float = spot.distance_to(last_spot)
+			var turned: float = absf(angle_difference(last_yaw, current.rotation.y))
+			wheels = wheels and current.wheel_differential()
+			if k == 0:
+				natural.append(_rig.view.road_of(TRADER) != null)
+				if index > 0:
+					joints.append(Vector2(moved, rad_to_deg(turned)))
+			else:
+				worst_excess = maxf(worst_excess, turned - (CaravanBodiesView.TURN_RAD_PER_M * moved * TURN_MARGIN + TURN_EPSILON_RAD))
+			if index == 1 and k == count:
+				end_yaw = current.rotation.y
+			last_spot = spot
+			last_yaw = current.rotation.y
+	assert_true(healthy, "O corpo é SEMPRE o mesmo e tudo é finito.")
+	assert_true(wheels, "As rodas por roda seguem ligadas também no caminho de hoje.")
+	assert_eq(natural, [true, false, false], "O 1º trecho é natural; a volta e o trecho seguinte usam o caminho de hoje (`road_of` nulo).")
+	for joint: Vector2 in joints:
+		assert_lt(joint.x, JOINT_GAP_M, "A troca de trecho não salta de posição (m).")
+		assert_lt(joint.y, JOINT_TURN_DEG, "E não estala o giro no quadro da troca (graus; sem o limite eram uns 165).")
+	assert_lte(worst_excess, 0.0, "Nenhum quadro gira mais que o limite de hoje (0,5 rad por metro andado; excesso em rad).")
+	assert_almost_eq(absf(angle_difference(end_yaw, NaturalCurvesRig.yaw_of(MARKETS[A] - MARKETS[B]))), 0.0, 0.001, "No fim da volta o corpo olha para onde a estrada nova vai.")
+	_rig.view.set_natural_curves(false)
+	_rig.view.set_natural_curves(true)
+	_rig.go(A, C, 0.05)
+	assert_not_null(_rig.view.road_of(TRADER), "Trocar o modo desfaz o caminho de hoje: o trecho seguinte volta a ser natural.")

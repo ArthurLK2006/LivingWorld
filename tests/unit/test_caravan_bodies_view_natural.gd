@@ -279,3 +279,34 @@ func test_the_lane_ramp_is_limited_to_half_of_a_short_road_and_an_empty_road_has
 	_rig.show([ScriptedCaravanBridge.row_of(TRADER, 0.5, "route_a_b", A, B)], MARKETS[A])
 	assert_null(_rig.view.body_of(TRADER), "Estrada vazia (comprimento 0): sem corpo.")
 	assert_eq(_rig.view.unplaced, 1, "Contada como `unplaced`, como a estrada sem mercado.")
+
+
+func test_a_leg_that_leaves_another_settlement_does_not_inherit_the_arrival() -> void:
+	_start()
+	_rig.go(A, C, 0.5)
+	_rig.go(A, C, 1.0)
+	_rig.go(B, A, 0.0)
+	assert_not_null(_rig.view.road_of(TRADER), "Segue no modo natural (não é o caminho de hoje).")
+	assert_eq(_rig.view.road_of(TRADER).corners().size(), 0, "Quem chegou em C e sai de B não herda a direção de chegada: a estrada nova é reta.")
+
+
+func test_switching_the_mode_off_and_on_in_the_middle_of_a_trip_forgets_the_arrival_and_the_turn() -> void:
+	_start()
+	_cross(A, C, B, 0.0)
+	assert_eq(_rig.view.road_of(TRADER).corners().size(), 1, "Premissa: a quina de C é uma curva (a chegada foi lembrada).")
+	_rig.view.set_natural_curves(false)
+	var today: CaravanView = _rig.go(C, B, 0.0)
+	assert_almost_eq(today.rotation.y, NaturalCurvesRig.yaw_of(MARKETS[B] - MARKETS[C]), ANGLE_TOLERANCE, "Desligado, o giro volta a ser o da estrada de hoje, sem o giro velho da curva (parado na quina o limite não corrigiria nada).")
+	_rig.view.set_natural_curves(true)
+	_rig.go(C, B, 0.0)
+	assert_eq(_rig.view.road_of(TRADER).corners().size(), 0, "Ligar de novo esquece a memória de chegada: o trecho em andamento nasce reto.")
+
+
+func test_the_radius_zero_asked_by_the_user_is_not_a_failed_fit_and_the_u_turn_stays_natural() -> void:
+	_start()
+	_rig.view.set_curve_radius_m(0.0)
+	_rig.go(A, B, 0.5)
+	_rig.go(A, B, 1.0)
+	var back: CaravanView = _rig.go(B, A, 0.0)
+	assert_not_null(_rig.view.road_of(TRADER), "Quina viva pedida de propósito (raio 0) segue natural: não vira o caminho de hoje.")
+	assert_true(_pose_of(back)[0].is_finite() and is_finite(back.rotation.y), "E tudo segue finito.")

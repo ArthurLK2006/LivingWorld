@@ -17,17 +17,19 @@ extends Node3D
 ## quina no povoado de passagem vira uma curva de poucos metros em vez de um estalo. Só a pose mostrada muda: a fração `u`, o tempo e a velocidade são os da simulação.
 ## CURVAS NATURAIS (LW-099f, EXPERIMENTAL; só apresentação; `set_natural_curves`, DESLIGADO por padrão: desligado nada disto roda e o jogo é o de hoje, bit a bit). Ligado, a estrada do trecho é uma `CaravanRoad` (retas e ARCOS no lugar da quina viva), o ponto é o da FAIXA a `s = u * comprimento da estrada` e a pose vem
 ## da `CaravanChain.cart_spec` (o comerciante e o carrinho como UM corpo rígido apoiado nos pés e no EIXO): o giro é o da corda entre os pés e o eixo, sem limite de giro por metro (a pose é função pura de `s`, não de estado entre quadros), e a inclinação usa a altura sob o EIXO real. O trecho que SAI de um povoado de passagem nasce reto na
-## direção de chegada do anterior (`CaravanRoad.entering`) se a vista lembra dela: o trecho anterior terminou nesse povoado e a última `u` vista nele foi >= `ARRIVAL_MEMORY_U`; é memória da própria vista (nada vem da ponte). Sem ela (caravana vista pela 1ª vez no meio da viagem, trecho que mudou antes do fim) a estrada é a reta de sempre.
+## direção de chegada do anterior (`CaravanRoad.entering`) se a vista lembra dela: o trecho anterior terminou nesse povoado e a última `u` vista nele foi >= `ARRIVAL_MEMORY_U`; é memória da própria vista (nada vem da ponte). Sem ela (caravana vista pela 1ª vez no meio da viagem, trecho que mudou antes do fim) a estrada é a reta de sempre. A volta de cerca de 180 graus no povoado de passagem não tem arco (`ENTRY_MIN_FIT_SHARE`): a caravana usa o caminho de hoje pelo resto da viagem.
 
 ## [HIP] Metros andados (a partir de cada ponta do trecho) em que o deslocamento lateral sobe de 0 ao valor do dado e desce de volta: 4 s a 1x.
 const LATERAL_RAMP_M: float = 12.0
 ## [HIP] Giro máximo (rad) por metro andado entre duas poses: 0,5 é uma curva de cerca de 2 m de raio (uma quina de 90 graus leva uns 3 m).
 const TURN_RAD_PER_M: float = 0.5
-## [HIP] CURVAS NATURAIS: o raio (m) do CAMINHO do veículo nas quinas; 6 m é a referência de Arthur para o veículo comprido (para o carrinho de hoje 3 m bastaria; os limites do estudo são 4,1 m duro, 8 e 10 m). A estrada é montada pelo EIXO e o veículo anda na FAIXA, `lateral_offset_m` à direita: numa quina para a direita a faixa fica DENTRO da curva
+## [HIP] CURVAS NATURAIS: o raio (m) do CAMINHO do veículo nas quinas; 6 m é a referência de Arthur para o veículo comprido (estimativa do estudo, não medida no jogo: para o carrinho de hoje 3 m bastaria; os limites do estudo são 4,1 m duro, 8 e 10 m). A estrada é montada pelo EIXO e o veículo anda na FAIXA, `lateral_offset_m` à direita: numa quina para a direita a faixa fica DENTRO da curva
 ## (o raio dela é o do eixo menos a faixa) e numa para a esquerda FORA (o do eixo mais a faixa); por isso o eixo pede `raio do caminho + faixa` (6 + 1,2 = 7,2 m) e a curva pelo lado da faixa nunca fecha mais que o caminho pedido (pela esquerda ela abre, 8,4 m).
 const CURVE_PATH_RADIUS_M: float = 6.0
 ## [HIP] A caravana "chegou" ao fim do trecho se a última fração `u` vista nele foi igual ou maior que isto: só então o trecho seguinte da mesma viagem herda a direção de chegada.
 const ARRIVAL_MEMORY_U: float = 0.9
+## [HIP] Se o arco que o trecho herdado consegue (`radius_eff_m`) é menor que esta fração do raio pedido (a volta de cerca de 180 graus no povoado de passagem: o trecho novo volta por onde veio e o arco some), a caravana usa o caminho de HOJE (giro limitado por metro, rampa linear) pelo RESTO da viagem. O raio 0 do usuário (quina viva de propósito) não conta.
+const ENTRY_MIN_FIT_SHARE: float = 0.5
 
 ## Consultas que falharam (os corpos ficaram como estavam).
 var failed_queries: int = 0
@@ -47,7 +49,7 @@ var _chunk_count: Vector2i = Vector2i.ZERO
 ## O mercado (x, z em metros) de cada povoado: as pontas da estrada.
 var _markets: Dictionary[String, Vector2] = {}
 ## O que a view guarda de cada caravana vista (por `trader_id`): a estrada do trecho, a pose do quadro e se está no alcance.
-var _tracks: Dictionary[int, Track] = {}
+var _tracks: Dictionary[int, CaravanTrack] = {}
 ## Rotas com pontos de passagem no dado que já foram avisadas (UM aviso por rota).
 var _warned_routes: Dictionary[String, bool] = {}
 ## Os `trader_id` que sumiram da consulta neste quadro (reaproveitado).
@@ -181,7 +183,7 @@ func curve_radius_m() -> float:
 
 ## A estrada com arcos do trecho atual da caravana (só nas curvas naturais), ou nulo: modo desligado, caravana desconhecida ou trecho sem estrada. Só leitura, para testes e diagnóstico.
 func road_of(trader_id: int) -> CaravanRoad:
-	var track: Track = _tracks.get(trader_id) as Track
+	var track: CaravanTrack = _tracks.get(trader_id) as CaravanTrack
 	return track.road if track != null else null
 
 
@@ -195,9 +197,9 @@ func _exit_tree() -> void:
 
 ## Acha ou cria o registro da caravana, garante a estrada do trecho e decide o alcance com histerese a partir do ponto DERIVADO. Sem estrada a caravana não entra no alcance.
 func _locate(row: BridgeReplies.CaravanBodyReply, focus_m: Vector2) -> void:
-	var track: Track = _tracks.get(row.trader_id) as Track
+	var track: CaravanTrack = _tracks.get(row.trader_id) as CaravanTrack
 	if track == null:
-		track = Track.new()
+		track = CaravanTrack.new()
 		_tracks[row.trader_id] = track
 	track.seen = _stamp
 	if not (_locate_on_road(track, row) if _natural_curves else _locate_on_path(track, row)):
@@ -212,7 +214,7 @@ func _locate(row: BridgeReplies.CaravanBodyReply, focus_m: Vector2) -> void:
 func _give_back_leavers() -> void:
 	_gone.clear()
 	for trader_id: int in _tracks:
-		var track: Track = _tracks[trader_id]
+		var track: CaravanTrack = _tracks[trader_id]
 		if track.seen != _stamp:
 			_gone.append(trader_id)
 		elif not track.inside and _pool.give_back(trader_id):
@@ -225,7 +227,7 @@ func _give_back_leavers() -> void:
 ## As entradas, em ordem crescente de comerciante (a da consulta): quem está no alcance e não tem corpo pega um. Reserva vazia: sem erro, `waiting` conta e o próximo quadro tenta de novo.
 func _take_newcomers(reply: BridgeReplies.CaravanBodiesReply) -> void:
 	for row: BridgeReplies.CaravanBodyReply in reply.bodies:
-		var track: Track = _tracks.get(row.trader_id) as Track
+		var track: CaravanTrack = _tracks.get(row.trader_id) as CaravanTrack
 		if track == null or not track.inside or _pool.body_of(row.trader_id) != null:
 			continue
 		if _pool.take(row.trader_id) == null:
@@ -238,13 +240,13 @@ func _apply_to_active(reply: BridgeReplies.CaravanBodiesReply) -> void:
 		var view: CaravanView = _pool.body_of(row.trader_id)
 		if view == null:
 			continue
-		var track: Track = _tracks[row.trader_id]
+		var track: CaravanTrack = _tracks[row.trader_id]
 		view.apply_state(row.state == BridgeReplies.CaravanBodyReply.STATE_TRAVELLING, row.good_id, row.load_permille)
 		if _natural_curves:
 			view.set_wheel_differential(true)
 		var is_drawn: bool = _terrain.has_chunk(_chunk_of(track.position))
 		if is_drawn:
-			if _natural_curves:
+			if _natural_curves and not track.legacy:
 				_pose_on_road(view, track)
 			else:
 				_pose_on_ground(view, track)
@@ -253,7 +255,7 @@ func _apply_to_active(reply: BridgeReplies.CaravanBodiesReply) -> void:
 
 ## Põe o corpo no chão: os pés na altura do terreno no ponto e a inclinação que liga os pés ao eixo do carrinho (ver o cabeçalho), limitada por `max_pitch_deg`. Altura dos pés ilegível: a pose não muda neste quadro (contada); altura do eixo
 ## ilegível: nivelado.
-func _pose_on_ground(view: CaravanView, track: Track) -> void:
+func _pose_on_ground(view: CaravanView, track: CaravanTrack) -> void:
 	var feet_m: float = _ground_at(track.position)
 	if is_nan(feet_m):
 		ground_misses += 1
@@ -265,7 +267,7 @@ func _pose_on_ground(view: CaravanView, track: Track) -> void:
 
 
 ## O modo de sempre: o ponto e o giro (limitado por metro andado) da polilinha do trecho. Falso se o trecho não tem estrada.
-func _locate_on_path(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
+func _locate_on_path(track: CaravanTrack, row: BridgeReplies.CaravanBodyReply) -> bool:
 	if not _follow_leg(track, row):
 		return false
 	track.path.sample_into(row.u, true, _routes.lateral_offset_m, _pose, LATERAL_RAMP_M)
@@ -276,19 +278,24 @@ func _locate_on_path(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
 
 
 ## CURVAS NATURAIS: o ponto da FAIXA a `s = u * comprimento da estrada` (é ele que decide o alcance e o chunk); `u` fora de 0 a 1 é cortado e NaN conta como 0. Falso se o trecho não tem estrada.
-func _locate_on_road(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
-	if not _follow_road(track, row):
+func _locate_on_road(track: CaravanTrack, row: BridgeReplies.CaravanBodyReply) -> bool:
+	if not track.legacy and not _follow_road(track, row):
 		return false
+	if track.legacy:
+		return _locate_on_path(track, row)
 	track.last_u = 0.0 if is_nan(row.u) else clampf(row.u, 0.0, 1.0)
 	track.s_m = track.last_u * track.road.length_m()
 	track.position = track.road.sample(track.s_m)
+	var heading: Vector2 = track.road.tangent(track.s_m)
+	track.yaw = atan2(-heading.x, -heading.y)
+	track.has_yaw = true
 	return true
 
 
 ## CURVAS NATURAIS: garante a estrada do trecho atual, montada de novo SÓ quando o trecho muda (ou depois de descartada). O trecho novo que sai do povoado onde o anterior terminou (a última `u` vista nele >= `ARRIVAL_MEMORY_U`) nasce reto na direção de chegada
 ## do anterior (`CaravanRoad.entering`); sem essa memória é a reta do mercado de saída ao de chegada (os pontos de passagem do dado seguem ignorados, com o mesmo aviso). Sempre com a faixa `lateral_offset_m` e a rampa SUAVE (`LATERAL_RAMP_M`, no máximo a metade do
 ## trecho: sem dobra). Falso se um dos povoados não tem mercado conhecido ou a estrada não tem comprimento.
-func _follow_road(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
+func _follow_road(track: CaravanTrack, row: BridgeReplies.CaravanBodyReply) -> bool:
 	var same_leg: bool = track.route_id == row.route_id and track.from_id == row.from_settlement_id and track.to_id == row.to_settlement_id
 	if same_leg and track.road != null:
 		return true
@@ -310,8 +317,19 @@ func _follow_road(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
 	var road: CaravanRoad = CaravanRoad.entering(track.arrival, start, finish, radius_m) if track.arrival != Vector2.ZERO else CaravanRoad.through(line, radius_m)
 	if road.length_m() <= 0.0:
 		return false
+	if track.arrival != Vector2.ZERO and radius_m > 0.0 and _is_too_tight(road):
+		track.legacy = true
+		return true
 	track.road = road.with_lane(_routes.lateral_offset_m, minf(LATERAL_RAMP_M, 0.5 * road.length_m()))
 	return true
+
+
+## A estrada herdada não consegue o arco: alguma quina tem raio efetivo menor que `ENTRY_MIN_FIT_SHARE` do pedido.
+func _is_too_tight(road: CaravanRoad) -> bool:
+	for corner: CaravanRoad.Corner in road.corners():
+		if corner.radius_eff_m < ENTRY_MIN_FIT_SHARE * corner.radius_req_m:
+			return true
+	return false
 
 
 ## O raio do EIXO que se pede à estrada: o do caminho mais a faixa (a conta está em `CURVE_PATH_RADIUS_M`); raio do caminho 0 são quinas vivas.
@@ -320,7 +338,7 @@ func _axis_radius_m() -> float:
 
 
 ## CURVAS NATURAIS: o corpo no chão. Os pés ficam no ponto da faixa (na altura do terreno), o giro é o da corda entre os pés e o EIXO do carrinho (`CaravanChain`, função pura de `s`) e a inclinação liga a altura dos pés à do terreno sob o EIXO real. Altura dos pés ilegível: a pose não muda (contada).
-func _pose_on_road(view: CaravanView, track: Track) -> void:
+func _pose_on_road(view: CaravanView, track: CaravanTrack) -> void:
 	if track.road == null:
 		return
 	var feet_m: float = _ground_at(track.position)
@@ -329,6 +347,7 @@ func _pose_on_road(view: CaravanView, track: Track) -> void:
 		return
 	CaravanChain.poses_into(track.road, _cart, track.s_m, _poses)
 	var body: CaravanChain.RigidPose = _poses[0]
+	track.yaw = body.yaw()
 	var axle: Vector2 = body.at_lead_frame(-CaravanView.CART_BACK_M)
 	var pitch: float = CaravanPath.pitch_from_heights(_ground_at(axle), feet_m, CaravanView.CART_BACK_M, _routes.max_pitch_deg)
 	view.apply_pose(Vector3(track.position.x, feet_m, track.position.y), body.yaw(), pitch)
@@ -338,13 +357,14 @@ func _pose_on_road(view: CaravanView, track: Track) -> void:
 ## Esquece as estradas com arcos montadas; `switch_mode` (troca de modo) esquece também a polilinha, o giro e a memória de chegada. A próxima consulta monta tudo de novo, no modo e com o raio de agora.
 func _discard_roads(switch_mode: bool) -> void:
 	for trader_id: int in _tracks:
-		var track: Track = _tracks[trader_id]
+		var track: CaravanTrack = _tracks[trader_id]
 		track.road = null
 		if switch_mode:
 			track.path = null
 			track.has_yaw = false
 			track.arrival = Vector2.ZERO
 			track.last_u = 0.0
+			track.legacy = false
 
 
 ## A altura do terreno no ponto (x, z), ou NAN se a ponte não a der.
@@ -354,7 +374,7 @@ func _ground_at(point: Vector2) -> float:
 
 
 ## Garante a estrada do trecho atual (a polilinha do mercado de saída ao de chegada), montada de novo SÓ quando o trecho muda. Falso se um dos dois povoados não tem mercado conhecido (ou a estrada não tem comprimento).
-func _follow_leg(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
+func _follow_leg(track: CaravanTrack, row: BridgeReplies.CaravanBodyReply) -> bool:
 	if track.path != null and track.route_id == row.route_id and track.from_id == row.from_settlement_id and track.to_id == row.to_settlement_id:
 		return true
 	track.route_id = row.route_id
@@ -418,26 +438,3 @@ func _clear() -> void:
 	unplaced = 0
 	waiting = 0
 	ground_misses = 0
-
-
-## O que a view guarda de UMA caravana vista: o trecho (rota e povoados) cuja estrada está montada, a pose (x, z e giro) do último quadro, se está no alcance, se o corpo que ela tem agora já recebeu a primeira pose e em que
-## consulta foi vista (quem não foi vista na última chegou).
-class Track:
-	extends RefCounted
-
-	var seen: int = 0
-	var inside: bool = false
-	var posed: bool = false
-	## O giro já tem um valor de uma amostra anterior (a primeira amostra de uma caravana não é limitada).
-	var has_yaw: bool = false
-	var route_id: String = ""
-	var from_id: String = ""
-	var to_id: String = ""
-	var path: CaravanPath
-	var position: Vector2 = Vector2.ZERO
-	var yaw: float = 0.0
-	## CURVAS NATURAIS (nada disto é lido no modo de sempre): a estrada com arcos do trecho, a distância andada sobre o EIXO dela, a última fração `u` vista e a direção de chegada que o trecho herdou (zero: nenhuma).
-	var road: CaravanRoad
-	var s_m: float = 0.0
-	var last_u: float = 0.0
-	var arrival: Vector2 = Vector2.ZERO
