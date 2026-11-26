@@ -9,6 +9,8 @@ extends Node3D
 ## Quem o usa (a 099b2b) calcula a pose com `CaravanPath` e a entrega a `apply_pose`. As rodas e a pisada seguem só o deslocamento REAL entre duas poses
 ## seguidas (roda: distância ÷ raio; pisada: a do `NpcView` na velocidade em que foi calibrada) e só com a caravana andando: parada, ou em pausa (a mesma
 ## pose), nada anima. O corpo nasce ESCONDIDO e só aparece na primeira pose depois de `bind`; esconder por falta de terreno é com quem o usa (`visible`).
+## RODAS POR RODA (LW-099f, EXPERIMENTAL, só apresentação; o interruptor `set_wheel_differential` nasce DESLIGADO e, desligado, nada muda): ligado, cada roda gira pelo deslocamento do PRÓPRIO
+## centro entre as duas poses, projetado na frente do corpo na pose média; em reta as duas giram como sempre e em curva a roda de fora gira mais que a de dentro (cinemática do corpo rígido).
 ## Os números são [HIP] PROVISÓRIOS, a afinar na janela de Arthur. Contrato: docs/economia/contrato-lw-099-viagem-visivel.md, seção 2.
 
 ## Nomes dos nós.
@@ -83,8 +85,11 @@ var _has_pose: bool = false
 var _last_position: Vector3 = Vector3.ZERO
 var _last_yaw: float = 0.0
 var _last_pitch: float = 0.0
-## Ângulo das rodas em torno de X (rad, de 0 a TAU): rolar para a frente (-Z) gira no sentido negativo de X, então o ângulo diminui com o deslocamento.
-var _wheel_angle: float = 0.0
+## Interruptor RODAS POR RODA (LW-099f, experimental; ver `set_wheel_differential`): falso (o padrão), as duas rodas giram juntas, a distância da origem ÷ raio; verdadeiro, cada uma pelo deslocamento do próprio centro.
+var _wheel_differential: bool = false
+## Ângulo de CADA roda (na ordem de `WHEEL_NAMES`) em torno de X (rad, de 0 a TAU): rolar para a frente (-Z) gira no sentido negativo de X, então o ângulo diminui com o deslocamento.
+## O estado é por roda nos dois modos (desligado, as duas recebem o mesmo passo: a conta de sempre), então trocar de modo no meio da viagem não dá salto.
+var _wheel_angles: PackedFloat64Array = PackedFloat64Array()
 
 
 ## `routes` é o dado de apresentação (a tabela de cor e forma da carga); este corpo só o lê.
@@ -126,7 +131,7 @@ func bind(new_trader_id: int) -> void:
 	trader_id = new_trader_id
 
 
-## Solta a caravana: o corpo some e volta ao estado de novo (nada é apagado), pronto para a reserva. O corpo reciclado não herda pose, rodas, carga nem pisada.
+## Solta a caravana: o corpo some e volta ao estado de novo (nada é apagado), pronto para a reserva. O corpo reciclado não herda pose, rodas, carga nem pisada. O interruptor RODAS POR RODA é configuração (não estado): fica como está.
 func release() -> void:
 	trader_id = IdGenerator.NO_ID
 	visible = false
@@ -135,7 +140,7 @@ func release() -> void:
 	_has_pose = false
 	_travelling = false
 	_set_merchant_walking(false)
-	_wheel_angle = 0.0
+	_wheel_angles.fill(0.0)
 	for wheel: Node3D in _wheels:
 		wheel.rotation = Vector3.ZERO
 	_good_id = ""
@@ -157,16 +162,32 @@ func volume_count() -> int:
 	return _volume_count
 
 
+## Liga ou desliga o modo RODAS POR RODA (LW-099f, EXPERIMENTAL; nasce DESLIGADO): ligado, cada roda gira pelo deslocamento do PRÓPRIO centro, projetado na frente do corpo na pose média (em reta é igual ao
+## desligado; em curva a roda de fora gira mais que a de dentro); desligado, as duas giram juntas pela distância da origem, como sempre. Trocar o modo não gira nada por si e não precisa de pose: vale da próxima
+## pose em diante, e cada roda continua do ângulo em que está (sem salto). O `release` não o desliga: é configuração do corpo, não estado da caravana.
+func set_wheel_differential(enabled: bool) -> void:
+	_wheel_differential = enabled
+
+
+## Se o modo RODAS POR RODA está ligado (padrão: falso).
+func wheel_differential() -> bool:
+	return _wheel_differential
+
+
 ## Põe o corpo na pose pedida: pés do comerciante em `ground_position` (metros, mundo), giro `yaw` (rad, em torno de Y; a frente é -Z local) e inclinação `pitch`
 ## (rad, em torno de X; positiva = frente mais alta). A primeira pose depois de `bind` mostra o corpo e não anima (não há "quadro anterior"); as seguintes giram as
 ## rodas e movem a pisada pela distância andada, mas só com a caravana andando (`apply_state`). A mesma pose de novo não faz nada. Valor não finito, ou corpo livre: ignorado.
+## Com o modo RODAS POR RODA ligado, cada roda gira pelo deslocamento do próprio centro (`_roll_by_wheel`); a pisada segue a distância da origem nos dois modos.
 func apply_pose(ground_position: Vector3, yaw: float, pitch: float) -> void:
 	if not is_bound() or not ground_position.is_finite() or not is_finite(yaw) or not is_finite(pitch):
 		return
 	if _has_pose and ground_position == _last_position and yaw == _last_yaw and pitch == _last_pitch:
 		return
 	if _has_pose and _travelling:
-		_roll(_last_position.distance_to(ground_position))
+		if _wheel_differential:
+			_roll_by_wheel(ground_position, yaw, pitch)
+		else:
+			_roll(_last_position.distance_to(ground_position))
 	_last_position = ground_position
 	_last_yaw = yaw
 	_last_pitch = pitch
@@ -193,14 +214,38 @@ func apply_state(travelling: bool, good_id: String, load_permille: int) -> void:
 	_refresh_cargo()
 
 
-## Gira as rodas (distância ÷ raio, para a frente) e adianta a pisada do comerciante pelo tempo que o NPC levaria para andar essa distância (a cadência do `NpcView` é a de 4 m/s).
+## Gira as duas rodas juntas (distância ÷ raio, para a frente) e adianta a pisada do comerciante pelo tempo que o NPC levaria para andar essa distância (a cadência do `NpcView` é a de 4 m/s).
 func _roll(step_m: float) -> void:
 	if step_m <= 0.0:
 		return
-	_wheel_angle = fposmod(_wheel_angle - step_m / WHEEL_RADIUS_M, TAU)
-	for wheel: Node3D in _wheels:
-		wheel.rotation.x = _wheel_angle
+	for index: int in _wheels.size():
+		_turn_wheel(index, step_m / WHEEL_RADIUS_M)
 	_merchant.advance_animation(step_m / NpcRoute.WALK_SPEED_MPS)
+
+
+## RODAS POR RODA: gira cada roda pelo deslocamento do PRÓPRIO centro entre a pose anterior e a nova (no mundo, em 3D), projetado na frente do corpo na pose MÉDIA (a média dos giros por `angle_difference`
+## e a das inclinações; a ordem de Euler é a do `rotation` do nó). O centro da roda no referencial do corpo é (lado × WHEEL_SIDE_M, WHEEL_RADIUS_M, CART_BACK_M). O deslocamento é o da origem mais o quanto o
+## centro se moveu por causa do giro do corpo (a diferença das duas bases: não se subtraem duas posições grandes do mundo, onde o float de 32 bits perderia precisão). Em reta, com giro e inclinação constantes,
+## dá a distância da origem, como `_roll`; em curva a roda de fora anda mais que a de dentro. A origem no mesmo lugar (mesmo que o giro mude) não rola nem pisa; a pisada é a de `_roll` (distância da ORIGEM).
+func _roll_by_wheel(to_position: Vector3, to_yaw: float, to_pitch: float) -> void:
+	var step_m: float = _last_position.distance_to(to_position)
+	if step_m <= 0.0:
+		return
+	var from_basis: Basis = Basis.from_euler(Vector3(_last_pitch, _last_yaw, 0.0))
+	var to_basis: Basis = Basis.from_euler(Vector3(to_pitch, to_yaw, 0.0))
+	var mean_yaw: float = _last_yaw + angle_difference(_last_yaw, to_yaw) * HALF
+	var front: Vector3 = Basis.from_euler(Vector3((_last_pitch + to_pitch) * HALF, mean_yaw, 0.0)) * Vector3.FORWARD
+	var travel: Vector3 = to_position - _last_position
+	for index: int in _wheels.size():
+		var centre: Vector3 = Vector3(SIDES[index] * WHEEL_SIDE_M, WHEEL_RADIUS_M, CART_BACK_M)
+		_turn_wheel(index, (travel + (to_basis * centre - from_basis * centre)).dot(front) / WHEEL_RADIUS_M)
+	_merchant.advance_animation(step_m / NpcRoute.WALK_SPEED_MPS)
+
+
+## Gira a roda `index` por `turn_rad` para a frente (o ângulo diminui, sempre dentro de uma volta), no estado e no pivô.
+func _turn_wheel(index: int, turn_rad: float) -> void:
+	_wheel_angles[index] = fposmod(_wheel_angles[index] - turn_rad, TAU)
+	_wheels[index].rotation.x = _wheel_angles[index]
 
 
 ## Liga ou desliga o andar do comerciante sem o `_process` do `NpcView` (que andaria em tempo real, e em pausa também): `set_walking` o religa ao começar a andar.
@@ -239,6 +284,7 @@ func _build_cart() -> void:
 		var wheel: Node3D = _new_wheel(WHEEL_NAMES[side], Vector3(SIDES[side] * WHEEL_SIDE_M, WHEEL_RADIUS_M, 0.0))
 		cart.add_child(wheel)
 		_wheels.append(wheel)
+		_wheel_angles.append(0.0)
 
 
 ## A roda: o pivô (que gira em X) com o pneu (cilindro deitado, eixo X) e o raio (a barra que mostra a volta).
