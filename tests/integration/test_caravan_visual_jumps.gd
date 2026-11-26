@@ -28,8 +28,8 @@ const SMALL_JUMP_M: float = 0.5
 const AXIS_M: float = 0.1
 const STAND_MAX_M: float = 3.5
 ## O maior passo entre duas poses de quadros de 250 ms (a 2,9 m/s são 0,73 m).
-## (doca, quinas) 0,8 -> 1,1 m: com pontos de passagem o deslocamento lateral de 1,2 m varre a quina e a pose anda até uns 0,3 m além da velocidade x o quadro (medido 0,96 m; antes 0,65 m); um salto de verdade seria de metros.
-const STEP_MAX_M: float = 1.1
+## (doca, quinas) 0,8 -> 1,1 -> 1,25 m (a SEGUNDA vez que este teto sobe): com pontos de passagem a faixa lateral de 1,2 m varre as quinas (as curvas naturais do PR #178 não estão neste PR) e a pose anda além da velocidade x o quadro; medido 0,96 m aqui e até 1,151 m pela revisão independente (1,66 vezes a velocidade, na quina de A-C perto de C); antes 0,65 m. Um salto de verdade seria de metros.
+const STEP_MAX_M: float = 1.25
 
 var _data: NpcLifeCheck.GameData
 var _routes: CaravanRoutesReader

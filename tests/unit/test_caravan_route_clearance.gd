@@ -2,7 +2,7 @@ extends GutTest
 ## LW-099g (opção B): a PROVA de FOLGA e COLISÃO do DADO REAL (data/presentation/caravan_routes.json), sem janela. Para cada rota e cada sentido o `u` anda de 0 a 1 em passos de 0,25 m andados pela `CaravanBodiesView` REAL (ponte roteirizada, mercados e terreno reais; lê-se a POSIÇÃO e o `rotation.y` do `CaravanView`, que é o que se vê, com o
 ## deslocamento lateral de 1,2 m, a rampa de 12 m e o giro limitado de hoje) e, a cada passo, o retângulo do carrinho (`RouteObstacles.cart_polygon`) tem de ficar a pelo menos FLOOR_M (0,3 m) de TODOS os obstáculos: as caixas dos locais e as peças das praças (`RouteObstacles`, provado contra a praça em
 ## `test_route_obstacles.gd`); nas poses de saída e de chegada também. A contagem de passos com folga menor que TARGET_M (0,5 m, o alvo) sai como número informativo, e a folga contra os adereços e arbustos das praças (que não entram no piso) também. Além disso: cada doca a no máximo 6 m do centro do mercado e FORA da peça central;
-## o comprimento do caminho MOSTRADO (doca à doca) entre 90% e 110% do `length_m` nos dois sentidos; os `settlement_a_id` e os povoados do dado batem com data/world. O teste de folga FALHA, com o local e o passo, se um ponto vai para dentro de uma casa (prova por mutante embutido). Sem as docas e os pontos no dado do jogo estes testes ficam PENDENTES, nunca verdes.
+## o comprimento do caminho MOSTRADO (doca à doca) entre 90% e 110% do `length_m` nos dois sentidos; os `settlement_a_id` e os povoados do dado batem com data/world. O teste de folga FALHA, com o local e o passo, se um ponto vai para dentro de uma casa (prova por mutante embutido). Sem as docas e os pontos no dado do jogo estes testes FALHAM (nunca pendentes nem verdes).
 
 const WORLD_DIR: String = "res://data/world"
 const PLACES_FILE: String = "res://data/world/places.json"
@@ -68,12 +68,15 @@ func _json_list(path: String) -> Array:
 	return rows
 
 
-## O dado real ainda não tem docas nem pontos de passagem (o arquivo de antes da opção B): estes testes são sobre o dado novo e ficam pendentes, não verdes.
+## O dado real das 3 rotas TEM de ter doca e pontos de passagem: estes testes medem o dado real, e sem docas nem pontos (o arquivo de antes da opção B) eles não provariam nada, então FALHAM (antes ficavam pendentes e o dado sem docas deixava tudo verde).
 func _is_data_missing() -> bool:
-	if _real.dock_ids().is_empty():
-		pending("o dado real ainda não tem docas nem pontos de passagem (a proposta do projeto de trajetos entra no dado do jogo antes da revisão)")
-		return true
-	return false
+	var has_everything: bool = not _markets.is_empty()
+	for settlement_id: String in _markets:
+		has_everything = has_everything and _real.has_dock(settlement_id)
+	for row: Dictionary in _route_rows:
+		has_everything = has_everything and not _real.points_of(str(row["id"])).is_empty() and not _real.route_a_of(str(row["id"])).is_empty()
+	assert_true(has_everything, "o dado real das 3 rotas tem de ter doca e pontos (data/presentation/caravan_routes.json): sem eles o teste de folga não mede nada")
+	return not has_everything
 
 
 func _start() -> void:
