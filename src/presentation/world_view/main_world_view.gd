@@ -17,6 +17,8 @@ const MARKET_VIEW_NAME: String = "MarketView"
 
 ## Viagem visível dos comerciantes (LW-099b2b): com ele ligado a cena cria a reserva e a vista dos corpos das caravanas (`CaravanBodiesView`); DESLIGADO por padrão (nada é criado nem lido) até Arthur ver o resultado na janela.
 @export var caravans_visible: bool = false
+## Curvas naturais das caravanas (LW-099f, EXPERIMENTAL): só têm efeito com `caravans_visible` ligado; com ele a vista usa a estrada com arcos, a faixa suave e o corpo do carrinho articulado pela corda; DESLIGADO por padrão (a estrada de sempre, bit a bit) até Arthur ver o resultado na janela.
+@export var caravan_natural_curves: bool = false
 
 @onready var _terrain_view: TerrainView = $TerrainView
 @onready var _decoration_view: DecorationView = $DecorationView
@@ -163,6 +165,8 @@ func _setup_caravans(bridge: SimBridge) -> void:
 	if not _caravans_view.setup(bridge, _terrain_view, loaded.data):
 		_caravans_view.queue_free()
 		_caravans_view = null
+		return
+	_caravans_view.set_natural_curves(caravan_natural_curves)
 
 
 ## A fonte das figuras (7b-2) só se a área tem entrada; null = tudo cápsula. Catálogo ou figura que falha: UM aviso com o motivo, e o `make` da fonte devolve null (cápsula).
