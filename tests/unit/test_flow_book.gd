@@ -110,6 +110,7 @@ func test_load_from_refuses_each_invalid_save_and_changes_nothing() -> void:
 		{"label": "dono-trânsito negativo", "data": _payload({"holder_id": -1}), "expect": "'holder_id' é -1; esperado 0 ou mais"},
 		{"label": "contador zero", "data": _payload({"next_lot_id": 0}), "expect": "'next_lot_id' é 0; esperado 1 ou mais"},
 		{"label": "contador igual ao maior lote", "data": _payload({"next_lot_id": 2}), "expect": "'next_lot_id' é 2; esperado maior que o maior lote (2)"},
+		{"label": "contador menor que o maior lote", "data": _payload({"next_lot_id": 1}), "expect": "'next_lot_id' é 1; esperado maior que o maior lote (2)"},
 		{"label": "rotas que não são lista", "data": _payload({"routes": {}}), "expect": "'routes' deve ser uma lista"},
 		{"label": "linha que não é objeto", "data": _payload({"routes": [3]}), "expect": "linha de rota 0: esperado um objeto"},
 		{"label": "rota que não é texto", "data": _payload({"routes": [_route("route_a_b", {"route_id": 5})]}), "expect": "'route_id' deve ser texto"},
@@ -144,6 +145,14 @@ func test_load_from_refuses_each_invalid_save_and_changes_nothing() -> void:
 		assert_true(pristine.is_pristine(), "%s: o livro virgem continua virgem." % test_case["label"])
 
 
+func test_a_successful_load_from_replaces_everything_the_book_had() -> void:
+	var book: FlowBook = _book(_payload())
+	var other: Dictionary = {"holder_id": 9, "next_lot_id": 5, "routes": [_route("route_a_c", {"risk_carry_bp": 40})], "lots": []}
+	assert_true(book.load_from(other).ok)
+	assert_eq(_bytes(book), _bytes(_book(other)), "Carregar de novo deixa só o que o save novo traz: nada das rotas nem dos lotes de antes (não mescla).")
+	assert_eq([book.route_ids(), book.lot_ids(), book.holder_id(), book.next_lot_id()], [["route_a_c"] as Array[String], [] as Array[int], 9, 5])
+
+
 func test_load_from_accepts_the_limits_of_each_field() -> void:
 	var edge: Dictionary = {"routes": [_route("route_a_b", {"risk_carry_bp": 9999}), _route("route_b_c", {"risk_carry_bp": 0})], "lots": [_lot(1, {"quantity": 1}), _lot(2, {"route_id": "route_b_c", "state": "held", "arrives_at": 0, "remaining_minutes": 0})], "next_lot_id": 3}
 	var book: FlowBook = _book(_payload(edge))
@@ -169,8 +178,9 @@ func test_the_replies_and_the_lookups_are_copies_of_simple_fields() -> void:
 	var before: String = _bytes(book)
 	var held: FlowBook.Lot = book.lot_of(2)
 	var lot_row: FlowReplies.LotQuery = FlowReplies.LotQuery.new(held)
-	for key: String in FlowBook.Lot.KEYS:
-		assert_eq(lot_row.get(key), held.get(key), "A linha do lote copia '%s'." % key)
+	assert_eq(FlowBook.Lot.KEYS.size(), 10, "Se um campo entrar no lote, a linha de resposta e este teste acompanham.")
+	assert_eq([lot_row.lot_id, lot_row.route_id, lot_row.origin_market_id, lot_row.destination_market_id, lot_row.good_id, lot_row.quantity, lot_row.state, lot_row.departed_at, lot_row.arrives_at, lot_row.remaining_minutes], [held.lot_id, held.route_id, held.origin_market_id, held.destination_market_id, held.good_id, held.quantity, held.state, held.departed_at, held.arrives_at, held.remaining_minutes], "A linha do lote copia os dez campos do lote.")
+	assert_eq([lot_row.lot_id, lot_row.route_id, lot_row.state, lot_row.arrives_at, lot_row.remaining_minutes], [2, "route_b_c", "held", 0, 40], "E são os do lote parado do save (9.16.2).")
 	var route_row: FlowReplies.RouteQuery = FlowReplies.RouteQuery.new(book.route_of("route_a_b"))
 	assert_eq([lot_row.minutes_left, route_row.route_id, route_row.enabled, route_row.risk_carry_bp, route_row.lots_count], [0, "route_a_b", true, 125, 0], "`minutes_left`, `route_state` e `lots_count` são de quem chama.")
 	var plan: FlowReplies.PlanQuery = FlowReplies.PlanQuery.new(Result.failure(EconomyCodes.NO_ROUTE, "sem rota"))
