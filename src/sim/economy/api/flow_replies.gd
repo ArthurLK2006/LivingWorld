@@ -39,12 +39,20 @@ class LotQuery:
 	var remaining_minutes: int = 0
 	var minutes_left: int = 0
 
-	## `lot`: o registro de que se tira a cópia; os campos de `FlowBook.Lot.KEYS` têm o mesmo nome aqui (o teste confere cada um).
+	## `lot`: o registro de que se tira a cópia, campo a campo (os dez de `FlowBook.Lot.KEYS`; o teste confere cada um).
 	func _init(lot: FlowBook.Lot = null) -> void:
 		if lot == null:
 			return
-		for key: String in FlowBook.Lot.KEYS:
-			set(key, lot.get(key))
+		lot_id = lot.lot_id
+		route_id = lot.route_id
+		origin_market_id = lot.origin_market_id
+		destination_market_id = lot.destination_market_id
+		good_id = lot.good_id
+		quantity = lot.quantity
+		state = lot.state
+		departed_at = lot.departed_at
+		arrives_at = lot.arrives_at
+		remaining_minutes = lot.remaining_minutes
 
 
 ## `peek_flow_plan`: o que a regra enviaria agora (nada é gravado). `result` falha com `ECON_NO_ROUTE` nos casos de 9.16.7; os outros campos só valem se `result.ok` e são preenchidos por quem chama: o sentido (mercado de origem e de destino), o bem, a quantidade planejada, a quantidade enviada (com o resto de risco de hoje), os minutos da viagem e o lucro líquido.

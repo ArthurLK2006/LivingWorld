@@ -90,10 +90,7 @@ class Lot:
 	var remaining_minutes: int = 0
 
 	func serialize() -> Dictionary:
-		var record: Dictionary = {}
-		for key: String in KEYS:
-			record[key] = get(key)
-		return record
+		return {"lot_id": lot_id, "route_id": route_id, "origin_market_id": origin_market_id, "destination_market_id": destination_market_id, "good_id": good_id, "quantity": quantity, "state": state, "departed_at": departed_at, "arrives_at": arrives_at, "remaining_minutes": remaining_minutes}
 
 	## O texto do problema de TIPO do registro cru do save (vazio se está certo).
 	static func shape_problem(record: Dictionary) -> String:
@@ -107,11 +104,16 @@ class Lot:
 	## Monta o lote de um `record` com os tipos já conferidos (`shape_problem`): número de JSON (decimal sem fração) vira inteiro.
 	static func from_record(record: Dictionary) -> Lot:
 		var lot: Lot = Lot.new()
-		for key: String in KEYS:
-			if TEXT_KEYS.has(key):
-				lot.set(key, str(record[key]))
-			else:
-				lot.set(key, EconomyJson.to_int(record[key]))
+		lot.lot_id = EconomyJson.to_int(record["lot_id"])
+		lot.route_id = str(record["route_id"])
+		lot.origin_market_id = EconomyJson.to_int(record["origin_market_id"])
+		lot.destination_market_id = EconomyJson.to_int(record["destination_market_id"])
+		lot.good_id = str(record["good_id"])
+		lot.quantity = EconomyJson.to_int(record["quantity"])
+		lot.state = str(record["state"])
+		lot.departed_at = EconomyJson.to_int(record["departed_at"])
+		lot.arrives_at = EconomyJson.to_int(record["arrives_at"])
+		lot.remaining_minutes = EconomyJson.to_int(record["remaining_minutes"])
 		return lot
 
 	func copy() -> Lot:
