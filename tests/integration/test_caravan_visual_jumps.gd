@@ -30,6 +30,8 @@ const STAND_MAX_M: float = 3.5
 ## O maior passo entre duas poses de quadros de 250 ms (a 2,9 m/s são 0,73 m).
 ## (doca, quinas) 0,8 -> 1,1 -> 1,25 m (a SEGUNDA vez que este teto sobe): com pontos de passagem a faixa lateral de 1,2 m varre as quinas (as curvas naturais do PR #178 não estão neste PR) e a pose anda além da velocidade x o quadro; medido 0,96 m aqui e até 1,151 m pela revisão independente (1,66 vezes a velocidade, na quina de A-C perto de C); antes 0,65 m. Um salto de verdade seria de metros.
 const STEP_MAX_M: float = 1.25
+## (trava do eixo; revisão independente nº 2) O maior passo entre quadros de 250 ms com o deslocamento lateral DESLIGADO: é só o andado, o da rota mais rápida (2,98 m/s: 0,745 m) mais uma folga de 0,035 m. O teto de 1,25 m acima só existe por causa da faixa de 1,2 m, que varre as quinas; sem esta trava um salto de poucos decímetros no meio da rota passaria despercebido.
+const AXIS_STEP_MAX_M: float = 0.78
 
 var _data: NpcLifeCheck.GameData
 var _routes: CaravanRoutesReader
@@ -293,4 +295,15 @@ func test_the_caravan_leaves_and_arrives_on_the_market_axis_and_every_step_stays
 	assert_lt(trip.last_spot.distance_to(trip.arrival_dock), AXIS_M, "CHEGADA (doca): a caravana TERMINA na doca do povoado de destino.")
 	assert_almost_eq(trip.last_spot.distance_to(trip.back_spot), arrival_gap_m, AXIS_M, "CHEGADA (doca): o salto da chegada é a distância da doca ao centro do mercado, onde o `NpcView` reaparece (antes 0,01 m; agora 5,70 m em A, 6,00 m em B e 11,85 m em C).")
 	assert_lt(trip.biggest_step_m, STEP_MAX_M, "Entre quadros de 250 ms a caravana nunca anda mais que a velocidade x o quadro (a rampa não mexe em `u`).")
+	assert_gt(trip.frames, 500, "A viagem inteira foi acompanhada, quadro a quadro.")
+
+
+func test_with_the_lane_off_the_pose_steps_only_the_walked_distance() -> void:
+	var lane_m: float = _routes.lateral_offset_m
+	_routes.lateral_offset_m = 0.0
+	var trip: Trip = _start_trip()
+	assert_ne(trip.first_spot, NO_SPOT, "Premissa: a caravana ganhou corpo no passo da partida.")
+	_follow(trip)
+	_routes.lateral_offset_m = lane_m
+	assert_lt(trip.biggest_step_m, AXIS_STEP_MAX_M, "Sem o deslocamento lateral o maior passo entre quadros de 250 ms é o andado (0,745 m na rota mais rápida): um salto extra no meio da rota aparece aqui; o teto de 1,25 m, feito para a faixa nas quinas, não o veria.")
 	assert_gt(trip.frames, 500, "A viagem inteira foi acompanhada, quadro a quadro.")
