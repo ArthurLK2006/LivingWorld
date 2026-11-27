@@ -82,8 +82,8 @@ func _with_flow(module: EconomyModule, flow: Dictionary) -> Dictionary:
 
 
 ## Um jogo novo (os mercados A, B e C abertos): devolve o `World` e o módulo.
-func _new_game() -> Array:
-	var module: EconomyModule = _module()
+func _new_game(definitions: EconomyDefinitions = null) -> Array:
+	var module: EconomyModule = EconomyModule.new(false, definitions if definitions != null else _definitions())
 	var clock: SimClock = SimClock.new()
 	var world: World = World.new(SimContext.new(clock, EventBus.new(clock), WorldRng.new(SEED), IdGenerator.new()))
 	assert_true(world.register_module("economy", module).ok)
@@ -194,6 +194,30 @@ func test_validate_catches_a_lot_without_goods_and_goods_without_a_lot_with_the_
 	assert_eq(module.validate(), ["[trade_flow] o dono-trânsito tem 9 de 'bread' e os lotes somam 10"] as Array[String], "Um pão saiu do dono-trânsito: os lotes dizem 10 e ele tem 9 (lote sem bem).")
 	assert_true(module.request_transfer_goods(_market(module, "b"), HOLDER, "wool", 1).ok)
 	assert_eq(module.validate(), ["[trade_flow] o dono-trânsito tem 9 de 'bread' e os lotes somam 10", "[trade_flow] o dono-trânsito tem 1 de 'wool' e os lotes somam 0"] as Array[String], "Um bem sem lote entra na lista, por bem em ordem.")
+
+
+func test_a_lot_to_a_market_that_does_not_trade_the_good_is_refused() -> void:
+	# Nos dados reais todo mercado negocia todo bem: aqui o mercado C perde a ferramenta, para o destino não negociar o que a origem negocia.
+	var definitions: EconomyDefinitions = _definitions()
+	var kept: Array[MarketTargetDef] = []
+	for target: MarketTargetDef in definitions.market_targets:
+		if target.settlement_id != "test_settlement_c" or target.good_id != "tool":
+			kept.append(target)
+	definitions.market_targets = kept
+	var module: EconomyModule = _new_game(definitions)[1]
+	assert_true(module.request_open_owner(HOLDER, FlowBook.KIND_FLOW).ok)
+	assert_true(module.request_transfer_goods(_market(module, "a"), HOLDER, "tool", 1).ok)
+	var flow: Dictionary = {"holder_id": HOLDER, "next_lot_id": 2, "routes": [{"route_id": ROUTE_A_C, "enabled": true, "risk_carry_bp": 0}], "lots": [_lot(1, ROUTE_A_C, _market(module, "a"), _market(module, "c"), "tool", 1, "travelling", 100, 224, 0)]}
+	var refused: Result = module.on_load(_with_flow(module, flow))
+	assert_eq(refused.code, EconomyCodes.INVALID_SAVE)
+	assert_string_contains(refused.message, "o lote 1: o bem 'tool' não é negociado no mercado de destino %d" % _market(module, "c"), "A origem negocia a ferramenta e o destino não: o destino também é conferido.")
+
+
+func test_a_departure_at_minute_zero_is_accepted() -> void:
+	var module: EconomyModule = _scenario(false)[1]
+	var lots: Array = _changed(_lots(module), 0, {"departed_at": 0})
+	assert_true(module.on_load(_with_flow(module, _flow(module, {"lots": lots}))).ok, "Partir no minuto 0 é legítimo: o limite é de 0 em diante.")
+	assert_eq(module.validate(), [] as Array[String])
 
 
 func test_the_flow_owner_kind_has_weight_5000_and_no_balance_and_weight_zero_means_carries_nothing() -> void:
