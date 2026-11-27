@@ -3,7 +3,7 @@ extends RefCounted
 ## A regra PURA do fluxo agregado por rota (LW-100b; docs/modules/economy.md, 9.16.2 e 9.16.3): o atraso, o corte do risco e a escolha do lote de cada rota. Funções estáticas em INTEIROS (DEC-150), sem estado, E/S, sorteio nem relógio: só DECIDE, não move bem nem dinheiro e não lê o `world`, o `MarketBook`, o `GoodsStore` nem o `Ledger`.
 ## Quem chama (o executor, LW-100d1) resolve a entrada: curvas, estoques, alvos, tetos, pesos e o que já está a caminho. A conta de lucro é a do `TradePlanner` (forma (ii) de 9.16.2: o planejador não é tocado e `test_flow_rule.gd` prova a equivalência), sem comerciante, saldo nem tarifa; o `RouteCost` é reusado.
 
-## Um bem num sentido da rota, já resolvido. `buy_totals` (compra na origem) e `sell_totals` (venda no destino) são as curvas de `MarketBook.buy_curve` e `sell_curve` sem ator: o índice é a quantidade (o 0 vale 0) e o fim da curva limita `q`. `incoming`: o que desse bem já está a caminho do destino.
+## Um bem num sentido da rota, já resolvido. `buy_totals` (compra na origem) e `sell_totals` (venda no destino) são os `totals` de `TradeEngine.quote_curve` (compra na origem e venda no destino, sem ator; o `TradeEngine` aplica as regras de comércio, como no planejador, e a `MarketBook` sozinha não): o índice é a quantidade (o 0 vale 0) e o fim da curva limita `q`. `incoming`: o que desse bem já está a caminho do destino.
 class Offer:
 	extends RefCounted
 

@@ -225,12 +225,14 @@ func test_best_quantity_matches_the_exhaustive_search_in_hand_made_scenarios() -
 		{"label": "o que está a caminho ocupa o espaço", "offer": {"destination_stock": 190, "incoming": 7}, "q": 3},
 		{"label": "origem na reserva", "offer": {"origin_stock": 50}, "q": 0},
 		{"label": "origem 3 acima da reserva", "offer": {"origin_stock": 53}, "q": 3},
+		{"label": "reserva arredonda para cima (alvo 101: reserva 51, não 50)", "offer": {"origin_target": 101, "origin_stock": 53}, "q": 2},
 		{"label": "peso curto (25 de peso livre, 10 por unidade)", "offer": {"unit_weight": 10}, "terms": {"free_weight": 25}, "q": 2},
 		{"label": "sem peso livre", "terms": {"free_weight": 0}, "q": 0},
 		{"label": "bem sem peso", "offer": {"unit_weight": 0}, "q": 0},
 		{"label": "teto do pedido (30)", "terms": {"max_order_quantity": 30}, "q": 30},
 		{"label": "teto diário (20)", "cap": 20, "q": 20},
 		{"label": "curva de venda curta (7)", "offer": {"sell_totals": _curve(200, 0, 7)}, "q": 7},
+		{"label": "curva de compra curta (7)", "offer": {"buy_totals": _curve(100, 0, 7)}, "q": 7},
 	]
 	for test_case: Dictionary in cases:
 		var label: String = test_case["label"]
@@ -284,10 +286,11 @@ func test_every_real_good_weighs_at_least_one_and_the_market_lists_goods_in_id_o
 	assert_true(setup.result.ok, setup.result.message)
 	for good: GoodDef in setup.definitions.goods:
 		assert_gte(good.weight, 1, "%s: a regra exige peso por unidade de 1 ou mais (como o planejador)." % good.id)
-	var listed: Array[String] = _rig(_spec({}, {})).markets.traded_goods("settlement_1")
-	var sorted_ids: Array[String] = listed.duplicate()
-	sorted_ids.sort()
-	assert_eq(listed, sorted_ids, "MarketBook.traded_goods já vem em ordem de good_id, a mesma ordem da regra (que de todo modo não depende dela).")
+	var reversed_spec: Dictionary = {MARKET_A: {}, MARKET_B: {}}
+	for good_id: String in ["twin_b", "twin_a", "bread", "anvil"]:
+		reversed_spec[MARKET_A][good_id] = [100, 100, 20000]
+		reversed_spec[MARKET_B][good_id] = [100, 100, 20000]
+	assert_eq(_rig(reversed_spec).markets.traded_goods("settlement_1"), ["anvil", "bread", "twin_a", "twin_b"], "MarketBook.traded_goods ordena por good_id mesmo com os bens cadastrados ao contrário (a regra, de todo modo, não depende dessa ordem: ver o teste de desempate).")
 
 
 func test_the_rule_matches_the_trade_planner_in_the_same_scenarios() -> void:
