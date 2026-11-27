@@ -1,13 +1,15 @@
 class_name CaravanRoutesReader
 extends RefCounted
 ## LW-099a (viagem visível dos comerciantes; só apresentação): lê e VALIDA data/presentation/caravan_routes.json, o dado de apresentação da caravana
-## (contrato técnico da LW-099: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2 e 3). Três blocos: `view` (os números da vista: raio de entrada e de saída do alcance,
-## deslocamento lateral, tamanho da reserva de corpos e inclinação máxima do carrinho), `routes` (por `route_id`,
-## os pontos de passagem OPCIONAIS `points_m`: pares [x, z] em metros, do povoado `settlement_a_id` para o `settlement_b_id`, SEM as pontas, que vêm dos
-## mercados; sem pontos a estrada é a reta) e `cargo` (por `good_id`, a cor `#RRGGBB` e a forma do volume, de um conjunto fechado). TODOS os valores são
+## (contrato técnico da LW-099: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2 e 3). Quatro blocos: `view` (os números da vista: raio de entrada e de saída do alcance,
+## deslocamento lateral, tamanho da reserva de corpos e inclinação máxima do carrinho), `routes` (por `route_id`, os pontos de passagem OPCIONAIS `points_m`: pares [x, z] em metros,
+## do povoado `settlement_a_id` para o outro, SEM as pontas; `settlement_a_id` é opcional, mas OBRIGATÓRIO com pontos: é ele que dá o SENTIDO deles, e o leitor nunca o adivinha), `docks`
+## (LW-099g, opcional: por `settlement_id`, a DOCA `point_m` [x, z], o ponto onde a caravana do povoado nasce e termina, fora da peça central do mercado; sem doca a ponta é o mercado) e `cargo`
+## (por `good_id`, a cor `#RRGGBB` e a forma do volume, de um conjunto fechado). `leg_line` monta a polilinha COMPLETA de um trecho no sentido da marcha (ponta de saída, pontos na ordem certa, ponta
+## de chegada): a vista não monta estrada por outro caminho. TODOS os valores são
 ## [HIP] PROVISÓRIOS: a afinação é visual, na janela de Arthur; `lateral_offset_m` e `max_pitch_deg` aceitam ZERO (desligam o deslocamento lateral e a inclinação por
 ## dado) e os demais números são estritamente positivos. Este leitor não conhece a simulação (a apresentação só fala com ela pela ponte): conferir
-## que os ids existem em routes.json e goods.json é do teste. Falha tratada, nunca erro: todo problema vira UMA falha com arquivo, item e campo e o dado
+## que os ids existem em routes.json, places.json e goods.json é do teste. Falha tratada, nunca erro: todo problema vira UMA falha com arquivo, item e campo e o dado
 ## devolvido fica VAZIO (nunca pela metade); o leitor não escreve no log e nada do arquivo é executado.
 
 const DEFAULT_PATH: String = "res://data/presentation/caravan_routes.json"
@@ -16,12 +18,17 @@ const SUPPORTED_VERSION: int = 1
 const VIEW: String = "view"
 const ROUTES: String = "routes"
 const CARGO: String = "cargo"
+const DOCKS: String = "docks"
 const ROUTE_ID: String = "route_id"
 const GOOD_ID: String = "good_id"
 const POINTS: String = "points_m"
-const ROOT_FIELDS: PackedStringArray = ["version", VIEW, ROUTES, CARGO]
+const SETTLEMENT_A: String = "settlement_a_id"
+const SETTLEMENT_ID: String = "settlement_id"
+const DOCK_POINT: String = "point_m"
+const ROOT_FIELDS: PackedStringArray = ["version", VIEW, ROUTES, CARGO, DOCKS]
 const VIEW_FIELDS: PackedStringArray = ["enter_m", "exit_m", "lateral_offset_m", "pool_size", "max_pitch_deg"]
-const ROUTE_FIELDS: PackedStringArray = [ROUTE_ID, POINTS]
+const ROUTE_FIELDS: PackedStringArray = [ROUTE_ID, SETTLEMENT_A, POINTS]
+const DOCK_FIELDS: PackedStringArray = [SETTLEMENT_ID, DOCK_POINT]
 const CARGO_FIELDS: PackedStringArray = [GOOD_ID, "color", "shape"]
 ## O volume da carga é desenhado com primitivas: o conjunto de formas é FECHADO (forma nova pede código na vista, não só dado).
 const SHAPES: PackedStringArray = ["box", "sack", "barrel", "bundle"]
@@ -38,6 +45,10 @@ var lateral_offset_m: float = 0.0
 var pool_size: int = 0
 var max_pitch_deg: float = 0.0
 var _points: Dictionary[String, PackedVector2Array] = {}
+## O `settlement_a_id` de cada rota que o declara (as outras ficam fora do dicionário).
+var _route_a: Dictionary[String, String] = {}
+## A doca (x, z em metros) de cada povoado que tem uma.
+var _docks: Dictionary[String, Vector2] = {}
 var _colors: Dictionary[String, Color] = {}
 var _shapes: Dictionary[String, String] = {}
 
@@ -64,9 +75,45 @@ func route_ids() -> PackedStringArray:
 	return PackedStringArray(_points.keys())
 
 
-## Os pontos de passagem da rota, de `settlement_a_id` para `settlement_b_id`, SEM as pontas (cópia). Vazio: a estrada é a reta (ou a rota não existe: confira `route_ids`).
+## Os pontos de passagem da rota, do povoado `settlement_a_id` (`route_a_of`) para o outro, SEM as pontas (cópia). Vazio: a estrada é a reta (ou a rota não existe: confira `route_ids`).
 func points_of(route_id: String) -> PackedVector2Array:
 	return _points[route_id].duplicate() if _points.has(route_id) else PackedVector2Array()
+
+
+## O `settlement_a_id` da rota (o povoado de onde `points_of` conta os pontos); "" se a rota não o declara (só vale sem pontos) ou não existe.
+func route_a_of(route_id: String) -> String:
+	return _route_a.get(route_id, "")
+
+
+## Se o povoado tem doca no dado.
+func has_dock(settlement_id: String) -> bool:
+	return _docks.has(settlement_id)
+
+
+## A doca do povoado: onde a caravana dele nasce e termina (x, z em metros); `Vector2.ZERO` se ele não tem (confira `has_dock`).
+func dock_of(settlement_id: String) -> Vector2:
+	return _docks.get(settlement_id, Vector2.ZERO)
+
+
+## Os povoados com doca, na ordem do arquivo.
+func dock_ids() -> PackedStringArray:
+	return PackedStringArray(_docks.keys())
+
+
+## A polilinha COMPLETA do trecho de `from_settlement_id` a `to_settlement_id` da rota, no sentido da marcha (cópia nova; só se chama quando o trecho muda, nunca por quadro): a ponta de saída
+## (a doca do povoado de saída, ou `from_market` se ele não tem doca), os pontos de passagem da rota (na ordem do dado se o povoado de saída é o `settlement_a_id` da rota; invertidos se não)
+## e a ponta de chegada (a doca do povoado de chegada, ou `to_market`). Rota sem pontos, ou que o dado não tem: só as duas pontas (a reta). Pura: a mesma entrada dá a mesma saída.
+func leg_line(route_id: String, from_settlement_id: String, to_settlement_id: String, from_market: Vector2, to_market: Vector2) -> PackedVector2Array:
+	var start: Vector2 = _docks.get(from_settlement_id, from_market)
+	var finish: Vector2 = _docks.get(to_settlement_id, to_market)
+	var via: PackedVector2Array = points_of(route_id)
+	if from_settlement_id != route_a_of(route_id):
+		via.reverse()
+	var line: PackedVector2Array = PackedVector2Array()
+	line.append(start)
+	line.append_array(via)
+	line.append(finish)
+	return line
 
 
 ## Os `good_id` com cor e forma, na ordem do arquivo.
@@ -99,6 +146,8 @@ func _read(reader: CharacterDataReader, root: Dictionary) -> void:
 	_read_view(reader, reader.object(root, VIEW, ""))
 	_read_routes(reader, reader.rows(root, ROUTES, ""))
 	_read_cargo(reader, reader.rows(root, CARGO, ""))
+	if root.has(DOCKS):
+		_read_docks(reader, reader.rows(root, DOCKS, ""))
 
 
 func _read_view(reader: CharacterDataReader, view: Dictionary) -> void:
@@ -119,6 +168,32 @@ func _read_routes(reader: CharacterDataReader, rows: Array[Dictionary]) -> void:
 		var item: String = _identify(reader, rows[index], ROUTES, ROUTE_ID, index, seen)
 		_reject_unknown(reader, rows[index], ROUTE_FIELDS, item)
 		_points[item] = _read_points(reader, rows[index], item)
+		_read_settlement_a(reader, rows[index], item, not _points[item].is_empty())
+
+
+## Uma doca por povoado (`settlement_id` único); a doca é o par `point_m` [x, z]. Que o povoado existe é conferido no teste, não aqui.
+func _read_docks(reader: CharacterDataReader, rows: Array[Dictionary]) -> void:
+	var seen: Dictionary[String, bool] = {}
+	for index: int in rows.size():
+		var item: String = _identify(reader, rows[index], DOCKS, SETTLEMENT_ID, index, seen)
+		_reject_unknown(reader, rows[index], DOCK_FIELDS, item)
+		var listed: Variant = rows[index].get(DOCK_POINT)  # Variant: fronteira com o JSON, conferido logo abaixo
+		if not _is_point(listed):
+			reader.fail(item, DOCK_POINT, "campo obrigatório: um par [x, z] de números finitos, de até %s m em módulo" % MAX_METERS)
+			continue
+		var pair: Array = listed
+		_docks[item] = Vector2(float(pair[0]), float(pair[1]))
+
+
+## `settlement_a_id` é opcional, mas OBRIGATÓRIO com pontos de passagem: é ele que diz de que ponta da rota os pontos são contados (o dado não adivinha o sentido).
+func _read_settlement_a(reader: CharacterDataReader, row: Dictionary, item: String, has_points: bool) -> void:
+	if not row.has(SETTLEMENT_A):
+		if has_points:
+			reader.fail(item, SETTLEMENT_A, "obrigatório quando a rota tem pontos de passagem (%s): é ele que dá o sentido dos pontos" % POINTS)
+		return
+	var settlement_a: String = reader.text(row, SETTLEMENT_A, item)
+	if not settlement_a.is_empty():
+		_route_a[item] = settlement_a
 
 
 func _read_cargo(reader: CharacterDataReader, rows: Array[Dictionary]) -> void:
@@ -146,8 +221,8 @@ func _read_points(reader: CharacterDataReader, row: Dictionary, item: String) ->
 		return points
 	var pairs: Array = listed
 	for index: int in pairs.size():
-		var pair: Array = pairs[index] if typeof(pairs[index]) == TYPE_ARRAY else []
-		if pair.size() == 2 and _is_coordinate(pair[0]) and _is_coordinate(pair[1]):
+		if _is_point(pairs[index]):
+			var pair: Array = pairs[index]
 			points.append(Vector2(float(pair[0]), float(pair[1])))
 		else:
 			reader.fail(item, POINTS, "o ponto %d deve ser um par [x, z] de números finitos, de até %s m em módulo" % [index, MAX_METERS])
@@ -178,6 +253,14 @@ static func _number(reader: CharacterDataReader, view: Dictionary, field: String
 		reader.fail(VIEW, field, "esperado um número finito %s zero, de até %s" % ["maior ou igual a" if allow_zero else "maior que", high])
 		return 0.0
 	return number
+
+
+## Um par [x, z] de números finitos, de até MAX_METERS em módulo.
+static func _is_point(value: Variant) -> bool:  # Variant: fronteira com o JSON
+	if typeof(value) != TYPE_ARRAY:
+		return false
+	var pair: Array = value
+	return pair.size() == 2 and _is_coordinate(pair[0]) and _is_coordinate(pair[1])
 
 
 static func _is_coordinate(value: Variant) -> bool:  # Variant: fronteira com o JSON
