@@ -13,6 +13,8 @@ const KEY_POSTS: String = ServicePostBook.KEY_POSTS
 const KEY_CONTRACTS: String = ContractBook.KEY_CONTRACTS
 ## Só quando há caravana; ao contrário dos outros livros, o valor é a LISTA dos registros por `trader_id` crescente (`CaravanBook.serialize`), não um objeto (9.10).
 const KEY_CARAVANS: String = "caravans"
+## Só quando o livro do fluxo NÃO é virgem (9.16.6); o valor é o objeto de `FlowBook.serialize`. Chave presente com objeto vazio é recusada: o livro virgem nem leva a chave.
+const KEY_TRADE_FLOW: String = "trade_flow"
 
 
 ## Sem dono e sem movimento: bloco vazio (nada entra no hash além da presença do módulo).
@@ -32,18 +34,20 @@ static func serialize(state: EconomyState) -> Dictionary:
 		block[KEY_CONTRACTS] = state.contracts.serialize()
 	if not state.caravans.is_pristine():
 		block[KEY_CARAVANS] = state.caravans.serialize()
+	if not state.flow.is_pristine():
+		block[KEY_TRADE_FLOW] = state.flow.serialize()
 	return block
 
 
-## Aceita o bloco vazio ou os campos conhecidos (`owners` e `ledger` sempre; `goods`, `markets`, `production`, `posts`, `contracts` e `caravans` quando há), tudo conferido antes de trocar o estado; qualquer outra chave é recusada com mensagem clara.
+## Aceita o bloco vazio ou os campos conhecidos (`owners` e `ledger` sempre; `goods`, `markets`, `production`, `posts`, `contracts`, `caravans` e `trade_flow` quando há), tudo conferido antes de trocar o estado; qualquer outra chave é recusada com mensagem clara.
 static func load_into(target: EconomyState, data: Dictionary) -> Result:
 	var names: PackedStringArray = PackedStringArray()
 	for key: Variant in data.keys():
 		names.append(str(key))
 	names.sort()
 	for name: String in names:
-		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS, KEY_CARAVANS].has(name):
-			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS, KEY_CARAVANS])
+		if not [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS, KEY_CARAVANS, KEY_TRADE_FLOW].has(name):
+			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: o bloco 'economy' do save tem %d chave(s) (%s); esperado vazio ou só '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s' e '%s'." % [names.size(), ", ".join(names), KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS, KEY_CARAVANS, KEY_TRADE_FLOW])
 	# Variant: valores crus do save (JSON); o tipo é conferido na linha seguinte.
 	var raw_owners: Variant = data.get(KEY_OWNERS)
 	var raw_ledger: Variant = data.get(KEY_LEDGER)
@@ -53,10 +57,13 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 	var raw_posts: Variant = data.get(KEY_POSTS, {})
 	var raw_contracts: Variant = data.get(KEY_CONTRACTS, {})
 	var raw_caravans: Variant = data.get(KEY_CARAVANS, [])
+	var raw_flow: Variant = data.get(KEY_TRADE_FLOW, {})
 	if typeof(raw_owners) != TYPE_DICTIONARY or typeof(raw_ledger) != TYPE_DICTIONARY or typeof(raw_goods) != TYPE_DICTIONARY or typeof(raw_markets) != TYPE_DICTIONARY or typeof(raw_production) != TYPE_DICTIONARY or typeof(raw_posts) != TYPE_DICTIONARY or typeof(raw_contracts) != TYPE_DICTIONARY:
 		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s' e '%s' devem ser objetos e estar os dois no bloco 'economy' (e '%s', '%s', '%s', '%s' e '%s', se houver, também objetos)." % [KEY_OWNERS, KEY_LEDGER, KEY_GOODS, KEY_MARKETS, KEY_PRODUCTION, KEY_POSTS, KEY_CONTRACTS])
 	if typeof(raw_caravans) != TYPE_ARRAY:
 		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s', se houver, deve ser uma lista." % KEY_CARAVANS)
+	if typeof(raw_flow) != TYPE_DICTIONARY:
+		return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s', se houver, deve ser um objeto." % KEY_TRADE_FLOW)
 	var market_data: Dictionary = raw_markets
 	var book: OwnerBook = OwnerBook.new()
 	var loaded: Result = book.load_from(raw_owners)
@@ -111,6 +118,16 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 		loaded = caravans.load_from(caravans_data)
 		if not loaded.ok:
 			return loaded
+	var flow: FlowBook = FlowBook.new(book, markets, goods)
+	if data.has(KEY_TRADE_FLOW):
+		var flow_data: Dictionary = raw_flow
+		loaded = flow.load_from(flow_data)
+		if not loaded.ok:
+			return loaded
+		# As conferências cruzadas (dono-trânsito, mercados, bens e estoque) também valem ANTES de trocar o estado: o livro as dá pelo mesmo `validate()`.
+		var flow_problems: Array[String] = flow.validate()
+		if not flow_problems.is_empty():
+			return Result.failure(CODE_INVALID_SAVE, "EconomyModule.on_load: '%s': %s." % [KEY_TRADE_FLOW, flow_problems[0]])
 	target.book = book
 	target.ledger = ledger
 	target.goods = goods
@@ -120,6 +137,7 @@ static func load_into(target: EconomyState, data: Dictionary) -> Result:
 	target.posts = posts
 	target.contracts = contracts
 	target.caravans = caravans
+	target.flow = flow
 	return Result.success()
 
 
@@ -146,6 +164,8 @@ static func validation_problems(state: EconomyState) -> Array[String]:
 		problems.append("[contracts] " + problem)
 	for problem: String in state.caravans.validate():
 		problems.append("[caravans] " + problem)
+	for problem: String in state.flow.validate():
+		problems.append("[trade_flow] " + problem)
 	return problems
 
 
@@ -166,4 +186,7 @@ static func summary(state: EconomyState) -> Dictionary:
 	# As caravanas (LW-098c; AGENTS 4.15): a chave só aparece quando há caravana, pelo mesmo motivo dos postos acima (o resumo inteiro é comparado em testes sem elas).
 	if not state.caravans.is_pristine():
 		report["caravans"] = state.caravans.trader_ids().size()
+	# O fluxo (LW-100c2; AGENTS 4.15): a chave só aparece quando o livro não é virgem, pelo mesmo motivo acima.
+	if not state.flow.is_pristine():
+		report["flow_lots"] = state.flow.lot_ids().size()
 	return report

@@ -97,7 +97,7 @@ func test_without_caravans_the_block_has_no_key_and_a_save_without_it_loads_and_
 	assert_eq(_bytes(restored), _bytes(module))
 	var unknown: Result = restored.on_load({"owners": {}, "ledger": {}, "extra": 1})
 	assert_eq(unknown.code, EconomyCodes.INVALID_SAVE)
-	assert_string_contains(unknown.message, "'contracts' e 'caravans'", "A mensagem lista a chave nova entre as aceitas.")
+	assert_string_contains(unknown.message, "'contracts', 'caravans' e 'trade_flow'", "A mensagem lista a chave `caravans` e a seguinte (`trade_flow`, LW-100c2) entre as aceitas.")
 	# Variant: o valor cru que um save corrompido poderia trazer em `caravans` (objeto, lista de número, registro incompleto).
 	for caravans: Variant in [{}, [3], [{"trader_id": 100}]]:
 		var bad: Dictionary = _through_json(block)
