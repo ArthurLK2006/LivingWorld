@@ -20,7 +20,8 @@ const NEAR_M: float = 10.0
 ## Folgas em torno das bordas do alcance (80 e 120 m), maiores que o deslocamento lateral de 1,2 m (a vista mede até o corpo, o teste até o eixo da estrada): dentro de IN_M a caravana TEM de ter corpo e acima de OUT_M NÃO pode ter.
 const IN_M: float = 78.0
 const OUT_M: float = 122.0
-const DEPARTURE_SPOT_M: float = 6.0
+## (doca) 6,0 -> 12,0 m: a doca de C fica na borda sul da praça, a 11,85 m do centro (A: 5,70 m; B: 6,00 m).
+const DEPARTURE_SPOT_M: float = 12.0
 const STEP_TOLERANCE_M: float = 0.01
 const STEP_RATIO_MIN: float = 0.9
 const STEP_RATIO_MAX: float = 1.1
@@ -32,7 +33,7 @@ const PART_OF_STEP_MS: int = 600
 const MS_PER_MINUTE: float = 1250.0
 const AFTER_LOAD_MINUTES: int = 20
 const ARRIVAL_GRACE: int = 2
-## (doca) A caravana nasce na doca (a menos de 0,1 m, como o primeiro quadro) e a doca fica a até 6 m do centro (+ 1 mm); o corpo anda a 1,2 m do eixo do caminho mostrado.
+## (doca) A caravana nasce na doca (a menos de 0,1 m, como o primeiro quadro) e a doca fica a até 12 m do centro (+ 1 mm); o corpo anda a 1,2 m do eixo do caminho mostrado.
 const DOCK_SPOT_M: float = 0.1
 const DOCK_TOLERANCE_M: float = 0.001
 const LATERAL_M: float = 1.2
@@ -361,7 +362,7 @@ func test_the_caravan_leaves_the_departure_market_and_the_merchant_never_has_two
 	assert_eq(_visible_bodies(trip.game, trip.trader), [0, 1] as Array[int], "No passo da partida o `NpcView` some e o corpo da caravana aparece, no mesmo quadro: um corpo só.")
 	var body: CaravanView = trip.game.caravan_bodies.body_of(trip.trader)
 	assert_lt(Vector2(body.position.x, body.position.z).distance_to(trip.dock), DOCK_SPOT_M, "(doca) O corpo da caravana nasce na DOCA do povoado de saída (antes, a menos de 6 m do centro do mercado).")
-	assert_lte(trip.dock.distance_to(trip.origin), DEPARTURE_SPOT_M + DOCK_TOLERANCE_M, "(doca) E a doca fica a no máximo 6 m do centro do mercado de saída (a de B fica a exatos 6,00 m: 1 mm de tolerância).")
+	assert_lte(trip.dock.distance_to(trip.origin), DEPARTURE_SPOT_M + DOCK_TOLERANCE_M, "(doca) E a doca fica a no máximo 12 m do centro do mercado de saída (A 5,70 m, B 6,00 m, C 11,85 m; 1 mm de tolerância).")
 	var record: TripLog = _follow(trip, false)
 	assert_gt(record.minutes, 60, "A viagem dura mais de uma hora.")
 	assert_eq([record.duplicated, record.npc_leaks, record.missing_near, record.lingering_far], [[] as Array[int], [] as Array[int], [] as Array[int], [] as Array[int]], "Em NENHUM minuto há dois corpos ou um `NpcView` do comerciante em viagem, perto do foco (80 m) a caravana TEM corpo e longe (120 m) NÃO tem.")

@@ -291,6 +291,6 @@ func test_the_caravan_leaves_and_arrives_on_the_market_axis_and_every_step_stays
 	assert_lt(trip.npc_spot.distance_to(trip.first_spot), stand_m + dock_gap_m + AXIS_M, "PARTIDA (doca): o salto é no máximo a distância do ponto onde o `NpcView` estava ao centro do mercado mais a do centro à doca (antes só a primeira: 2,55 m).")
 	assert_lt(trip.back_spot.distance_to(trip.destination), AXIS_M, "CHEGADA: o `NpcView` reaparece no centro do mercado de destino (`MerchantArrival`).")
 	assert_lt(trip.last_spot.distance_to(trip.arrival_dock), AXIS_M, "CHEGADA (doca): a caravana TERMINA na doca do povoado de destino.")
-	assert_almost_eq(trip.last_spot.distance_to(trip.back_spot), arrival_gap_m, AXIS_M, "CHEGADA (doca): o salto da chegada é a distância da doca ao centro do mercado, onde o `NpcView` reaparece (antes 0,01 m; agora de 5,7 a 6,0 m).")
+	assert_almost_eq(trip.last_spot.distance_to(trip.back_spot), arrival_gap_m, AXIS_M, "CHEGADA (doca): o salto da chegada é a distância da doca ao centro do mercado, onde o `NpcView` reaparece (antes 0,01 m; agora 5,70 m em A, 6,00 m em B e 11,85 m em C).")
 	assert_lt(trip.biggest_step_m, STEP_MAX_M, "Entre quadros de 250 ms a caravana nunca anda mais que a velocidade x o quadro (a rampa não mexe em `u`).")
 	assert_gt(trip.frames, 500, "A viagem inteira foi acompanhada, quadro a quadro.")

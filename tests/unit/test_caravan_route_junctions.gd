@@ -1,8 +1,8 @@
 extends GutTest
 ## LW-099g: as viagens de DOIS TRECHOS (a caravana que passa por um povoado do meio, hoje só com uma estrada fechada), sem janela. A `CaravanBodiesView` REAL (ponte roteirizada, mercados, terreno e dado REAIS) anda o 1º trecho com `u` de 0 a 1 em passos de 0,25 m andados e logo em seguida o 2º, com o MESMO `trader_id` (o corpo e o giro dele atravessam a troca, como no jogo),
 ## e mede a folga do carrinho (`RouteObstacles`, os obstáculos principais e também os que só informam: adereços e arbustos) em todos os passos. Nas 6 viagens a troca de trecho é CONTÍNUA (a posição do fim do 1º trecho e a do começo do 2º, a menos de 1 cm, na doca do povoado do meio).
-## LIMITAÇÃO CONHECIDA (decisão de Arthur: o desvio por estrada fechada é raro): as duas rotas de um povoado saem pelo mesmo corredor, então o carrinho dá a volta em U na doca e a traseira varre a praça; por B e por C a folga cai a zero ou menos (árvore de B, arbusto de C) e esses testes ficam PENDENTES com a folga medida na mensagem;
-## por A passa com folga e é asseverada. Se alguém consertar (outro caminho de volta, curva natural), o pendente vira verde sozinho.
+## LIMITAÇÃO CONHECIDA (decisão de Arthur: o desvio por estrada fechada é raro): as duas rotas de um povoado saem pelo mesmo corredor, então o carrinho dá a volta em U na doca e, se a doca fica DENTRO da praça, a traseira a varre. Por B a folga cai a zero ou menos (árvore Tree6 de B) e esses testes ficam PENDENTES
+## com a folga medida na mensagem; por A passa com folga; por C, com a doca na borda sul, FORA da praça (a 11,85 m do centro), a volta em U (de 173 graus) passa e o teste é verde. Se alguém consertar B, o pendente vira verde sozinho.
 
 const WORLD_DIR: String = "res://data/world"
 const PLACES_FILE: String = "res://data/world/places.json"

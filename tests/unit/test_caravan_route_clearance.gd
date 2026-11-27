@@ -1,7 +1,7 @@
 extends GutTest
 ## LW-099g (opção B): a PROVA de FOLGA e COLISÃO do DADO REAL (data/presentation/caravan_routes.json), sem janela. Para cada rota e cada sentido o `u` anda de 0 a 1 em passos de 0,25 m andados pela `CaravanBodiesView` REAL (ponte roteirizada, mercados e terreno reais; lê-se a POSIÇÃO e o `rotation.y` do `CaravanView`, que é o que se vê, com o
 ## deslocamento lateral de 1,2 m, a rampa de 12 m e o giro limitado de hoje) e, a cada passo, o retângulo do carrinho (`RouteObstacles.cart_polygon`) tem de ficar a pelo menos FLOOR_M (0,3 m) de TODOS os obstáculos: as caixas dos locais e as peças das praças (`RouteObstacles`, provado contra a praça em
-## `test_route_obstacles.gd`); nas poses de saída e de chegada também. A contagem de passos com folga menor que TARGET_M (0,5 m, o alvo) sai como número informativo, e a folga contra os adereços e arbustos das praças (que não entram no piso) também. Além disso: cada doca a no máximo 6 m do centro do mercado e FORA da peça central;
+## `test_route_obstacles.gd`); nas poses de saída e de chegada também. A contagem de passos com folga menor que TARGET_M (0,5 m, o alvo) sai como número informativo, e a folga contra os adereços e arbustos das praças (que não entram no piso) também. Além disso: cada doca a no máximo 12 m do centro do mercado (a de C fica na borda sul da praça) e FORA da peça central;
 ## o comprimento do caminho MOSTRADO (doca à doca) entre 90% e 110% do `length_m` nos dois sentidos; os `settlement_a_id` e os povoados do dado batem com data/world. O teste de folga FALHA, com o local e o passo, se um ponto vai para dentro de uma casa (prova por mutante embutido). Sem as docas e os pontos no dado do jogo estes testes FALHAM (nunca pendentes nem verdes).
 
 const WORLD_DIR: String = "res://data/world"
@@ -16,8 +16,9 @@ const FLOOR_M: float = 0.3
 const TARGET_M: float = 0.5
 ## O deslocamento lateral da caravana (o do dado de apresentação).
 const LATERAL_M: float = 1.2
-const MAX_DOCK_FROM_CENTER_M: float = 6.0
-## Tolerância de 1 mm na distância da doca ao centro (a doca de B fica a EXATOS 6,00 m: o limite vale com a conta de ponto flutuante).
+## (doca) 6 -> 12 m: a doca de C fica na borda sul da praça, a 11,85 m do centro (A: 5,70 m; B: 6,00 m); a doca continua exigida FORA da peça central, a 0,3 m ou mais da borda dela.
+const MAX_DOCK_FROM_CENTER_M: float = 12.0
+## Tolerância de 1 mm na distância da doca ao centro (a conta é de ponto flutuante).
 const DOCK_TOLERANCE_M: float = 0.001
 const CENTER_PIECE_MARGIN_M: float = 0.3
 const MIN_RATIO: float = 0.9
@@ -167,7 +168,7 @@ func test_each_dock_is_near_its_market_and_outside_the_center_piece() -> void:
 	for settlement_id: String in _markets:
 		assert_true(_real.has_dock(settlement_id), "%s: tem doca" % settlement_id)
 		var dock: Vector2 = _real.dock_of(settlement_id)
-		assert_lte(dock.distance_to(_markets[settlement_id]), MAX_DOCK_FROM_CENTER_M + DOCK_TOLERANCE_M, "%s: a doca fica a no máximo 6 m do centro do mercado" % settlement_id)
+		assert_lte(dock.distance_to(_markets[settlement_id]), MAX_DOCK_FROM_CENTER_M + DOCK_TOLERANCE_M, "%s: (doca) a doca fica a no máximo 12 m do centro do mercado (A 5,70 m, B 6,00 m, C 11,85 m)" % settlement_id)
 		var center_name: String = PlazaVariants.CENTER_NAMES[PlazaVariants.for_market(_market_ids[settlement_id]).center]
 		var center: RouteObstacles.Item = _obstacles.item("%s/%s" % [_market_ids[settlement_id], center_name])
 		assert_not_null(center, "%s: a praça tem a peça central %s" % [settlement_id, center_name])
