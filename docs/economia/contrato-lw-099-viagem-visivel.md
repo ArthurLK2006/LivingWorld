@@ -29,7 +29,7 @@
 
 | Estado da caravana | O que se vê |
 |---|---|
-| sem registro (parado), ou chegada (o registro some no passo da chegada) | nenhum `CaravanView`; na chegada o `npc` realoca o NPC no mercado de destino e o `NpcView` volta em até 1 passo (`NpcBodies.release_body`): piscada de até 1,25 s a 1x, aceita como provisória |
+| sem registro (parado), ou chegada (o registro some no passo da chegada) | nenhum `CaravanView`; na chegada o `npc` realoca o NPC no mercado de destino e o `NpcView` volta em até 1 passo (`NpcBodies.release_body`): piscada de até 1,25 s a 1x, aceita como provisória; com a chegada suave (LW-099h, `docs/modules/presentation.md`, só apresentação) o `NpcView` nasce onde a caravana terminou (a doca, se o dado tem doca; sem doca é o mesmo de antes) e anda até o mercado |
 | `travelling` | anda pela polilinha; na partida nasce na borda da caixa de 4 × 4 m do mercado (como `NpcRoute.stop_point`), para o corpo que sai de S0 não saltar |
 | `held` no meio do trecho (rota fechada) | parado onde está até a rota reabrir; `held` sem ter andado: parado na ponta de partida do trecho |
 | morte do comerciante na estrada | o carrinho some (a carga fica na conta fechada, DEC-146); sem carrinho abandonado (não entra) |
