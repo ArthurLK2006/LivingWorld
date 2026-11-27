@@ -102,6 +102,7 @@ func test_the_switch_is_born_off_and_off_the_scene_creates_nothing_of_the_visibl
 	assert_null(_main.get_node_or_null(VIEW_NAME), "Desligado, a cena não cria a vista das caravanas.")
 	assert_eq(_caravan_nodes_in(_main), 0, "Nem a reserva de corpos: nenhum `CaravanView` na cena.")
 	assert_not_null(_main.get_node_or_null(NPC_VIEW_NAME), "O resto da cena segue como sempre (a vista dos NPCs está lá).")
+	assert_false((_main.get_node(NPC_VIEW_NAME) as NpcBodiesView).has_arrival_spots(), "(LW-099h) Sem a vista das caravanas não há fonte de pontos de chegada: os corpos nascem onde a ponte manda, como sempre.")
 
 
 func test_off_by_name_is_the_same_as_the_default() -> void:
@@ -124,3 +125,4 @@ func test_on_the_scene_creates_the_view_with_its_hidden_pool_and_a_working_query
 	for child: Node in view.get_children():
 		assert_false((child as Node3D).visible, "Todo corpo da reserva nasce escondido.")
 	assert_not_null(_main.get_node_or_null(NPC_VIEW_NAME), "E o resto da cena segue como sempre.")
+	assert_true((_main.get_node(NPC_VIEW_NAME) as NpcBodiesView).has_arrival_spots(), "(LW-099h) A cena liga a vista das caravanas à dos NPCs: o comerciante que chega nasce na doca onde a caravana terminou.")

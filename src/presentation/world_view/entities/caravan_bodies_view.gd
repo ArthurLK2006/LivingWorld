@@ -10,16 +10,23 @@ extends Node3D
 ## então uma altura provisória seguida da real as giraria de uma vez); a pose é aplicada ANTES de mostrar, no mesmo quadro em que o terreno aparece. `CaravanView.apply_pose` mostra o corpo na 1ª pose, por isso `visible` é escrito DEPOIS dela, a cada quadro.
 ## ORDEM por quadro: as SAÍDAS (`give_back`) antes das ENTRADAS (`take`), depois estado e pose dos ativos. Quando a caravana some da consulta (a chegada) o corpo volta à reserva no mesmo quadro, e o `NpcView` do comerciante volta
 ## pelo LOD (o filtro da ponte tira o NPC em viagem de `peek_npc_bodies`). NUNCA dois corpos do mesmo comerciante: a reserva dá no máximo um `CaravanView` por `trader_id` e o `NpcView` do comerciante em viagem não existe.
+## CHEGADA SUAVE (LW-099h; só apresentação): se o jogador via o corpo da caravana quando ela sumiu, a vista GUARDA o ponto onde a viagem terminou (a doca do povoado de chegada, ou o mercado dele se não tem doca) por `ARRIVAL_SPOT_TTL_S`, e o `NpcBodiesView`
+## o pega por `take_arrival_spot` quando o `NpcView` do comerciante nasce (até um passo da simulação depois): o comerciante reaparece na doca e anda até o mercado, em vez de saltar até 6 m para o centro. Valer uma vez, expirar e ser ignorado quando
+## cai em cima da posição lógica (sem doca) são regras do uso, não da simulação, que nunca é consultada nem escrita por isso.
 ## Reserva vazia: `take` devolve nulo, a reserva conta (`empty_hits`), `waiting` mostra quantas caravanas ficaram sem corpo e a próxima consulta tenta de novo. Consulta que falha: os corpos ficam como estão (UM aviso por sequência de
 ## falhas). Trecho sem mercado conhecido numa das pontas (mesmo que o povoado tenha doca): sem estrada e sem corpo (`unplaced`). Contrato: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2, 3 e 6.
 ## JUNTAS (LW-099c; medidas em tests/integration/test_caravan_visual_jumps.gd e tests/unit/test_caravan_bodies_view_joints.gd): o deslocamento lateral sobe de 0 nos primeiros `LATERAL_RAMP_M` metros e desce a 0 nos últimos, então a caravana sai e chega no
-## EIXO da estrada (a doca do povoado, ou o mercado se ele não tem doca; o `NpcView` reaparece no centro do mercado na chegada), e a troca de trecho não salta de lado; o giro anda no máximo `TURN_RAD_PER_M` radianos por metro andado entre duas poses (a primeira pose de uma caravana é o giro da estrada, sem limite), então a
+## EIXO da estrada (a doca do povoado, ou o mercado se ele não tem doca; o `NpcView` reaparece ali, ver CHEGADA SUAVE), e a troca de trecho não salta de lado; o giro anda no máximo `TURN_RAD_PER_M` radianos por metro andado entre duas poses (a primeira pose de uma caravana é o giro da estrada, sem limite), então a
 ## quina no povoado de passagem vira uma curva de poucos metros em vez de um estalo. Só a pose mostrada muda: a fração `u`, o tempo e a velocidade são os da simulação.
 
 ## [HIP] Metros andados (a partir de cada ponta do trecho) em que o deslocamento lateral sobe de 0 ao valor do dado e desce de volta: 4 s a 1x.
 const LATERAL_RAMP_M: float = 12.0
 ## [HIP] Giro máximo (rad) por metro andado entre duas poses: 0,5 é uma curva de cerca de 2 m de raio (uma quina de 90 graus leva uns 3 m).
 const TURN_RAD_PER_M: float = 0.5
+## [HIP] Por quanto tempo (s reais) o ponto de chegada vale depois de a caravana sumir: o `NpcView` volta no passo SEGUINTE da simulação (até 1,25 s a 1x, menos nas velocidades maiores), então 4 s cobrem alguns passos e esquecem o ponto que ninguém usou.
+const ARRIVAL_SPOT_TTL_S: float = 4.0
+## O que `take_arrival_spot` devolve sem ponto (não finito: confira com `is_finite()`, ou pergunte antes com `has_arrival_spot`).
+const NO_SPOT: Vector2 = Vector2(NAN, NAN)
 
 ## Consultas que falharam (os corpos ficaram como estavam).
 var failed_queries: int = 0
@@ -42,6 +49,11 @@ var _markets: Dictionary[String, Vector2] = {}
 var _tracks: Dictionary[int, Track] = {}
 ## Os `trader_id` que sumiram da consulta neste quadro (reaproveitado).
 var _gone: Array[int] = []
+## Onde cada comerciante que acabou de chegar deve reaparecer (por `trader_id`), até quando, no relógio desta vista; o `_expired` é reaproveitado.
+var _arrivals: Dictionary[int, ArrivalSpot] = {}
+var _expired: Array[int] = []
+## O relógio desta vista (s reais): a soma dos `delta` que o `reconcile` recebe.
+var _clock_s: float = 0.0
 var _pose: CaravanPath.Pose = CaravanPath.Pose.new()
 var _stamp: int = 0
 var _is_active: bool = false
@@ -77,10 +89,13 @@ func setup(bridge: SimBridge, terrain: TerrainView, routes: CaravanRoutesReader)
 	return true
 
 
-## Põe os corpos em dia com a simulação: devolve os de quem saiu do alcance ou chegou, entrega os de quem entrou e aplica estado e pose em todos os ativos. Consulta que falha: nada muda.
-func reconcile() -> void:
+## Põe os corpos em dia com a simulação: devolve os de quem saiu do alcance ou chegou, entrega os de quem entrou e aplica estado e pose em todos os ativos. Consulta que falha: nada muda. `delta_s` (s reais desde o `reconcile` anterior; o `_process` o dá, quem
+## chama sem ele não passa tempo) só faz andar o prazo dos pontos de chegada.
+func reconcile(delta_s: float = 0.0) -> void:
 	if not _is_active:
 		return
+	_clock_s += delta_s
+	_forget_expired_arrivals()
 	var reply: BridgeReplies.CaravanBodiesReply = _bridge.peek_caravan_bodies()
 	if not reply.result.ok:
 		_note_failure(reply.result)
@@ -106,6 +121,7 @@ func release() -> void:
 	for trader_id: int in _pool.active_ids():
 		_pool.give_back(trader_id)
 	_tracks.clear()
+	_arrivals.clear()
 
 
 func is_active() -> bool:
@@ -130,8 +146,22 @@ func pool() -> CaravanViewPool:
 	return _pool
 
 
-func _process(_delta: float) -> void:
-	reconcile()
+## Há ponto de chegada guardado e dentro do prazo para o comerciante? (Só pergunta; quem usa o ponto chama `take_arrival_spot`.)
+func has_arrival_spot(trader_id: int) -> bool:
+	return _arrivals.has(trader_id)
+
+
+## O ponto (x e z, em metros) onde o comerciante que acabou de chegar deve reaparecer, e o ESQUECE: vale uma vez. Sem ponto (o jogador não via o corpo da caravana, o comerciante nunca chegou ou o prazo passou): `NO_SPOT`.
+func take_arrival_spot(trader_id: int) -> Vector2:
+	var spot: ArrivalSpot = _arrivals.get(trader_id) as ArrivalSpot
+	if spot == null:
+		return NO_SPOT
+	_arrivals.erase(trader_id)
+	return spot.position if spot.expires_s > _clock_s else NO_SPOT
+
+
+func _process(delta: float) -> void:
+	reconcile(delta)
 
 
 func _exit_tree() -> void:
@@ -167,8 +197,32 @@ func _give_back_leavers() -> void:
 		elif not track.inside and _pool.give_back(trader_id):
 			track.posed = false
 	for trader_id: int in _gone:
+		_note_arrival(trader_id, _tracks[trader_id])
 		_pool.give_back(trader_id)
 		_tracks.erase(trader_id)
+
+
+## A caravana sumiu da consulta: se o jogador via o corpo dela (visível até o quadro anterior), guarda onde a viagem terminou, a doca do povoado de chegada (ou o mercado dele, se não tem doca), para o `NpcView` do comerciante nascer ali. Quem o jogador não via não deixa ponto. A morte na estrada também some da consulta: o ponto expira sem uso.
+func _note_arrival(trader_id: int, track: Track) -> void:
+	var view: CaravanView = _pool.body_of(trader_id)
+	if view == null or not view.visible or not _markets.has(track.to_id):
+		return
+	var spot: ArrivalSpot = ArrivalSpot.new()
+	spot.position = _routes.dock_of(track.to_id) if _routes.has_dock(track.to_id) else _markets[track.to_id]
+	spot.expires_s = _clock_s + ARRIVAL_SPOT_TTL_S
+	_arrivals[trader_id] = spot
+
+
+## Esquece os pontos de chegada cujo prazo passou (sem alocar: a lista é reaproveitada e só se percorre o que existe).
+func _forget_expired_arrivals() -> void:
+	if _arrivals.is_empty():
+		return
+	_expired.clear()
+	for trader_id: int in _arrivals:
+		if _arrivals[trader_id].expires_s <= _clock_s:
+			_expired.append(trader_id)
+	for trader_id: int in _expired:
+		_arrivals.erase(trader_id)
 
 
 ## As entradas, em ordem crescente de comerciante (a da consulta): quem está no alcance e não tem corpo pega um. Reserva vazia: sem erro, `waiting` conta e o próximo quadro tenta de novo.
@@ -262,6 +316,8 @@ func _clear() -> void:
 	_pool = null
 	_tracks.clear()
 	_markets.clear()
+	_arrivals.clear()
+	_clock_s = 0.0
 	_is_failing = false
 	failed_queries = 0
 	unplaced = 0
@@ -285,3 +341,11 @@ class Track:
 	var path: CaravanPath
 	var position: Vector2 = Vector2.ZERO
 	var yaw: float = 0.0
+
+
+## Onde um comerciante que acabou de chegar deve reaparecer (x e z, em metros) e até que instante do relógio da vista (s).
+class ArrivalSpot:
+	extends RefCounted
+
+	var position: Vector2 = Vector2.ZERO
+	var expires_s: float = 0.0

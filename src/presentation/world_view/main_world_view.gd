@@ -163,6 +163,9 @@ func _setup_caravans(bridge: SimBridge) -> void:
 	if not _caravans_view.setup(bridge, _terrain_view, loaded.data):
 		_caravans_view.queue_free()
 		_caravans_view = null
+		return
+	# Chegada suave (LW-099h): o comerciante que chega nasce na doca onde a caravana terminou (sem doca no dado, no mesmo lugar de sempre).
+	_bodies_view.set_arrival_spots(_caravans_view.take_arrival_spot)
 
 
 ## A fonte das figuras (7b-2) só se a área tem entrada; null = tudo cápsula. Catálogo ou figura que falha: UM aviso com o motivo, e o `make` da fonte devolve null (cápsula).

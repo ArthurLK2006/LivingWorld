@@ -6,7 +6,12 @@ extends Node3D
 ## ESCONDIDO enquanto o terreno do seu chunk não está desenhado (`TerrainView.has_chunk`). `setup` liga o interruptor de corpos da simulação e
 ## `release` o desliga; ponte que falha = nenhum corpo e interruptor desligado, até outro `setup`. O corpo fica parado onde nasceu (o andar é da
 ## LW-072d) e a cena ainda não cria a view (LW-072f). Contrato: docs/modules/presentation.md.
+## CHEGADA SUAVE (LW-099h): com uma fonte de pontos de chegada (`set_arrival_spots`, a `take_arrival_spot` da vista das caravanas), o corpo do comerciante que acaba de chegar de viagem nasce na DOCA onde a caravana terminou, e não na posição da ponte (o centro do mercado), e o motorista o leva andando até o destino de sempre; ponto a menos de `MIN_ARRIVAL_GAP_M` da posição da ponte (o dado sem docas) ou a mais de `MAX_ARRIVAL_GAP_M` dela é ignorado (nasce na posição da ponte, como sempre). Só a apresentação muda.
 ## FIGURA INTEIRA (ART-12, 7b-2): com uma área de figuras (`CharacterArea`, não vazia) e uma fábrica (`figure_factory(figure_id) -> Node3D`), o NPC da área que ENTRA em S0 recebe a figura no corpo que acaba de sair da reserva (`NpcView.attach_figure`); fábrica que devolve null deixa a cápsula e dá UM aviso por NPC. Sair de S0 e o `release` devolvem a cápsula (o `give_back` do pool chama `detach`, que libera a figura); a reserva não guarda figura. Sem área, com área vazia ou sem fábrica a view é a de sempre.
+
+## [HIP] Um ponto de chegada vale só se ficar a MAIS de tanto (m) da posição da ponte (menos que isso é o mesmo lugar, e o corpo nasce na posição da ponte, bit a bit como sempre) e a NO MÁXIMO tanto (m) dela (a doca fica a até 6 m do centro do mercado; mais longe que isto o corpo nunca nasce, para não ficar longe de onde a simulação põe o NPC).
+const MIN_ARRIVAL_GAP_M: float = 0.25
+const MAX_ARRIVAL_GAP_M: float = 15.0
 
 var _bridge: SimBridge
 var _terrain: TerrainView
@@ -20,6 +25,8 @@ var _figure_factory: Callable
 ## O DONO da fábrica: um `Callable` de método de um `RefCounted` (a `source.make` da cena) NÃO segura o objeto, e a fonte, local na cena, morreria ao fim do preparo com a fábrica já inválida. Quem a segura é esta view, até o próximo `setup`.
 var _figure_owner: RefCounted
 var _warned_npcs: Dictionary[int, bool] = {}
+## A fonte dos pontos de chegada: `(npc_id: int) -> Vector2` (x e z em metros; não finito = sem ponto). Inválida = nenhum ponto.
+var _arrival_spots: Callable = Callable()
 
 
 ## Liga a view à ponte e ao terreno, cria a reserva de corpos e liga o interruptor de corpos da simulação. Ponte ou terreno nulo, ponte sem
@@ -65,7 +72,7 @@ func reconcile() -> void:
 			_pool.give_back(npc_id)
 	for body: BridgeReplies.NpcBodyReply in reply.bodies:
 		if _pool.body_of(body.npc_id) == null:
-			var entered: NpcView = _pool.take(body.npc_id, body.position)
+			var entered: NpcView = _pool.take(body.npc_id, _birth_position(body))
 			if entered != null and _area != null:
 				_attach_figure_of(entered, body.npc_id)
 	for npc_id: int in _pool.active_ids():
@@ -87,6 +94,15 @@ func release() -> void:
 
 func is_active() -> bool:
 	return _is_active
+
+
+## Liga a fonte dos pontos de chegada (a cena passa a `take_arrival_spot` da `CaravanBodiesView`): `source.call(npc_id) -> Vector2` com x e z em metros, ou um vetor não finito se não há ponto. Chame DEPOIS de `setup` (ele a solta). Fonte inválida (ou nenhuma, o padrão) = todo corpo nasce na posição da ponte.
+func set_arrival_spots(source: Callable) -> void:
+	_arrival_spots = source
+
+
+func has_arrival_spots() -> bool:
+	return _arrival_spots.is_valid()
 
 
 ## IDs dos NPCs com corpo, em ordem crescente.
@@ -112,6 +128,26 @@ func _exit_tree() -> void:
 
 func _chunk_of(point: Vector3) -> Vector2i:
 	return Vector2i(clampi(floori(point.x / _chunk_size_m), 0, _chunk_count.x - 1), clampi(floori(point.z / _chunk_size_m), 0, _chunk_count.y - 1))
+
+
+## Onde o corpo que entra nasce: na posição da ponte, ou, se a fonte dá um ponto de chegada que vale (entre `MIN_ARRIVAL_GAP_M` e `MAX_ARRIVAL_GAP_M` da posição da ponte), nele, com os pés na altura do terreno ali. Altura ilegível ou resposta torta da fonte: a posição da ponte (a altura nunca é inventada).
+func _birth_position(body: BridgeReplies.NpcBodyReply) -> Vector3:
+	if not _arrival_spots.is_valid():
+		return body.position
+	# Variant na fronteira com o Callable: o tipo da resposta é conferido antes de usar.
+	var answer: Variant = _arrival_spots.call(body.npc_id)
+	if typeof(answer) != TYPE_VECTOR2:
+		return body.position
+	var spot: Vector2 = answer
+	if not spot.is_finite():
+		return body.position
+	var gap_m: float = spot.distance_to(Vector2(body.position.x, body.position.z))
+	if gap_m <= MIN_ARRIVAL_GAP_M or gap_m > MAX_ARRIVAL_GAP_M:
+		return body.position
+	var ground: BridgeReplies.HeightReply = _bridge.peek_height(spot.x, spot.y)
+	if not ground.result.ok:
+		return body.position
+	return Vector3(spot.x, ground.height_m, spot.y)
 
 
 ## Põe no corpo que acaba de entrar a figura que a área dá a esse NPC (se ele está nela). Fábrica que devolve null: o corpo segue cápsula e o NPC recebe UM aviso, nunca um por quadro (nem a cada reentrada em S0).
@@ -142,4 +178,5 @@ func _clear() -> void:
 	_area = null
 	_figure_factory = Callable()
 	_figure_owner = null
+	_arrival_spots = Callable()
 	_warned_npcs.clear()
