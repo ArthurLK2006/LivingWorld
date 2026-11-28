@@ -1,7 +1,7 @@
 class_name FlowRunner
 extends RefCounted
 ## O fluxo agregado por rota por dentro (LW-100d1a; docs/modules/economy.md, 9.16.2, 9.16.3 e 9.16.7): LIGAR a chave de uma rota (o comando de desenvolvimento), as ENTREGAS dos lotes vencidos e os ENVIOS do início do dia, com o corte de risco. O par do `CaravanRunner`: trabalha sobre o `EconomyState` do momento e a porta de rotas do `world` (`WorldModule`) e decide pela
-## `FlowRule` (função pura). Os bens só se movem por `GoodsStore.transfer` (nada nasce nem some) e NENHUM dinheiro muda: não há chamada ao `Ledger`. Não sorteia e não lê o relógio: o minuto de simulação (`hora × 60`) vem de quem chama. Rota fechada (reter e retomar) é da LW-100d2 e as consultas `peek_flow_*`, da LW-100d1b.
+## `FlowRule` (função pura). Os bens só se movem por `GoodsStore.transfer` (nada nasce nem some) e NENHUM dinheiro muda: não há chamada ao `Ledger`. Não sorteia e não lê o relógio: o minuto de simulação (`hora × 60`) vem de quem chama. As consultas `peek_flow_*` (LW-100d1b) leem o livro e a MESMA decisão do envio (`_choose`), sem gravar nada. Rota fechada (reter e retomar) é da LW-100d2.
 
 var _state: EconomyState
 var _world: WorldModule
@@ -49,6 +49,52 @@ func run_hour(now: int) -> void:
 			_dispatch(row, now)
 
 
+## `peek_flow_routes` (9.16.7): as rotas já ligadas alguma vez, em cópias e por `route_id` crescente. `route_state` é o do `world` (vazio se ele não conhece a rota ou não há a porta de rotas) e `lots_count`, os lotes dela.
+func routes() -> FlowReplies.RoutesQuery:
+	var rows: Array[FlowReplies.RouteQuery] = []
+	for route_id: String in _state.flow.route_ids():
+		var row: FlowReplies.RouteQuery = FlowReplies.RouteQuery.new(_state.flow.route_of(route_id))
+		var found: WorldModule.RouteStateQuery = _world.peek_route(route_id) if _world != null else null
+		row.route_state = found.state if found != null and found.result.ok else ""
+		for lot_id: int in _state.flow.lot_ids():
+			row.lots_count += 1 if _state.flow.lot_of(lot_id).route_id == route_id else 0
+		rows.append(row)
+	return FlowReplies.RoutesQuery.new(Result.success(), rows)
+
+
+## `peek_flow_lots` (9.16.7): os lotes (os da rota, ou todos se `route_id` é vazio), em cópias e por `lot_id` crescente. `minutes_left`: em `held`, o `remaining_minutes`; senão, o que falta para `arrives_at` no relógio `now` (0 se já venceu e espera a hora cheia).
+func lots(route_id: String, now: int) -> FlowReplies.LotsQuery:
+	var rows: Array[FlowReplies.LotQuery] = []
+	for lot_id: int in _state.flow.lot_ids():
+		var lot: FlowBook.Lot = _state.flow.lot_of(lot_id)
+		if route_id == "" or lot.route_id == route_id:
+			var row: FlowReplies.LotQuery = FlowReplies.LotQuery.new(lot)
+			row.minutes_left = lot.remaining_minutes if lot.state == FlowBook.Lot.STATE_HELD else maxi(lot.arrives_at - now, 0)
+			rows.append(row)
+	return FlowReplies.LotsQuery.new(Result.success(), rows)
+
+
+## `peek_flow_plan` (9.16.7): o que a regra enviaria AGORA na rota, com a chave ligada ou não (a regra é a do envio, `_choose`) e sem gravar nada, nem o resto do risco. As falhas são as do comando. Sem lote hoje (rota fechada, nada que valha o envio) a resposta é ok com `planned_quantity` 0; `sent_quantity` já leva o resto de risco de hoje (0 se a rota nunca foi ligada).
+func plan(route_id: String, ids: IdGenerator) -> FlowReplies.PlanQuery:
+	var refused: Result = _check_command(route_id, ids)
+	if not refused.ok:
+		return FlowReplies.PlanQuery.new(refused)
+	var reply: FlowReplies.PlanQuery = FlowReplies.PlanQuery.new(Result.success())
+	var terms: FlowRule.Terms = FlowRule.Terms.new()
+	var chosen: FlowRule.Lot = _choose(route_id, terms)
+	if chosen == null:
+		return reply
+	var row: FlowBook.RouteRow = _state.flow.route_of(route_id)
+	reply.origin_market_id = chosen.origin_market_id
+	reply.destination_market_id = chosen.destination_market_id
+	reply.good_id = chosen.good_id
+	reply.planned_quantity = chosen.quantity
+	reply.sent_quantity = FlowRule.apply_cut(chosen.quantity, FlowRule.risk_bp_of(terms.risk_points, _flow), row.risk_carry_bp if row != null else 0).sent
+	reply.minutes = terms.minutes
+	reply.net_profit = chosen.net
+	return reply
+
+
 ## Há com que mover bens? A porta de rotas do `world`, os parâmetros do fluxo e da caravana (uma fonte só, 9.16.2) e o motor de ordens (que vem dos mercados).
 func _is_available() -> bool:
 	return _world != null and _flow != null and _caravan != null and _state.engine != null
@@ -60,12 +106,20 @@ func _check_command(route_id: String, ids: IdGenerator) -> Result:
 		return _failure(EconomyCodes.NO_ROUTE, "sem setup, sem a porta de rotas do world ou sem os parâmetros do fluxo e da caravana (9.16.7)")
 	if not _world.peek_route(route_id).result.ok:
 		return _failure(EconomyCodes.NO_ROUTE, "a rota '%s' não existe no world" % route_id)
+	var kind: OwnerKindDef = _flow_kind()
+	if kind == null:
+		return _failure(EconomyCodes.NO_ROUTE, "o tipo de dono '%s' não existe nas definições" % FlowBook.KIND_FLOW)
+	if kind.initial_balance != 0:
+		return _failure(EconomyCodes.DATA_INVALID, "o tipo '%s' tem saldo inicial %d; esperado 0 (o fluxo não move dinheiro)" % [kind.id, kind.initial_balance])
+	return Result.success()
+
+
+## O tipo de dono do dono-trânsito nas definições (nulo se não existe).
+func _flow_kind() -> OwnerKindDef:
 	for kind: OwnerKindDef in _state.definitions.kinds:
 		if kind.id == FlowBook.KIND_FLOW:
-			if kind.initial_balance != 0:
-				return _failure(EconomyCodes.DATA_INVALID, "o tipo '%s' tem saldo inicial %d; esperado 0 (o fluxo não move dinheiro)" % [kind.id, kind.initial_balance])
-			return Result.success()
-	return _failure(EconomyCodes.NO_ROUTE, "o tipo de dono '%s' não existe nas definições" % FlowBook.KIND_FLOW)
+			return kind
+	return null
 
 
 ## A ENTREGA (9.16.3): cada lote `travelling` que venceu (`now >= arrives_at`: a primeira hora cheia em que a chegada já passou) entra no mercado de destino, por `lot_id` crescente: o que COUBER no peso dele; o resto fica no lote e tenta na hora seguinte. O teto de compra do destino NÃO é conferido (entrega não é compra) e o lote some quando chega a 0.
@@ -80,30 +134,44 @@ func _deliver_due(now: int) -> void:
 			_state.flow.reduce_lot(lot_id, delivered)
 
 
-## O envio de UMA rota ligada: só se está ABERTA no `world` e tem os dois mercados. As ofertas dos dois sentidos, o melhor lote do dia (um só, pela `FlowRule`) e o corte do risco; o resto novo do corte é gravado SEMPRE, saia lote ou não (9.16.3).
+## O envio de UMA rota ligada: o lote do dia (`_choose`) e o corte do risco; o resto novo do corte é gravado SEMPRE, saia lote ou não (9.16.3).
 func _dispatch(row: FlowBook.RouteRow, now: int) -> void:
-	var found: WorldModule.RouteStateQuery = _world.peek_route(row.route_id)
-	if not found.result.ok or found.state != WorldModule.STATE_OPEN:
-		return
-	var market_a: int = _state.markets.market_of(found.route.settlement_a_id)
-	var market_b: int = _state.markets.market_of(found.route.settlement_b_id)
-	if market_a == IdGenerator.NO_ID or market_b == IdGenerator.NO_ID:
-		return
-	var leg: RouteCost.Leg = RouteCost.Leg.new(row.route_id, found.route.length_m, found.route.difficulty, found.route.risk)
 	var terms: FlowRule.Terms = FlowRule.Terms.new()
-	terms.minutes = RouteCost.leg_minutes(leg, _caravan)
-	terms.risk_points = leg.risk
-	terms.free_weight = _state.goods.capacity_of(_state.flow.holder_id()) - _state.goods.weight_of(_state.flow.holder_id())
-	terms.max_order_quantity = _state.definitions.price_params.max_order_quantity
-	var offers: Array[FlowRule.Offer] = _offers(market_a, market_b, terms)
-	offers.append_array(_offers(market_b, market_a, terms))
-	var chosen: FlowRule.Lot = FlowRule.best_lot(offers, terms, _flow, _caravan)
+	var chosen: FlowRule.Lot = _choose(row.route_id, terms)
 	if chosen == null:
 		return
 	var cut: FlowRule.Cut = FlowRule.apply_cut(chosen.quantity, FlowRule.risk_bp_of(terms.risk_points, _flow), row.risk_carry_bp)
 	_state.flow.set_carry(row.route_id, cut.carry_bp)
 	if cut.sent >= 1:
 		_send(row.route_id, chosen, cut.sent, now, terms.minutes)
+
+
+## A decisão do dia numa rota (a conta do envio e do plano; só lê): nula se a rota não está ABERTA no `world`, sem os dois mercados ou sem lote que valha. Preenche `terms` (os minutos e o risco da rota, que quem chama usa no corte).
+func _choose(route_id: String, terms: FlowRule.Terms) -> FlowRule.Lot:
+	var found: WorldModule.RouteStateQuery = _world.peek_route(route_id)
+	if not found.result.ok or found.state != WorldModule.STATE_OPEN:
+		return null
+	var market_a: int = _state.markets.market_of(found.route.settlement_a_id)
+	var market_b: int = _state.markets.market_of(found.route.settlement_b_id)
+	if market_a == IdGenerator.NO_ID or market_b == IdGenerator.NO_ID:
+		return null
+	var leg: RouteCost.Leg = RouteCost.Leg.new(route_id, found.route.length_m, found.route.difficulty, found.route.risk)
+	terms.minutes = RouteCost.leg_minutes(leg, _caravan)
+	terms.risk_points = leg.risk
+	terms.free_weight = _free_weight()
+	terms.max_order_quantity = _state.definitions.price_params.max_order_quantity
+	var offers: Array[FlowRule.Offer] = _offers(market_a, market_b, terms)
+	offers.append_array(_offers(market_b, market_a, terms))
+	return FlowRule.best_lot(offers, terms, _flow, _caravan)
+
+
+## O peso que ainda cabe no dono-trânsito; antes de ele existir (a chave nunca foi ligada), o do tipo `flow` vazio, para o plano valer com a chave desligada.
+func _free_weight() -> int:
+	var holder_id: int = _state.flow.holder_id()
+	if holder_id != IdGenerator.NO_ID:
+		return _state.goods.capacity_of(holder_id) - _state.goods.weight_of(holder_id)
+	var kind: OwnerKindDef = _flow_kind()
+	return kind.weight_capacity if kind != null else 0
 
 
 ## As ofertas de um sentido: cada bem negociado nos DOIS mercados, por `good_id` crescente, com o estoque, o alvo, o teto de compra, o que já está a caminho do destino, o peso e as curvas de cotação (compra na origem e venda no destino, sem ator; só ajudam a decidir: nenhum dinheiro muda de mãos).
