@@ -1,9 +1,9 @@
 class_name FlowBook
 extends RefCounted
-## O livro do fluxo agregado por rota (LW-100c1; docs/modules/economy.md, 9.16.2 e 9.16.6): SÓ a estrutura, ainda ligada a nada (nem ao `EconomyState`, nem ao save, nem a comando; isso é da LW-100c2 e da LW-100d1), então o jogo é igual ao de hoje. Guarda o dono-trânsito (`holder_id`, 0 = ainda não aberto), o contador PRÓPRIO de lotes
+## O livro do fluxo agregado por rota (LW-100c1; docs/modules/economy.md, 9.16.2 e 9.16.6): a estrutura (LW-100c1), ligada ao `EconomyState` e ao save na LW-100c2 mas ainda sem comando que a preencha (LW-100d1), então o jogo é igual ao de hoje. Guarda o dono-trânsito (`holder_id`, 0 = ainda não aberto), o contador PRÓPRIO de lotes
 ## (`next_lot_id`, de 1 em diante: não gasta `ctx.ids` e nunca devolve um id), uma linha por rota já ligada alguma vez (`RouteRow`) e os lotes a caminho (`Lot`). Sem preço, dinheiro nem cópia de estoque: os bens do lote estão no inventário do dono-trânsito. Tempo em minutos de simulação; nunca sorteia nem olha o relógio.
-## O livro VIRGEM (`is_pristine`: `holder_id` 0, nenhuma linha e nenhum lote) é a guarda de "desligado = nada muda" (9.16.6): não tem o que gravar e o `serialize` devolve `{}` (a chave `trade_flow` do save só existirá para o livro que NÃO é virgem, LW-100c2). O save é um objeto com `holder_id`, `next_lot_id` e duas LISTAS (`routes` por `route_id` e
-## `lots` por `lot_id`, crescentes), só com inteiros, textos e booleanos. O `load_from` confere tudo o que o livro sabe sozinho (tipos, campos, faixas, ids e a rota de cada lote) e é TUDO OU NADA; as conferências com o `world`, os mercados, os bens e o inventário do dono-trânsito são da LW-100c2. Aqui NÃO há envio, entrega, retenção nem retomada (LW-100d1 e LW-100d2).
+## O livro VIRGEM (`is_pristine`: `holder_id` 0, nenhuma linha e nenhum lote) é a guarda de "desligado = nada muda" (9.16.6): não tem o que gravar e o `serialize` devolve `{}` (a chave `trade_flow` do save só existe para o livro que NÃO é virgem). O save é um objeto com `holder_id`, `next_lot_id` e duas LISTAS (`routes` por `route_id` e
+## `lots` por `lot_id`, crescentes), só com inteiros, textos e booleanos. O `load_from` confere tudo o que o livro sabe sozinho (tipos, campos, faixas, ids e a linha de rota de cada lote) e é TUDO OU NADA; o `validate` (LW-100c2) confere o livro contra o dono-trânsito, os mercados, os bens e o estoque dele, e a rota contra o `world` fica para a LW-100d1 (só ela terá a porta de rotas, como `CaravanRunner.route_problems`). Aqui NÃO há envio, entrega, retenção nem retomada (LW-100d1 e LW-100d2).
 
 const KEY_HOLDER: String = "holder_id"
 const KEY_NEXT_LOT: String = "next_lot_id"
@@ -11,11 +11,23 @@ const KEY_ROUTES: String = "routes"
 const KEY_LOTS: String = "lots"
 ## O resto de risco de uma rota vai de 0 a 9999 pontos-base: 10000 já vira um corte inteiro (9.16.3).
 const MAX_CARRY_BP: int = 9999
+## Id do tipo de dono do dono-trânsito (`owner_kinds.json`; 9.16.3): peso 5000 e saldo 0 [HIP]. Peso 0 não serve: no `GoodsStore` quer dizer "não carrega nada", não "sem limite".
+const KIND_FLOW: String = "flow"
 
 var _holder_id: int = IdGenerator.NO_ID
 var _next_lot_id: int = IdGenerator.FIRST_ID
 var _routes: Dictionary[String, RouteRow] = {}
 var _lots: Dictionary[int, Lot] = {}
+## Os livros de fora, só para as conferências cruzadas do `validate` (LW-100c2); sem eles o livro guarda e serializa igual. `_markets` é nulo na economia sem constantes de preço (então nenhum mercado é conhecido).
+var _owners: OwnerBook
+var _markets: MarketBook
+var _store: GoodsStore
+
+
+func _init(owner_book: OwnerBook = null, market_book: MarketBook = null, goods_store: GoodsStore = null) -> void:
+	_owners = owner_book
+	_markets = market_book
+	_store = goods_store
 
 
 ## A linha de uma rota já ligada alguma vez (9.16.6): a chave `enabled` e o resto de risco (`risk_carry_bp`, de 0 a 9999) que o próximo envio soma (9.16.3).
@@ -204,6 +216,29 @@ func load_from(data: Dictionary) -> Result:
 	return Result.success()
 
 
+## As conferências do livro (9.16.6), uma frase por problema: o `EconomyPersistence` as chama no `validate()` (prefixo `[trade_flow]`) e antes de trocar o estado ao carregar o save. Livro virgem: nada a conferir. Repete, sobre o livro vivo, o que o `load_from` confere (reusa o `_load` num rascunho do próprio `serialize`: só o primeiro problema dele) e acrescenta o que o contrato e o molde da caravana pedem: dono-trânsito aberto
+## se há linha de rota ou lote; tempos de 0 ou mais e origem diferente do destino; o dono-trânsito existe, está aberto e é do tipo `flow`; os dois mercados de cada lote existem e negociam o bem; e, por bem, o estoque do dono-trânsito é a soma das `quantity` dos lotes (lote sem bem e bem sem lote são erro). A rota contra o `world` NÃO é daqui (o livro não tem a porta de rotas; LW-100d1). Sem o `OwnerBook` e o `GoodsStore` (livro avulso) só valem as conferências próprias.
+func validate() -> Array[String]:
+	var problems: Array[String] = []
+	if is_pristine():
+		return problems
+	var internal: String = FlowBook.new()._load(serialize())
+	if not internal.is_empty():
+		problems.append(internal)
+	if _holder_id == IdGenerator.NO_ID:
+		problems.append("há linha de rota ou lote, mas '%s' é 0: ligar a chave abre o dono-trânsito e cria a linha de uma vez (9.16.7)" % KEY_HOLDER)
+	for lot_id: int in lot_ids():
+		problems.append_array(_lot_problems(_lots[lot_id]))
+	if _owners == null or _store == null or _holder_id == IdGenerator.NO_ID:
+		return problems
+	var holder_problem: String = _holder_problem()
+	if holder_problem.is_empty():
+		problems.append_array(_stock_problems())
+	else:
+		problems.append(holder_problem)
+	return problems
+
+
 ## Lê o `data` para ESTE livro e devolve o primeiro problema, uma frase (vazio se tudo confere).
 func _load(data: Dictionary) -> String:
 	for key: String in [KEY_HOLDER, KEY_NEXT_LOT]:
@@ -277,3 +312,50 @@ func _link_problem() -> String:
 	if _holder_id == IdGenerator.NO_ID and not ids.is_empty():
 		return "há lotes, mas '%s' é 0 (o dono-trânsito não foi aberto)" % KEY_HOLDER
 	return ""
+
+
+## O dono-trânsito existe, está aberto e é do tipo `flow` (vazio se está certo); só com `holder_id` diferente de 0 (o 0 é problema do `validate`).
+func _holder_problem() -> String:
+	var opened: Result = _owners.check_open(_holder_id)
+	if not opened.ok:
+		return "o dono-trânsito: %s" % opened.message.trim_suffix(".")
+	if _owners.kind_of(_holder_id) != KIND_FLOW:
+		return "o dono-trânsito %d é do tipo '%s'; esperado '%s'" % [_holder_id, _owners.kind_of(_holder_id), KIND_FLOW]
+	return ""
+
+
+## O que o lote precisa além do `load_from` (como a caravana, 9.3): tempos de 0 ou mais, origem diferente do destino e, com os livros de fora, os dois mercados existem e negociam o bem.
+func _lot_problems(lot: Lot) -> Array[String]:
+	var problems: Array[String] = []
+	if lot.departed_at < 0:
+		problems.append("o lote %d: 'departed_at' é %d; esperado 0 ou mais" % [lot.lot_id, lot.departed_at])
+	if lot.arrives_at < 0:
+		problems.append("o lote %d: 'arrives_at' é %d; esperado 0 ou mais" % [lot.lot_id, lot.arrives_at])
+	if lot.origin_market_id == lot.destination_market_id:
+		problems.append("o lote %d: a origem e o destino são o mesmo mercado (%d)" % [lot.lot_id, lot.origin_market_id])
+	if _owners == null or _store == null:
+		return problems
+	var sides: Dictionary[String, int] = {"origem": lot.origin_market_id, "destino": lot.destination_market_id}
+	for side: String in sides:
+		if _markets == null or not _markets.has_market(sides[side]):
+			problems.append("o lote %d: o mercado de %s %d não existe" % [lot.lot_id, side, sides[side]])
+		elif not _markets.is_traded(sides[side], lot.good_id):
+			problems.append("o lote %d: o bem '%s' não é negociado no mercado de %s %d" % [lot.lot_id, lot.good_id, side, sides[side]])
+	return problems
+
+
+## Por bem, o estoque do dono-trânsito é a soma das `quantity` dos lotes (9.16.6): a soma dos lotes de cada bem contra o que o dono tem, nos bens de uns e de outros.
+func _stock_problems() -> Array[String]:
+	var wanted: Dictionary[String, int] = {}
+	for lot_id: int in lot_ids():
+		wanted[_lots[lot_id].good_id] = int(wanted.get(_lots[lot_id].good_id, 0)) + _lots[lot_id].quantity
+	for row: Dictionary in _store.inventory_rows(_holder_id):
+		wanted[str(row["good_id"])] = int(wanted.get(str(row["good_id"]), 0))
+	var good_ids: Array[String] = []
+	good_ids.assign(wanted.keys())
+	good_ids.sort()
+	var problems: Array[String] = []
+	for good_id: String in good_ids:
+		if _store.quantity_of(_holder_id, good_id) != wanted[good_id]:
+			problems.append("o dono-trânsito tem %d de '%s' e os lotes somam %d" % [_store.quantity_of(_holder_id, good_id), good_id, wanted[good_id]])
+	return problems

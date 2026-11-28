@@ -4,5 +4,6 @@
 	{"id": "site", "weight_capacity": 400, "initial_balance": 200},
 	{"id": "market", "weight_capacity": 5000, "initial_balance": 3000},
 	{"id": "contract", "weight_capacity": 0, "initial_balance": 0},
-	{"id": "merchant", "weight_capacity": 120, "initial_balance": 300}
+	{"id": "merchant", "weight_capacity": 120, "initial_balance": 300},
+	{"id": "flow", "weight_capacity": 5000, "initial_balance": 0}
 ]
