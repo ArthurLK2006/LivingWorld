@@ -1,7 +1,7 @@
 class_name FlowReplies
 extends RefCounted
 ## Tipos de resposta do fluxo (LW-100c1; docs/modules/economy.md, 9.16.7): a porta devolve CÓPIAS destes tipos, só com campos simples (inteiros, textos e booleano), nunca o `Lot` nem a `RouteRow` do livro: mudar a resposta nunca muda o livro. Arquivo à parte, como `caravan_replies.gd`. As listas saem por `route_id` e por `lot_id` crescentes.
-## Ainda NÃO há porta nem comando que os devolva (LW-100d1): aqui só os tipos, sem dependência da regra nem dos parâmetros do fluxo; os campos derivados são PREENCHIDOS por quem chama.
+## A porta (`peek_flow_routes`, `peek_flow_lots` e `peek_flow_plan`, LW-100d1b) os devolve; aqui só os tipos, sem dependência da regra nem dos parâmetros do fluxo; os campos derivados são PREENCHIDOS por quem chama (o `FlowRunner`).
 
 
 ## Uma linha de `peek_flow_routes`: a rota já ligada alguma vez. `route_state` (o estado da rota no `world`) e `lots_count` (os lotes dela) são preenchidos por quem chama.
@@ -53,6 +53,30 @@ class LotQuery:
 		departed_at = lot.departed_at
 		arrives_at = lot.arrives_at
 		remaining_minutes = lot.remaining_minutes
+
+
+## `peek_flow_routes` (LW-100d1b): as rotas já ligadas alguma vez, por `route_id` crescente (acréscimo, como o `CaravanReplies.CaravansQuery`). `result` é sempre ok hoje; o tipo guarda o lugar de uma falha futura.
+class RoutesQuery:
+	extends RefCounted
+
+	var result: Result
+	var rows: Array[RouteQuery]
+
+	func _init(query_result: Result, route_rows: Array[RouteQuery] = []) -> void:
+		result = query_result
+		rows = route_rows
+
+
+## `peek_flow_lots` (LW-100d1b): os lotes, por `lot_id` crescente (acréscimo). Rota que nunca teve lote dá lista vazia, sem erro.
+class LotsQuery:
+	extends RefCounted
+
+	var result: Result
+	var rows: Array[LotQuery]
+
+	func _init(query_result: Result, lot_rows: Array[LotQuery] = []) -> void:
+		result = query_result
+		rows = lot_rows
 
 
 ## `peek_flow_plan`: o que a regra enviaria agora (nada é gravado). `result` falha com `ECON_NO_ROUTE` nos casos de 9.16.7; os outros campos só valem se `result.ok` e são preenchidos por quem chama: o sentido (mercado de origem e de destino), o bem, a quantidade planejada, a quantidade enviada (com o resto de risco de hoje), os minutos da viagem e o lucro líquido.

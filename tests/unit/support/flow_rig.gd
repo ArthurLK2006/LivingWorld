@@ -43,8 +43,9 @@ static func build(route_service: RouteService, flow: FlowParams = null, slowdown
 	return rig
 
 
-func start_new_game() -> void:
-	runner.start_new_game(func(scheduler: Scheduler) -> void: scheduler.configure_module("economy", 1))
+## `cadence`: de quantos em quantos minutos a economia anda (1 = o jogo real; LW-100d1b, para o T5).
+func start_new_game(cadence: int = 1) -> void:
+	runner.start_new_game(func(scheduler: Scheduler) -> void: scheduler.configure_module("economy", cadence))
 	market_a = module.peek_market_of("test_settlement_a").market_id
 	market_b = module.peek_market_of("test_settlement_b").market_id
 	market_c = module.peek_market_of("test_settlement_c").market_id

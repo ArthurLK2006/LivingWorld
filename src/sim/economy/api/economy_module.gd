@@ -339,6 +339,19 @@ func peek_trade_plans(trader_id: int, origin_market_id: int) -> CaravanReplies.P
 	return _caravan_runner().plans(trader_id, origin_market_id)
 
 
+## As consultas do FLUXO agregado (LW-100d1b; 9.16.7), só leitura, em cópias (`FlowReplies`). `peek_flow_routes`: as rotas já ligadas alguma vez, por `route_id`. `peek_flow_lots`: os lotes, por `lot_id` (todos se a rota é vazia). `peek_flow_plan`: o que a regra enviaria agora, com a chave ligada ou não; `ECON_NO_ROUTE` nos casos do comando.
+func peek_flow_routes() -> FlowReplies.RoutesQuery:
+	return FlowRunner.new(_state, _world).routes()
+
+
+func peek_flow_lots(route_id: String = "") -> FlowReplies.LotsQuery:
+	return FlowRunner.new(_state, _world).lots(route_id, _now())
+
+
+func peek_flow_plan(route_id: String) -> FlowReplies.PlanQuery:
+	return FlowRunner.new(_state, _world).plan(route_id, _ids)
+
+
 func peek_balance(owner_id: int) -> EconomyReplies.BalanceQuery:
 	return EconomyQueries.peek_balance(_state, owner_id)
 
