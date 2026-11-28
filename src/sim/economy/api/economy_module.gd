@@ -426,16 +426,19 @@ func _on_npc_died(event: SimEvent) -> void:
 		_state.book.close_owner(owner_id)
 
 
-## `RouteStateChanged` (LW-098e; 9.7): a rota fechou ou reabriu; o `CaravanRunner` segura, retoma ou refaz o caminho das caravanas, em ordem de `trader_id`. Os campos são lidos pelo nome, sem citar a classe do `world`; carga de outro tipo é ignorada e, com o livro vazio, sai logo.
+## `RouteStateChanged` (LW-098e; 9.7): a rota fechou ou reabriu; o `CaravanRunner` segura, retoma ou refaz o caminho das caravanas, em ordem de `trader_id`. LW-100d2: DEPOIS dele, o `FlowRunner` segura ou retoma os lotes do fluxo (9.16.4), por `lot_id`. Os campos são lidos pelo nome, sem citar a classe do `world`; carga de outro tipo é ignorada e, com o livro de cada um vazio (caravanas; fluxo nunca ligado), aquele sai logo.
 func _on_route_state_changed(event: SimEvent) -> void:
 	# Variant: campos crus do evento; o tipo é conferido na linha seguinte.
 	var raw_route: Variant = event.get("route_id")
 	var raw_state: Variant = event.get("new_state")
-	if typeof(raw_route) != TYPE_STRING or typeof(raw_state) != TYPE_STRING or _state.caravans.is_pristine():
+	if typeof(raw_route) != TYPE_STRING or typeof(raw_state) != TYPE_STRING:
 		return
 	var route_id: String = raw_route
 	var new_state: String = raw_state
-	_caravan_runner().route_state_changed(route_id, new_state, _now())
+	if not _state.caravans.is_pristine():
+		_caravan_runner().route_state_changed(route_id, new_state, _now())
+	if not _state.flow.is_pristine():
+		FlowRunner.new(_state, _world).route_state_changed(route_id, new_state, _now())
 
 
 ## Publica o `ContractCompleted` se o comando concluiu o contrato e devolve o resultado dele.

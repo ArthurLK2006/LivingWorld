@@ -13,6 +13,7 @@ const GOODS: Array[String] = ["grain", "flour", "bread", "wood", "plank", "ore",
 var runner: SimulationRunner
 var module: EconomyModule
 var definitions: EconomyDefinitions
+var routes: WorldModule
 var market_a: int
 var market_b: int
 var market_c: int
@@ -34,10 +35,10 @@ static func build(route_service: RouteService, flow: FlowParams = null, slowdown
 		rig.definitions.production_sites = []
 		rig.definitions.service_posts = []
 		rig.definitions.contract_templates = []
-	var routes: WorldModule = WorldModule.new(route_service, true)
-	rig.module = EconomyModule.new(false, rig.definitions, routes)
+	rig.routes = WorldModule.new(route_service, true)
+	rig.module = EconomyModule.new(false, rig.definitions, rig.routes)
 	rig.runner = SimulationRunner.new(SEED, START_MINUTE)
-	for entry: Array in [["world", routes], ["economy", rig.module]]:
+	for entry: Array in [["world", rig.routes], ["economy", rig.module]]:
 		if not rig.runner.register_module(entry[0], entry[1]).ok:
 			push_error("FlowRig: módulo '%s' não registrado." % entry[0])
 	return rig
@@ -54,6 +55,14 @@ func start_new_game(cadence: int = 1) -> void:
 ## Roda passos de 1 minuto (relógio, módulos, entrega dos eventos) até o relógio chegar a `minute`.
 func until(minute: int) -> void:
 	runner.run_steps(minute - runner.world.context.clock.total_minutes())
+
+
+## Abre ou fecha a rota no `world` (comando de desenvolvimento) e entrega o `RouteStateChanged` AGORA, no minuto em que o relógio está, como o passo do host faz (LW-100d2). O `world` só publica se o estado muda.
+func set_route(route_id: String, is_open: bool) -> void:
+	var asked: Result = routes.request_open_route(route_id) if is_open else routes.request_close_route(route_id)
+	if not asked.ok:
+		push_error("FlowRig: a rota '%s' não mudou: %s" % [route_id, asked.message])
+	runner.world.context.events.dispatch()
 
 
 func release() -> void:

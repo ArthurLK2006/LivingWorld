@@ -1,7 +1,7 @@
 class_name FlowRunner
 extends RefCounted
 ## O fluxo agregado por rota por dentro (LW-100d1a; docs/modules/economy.md, 9.16.2, 9.16.3 e 9.16.7): LIGAR a chave de uma rota (o comando de desenvolvimento), as ENTREGAS dos lotes vencidos e os ENVIOS do início do dia, com o corte de risco. O par do `CaravanRunner`: trabalha sobre o `EconomyState` do momento e a porta de rotas do `world` (`WorldModule`) e decide pela
-## `FlowRule` (função pura). Os bens só se movem por `GoodsStore.transfer` (nada nasce nem some) e NENHUM dinheiro muda: não há chamada ao `Ledger`. Não sorteia e não lê o relógio: o minuto de simulação (`hora × 60`) vem de quem chama. As consultas `peek_flow_*` (LW-100d1b) leem o livro e a MESMA decisão do envio (`_choose`), sem gravar nada. Rota fechada (reter e retomar) é da LW-100d2.
+## `FlowRule` (função pura). Os bens só se movem por `GoodsStore.transfer` (nada nasce nem some) e NENHUM dinheiro muda: não há chamada ao `Ledger`. Não sorteia e não lê o relógio: o minuto de simulação (`hora × 60`) vem de quem chama. As consultas `peek_flow_*` (LW-100d1b) leem o livro e a MESMA decisão do envio (`_choose`), sem gravar nada. LW-100d2: a rota FECHADA segura os lotes a caminho e a reaberta os retoma (`route_state_changed`, 9.16.4).
 
 var _state: EconomyState
 var _world: WorldModule
@@ -47,6 +47,21 @@ func run_hour(now: int) -> void:
 		var row: FlowBook.RouteRow = _state.flow.route_of(route_id)
 		if row.enabled:
 			_dispatch(row, now)
+
+
+## `RouteStateChanged` (LW-100d2; 9.16.4: a economia só OUVE), por `lot_id` crescente e sem sorteio: `closed` SEGURA cada lote `travelling` da rota cuja chegada ainda está no futuro (`held`: `remaining_minutes = arrives_at − now`, `arrives_at` 0) e `open` RETOMA cada `held` dela (`travelling` com `arrives_at = now + remaining_minutes`; o envio novo só vem na primeira hora do próximo dia, em `run_hour`). O lote JÁ VENCIDO (`arrives_at <= now`) não congela: chega na próxima hora cheia. A chave NÃO conta (desligar não interrompe lote). Fechar duas vezes, reabrir duas vezes,
+## rota sem lote e `new_state` que não é `open` nem `closed`: nada muda. `now`: o minuto em que o evento é tratado (depois dos `tick` do passo). Quem chama sai antes com o livro virgem (9.16.6).
+func route_state_changed(route_id: String, new_state: String, now: int) -> void:
+	if not [WorldModule.STATE_OPEN, WorldModule.STATE_CLOSED].has(new_state):
+		return
+	for lot_id: int in _state.flow.lot_ids():
+		var lot: FlowBook.Lot = _state.flow.lot_of(lot_id)
+		if lot.route_id != route_id:
+			continue
+		if new_state == WorldModule.STATE_CLOSED and lot.state == FlowBook.Lot.STATE_TRAVELLING and lot.arrives_at > now:
+			_state.flow.hold_lot(lot_id, lot.arrives_at - now)
+		elif new_state == WorldModule.STATE_OPEN and lot.state == FlowBook.Lot.STATE_HELD:
+			_state.flow.resume_lot(lot_id, now + lot.remaining_minutes)
 
 
 ## `peek_flow_routes` (9.16.7): as rotas já ligadas alguma vez, em cópias e por `route_id` crescente. `route_state` é o do `world` (vazio se ele não conhece a rota ou não há a porta de rotas) e `lots_count`, os lotes dela.
