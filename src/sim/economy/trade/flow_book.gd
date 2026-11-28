@@ -225,6 +225,26 @@ func reduce_lot(lot_id: int, delivered: int) -> bool:
 	return true
 
 
+## SEGURA o lote que a rota fechada interrompeu (LW-100d2; 9.16.4): `travelling` vira `held` com os minutos que faltavam (`remaining_minutes`, 0 ou mais; quem chama os calcula como `arrives_at` menos agora) e `arrives_at` 0; os bens seguem no dono-trânsito. Lote que não existe, que não está a caminho ou minutos negativos: nada muda. Devolve se mudou.
+func hold_lot(lot_id: int, remaining_minutes: int) -> bool:
+	if not _lots.has(lot_id) or _lots[lot_id].state != Lot.STATE_TRAVELLING or remaining_minutes < 0:
+		return false
+	_lots[lot_id].state = Lot.STATE_HELD
+	_lots[lot_id].arrives_at = 0
+	_lots[lot_id].remaining_minutes = remaining_minutes
+	return true
+
+
+## RETOMA o lote segurado (LW-100d2; 9.16.4): `held` volta a `travelling` com a nova chegada `arrives_at` (1 ou mais: agora mais os minutos que faltavam) e `remaining_minutes` 0. Lote que não existe, que não está `held` ou chegada menor que 1: nada muda. Devolve se mudou.
+func resume_lot(lot_id: int, arrives_at: int) -> bool:
+	if not _lots.has(lot_id) or _lots[lot_id].state != Lot.STATE_HELD or arrives_at < 1:
+		return false
+	_lots[lot_id].state = Lot.STATE_TRAVELLING
+	_lots[lot_id].arrives_at = arrives_at
+	_lots[lot_id].remaining_minutes = 0
+	return true
+
+
 ## O que desse bem já está a caminho do mercado (LW-100d1a): a soma das `quantity` dos lotes com esse destino, em qualquer estado. É o espaço do destino já reservado no envio (9.16.2); só leitura.
 func incoming_of(destination_market_id: int, good_id: String) -> int:
 	var total: int = 0
