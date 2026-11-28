@@ -20,7 +20,8 @@ const NEAR_M: float = 10.0
 ## Folgas em torno das bordas do alcance (80 e 120 m), maiores que o deslocamento lateral de 1,2 m (a vista mede até o corpo, o teste até o eixo da estrada): dentro de IN_M a caravana TEM de ter corpo e acima de OUT_M NÃO pode ter.
 const IN_M: float = 78.0
 const OUT_M: float = 122.0
-const DEPARTURE_SPOT_M: float = 6.0
+## (doca) 6,0 -> 12,0 m: a doca de C fica na borda sul da praça, a 11,85 m do centro (A: 5,70 m; B: 6,00 m).
+const DEPARTURE_SPOT_M: float = 12.0
 const STEP_TOLERANCE_M: float = 0.01
 const STEP_RATIO_MIN: float = 0.9
 const STEP_RATIO_MAX: float = 1.1
@@ -32,6 +33,10 @@ const PART_OF_STEP_MS: int = 600
 const MS_PER_MINUTE: float = 1250.0
 const AFTER_LOAD_MINUTES: int = 20
 const ARRIVAL_GRACE: int = 2
+## (doca) A caravana nasce na doca (a menos de 0,1 m, como o primeiro quadro) e a doca fica a até 12 m do centro (+ 1 mm); o corpo anda a 1,2 m do eixo do caminho mostrado.
+const DOCK_SPOT_M: float = 0.1
+const DOCK_TOLERANCE_M: float = 0.001
+const LATERAL_M: float = 1.2
 
 var _data: NpcLifeCheck.GameData
 var _routes: CaravanRoutesReader
@@ -65,8 +70,9 @@ class Trip:
 	var route_id: String = ""
 	var from_id: String = ""
 	var origin: Vector2 = Vector2.ZERO
-	var heading: Vector2 = Vector2.ZERO
+	## (doca) O comprimento do caminho mostrado (da doca de saída à de chegada, pelos pontos) e a doca de saída.
 	var road_m: float = 0.0
+	var dock: Vector2 = Vector2.ZERO
 	var length_m: int = 0
 	var leg_minutes: int = 0
 	var npc_views_before: int = 0
@@ -84,6 +90,8 @@ class TripLog:
 	var missing_near: Array[int] = []
 	var lingering_far: Array[int] = []
 	var progress: PackedFloat64Array = PackedFloat64Array()
+	## (doca) O maior afastamento (m) entre o corpo e o ponto do caminho mostrado na mesma fração `u` (o deslocamento lateral, no máximo 1,2 m).
+	var far_from_road_m: float = 0.0
 
 
 func before_all() -> void:
@@ -236,9 +244,12 @@ func _refresh(game: Game) -> void:
 		game.caravan_bodies.reconcile()
 
 
-## O ponto da estrada reta entre os mercados do trecho (sem o deslocamento lateral).
+## O ponto do caminho MOSTRADO do trecho (a polilinha do dado: doca, pontos de passagem, doca; sem o deslocamento lateral) na fração `u` da linha (doca: antes era a reta entre os mercados).
 func _road_point(game: Game, row: BridgeReplies.CaravanBodyReply) -> Vector2:
-	return game.markets[row.from_settlement_id].lerp(game.markets[row.to_settlement_id], row.u)
+	var line: PackedVector2Array = _routes.leg_line(row.route_id, row.from_settlement_id, row.to_settlement_id, game.markets[row.from_settlement_id], game.markets[row.to_settlement_id])
+	var pose: CaravanPath.Pose = CaravanPath.Pose.new()
+	CaravanPath.new(line).sample_into(row.u, true, 0.0, pose)
+	return pose.position
 
 
 func _row_of(game: Game, trader: int) -> BridgeReplies.CaravanBodyReply:
@@ -271,8 +282,9 @@ func _visible_bodies(game: Game, trader: int) -> Array[int]:
 	return counts
 
 
-func _progress_of(trip: Trip, body: CaravanView) -> float:
-	return (Vector2(body.position.x, body.position.z) - trip.origin).dot(trip.heading)
+## O avanço ao longo do caminho MOSTRADO (doca: antes, a projeção do corpo na reta entre os mercados): a fração `u` da ponte vezes o comprimento da polilinha mostrada. Que o corpo está sobre esse caminho é medido à parte (`far_from_road_m`).
+func _progress_of(trip: Trip, row: BridgeReplies.CaravanBodyReply) -> float:
+	return row.u * trip.road_m
 
 
 ## O jogo novo com as duas vistas, o foco a 10 m do mercado de partida e o terreno desenhado ali, andado até um comerciante do povoado de partida ter caravana (o foco fica onde está).
@@ -297,8 +309,9 @@ func _start_trip() -> Trip:
 			trip.route_id = row.route_id
 			trip.from_id = row.from_settlement_id
 			trip.origin = game.markets[row.from_settlement_id]
-			trip.road_m = trip.origin.distance_to(game.markets[row.to_settlement_id])
-			trip.heading = (game.markets[row.to_settlement_id] - trip.origin).normalized()
+			var shown: PackedVector2Array = _routes.leg_line(row.route_id, row.from_settlement_id, row.to_settlement_id, trip.origin, game.markets[row.to_settlement_id])
+			trip.road_m = CaravanPath.new(shown).length_m()
+			trip.dock = shown[0]
 			trip.length_m = game.economy.peek_caravan(trader).leg_length_m
 			trip.leg_minutes = game.economy.peek_caravan(trader).leg_minutes
 			trip.npc_views_before = views_before[trader]
@@ -337,7 +350,8 @@ func _follow(trip: Trip, follow: bool, max_minutes: int = TRIP_LIMIT) -> TripLog
 			record.lingering_far.append(minute)
 		var body: CaravanView = game.caravan_bodies.body_of(trip.trader)
 		if body != null and body.visible and row.route_id == trip.route_id and row.from_settlement_id == trip.from_id:
-			record.progress.append(_progress_of(trip, body))
+			record.progress.append(_progress_of(trip, row))
+			record.far_from_road_m = maxf(record.far_from_road_m, Vector2(body.position.x, body.position.z).distance_to(spot))
 		_step(game)
 	return record
 
@@ -347,7 +361,8 @@ func test_the_caravan_leaves_the_departure_market_and_the_merchant_never_has_two
 	assert_eq(trip.npc_views_before, 1, "ANTES de partir o comerciante tem o seu `NpcView` na praça (foco a 10 m).")
 	assert_eq(_visible_bodies(trip.game, trip.trader), [0, 1] as Array[int], "No passo da partida o `NpcView` some e o corpo da caravana aparece, no mesmo quadro: um corpo só.")
 	var body: CaravanView = trip.game.caravan_bodies.body_of(trip.trader)
-	assert_lt(Vector2(body.position.x, body.position.z).distance_to(trip.origin), DEPARTURE_SPOT_M, "O corpo da caravana nasce junto do mercado de saída.")
+	assert_lt(Vector2(body.position.x, body.position.z).distance_to(trip.dock), DOCK_SPOT_M, "(doca) O corpo da caravana nasce na DOCA do povoado de saída (antes, a menos de 6 m do centro do mercado).")
+	assert_lte(trip.dock.distance_to(trip.origin), DEPARTURE_SPOT_M + DOCK_TOLERANCE_M, "(doca) E a doca fica a no máximo 12 m do centro do mercado de saída (A 5,70 m, B 6,00 m, C 11,85 m; 1 mm de tolerância).")
 	var record: TripLog = _follow(trip, false)
 	assert_gt(record.minutes, 60, "A viagem dura mais de uma hora.")
 	assert_eq([record.duplicated, record.npc_leaks, record.missing_near, record.lingering_far], [[] as Array[int], [] as Array[int], [] as Array[int], [] as Array[int]], "Em NENHUM minuto há dois corpos ou um `NpcView` do comerciante em viagem, perto do foco (80 m) a caravana TEM corpo e longe (120 m) NÃO tem.")
@@ -367,6 +382,7 @@ func test_walking_with_the_caravan_the_body_is_always_there_alone_and_steps_matc
 		smallest = minf(smallest, step_m)
 		worst_error = maxf(worst_error, absf(step_m - expected_m))
 	assert_gt(smallest, 0.0, "A posição ao longo da estrada só cresce (monótona).")
+	assert_lt(record.far_from_road_m, LATERAL_M + STEP_TOLERANCE_M, "(doca) E o corpo está sobre o caminho mostrado, a no máximo o deslocamento lateral de 1,2 m do eixo (antes, medido pela projeção na reta).")
 	assert_lt(worst_error, STEP_TOLERANCE_M, "Cada minuto avança a estrada ÷ `leg_minutes`.")
 	var ratio: float = expected_m / (float(trip.length_m) / float(trip.leg_minutes))
 	assert_between(ratio, STEP_RATIO_MIN, STEP_RATIO_MAX, "E isso é compatível (90% a 110%) com o `length_m ÷ leg_minutes` da simulação.")
@@ -404,7 +420,7 @@ func test_a_save_made_mid_trip_brings_the_body_back_at_most_one_step_behind_and_
 	_refresh(game)
 	var body: CaravanView = game.caravan_bodies.body_of(trip.trader)
 	assert_true(body != null and body.visible, "Premissa: no meio da viagem o corpo está na tela.")
-	var before_m: float = _progress_of(trip, body)
+	var before_m: float = _progress_of(trip, _row_of(game, trip.trader))
 	var bytes: PackedByteArray = _encode(game)
 	var focus_m: Vector2 = game.terrain_view.focus()
 	var restored: Game = _load(bytes, true)
@@ -417,7 +433,7 @@ func test_a_save_made_mid_trip_brings_the_body_back_at_most_one_step_behind_and_
 	var revived: CaravanView = restored.caravan_bodies.body_of(trip.trader)
 	assert_true(revived != null and revived.visible, "O corpo da caravana reaparece no mundo carregado.")
 	var step_m: float = trip.road_m / float(trip.leg_minutes)
-	var behind_m: float = before_m - _progress_of(trip, revived)
+	var behind_m: float = before_m - _progress_of(trip, _row_of(restored, trip.trader))
 	assert_between(behind_m, 0.0, step_m + STEP_TOLERANCE_M, "Reaparece atrás do que se via (a fração de passo volta a 0), a menos de 1 passo, nunca à frente.")
 	assert_almost_eq(behind_m, float(PART_OF_STEP_MS) / MS_PER_MINUTE * step_m, 0.05, "E atrás exatamente a fração de passo que se perdeu.")
 	assert_eq(_visible_bodies(restored, trip.trader), [0, 1] as Array[int], "Um corpo só, o da caravana (o fantasma não volta com o save).")

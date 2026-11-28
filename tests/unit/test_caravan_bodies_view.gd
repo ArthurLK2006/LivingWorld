@@ -37,7 +37,8 @@ func before_all() -> void:
 	var settlements: SettlementLoader.LoadResult = SettlementLoader.load_dir(WORLD_DIR, _terrain)
 	assert_true(settlements.result.ok, settlements.result.message)
 	_places = settlements.places
-	var loaded: CaravanRoutesReader.LoadResult = CaravanRoutesReader.from_file()
+	# (doca) LW-099g: o dado real agora é polilinha com docas; este teste mede a mecânica da vista numa estrada RETA de mercado a mercado, então usa o dado reto derivado dele (`StraightRoads`).
+	var loaded: CaravanRoutesReader.LoadResult = StraightRoads.from_real_file()
 	assert_true(loaded.result.ok, loaded.result.message)
 	_routes = loaded.data
 

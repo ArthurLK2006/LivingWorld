@@ -1,9 +1,9 @@
 class_name CaravanBodiesView
 extends Node3D
 ## LW-099b2b (viagem visível dos comerciantes; só apresentação): a VISTA que decide quem aparece. A cada quadro faz UMA consulta à ponte (`peek_caravan_bodies`, sem sinal; só leitura: esta view nunca escreve na simulação) e mantém,
-## na `CaravanViewPool`, um `CaravanView` por caravana que está no ALCANCE do jogador, nem mais nem menos. ESTRADA: a polilinha do trecho (`CaravanPath.through`) vai do mercado do povoado de saída ao do de chegada, no sentido da marcha
-## (os mercados vêm de `peek_places`; a apresentação não conhece a simulação), e é montada UMA vez por trecho de cada caravana, não por quadro; a fração `u` que a ponte entrega é a fração dessa polilinha, e o ponto sai de `sample_into`
-## (uma `Pose` só, reaproveitada). ALTURA: a do terreno (`peek_height`) sob os PÉS do comerciante (a origem do corpo); INCLINAÇÃO: a que liga os pés ao EIXO do carrinho, `CaravanView.CART_BACK_M` atrás ao longo da frente (as duas alturas em que o corpo
+## na `CaravanViewPool`, um `CaravanView` por caravana que está no ALCANCE do jogador, nem mais nem menos. ESTRADA: a polilinha do trecho vem pronta do dado (`CaravanRoutesReader.leg_line`, o ÚNICO lugar que a monta): da doca do povoado de saída (ou do mercado dele, se não tem doca) pelos pontos de passagem da rota, na ordem certa
+## para o sentido da marcha (o `settlement_a_id` do dado diz de que ponta eles são contados), até a doca do de chegada (ou o mercado). Os mercados vêm de `peek_places` (a apresentação não conhece a simulação) e a polilinha é montada UMA vez por trecho de cada caravana, não por quadro;
+## a fração `u` que a ponte entrega é a fração dessa polilinha, e o ponto sai de `sample_into` (uma `Pose` só, reaproveitada). ALTURA: a do terreno (`peek_height`) sob os PÉS do comerciante (a origem do corpo); INCLINAÇÃO: a que liga os pés ao EIXO do carrinho, `CaravanView.CART_BACK_M` atrás ao longo da frente (as duas alturas em que o corpo
 ## rígido se apoia: o carrinho desce `CART_BACK_M * sen(inclinação)` e o comerciante inclina junto), limitada por `max_pitch_deg`. ALCANCE: a
 ## distância no plano do FOCO do jogador (o mesmo que a cena dá ao `TerrainView`: `focus()`) ao ponto DERIVADO (não à posição lógica do comerciante, que fica no mercado de partida), com histerese: entra a `enter_m` e só sai acima de `exit_m`
 ## (o dado de apresentação). Sem o terreno do chunk desenhado (`TerrainView.has_chunk`) o corpo fica ESCONDIDO e NENHUMA pose é aplicada (a última pose boa fica, e a altura nunca é inventada: rodas e pisada contam a distância 3D entre poses,
@@ -11,9 +11,9 @@ extends Node3D
 ## ORDEM por quadro: as SAÍDAS (`give_back`) antes das ENTRADAS (`take`), depois estado e pose dos ativos. Quando a caravana some da consulta (a chegada) o corpo volta à reserva no mesmo quadro, e o `NpcView` do comerciante volta
 ## pelo LOD (o filtro da ponte tira o NPC em viagem de `peek_npc_bodies`). NUNCA dois corpos do mesmo comerciante: a reserva dá no máximo um `CaravanView` por `trader_id` e o `NpcView` do comerciante em viagem não existe.
 ## Reserva vazia: `take` devolve nulo, a reserva conta (`empty_hits`), `waiting` mostra quantas caravanas ficaram sem corpo e a próxima consulta tenta de novo. Consulta que falha: os corpos ficam como estão (UM aviso por sequência de
-## falhas). Trecho sem mercado conhecido numa das pontas: sem estrada e sem corpo (`unplaced`). Pontos de passagem (`points_m`) no dado: ver `_via_of` (lacuna aberta). Contrato: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2, 3 e 6.
+## falhas). Trecho sem mercado conhecido numa das pontas (mesmo que o povoado tenha doca): sem estrada e sem corpo (`unplaced`). Contrato: docs/economia/contrato-lw-099-viagem-visivel.md, seções 2, 3 e 6.
 ## JUNTAS (LW-099c; medidas em tests/integration/test_caravan_visual_jumps.gd e tests/unit/test_caravan_bodies_view_joints.gd): o deslocamento lateral sobe de 0 nos primeiros `LATERAL_RAMP_M` metros e desce a 0 nos últimos, então a caravana sai e chega no
-## EIXO da estrada (o mercado), onde o `NpcView` reaparece na chegada, e a troca de trecho não salta de lado; o giro anda no máximo `TURN_RAD_PER_M` radianos por metro andado entre duas poses (a primeira pose de uma caravana é o giro da estrada, sem limite), então a
+## EIXO da estrada (a doca do povoado, ou o mercado se ele não tem doca; o `NpcView` reaparece no centro do mercado na chegada), e a troca de trecho não salta de lado; o giro anda no máximo `TURN_RAD_PER_M` radianos por metro andado entre duas poses (a primeira pose de uma caravana é o giro da estrada, sem limite), então a
 ## quina no povoado de passagem vira uma curva de poucos metros em vez de um estalo. Só a pose mostrada muda: a fração `u`, o tempo e a velocidade são os da simulação.
 
 ## [HIP] Metros andados (a partir de cada ponta do trecho) em que o deslocamento lateral sobe de 0 ao valor do dado e desce de volta: 4 s a 1x.
@@ -40,8 +40,6 @@ var _chunk_count: Vector2i = Vector2i.ZERO
 var _markets: Dictionary[String, Vector2] = {}
 ## O que a view guarda de cada caravana vista (por `trader_id`): a estrada do trecho, a pose do quadro e se está no alcance.
 var _tracks: Dictionary[int, Track] = {}
-## Rotas com pontos de passagem no dado que já foram avisadas (UM aviso por rota).
-var _warned_routes: Dictionary[String, bool] = {}
 ## Os `trader_id` que sumiram da consulta neste quadro (reaproveitado).
 var _gone: Array[int] = []
 var _pose: CaravanPath.Pose = CaravanPath.Pose.new()
@@ -216,7 +214,7 @@ func _ground_at(point: Vector2) -> float:
 	return ground.height_m if ground.result.ok else NAN
 
 
-## Garante a estrada do trecho atual (a polilinha do mercado de saída ao de chegada), montada de novo SÓ quando o trecho muda. Falso se um dos dois povoados não tem mercado conhecido (ou a estrada não tem comprimento).
+## Garante a estrada do trecho atual (`leg_line` do dado: da doca ou do mercado de saída, pelos pontos de passagem, à doca ou ao mercado de chegada), montada de novo SÓ quando o trecho muda. Falso se um dos dois povoados não tem mercado conhecido (ou a estrada não tem comprimento).
 func _follow_leg(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
 	if track.path != null and track.route_id == row.route_id and track.from_id == row.from_settlement_id and track.to_id == row.to_settlement_id:
 		return true
@@ -226,20 +224,9 @@ func _follow_leg(track: Track, row: BridgeReplies.CaravanBodyReply) -> bool:
 	track.path = null
 	if not _markets.has(row.from_settlement_id) or not _markets.has(row.to_settlement_id):
 		return false
-	var road: CaravanPath = CaravanPath.through(_markets[row.from_settlement_id], _via_of(row.route_id), _markets[row.to_settlement_id])
+	var road: CaravanPath = CaravanPath.new(_routes.leg_line(row.route_id, row.from_settlement_id, row.to_settlement_id, _markets[row.from_settlement_id], _markets[row.to_settlement_id]))
 	track.path = road if road.length_m() > 0.0 else null
 	return track.path != null
-
-
-## Os pontos de passagem da estrada, no sentido da marcha. LACUNA ABERTA: o dado os guarda de `settlement_a_id` para `settlement_b_id`, e a ponte (`peek_caravan_bodies`) só diz de onde para onde o trecho vai, não qual povoado é o `a` da rota,
-## então não dá para saber se é preciso invertê-los. Sem pontos (o dado de hoje, as três rotas) a estrada é a reta e o sentido não importa; COM pontos a estrada cai na reta e UM aviso por rota diz o porquê, em vez de desenhar o caminho de trás
-## para a frente. A correção está no relatório da LW-099b2b (a ponte informar o sentido do trecho em relação à rota).
-func _via_of(route_id: String) -> PackedVector2Array:
-	var stored: PackedVector2Array = _routes.points_of(route_id)
-	if not stored.is_empty() and not _warned_routes.has(route_id):
-		_warned_routes[route_id] = true
-		push_warning("CaravanBodiesView: a rota '%s' tem pontos de passagem, mas a ponte não diz o sentido do trecho em relação a ela; a estrada fica reta até isso existir." % route_id)
-	return PackedVector2Array()
 
 
 ## O giro `from` levado até `to` pelo lado mais curto, no máximo `TURN_RAD_PER_M` por metro andado (`travelled_m`): sem andar, o giro não muda. Resultado entre -PI e PI.
@@ -275,7 +262,6 @@ func _clear() -> void:
 	_pool = null
 	_tracks.clear()
 	_markets.clear()
-	_warned_routes.clear()
 	_is_failing = false
 	failed_queries = 0
 	unplaced = 0

@@ -11,7 +11,8 @@ const PLACES_FILE: String = "res://data/world/places.json"
 const POPULATION_FILE: String = "res://data/population.json"
 const LABEL: String = CaravanRoutesReader.DEFAULT_PATH
 const VIEW_OK: String = '{"enter_m": 80, "exit_m": 120, "lateral_offset_m": 1.2, "pool_size": 8, "max_pitch_deg": 25}'
-const ROUTES_OK: String = '[{"route_id": "r1", "points_m": [[10, 20], [30.5, 40]]}, {"route_id": "r2"}]'
+## LW-099g: `settlement_a_id` é obrigatório numa rota com `points_m` (é ele que dá o sentido dos pontos), então a rota r1 o declara; o resto do arquivo-base é o de antes.
+const ROUTES_OK: String = '[{"route_id": "r1", "settlement_a_id": "sa", "points_m": [[10, 20], [30.5, 40]]}, {"route_id": "r2"}]'
 const CARGO_OK: String = '[{"good_id": "g1", "color": "#C4A24C", "shape": "sack"}, {"good_id": "g2", "color": "#48535E", "shape": "box"}]'
 const MINIMAL: String = '{"version": 1, "view": ' + VIEW_OK + ', "routes": ' + ROUTES_OK + ', "cargo": ' + CARGO_OK + "}"
 ## Distância mínima entre duas cores de carga (RGB de 0 a 1) e saturação máxima: [HIP], "sóbrias e distinguíveis".
@@ -107,8 +108,9 @@ func test_the_road_between_the_markets_is_within_ten_percent_of_the_leg_length()
 	for route: Dictionary in _rows(ROUTES_FILE):
 		var start: Vector2 = markets[str(route["settlement_a_id"])]
 		var end: Vector2 = markets[str(route["settlement_b_id"])]
-		var road: CaravanPath = CaravanPath.through(start, _real.points_of(str(route["id"])), end)
-		assert_between(road.length_m() / float(route["length_m"]), 0.9, 1.1, "%s: a polilinha entre os mercados fica entre 90%% e 110%% do length_m" % route["id"])
+		# LW-099g: o caminho MOSTRADO (`leg_line`: com docas, de doca a doca; sem elas, de mercado a mercado, como antes) e não mais mercado, pontos, mercado.
+		var road: CaravanPath = CaravanPath.new(_real.leg_line(str(route["id"]), str(route["settlement_a_id"]), str(route["settlement_b_id"]), start, end))
+		assert_between(road.length_m() / float(route["length_m"]), 0.9, 1.1, "%s: a polilinha mostrada fica entre 90%% e 110%% do length_m" % route["id"])
 
 
 func test_the_pool_has_room_for_every_merchant() -> void:
