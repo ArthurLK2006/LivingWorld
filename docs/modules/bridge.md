@@ -85,7 +85,7 @@ Estado: **PLANEJADA.** Nada desta seção existe no código; é desenho para as 
 ### B4. HUD de combate e inventário (LW-153b e LW-148b; DEC-193 e DEC-200)
 
 - **`peek_combat_hud(actor_id) -> CombatHudReply`:** vida e estamina próprias, "ferido", o alvo (`target_id`, `name_key`, fração de vida) e cada habilidade com `ready_at_ms` e `now_ms`. Compõe `combat.peek_combatant` e `character.peek_body`; **sem estado novo**, só cópias.
-- **`peek_inventory_view(actor_id) -> InventoryReply`:** as instâncias (do `character`: `def_id`, qualidade, durabilidade, `bound`, em qual slot), os **bens em quantidade** (da `economy`), o peso total e a capacidade. **Peso (DEC-193, PROPOSTA):** a ponte **soma** as duas consultas; é conta de consulta, não regra. Repassa `request_equip`, `request_unequip` e `request_pickup_item` ao `character`.
+- **`peek_inventory_view(actor_id) -> InventoryReply`:** as instâncias (do `character`: `def_id`, qualidade e o nível dela (Comum, Bem-feito ou Excelente), durabilidade, em qual slot), os **bens em quantidade** (da `economy`), o peso total e a capacidade. **Peso (DEC-193, PROPOSTA):** a ponte **soma** as duas consultas; é conta de consulta, não regra. Repassa `request_equip`, `request_unequip` e `request_pickup_item` ao `character`.
 - **[EM ABERTO] quem recusa por excesso de peso** (`character.md`, seção E1). (a) a ponte, o que seria **regra de jogo na ponte** (proibido, AGENTS 6); (b) uma **interface injetada** no `character`, no padrão do `TradeRules` (DEC-141), que lê o peso dos bens sem importar a `economy`. **Recomendação: (b).**
 
 ### B5. Derrota e renascimento (LW-156c e LW-156d; DEC-181)
