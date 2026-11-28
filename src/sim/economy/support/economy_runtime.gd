@@ -44,6 +44,13 @@ static func check_arrivals(state: EconomyState, world: WorldModule, events: Even
 			events.publish(arrived)
 
 
+## A hora do FLUXO agregado por rota (LW-100d1a; docs/modules/economy.md, 9.16.2): as entregas dos lotes vencidos e, na primeira hora de cada dia, os envios. `now` é o minuto da hora cheia (`hora x 60`). Livro VIRGEM (a chave nunca foi ligada: o jogo real): sai na PRIMEIRA linha, sem ler mercado, cotação, `world` nem relógio, então save, hash e IDs ficam idênticos (9.16.6).
+static func run_flow_hour(state: EconomyState, world: WorldModule, now: int) -> void:
+	if state.flow.is_pristine():
+		return
+	FlowRunner.new(state, world).run_hour(now)
+
+
 ## A hora da folha: primeiro os postos de serviço, pela conta do mercado (passo 0), depois os locais de produção os contratos que venceram (`now` é o minuto da hora cheia que está sendo processada, `hora x 60`: LW-107c3, num passo que cobre várias horas cada hora atrasada
 ## traz o minuto da PRÓPRIA hora), as vagas (a conferência de quem falta nos locais de trabalho) e, por fim, o postador de contratos de entrega (LW-107c2): um contrato vencido nesta hora já abre espaço para o próximo.
 static func run_production_hour(state: EconomyState, events: EventBus, ids: IdGenerator, now: int) -> void:

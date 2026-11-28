@@ -85,6 +85,7 @@ func on_new_game(_world_seed: int) -> void:
 
 ## A CADA passo, antes das horas cheias: as chegadas das caravanas (LW-098d2; a chegada é por minuto, e com o livro vazio isto sai na hora). Depois, a cada hora cheia que passa: se ela vira um dia, o fim do dia (mercados, depois locais de produção) vem primeiro; depois a hora de produção. Os eventos saem.
 ## LW-107c3: cada hora é processada com o relógio DAQUELA hora (`hora x 60`), não com o do fim do passo: num passo que cobre várias horas (cadência de 180 minutos, por exemplo) as horas atrasadas dão o mesmo prazo, as mesmas ofertas, o mesmo vencimento e o mesmo hash dos contratos do postador que passos de 1, 7 ou 60 minutos (`test_contract_poster_long_step.gd`). Com passos de 1 minuto os dois relógios são o mesmo.
+## LW-100d1a: o FLUXO agregado roda por hora cheia, DEPOIS do `close_day` e ANTES da produção (`EconomyRuntime.run_flow_hour`, com o relógio daquela hora): com o livro virgem (a chave nunca ligada) sai na primeira linha e nada muda.
 ## NÃO garantido, pendente e anterior a esta correção: `check_arrivals` roda no início do passo, então com cadência maior que 1 minuto a venda de uma chegada de caravana pode vir ANTES da hora ou do fechamento do dia do mesmo passo e mudar o estado e o hash (o jogo real roda a 1 minuto e não é afetado); só o carimbo `time` dos eventos das horas atrasadas (o `EventBus` o grava com o relógio do fim do passo) fica fora do estado e do hash.
 func tick(_elapsed_minutes: int) -> void:
 	if _state.markets == null or _clock == null:
@@ -95,6 +96,7 @@ func tick(_elapsed_minutes: int) -> void:
 		_last_hour += 1
 		if _last_hour % SimClock.HOURS_PER_DAY == 0:
 			EconomyRuntime.close_day(_state, _events)
+		EconomyRuntime.run_flow_hour(_state, _world, _last_hour * SimClock.MINUTES_PER_HOUR)
 		EconomyRuntime.run_production_hour(_state, _events, _ids, _last_hour * SimClock.MINUTES_PER_HOUR)
 
 
@@ -223,6 +225,14 @@ func request_set_stock(market_id: int, good_id: String, quantity: int) -> Result
 	if quantity < current:
 		return _state.goods.destroy(market_id, good_id, current - quantity, GoodsStore.REASON_CONSUMED)
 	return Result.success()
+
+
+## Comando de DESENVOLVIMENTO (LW-100d1a; 9.16.7; só com `EconomyDefinitions.is_development_build`, fora dele `ECON_DEV_ONLY`): liga ou desliga a chave do fluxo agregado de uma rota. Idempotente; a primeira ligação do jogo abre o dono-trânsito (1 ID) e cria a linha da rota, tudo ou nada; desligar só barra o envio novo (o lote a caminho chega). Falhas: `ECON_NO_ROUTE` (rota que o `world` não conhece, sem a porta de rotas, sem os
+## parâmetros do fluxo ou da caravana, sem o tipo `flow` ou sem `setup`) e `ECON_DATA_INVALID` (tipo `flow` com saldo inicial diferente de 0).
+func request_set_flow_enabled(route_id: String, enabled: bool) -> Result:
+	if not _state.definitions.is_development_build:
+		return Result.failure(EconomyCodes.DEV_ONLY, "EconomyModule.request_set_flow_enabled: comando só existe em build de desenvolvimento (EconomyDefinitions.is_development_build).")
+	return FlowRunner.new(_state, _world).set_enabled(route_id, enabled, _ids)
 
 
 ## A ordem de compra (`buy`) ou de venda (`sell`) de um ator num mercado: ATÔMICA, pelo `TradeEngine` (docs/modules/economy.md, seção 5). Falhas: `ECON_UNKNOWN_MARKET`, `ECON_UNKNOWN_GOOD`, `ECON_BAD_QUANTITY`, `ECON_TRADE_BANNED`,
