@@ -22,6 +22,8 @@ var caravan_params: CaravanParams
 var contract_templates: Array[ContractTemplateDef] = []
 ## Os limites de encomendas aceitas ao mesmo tempo, uma linha por categoria (LW-107f2; `contract_limits.json`, lido pelo `ContractLimitLoader`): OPCIONAIS. Sem o arquivo a lista é vazia (nenhuma categoria tem limite definido); só `EconomyModule.peek_contract_limit` a lê.
 var contract_limits: Array[ContractLimitDef] = []
+## Os parâmetros PRÓPRIOS do fluxo agregado por rota (LW-100d1a; `flow_params.json`, lido pelo `FlowParamsLoader`): OPCIONAIS e fora do construtor. Nulo = sem fluxo (`request_set_flow_enabled` devolve `ECON_NO_ROUTE`). Nada os põe no jogo montado ainda (é da LW-100e); os testes os põem direto.
+var flow_params: FlowParams
 
 
 func _init(good_defs: Array[GoodDef] = [], kind_defs: Array[OwnerKindDef] = [], targets: Array[MarketTargetDef] = [], params: PriceParams = null, development_build: bool = false, rules: TradeRules = null, recipe_defs: Dictionary[String, RecipeDef] = {}, params_of_sites: SiteParams = null, site_defs: Array[SiteDef] = [], post_defs: Array[PostDef] = [], caravan: CaravanParams = null, template_defs: Array[ContractTemplateDef] = [], limit_defs: Array[ContractLimitDef] = []) -> void:

@@ -1,6 +1,6 @@
 class_name FlowBook
 extends RefCounted
-## O livro do fluxo agregado por rota (LW-100c1; docs/modules/economy.md, 9.16.2 e 9.16.6): a estrutura (LW-100c1), ligada ao `EconomyState` e ao save na LW-100c2 mas ainda sem comando que a preencha (LW-100d1), então o jogo é igual ao de hoje. Guarda o dono-trânsito (`holder_id`, 0 = ainda não aberto), o contador PRÓPRIO de lotes
+## O livro do fluxo agregado por rota (LW-100c1; docs/modules/economy.md, 9.16.2 e 9.16.6): a estrutura (LW-100c1), ligada ao `EconomyState` e ao save na LW-100c2 e preenchida pelo `FlowRunner` (LW-100d1a) só depois que um comando de desenvolvimento liga a chave de uma rota, então o jogo é igual ao de hoje. Guarda o dono-trânsito (`holder_id`, 0 = ainda não aberto), o contador PRÓPRIO de lotes
 ## (`next_lot_id`, de 1 em diante: não gasta `ctx.ids` e nunca devolve um id), uma linha por rota já ligada alguma vez (`RouteRow`) e os lotes a caminho (`Lot`). Sem preço, dinheiro nem cópia de estoque: os bens do lote estão no inventário do dono-trânsito. Tempo em minutos de simulação; nunca sorteia nem olha o relógio.
 ## O livro VIRGEM (`is_pristine`: `holder_id` 0, nenhuma linha e nenhum lote) é a guarda de "desligado = nada muda" (9.16.6): não tem o que gravar e o `serialize` devolve `{}` (a chave `trade_flow` do save só existe para o livro que NÃO é virgem). O save é um objeto com `holder_id`, `next_lot_id` e duas LISTAS (`routes` por `route_id` e
 ## `lots` por `lot_id`, crescentes), só com inteiros, textos e booleanos. O `load_from` confere tudo o que o livro sabe sozinho (tipos, campos, faixas, ids e a linha de rota de cada lote) e é TUDO OU NADA; o `validate` (LW-100c2) confere o livro contra o dono-trânsito, os mercados, os bens e o estoque dele, e a rota contra o `world` fica para a LW-100d1 (só ela terá a porta de rotas, como `CaravanRunner.route_problems`). Aqui NÃO há envio, entrega, retenção nem retomada (LW-100d1 e LW-100d2).
@@ -188,6 +188,50 @@ func add_lot(lot: Lot) -> int:
 ## O lote some (entregue por inteiro, LW-100d1). O contador NÃO volta: o id retirado nunca é reaproveitado.
 func remove_lot(lot_id: int) -> void:
 	_lots.erase(lot_id)
+
+
+## Grava o dono-trânsito (LW-100d1a), UMA vez: só vale com o livro ainda sem dono e um id de 1 ou mais; devolve se gravou. Abrir o dono no `OwnerBook` é de quem chama (o `FlowRunner`).
+func set_holder(owner_id: int) -> bool:
+	if _holder_id != IdGenerator.NO_ID or owner_id < IdGenerator.FIRST_ID:
+		return false
+	_holder_id = owner_id
+	return true
+
+
+## Liga ou desliga a chave da rota (LW-100d1a). A primeira vez cria a linha (resto 0); idempotente.
+func set_enabled(route_id: String, enabled: bool) -> void:
+	if not _routes.has(route_id):
+		var row: RouteRow = RouteRow.new()
+		row.route_id = route_id
+		_routes[route_id] = row
+	_routes[route_id].enabled = enabled
+
+
+## Grava o resto de risco da rota (LW-100d1a; 9.16.3), de 0 a 9999; rota sem linha ou resto fora da faixa: nada muda. Devolve se gravou.
+func set_carry(route_id: String, carry_bp: int) -> bool:
+	if not _routes.has(route_id) or carry_bp < 0 or carry_bp > MAX_CARRY_BP:
+		return false
+	_routes[route_id].risk_carry_bp = carry_bp
+	return true
+
+
+## Entrega PARCIAL (LW-100d1a): tira `delivered` unidades da `quantity` do lote; chegando a 0 o lote sai (`remove_lot`). Lote que não existe ou `delivered` fora de 1 a `quantity`: nada muda. Devolve se mudou.
+func reduce_lot(lot_id: int, delivered: int) -> bool:
+	if not _lots.has(lot_id) or delivered < 1 or delivered > _lots[lot_id].quantity:
+		return false
+	_lots[lot_id].quantity -= delivered
+	if _lots[lot_id].quantity == 0:
+		remove_lot(lot_id)
+	return true
+
+
+## O que desse bem já está a caminho do mercado (LW-100d1a): a soma das `quantity` dos lotes com esse destino, em qualquer estado. É o espaço do destino já reservado no envio (9.16.2); só leitura.
+func incoming_of(destination_market_id: int, good_id: String) -> int:
+	var total: int = 0
+	for lot: Lot in _lots.values():
+		if lot.destination_market_id == destination_market_id and lot.good_id == good_id:
+			total += lot.quantity
+	return total
 
 
 ## `{}` no livro virgem (nada a gravar); senão `holder_id`, `next_lot_id`, `routes` (por `route_id`) e `lots` (por `lot_id`), uma lista de registros cada, os mesmos bytes para os mesmos dados em qualquer ordem de entrada.
