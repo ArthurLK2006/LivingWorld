@@ -53,11 +53,11 @@ Regras: `need_id` e `need_relief` vêm **juntos** ou nenhum; todo bem tem uma re
 
 ## `owner_kinds.json` (LW-089): tipos de dono
 
-Seis linhas: `npc`, `player`, `site`, `market`, `contract` e `merchant` (a sexta, do comerciante, entra na LW-098c por decisão de Arthur de 14/11/2026; antes eram cinco).
+Sete linhas: `npc`, `player`, `site`, `market`, `contract`, `merchant` e `flow` (a sexta, do comerciante, entra na LW-098c por decisão de Arthur de 14/11/2026; a sétima, o dono-trânsito do fluxo agregado, entra na LW-100c2: contrato do `TradeFlow` aprovado por Arthur em 27/11/2026, e a linha é dado novo por ordem expressa dele, Q4; `economy.md`, 9.16.3).
 
 | Coluna | Tipo | Regra |
 |---|---|---|
-| `id` | `STRING` | um dos seis tipos (o sexto, `merchant`: capacidade de peso 120 e saldo inicial 300 [HIP], resposta de Arthur à Q2 em 14/11/2026; `economy.md`, 9.14) |
+| `id` | `STRING` | um dos sete tipos (o sexto, `merchant`: capacidade de peso 120 e saldo inicial 300 [HIP], resposta de Arthur à Q2 em 14/11/2026; `economy.md`, 9.14; o sétimo, `flow`: capacidade de peso 5000 e saldo inicial 0 [HIP], Q4 de 27/11/2026; `economy.md`, 9.16.3) |
 | `weight_capacity` | `INT` | 0 ou mais; **0 = sem inventário** (só o `contract`, que é só conta) |
 | `initial_balance` | `INT` | 0 ou mais; vira o `mint` inicial `game_start` ao abrir o dono (contrato, seção 3; para o `npc`, na **LW-093**); [HIP] |
 
@@ -345,6 +345,18 @@ Uma linha só, `id` = `caravan_defaults` (como `price_defaults` e `site_defaults
 | `origin_reserve_bp` | `INT` | 0 a 10.000 | 5000 | fração do **alvo** de estoque que o comerciante nunca tira do mercado de origem (Q8) |
 
 Conta de conferência (as rotas reais, com estes [HIP]): o trecho de 520 m com dificuldade 20 leva `ceil_div(52000 × 11000, 400 × 10000)` = **143 minutos**; 430 m e dificuldade 30, **124**; 340 m e dificuldade 25, **96**. O custo de tempo de uma viagem A–B é `ceil_div(143 × 2, 60) + 5` = 10. **Testes de dados (098b):** arquivo real carrega; campo ausente, tipo errado, campo desconhecido, mais de uma linha, `id` diferente de `caravan_defaults` e faixa inválida falham apontando arquivo, item e campo (`ECON_DATA_INVALID`); carregar duas vezes dá o mesmo resultado. **Serialização, compatibilidade e determinismo (exigidos por Arthur em 14/11/2026):** a linha reescrita e relida dá o mesmo objeto; `EconomySetup.from_dir` carrega a pasta real `data/economy/` com o arquivo novo, `check_content_ids` verde e nenhum outro carregador alterado; a mesma entrada dá o mesmo resultado. Textos ao jogador nunca vão nesta tabela.
+
+## `flow_params.json` (LW-100b1): parâmetros PRÓPRIOS do fluxo agregado por rota [HIP; formato autorizado por Arthur em 27/11/2026]
+
+Uma linha só, `id` = `flow_defaults` (como `caravan_defaults`). Todas as colunas são `INT`. São parâmetros de **decisão** (o teto do lote) e de **corte do envio** (o risco): nenhum move dinheiro nem bem. Os demais números do fluxo vêm de `caravan_params.json` (uma fonte só, para os dois modos ficarem comparáveis) e de `price_params.json` (`max_order_quantity`, só leitura). Nasce na 100b1; o formato foi **autorizado por Arthur em 27/11/2026** (AGENTS 16.2; `economy.md`, 9.16.2), limitado ao contrato, e o arquivo fica INERTE até a fiação da 100e.
+
+| Coluna | Tipo | Regra | Partida [HIP] | Para que serve |
+|---|---|---|---|---|
+| `id` | `STRING` | `flow_defaults` | | a única linha |
+| `daily_cap_units` | `INT` | 1 a 1.000 | 50 | teto de unidades de UM lote (um bem, um sentido) por rota e por dia (o `max_order_quantity` de hoje) |
+| `risk_bp_per_point` | `INT` | 0 a 100 | 25 | pontos-base de corte do envio por ponto de risco da rota (A–B: 250, isto é, 2,5%); campo próprio, para o SP7 calibrar só o fluxo |
+
+**Testes de dados (100b1):** o arquivo real carrega com 50 e 25; campo ausente, tipo errado (texto, decimal, booleano), campo desconhecido, mais de uma linha, nenhuma linha, `id` diferente de `flow_defaults`, faixa inválida nos dois extremos e arquivo ausente falham apontando arquivo, item e campo (`ECON_DATA_INVALID`); a linha reescrita e relida dá o mesmo objeto; carregar duas vezes dá o mesmo resultado. Textos ao jogador nunca vão nesta tabela.
 
 ## Ofícios novos (dado do `npc`)
 
